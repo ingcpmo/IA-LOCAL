@@ -1,0 +1,35 @@
+TITLE: ICH Q10 Pharmaceutical Quality System
+SOURCE: International Council for Harmonisation
+
+PURPOSE: Describes a pharmaceutical quality system model that can be
+implemented throughout the different stages of a product's lifecycle.
+
+KEY ELEMENTS:
+1. Management Responsibility: Senior management commitment to quality system
+2. Continual Improvement: Mechanisms to identify and implement improvements
+3. Process Performance and Product Quality Monitoring
+4. CAPA (Corrective and Preventive Action) system
+5. Change Management: systematic approach to evaluating proposed changes
+
+CHANGE CONTROL:
+All changes to validated systems/processes must go through change control:
+- Description of proposed change and reason
+- Risk assessment: impact on product quality, regulatory status
+- Required actions: testing, validation, regulatory notification
+- Approval before implementation
+- Effectiveness check after implementation
+
+CAPA PROCESS:
+Corrective Action: eliminate the cause of a detected nonconformity
+Preventive Action: eliminate the cause of a potential nonconformity
+CAPA must be: documented, risk-based, effective, and verified
+
+PERIODIC REVIEW OF VALIDATED SYSTEMS:
+Documented review at defined intervals (typically annual for critical systems)
+Review should include:
+- Changes made since last review
+- Deviations and their resolution
+- Calibration and maintenance records
+- SOPs: current and followed
+- Recommended improvements
+Outcome: confirm system remains in validated state or initiate revalidation

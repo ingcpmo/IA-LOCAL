@@ -1,0 +1,33 @@
+TITLE: ICH Q9 Quality Risk Management
+SOURCE: International Council for Harmonisation
+
+DEFINITION: Quality Risk Management is a systematic process for the assessment,
+control, communication and review of risks to the quality of the drug product
+across the product lifecycle.
+
+FMEA (Failure Mode and Effects Analysis):
+A prospective tool used to identify and rank failure modes according to their
+severity, occurrence probability, and detectability.
+- RPN (Risk Priority Number) = Severity x Occurrence x Detectability
+- RPN scale typically 1-10 for each factor
+- High RPN (>100-125): requires immediate corrective action
+
+RISK ASSESSMENT PRINCIPLES:
+1. Identify hazards (potential failure modes)
+2. Analyze risk (probability and severity of harm)
+3. Evaluate risk (compare against criteria)
+4. Control risk (reduce to acceptable level)
+5. Review risk (ongoing monitoring)
+
+QUALIFICATION RISK ASSESSMENT:
+Critical Quality Attributes (CQAs): physical, chemical, biological attributes
+that must be within appropriate limits to ensure product quality.
+Critical Process Parameters (CPPs): parameters that affect CQAs and must be
+monitored and controlled.
+
+GAMP 5 RISK-BASED APPROACH:
+Category 1: Infrastructure software (OS, databases)
+Category 3: Non-configured software (instruments)
+Category 4: Configured software (SCADA, DCS, LIMS)
+Category 5: Custom software (bespoke applications)
+Higher category = higher risk = more validation effort required.

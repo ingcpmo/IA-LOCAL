@@ -1,0 +1,62 @@
+TITLE: ISPE Commissioning and Qualification Guide
+SOURCE: International Society for Pharmaceutical Engineering
+
+COMMISSIONING vs QUALIFICATION:
+Commissioning: Engineering activities to ensure systems are installed and
+operating correctly. Not a GMP activity per se.
+Qualification: Documented activities demonstrating equipment/systems consistently
+produce results meeting specifications. GMP requirement.
+
+DESIGN QUALIFICATION (DQ):
+Verify proposed design meets GMP requirements and user requirements.
+Key activities:
+- Review and approve User Requirements Specification (URS)
+- Vendor assessment and selection
+- Design review against regulatory requirements
+- Risk assessment of design elements
+
+INSTALLATION QUALIFICATION (IQ) KEY CHECKS:
+1. Equipment identification: model, serial number, manufacturer confirmed
+2. Utility connections: electrical (voltage, amperage), pneumatic (pressure),
+   process connections (size, material) verified against design
+3. Instrument calibration: all critical instruments have valid calibration
+   certificates traceable to national standards (NIST/SI)
+4. Software version: exact version installed matches approved specification
+5. Materials of construction: product contact materials verified against URS
+6. Documentation: P&IDs, drawings, SOPs available and current
+
+OPERATIONAL QUALIFICATION (OQ) KEY TESTS:
+1. Alarm testing: verify each alarm activates at the defined setpoint
+   Document: setpoint value, activation value, response time
+2. Interlock testing: verify safety interlocks prevent unsafe conditions
+   Must test both normal function and failure modes
+3. Operating range: test at minimum, nominal, and maximum parameters
+4. Audit trail: verify all changes are recorded with user ID and timestamp
+5. Access control: verify unauthorized access is rejected
+6. Emergency stop: verify ESD function operates correctly
+
+PERFORMANCE QUALIFICATION (PQ):
+Minimum 3 consecutive successful production runs under routine conditions.
+Must include worst-case scenarios.
+PQ Acceptance Criteria: All CPPs within validated range for all 3 runs.
+All CQAs within specification for all 3 runs.
+Statistical analysis recommended: process capability Cpk ≥ 1.33
+
+REQUALIFICATION TRIGGERS:
+- Equipment relocation: repeat IQ (utility reverification) + OQ impact assessment
+- Major maintenance or component replacement: OQ for affected functions
+- Software update: regression OQ testing per change control
+- Process change: revalidation assessment
+- Calibration failure: impact assessment + requalification of affected tests
+
+HVAC QUALIFICATION:
+IQ checks: ductwork installation, filter installation, sensor placement
+OQ tests: temperature mapping, pressure differential, air change rate,
+particle counts, HEPA filter integrity test
+PQ: seasonal mapping studies, ongoing environmental monitoring program
+
+PURIFIED WATER SYSTEMS:
+IQ: pipe installation (slope, dead legs), material of construction
+OQ: flow rates, conductivity, TOC, microbial testing at each point of use
+PQ: 12-month monitoring program across all seasons
+Ongoing: daily monitoring per USP <1231>
