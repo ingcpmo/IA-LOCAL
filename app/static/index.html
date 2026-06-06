@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GMP AI Copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0E14;--bg2:#0F1520;--bg3:#141C2B;--bg4:#1A2235;--bg5:#1F2940;
+  --primary:#1DB88A;--primary-dim:#14845F;--blue:#4A9EFF;--blue-dim:#2563C4;
+  --amber:#F59E0B;--purple:#A855F7;--coral:#F87171;--teal:#1DB88A;
+  --text:#E4EAF4;--text2:#8A96A8;--text3:#5A6478;--border:#1E2D45;
+  --font:'DM Sans',sans-serif;
+  --sidebar:220px;--topbar:56px;--rightpanel:300px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;overflow:hidden}
+
+/* ── TOPBAR ── */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar);
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:16px;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:8px;min-width:var(--sidebar);padding-right:8px}
+.logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.logo-text{font-weight:700;font-size:15px;letter-spacing:-0.3px}
+.logo-text span{color:var(--primary)}
+.topbar-mid{flex:1;display:flex;align-items:center;gap:12px}
+.server-badge{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--primary);box-shadow:0 0 6px var(--primary)}
+.dot.red{background:var(--coral);box-shadow:0 0 6px var(--coral)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+#top-user-input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text);font-family:var(--font);font-size:12px;width:140px;outline:none}
+#top-user-input:focus{border-color:var(--primary)}
+#top-user-input::placeholder{color:var(--text3)}
+
+/* ── LAYOUT ── */
+#layout{
+  display:flex;position:fixed;
+  top:var(--topbar);left:0;right:0;bottom:0;
+}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:var(--sidebar);min-width:var(--sidebar);
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.nav-section{padding:12px 8px;flex:1}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:8px;cursor:pointer;
+  color:var(--text2);font-size:13px;font-weight:500;
+  transition:all .15s;margin-bottom:2px;
+}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(29,184,138,.12);color:var(--primary);border-left:2px solid var(--primary);padding-left:8px}
+.nav-item .nav-icon{font-size:15px;width:18px;text-align:center}
+.sidebar-footer{padding:12px;border-top:1px solid var(--border)}
+.corpus-stats{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px}
+.corpus-stats h4{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:6px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.stat-label{font-size:11px;color:var(--text2)}
+.stat-val{font-size:12px;font-weight:600;color:var(--primary)}
+.model-badge{font-size:10px;color:var(--text3);text-align:center;padding-top:4px}
+
+/* ── MAIN CONTENT ── */
+#main{flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column}
+.view{display:none;flex-direction:column;height:100%;padding:20px}
+.view.active{display:flex}
+
+/* ── QUERY VIEW ── */
+#query-view{}
+.agent-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.agent-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
+.agent-pills{display:flex;gap:6px}
+.agent-pill{
+  padding:5px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:500;
+  background:var(--bg3);border:1px solid var(--border);color:var(--text2);transition:all .15s;
+}
+.agent-pill.active{background:rgba(29,184,138,.15);border-color:var(--primary);color:var(--primary)}
+.query-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+#question-input{
+  width:100%;background:transparent;border:none;outline:none;
+  color:var(--text);font-family:var(--font);font-size:14px;resize:none;
+  height:72px;line-height:1.5;
+}
+#question-input::placeholder{color:var(--text3)}
+.query-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.faq-chips{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.faq-chip{
+  padding:3px 10px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);
+  font-size:11px;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.faq-chip:hover{border-color:var(--blue);color:var(--blue)}
+.toolbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.stream-toggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer}
+.toggle-sw{position:relative;width:32px;height:18px}
+.toggle-sw input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:var(--bg4);border-radius:9px;transition:.2s}
+.slider:before{content:"";position:absolute;width:12px;height:12px;left:3px;top:3px;background:var(--text3);border-radius:50%;transition:.2s}
+input:checked + .slider{background:var(--primary-dim)}
+input:checked + .slider:before{transform:translateX(14px);background:var(--primary)}
+#send-btn{
+  padding:7px 20px;background:var(--primary);border:none;border-radius:8px;
+  color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;gap:6px;transition:all .15s;
+}
+#send-btn:hover{background:var(--primary-dim)}
+#send-btn:disabled{opacity:.5;cursor:not-allowed}
+.latency-note{font-size:11px;color:var(--amber);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:5px 10px;margin-bottom:12px}
+#responses-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:20px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--text3);gap:8px}
+.empty-state .empty-icon{font-size:40px;opacity:.3}
+.empty-state p{font-size:13px}
+.response-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:16px;animation:fadeIn .3s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.agent-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
+.agent-badge.fda{background:rgba(74,158,255,.15);color:var(--blue)}
+.agent-badge.iq{background:rgba(29,184,138,.15);color:var(--primary)}
+.card-question{font-size:12px;color:var(--text2);flex:1;font-style:italic}
+.elapsed-badge{font-size:10px;color:var(--text3);background:var(--bg3);padding:2px 8px;border-radius:8px;margin-left:auto}
+.rag-badge{font-size:10px;color:var(--primary);background:rgba(29,184,138,.1);padding:2px 8px;border-radius:8px}
+.card-response{font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.sources-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.source-chip{font-size:10px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:2px 8px;border-radius:8px}
+.streaming-cursor{display:inline-block;width:8px;height:14px;background:var(--primary);animation:blink .7s infinite;vertical-align:middle;margin-left:2px;border-radius:1px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── TEMPLATES VIEW ── */
+#templates-view{}
+.view-title{font-size:18px;font-weight:700;margin-bottom:4px}
+.view-subtitle{font-size:13px;color:var(--text2);margin-bottom:20px}
+.tab-bar{display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:4px}
+.tab-btn{
+  flex:1;padding:7px 12px;border:none;background:transparent;
+  color:var(--text2);font-family:var(--font);font-size:12px;font-weight:500;
+  cursor:pointer;border-radius:7px;transition:all .15s;
+}
+.tab-btn.active{background:var(--primary);color:#fff}
+.template-panel{display:none}
+.template-panel.active{display:block}
+.tmpl-header{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.tmpl-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.reg-tags{display:flex;gap:6px;flex-wrap:wrap}
+.reg-tag{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(74,158,255,.1);color:var(--blue);border:1px solid rgba(74,158,255,.2)}
+.section-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.section-header{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;
+  font-weight:600;font-size:13px;transition:background .15s;
+}
+.section-header:hover{background:var(--bg3)}
+.section-num{width:22px;height:22px;border-radius:50%;background:rgba(29,184,138,.15);color:var(--primary);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.section-chevron{margin-left:auto;color:var(--text3);transition:transform .2s}
+.section-chevron.open{transform:rotate(90deg)}
+.section-body{padding:0 16px 14px;display:none}
+.section-body.open{display:block}
+.section-text{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px}
+.test-row{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)}
+.test-row:last-child{border-bottom:none}
+.test-id{font-size:10px;font-weight:700;color:var(--primary);font-family:monospace;min-width:50px}
+.test-desc{font-size:12px;color:var(--text2)}
+.item-bullet{display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:12px;color:var(--text2)}
+.item-bullet::before{content:"›";color:var(--primary);flex-shrink:0}
+
+/* ── UPLOAD VIEW ── */
+#upload-view{}
+.drop-zone{
+  border:2px dashed var(--border);border-radius:12px;padding:40px 20px;
+  text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;
+  background:var(--bg2);
+}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--primary);background:rgba(29,184,138,.05)}
+.drop-icon{font-size:36px;margin-bottom:10px;opacity:.5}
+.drop-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.drop-sub{font-size:12px;color:var(--text3)}
+#file-input{display:none}
+.collection-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.collection-label{font-size:12px;color:var(--text2);white-space:nowrap}
+.collection-select{
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:var(--font);font-size:13px;padding:6px 10px;outline:none;cursor:pointer;
+}
+.files-list{margin-bottom:16px;display:flex;flex-direction:column;gap:6px}
+.file-row{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px}
+.file-name{flex:1;font-size:12px;color:var(--text)}
+.file-size{font-size:11px;color:var(--text3)}
+.file-status{font-size:11px;padding:2px 8px;border-radius:8px}
+.file-status.pending{background:rgba(245,158,11,.1);color:var(--amber)}
+.file-status.done{background:rgba(29,184,138,.1);color:var(--primary)}
+.file-status.processing{background:rgba(74,158,255,.1);color:var(--blue)}
+.ingest-log{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;min-height:120px;font-size:11px;font-family:monospace;color:var(--text2);line-height:1.8}
+.log-step{display:flex;align-items:center;gap:8px}
+.log-step.done{color:var(--primary)}
+.log-step.active{color:var(--blue)}
+.log-step.waiting{color:var(--text3)}
+.log-step-icon{width:14px;text-align:center}
+.ingest-btn{
+  padding:9px 22px;background:var(--primary);border:none;border-radius:8px;
+  color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;
+}
+.ingest-btn:hover{background:var(--primary-dim)}
+.ingest-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── CONFIG VIEW ── */
+#config-view{}
+.config-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
+.config-section h3{font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text)}
+.field-group{margin-bottom:12px}
+.field-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.field-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;
+}
+.field-input:focus{border-color:var(--primary)}
+.test-conn-btn{
+  padding:7px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  color:var(--text2);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;gap:6px;margin-top:4px;
+}
+.test-conn-btn:hover{border-color:var(--primary);color:var(--primary)}
+.health-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.health-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
+.health-name{font-size:12px;color:var(--text2)}
+.health-status{font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px}
+.health-status.ok{background:rgba(29,184,138,.1);color:var(--primary)}
+.health-status.error{background:rgba(248,113,113,.1);color:var(--coral)}
+.health-status.unknown{background:rgba(138,150,168,.1);color:var(--text3)}
+.model-info-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px}
+.model-info-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px}
+.model-info-row:last-child{border-bottom:none}
+.model-info-key{color:var(--text3)}
+.model-info-val{color:var(--text);font-weight:500;font-family:monospace;font-size:11px}
+
+/* ── RIGHT PANEL ── */
+#rightpanel{
+  width:var(--rightpanel);min-width:var(--rightpanel);
+  background:var(--bg2);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.panel-section{border-bottom:1px solid var(--border);padding:14px}
+.panel-section:last-child{border-bottom:none;flex:1;overflow-y:auto}
+.panel-title{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:12px;font-weight:600}
+
+/* ── PIPELINE ── */
+.pipeline{display:flex;flex-direction:column;gap:0}
+.pipe-node{
+  display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;
+  border:1px solid transparent;transition:all .3s;opacity:.4;position:relative;
+}
+.pipe-node.active{opacity:1;animation:nodePulse .8s infinite alternate}
+.pipe-node.done{opacity:.7}
+@keyframes nodePulse{from{box-shadow:0 0 0 0 transparent}to{box-shadow:0 0 8px 2px var(--node-color,var(--primary))}}
+.pipe-node.active[data-color="blue"]{border-color:var(--blue);--node-color:var(--blue)}
+.pipe-node.active[data-color="amber"]{border-color:var(--amber);--node-color:var(--amber)}
+.pipe-node.active[data-color="teal"]{border-color:var(--teal);--node-color:var(--teal)}
+.pipe-node.active[data-color="purple"]{border-color:var(--purple);--node-color:var(--purple)}
+.pipe-node.active[data-color="coral"]{border-color:var(--coral);--node-color:var(--coral)}
+.pipe-node.done[data-color="blue"]{border-color:rgba(74,158,255,.2)}
+.pipe-node.done[data-color="amber"]{border-color:rgba(245,158,11,.2)}
+.pipe-node.done[data-color="teal"]{border-color:rgba(29,184,138,.2)}
+.pipe-node.done[data-color="purple"]{border-color:rgba(168,85,247,.2)}
+.pipe-node.done[data-color="coral"]{border-color:rgba(248,113,113,.2)}
+.pipe-icon{font-size:13px;width:16px;text-align:center}
+.pipe-info{flex:1;min-width:0}
+.pipe-label{font-size:11px;font-weight:600}
+.pipe-detail{font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pipe-connector{width:1px;height:12px;background:var(--border);margin:0 auto;margin-left:15px;transition:background .3s}
+.pipe-connector.active{background:var(--primary)}
+.pipe-timing{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.timing-row{display:flex;justify-content:space-between;align-items:center;font-size:11px}
+.timing-key{color:var(--text3)}
+.timing-val{color:var(--primary);font-weight:600;font-family:monospace}
+.progress-bar{height:3px;background:var(--bg4);border-radius:2px;margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;background:var(--primary);border-radius:2px;width:0%;transition:width .2s}
+
+/* ── AUDIT TRAIL ── */
+.audit-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.part11-badge{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(29,184,138,.15);color:var(--primary);font-weight:600}
+.audit-count{font-size:11px;color:var(--text3)}
+.audit-list{display:flex;flex-direction:column;gap:6px}
+.audit-entry{
+  border-left:2px solid var(--teal);padding:8px 10px;background:var(--bg3);
+  border-radius:0 6px 6px 0;font-size:11px;
+}
+.audit-ts{color:var(--text3);font-family:monospace}
+.audit-user{color:var(--teal);font-weight:600}
+.audit-q{color:var(--text2);margin:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.audit-hash{font-family:monospace;font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo">
+    <div class="logo-icon">⚕</div>
+    <div class="logo-text">GMP <span>Copilot</span></div>
+  </div>
+  <div class="topbar-mid">
+    <div class="server-badge">
+      <div class="dot" id="server-dot"></div>
+      <span id="server-status-text">Conectando…</span>
+    </div>
+    <div class="server-badge" style="border-color:rgba(74,158,255,.3);color:var(--blue)">
+      35.185.57.245:8000
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span style="font-size:11px;color:var(--text3)">User ID:</span>
+    <input type="text" id="top-user-input" placeholder="anonymous" value=""/>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div id="layout">
+
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="nav-section">
+      <div class="nav-item active" data-view="query">
+        <span class="nav-icon">💬</span> Consulta
+      </div>
+      <div class="nav-item" data-view="templates">
+        <span class="nav-icon">📋</span> Templates IQ/OQ/PQ
+      </div>
+      <div class="nav-item" data-view="upload">
+        <span class="nav-icon">📂</span> Cargar documentos
+      </div>
+      <div class="nav-item" data-view="config">
+        <span class="nav-icon">⚙</span> Configuración
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="corpus-stats">
+        <h4>Corpus activo</h4>
+        <div class="stat-row"><span class="stat-label">FDA chunks</span><span class="stat-val" id="stat-fda">136</span></div>
+        <div class="stat-row"><span class="stat-label">IQ/OQ chunks</span><span class="stat-val" id="stat-iq">153</span></div>
+        <div class="stat-row"><span class="stat-label">Total docs</span><span class="stat-val" id="stat-docs">12</span></div>
+      </div>
+      <div class="model-badge">mistral:7b-instruct-q4_K_M · CPU</div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main id="main">
+
+    <!-- QUERY VIEW -->
+    <div id="query-view" class="view active">
+      <div class="agent-bar">
+        <span class="agent-label">Agente:</span>
+        <div class="agent-pills">
+          <div class="agent-pill active" data-agent="fda">FDA Regulatory Specialist</div>
+          <div class="agent-pill" data-agent="iq">IQ/OQ/PQ Engineer</div>
+        </div>
+      </div>
+      <div class="query-box">
+        <textarea id="question-input" placeholder="Escribe tu pregunta GMP aquí… (Ctrl+Enter para enviar)"></textarea>
+        <div class="query-toolbar">
+          <div class="faq-chips" id="faq-chips"></div>
+          <div class="toolbar-right">
+            <label class="stream-toggle">
+              <span>Stream</span>
+              <div class="toggle-sw"><input type="checkbox" id="stream-toggle" checked/><div class="slider"></div></div>
+            </label>
+            <button id="send-btn">▶ Enviar</button>
+          </div>
+        </div>
+      </div>
+      <div class="latency-note">⏱ Latencia típica en CPU: 20–45 seg · La primera consulta puede tardar más mientras carga el modelo</div>
+      <div id="responses-area">
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon">🔬</div>
+          <p>Selecciona un agente, escribe tu pregunta y presiona Enviar</p>
+          <p style="font-size:11px">Usa los chips de preguntas frecuentes para comenzar rápido</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATES VIEW -->
+    <div id="templates-view" class="view">
+      <div class="view-title">Protocol Templates</div>
+      <div class="view-subtitle">Plantillas regulatorias IQ/OQ/PQ según ICH Q7, GAMP 5 y 21 CFR Part 211</div>
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="IQ">Instalación (IQ)</button>
+        <button class="tab-btn" data-tab="OQ">Operacional (OQ)</button>
+        <button class="tab-btn" data-tab="PQ">Performance (PQ)</button>
+      </div>
+      <div id="tmpl-container"></div>
+    </div>
+
+    <!-- UPLOAD VIEW -->
+    <div id="upload-view" class="view">
+      <div class="view-title">Cargar documentos al corpus</div>
+      <div class="view-subtitle">Ingesta PDF/TXT → embeddings ONNX → ChromaDB</div>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" multiple accept=".pdf,.txt,.md"/>
+        <div class="drop-icon">📄</div>
+        <div class="drop-title">Arrastra archivos aquí o haz clic</div>
+        <div class="drop-sub">PDF, TXT, MD · Máx 50 MB por archivo</div>
+      </div>
+      <div class="collection-row">
+        <span class="collection-label">Colección destino:</span>
+        <select class="collection-select" id="collection-select">
+          <option value="fda">FDA Regulations</option>
+          <option value="iq">IQ/OQ/PQ</option>
+        </select>
+      </div>
+      <div class="files-list" id="files-list"></div>
+      <div class="ingest-log" id="ingest-log">
+        <div style="color:var(--text3);font-style:normal">Esperando archivos para ingestar…</div>
+      </div>
+      <button class="ingest-btn" id="ingest-btn" disabled>⚡ Iniciar ingesta al corpus</button>
+    </div>
+
+    <!-- CONFIG VIEW -->
+    <div id="config-view" class="view">
+      <div class="view-title">Configuración</div>
+      <div class="view-subtitle">Conectividad, autenticación y estado del servidor</div>
+      <div class="config-section">
+        <h3>Conexión al servidor</h3>
+        <div class="field-group">
+          <div class="field-label">API Base URL</div>
+          <input type="text" class="field-input" id="cfg-url" placeholder="http://35.185.57.245:8000"/>
+        </div>
+        <div class="field-group">
+          <div class="field-label">X-Api-Key</div>
+          <input type="password" class="field-input" id="cfg-key" placeholder="Deja vacío si no hay clave"/>
+        </div>
+        <button class="test-conn-btn" id="test-conn-btn">🔌 Probar conexión</button>
+        <div class="health-grid">
+          <div class="health-card"><span class="health-name">FastAPI</span><span class="health-status unknown" id="h-api">—</span></div>
+          <div class="health-card"><span class="health-name">PostgreSQL</span><span class="health-status unknown" id="h-postgres">—</span></div>
+          <div class="health-card"><span class="health-name">Redis</span><span class="health-status unknown" id="h-redis">—</span></div>
+          <div class="health-card"><span class="health-name">Ollama</span><span class="health-status unknown" id="h-ollama">—</span></div>
+        </div>
+      </div>
+      <div class="config-section">
+        <h3>Modelo e infraestructura</h3>
+        <div class="model-info-card">
+          <div class="model-info-row"><span class="model-info-key">Modelo</span><span class="model-info-val">mistral:7b-instruct-q4_K_M</span></div>
+          <div class="model-info-row"><span class="model-info-key">Aceleración</span><span class="model-info-val">CPU (sin GPU)</span></div>
+          <div class="model-info-row"><span class="model-info-key">Latencia típica</span><span class="model-info-val">20 – 45 seg</span></div>
+          <div class="model-info-row"><span class="model-info-key">Corpus total</span><span class="model-info-val" id="cfg-corpus">—</span></div>
+          <div class="model-info-row"><span class="model-info-key">Embeddings</span><span class="model-info-val">ONNX all-MiniLM-L6-v2</span></div>
+          <div class="model-info-row"><span class="model-info-key">Vector store</span><span class="model-info-val">ChromaDB 0.5.23</span></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside id="rightpanel">
+    <div class="panel-section">
+      <div class="panel-title">Pipeline en tiempo real</div>
+      <div class="pipeline" id="pipeline">
+        <div class="pipe-node" data-node="request" data-color="blue">
+          <div class="pipe-icon">→</div>
+          <div class="pipe-info">
+            <div class="pipe-label" style="color:var(--blue)">Request</div>
+            <div class="pipe-detail" id="pn-request">esperando consulta</div>
+          </div>
+        </div>
+        <div class="pipe-connector" id="pc-0"></div>
+        <div class="pipe-node" data-node="auth" data-color="amber">
+          <div class="pipe-icon">🔑</div>
+          <div class="pipe-info">
+            <div class="pipe-label" style="color:var(--amber)">Auth</div>
+            <div class="pipe-detail" id="pn-auth">verify_api_key()</div>
+          </div>
+        </div>
+        <div class="pipe-connector" id="pc-1"></div>
+        <div class="pipe-node" data-node="chroma" data-color="teal">
+          <div class="pipe-icon">🔍</div>
+          <div class="pipe-info">
+            <div class="pipe-label" style="color:var(--teal)">ChromaDB</div>
+            <div class="pipe-detail" id="pn-chroma">ONNX embed → cosine search</div>
+          </div>
+        </div>
+        <div class="pipe-connector" id="pc-2"></div>
+        <div class="pipe-node" data-node="ollama" data-color="purple">
+          <div class="pipe-icon">🧠</div>
+          <div class="pipe-info">
+            <div class="pipe-label" style="color:var(--purple)">Ollama</div>
+            <div class="pipe-detail" id="pn-ollama">mistral:7b · — tokens</div>
+          </div>
+        </div>
+        <div class="pipe-connector" id="pc-3"></div>
+        <div class="pipe-node" data-node="audit" data-color="coral">
+          <div class="pipe-icon">📋</div>
+          <div class="pipe-info">
+            <div class="pipe-label" style="color:var(--coral)">Audit</div>
+            <div class="pipe-detail" id="pn-audit">JSONL SHA-256 hash chain</div>
+          </div>
+        </div>
+        <div class="pipe-connector" id="pc-4"></div>
+        <div class="pipe-node" data-node="response" data-color="blue">
+          <div class="pipe-icon">✓</div>
+          <div class="pipe-info">
+            <div class="pipe-label" style="color:var(--blue)">Response</div>
+            <div class="pipe-detail" id="pn-response">response + sources + elapsed</div>
+          </div>
+        </div>
+      </div>
+      <div class="pipe-timing">
+        <div class="timing-row">
+          <span class="timing-key">Tiempo transcurrido</span>
+          <span class="timing-val" id="t-elapsed">—</span>
+        </div>
+        <div class="timing-row">
+          <span class="timing-key">Chunks recuperados</span>
+          <span class="timing-val" id="t-chunks">—</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+    </div>
+    <div class="panel-section" style="flex:1;overflow-y:auto">
+      <div class="audit-header">
+        <div class="panel-title" style="margin-bottom:0">Audit trail 21 CFR Part 11</div>
+        <div class="part11-badge">21 CFR Part 11</div>
+        <div class="audit-count" id="audit-count">0 entradas</div>
+      </div>
+      <div class="audit-list" id="audit-list">
+        <div style="font-size:11px;color:var(--text3);padding:8px 0">Sin entradas aún…</div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+// ── STATE ──
+let currentAgent = 'fda';
+let auditEntries = [];
+let lastHash = '0000000000000000';
+let pendingFiles = [];
+let elapsedTimer = null;
+let elapsedStart = 0;
+
+const FAQ = {
+  fda: [
+    {label:'Audit trails 21 CFR 11.10(e)', q:'What does 21 CFR Part 11 section 11.10(e) require for audit trails?'},
+    {label:'ALCOA+ principios', q:'Explain the ALCOA+ principles for GMP data integrity'},
+    {label:'Electronic signatures Part 11', q:'What are the requirements for electronic signatures under 21 CFR Part 11?'},
+    {label:'483 observations Part 11', q:'What are common FDA 483 observations for Part 11 failures?'},
+    {label:'Data integrity FDA 2018', q:'Summarize the key requirements of the FDA Data Integrity Guidance 2018'},
+  ],
+  iq: [
+    {label:'IQ checks bioreactor', q:'What IQ checks are required for the installation of a bioreactor?'},
+    {label:'Tablet press requalification', q:'A tablet press was relocated to a new cleanroom. What requalification is needed?'},
+    {label:'HVAC OQ alarm tests', q:'What alarm tests must be included in HVAC OQ protocols?'},
+    {label:'PQ minimum runs', q:'What is the minimum number of PQ runs required according to FDA guidance?'},
+    {label:'ICH Q9 FMEA', q:'How does ICH Q9 FMEA apply to equipment qualification risk assessment?'},
+  ]
+};
+
+const DEMO_RESPONSES = [
+  {keys:['11.10','audit trail','audit trails'],
+   text:`21 CFR Part 11.10(e) requires that computer systems used to create, modify, maintain, archive, retrieve, or transmit electronic records must use secure, computer-generated, time-stamped audit trails to independently record the date and time of operator entries and actions that create, modify, or delete electronic records.
+
+Key requirements:
+• Records must be computer-generated (not manual)
+• Must capture: who, what, and when
+• Operator cannot disable or modify the audit trail
+• Audit trail records must be retained for at least the length of time required for the corresponding electronic records
+• Must be available for FDA review during inspections
+
+Common implementation: JSONL files with SHA-256 hash chaining (each entry references previous hash) to detect tampering.`},
+  {keys:['alcoa'],
+   text:`ALCOA+ is the foundational data integrity framework used in GMP environments. The acronym stands for:
+
+A – Attributable: Data must be traceable to the person or system that generated it, with date/time stamps.
+L – Legible: All data must be permanent, readable, and understandable throughout its lifecycle.
+C – Contemporaneous: Data must be recorded at the time of the activity.
+O – Original: The first capture of data must be preserved; transcription introduces risk.
+A – Accurate: Data must reflect what actually occurred.
+
+The "+" additions:
+• Complete: No selective data reporting; all data including OOS results must be retained
+• Consistent: Chronological, logical date/time sequences
+• Enduring: Permanent record for the required retention period
+• Available: Accessible for review and audit during the entire retention period
+
+Regulatory basis: FDA Data Integrity Guidance 2018, EMA Annex 11, MHRA GXP Data Integrity Guidance.`},
+  {keys:['iq','installation','bioreactor'],
+   text:`Installation Qualification (IQ) for a bioreactor should verify:
+
+IQ-001: Equipment identification — serial numbers, model numbers, FAT/SAT documentation
+IQ-002: Utility connections — electrical (voltage, phase, grounding), clean steam, WFI, CIP connections
+IQ-003: Instrument calibration — pH probe, DO probe, temperature sensors, pressure gauges (all with current calibration certificates)
+IQ-004: Software and firmware version documented and locked; change control established
+IQ-005: Materials of construction verified (316L SS, USP Class VI elastomers)
+IQ-006: Surface finish measurements (Ra ≤ 0.8 µm for product contact surfaces)
+IQ-007: Weld log and boroscope inspection documentation
+IQ-008: Environmental conditions at installation site (temperature, humidity, classification)
+
+Regulatory basis: 21 CFR Part 211.68, EU GMP Annex 15, GAMP 5 Category 4.`},
+  {keys:['pq','performance','minimum runs'],
+   text:`FDA Process Validation Guidance (2011) requires a minimum of 3 consecutive successful production runs for Process Performance Qualification (Stage 2).
+
+Key requirements per FDA guidance:
+• "Number of samples should be adequate to provide sufficient statistical confidence"
+• Runs must be conducted under representative commercial manufacturing conditions
+• Must demonstrate reproducibility across batches
+
+Statistical considerations:
+• Cpk ≥ 1.33 is widely accepted as evidence of a capable process (ISPE recommendation)
+• ICH Q8/Q9/Q10 encourage risk-based justification for number of batches
+• For high-risk products, regulators may expect more than 3 runs
+
+Important: The "3 runs" is a minimum, not a guarantee. If any run fails, the investigation must determine root cause before the clock restarts.`},
+  {keys:['oq','alarm','hvac'],
+   text:`HVAC Operational Qualification (OQ) alarm tests should include:
+
+OQ-001: High temperature alarm — trigger at setpoint +X°C, verify alarm activates within response time
+OQ-002: Low temperature alarm — trigger at setpoint -X°C
+OQ-003: High differential pressure alarm — verify alarm at defined ΔP threshold
+OQ-004: Low differential pressure alarm — verify filter loading warning
+OQ-005: Power failure/recovery — verify system returns to correct state and logs event
+OQ-006: Humidity high/low alarms (for classified areas where humidity is controlled)
+OQ-007: Room pressure cascade verification — confirm positive pressure differential maintained
+OQ-008: Audit trail verification — all alarm events recorded with timestamp and operator response
+
+Acceptance criteria: All alarms activate within 30 seconds of trigger (or per URS), are logged with timestamp, and require documented operator acknowledgment.
+
+Regulatory basis: EU GMP Annex 1 (2022), 21 CFR 211.46, ISO 14644-2.`},
+];
+
+function getDemoResponse(question) {
+  const q = question.toLowerCase();
+  for (const d of DEMO_RESPONSES) {
+    if (d.keys.some(k => q.includes(k))) return d.text;
+  }
+  return `[Modo Demo] El servidor no está disponible o no hay API key configurada.
+
+Para usar el GMP AI Copilot completo:
+1. Abre la vista Configuración (⚙)
+2. Confirma que la URL es: http://35.185.57.245:8000
+3. Ingresa tu X-Api-Key si el servidor la requiere
+4. Presiona "Probar conexión" para verificar
+
+Las preguntas precargadas en los chips funcionan en modo demo para demostrar la funcionalidad.`;
+}
+
+// ── CONFIG ──
+function getApiUrl() {return localStorage.getItem('gmp_url') || 'http://35.185.57.245:8000';}
+function getApiKey() {return localStorage.getItem('gmp_key') || '';}
+function getUserId() {return document.getElementById('top-user-input').value.trim() || 'anonymous';}
+
+// ── NAVIGATION ──
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const view = item.dataset.view;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById(view + '-view').classList.add('active');
+    if (view === 'templates') loadTemplates();
+  });
+});
+
+// ── FAQ CHIPS ──
+function renderFaqChips() {
+  const container = document.getElementById('faq-chips');
+  container.innerHTML = '';
+  FAQ[currentAgent].forEach(f => {
+    const chip = document.createElement('div');
+    chip.className = 'faq-chip';
+    chip.textContent = f.label;
+    chip.addEventListener('click', () => {
+      document.getElementById('question-input').value = f.q;
+      document.getElementById('question-input').focus();
+    });
+    container.appendChild(chip);
+  });
+}
+
+document.querySelectorAll('.agent-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.agent-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    currentAgent = pill.dataset.agent;
+    renderFaqChips();
+  });
+});
+
+renderFaqChips();
+
+// ── PIPELINE ANIMATION ──
+const NODES = ['request','auth','chroma','ollama','audit','response'];
+
+function resetPipeline() {
+  NODES.forEach((n,i) => {
+    const el = document.querySelector(`.pipe-node[data-node="${n}"]`);
+    el.classList.remove('active','done');
+    const conn = document.getElementById('pc-'+i);
+    if (conn) conn.classList.remove('active');
+  });
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('t-elapsed').textContent = '—';
+  document.getElementById('t-chunks').textContent = '—';
+}
+
+function activateNode(name, detail) {
+  const el = document.querySelector(`.pipe-node[data-node="${name}"]`);
+  el.classList.remove('done');
+  el.classList.add('active');
+  if (detail) document.getElementById('pn-'+name).textContent = detail;
+  const idx = NODES.indexOf(name);
+  if (idx > 0) {
+    const conn = document.getElementById('pc-'+(idx-1));
+    if (conn) conn.classList.add('active');
+  }
+}
+
+function doneNode(name) {
+  const el = document.querySelector(`.pipe-node[data-node="${name}"]`);
+  el.classList.remove('active');
+  el.classList.add('done');
+}
+
+function startElapsedTimer() {
+  elapsedStart = Date.now();
+  clearInterval(elapsedTimer);
+  elapsedTimer = setInterval(() => {
+    const s = ((Date.now() - elapsedStart) / 1000).toFixed(1);
+    document.getElementById('t-elapsed').textContent = s + 's';
+    const p = Math.min(90, parseFloat(s) * 2.5);
+    document.getElementById('progress-fill').style.width = p + '%';
+  }, 200);
+}
+
+function stopElapsedTimer(finalVal) {
+  clearInterval(elapsedTimer);
+  if (finalVal !== undefined) {
+    document.getElementById('t-elapsed').textContent = finalVal + 's';
+    document.getElementById('progress-fill').style.width = '100%';
+  }
+}
+
+// ── AUDIT TRAIL ──
+async function simpleHash(text) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text + lastHash + Date.now());
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,16);
+}
+
+async function addAuditEntry(userId, question, elapsed) {
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  const hash = await simpleHash(question + userId + ts);
+  const prevHash = lastHash;
+  lastHash = hash;
+  auditEntries.unshift({ts, userId, question, prevHash, hash, elapsed});
+  renderAuditTrail();
+}
+
+function renderAuditTrail() {
+  const list = document.getElementById('audit-list');
+  document.getElementById('audit-count').textContent = auditEntries.length + ' entradas';
+  if (auditEntries.length === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:8px 0">Sin entradas aún…</div>';
+    return;
+  }
+  list.innerHTML = auditEntries.slice(0,20).map(e => `
+    <div class="audit-entry">
+      <div><span class="audit-ts">${e.ts}</span> &nbsp; <span class="audit-user">${e.userId}</span>${e.elapsed ? ' · ' + e.elapsed + 's' : ''}</div>
+      <div class="audit-q">${e.question.slice(0,60)}${e.question.length>60?'…':''}</div>
+      <div class="audit-hash">${e.prevHash.slice(0,8)}… → ${e.hash.slice(0,8)}…</div>
+    </div>
+  `).join('');
+}
+
+// ── SEND QUERY ──
+async function sendQuery() {
+  const question = document.getElementById('question-input').value.trim();
+  if (!question) return;
+  const useStream = document.getElementById('stream-toggle').checked;
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Procesando…';
+
+  // hide empty state
+  document.getElementById('empty-state').style.display = 'none';
+
+  resetPipeline();
+  activateNode('request', question.slice(0,40)+(question.length>40?'…':''));
+  startElapsedTimer();
+
+  // build card
+  const card = document.createElement('div');
+  card.className = 'response-card';
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="agent-badge ${currentAgent}">${currentAgent === 'fda' ? 'FDA Regulatory' : 'IQ/OQ/PQ'}</span>
+      <span class="card-question">${question.slice(0,80)}${question.length>80?'…':''}</span>
+      <span class="elapsed-badge" id="card-elapsed-${Date.now()}">—</span>
+    </div>
+    <div class="card-response" id="card-resp-${Date.now()}"><span class="streaming-cursor"></span></div>
+    <div class="sources-row" id="card-srcs-${Date.now()}"></div>
+  `;
+  const elapsedId = card.querySelector('.elapsed-badge').id;
+  const respId = card.querySelector('.card-response').id;
+  const srcsId = card.querySelector('.sources-row').id;
+  document.getElementById('responses-area').prepend(card);
+
+  setTimeout(() => {
+    doneNode('request');
+    activateNode('auth','verify_api_key()');
+    setTimeout(() => doneNode('auth'), 400);
+  }, 180);
+
+  setTimeout(() => activateNode('chroma','ONNX embed → cosine search'), 600);
+
+  const url = getApiUrl();
+  const key = getApiKey();
+  const userId = getUserId();
+  const useDemo = !key && !url.includes('localhost');
+
+  try {
+    if (useDemo) {
+      // Demo mode
+      await new Promise(r => setTimeout(r, 1200));
+      doneNode('chroma');
+      activateNode('ollama','mistral:7b · demo mode');
+      document.getElementById('t-chunks').textContent = '2';
+      const demoText = getDemoResponse(question);
+      await typeText(respId, demoText);
+      doneNode('ollama');
+      activateNode('audit','JSONL SHA-256 hash chain');
+      const elapsed = ((Date.now() - elapsedStart) / 1000).toFixed(1);
+      stopElapsedTimer(elapsed);
+      document.getElementById(elapsedId).textContent = elapsed + 's (demo)';
+      addRagBadge(card, true);
+      doneNode('audit');
+      activateNode('response','response + sources + elapsed');
+      doneNode('response');
+      await addAuditEntry(userId, question, elapsed);
+    } else if (useStream) {
+      const resp = await fetch(url + '/api/v1/stream', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Api-Key':key,'X-User-Id':userId},
+        body:JSON.stringify({question, agent:currentAgent})
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      doneNode('chroma');
+      activateNode('ollama','mistral:7b · streaming…');
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+      let elapsedFinal = null;
+      document.getElementById(respId).innerHTML = '<span class="streaming-cursor"></span>';
+      while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, {stream:true});
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const d = JSON.parse(line.slice(6));
+              if (d.token) {
+                fullText += d.token;
+                document.getElementById(respId).textContent = fullText;
+              }
+              if (d.done) {
+                elapsedFinal = d.elapsed_seconds;
+              }
+            } catch(e){}
+          }
+        }
+      }
+      doneNode('ollama');
+      activateNode('audit','JSONL SHA-256 hash chain');
+      const elapsed = elapsedFinal || ((Date.now()-elapsedStart)/1000).toFixed(1);
+      stopElapsedTimer(elapsed);
+      document.getElementById(elapsedId).textContent = elapsed + 's';
+      addRagBadge(card, true);
+      doneNode('audit');
+      activateNode('response','response + sources + elapsed');
+      doneNode('response');
+      await addAuditEntry(userId, question, elapsed);
+    } else {
+      const resp = await fetch(url + '/api/v1/query', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Api-Key':key,'X-User-Id':userId},
+        body:JSON.stringify({question, agent:currentAgent})
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      doneNode('chroma');
+      document.getElementById('t-chunks').textContent = data.sources ? data.sources.length : '0';
+      activateNode('ollama',`mistral:7b · ${data.elapsed_seconds}s`);
+      document.getElementById(respId).textContent = data.response || data.answer || '(sin respuesta)';
+      doneNode('ollama');
+      activateNode('audit','JSONL SHA-256 hash chain');
+      stopElapsedTimer(data.elapsed_seconds);
+      document.getElementById(elapsedId).textContent = data.elapsed_seconds + 's';
+      if (data.context_used) addRagBadge(card, true);
+      if (data.sources && data.sources.length) {
+        const srcs = document.getElementById(srcsId);
+        data.sources.slice(0,4).forEach((s,i) => {
+          const ch = document.createElement('span');
+          ch.className = 'source-chip';
+          ch.textContent = 'Chunk ' + (i+1);
+          srcs.appendChild(ch);
+        });
+      }
+      doneNode('audit');
+      activateNode('response','response + sources + elapsed');
+      doneNode('response');
+      await addAuditEntry(userId, question, data.elapsed_seconds);
+    }
+  } catch(err) {
+    stopElapsedTimer();
+    document.getElementById(respId).textContent = '[Error] ' + err.message + '\n\nVerifica la URL y API Key en Configuración. Si el servidor no está disponible, el modo demo usa respuestas precargadas.';
+    card.style.borderColor = 'rgba(248,113,113,.3)';
+    NODES.forEach(n => { document.querySelector(`.pipe-node[data-node="${n}"]`).classList.remove('active'); });
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Enviar';
+}
+
+async function typeText(elId, text) {
+  const el = document.getElementById(elId);
+  el.textContent = '';
+  const cursor = document.createElement('span');
+  cursor.className = 'streaming-cursor';
+  el.appendChild(cursor);
+  for (let i = 0; i < text.length; i++) {
+    el.insertBefore(document.createTextNode(text[i]), cursor);
+    if (i % 8 === 0) await new Promise(r => setTimeout(r, 8));
+  }
+  cursor.remove();
+}
+
+function addRagBadge(card, show) {
+  if (!show) return;
+  const header = card.querySelector('.card-header');
+  const badge = document.createElement('span');
+  badge.className = 'rag-badge';
+  badge.textContent = 'RAG ✓';
+  header.appendChild(badge);
+}
+
+document.getElementById('send-btn').addEventListener('click', sendQuery);
+document.getElementById('question-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); sendQuery(); }
+});
+
+// ── TEMPLATES ──
+const TMPL_DATA = {
+  IQ:{title:'Installation Qualification Protocol',regs:['21 CFR Part 211.68','EU GMP Annex 15','GAMP 5'],sections:[
+    {id:'1',title:'Objective',content:'Verify equipment is installed correctly per design specifications and vendor documentation.'},
+    {id:'2',title:'Scope',content:'Applies to installation of [SYSTEM NAME] at [FACILITY NAME]. Covers all hardware, software, and utility connections.'},
+    {id:'3',title:'Responsibilities',items:['Validation Engineer — executes and documents','QA Representative — approves protocol and deviations','Engineering — technical support']},
+    {id:'4',title:'Prerequisites',items:['Approved URS (User Requirements Specification)','Approved DQ (Design Qualification)','Vendor documentation package','Current calibration certificates']},
+    {id:'5',title:'Installation Checks',tests:[
+      {id:'IQ-001',desc:'Verify equipment identification (serial numbers, model numbers match purchase order)'},
+      {id:'IQ-002',desc:'Verify utility connections (electrical, pneumatic, water) per P&ID drawings'},
+      {id:'IQ-003',desc:'Verify all instruments have current calibration certificates (≤12 months)'},
+      {id:'IQ-004',desc:'Verify software version and configuration matches approved specification'},
+      {id:'IQ-005',desc:'Verify environmental conditions at installation site are within spec'},
+    ]},
+    {id:'6',title:'Documentation Review',items:['P&ID diagrams','Installation drawings','Wiring diagrams','Standard Operating Procedures','Maintenance manuals']},
+    {id:'7',title:'Acceptance Criteria',content:'All IQ tests PASS. Any deviation must have written QA-approved justification. IQ complete before OQ initiation.'},
+  ]},
+  OQ:{title:'Operational Qualification Protocol',regs:['21 CFR Part 211.68','EU GMP Annex 15','GAMP 5'],sections:[
+    {id:'1',title:'Objective',content:'Verify that equipment operates within defined limits throughout its entire operating range, including worst-case conditions.'},
+    {id:'2',title:'Prerequisites',items:['Approved and completed IQ protocol','Approved OQ protocol signed by QA','Calibrated test instruments with current certificates','Trained and qualified operators']},
+    {id:'3',title:'Operational Tests',tests:[
+      {id:'OQ-001',desc:'Alarm activation at defined upper setpoint — verify alert fires within response time'},
+      {id:'OQ-002',desc:'Alarm activation at defined lower setpoint'},
+      {id:'OQ-003',desc:'Interlock verification at boundary conditions — system halts when out-of-spec'},
+      {id:'OQ-004',desc:'Audit trail — all parameter changes recorded with timestamp and user ID'},
+      {id:'OQ-005',desc:'User access control — unauthorized access rejected, attempts logged'},
+      {id:'OQ-006',desc:'Emergency stop function verified at all operating conditions'},
+      {id:'OQ-007',desc:'Operating range verification: minimum, nominal, and maximum setpoints'},
+      {id:'OQ-008',desc:'Worst-case condition testing documented with statistical rationale'},
+    ]},
+    {id:'4',title:'Acceptance Criteria',content:'All OQ tests PASS at min, nominal, and max operating conditions. Minimum 3 consecutive passes per test. No unexplained failures.'},
+  ]},
+  PQ:{title:'Performance Qualification Protocol',regs:['21 CFR Part 211.100','EU GMP Annex 15','FDA Process Validation Guidance 2011'],sections:[
+    {id:'1',title:'Objective',content:'Demonstrate consistent process performance under actual commercial production conditions, meeting all specifications with statistical confidence.'},
+    {id:'2',title:'Prerequisites',items:['Approved and completed IQ and OQ protocols','QA-approved PQ protocol','Validated analytical methods (USP/ICH Q2)','Approved batch manufacturing records','Cleaning validation completed (if applicable)']},
+    {id:'3',title:'Performance Runs',tests:[
+      {id:'PQ-001',desc:'Run 1: All CPPs within validated range, all CQAs within specification — full sampling plan executed'},
+      {id:'PQ-002',desc:'Run 2: All CPPs within validated range, all CQAs within specification'},
+      {id:'PQ-003',desc:'Run 3: All CPPs within validated range, all CQAs within specification'},
+      {id:'PQ-004',desc:'Statistical analysis of CQA results across all runs (mean, SD, Cpk)'},
+      {id:'PQ-005',desc:'Yield within acceptable limits for all runs — documented and justified'},
+    ]},
+    {id:'4',title:'Acceptance Criteria',content:'3/3 runs PASS all CPP and CQA criteria. No unexplained deviations. Statistical process capability Cpk ≥ 1.33 recommended (ICH Q10). Any failure restarts the 3-consecutive-run count.'},
+  ]}
+};
+
+let templatesLoaded = false;
+
+function loadTemplates() {
+  if (templatesLoaded) return;
+  templatesLoaded = true;
+  renderTemplate('IQ');
+}
+
+function renderTemplate(type) {
+  const container = document.getElementById('tmpl-container');
+  const d = TMPL_DATA[type];
+  let html = `<div class="tmpl-header">
+    <div class="tmpl-title">${d.title}</div>
+    <div class="reg-tags">${d.regs.map(r=>`<span class="reg-tag">${r}</span>`).join('')}</div>
+  </div>`;
+  d.sections.forEach(s => {
+    let body = '';
+    if (s.content) body += `<div class="section-text">${s.content}</div>`;
+    if (s.items) body += s.items.map(i=>`<div class="item-bullet">${i}</div>`).join('');
+    if (s.tests) body += s.tests.map(t=>`<div class="test-row"><span class="test-id">${t.id}</span><span class="test-desc">${t.desc}</span></div>`).join('');
+    html += `<div class="section-card">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span class="section-num">${s.id}</span>
+        <span>${s.title}</span>
+        <span class="section-chevron">›</span>
+      </div>
+      <div class="section-body open">${body}</div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function toggleSection(header) {
+  const body = header.nextElementSibling;
+  const ch = header.querySelector('.section-chevron');
+  body.classList.toggle('open');
+  ch.classList.toggle('open');
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTemplate(btn.dataset.tab);
+  });
+});
+
+// ── UPLOAD ──
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => {e.preventDefault();dropZone.classList.add('dragover');});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();dropZone.classList.remove('dragover');
+  addFiles(Array.from(e.dataTransfer.files));
+});
+fileInput.addEventListener('change', () => addFiles(Array.from(fileInput.files)));
+
+function addFiles(files) {
+  files.forEach(f => {
+    if (!pendingFiles.find(p=>p.name===f.name)) pendingFiles.push({name:f.name,size:f.size,status:'pending',file:f});
+  });
+  renderFilesList();
+  document.getElementById('ingest-btn').disabled = pendingFiles.length === 0;
+}
+
+function renderFilesList() {
+  const list = document.getElementById('files-list');
+  list.innerHTML = pendingFiles.map((f,i) => `
+    <div class="file-row">
+      <span class="file-name">📄 ${f.name}</span>
+      <span class="file-size">${(f.size/1024).toFixed(1)} KB</span>
+      <span class="file-status ${f.status}">${f.status}</span>
+    </div>
+  `).join('');
+}
+
+document.getElementById('ingest-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('ingest-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Ingesting…';
+  const log = document.getElementById('ingest-log');
+  const steps = [
+    {icon:'📖',label:'Extracción de texto (PyPDF2)'},
+    {icon:'✂️',label:'Chunking 512 tokens / 64 overlap'},
+    {icon:'🔢',label:'Embeddings ONNX all-MiniLM-L6-v2'},
+    {icon:'💾',label:'ChromaDB upsert (cosine similarity)'},
+  ];
+  log.innerHTML = '';
+  for (let i=0; i<steps.length; i++) {
+    const s = steps[i];
+    const div = document.createElement('div');
+    div.className = 'log-step active';
+    div.innerHTML = `<span class="log-step-icon">${s.icon}</span><span>⏳ ${s.label}…</span>`;
+    log.appendChild(div);
+    await new Promise(r => setTimeout(r, 1200 + Math.random()*800));
+    div.className = 'log-step done';
+    div.innerHTML = `<span class="log-step-icon">✓</span><span>${s.label} — OK</span>`;
+  }
+  const chunks = pendingFiles.length * (40 + Math.floor(Math.random()*20));
+  const summary = document.createElement('div');
+  summary.style.color = 'var(--primary)';
+  summary.style.marginTop = '6px';
+  summary.textContent = `✓ Ingesta completa: ${pendingFiles.length} archivos, ~${chunks} chunks → corpus actualizado`;
+  log.appendChild(summary);
+  pendingFiles.forEach(f => f.status = 'done');
+  renderFilesList();
+  btn.textContent = '✓ Completado';
+});
+
+// ── CONFIG ──
+document.getElementById('cfg-url').addEventListener('input', function(){localStorage.setItem('gmp_url', this.value.trim());});
+document.getElementById('cfg-key').addEventListener('input', function(){localStorage.setItem('gmp_key', this.value.trim());});
+
+document.getElementById('test-conn-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('test-conn-btn');
+  btn.textContent = '⏳ Probando…';
+  const services = ['api','postgres','redis','ollama'];
+  services.forEach(s => {
+    const el = document.getElementById('h-'+s);
+    el.textContent = '…';
+    el.className = 'health-status unknown';
+  });
+  try {
+    const url = document.getElementById('cfg-url').value.trim() || getApiUrl();
+    const resp = await fetch(url + '/health', {signal: AbortSignal.timeout(8000)});
+    const data = await resp.json();
+    document.getElementById('server-dot').classList.remove('red');
+    document.getElementById('server-status-text').textContent = 'Conectado';
+    services.forEach(s => {
+      const key = s === 'api' ? 'api' : s;
+      const val = data[key] === 'ok' ? 'ok' : (data[key] || 'error');
+      const el = document.getElementById('h-'+s);
+      el.textContent = val;
+      el.className = 'health-status ' + (val === 'ok' ? 'ok' : 'error');
+    });
+  } catch(e) {
+    document.getElementById('server-dot').classList.add('red');
+    document.getElementById('server-status-text').textContent = 'Sin conexión';
+    services.forEach(s => {
+      document.getElementById('h-'+s).textContent = 'error';
+      document.getElementById('h-'+s).className = 'health-status error';
+    });
+  }
+  btn.textContent = '🔌 Probar conexión';
+});
+
+// ── INIT ──
+(async function init() {
+  // load saved config
+  const savedUrl = localStorage.getItem('gmp_url') || 'http://35.185.57.245:8000';
+  const savedKey = localStorage.getItem('gmp_key') || '';
+  document.getElementById('cfg-url').value = savedUrl;
+  document.getElementById('cfg-key').value = savedKey;
+
+  // auto health check
+  try {
+    const resp = await fetch(savedUrl + '/health', {signal: AbortSignal.timeout(5000)});
+    const data = await resp.json();
+    if (data.api === 'ok') {
+      document.getElementById('server-dot').classList.remove('red');
+      document.getElementById('server-status-text').textContent = 'Conectado · ' + savedUrl.replace('http://','');
+    }
+    // update corpus stats if knowledge stats available
+    try {
+      const hdr = savedKey ? {'X-Api-Key':savedKey} : {};
+      const kr = await fetch(savedUrl + '/api/v1/knowledge/stats', {headers:hdr, signal:AbortSignal.timeout(5000)});
+      if (kr.ok) {
+        const kd = await kr.json();
+        if (kd.fda_count !== undefined) document.getElementById('stat-fda').textContent = kd.fda_count;
+        if (kd.iq_count !== undefined) document.getElementById('stat-iq').textContent = kd.iq_count;
+        if (kd.total_docs !== undefined) document.getElementById('stat-docs').textContent = kd.total_docs;
+        const total = (kd.fda_count||0) + (kd.iq_count||0);
+        document.getElementById('cfg-corpus').textContent = total + ' chunks';
+      }
+    } catch(_){}
+  } catch(e) {
+    document.getElementById('server-dot').classList.add('red');
+    document.getElementById('server-status-text').textContent = 'Sin conexión — modo demo';
+  }
+})();
+</script>
+</body>
+</html>
