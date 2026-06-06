@@ -2,11 +2,32 @@
 GMP AI Copilot — Validation Test Suite
 18 tests covering connectivity, API contract, data integrity, regulatory quality, and streaming.
 """
+import os
+from pathlib import Path
+
 import httpx
 import pytest
 
 BASE_URL = "http://localhost:8000"
 OLLAMA_TIMEOUT = 180
+
+
+def _load_env_key() -> str:
+    """Read GMP_API_KEY from .env file or environment variable."""
+    key = os.getenv("GMP_API_KEY", "")
+    if key:
+        return key
+    env_path = Path(__file__).parent.parent / ".env"
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if line.startswith("GMP_API_KEY=") and not line.startswith("#"):
+                return line[len("GMP_API_KEY="):].strip()
+    return ""
+
+
+_KEY = _load_env_key()
+_AUTH = {"X-Api-Key": _KEY} if _KEY else {}
 
 
 # ─── Connectivity (2) ───────────────────────────────────────────────────────
@@ -23,6 +44,7 @@ def test_v1_query_returns_200():
     r = httpx.post(
         f"{BASE_URL}/api/v1/query",
         json={"question": "What is GMP?", "agent": "fda"},
+        headers=_AUTH,
         timeout=OLLAMA_TIMEOUT,
     )
     assert r.status_code == 200
@@ -36,6 +58,7 @@ def test_response_field_exists():
     r = httpx.post(
         f"{BASE_URL}/api/v1/query",
         json={"question": "test", "agent": "fda"},
+        headers=_AUTH,
         timeout=OLLAMA_TIMEOUT,
     )
     assert r.status_code == 200
@@ -48,6 +71,7 @@ def test_elapsed_seconds_present():
     r = httpx.post(
         f"{BASE_URL}/api/v1/query",
         json={"question": "test", "agent": "fda"},
+        headers=_AUTH,
         timeout=OLLAMA_TIMEOUT,
     )
     assert r.status_code == 200
@@ -57,18 +81,18 @@ def test_elapsed_seconds_present():
 
 
 def test_knowledge_stats():
-    r = httpx.get(f"{BASE_URL}/api/v1/knowledge/stats", timeout=10)
+    r = httpx.get(f"{BASE_URL}/api/v1/knowledge/stats", headers=_AUTH, timeout=10)
     assert r.status_code == 200
 
 
 def test_audit_verify():
-    r = httpx.get(f"{BASE_URL}/api/v1/audit/verify", timeout=10)
+    r = httpx.get(f"{BASE_URL}/api/v1/audit/verify", headers=_AUTH, timeout=10)
     assert r.status_code == 200
 
 
 def test_knowledge_stats_structure():
     """P2: /knowledge/stats must contain fda_collection and iq_collection."""
-    r = httpx.get(f"{BASE_URL}/api/v1/knowledge/stats", timeout=10)
+    r = httpx.get(f"{BASE_URL}/api/v1/knowledge/stats", headers=_AUTH, timeout=10)
     assert r.status_code == 200
     data = r.json()
     assert "fda_collection" in data
@@ -79,7 +103,7 @@ def test_knowledge_stats_structure():
 
 def test_audit_verify_structure():
     """Audit verify must return verified, log_count, hash_algo."""
-    r = httpx.get(f"{BASE_URL}/api/v1/audit/verify", timeout=10)
+    r = httpx.get(f"{BASE_URL}/api/v1/audit/verify", headers=_AUTH, timeout=10)
     assert r.status_code == 200
     data = r.json()
     assert "verified" in data
@@ -90,7 +114,7 @@ def test_audit_verify_structure():
 
 
 def test_protocol_template_iq():
-    r = httpx.get(f"{BASE_URL}/api/v1/protocol-template/IQ", timeout=10)
+    r = httpx.get(f"{BASE_URL}/api/v1/protocol-template/IQ", headers=_AUTH, timeout=10)
     assert r.status_code == 200
     data = r.json()
     assert data["protocol_type"] == "IQ"
@@ -101,7 +125,7 @@ def test_protocol_template_iq():
 
 
 def test_protocol_template_oq():
-    r = httpx.get(f"{BASE_URL}/api/v1/protocol-template/OQ", timeout=10)
+    r = httpx.get(f"{BASE_URL}/api/v1/protocol-template/OQ", headers=_AUTH, timeout=10)
     assert r.status_code == 200
     data = r.json()
     assert data["protocol_type"] == "OQ"
@@ -118,7 +142,7 @@ def test_protocol_template_oq():
 
 
 def test_protocol_template_pq():
-    r = httpx.get(f"{BASE_URL}/api/v1/protocol-template/PQ", timeout=10)
+    r = httpx.get(f"{BASE_URL}/api/v1/protocol-template/PQ", headers=_AUTH, timeout=10)
     assert r.status_code == 200
     data = r.json()
     assert data["protocol_type"] == "PQ"
@@ -130,7 +154,7 @@ def test_protocol_template_pq():
 
 def test_protocol_template_invalid():
     """Unknown protocol type must return 404, not 500."""
-    r = httpx.get(f"{BASE_URL}/api/v1/protocol-template/XX", timeout=10)
+    r = httpx.get(f"{BASE_URL}/api/v1/protocol-template/XX", headers=_AUTH, timeout=10)
     assert r.status_code in (404, 400)
 
 
@@ -142,6 +166,7 @@ def test_query_context_used():
     r = httpx.post(
         f"{BASE_URL}/api/v1/query",
         json={"question": "What does 21 CFR Part 11 require?", "agent": "fda"},
+        headers=_AUTH,
         timeout=OLLAMA_TIMEOUT,
     )
     assert r.status_code == 200
@@ -156,6 +181,7 @@ def test_query_cita_21cfr_11():
     r = httpx.post(
         f"{BASE_URL}/api/v1/query",
         json={"question": "What are the requirements for electronic records under 21 CFR Part 11?", "agent": "fda"},
+        headers=_AUTH,
         timeout=OLLAMA_TIMEOUT,
     )
     assert r.status_code == 200
@@ -171,6 +197,7 @@ def test_query_alcoa_principles():
     r = httpx.post(
         f"{BASE_URL}/api/v1/query",
         json={"question": "What are the ALCOA+ principles for data integrity in GMP?", "agent": "fda"},
+        headers=_AUTH,
         timeout=OLLAMA_TIMEOUT,
     )
     assert r.status_code == 200
@@ -186,6 +213,7 @@ def test_query_iq_checks():
     r = httpx.post(
         f"{BASE_URL}/api/v1/query",
         json={"question": "What must be verified during Installation Qualification (IQ)?", "agent": "fda"},
+        headers=_AUTH,
         timeout=OLLAMA_TIMEOUT,
     )
     assert r.status_code == 200
@@ -201,6 +229,7 @@ def test_query_equipment_reloc():
     r = httpx.post(
         f"{BASE_URL}/api/v1/query",
         json={"question": "Does moving equipment to a new location require requalification?", "agent": "fda"},
+        headers=_AUTH,
         timeout=OLLAMA_TIMEOUT,
     )
     assert r.status_code == 200
@@ -220,6 +249,7 @@ def test_streaming_endpoint():
         "POST",
         f"{BASE_URL}/api/v1/stream",
         json={"question": "What is ALCOA?", "agent": "fda"},
+        headers=_AUTH,
         timeout=OLLAMA_TIMEOUT,
     ) as resp:
         assert resp.status_code == 200

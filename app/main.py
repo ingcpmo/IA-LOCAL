@@ -4,7 +4,7 @@ import time
 import asyncpg
 import httpx
 import redis
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel
 
 APP_NAME = os.getenv("APP_NAME", "GMP AI Copilot")
@@ -13,6 +13,7 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "mistral:7b-instruct-q4_K_M")
 OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "180"))
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+GMP_API_KEY = os.getenv("GMP_API_KEY", "")
 
 app = FastAPI(title=APP_NAME)
 
@@ -20,6 +21,11 @@ app = FastAPI(title=APP_NAME)
 class QueryRequest(BaseModel):
     question: str
     agent: str = "general"
+
+
+async def verify_api_key(x_api_key: str = Header(default="")):
+    if GMP_API_KEY and x_api_key != GMP_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
 
 @app.get("/")
@@ -89,7 +95,7 @@ async def ask(payload: QueryRequest):
 
 
 @app.post("/api/v1/query")
-async def v1_query(payload: QueryRequest, request: Request):
+async def v1_query(payload: QueryRequest, request: Request, _: None = Depends(verify_api_key)):
     from app.audit import write_audit_entry
     from knowledge.retriever import retrieve_context
 
@@ -98,7 +104,6 @@ async def v1_query(payload: QueryRequest, request: Request):
     contexts = await retrieve_context(payload.question, n_results=2)
 
     if contexts:
-        # Limit total context to ~1200 chars to keep Ollama response time reasonable
         context_block = "\n\n".join(c[:400] for c in contexts[:4])
         prompt = (
             f"You are a GMP compliance expert. Use the regulatory context below to answer concisely.\n\n"
@@ -145,14 +150,14 @@ async def v1_query(payload: QueryRequest, request: Request):
 
 
 @app.get("/api/v1/knowledge/stats")
-async def knowledge_stats():
+async def knowledge_stats(_: None = Depends(verify_api_key)):
     from knowledge.retriever import get_collection_stats
 
     return get_collection_stats()
 
 
 @app.get("/api/v1/audit/verify")
-async def audit_verify():
+async def audit_verify(_: None = Depends(verify_api_key)):
     from app.audit import verify_audit_logs
     return verify_audit_logs()
 
@@ -248,7 +253,7 @@ _PROTOCOL_TEMPLATES = {
 
 
 @app.get("/api/v1/protocol-template/{protocol_type}")
-async def protocol_template(protocol_type: str):
+async def protocol_template(protocol_type: str, _: None = Depends(verify_api_key)):
     from fastapi import HTTPException
     template = _PROTOCOL_TEMPLATES.get(protocol_type.upper())
     if template is None:
@@ -260,7 +265,7 @@ async def protocol_template(protocol_type: str):
 
 
 @app.post("/api/v1/stream")
-async def v1_stream(payload: QueryRequest, request: Request):
+async def v1_stream(payload: QueryRequest, request: Request, _: None = Depends(verify_api_key)):
     """Streaming SSE — tokens en tiempo real mientras Ollama genera."""
     import json as json_lib
     from app.audit import write_audit_entry
