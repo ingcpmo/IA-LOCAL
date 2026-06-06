@@ -1,0 +1,29 @@
+EU GMP Annex 11 — Computerised Systems
+Source: European Medicines Agency
+
+VALIDATION: The application should be validated; IT infrastructure should be
+qualified. Where a computerised system replaces a manual operation, there
+should be no resultant decrease in product quality.
+
+AUDIT TRAILS: Consideration should be given to creating audit trails for
+all changes to data, especially for systems in GMP critical processes.
+Audit trails should be available and convertible to a human readable form.
+
+ACCESS CONTROL: Physical and/or logical controls should be in place to
+restrict access to computerised systems. Appropriate methods of access
+restriction could include keys, pass cards, passwords, biometric data and
+restricted access to computer equipment and storage areas.
+
+DATA INTEGRITY: Data should be secured by physical and electronic means
+against damage. Stored data should be checked for accessibility, readability
+and accuracy. Access to data should be ensured throughout the retention period.
+
+ELECTRONIC SIGNATURES: An electronic signature is a set of data in electronic
+form that substitutes for a handwritten signature and is used to authenticate
+a computer record. The identity of persons using electronic signatures must
+be verified and their use authorised by competent authority.
+
+21 CFR PART 11 vs EU GMP ANNEX 11 COMPARISON:
+Both require: validation, audit trails, access control, electronic signatures.
+EU Annex 11: requires supplier assessments, periodic reviews, disaster recovery.
+21 CFR Part 11: more prescriptive on technical requirements for e-signatures.
