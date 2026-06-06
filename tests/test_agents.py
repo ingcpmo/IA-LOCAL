@@ -1,6 +1,6 @@
 """
 GMP AI Copilot — Validation Test Suite
-17 tests covering connectivity, API contract, data integrity, and regulatory quality.
+18 tests covering connectivity, API contract, data integrity, regulatory quality, and streaming.
 """
 import httpx
 import pytest
@@ -211,6 +211,35 @@ def test_query_equipment_reloc():
     )
 
 
+# ─── Streaming (1) ───────────────────────────────────────────────────────────
+
+
+def test_streaming_endpoint():
+    """Streaming SSE must produce token data: JSON lines progressively."""
+    with httpx.stream(
+        "POST",
+        f"{BASE_URL}/api/v1/stream",
+        json={"question": "What is ALCOA?", "agent": "fda"},
+        timeout=OLLAMA_TIMEOUT,
+    ) as resp:
+        assert resp.status_code == 200
+        assert "text/event-stream" in resp.headers.get("content-type", "")
+        tokens = []
+        done_seen = False
+        for line in resp.iter_lines():
+            if line.startswith("data: "):
+                import json as _json
+                payload = _json.loads(line[6:])
+                if payload.get("token"):
+                    tokens.append(payload["token"])
+                if payload.get("done"):
+                    done_seen = True
+                    break
+            if len(tokens) >= 3:
+                break
+        assert len(tokens) >= 3, f"Expected ≥3 tokens, got {len(tokens)}"
+
+
 # ─── Standalone runner ────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -234,6 +263,7 @@ if __name__ == "__main__":
         test_query_alcoa_principles,
         test_query_iq_checks,
         test_query_equipment_reloc,
+        test_streaming_endpoint,
     ]
     passed = failed = 0
     for t in tests:

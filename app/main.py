@@ -257,3 +257,71 @@ async def protocol_template(protocol_type: str):
             detail=f"Unknown protocol type '{protocol_type}'. Valid types: IQ, OQ, PQ",
         )
     return template
+
+
+@app.post("/api/v1/stream")
+async def v1_stream(payload: QueryRequest, request: Request):
+    """Streaming SSE — tokens en tiempo real mientras Ollama genera."""
+    import json as json_lib
+    from app.audit import write_audit_entry
+    from fastapi.responses import StreamingResponse
+    from knowledge.retriever import retrieve_context
+
+    user_id = request.headers.get("X-User-Id", "anonymous")
+    t_start = time.time()
+    contexts = await retrieve_context(payload.question, n_results=2)
+    context_block = "\n\n".join(c[:400] for c in contexts[:4]) if contexts else ""
+
+    if context_block:
+        prompt = (
+            f"You are a GMP compliance expert. Use the regulatory "
+            f"context below to answer concisely.\n\n"
+            f"Context:\n{context_block}\n\n"
+            f"Question: {payload.question}\n\nAnswer:"
+        )
+    else:
+        prompt = (
+            f"You are a GMP compliance expert.\n\n"
+            f"Question: {payload.question}"
+        )
+
+    async def generate():
+        full_response = ""
+        try:
+            async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
+                async with client.stream(
+                    "POST",
+                    f"{OLLAMA_BASE_URL}/api/generate",
+                    json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": True},
+                ) as resp:
+                    async for line in resp.aiter_lines():
+                        if line:
+                            try:
+                                chunk = json_lib.loads(line)
+                                token = chunk.get("response", "")
+                                if token:
+                                    full_response += token
+                                    yield f"data: {json_lib.dumps({'token': token})}\n\n"
+                                if chunk.get("done", False):
+                                    break
+                            except Exception:
+                                continue
+        finally:
+            elapsed = round(time.time() - t_start, 2)
+            write_audit_entry(
+                user_id=user_id,
+                action="stream_query",
+                agent=payload.agent,
+                question=payload.question,
+                model=OLLAMA_MODEL,
+                context_used=bool(contexts),
+                elapsed_seconds=elapsed,
+                response_text=full_response,
+            )
+            yield f"data: {json_lib.dumps({'done': True, 'elapsed_seconds': elapsed})}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
