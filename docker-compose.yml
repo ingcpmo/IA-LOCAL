@@ -51,6 +51,8 @@ services:
     volumes:
       - ./data:/app/data
       - /home/ing_cpmo/.cache/chroma:/root/.cache/chroma
+      - ./app:/app/app
+      - ./knowledge:/app/knowledge
     depends_on:
       postgres:
         condition: service_healthy

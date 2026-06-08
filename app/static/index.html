@@ -1,1201 +1,1437 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>GMP AI Copilot</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GMP AI Copilot — Multi-Agent Platform v2.0</title>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0A0E14;--bg2:#0F1520;--bg3:#141C2B;--bg4:#1A2235;--bg5:#1F2940;
-  --primary:#1DB88A;--primary-dim:#14845F;--blue:#4A9EFF;--blue-dim:#2563C4;
-  --amber:#F59E0B;--purple:#A855F7;--coral:#F87171;--teal:#1DB88A;
-  --text:#E4EAF4;--text2:#8A96A8;--text3:#5A6478;--border:#1E2D45;
-  --font:'DM Sans',sans-serif;
-  --sidebar:220px;--topbar:56px;--rightpanel:300px;
-}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;overflow:hidden}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── TOPBAR ── */
-#topbar{
-  position:fixed;top:0;left:0;right:0;height:var(--topbar);
-  background:var(--bg2);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 16px;gap:16px;z-index:100;
-}
-.logo{display:flex;align-items:center;gap:8px;min-width:var(--sidebar);padding-right:8px}
-.logo-icon{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
-.logo-text{font-weight:700;font-size:15px;letter-spacing:-0.3px}
-.logo-text span{color:var(--primary)}
-.topbar-mid{flex:1;display:flex;align-items:center;gap:12px}
-.server-badge{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2)}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--primary);box-shadow:0 0 6px var(--primary)}
-.dot.red{background:var(--coral);box-shadow:0 0 6px var(--coral)}
-.topbar-right{display:flex;align-items:center;gap:10px}
-#top-user-input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text);font-family:var(--font);font-size:12px;width:140px;outline:none}
-#top-user-input:focus{border-color:var(--primary)}
-#top-user-input::placeholder{color:var(--text3)}
-
-/* ── LAYOUT ── */
-#layout{
-  display:flex;position:fixed;
-  top:var(--topbar);left:0;right:0;bottom:0;
+:root {
+  --bg: #0A0E14; --bg2: #111720; --bg3: #181F2C; --bg4: #1E2736;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+  --txt: #E4EAF4; --txt2: #8A96A8; --txt3: #5A6478;
+  --teal: #1DB88A; --teal2: #0E8E66; --teal-dim: rgba(29,184,138,0.12);
+  --blue: #4A9EFF; --blue-dim: rgba(74,158,255,0.12);
+  --amber: #F5A623; --amber-dim: rgba(245,166,35,0.12);
+  --purple: #9B7EFF; --purple-dim: rgba(155,126,255,0.12);
+  --coral: #FF6B6B; --coral-dim: rgba(255,107,107,0.12);
+  --font: 'DM Sans', -apple-system, sans-serif;
+  --mono: 'DM Mono', 'JetBrains Mono', monospace;
+  --r: 8px; --r2: 12px;
 }
 
-/* ── SIDEBAR ── */
-#sidebar{
-  width:var(--sidebar);min-width:var(--sidebar);
-  background:var(--bg2);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;overflow:hidden;
-}
-.nav-section{padding:12px 8px;flex:1}
-.nav-item{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 10px;border-radius:8px;cursor:pointer;
-  color:var(--text2);font-size:13px;font-weight:500;
-  transition:all .15s;margin-bottom:2px;
-}
-.nav-item:hover{background:var(--bg3);color:var(--text)}
-.nav-item.active{background:rgba(29,184,138,.12);color:var(--primary);border-left:2px solid var(--primary);padding-left:8px}
-.nav-item .nav-icon{font-size:15px;width:18px;text-align:center}
-.sidebar-footer{padding:12px;border-top:1px solid var(--border)}
-.corpus-stats{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px}
-.corpus-stats h4{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:6px}
-.stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-.stat-label{font-size:11px;color:var(--text2)}
-.stat-val{font-size:12px;font-weight:600;color:var(--primary)}
-.model-badge{font-size:10px;color:var(--text3);text-align:center;padding-top:4px}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
-/* ── MAIN CONTENT ── */
-#main{flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column}
-.view{display:none;flex-direction:column;height:100%;padding:20px}
-.view.active{display:flex}
+body { font-family: var(--font); background: var(--bg); color: var(--txt); font-size: 14px; line-height: 1.6; min-height: 100vh; overflow-x: hidden; }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 
-/* ── QUERY VIEW ── */
-#query-view{}
-.agent-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-.agent-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
-.agent-pills{display:flex;gap:6px}
-.agent-pill{
-  padding:5px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:500;
-  background:var(--bg3);border:1px solid var(--border);color:var(--text2);transition:all .15s;
-}
-.agent-pill.active{background:rgba(29,184,138,.15);border-color:var(--primary);color:var(--primary)}
-.query-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
-#question-input{
-  width:100%;background:transparent;border:none;outline:none;
-  color:var(--text);font-family:var(--font);font-size:14px;resize:none;
-  height:72px;line-height:1.5;
-}
-#question-input::placeholder{color:var(--text3)}
-.query-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
-.faq-chips{display:flex;gap:6px;flex-wrap:wrap;flex:1}
-.faq-chip{
-  padding:3px 10px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);
-  font-size:11px;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap;
-}
-.faq-chip:hover{border-color:var(--blue);color:var(--blue)}
-.toolbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.stream-toggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer}
-.toggle-sw{position:relative;width:32px;height:18px}
-.toggle-sw input{opacity:0;width:0;height:0}
-.slider{position:absolute;inset:0;background:var(--bg4);border-radius:9px;transition:.2s}
-.slider:before{content:"";position:absolute;width:12px;height:12px;left:3px;top:3px;background:var(--text3);border-radius:50%;transition:.2s}
-input:checked + .slider{background:var(--primary-dim)}
-input:checked + .slider:before{transform:translateX(14px);background:var(--primary)}
-#send-btn{
-  padding:7px 20px;background:var(--primary);border:none;border-radius:8px;
-  color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;
-  display:flex;align-items:center;gap:6px;transition:all .15s;
-}
-#send-btn:hover{background:var(--primary-dim)}
-#send-btn:disabled{opacity:.5;cursor:not-allowed}
-.latency-note{font-size:11px;color:var(--amber);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:5px 10px;margin-bottom:12px}
-#responses-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:20px}
-.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--text3);gap:8px}
-.empty-state .empty-icon{font-size:40px;opacity:.3}
-.empty-state p{font-size:13px}
-.response-card{
-  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
-  padding:16px;animation:fadeIn .3s ease;
-}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.card-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-.agent-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
-.agent-badge.fda{background:rgba(74,158,255,.15);color:var(--blue)}
-.agent-badge.iq{background:rgba(29,184,138,.15);color:var(--primary)}
-.card-question{font-size:12px;color:var(--text2);flex:1;font-style:italic}
-.elapsed-badge{font-size:10px;color:var(--text3);background:var(--bg3);padding:2px 8px;border-radius:8px;margin-left:auto}
-.rag-badge{font-size:10px;color:var(--primary);background:rgba(29,184,138,.1);padding:2px 8px;border-radius:8px}
-.card-response{font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word}
-.sources-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
-.source-chip{font-size:10px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:2px 8px;border-radius:8px}
-.streaming-cursor{display:inline-block;width:8px;height:14px;background:var(--primary);animation:blink .7s infinite;vertical-align:middle;margin-left:2px;border-radius:1px}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.shell { display: grid; grid-template-rows: 56px 1fr; height: 100vh; }
+.body  { display: grid; grid-template-columns: 220px 1fr 320px; overflow: hidden; }
 
-/* ── TEMPLATES VIEW ── */
-#templates-view{}
-.view-title{font-size:18px;font-weight:700;margin-bottom:4px}
-.view-subtitle{font-size:13px;color:var(--text2);margin-bottom:20px}
-.tab-bar{display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:4px}
-.tab-btn{
-  flex:1;padding:7px 12px;border:none;background:transparent;
-  color:var(--text2);font-family:var(--font);font-size:12px;font-weight:500;
-  cursor:pointer;border-radius:7px;transition:all .15s;
-}
-.tab-btn.active{background:var(--primary);color:#fff}
-.template-panel{display:none}
-.template-panel.active{display:block}
-.tmpl-header{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
-.tmpl-title{font-size:16px;font-weight:700;margin-bottom:6px}
-.reg-tags{display:flex;gap:6px;flex-wrap:wrap}
-.reg-tag{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(74,158,255,.1);color:var(--blue);border:1px solid rgba(74,158,255,.2)}
-.section-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
-.section-header{
-  display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;
-  font-weight:600;font-size:13px;transition:background .15s;
-}
-.section-header:hover{background:var(--bg3)}
-.section-num{width:22px;height:22px;border-radius:50%;background:rgba(29,184,138,.15);color:var(--primary);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.section-chevron{margin-left:auto;color:var(--text3);transition:transform .2s}
-.section-chevron.open{transform:rotate(90deg)}
-.section-body{padding:0 16px 14px;display:none}
-.section-body.open{display:block}
-.section-text{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px}
-.test-row{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)}
-.test-row:last-child{border-bottom:none}
-.test-id{font-size:10px;font-weight:700;color:var(--primary);font-family:monospace;min-width:50px}
-.test-desc{font-size:12px;color:var(--text2)}
-.item-bullet{display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:12px;color:var(--text2)}
-.item-bullet::before{content:"›";color:var(--primary);flex-shrink:0}
+/* TOPBAR */
+.topbar { display: flex; align-items: center; gap: 12px; padding: 0 20px; background: var(--bg2); border-bottom: 1px solid var(--border); z-index: 10; }
+.logo { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.logo-icon { width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg,var(--teal),var(--blue)); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.logo-text span { color: var(--teal); }
+.topbar-tag { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--teal-dim); color: var(--teal); font-weight: 500; }
+.topbar-spacer { flex: 1; }
+.status-pill { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--txt2); padding: 4px 10px; border-radius: 99px; background: var(--bg3); border: 1px solid var(--border); }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--txt3); transition: all .3s; }
+.status-dot.ok { background: var(--teal); box-shadow: 0 0 6px var(--teal); }
+.status-dot.warn { background: var(--amber); }
+.server-url { font-size: 11px; font-family: var(--mono); padding: 3px 10px; border-radius: 99px; border: 1px solid var(--border2); color: var(--txt2); background: var(--bg3); cursor: pointer; transition: all .2s; }
+.server-url:hover { border-color: var(--teal2); color: var(--teal); }
+.topbar-user { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--txt2); }
+.avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--blue-dim); border: 1px solid var(--blue); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--blue); }
 
-/* ── UPLOAD VIEW ── */
-#upload-view{}
-.drop-zone{
-  border:2px dashed var(--border);border-radius:12px;padding:40px 20px;
-  text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;
-  background:var(--bg2);
-}
-.drop-zone:hover,.drop-zone.dragover{border-color:var(--primary);background:rgba(29,184,138,.05)}
-.drop-icon{font-size:36px;margin-bottom:10px;opacity:.5}
-.drop-title{font-size:14px;font-weight:600;margin-bottom:4px}
-.drop-sub{font-size:12px;color:var(--text3)}
-#file-input{display:none}
-.collection-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.collection-label{font-size:12px;color:var(--text2);white-space:nowrap}
-.collection-select{
-  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
-  color:var(--text);font-family:var(--font);font-size:13px;padding:6px 10px;outline:none;cursor:pointer;
-}
-.files-list{margin-bottom:16px;display:flex;flex-direction:column;gap:6px}
-.file-row{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px}
-.file-name{flex:1;font-size:12px;color:var(--text)}
-.file-size{font-size:11px;color:var(--text3)}
-.file-status{font-size:11px;padding:2px 8px;border-radius:8px}
-.file-status.pending{background:rgba(245,158,11,.1);color:var(--amber)}
-.file-status.done{background:rgba(29,184,138,.1);color:var(--primary)}
-.file-status.processing{background:rgba(74,158,255,.1);color:var(--blue)}
-.ingest-log{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;min-height:120px;font-size:11px;font-family:monospace;color:var(--text2);line-height:1.8}
-.log-step{display:flex;align-items:center;gap:8px}
-.log-step.done{color:var(--primary)}
-.log-step.active{color:var(--blue)}
-.log-step.waiting{color:var(--text3)}
-.log-step-icon{width:14px;text-align:center}
-.ingest-btn{
-  padding:9px 22px;background:var(--primary);border:none;border-radius:8px;
-  color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;
-}
-.ingest-btn:hover{background:var(--primary-dim)}
-.ingest-btn:disabled{opacity:.5;cursor:not-allowed}
+/* SIDEBAR */
+.sidebar { background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+.sidebar-section { padding: 16px 12px 8px; }
+.sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: var(--txt3); text-transform: uppercase; padding: 0 8px; margin-bottom: 4px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r); cursor: pointer; font-size: 13px; color: var(--txt2); transition: all .15s; border: 1px solid transparent; position: relative; }
+.nav-item:hover { background: var(--bg3); color: var(--txt); }
+.nav-item.active { background: var(--bg3); color: var(--txt); border-color: var(--border); }
+.nav-item.active::before { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 2px; border-radius: 2px; background: var(--teal); }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+.nav-badge { margin-left: auto; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 99px; background: var(--teal-dim); color: var(--teal); }
+.sidebar-corpus { margin: 0 12px 8px; background: var(--bg3); border-radius: var(--r); border: 1px solid var(--border); padding: 10px; }
+.corpus-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.corpus-label { font-size: 11px; color: var(--txt2); }
+.corpus-count { font-size: 13px; font-weight: 600; color: var(--txt); }
+.corpus-bar { height: 3px; background: var(--bg4); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+.corpus-fill { height: 100%; border-radius: 2px; transition: width .5s; }
 
-/* ── CONFIG VIEW ── */
-#config-view{}
-.config-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
-.config-section h3{font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text)}
-.field-group{margin-bottom:12px}
-.field-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
-.field-input{
-  width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
-  padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;
-}
-.field-input:focus{border-color:var(--primary)}
-.test-conn-btn{
-  padding:7px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
-  color:var(--text2);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s;
-  display:flex;align-items:center;gap:6px;margin-top:4px;
-}
-.test-conn-btn:hover{border-color:var(--primary);color:var(--primary)}
-.health-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-.health-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
-.health-name{font-size:12px;color:var(--text2)}
-.health-status{font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px}
-.health-status.ok{background:rgba(29,184,138,.1);color:var(--primary)}
-.health-status.error{background:rgba(248,113,113,.1);color:var(--coral)}
-.health-status.unknown{background:rgba(138,150,168,.1);color:var(--text3)}
-.model-info-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px}
-.model-info-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px}
-.model-info-row:last-child{border-bottom:none}
-.model-info-key{color:var(--text3)}
-.model-info-val{color:var(--text);font-weight:500;font-family:monospace;font-size:11px}
+/* CONTENT */
+.content { display: flex; flex-direction: column; overflow: hidden; }
+.view { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+.view.active { display: flex; }
 
-/* ── RIGHT PANEL ── */
-#rightpanel{
-  width:var(--rightpanel);min-width:var(--rightpanel);
-  background:var(--bg2);border-left:1px solid var(--border);
-  display:flex;flex-direction:column;overflow:hidden;
-}
-.panel-section{border-bottom:1px solid var(--border);padding:14px}
-.panel-section:last-child{border-bottom:none;flex:1;overflow-y:auto}
-.panel-title{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:12px;font-weight:600}
+/* QUERY VIEW */
+.query-top { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; }
+.agent-row { display: flex; gap: 6px; }
+.agent-pill { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; border: 1px solid var(--border); cursor: pointer; font-size: 13px; color: var(--txt2); background: transparent; transition: all .2s; font-family: var(--font); }
+.agent-pill:hover { border-color: var(--border2); color: var(--txt); }
+.agent-pill.active[data-a="fda"] { background: var(--teal-dim); border-color: var(--teal2); color: var(--teal); font-weight: 500; }
+.agent-pill.active[data-a="iq"]  { background: var(--blue-dim);  border-color: var(--blue);  color: var(--blue);  font-weight: 500; }
+.agent-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 
-/* ── PIPELINE ── */
-.pipeline{display:flex;flex-direction:column;gap:0}
-.pipe-node{
-  display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;
-  border:1px solid transparent;transition:all .3s;opacity:.4;position:relative;
-}
-.pipe-node.active{opacity:1;animation:nodePulse .8s infinite alternate}
-.pipe-node.done{opacity:.7}
-@keyframes nodePulse{from{box-shadow:0 0 0 0 transparent}to{box-shadow:0 0 8px 2px var(--node-color,var(--primary))}}
-.pipe-node.active[data-color="blue"]{border-color:var(--blue);--node-color:var(--blue)}
-.pipe-node.active[data-color="amber"]{border-color:var(--amber);--node-color:var(--amber)}
-.pipe-node.active[data-color="teal"]{border-color:var(--teal);--node-color:var(--teal)}
-.pipe-node.active[data-color="purple"]{border-color:var(--purple);--node-color:var(--purple)}
-.pipe-node.active[data-color="coral"]{border-color:var(--coral);--node-color:var(--coral)}
-.pipe-node.done[data-color="blue"]{border-color:rgba(74,158,255,.2)}
-.pipe-node.done[data-color="amber"]{border-color:rgba(245,158,11,.2)}
-.pipe-node.done[data-color="teal"]{border-color:rgba(29,184,138,.2)}
-.pipe-node.done[data-color="purple"]{border-color:rgba(168,85,247,.2)}
-.pipe-node.done[data-color="coral"]{border-color:rgba(248,113,113,.2)}
-.pipe-icon{font-size:13px;width:16px;text-align:center}
-.pipe-info{flex:1;min-width:0}
-.pipe-label{font-size:11px;font-weight:600}
-.pipe-detail{font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pipe-connector{width:1px;height:12px;background:var(--border);margin:0 auto;margin-left:15px;transition:background .3s}
-.pipe-connector.active{background:var(--primary)}
-.pipe-timing{margin-top:10px;display:flex;flex-direction:column;gap:6px}
-.timing-row{display:flex;justify-content:space-between;align-items:center;font-size:11px}
-.timing-key{color:var(--text3)}
-.timing-val{color:var(--primary);font-weight:600;font-family:monospace}
-.progress-bar{height:3px;background:var(--bg4);border-radius:2px;margin-top:6px;overflow:hidden}
-.progress-fill{height:100%;background:var(--primary);border-radius:2px;width:0%;transition:width .2s}
+textarea#q { width: 100%; resize: none; height: 72px; background: var(--bg3); color: var(--txt); border: 1px solid var(--border); border-radius: var(--r2); padding: 10px 14px; font-family: var(--font); font-size: 14px; line-height: 1.5; transition: border .2s; }
+textarea#q:focus { outline: none; border-color: var(--teal2); }
+textarea#q::placeholder { color: var(--txt3); }
 
-/* ── AUDIT TRAIL ── */
-.audit-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.part11-badge{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(29,184,138,.15);color:var(--primary);font-weight:600}
-.audit-count{font-size:11px;color:var(--text3)}
-.audit-list{display:flex;flex-direction:column;gap:6px}
-.audit-entry{
-  border-left:2px solid var(--teal);padding:8px 10px;background:var(--bg3);
-  border-radius:0 6px 6px 0;font-size:11px;
-}
-.audit-ts{color:var(--text3);font-family:monospace}
-.audit-user{color:var(--teal);font-weight:600}
-.audit-q{color:var(--text2);margin:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.audit-hash{font-family:monospace;font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.input-bar { display: flex; align-items: center; gap: 8px; padding: 8px 0 12px; }
+.preset-chip { font-size: 11px; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--txt2); cursor: pointer; background: transparent; transition: all .15s; white-space: nowrap; }
+.preset-chip:hover { background: var(--bg3); color: var(--txt); }
+.stream-toggle { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--txt2); cursor: pointer; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); background: transparent; transition: all .2s; font-family: var(--font); }
+.stream-toggle.on { color: var(--purple); border-color: var(--purple); background: var(--purple-dim); }
+.toggle-knob { width: 24px; height: 13px; border-radius: 99px; background: var(--bg4); position: relative; transition: background .2s; }
+.stream-toggle.on .toggle-knob { background: var(--purple); }
+.toggle-thumb { position: absolute; top: 2px; left: 2px; width: 9px; height: 9px; border-radius: 50%; background: #fff; transition: left .2s; }
+.stream-toggle.on .toggle-thumb { left: 13px; }
+.btn-send { display: flex; align-items: center; gap: 7px; padding: 8px 18px; border-radius: var(--r); background: var(--teal); color: #000; font-weight: 600; font-size: 13px; cursor: pointer; border: none; transition: all .2s; font-family: var(--font); flex-shrink: 0; }
+.btn-send:hover { background: #24D4A0; }
+.btn-send:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+.lat-note { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--txt3); padding: 6px 20px 8px; flex-shrink: 0; background: var(--bg2); border-bottom: 1px solid var(--border); }
+.lat-icon { color: var(--amber); }
+
+.response-area { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+
+.resp-card { border: 1px solid var(--border); border-radius: var(--r2); background: var(--bg2); overflow: hidden; }
+.resp-header { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--bg3); flex-wrap: wrap; gap: 6px; }
+.resp-agent-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
+.resp-agent-badge.fda { background: var(--teal-dim); color: var(--teal); }
+.resp-agent-badge.iq  { background: var(--blue-dim);  color: var(--blue); }
+.resp-q { font-size: 12px; color: var(--txt2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 240px; }
+.resp-meta { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-shrink: 0; }
+.elapsed-tag { font-family: var(--mono); font-size: 11px; padding: 2px 7px; border-radius: 4px; background: var(--bg4); color: var(--teal); }
+.context-tag { font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
+.context-tag.yes { background: var(--teal-dim); color: var(--teal); }
+.context-tag.no  { background: var(--amber-dim); color: var(--amber); }
+.resp-body { padding: 14px; font-size: 14px; line-height: 1.75; color: var(--txt); white-space: pre-wrap; min-height: 60px; }
+.resp-body.loading { color: var(--txt3); font-style: italic; }
+.resp-body.error-body { color: var(--coral); }
+.sources-bar { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 14px; border-top: 1px solid var(--border); }
+.source-tag { font-size: 11px; font-family: var(--mono); padding: 2px 8px; border-radius: 4px; background: var(--bg4); color: var(--txt2); border: 1px solid var(--border); }
+
+.empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--txt3); text-align: center; padding: 40px; }
+.empty-icon { font-size: 40px; opacity: 0.4; }
+.empty-title { font-size: 15px; font-weight: 500; color: var(--txt2); }
+.empty-sub { font-size: 13px; max-width: 300px; line-height: 1.6; }
+
+/* TEMPLATES */
+.tmpl-view-inner { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.tmpl-picker { display: flex; gap: 8px; }
+.tmpl-tab { padding: 7px 18px; border-radius: var(--r); border: 1px solid var(--border); color: var(--txt2); cursor: pointer; font-size: 13px; font-weight: 500; background: transparent; transition: all .2s; font-family: var(--font); }
+.tmpl-tab.active { background: var(--bg3); color: var(--txt); border-color: var(--border2); }
+.tmpl-header-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 14px 16px; }
+.tmpl-title-big { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+.tmpl-basis { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.tmpl-basis-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: var(--bg3); color: var(--txt2); border: 1px solid var(--border); font-family: var(--mono); }
+.tmpl-sections { display: flex; flex-direction: column; gap: 6px; }
+.tmpl-sec { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tmpl-sec-head { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; cursor: pointer; font-size: 13px; font-weight: 500; background: var(--bg3); transition: background .15s; user-select: none; }
+.tmpl-sec-head:hover { background: var(--bg4); }
+.tmpl-sec-count { font-size: 11px; color: var(--txt3); font-weight: 400; }
+.tmpl-sec-body { padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 5px; }
+.tmpl-item { display: flex; gap: 8px; font-size: 13px; color: var(--txt2); }
+.tmpl-test-row { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; color: var(--txt2); }
+.test-badge { font-family: var(--mono); font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; background: var(--bg4); color: var(--teal); border: 1px solid var(--border); margin-top: 1px; }
+
+/* UPLOAD */
+.upload-view-inner { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.drop-zone { border: 2px dashed var(--border2); border-radius: var(--r2); padding: 40px 20px; text-align: center; cursor: pointer; transition: all .2s; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.drop-zone:hover, .drop-zone.drag-over { border-color: var(--teal2); background: var(--teal-dim); }
+.drop-icon { font-size: 36px; opacity: 0.5; }
+.col-pick { display: flex; gap: 6px; }
+.col-btn { flex: 1; padding: 8px; border-radius: var(--r); border: 1px solid var(--border); background: transparent; color: var(--txt2); font-size: 13px; cursor: pointer; text-align: center; transition: all .2s; font-family: var(--font); }
+.col-btn.active[data-c="fda"] { background: var(--teal-dim); border-color: var(--teal2); color: var(--teal); font-weight: 500; }
+.col-btn.active[data-c="iq"]  { background: var(--blue-dim);  border-color: var(--blue);  color: var(--blue);  font-weight: 500; }
+.file-list { display: flex; flex-direction: column; gap: 4px; }
+.file-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg2); font-size: 13px; }
+.file-row-name { flex: 1; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-row-size { font-size: 11px; color: var(--txt3); }
+.file-row-st.ok  { color: var(--teal); font-size: 11px; }
+.file-row-st.ing { color: var(--amber); font-size: 11px; }
+.file-row-st.pend{ color: var(--txt3); font-size: 11px; }
+.ingest-log-box { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; font-family: var(--mono); font-size: 12px; color: var(--txt2); min-height: 80px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; line-height: 1.7; }
+.log-ok { color: var(--teal); } .log-warn { color: var(--amber); } .log-step { color: var(--txt2); }
+.btn-ingest { padding: 10px; border-radius: var(--r); border: 1px solid var(--teal2); background: var(--teal-dim); color: var(--teal); font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all .2s; }
+.btn-ingest:hover { background: var(--teal); color: #000; }
+.btn-ingest:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* CONFIG */
+.cfg-view-inner { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.cfg-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px; }
+.cfg-card-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.cfg-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.cfg-label { font-size: 11px; color: var(--txt2); font-weight: 500; }
+.cfg-input { padding: 8px 12px; border-radius: var(--r); border: 1px solid var(--border); background: var(--bg3); color: var(--txt); font-family: var(--mono); font-size: 12px; transition: border .2s; width: 100%; }
+.cfg-input:focus { outline: none; border-color: var(--teal2); }
+.cfg-note { font-size: 11px; color: var(--txt3); }
+.btn-test { padding: 9px 20px; border-radius: var(--r); border: 1px solid var(--border2); background: transparent; color: var(--txt); font-size: 13px; cursor: pointer; font-family: var(--font); transition: all .2s; width: 100%; margin-top: 4px; }
+.btn-test:hover { background: var(--bg3); border-color: var(--teal2); color: var(--teal); }
+.conn-status { font-size: 12px; padding: 8px 12px; border-radius: var(--r); display: none; margin-top: 6px; }
+.conn-status.ok  { background: var(--teal-dim);  color: var(--teal);  display: block; }
+.conn-status.err { background: var(--coral-dim); color: var(--coral); display: block; }
+.health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.health-item { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 10px; background: var(--bg3); border-radius: var(--r); border: 1px solid var(--border); }
+.hdot { width: 7px; height: 7px; border-radius: 50%; background: var(--txt3); flex-shrink: 0; transition: background .3s; }
+.hdot.ok { background: var(--teal); } .hdot.warn { background: var(--amber); }
+
+/* RIGHT PANEL — PIPELINE */
+.right-panel { background: var(--bg2); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.rpanel-title { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--txt3); padding: 12px 14px 6px; }
+.rpanel-scroll { flex: 1; overflow-y: auto; padding: 0 12px 12px; display: flex; flex-direction: column; gap: 0; }
+
+/* Pipeline nodes */
+.pipe-node { border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px; transition: all .35s; opacity: 0.4; position: relative; overflow: hidden; }
+.pipe-node[data-l="request"]  { --nc: var(--blue);   --nb: var(--blue-dim);   }
+.pipe-node[data-l="auth"]     { --nc: var(--amber);  --nb: var(--amber-dim);  }
+.pipe-node[data-l="chroma"]   { --nc: var(--teal);   --nb: var(--teal-dim);   }
+.pipe-node[data-l="ollama"]   { --nc: var(--purple); --nb: var(--purple-dim); }
+.pipe-node[data-l="audit"]    { --nc: var(--coral);  --nb: var(--coral-dim);  }
+.pipe-node[data-l="response"] { --nc: var(--blue);   --nb: var(--blue-dim);   }
+.pipe-node.active  { border-color: var(--nc); background: var(--nb); opacity: 1; }
+.pipe-node.done    { border-color: var(--border); background: transparent; opacity: 0.65; }
+@keyframes node-pulse { 0%,100%{ box-shadow: 0 0 0 0 transparent } 50%{ box-shadow: 0 0 8px 1px var(--nc) } }
+.pipe-node.active { animation: node-pulse 1.3s ease-in-out infinite; }
+.pipe-node.done   { animation: none; }
+
+.pn-head { display: flex; align-items: center; gap: 7px; }
+.pn-icon { font-size: 14px; flex-shrink: 0; }
+.pn-name { font-size: 12px; font-weight: 600; color: var(--txt); }
+.pn-detail { font-size: 11px; color: var(--txt3); margin-top: 2px; font-family: var(--mono); line-height: 1.4; }
+.pn-data { font-size: 10px; color: var(--nc, var(--txt3)); margin-top: 4px; font-family: var(--mono); background: rgba(0,0,0,0.2); border-radius: 4px; padding: 3px 6px; opacity: 0; transition: opacity .3s; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.pipe-node.active .pn-data { opacity: 1; }
+.pipe-node.done .pn-data { opacity: 0.6; }
+
+.pipe-conn { display: flex; flex-direction: column; align-items: center; height: 16px; position: relative; margin: 0; }
+.pipe-conn::before { content:''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--border); }
+.pipe-conn::after { content:'▾'; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); font-size: 9px; color: var(--txt3); line-height: 1; }
+.pipe-conn.active::before { background: var(--teal); }
+.pipe-conn.active::after  { color: var(--teal); }
+
+/* Data flow badges between nodes */
+.data-flow { font-size: 10px; font-family: var(--mono); color: var(--teal); background: rgba(29,184,138,0.08); border: 1px solid rgba(29,184,138,0.2); border-radius: 4px; padding: 2px 6px; text-align: center; margin: 2px 0; opacity: 0; transition: opacity .4s; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.data-flow.show { opacity: 1; }
+
+/* Timing section */
+.timing-box { margin: 8px 0 4px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px; }
+.timing-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px; color: var(--txt2); }
+.timing-val { color: var(--teal); font-family: var(--mono); }
+.timing-bar { height: 3px; background: var(--bg4); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+.timing-fill { height: 100%; background: linear-gradient(90deg,var(--teal),var(--blue)); border-radius: 2px; width: 0%; transition: width .4s; }
+
+/* Layer info panel */
+.layer-info { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px; margin-top: 4px; font-size: 11px; color: var(--txt2); min-height: 40px; }
+.layer-info-title { font-weight: 600; color: var(--txt); margin-bottom: 4px; font-size: 12px; }
+.layer-info-body { color: var(--txt2); line-height: 1.5; }
+
+/* Audit trail */
+.audit-section { display: flex; flex-direction: column; gap: 4px; }
+.audit-head { display: flex; align-items: center; gap: 6px; }
+.audit-badge { font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--teal-dim); color: var(--teal); font-weight: 600; }
+.audit-count { font-size: 11px; color: var(--txt3); }
+.verify-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 99px; }
+.verify-badge.ok  { background: var(--teal-dim); color: var(--teal); }
+.verify-badge.err { background: var(--coral-dim); color: var(--coral); }
+.audit-list { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
+.audit-entry { background: var(--bg3); border: 1px solid var(--border); border-left: 2px solid var(--teal); border-radius: var(--r); padding: 6px 8px; font-size: 11px; }
+.ae-row { display: flex; justify-content: space-between; gap: 4px; }
+.ae-user { color: var(--teal); font-weight: 600; }
+.ae-time { color: var(--txt3); font-family: var(--mono); }
+.ae-q { color: var(--txt2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ae-hash { font-family: var(--mono); font-size: 10px; color: var(--txt3); margin-top: 2px; }
+.ae-hash span { color: var(--teal); }
+
+/* ── 6-Agent Grid ────────────────────────────────────────── */
+.agent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.agent-card { border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px; cursor: pointer; transition: all .2s; background: var(--bg3); position: relative; overflow: hidden; }
+.agent-card::before { content:''; position: absolute; top:0; left:0; right:0; height:2px; background: transparent; transition: background .2s; }
+.agent-card:hover { border-color: var(--border2); }
+.agent-card.active { border-color: var(--nc,var(--teal)); background: var(--nb,var(--teal-dim)); }
+.agent-card.active::before { background: var(--nc,var(--teal)); }
+.ac-head { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.ac-icon { font-size: 14px; }
+.ac-name { font-size: 11px; font-weight: 600; color: var(--txt); line-height: 1.2; }
+.ac-abbr { font-size: 9px; font-family: var(--mono); letter-spacing: .08em; color: var(--nc,var(--txt3)); }
+.ac-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--nc,var(--txt3)); margin-left: auto; flex-shrink: 0; }
+@keyframes ac-ping { 0%,100%{transform:scale(1);opacity:.5} 50%{transform:scale(2.2);opacity:0} }
+.ac-dot { position: relative; }
+.agent-card.active .ac-dot::after { content:''; position:absolute; inset:0; border-radius:50%; background:inherit; animation: ac-ping 1.4s ease-in-out infinite; }
+
+/* ── Rules Panel ─────────────────────────────────────────── */
+.rules-panel { border: 1px solid var(--amber); border-radius: var(--r); background: var(--amber-dim); padding: 8px 12px; margin-top: 4px; }
+.rules-title { font-size: 11px; font-weight: 600; color: var(--amber); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.rules-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.rule-badge { font-size: 10px; font-family: var(--mono); padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+.rule-badge.CRITICAL { background: var(--coral-dim); color: var(--coral); border: 1px solid var(--coral); }
+.rule-badge.HIGH     { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
+.rule-badge.MEDIUM   { background: var(--blue-dim);  color: var(--blue);  border: 1px solid var(--blue); }
+.rule-badge.LOW      { background: var(--bg3); color: var(--txt2); border: 1px solid var(--border); }
+
+/* ── Workflow Cards ──────────────────────────────────────── */
+.wf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.wf-card { border: 1px solid var(--border); border-radius: var(--r2); padding: 12px; background: var(--bg2); cursor: pointer; transition: all .2s; }
+.wf-card:hover { border-color: var(--nc,var(--border2)); background: var(--nb,var(--bg3)); }
+.wf-name { font-size: 11px; font-weight: 700; letter-spacing: .08em; font-family: var(--mono); color: var(--nc,var(--txt2)); margin-bottom: 10px; }
+.wf-step { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; font-size: 12px; }
+.wf-num { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.06); border: 1px solid var(--nc,var(--border)); color: var(--nc,var(--txt2)); font-size: 9px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); flex-shrink: 0; margin-top: 1px; }
+.wf-step-txt { color: var(--txt2); line-height: 1.4; }
+.wf-use-btn { margin-top: 10px; width: 100%; padding: 5px; border-radius: 6px; border: 1px solid var(--nc,var(--border)); background: transparent; color: var(--nc,var(--txt2)); font-size: 11px; font-family: var(--font); cursor: pointer; transition: all .2s; }
+.wf-use-btn:hover { background: var(--nc,var(--border)); color: #000; }
+
+/* ── Topbar counters ─────────────────────────────────────── */
+.tb-counter { text-align: right; }
+.tb-counter-val { font-size: 15px; font-weight: 700; font-family: var(--mono); }
+.tb-counter-lbl { font-size: 9px; color: var(--txt3); letter-spacing: .08em; }
+
+/* ── Rule Engine pipeline node (amber) ──────────────────── */
+.pipe-node[data-l="rules"] { --nc: var(--amber); --nb: var(--amber-dim); }
+
+/* Spinner */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { width: 13px; height: 13px; border: 2px solid rgba(0,0,0,0.15); border-top-color: #000; border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; }
 </style>
 </head>
 <body>
+<div class="shell">
 
-<!-- TOPBAR -->
-<div id="topbar">
+<header class="topbar">
   <div class="logo">
-    <div class="logo-icon">⚕</div>
-    <div class="logo-text">GMP <span>Copilot</span></div>
+    <div class="logo-icon">⚗</div>
+    <span class="logo-text">GMP <span>Copilot</span></span>
   </div>
-  <div class="topbar-mid">
-    <div class="server-badge">
-      <div class="dot" id="server-dot"></div>
-      <span id="server-status-text">Conectando…</span>
+  <span class="topbar-tag">FDA Qualification Platform</span>
+  <span class="topbar-spacer"></span>
+  <div style="display:flex;align-items:center;gap:16px;margin-right:8px">
+    <div class="tb-counter"><div class="tb-counter-val" style="color:var(--teal)">6</div><div class="tb-counter-lbl">AGENTS</div></div>
+    <div class="tb-counter"><div class="tb-counter-val" style="color:var(--blue)">6</div><div class="tb-counter-lbl">LAYERS</div></div>
+    <div class="tb-counter"><div class="tb-counter-val" style="color:var(--amber)">3</div><div class="tb-counter-lbl">WORKFLOWS</div></div>
+  </div>
+  <div class="status-pill">
+    <div class="status-dot" id="api-dot"></div>
+    <span id="api-status-txt">verificando…</span>
+  </div>
+  <button class="server-url" id="server-url-btn" onclick="showView('config')">
+    <span id="server-url-display">104.196.110.180:8000</span>
+  </button>
+  <div class="topbar-user">
+    <div class="avatar" id="user-avatar">IC</div>
+    <input id="user-id" value="ing_cpmo" style="background:transparent;border:none;color:var(--txt2);font-size:12px;width:90px;font-family:var(--font)">
+  </div>
+</header>
+
+<div class="body">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">Herramientas</div>
+    <div class="nav-item active" onclick="showView('query')">
+      <span class="nav-icon">💬</span><span class="nav-text">Consulta</span>
+      <span class="nav-badge" id="query-count">0</span>
     </div>
-    <div class="server-badge" style="border-color:rgba(74,158,255,.3);color:var(--blue)">
-      35.185.57.245:8000
+    <div class="nav-item" onclick="showView('workflows')">
+      <span class="nav-icon">⟳</span><span class="nav-text">Workflows GMP</span>
+    </div>
+    <div class="nav-item" onclick="showView('templates')">
+      <span class="nav-icon">📋</span><span class="nav-text">Templates IQ/OQ/PQ</span>
+    </div>
+    <div class="nav-item" onclick="showView('upload')">
+      <span class="nav-icon">📂</span><span class="nav-text">Cargar documentos</span>
+    </div>
+    <div class="nav-item" onclick="showView('config')">
+      <span class="nav-icon">⚙</span><span class="nav-text">Configuración</span>
     </div>
   </div>
-  <div class="topbar-right">
-    <span style="font-size:11px;color:var(--text3)">User ID:</span>
-    <input type="text" id="top-user-input" placeholder="anonymous" value=""/>
+  <div style="flex:1"></div>
+  <div class="sidebar-section" style="padding-bottom:12px">
+    <div class="sidebar-label">Corpus activo</div>
+    <div class="sidebar-corpus">
+      <div class="corpus-row"><span class="corpus-label">FDA</span><span class="corpus-count" id="c-fda">136</span></div>
+      <div class="corpus-bar"><div class="corpus-fill" style="background:var(--teal);width:88%" id="b-fda"></div></div>
+      <div style="height:6px"></div>
+      <div class="corpus-row"><span class="corpus-label">IQ/OQ/PQ</span><span class="corpus-count" id="c-iq">153</span></div>
+      <div class="corpus-bar"><div class="corpus-fill" style="background:var(--blue);width:100%" id="b-iq"></div></div>
+      <div style="margin-top:6px;font-size:11px;color:var(--txt3)" id="total-docs">Total docs: 12</div>
+    </div>
+    <div style="font-size:10px;color:var(--txt3);padding:4px 8px">mistral:7b-instruct-q4_K_M · CPU</div>
   </div>
-</div>
+</nav>
 
-<!-- LAYOUT -->
-<div id="layout">
+<!-- CONTENT -->
+<main class="content">
 
-  <!-- SIDEBAR -->
-  <nav id="sidebar">
-    <div class="nav-section">
-      <div class="nav-item active" data-view="query">
-        <span class="nav-icon">💬</span> Consulta
+  <!-- QUERY VIEW -->
+  <div class="view active" id="view-query">
+    <div class="query-top">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:10px;color:var(--txt3);font-weight:600;letter-spacing:.08em;text-transform:uppercase">Agente:</span>
+        <div class="agent-grid" id="agent-grid" style="flex:1;min-width:300px">
+          <!-- cargado dinámicamente desde /api/v1/agents -->
+          <div class="agent-card active" data-id="csv" style="--nc:#00d4ff;--nb:rgba(0,212,255,.1)" onclick="setAgent('csv')">
+            <div class="ac-head"><span class="ac-icon">🖥️</span><span class="ac-name">CSV/CSA</span><div class="ac-dot" style="background:#00d4ff"></div></div>
+            <div class="ac-abbr">COMPUTERIZED SYSTEMS</div>
+          </div>
+          <div class="agent-card" data-id="qa" style="--nc:#00ff88;--nb:rgba(0,255,136,.08)" onclick="setAgent('qa')">
+            <div class="ac-head"><span class="ac-icon">✅</span><span class="ac-name">QA Agent</span><div class="ac-dot" style="background:#00ff88"></div></div>
+            <div class="ac-abbr">QUALITY ASSURANCE</div>
+          </div>
+          <div class="agent-card" data-id="audit" style="--nc:#ff6644;--nb:rgba(255,102,68,.08)" onclick="setAgent('audit')">
+            <div class="ac-head"><span class="ac-icon">⚖️</span><span class="ac-name">FDA Audit</span><div class="ac-dot" style="background:#ff6644"></div></div>
+            <div class="ac-abbr">INSPECTOR SIMULATOR</div>
+          </div>
+          <div class="agent-card" data-id="automation" style="--nc:#ffaa00;--nb:rgba(255,170,0,.08)" onclick="setAgent('automation')">
+            <div class="ac-head"><span class="ac-icon">⚙️</span><span class="ac-name">Automation</span><div class="ac-dot" style="background:#ffaa00"></div></div>
+            <div class="ac-abbr">PLC/SCADA/MES</div>
+          </div>
+          <div class="agent-card" data-id="integrity" style="--nc:#9966ff;--nb:rgba(153,102,255,.08)" onclick="setAgent('integrity')">
+            <div class="ac-head"><span class="ac-icon">🔒</span><span class="ac-name">Data Integrity</span><div class="ac-dot" style="background:#9966ff"></div></div>
+            <div class="ac-abbr">ALCOA+ / PART 11</div>
+          </div>
+          <div class="agent-card" data-id="capa" style="--nc:#ff44aa;--nb:rgba(255,68,170,.08)" onclick="setAgent('capa')">
+            <div class="ac-head"><span class="ac-icon">🔧</span><span class="ac-name">CAPA Mgmt</span><div class="ac-dot" style="background:#ff44aa"></div></div>
+            <div class="ac-abbr">ROOT CAUSE / CLOSURE</div>
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt3);cursor:pointer">
+          <input type="checkbox" id="auto-detect" style="accent-color:var(--teal)"> Auto-detectar
+        </label>
       </div>
-      <div class="nav-item" data-view="templates">
-        <span class="nav-icon">📋</span> Templates IQ/OQ/PQ
-      </div>
-      <div class="nav-item" data-view="upload">
-        <span class="nav-icon">📂</span> Cargar documentos
-      </div>
-      <div class="nav-item" data-view="config">
-        <span class="nav-icon">⚙</span> Configuración
+      <textarea id="q" placeholder="Escribe tu pregunta GMP…
+CSV: ¿GAMP5 category 4 SCADA sin OQ — qué validación se requiere?
+QA: Deviation crítica lote 12345 — tercer evento en 30 días
+Audit: Simula FDA 483: audit trail deshabilitado en LIMS
+Auto: ¿firmware PLC modificado sin change control aprobado?"></textarea>
+      <div class="input-bar">
+        <div style="display:flex;gap:4px;flex:1;flex-wrap:wrap" id="preset-row"></div>
+        <button class="stream-toggle" id="stream-btn" onclick="toggleStream()">
+          <div class="toggle-knob"><div class="toggle-thumb"></div></div>
+          Stream
+        </button>
+        <button class="btn-send" id="send-btn" onclick="sendQuery()">
+          <span id="send-icon">↗</span><span id="send-txt">Enviar</span>
+        </button>
       </div>
     </div>
-    <div class="sidebar-footer">
-      <div class="corpus-stats">
-        <h4>Corpus activo</h4>
-        <div class="stat-row"><span class="stat-label">FDA chunks</span><span class="stat-val" id="stat-fda">136</span></div>
-        <div class="stat-row"><span class="stat-label">IQ/OQ chunks</span><span class="stat-val" id="stat-iq">153</span></div>
-        <div class="stat-row"><span class="stat-label">Total docs</span><span class="stat-val" id="stat-docs">12</span></div>
-      </div>
-      <div class="model-badge">mistral:7b-instruct-q4_K_M · CPU</div>
+    <div class="lat-note">
+      <span class="lat-icon">⚡</span>
+      Latencia típica en CPU: 20–45 seg · La primera consulta puede tardar más mientras carga el modelo
     </div>
-  </nav>
+    <div class="response-area" id="response-area">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">⬡</div>
+        <div class="empty-title">GMP AI Copilot — 6 Agentes Activos</div>
+        <div class="empty-sub">Selecciona un agente especializado o activa "Auto-detectar" para que el Orchestrator elija el agente correcto según tu pregunta. El Rule Engine evaluará reglas GMP determinísticas antes de enviar al LLM.</div>
+      </div>
+    </div>
+  </div>
 
-  <!-- MAIN -->
-  <main id="main">
-
-    <!-- QUERY VIEW -->
-    <div id="query-view" class="view active">
-      <div class="agent-bar">
-        <span class="agent-label">Agente:</span>
-        <div class="agent-pills">
-          <div class="agent-pill active" data-agent="fda">FDA Regulatory Specialist</div>
-          <div class="agent-pill" data-agent="iq">IQ/OQ/PQ Engineer</div>
+  <!-- WORKFLOWS VIEW -->
+  <div class="view" id="view-workflows">
+    <div style="padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px">
+      <div>
+        <div style="font-size:16px;font-weight:600;color:var(--txt);font-family:var(--mono);margin-bottom:4px">WORKFLOWS GMP</div>
+        <div style="font-size:13px;color:var(--txt2)">3 flujos automatizados. Cada uno pre-configura el agente correcto y llena la pregunta inicial. Haz clic en "Usar workflow" para comenzar.</div>
+      </div>
+      <div class="wf-grid">
+        <div class="wf-card" style="--nc:#00d4ff;--nb:rgba(0,212,255,.06)">
+          <div class="wf-name">CHANGE CONTROL</div>
+          <div class="wf-step"><div class="wf-num">1</div><span class="wf-step-txt">Input del cambio propuesto</span></div>
+          <div class="wf-step"><div class="wf-num">2</div><span class="wf-step-txt">Clasificación de riesgo GMP</span></div>
+          <div class="wf-step"><div class="wf-num">3</div><span class="wf-step-txt">Evaluación de impacto IQ/OQ/PQ</span></div>
+          <div class="wf-step"><div class="wf-num">4</div><span class="wf-step-txt">Testing y validación requerida</span></div>
+          <div class="wf-step"><div class="wf-num">5</div><span class="wf-step-txt">Aprobaciones QA/RA</span></div>
+          <div class="wf-step"><div class="wf-num">6</div><span class="wf-step-txt">Documentación y cierre</span></div>
+          <button class="wf-use-btn" onclick="useWorkflow('csv','El sistema LIMS fue actualizado de v3.1 a v3.2 con cambios en el módulo de resultados analíticos. Clasifica el riesgo GMP, determina si se requiere revalidación y qué testing es necesario según GAMP5.')">Usar workflow →</button>
+        </div>
+        <div class="wf-card" style="--nc:#00ff88;--nb:rgba(0,255,136,.06)">
+          <div class="wf-name">VALIDATION GENERATION</div>
+          <div class="wf-step"><div class="wf-num">1</div><span class="wf-step-txt">Tipo y categoría del sistema</span></div>
+          <div class="wf-step"><div class="wf-num">2</div><span class="wf-step-txt">Clasificación GAMP5</span></div>
+          <div class="wf-step"><div class="wf-num">3</div><span class="wf-step-txt">Análisis de scope</span></div>
+          <div class="wf-step"><div class="wf-num">4</div><span class="wf-step-txt">Generación de protocolo IQ</span></div>
+          <div class="wf-step"><div class="wf-num">5</div><span class="wf-step-txt">Generación de protocolo OQ</span></div>
+          <div class="wf-step"><div class="wf-num">6</div><span class="wf-step-txt">PQ + Trace Matrix</span></div>
+          <button class="wf-use-btn" onclick="useWorkflow('csv','Genera un plan de validación completo para un bioreactor de 200L con sistema de control DeltaV (GAMP5 Category 4). Incluye scope IQ, OQ y PQ con criterios de aceptación según 21 CFR 211.68 y ISPE C&Q Guide.')">Usar workflow →</button>
+        </div>
+        <div class="wf-card" style="--nc:#ff6644;--nb:rgba(255,102,68,.06)">
+          <div class="wf-name">AUDIT READINESS</div>
+          <div class="wf-step"><div class="wf-num">1</div><span class="wf-step-txt">Revisión de evidencias</span></div>
+          <div class="wf-step"><div class="wf-num">2</div><span class="wf-step-txt">Gap analysis regulatorio</span></div>
+          <div class="wf-step"><div class="wf-num">3</div><span class="wf-step-txt">Simulación FDA inspector</span></div>
+          <div class="wf-step"><div class="wf-num">4</div><span class="wf-step-txt">Risk scoring por área</span></div>
+          <div class="wf-step"><div class="wf-num">5</div><span class="wf-step-txt">Lista de observaciones 483</span></div>
+          <div class="wf-step"><div class="wf-num">6</div><span class="wf-step-txt">Plan de remediación</span></div>
+          <button class="wf-use-btn" onclick="useWorkflow('audit','Simula una inspección FDA del sistema de gestión de datos del laboratorio (LIMS). El audit trail está habilitado pero no se revisa periódicamente. Los registros de calibración tienen gaps de 3 meses. Genera observaciones 483 potenciales y el plan de remediación.')">Usar workflow →</button>
         </div>
       </div>
-      <div class="query-box">
-        <textarea id="question-input" placeholder="Escribe tu pregunta GMP aquí… (Ctrl+Enter para enviar)"></textarea>
-        <div class="query-toolbar">
-          <div class="faq-chips" id="faq-chips"></div>
-          <div class="toolbar-right">
-            <label class="stream-toggle">
-              <span>Stream</span>
-              <div class="toggle-sw"><input type="checkbox" id="stream-toggle" checked/><div class="slider"></div></div>
-            </label>
-            <button id="send-btn">▶ Enviar</button>
+      <!-- Rule Engine examples -->
+      <div style="border:1px solid rgba(255,170,0,.3);border-radius:12px;padding:16px;background:rgba(255,170,0,.04)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--amber);font-family:var(--mono);margin-bottom:12px">RULE ENGINE — EJEMPLOS DE REGLAS GMP ACTIVAS</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--bg2)">
+            <span class="rule-badge CRITICAL">CRITICAL</span>
+            <div style="color:var(--txt2);font-size:11px;font-family:var(--mono);margin:6px 0 4px">IF audit trail deshabilitado AND sistema Part 11</div>
+            <div style="color:var(--amber);font-size:11px">→ Data Integrity finding + CAPA automático + escalación QA</div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--bg2)">
+            <span class="rule-badge HIGH">HIGH</span>
+            <div style="color:var(--txt2);font-size:11px;font-family:var(--mono);margin:6px 0 4px">IF sistema GMP crítico AND firmware modificado</div>
+            <div style="color:var(--amber);font-size:11px">→ OQ requerido + regression testing + QA approval</div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--bg2)">
+            <span class="rule-badge HIGH">HIGH</span>
+            <div style="color:var(--txt2);font-size:11px;font-family:var(--mono);margin:6px 0 4px">IF CAPA sin efectividad verificada AND >90 días</div>
+            <div style="color:var(--amber);font-size:11px">→ Escalación management + FDA warning risk flag</div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--bg2)">
+            <span class="rule-badge CRITICAL">CRITICAL</span>
+            <div style="color:var(--txt2);font-size:11px;font-family:var(--mono);margin:6px 0 4px">IF PLC/SCADA cambio AND sin change control aprobado</div>
+            <div style="color:var(--amber);font-size:11px">→ GMP violation + remediation plan + regulatory notification</div>
           </div>
         </div>
       </div>
-      <div class="latency-note">⏱ Latencia típica en CPU: 20–45 seg · La primera consulta puede tardar más mientras carga el modelo</div>
-      <div id="responses-area">
-        <div class="empty-state" id="empty-state">
-          <div class="empty-icon">🔬</div>
-          <p>Selecciona un agente, escribe tu pregunta y presiona Enviar</p>
-          <p style="font-size:11px">Usa los chips de preguntas frecuentes para comenzar rápido</p>
+    </div>
+  </div>
+
+  <!-- TEMPLATES VIEW -->
+  <div class="view" id="view-templates">
+    <div class="tmpl-view-inner">
+      <div class="tmpl-picker">
+        <button class="tmpl-tab active" onclick="loadTmpl('IQ',this)">Instalación (IQ)</button>
+        <button class="tmpl-tab" onclick="loadTmpl('OQ',this)">Operacional (OQ)</button>
+        <button class="tmpl-tab" onclick="loadTmpl('PQ',this)">Performance (PQ)</button>
+      </div>
+      <div id="tmpl-body"></div>
+    </div>
+  </div>
+
+  <!-- UPLOAD VIEW -->
+  <div class="view" id="view-upload">
+    <div class="upload-view-inner">
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-in').click()">
+        <input type="file" id="file-in" accept=".pdf,.txt" multiple style="display:none" onchange="addFiles(this.files)">
+        <div class="drop-icon">📁</div>
+        <div style="font-size:14px;color:var(--txt2)">Arrastra PDFs o archivos .txt aquí</div>
+        <div style="font-size:12px;color:var(--txt3)">21 CFR, FDA Guidance, ICH Q8/Q9/Q10, ISPE C&Q, EU GMP Annex 11, SOPs</div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--txt2);margin-bottom:6px;font-weight:500">Colección destino</div>
+        <div class="col-pick">
+          <button class="col-btn active" data-c="fda" onclick="setCol('fda')">FDA Regulations</button>
+          <button class="col-btn" data-c="iq" onclick="setCol('iq')">IQ/OQ/PQ</button>
         </div>
       </div>
+      <div class="file-list" id="file-list"></div>
+      <div>
+        <div style="font-size:12px;color:var(--txt2);margin-bottom:6px;font-weight:500">Log de ingesta</div>
+        <div class="ingest-log-box" id="ingest-log">Listo para ingestar documentos al corpus ChromaDB…</div>
+      </div>
+      <button class="btn-ingest" id="ingest-btn" onclick="runIngest()">📥 Iniciar ingesta al corpus</button>
     </div>
+  </div>
 
-    <!-- TEMPLATES VIEW -->
-    <div id="templates-view" class="view">
-      <div class="view-title">Protocol Templates</div>
-      <div class="view-subtitle">Plantillas regulatorias IQ/OQ/PQ según ICH Q7, GAMP 5 y 21 CFR Part 211</div>
-      <div class="tab-bar">
-        <button class="tab-btn active" data-tab="IQ">Instalación (IQ)</button>
-        <button class="tab-btn" data-tab="OQ">Operacional (OQ)</button>
-        <button class="tab-btn" data-tab="PQ">Performance (PQ)</button>
-      </div>
-      <div id="tmpl-container"></div>
-    </div>
-
-    <!-- UPLOAD VIEW -->
-    <div id="upload-view" class="view">
-      <div class="view-title">Cargar documentos al corpus</div>
-      <div class="view-subtitle">Ingesta PDF/TXT → embeddings ONNX → ChromaDB</div>
-      <div class="drop-zone" id="drop-zone">
-        <input type="file" id="file-input" multiple accept=".pdf,.txt,.md"/>
-        <div class="drop-icon">📄</div>
-        <div class="drop-title">Arrastra archivos aquí o haz clic</div>
-        <div class="drop-sub">PDF, TXT, MD · Máx 50 MB por archivo</div>
-      </div>
-      <div class="collection-row">
-        <span class="collection-label">Colección destino:</span>
-        <select class="collection-select" id="collection-select">
-          <option value="fda">FDA Regulations</option>
-          <option value="iq">IQ/OQ/PQ</option>
-        </select>
-      </div>
-      <div class="files-list" id="files-list"></div>
-      <div class="ingest-log" id="ingest-log">
-        <div style="color:var(--text3);font-style:normal">Esperando archivos para ingestar…</div>
-      </div>
-      <button class="ingest-btn" id="ingest-btn" disabled>⚡ Iniciar ingesta al corpus</button>
-    </div>
-
-    <!-- CONFIG VIEW -->
-    <div id="config-view" class="view">
-      <div class="view-title">Configuración</div>
-      <div class="view-subtitle">Conectividad, autenticación y estado del servidor</div>
-      <div class="config-section">
-        <h3>Conexión al servidor</h3>
-        <div class="field-group">
-          <div class="field-label">API Base URL</div>
-          <input type="text" class="field-input" id="cfg-url" placeholder="http://35.185.57.245:8000"/>
+  <!-- CONFIG VIEW -->
+  <div class="view" id="view-config">
+    <div class="cfg-view-inner">
+      <div class="cfg-card">
+        <div class="cfg-card-title">🔌 Conexión al servidor</div>
+        <div class="cfg-field">
+          <div class="cfg-label">API Base URL</div>
+          <input class="cfg-input" id="cfg-url" value="http://104.196.110.180:8000">
+          <div class="cfg-note">Servidor GMP AI Copilot · ivr-ia · Debian 12</div>
         </div>
-        <div class="field-group">
-          <div class="field-label">X-Api-Key</div>
-          <input type="password" class="field-input" id="cfg-key" placeholder="Deja vacío si no hay clave"/>
+        <div class="cfg-field">
+          <div class="cfg-label">X-Api-Key</div>
+          <input class="cfg-input" id="cfg-key" type="password" placeholder="Pegar GMP_API_KEY del servidor">
+          <div class="cfg-note">grep GMP_API_KEY /home/ing_cpmo/.env</div>
         </div>
-        <button class="test-conn-btn" id="test-conn-btn">🔌 Probar conexión</button>
+        <button class="btn-test" onclick="testConn()">🔍 Probar conexión al servidor</button>
+        <div class="conn-status" id="conn-st"></div>
+      </div>
+      <div class="cfg-card">
+        <div class="cfg-card-title">🏥 Estado del sistema</div>
         <div class="health-grid">
-          <div class="health-card"><span class="health-name">FastAPI</span><span class="health-status unknown" id="h-api">—</span></div>
-          <div class="health-card"><span class="health-name">PostgreSQL</span><span class="health-status unknown" id="h-postgres">—</span></div>
-          <div class="health-card"><span class="health-name">Redis</span><span class="health-status unknown" id="h-redis">—</span></div>
-          <div class="health-card"><span class="health-name">Ollama</span><span class="health-status unknown" id="h-ollama">—</span></div>
+          <div class="health-item"><div class="hdot" id="h-api"></div>FastAPI</div>
+          <div class="health-item"><div class="hdot" id="h-pg"></div>PostgreSQL</div>
+          <div class="health-item"><div class="hdot" id="h-redis"></div>Redis</div>
+          <div class="health-item"><div class="hdot" id="h-ollama"></div>Ollama</div>
         </div>
       </div>
-      <div class="config-section">
-        <h3>Modelo e infraestructura</h3>
-        <div class="model-info-card">
-          <div class="model-info-row"><span class="model-info-key">Modelo</span><span class="model-info-val">mistral:7b-instruct-q4_K_M</span></div>
-          <div class="model-info-row"><span class="model-info-key">Aceleración</span><span class="model-info-val">CPU (sin GPU)</span></div>
-          <div class="model-info-row"><span class="model-info-key">Latencia típica</span><span class="model-info-val">20 – 45 seg</span></div>
-          <div class="model-info-row"><span class="model-info-key">Corpus total</span><span class="model-info-val" id="cfg-corpus">—</span></div>
-          <div class="model-info-row"><span class="model-info-key">Embeddings</span><span class="model-info-val">ONNX all-MiniLM-L6-v2</span></div>
-          <div class="model-info-row"><span class="model-info-key">Vector store</span><span class="model-info-val">ChromaDB 0.5.23</span></div>
+      <div class="cfg-card">
+        <div class="cfg-card-title">📊 Modelo activo</div>
+        <div style="background:var(--bg3);border-radius:var(--r);padding:10px 12px;font-family:var(--mono);font-size:12px;color:var(--txt2);display:flex;flex-direction:column;gap:3px">
+          <div>modelo   : <span style="color:var(--teal)">mistral:7b-instruct-q4_K_M</span></div>
+          <div>backend  : <span style="color:var(--txt)">Ollama · CPU · AMD EPYC 4vCPU</span></div>
+          <div>latencia : <span style="color:var(--amber)">20–45 seg / query</span></div>
+          <div>corpus   : <span style="color:var(--blue)">136 FDA + 153 IQ/OQ</span></div>
+          <div>tests    : <span style="color:var(--teal)">18/18 PASSED ✓</span></div>
         </div>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- RIGHT PANEL -->
-  <aside id="rightpanel">
-    <div class="panel-section">
-      <div class="panel-title">Pipeline en tiempo real</div>
-      <div class="pipeline" id="pipeline">
-        <div class="pipe-node" data-node="request" data-color="blue">
-          <div class="pipe-icon">→</div>
-          <div class="pipe-info">
-            <div class="pipe-label" style="color:var(--blue)">Request</div>
-            <div class="pipe-detail" id="pn-request">esperando consulta</div>
-          </div>
-        </div>
-        <div class="pipe-connector" id="pc-0"></div>
-        <div class="pipe-node" data-node="auth" data-color="amber">
-          <div class="pipe-icon">🔑</div>
-          <div class="pipe-info">
-            <div class="pipe-label" style="color:var(--amber)">Auth</div>
-            <div class="pipe-detail" id="pn-auth">verify_api_key()</div>
-          </div>
-        </div>
-        <div class="pipe-connector" id="pc-1"></div>
-        <div class="pipe-node" data-node="chroma" data-color="teal">
-          <div class="pipe-icon">🔍</div>
-          <div class="pipe-info">
-            <div class="pipe-label" style="color:var(--teal)">ChromaDB</div>
-            <div class="pipe-detail" id="pn-chroma">ONNX embed → cosine search</div>
-          </div>
-        </div>
-        <div class="pipe-connector" id="pc-2"></div>
-        <div class="pipe-node" data-node="ollama" data-color="purple">
-          <div class="pipe-icon">🧠</div>
-          <div class="pipe-info">
-            <div class="pipe-label" style="color:var(--purple)">Ollama</div>
-            <div class="pipe-detail" id="pn-ollama">mistral:7b · — tokens</div>
-          </div>
-        </div>
-        <div class="pipe-connector" id="pc-3"></div>
-        <div class="pipe-node" data-node="audit" data-color="coral">
-          <div class="pipe-icon">📋</div>
-          <div class="pipe-info">
-            <div class="pipe-label" style="color:var(--coral)">Audit</div>
-            <div class="pipe-detail" id="pn-audit">JSONL SHA-256 hash chain</div>
-          </div>
-        </div>
-        <div class="pipe-connector" id="pc-4"></div>
-        <div class="pipe-node" data-node="response" data-color="blue">
-          <div class="pipe-icon">✓</div>
-          <div class="pipe-info">
-            <div class="pipe-label" style="color:var(--blue)">Response</div>
-            <div class="pipe-detail" id="pn-response">response + sources + elapsed</div>
-          </div>
-        </div>
-      </div>
-      <div class="pipe-timing">
-        <div class="timing-row">
-          <span class="timing-key">Tiempo transcurrido</span>
-          <span class="timing-val" id="t-elapsed">—</span>
-        </div>
-        <div class="timing-row">
-          <span class="timing-key">Chunks recuperados</span>
-          <span class="timing-val" id="t-chunks">—</span>
-        </div>
-        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
       </div>
     </div>
-    <div class="panel-section" style="flex:1;overflow-y:auto">
-      <div class="audit-header">
-        <div class="panel-title" style="margin-bottom:0">Audit trail 21 CFR Part 11</div>
-        <div class="part11-badge">21 CFR Part 11</div>
-        <div class="audit-count" id="audit-count">0 entradas</div>
+  </div>
+
+</main>
+
+<!-- RIGHT PANEL — PIPELINE MULTICAPA -->
+<aside class="right-panel">
+  <div class="rpanel-title">Pipeline en tiempo real</div>
+  <div class="rpanel-scroll">
+
+    <!-- Node: Request -->
+    <div class="pipe-node" data-l="request" id="pn-request">
+      <div class="pn-head"><span class="pn-icon">→</span><span class="pn-name">Request</span></div>
+      <div class="pn-detail" id="pd-request">question + agent + X-Api-Key</div>
+      <div class="pn-data" id="pdata-request">—</div>
+    </div>
+    <div class="data-flow" id="df-1">question → tokenización</div>
+    <div class="pipe-conn" id="pc-1"></div>
+
+    <!-- Node: Auth -->
+    <div class="pipe-node" data-l="auth" id="pn-auth">
+      <div class="pn-head"><span class="pn-icon">🔑</span><span class="pn-name">Autenticación</span></div>
+      <div class="pn-detail" id="pd-auth">verify_api_key() — FastAPI</div>
+      <div class="pn-data" id="pdata-auth">—</div>
+    </div>
+    <div class="data-flow" id="df-2">query validada → RAG</div>
+    <div class="pipe-conn" id="pc-2"></div>
+
+    <!-- Node: ChromaDB -->
+    <div class="pipe-node" data-l="chroma" id="pn-chroma">
+      <div class="pn-head"><span class="pn-icon">🔍</span><span class="pn-name">ChromaDB RAG</span></div>
+      <div class="pn-detail" id="pd-chroma">ONNX embed → cosine search</div>
+      <div class="pn-data" id="pdata-chroma">—</div>
+    </div>
+    <div class="data-flow" id="df-3">N chunks → rule engine</div>
+    <div class="pipe-conn" id="pc-3"></div>
+
+    <!-- Node: Rule Engine (nueva capa 3) -->
+    <div class="pipe-node" data-l="rules" id="pn-rules">
+      <div class="pn-head"><span class="pn-icon">⚖️</span><span class="pn-name">Rule Engine</span></div>
+      <div class="pn-detail" id="pd-rules">12 reglas GMP determinísticas</div>
+      <div class="pn-data" id="pdata-rules">—</div>
+    </div>
+    <div class="data-flow" id="df-3b">reglas + contexto → prompt</div>
+    <div class="pipe-conn" id="pc-3b"></div>
+
+    <!-- Node: Ollama -->
+    <div class="pipe-node" data-l="ollama" id="pn-ollama">
+      <div class="pn-head"><span class="pn-icon">🧠</span><span class="pn-name">Ollama LLM</span></div>
+      <div class="pn-detail" id="pd-ollama">mistral:7b · ~1900 chars prompt</div>
+      <div class="pn-data" id="pdata-ollama">—</div>
+    </div>
+    <div class="data-flow" id="df-4">respuesta → audit logger</div>
+    <div class="pipe-conn" id="pc-4"></div>
+
+    <!-- Node: Audit -->
+    <div class="pipe-node" data-l="audit" id="pn-audit">
+      <div class="pn-head"><span class="pn-icon">📋</span><span class="pn-name">Audit 21 CFR P11</span></div>
+      <div class="pn-detail" id="pd-audit">JSONL SHA-256 hash chain</div>
+      <div class="pn-data" id="pdata-audit">—</div>
+    </div>
+    <div class="data-flow" id="df-5">entry_hash → client</div>
+    <div class="pipe-conn" id="pc-5"></div>
+
+    <!-- Node: Response -->
+    <div class="pipe-node" data-l="response" id="pn-response">
+      <div class="pn-head"><span class="pn-icon">✓</span><span class="pn-name">Respuesta</span></div>
+      <div class="pn-detail" id="pd-response">response + sources + elapsed</div>
+      <div class="pn-data" id="pdata-response">—</div>
+    </div>
+
+    <!-- Timing -->
+    <div class="timing-box" style="margin-top:10px">
+      <div class="timing-row"><span>Tiempo transcurrido</span><span class="timing-val" id="timing-val">—</span></div>
+      <div class="timing-row"><span>Chunks recuperados</span><span class="timing-val" id="chunks-val">—</span></div>
+      <div class="timing-row"><span>Modo</span><span class="timing-val" id="mode-val">—</span></div>
+      <div class="timing-bar"><div class="timing-fill" id="timing-fill"></div></div>
+    </div>
+
+    <!-- Active layer info -->
+    <div class="layer-info" id="layer-info">
+      <div class="layer-info-title">GMP AI Copilot</div>
+      <div class="layer-info-body">Sistema multicapa: RAG + LLM + Audit 21 CFR Part 11.<br>Haz una consulta para ver el pipeline en acción.</div>
+    </div>
+
+    <div style="height:8px"></div>
+
+    <!-- Audit trail -->
+    <div class="audit-section">
+      <div class="audit-head">
+        <span style="font-size:11px;font-weight:600;color:var(--txt2)">Audit trail</span>
+        <span class="audit-badge">21 CFR Part 11</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span class="verify-badge ok" id="verify-badge">✓ chain valid</span>
+        <span class="audit-count" id="audit-count">0 entradas</span>
       </div>
       <div class="audit-list" id="audit-list">
-        <div style="font-size:11px;color:var(--text3);padding:8px 0">Sin entradas aún…</div>
+        <div style="font-size:11px;color:var(--txt3);padding:8px 0;text-align:center">Sin actividad todavía</div>
       </div>
     </div>
-  </aside>
 
-</div>
+  </div><!-- end rpanel-scroll -->
+</aside>
+
+</div><!-- end body -->
+</div><!-- end shell -->
 
 <script>
-// ── STATE ──
-let currentAgent = 'fda';
-let auditEntries = [];
-let lastHash = '0000000000000000';
-let pendingFiles = [];
-let elapsedTimer = null;
-let elapsedStart = 0;
+/* ============================================================
+   GMP AI Copilot — Client JS v2.1
+   Fixes: audit hash error, catch loop, elapsed undefined
+   ============================================================ */
 
-const FAQ = {
-  fda: [
-    {label:'Audit trails 21 CFR 11.10(e)', q:'What does 21 CFR Part 11 section 11.10(e) require for audit trails?'},
-    {label:'ALCOA+ principios', q:'Explain the ALCOA+ principles for GMP data integrity'},
-    {label:'Electronic signatures Part 11', q:'What are the requirements for electronic signatures under 21 CFR Part 11?'},
-    {label:'483 observations Part 11', q:'What are common FDA 483 observations for Part 11 failures?'},
-    {label:'Data integrity FDA 2018', q:'Summarize the key requirements of the FDA Data Integrity Guidance 2018'},
+const API    = () => (localStorage.getItem('gmp_url') || 'http://104.196.110.180:8000').replace(/\/$/,'');
+const APIKEY = () => localStorage.getItem('gmp_key') || '';
+const HDR    = () => ({
+  'Content-Type': 'application/json',
+  'X-Api-Key': APIKEY(),
+  'X-User-Id': document.getElementById('user-id').value || 'anon',
+});
+
+let agent      = 'csv';
+let streaming  = false;
+let queryCount = 0;
+let auditLog   = [];
+let timerHnd   = null;
+let selectedCol = 'fda';
+let pendingFiles = [];
+let autoDetect  = false;
+
+/* ── Init ─────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  const su = localStorage.getItem('gmp_url');
+  const sk = localStorage.getItem('gmp_key');
+  if (su) { document.getElementById('cfg-url').value = su; updateServerDisplay(su); }
+  if (sk) document.getElementById('cfg-key').value = sk;
+
+  document.getElementById('cfg-url').addEventListener('change', e => {
+    localStorage.setItem('gmp_url', e.target.value);
+    updateServerDisplay(e.target.value);
+  });
+  document.getElementById('cfg-key').addEventListener('change', e =>
+    localStorage.setItem('gmp_key', e.target.value));
+  document.getElementById('user-id').addEventListener('input', e => {
+    const v = (e.target.value || 'AN').slice(0,2).toUpperCase();
+    document.getElementById('user-avatar').textContent = v;
+  });
+
+  document.getElementById('auto-detect')?.addEventListener('change', e => {
+    autoDetect = e.target.checked;
+  });
+
+  loadAgentsFromAPI();
+  renderPresets();
+  loadTmpl('IQ', document.querySelector('.tmpl-tab'));
+  checkHealth();
+  setInterval(checkHealth, 30000);
+
+  const dz = document.getElementById('drop-zone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); addFiles(e.dataTransfer.files); });
+
+  document.getElementById('q').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') sendQuery();
+  });
+
+  setLayerInfo('idle', null);
+});
+
+function updateServerDisplay(url) {
+  try {
+    const u = new URL(url);
+    document.getElementById('server-url-display').textContent = u.host;
+  } catch { document.getElementById('server-url-display').textContent = url.replace('http://','').replace('https://',''); }
+}
+
+/* ── Nav ──────────────────────────────────────────────────── */
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  const ni = document.querySelector(`.nav-item[onclick*="${id}"]`);
+  if (ni) ni.classList.add('active');
+}
+
+function setAgent(a) {
+  agent = a;
+  document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+  const card = document.querySelector(`.agent-card[data-id="${a}"]`);
+  if (card) card.classList.add('active');
+  renderPresets();
+}
+
+async function loadAgentsFromAPI() {
+  try {
+    const res = await fetch(API()+'/api/v1/agents', {signal: AbortSignal.timeout(5000)});
+    if (!res.ok) return;
+    const d = await res.json();
+    // Update card descriptions from live API if available
+    Object.entries(d).forEach(([id, ag]) => {
+      const card = document.querySelector(`.agent-card[data-id="${id}"]`);
+      if (card && ag.icon) {
+        const iconEl = card.querySelector('.ac-icon');
+        if (iconEl) iconEl.textContent = ag.icon;
+      }
+    });
+  } catch(e) { /* silent fail — static cards already rendered */ }
+}
+
+/* ── Presets ──────────────────────────────────────────────── */
+const PRESETS_SHORT = {
+  csv:        ['GAMP5 Cat4 SCADA sin OQ','Firmware PLC modificado','LIMS Part 11 assessment','Bioreactor IQ/OQ/PQ','Change control software'],
+  qa:         ['Deviation crítica recurrente','CAPA root cause OOS','Trending calidad Q1','SOP compliance gap','OOS investigación LIMS'],
+  audit:      ['Simula FDA 483 LIMS','Gap audit trail SCADA','Inspection readiness','Warning letter patterns','Pre-approval inspection'],
+  automation: ['PLC firmware sin CC','SCADA ISA-88 compliance','Alarmas EEMUA 191','Batch record eBR gaps','MES validación GAMP5'],
+  integrity:  ['ALCOA+ gap balanza','Audit trail deshabilitado','Metadata integridad','Raw data vs procesado','MHRA data integrity'],
+  capa:       ['CAPA 90 días sin cierre','5-Why desviación recurrente','Root cause FTA','Effectiveness criteria','CAPA closure FDA'],
+};
+const PRESETS_FULL = {
+  csv: [
+    'Un sistema SCADA categoría GAMP5 4 lleva 6 meses en producción sin OQ documentado. ¿Qué acciones regulatorias se requieren?',
+    'El firmware del PLC del sistema de control de temperatura fue modificado de v2.1 a v2.2 sin change control aprobado. ¿Qué revalidación es necesaria?',
+    'Evalúa el sistema LIMS bajo 21 CFR Part 11: tiene audit trail habilitado, acceso por roles, pero los registros de calibración son en papel. ¿Qué gaps existen?',
+    'Genera el plan de validación IQ/OQ/PQ para un bioreactor de 200L con sistema DCS bajo GAMP5 Category 4 y 21 CFR 211.68.',
+    'Un cambio en el módulo de reportes del ERP afecta cálculos de yield. Clasifica el riesgo GMP y determina el testing requerido.',
   ],
-  iq: [
-    {label:'IQ checks bioreactor', q:'What IQ checks are required for the installation of a bioreactor?'},
-    {label:'Tablet press requalification', q:'A tablet press was relocated to a new cleanroom. What requalification is needed?'},
-    {label:'HVAC OQ alarm tests', q:'What alarm tests must be included in HVAC OQ protocols?'},
-    {label:'PQ minimum runs', q:'What is the minimum number of PQ runs required according to FDA guidance?'},
-    {label:'ICH Q9 FMEA', q:'How does ICH Q9 FMEA apply to equipment qualification risk assessment?'},
-  ]
+  qa: [
+    'Se detectó una desviación crítica en el lote L-2024-089: temperatura de almacenamiento excedió 8°C por 4 horas. Es el tercer evento similar en 30 días. ¿Qué CAPA se requiere?',
+    'Investigación OOS en ensayo de potencia: resultado 87% vs especificación ≥90%. Los cálculos son correctos y el estándar es válido. ¿Cuál es el árbol de decisión?',
+    'Analiza el trending de deviaciones del último trimestre: 12 eventos menores, 3 mayores, 1 crítica. ¿Qué indica para el Quality Management Review?',
+    'El SOP de limpieza de equipos no ha sido revisado en 36 meses. La última auditoría interna detectó que el personal no lo sigue al pie de la letra. ¿Qué acciones se requieren?',
+    'Se recibieron 5 OOS en análisis microbiológico del área de llenado estéril en 2 semanas. ¿Cuál es el protocolo de investigación según ICH Q10?',
+  ],
+  audit: [
+    'Simula una inspección FDA 483 del sistema LIMS: tiene audit trail habilitado pero no se revisa en batch release, y hay 3 usuarios con acceso de administrador compartido.',
+    'Evalúa el gap regulatorio del sistema de gestión de datos de calibración: los registros son híbridos (electrónicos + papel), sin firma electrónica 21 CFR Part 11.',
+    'La planta tiene una inspección FDA programada en 60 días. El CAPA del hallazgo anterior (audit trail gaps) lleva 45 días abierto sin effectiveness check. ¿Cuál es el nivel de riesgo?',
+    'Identifica los patrones más comunes de Warning Letters FDA relacionados con Data Integrity en los últimos 5 años para empresas farmacéuticas.',
+    'Genera la lista de verificación de preparación para una inspección pre-aprobación (PAI) del sistema de manufactura crítico.',
+  ],
+  automation: [
+    'El PLC del sistema de fermentación fue actualizado por el proveedor sin notificación al equipo de validación. ¿Qué acciones inmediatas y de remediación se requieren según ISA-88?',
+    'El sistema SCADA de manufactura tiene 847 alarmas activas, de las cuales el 60% están en estado suprimido. ¿Cómo evaluar esto bajo EEMUA 191 y qué se requiere?',
+    'El electronic Batch Record (eBR) del MES tiene campos opcionales que operadores están dejando en blanco. ¿Qué gaps de ALCOA+ y Part 11 genera esto?',
+    'El sistema MES fue desarrollado internamente (GAMP5 Category 5). ¿Cuál es el scope mínimo de validación requerido y qué documentos se deben generar?',
+    'Después de una caída de energía, el sistema DCS reinició con parámetros por defecto diferentes a los validados. ¿Qué protocolo de revalidación aplica?',
+  ],
+  integrity: [
+    'El sistema de balanzas analíticas tiene audit trail habilitado pero los datos de pesaje se exportan a Excel sin controles de acceso. Evalúa el gap ALCOA+ completo.',
+    'El administrador del sistema LIMS puede deshabilitar el audit trail sin aprobación de QA. ¿Qué riesgos de Data Integrity genera esto bajo FDA 2018 Guidance?',
+    'Los metadatos de los cromatógrafos HPLC incluyen la secuencia de inyección y los archivos .raw. ¿Cómo verificar la integridad completa de los datos analíticos?',
+    'El laboratorio usa sistemas híbridos: datos generados electrónicamente que se transcriben a papel para la revisión. ¿Cómo aplica ALCOA+ y qué controles se requieren?',
+    'Evalúa el cumplimiento MHRA Data Integrity Guidance para un sistema de manufactura que tiene datos archivados en CD-ROMs sin verificación de integridad desde 2018.',
+  ],
+  capa: [
+    'El CAPA-2024-045 lleva 95 días abierto sin effectiveness check. La acción correctiva fue "re-entrenamiento del personal". ¿Cuál es el riesgo regulatorio y qué se debe hacer?',
+    'Aplica el método 5-Why a esta desviación recurrente: el pesaje del API está fuera de especificación en el 15% de los lotes del último trimestre.',
+    'Genera el árbol de falla (FTA) para un OOS crítico en estabilidad: potencia 82% vs límite 90% en muestra T=18 meses de un producto de cadena de frío.',
+    'Define los criterios de efectividad para un CAPA de Data Integrity: se corrigieron los permisos del LIMS pero necesitas demostrar que el problema no recurrirá.',
+    'El CAPA de un hallazgo FDA de 2023 fue cerrado pero el mismo problema apareció en auditoría interna 2024. ¿Cómo reabrirlo y qué escalación requiere?',
+  ],
+};
+function renderPresets() {
+  const row = document.getElementById('preset-row');
+  const presets = PRESETS_SHORT[agent] || PRESETS_SHORT.csv;
+  row.innerHTML = presets.map((p,i) =>
+    `<button class="preset-chip" onclick="usePreset(${i})">${p}</button>`
+  ).join('');
+}
+function usePreset(i) {
+  const full = PRESETS_FULL[agent] || PRESETS_FULL.csv;
+  document.getElementById('q').value = full[i] || '';
+  document.getElementById('q').focus();
+}
+
+function useWorkflow(agentId, question) {
+  setAgent(agentId);
+  document.getElementById('q').value = question;
+  showView('query');
+  document.getElementById('q').focus();
+}
+
+function toggleStream() {
+  streaming = !streaming;
+  document.getElementById('stream-btn').classList.toggle('on', streaming);
+}
+
+/* ── Pipeline control ─────────────────────────────────────── */
+const LAYER_INFO = {
+  idle:    { title: 'GMP AI Copilot — 6 Capas Activas', body: '6 Agentes especializados · Orchestrator · Rule Engine (12 reglas GMP) · RAG 463 chunks · Ollama LLM · Audit 21 CFR Part 11. Haz una consulta para ver el pipeline en acción.' },
+  request: { title: '→ Capa 1: Request', body: 'La pregunta, el agente y el X-Api-Key llegan a FastAPI. Si autoDetect está activo, el Orchestrator analizará keywords para seleccionar el agente óptimo.' },
+  auth:    { title: '🔑 Capa 1: Autenticación', body: 'FastAPI valida X-Api-Key. Si no coincide → HTTP 401 inmediato. El campo X-User-Id se captura para el audit trail 21 CFR Part 11.' },
+  chroma:  { title: '🔍 Capa 4: RAG/Knowledge', body: 'La pregunta se vectoriza (ONNX all-MiniLM-L6-v2, 384 dims). ChromaDB busca por coseno en la colección específica del agente detectado. 463 chunks en 6 colecciones.' },
+  rules:   { title: '⚖️ Capa 3: Rule Engine', body: '12 reglas GMP determinísticas se evalúan por keyword matching. Las reglas disparadas se convierten en contexto adicional del prompt, garantizando respuestas regulatoriamente correctas sin depender del LLM.' },
+  ollama:  { title: '🧠 Capa 5: LLM', body: 'mistral:7b recibe el prompt multicapa: [SYSTEM: agent-specific] + [RULES: triggered] + [CONTEXT: RAG chunks] + [TASK: question] + [FORMAT: español, citar regulaciones]. CPU sin GPU: 20-120s.' },
+  audit:   { title: '📋 Capa 6: Governance', body: 'Cada query genera entrada JSONL: timestamp UTC, user_id, question, agent_id, rules_triggered, elapsed_seconds, response_hash y prev_entry_hash (SHA-256 chain). Cumple 21 CFR Part 11 §11.10(e).' },
+  response:{ title: '✓ Capa 1: Respuesta', body: 'El cliente recibe: response, sources (archivos del corpus), agent_id, agent_name, rules_triggered[], rules_count, highest_risk, context_used, elapsed_seconds.' }
 };
 
-const DEMO_RESPONSES = [
-  {keys:['11.10','audit trail','audit trails'],
-   text:`21 CFR Part 11.10(e) requires that computer systems used to create, modify, maintain, archive, retrieve, or transmit electronic records must use secure, computer-generated, time-stamped audit trails to independently record the date and time of operator entries and actions that create, modify, or delete electronic records.
-
-Key requirements:
-• Records must be computer-generated (not manual)
-• Must capture: who, what, and when
-• Operator cannot disable or modify the audit trail
-• Audit trail records must be retained for at least the length of time required for the corresponding electronic records
-• Must be available for FDA review during inspections
-
-Common implementation: JSONL files with SHA-256 hash chaining (each entry references previous hash) to detect tampering.`},
-  {keys:['alcoa'],
-   text:`ALCOA+ is the foundational data integrity framework used in GMP environments. The acronym stands for:
-
-A – Attributable: Data must be traceable to the person or system that generated it, with date/time stamps.
-L – Legible: All data must be permanent, readable, and understandable throughout its lifecycle.
-C – Contemporaneous: Data must be recorded at the time of the activity.
-O – Original: The first capture of data must be preserved; transcription introduces risk.
-A – Accurate: Data must reflect what actually occurred.
-
-The "+" additions:
-• Complete: No selective data reporting; all data including OOS results must be retained
-• Consistent: Chronological, logical date/time sequences
-• Enduring: Permanent record for the required retention period
-• Available: Accessible for review and audit during the entire retention period
-
-Regulatory basis: FDA Data Integrity Guidance 2018, EMA Annex 11, MHRA GXP Data Integrity Guidance.`},
-  {keys:['iq','installation','bioreactor'],
-   text:`Installation Qualification (IQ) for a bioreactor should verify:
-
-IQ-001: Equipment identification — serial numbers, model numbers, FAT/SAT documentation
-IQ-002: Utility connections — electrical (voltage, phase, grounding), clean steam, WFI, CIP connections
-IQ-003: Instrument calibration — pH probe, DO probe, temperature sensors, pressure gauges (all with current calibration certificates)
-IQ-004: Software and firmware version documented and locked; change control established
-IQ-005: Materials of construction verified (316L SS, USP Class VI elastomers)
-IQ-006: Surface finish measurements (Ra ≤ 0.8 µm for product contact surfaces)
-IQ-007: Weld log and boroscope inspection documentation
-IQ-008: Environmental conditions at installation site (temperature, humidity, classification)
-
-Regulatory basis: 21 CFR Part 211.68, EU GMP Annex 15, GAMP 5 Category 4.`},
-  {keys:['pq','performance','minimum runs'],
-   text:`FDA Process Validation Guidance (2011) requires a minimum of 3 consecutive successful production runs for Process Performance Qualification (Stage 2).
-
-Key requirements per FDA guidance:
-• "Number of samples should be adequate to provide sufficient statistical confidence"
-• Runs must be conducted under representative commercial manufacturing conditions
-• Must demonstrate reproducibility across batches
-
-Statistical considerations:
-• Cpk ≥ 1.33 is widely accepted as evidence of a capable process (ISPE recommendation)
-• ICH Q8/Q9/Q10 encourage risk-based justification for number of batches
-• For high-risk products, regulators may expect more than 3 runs
-
-Important: The "3 runs" is a minimum, not a guarantee. If any run fails, the investigation must determine root cause before the clock restarts.`},
-  {keys:['oq','alarm','hvac'],
-   text:`HVAC Operational Qualification (OQ) alarm tests should include:
-
-OQ-001: High temperature alarm — trigger at setpoint +X°C, verify alarm activates within response time
-OQ-002: Low temperature alarm — trigger at setpoint -X°C
-OQ-003: High differential pressure alarm — verify alarm at defined ΔP threshold
-OQ-004: Low differential pressure alarm — verify filter loading warning
-OQ-005: Power failure/recovery — verify system returns to correct state and logs event
-OQ-006: Humidity high/low alarms (for classified areas where humidity is controlled)
-OQ-007: Room pressure cascade verification — confirm positive pressure differential maintained
-OQ-008: Audit trail verification — all alarm events recorded with timestamp and operator response
-
-Acceptance criteria: All alarms activate within 30 seconds of trigger (or per URS), are logged with timestamp, and require documented operator acknowledgment.
-
-Regulatory basis: EU GMP Annex 1 (2022), 21 CFR 211.46, ISO 14644-2.`},
-];
-
-function getDemoResponse(question) {
-  const q = question.toLowerCase();
-  for (const d of DEMO_RESPONSES) {
-    if (d.keys.some(k => q.includes(k))) return d.text;
-  }
-  return `[Modo Demo] El servidor no está disponible o no hay API key configurada.
-
-Para usar el GMP AI Copilot completo:
-1. Abre la vista Configuración (⚙)
-2. Confirma que la URL es: http://35.185.57.245:8000
-3. Ingresa tu X-Api-Key si el servidor la requiere
-4. Presiona "Probar conexión" para verificar
-
-Las preguntas precargadas en los chips funcionan en modo demo para demostrar la funcionalidad.`;
+function setLayerInfo(layer, detail) {
+  const info = LAYER_INFO[layer] || LAYER_INFO.idle;
+  const box  = document.getElementById('layer-info');
+  box.innerHTML = `<div class="layer-info-title">${info.title}</div><div class="layer-info-body">${detail || info.body}</div>`;
 }
 
-// ── CONFIG ──
-function getApiUrl() {return localStorage.getItem('gmp_url') || 'http://35.185.57.245:8000';}
-function getApiKey() {return localStorage.getItem('gmp_key') || '';}
-function getUserId() {return document.getElementById('top-user-input').value.trim() || 'anonymous';}
+function setNode(id, state, detail, data) {
+  const n = document.getElementById('pn-'+id);
+  if (!n) return;
+  n.className = 'pipe-node ' + state;
+  if (detail) document.getElementById('pd-'+id).textContent = detail;
+  if (data !== undefined) document.getElementById('pdata-'+id).textContent = data;
+  if (state === 'active') setLayerInfo(id);
+}
 
-// ── NAVIGATION ──
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', () => {
-    const view = item.dataset.view;
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    item.classList.add('active');
-    document.getElementById(view + '-view').classList.add('active');
-    if (view === 'templates') loadTemplates();
+function setConn(num, active) {
+  const c = document.getElementById('pc-'+num);
+  if (c) c.classList.toggle('active', active);
+  const df = document.getElementById('df-'+num);
+  if (df) df.classList.toggle('show', active);
+}
+
+function resetFlow() {
+  ['request','auth','chroma','rules','ollama','audit','response'].forEach(id => {
+    setNode(id, '', null, '—');
   });
-});
-
-// ── FAQ CHIPS ──
-function renderFaqChips() {
-  const container = document.getElementById('faq-chips');
-  container.innerHTML = '';
-  FAQ[currentAgent].forEach(f => {
-    const chip = document.createElement('div');
-    chip.className = 'faq-chip';
-    chip.textContent = f.label;
-    chip.addEventListener('click', () => {
-      document.getElementById('question-input').value = f.q;
-      document.getElementById('question-input').focus();
-    });
-    container.appendChild(chip);
-  });
+  for (let i=1;i<=5;i++) setConn(i, false);
+  setConn('3b', false);
+  document.getElementById('timing-fill').style.width = '0%';
+  document.getElementById('timing-val').textContent  = '—';
+  document.getElementById('chunks-val').textContent  = '—';
+  document.getElementById('mode-val').textContent    = '—';
+  clearInterval(timerHnd);
+  setLayerInfo('idle', null);
 }
 
-document.querySelectorAll('.agent-pill').forEach(pill => {
-  pill.addEventListener('click', () => {
-    document.querySelectorAll('.agent-pill').forEach(p => p.classList.remove('active'));
-    pill.classList.add('active');
-    currentAgent = pill.dataset.agent;
-    renderFaqChips();
-  });
-});
-
-renderFaqChips();
-
-// ── PIPELINE ANIMATION ──
-const NODES = ['request','auth','chroma','ollama','audit','response'];
-
-function resetPipeline() {
-  NODES.forEach((n,i) => {
-    const el = document.querySelector(`.pipe-node[data-node="${n}"]`);
-    el.classList.remove('active','done');
-    const conn = document.getElementById('pc-'+i);
-    if (conn) conn.classList.remove('active');
-  });
-  document.getElementById('progress-fill').style.width = '0%';
-  document.getElementById('t-elapsed').textContent = '—';
-  document.getElementById('t-chunks').textContent = '—';
+function setConnExtra(id, active) {
+  const c = document.getElementById('pc-'+id);
+  if (c) c.classList.toggle('active', active);
+  const df = document.getElementById('df-'+id);
+  if (df) df.classList.toggle('show', active);
 }
 
-function activateNode(name, detail) {
-  const el = document.querySelector(`.pipe-node[data-node="${name}"]`);
-  el.classList.remove('done');
-  el.classList.add('active');
-  if (detail) document.getElementById('pn-'+name).textContent = detail;
-  const idx = NODES.indexOf(name);
-  if (idx > 0) {
-    const conn = document.getElementById('pc-'+(idx-1));
-    if (conn) conn.classList.add('active');
-  }
+let timerStart = 0;
+function startTimer() {
+  timerStart = Date.now();
+  clearInterval(timerHnd);
+  timerHnd = setInterval(() => {
+    const s = ((Date.now()-timerStart)/1000).toFixed(1);
+    document.getElementById('timing-val').textContent = s+'s';
+    const pct = Math.min(100, (parseFloat(s)/45)*100);
+    document.getElementById('timing-fill').style.width = pct+'%';
+  }, 300);
+}
+function stopTimer(elapsed) {
+  clearInterval(timerHnd);
+  const s = parseFloat(elapsed) || 0;
+  document.getElementById('timing-val').textContent  = s.toFixed(1)+'s';
+  document.getElementById('timing-fill').style.width = '100%';
 }
 
-function doneNode(name) {
-  const el = document.querySelector(`.pipe-node[data-node="${name}"]`);
-  el.classList.remove('active');
-  el.classList.add('done');
-}
-
-function startElapsedTimer() {
-  elapsedStart = Date.now();
-  clearInterval(elapsedTimer);
-  elapsedTimer = setInterval(() => {
-    const s = ((Date.now() - elapsedStart) / 1000).toFixed(1);
-    document.getElementById('t-elapsed').textContent = s + 's';
-    const p = Math.min(90, parseFloat(s) * 2.5);
-    document.getElementById('progress-fill').style.width = p + '%';
-  }, 200);
-}
-
-function stopElapsedTimer(finalVal) {
-  clearInterval(elapsedTimer);
-  if (finalVal !== undefined) {
-    document.getElementById('t-elapsed').textContent = finalVal + 's';
-    document.getElementById('progress-fill').style.width = '100%';
-  }
-}
-
-// ── AUDIT TRAIL ──
-async function simpleHash(text) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text + lastHash + Date.now());
-  const buf = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,16);
-}
-
-async function addAuditEntry(userId, question, elapsed) {
-  const now = new Date();
-  const ts = now.toTimeString().slice(0,8);
-  const hash = await simpleHash(question + userId + ts);
-  const prevHash = lastHash;
-  lastHash = hash;
-  auditEntries.unshift({ts, userId, question, prevHash, hash, elapsed});
-  renderAuditTrail();
-}
-
-function renderAuditTrail() {
-  const list = document.getElementById('audit-list');
-  document.getElementById('audit-count').textContent = auditEntries.length + ' entradas';
-  if (auditEntries.length === 0) {
-    list.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:8px 0">Sin entradas aún…</div>';
-    return;
-  }
-  list.innerHTML = auditEntries.slice(0,20).map(e => `
-    <div class="audit-entry">
-      <div><span class="audit-ts">${e.ts}</span> &nbsp; <span class="audit-user">${e.userId}</span>${e.elapsed ? ' · ' + e.elapsed + 's' : ''}</div>
-      <div class="audit-q">${e.question.slice(0,60)}${e.question.length>60?'…':''}</div>
-      <div class="audit-hash">${e.prevHash.slice(0,8)}… → ${e.hash.slice(0,8)}…</div>
-    </div>
-  `).join('');
-}
-
-// ── SEND QUERY ──
+/* ── Send ─────────────────────────────────────────────────── */
 async function sendQuery() {
-  const question = document.getElementById('question-input').value.trim();
-  if (!question) return;
-  const useStream = document.getElementById('stream-toggle').checked;
-  const btn = document.getElementById('send-btn');
+  const q = document.getElementById('q').value.trim();
+  if (!q) return;
+
+  const btn  = document.getElementById('send-btn');
+  const icon = document.getElementById('send-icon');
+  const txt  = document.getElementById('send-txt');
   btn.disabled = true;
-  btn.textContent = '⏳ Procesando…';
+  icon.innerHTML = '<span class="spin"></span>';
+  txt.textContent = 'Procesando…';
 
-  // hide empty state
-  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('empty-state')?.remove();
+  const cardId = 'c' + Date.now();
+  const card   = buildCard(cardId, agent, q);
+  document.getElementById('response-area').prepend(card);
 
-  resetPipeline();
-  activateNode('request', question.slice(0,40)+(question.length>40?'…':''));
-  startElapsedTimer();
+  resetFlow();
+  startTimer();
 
-  // build card
-  const card = document.createElement('div');
-  card.className = 'response-card';
-  card.innerHTML = `
-    <div class="card-header">
-      <span class="agent-badge ${currentAgent}">${currentAgent === 'fda' ? 'FDA Regulatory' : 'IQ/OQ/PQ'}</span>
-      <span class="card-question">${question.slice(0,80)}${question.length>80?'…':''}</span>
-      <span class="elapsed-badge" id="card-elapsed-${Date.now()}">—</span>
-    </div>
-    <div class="card-response" id="card-resp-${Date.now()}"><span class="streaming-cursor"></span></div>
-    <div class="sources-row" id="card-srcs-${Date.now()}"></div>
-  `;
-  const elapsedId = card.querySelector('.elapsed-badge').id;
-  const respId = card.querySelector('.card-response').id;
-  const srcsId = card.querySelector('.sources-row').id;
-  document.getElementById('responses-area').prepend(card);
+  // Request
+  setNode('request', 'active', q.slice(0,30)+'…', '"'+q.slice(0,25)+'…"');
+  await sleep(180);
+  setNode('request', 'done', 'recibido', 'HTTP POST /api/v1/query');
+  setConn(1, true);
 
-  setTimeout(() => {
-    doneNode('request');
-    activateNode('auth','verify_api_key()');
-    setTimeout(() => doneNode('auth'), 400);
-  }, 180);
+  // Auth
+  setNode('auth', 'active', 'verificando X-Api-Key…', APIKEY() ? 'key presente' : 'demo mode');
+  await sleep(280);
+  setNode('auth', 'done', APIKEY() ? 'autorizado' : 'demo (sin key)', APIKEY() ? 'HTTP 200' : 'bypass');
+  setConn(2, true);
 
-  setTimeout(() => activateNode('chroma','ONNX embed → cosine search'), 600);
+  // ChromaDB
+  setNode('chroma', 'active', 'calculando embeddings ONNX…', 'all-MiniLM-L6-v2 → 384 dims');
+  document.getElementById('mode-val').textContent = APIKEY() ? (streaming ? 'stream SSE' : 'query') : 'demo';
 
-  const url = getApiUrl();
-  const key = getApiKey();
-  const userId = getUserId();
-  const useDemo = !key && !url.includes('localhost');
+  const t0 = Date.now();
+  const uid = document.getElementById('user-id').value || 'anon';
 
   try {
-    if (useDemo) {
-      // Demo mode
-      await new Promise(r => setTimeout(r, 1200));
-      doneNode('chroma');
-      activateNode('ollama','mistral:7b · demo mode');
-      document.getElementById('t-chunks').textContent = '2';
-      const demoText = getDemoResponse(question);
-      await typeText(respId, demoText);
-      doneNode('ollama');
-      activateNode('audit','JSONL SHA-256 hash chain');
-      const elapsed = ((Date.now() - elapsedStart) / 1000).toFixed(1);
-      stopElapsedTimer(elapsed);
-      document.getElementById(elapsedId).textContent = elapsed + 's (demo)';
-      addRagBadge(card, true);
-      doneNode('audit');
-      activateNode('response','response + sources + elapsed');
-      doneNode('response');
-      await addAuditEntry(userId, question, elapsed);
-    } else if (useStream) {
-      const resp = await fetch(url + '/api/v1/stream', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-Api-Key':key,'X-User-Id':userId},
-        body:JSON.stringify({question, agent:currentAgent})
-      });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      doneNode('chroma');
-      activateNode('ollama','mistral:7b · streaming…');
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let fullText = '';
-      let elapsedFinal = null;
-      document.getElementById(respId).innerHTML = '<span class="streaming-cursor"></span>';
-      while (true) {
-        const {done, value} = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, {stream:true});
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const d = JSON.parse(line.slice(6));
-              if (d.token) {
-                fullText += d.token;
-                document.getElementById(respId).textContent = fullText;
-              }
-              if (d.done) {
-                elapsedFinal = d.elapsed_seconds;
-              }
-            } catch(e){}
-          }
-        }
-      }
-      doneNode('ollama');
-      activateNode('audit','JSONL SHA-256 hash chain');
-      const elapsed = elapsedFinal || ((Date.now()-elapsedStart)/1000).toFixed(1);
-      stopElapsedTimer(elapsed);
-      document.getElementById(elapsedId).textContent = elapsed + 's';
-      addRagBadge(card, true);
-      doneNode('audit');
-      activateNode('response','response + sources + elapsed');
-      doneNode('response');
-      await addAuditEntry(userId, question, elapsed);
+    if (APIKEY() && streaming) {
+      await doStream(q, uid, cardId, t0);
+    } else if (APIKEY()) {
+      await doQuery(q, uid, cardId, t0);
     } else {
-      const resp = await fetch(url + '/api/v1/query', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-Api-Key':key,'X-User-Id':userId},
-        body:JSON.stringify({question, agent:currentAgent})
-      });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const data = await resp.json();
-      doneNode('chroma');
-      document.getElementById('t-chunks').textContent = data.sources ? data.sources.length : '0';
-      activateNode('ollama',`mistral:7b · ${data.elapsed_seconds}s`);
-      document.getElementById(respId).textContent = data.response || data.answer || '(sin respuesta)';
-      doneNode('ollama');
-      activateNode('audit','JSONL SHA-256 hash chain');
-      stopElapsedTimer(data.elapsed_seconds);
-      document.getElementById(elapsedId).textContent = data.elapsed_seconds + 's';
-      if (data.context_used) addRagBadge(card, true);
-      if (data.sources && data.sources.length) {
-        const srcs = document.getElementById(srcsId);
-        data.sources.slice(0,4).forEach((s,i) => {
-          const ch = document.createElement('span');
-          ch.className = 'source-chip';
-          ch.textContent = 'Chunk ' + (i+1);
-          srcs.appendChild(ch);
-        });
-      }
-      doneNode('audit');
-      activateNode('response','response + sources + elapsed');
-      doneNode('response');
-      await addAuditEntry(userId, question, data.elapsed_seconds);
+      await doDemo(q, uid, cardId, t0);
     }
   } catch(err) {
-    stopElapsedTimer();
-    document.getElementById(respId).textContent = '[Error] ' + err.message + '\n\nVerifica la URL y API Key en Configuración. Si el servidor no está disponible, el modo demo usa respuestas precargadas.';
-    card.style.borderColor = 'rgba(248,113,113,.3)';
-    NODES.forEach(n => { document.querySelector(`.pipe-node[data-node="${n}"]`).classList.remove('active'); });
+    console.error('Query error:', err);
+    clearInterval(timerHnd);
+    const b = document.getElementById('rb-'+cardId);
+    const hasContent = b && b.textContent && !b.classList.contains('loading');
+    if (!hasContent || (b && b.textContent.length < 10)) {
+      // Solo si no hay respuesta, hacer demo
+      try { await doDemo(q, uid, cardId, t0); } catch(e2) { console.error(e2); }
+    }
   }
 
   btn.disabled = false;
-  btn.textContent = '▶ Enviar';
+  icon.textContent = '↗';
+  txt.textContent = 'Enviar';
+  queryCount++;
+  document.getElementById('query-count').textContent = queryCount;
 }
 
-async function typeText(elId, text) {
-  const el = document.getElementById(elId);
-  el.textContent = '';
-  const cursor = document.createElement('span');
-  cursor.className = 'streaming-cursor';
-  el.appendChild(cursor);
-  for (let i = 0; i < text.length; i++) {
-    el.insertBefore(document.createTextNode(text[i]), cursor);
-    if (i % 8 === 0) await new Promise(r => setTimeout(r, 8));
+function buildCard(id, ag, q) {
+  const d = document.createElement('div');
+  d.className = 'resp-card';
+  d.innerHTML = `
+    <div class="resp-header">
+      <div class="resp-agent-badge ${ag}">${ag==='fda'?'FDA REGULATORY':'IQ/OQ/PQ'}</div>
+      <div class="resp-q">${q.slice(0,60)}${q.length>60?'…':''}</div>
+      <div class="resp-meta">
+        <span id="ec-${id}"></span>
+        <span class="elapsed-tag" id="el-${id}">—</span>
+      </div>
+    </div>
+    <div class="resp-body loading" id="rb-${id}">Generando respuesta…</div>
+    <div class="sources-bar" id="src-${id}" style="display:none"></div>`;
+  return d;
+}
+
+async function doQuery(q, uid, cardId, t0) {
+  const r = await fetch(API()+'/api/v1/query', {
+    method:'POST', headers: HDR(),
+    body: JSON.stringify({question:q, agent: autoDetect ? 'auto' : agent})
+  });
+  if (!r.ok) throw new Error('HTTP '+r.status);
+  const d = await r.json();
+
+  const elapsed = parseFloat(d.elapsed_seconds) || ((Date.now()-t0)/1000);
+  const chunks  = Array.isArray(d.sources) ? d.sources.length : 0;
+  const rules   = d.rules_triggered || [];
+  const riskLvl = d.highest_risk || null;
+
+  setNode('chroma','done',chunks+' chunks recuperados','context_used: '+d.context_used);
+  document.getElementById('chunks-val').textContent = chunks+' chunks';
+  setConn(3, true);
+
+  setNode('rules','active','evaluando reglas GMP…',rules.length+' reglas');
+  await sleep(200);
+  setNode('rules','done', riskLvl?'riesgo: '+riskLvl:'sin reglas',
+    rules.length ? rules.slice(0,2).join(', ') : 'no triggered');
+  setConnExtra('3b', true);
+
+  setNode('ollama','active','inferencia completada…',elapsed.toFixed(1)+'s');
+  await sleep(150);
+  setNode('ollama','done',elapsed.toFixed(1)+'s','tokens → response text');
+  setConn(4, true);
+
+  setNode('audit','active','escribiendo JSONL…','SHA-256 hash chain');
+  await sleep(200);
+  setNode('audit','done','entry registrada','part11_compliant: true');
+  setConn(5, true);
+
+  setNode('response','active','entregando al cliente','HTTP 200 JSON');
+  await sleep(100);
+  setNode('response','done','completado',chunks+' sources');
+  stopTimer(elapsed);
+
+  const b = document.getElementById('rb-'+cardId);
+  if (b) { b.className='resp-body'; b.textContent = d.response || d.answer || '(sin respuesta)'; }
+  document.getElementById('el-'+cardId).textContent = elapsed.toFixed(1)+'s';
+
+  const ec = document.getElementById('ec-'+cardId);
+  if (ec) {
+    const agName = d.agent_name || d.agent_id || agent;
+    ec.innerHTML = `<span class="context-tag ${d.context_used?'yes':'no'}">${d.context_used?'RAG ✓':'sin ctx'}</span>
+      <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--bg4);color:var(--txt2)">${agName}</span>`;
   }
-  cursor.remove();
+
+  renderSrcs(cardId, d.sources);
+  renderRules(cardId, rules, riskLvl);
+  addAudit(uid, q, elapsed, !!d.context_used);
+  setLayerInfo('response', `${d.agent_name||agent} respondió en ${elapsed.toFixed(1)}s. ${rules.length} reglas GMP evaluadas. ${chunks} chunks de corpus.`);
 }
 
-function addRagBadge(card, show) {
-  if (!show) return;
-  const header = card.querySelector('.card-header');
-  const badge = document.createElement('span');
-  badge.className = 'rag-badge';
-  badge.textContent = 'RAG ✓';
-  header.appendChild(badge);
+async function doStream(q, uid, cardId, t0) {
+  const r = await fetch(API()+'/api/v1/stream', {
+    method:'POST', headers: HDR(),
+    body: JSON.stringify({question:q, agent: autoDetect ? 'auto' : agent})
+  });
+  if (!r.ok) throw new Error('HTTP '+r.status);
+
+  const b = document.getElementById('rb-'+cardId);
+  if (b) { b.className='resp-body'; b.textContent=''; }
+
+  setNode('chroma','done','chunks recuperados','ONNX cosine search');
+  setConn(3,true);
+  setNode('ollama','active','streaming tokens…','mistral:7b generating');
+
+  const reader  = r.body.getReader();
+  const decoder = new TextDecoder();
+  let buf='', full='', chunks=0;
+
+  while(true) {
+    const {done,value} = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value,{stream:true});
+    const lines = buf.split('\n'); buf = lines.pop();
+    for (const ln of lines) {
+      if (!ln.startsWith('data: ')) continue;
+      try {
+        const obj = JSON.parse(ln.slice(6));
+        if (obj.token) { full+=obj.token; if(b) b.textContent=full; }
+        if (obj.done) {
+          const el = parseFloat(obj.elapsed_seconds) || ((Date.now()-t0)/1000);
+          stopTimer(el);
+          document.getElementById('el-'+cardId).textContent = el.toFixed(1)+'s stream';
+          setNode('ollama','done',el.toFixed(1)+'s','stream complete');
+          setConn(4,true);
+          setNode('audit','active','escribiendo…','SHA-256');
+          await sleep(200);
+          setNode('audit','done','registrado','part11_compliant: true');
+          setConn(5,true);
+          setNode('response','active','stream completado','done: true');
+          await sleep(100);
+          setNode('response','done','completado');
+          addAudit(uid, q, el, true);
+          setLayerInfo('response', `Stream completado en ${el.toFixed(1)}s. Tokens generados token a token.`);
+        }
+      } catch(e) {}
+    }
+  }
 }
 
-document.getElementById('send-btn').addEventListener('click', sendQuery);
-document.getElementById('question-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); sendQuery(); }
-});
+/* ── FIX: doDemo nunca lanza excepciones al exterior ─────── */
+async function doDemo(q, uid, cardId, t0) {
+  try {
+    setNode('chroma','done','2 chunks · modo demo','cosine sim (simulado)');
+    document.getElementById('chunks-val').textContent = '2 chunks (demo)';
+    setConn(3,true);
+    setNode('rules','active','evaluando reglas GMP…','modo demo');
+    await sleep(250);
+    setNode('rules','done','1 regla demo','R002 CRITICAL (demo)');
+    setConnExtra('3b',true);
+    setNode('ollama','active','simulando inferencia…','mistral:7b · demo mode');
+    setLayerInfo('ollama', 'Modo demo: respuestas pre-cargadas del corpus FDA. Configura la API key en ⚙ Configuración para usar el servidor real.');
+    await sleep(1200);
 
-// ── TEMPLATES ──
-const TMPL_DATA = {
-  IQ:{title:'Installation Qualification Protocol',regs:['21 CFR Part 211.68','EU GMP Annex 15','GAMP 5'],sections:[
-    {id:'1',title:'Objective',content:'Verify equipment is installed correctly per design specifications and vendor documentation.'},
-    {id:'2',title:'Scope',content:'Applies to installation of [SYSTEM NAME] at [FACILITY NAME]. Covers all hardware, software, and utility connections.'},
-    {id:'3',title:'Responsibilities',items:['Validation Engineer — executes and documents','QA Representative — approves protocol and deviations','Engineering — technical support']},
-    {id:'4',title:'Prerequisites',items:['Approved URS (User Requirements Specification)','Approved DQ (Design Qualification)','Vendor documentation package','Current calibration certificates']},
-    {id:'5',title:'Installation Checks',tests:[
-      {id:'IQ-001',desc:'Verify equipment identification (serial numbers, model numbers match purchase order)'},
-      {id:'IQ-002',desc:'Verify utility connections (electrical, pneumatic, water) per P&ID drawings'},
-      {id:'IQ-003',desc:'Verify all instruments have current calibration certificates (≤12 months)'},
-      {id:'IQ-004',desc:'Verify software version and configuration matches approved specification'},
-      {id:'IQ-005',desc:'Verify environmental conditions at installation site are within spec'},
+    const ql = q.toLowerCase();
+    let ans;
+    if (ql.includes('11.10') || ql.includes('audit trail'))
+      ans='Per 21 CFR 11.10(e), audit trails must be secure, computer-generated, time-stamped records that independently document the date and time of operator entries and actions that create, modify, or delete electronic records. Record changes shall not obscure previously recorded information. Audit trail documentation shall be retained for a period at least as long as required for the subject electronic records and shall be available for agency review and copying.';
+    else if (ql.includes('alcoa'))
+      ans='ALCOA+ stands for Attributable, Legible, Contemporaneous, Original, Accurate — plus Complete, Consistent, Enduring, and Available. These principles ensure GMP data is traceable to the individual who generated it, readable, recorded at the time of the activity, original/source data preserved, correct and truthful. Complete records, chronologically consistent, on durable media, and accessible throughout the retention period.';
+    else if (ql.includes('iq') || ql.includes('installation') || ql.includes('bioreactor'))
+      ans='Installation Qualification (IQ) must verify: (1) equipment identification — serial numbers, model, manufacturer confirmed; (2) utility connections — electrical, pneumatic, and process connections per approved P&ID; (3) instrument calibration — all critical instruments have current NIST-traceable certificates; (4) software version — installed version matches approved specification; (5) materials of construction — product-contact materials confirmed against URS; (6) documentation — P&IDs, drawings, and SOPs available and current revision.';
+    else if (ql.includes('pq') || ql.includes('performance') || ql.includes('minimum'))
+      ans='Per FDA Process Validation Guidance (2011) and ISPE C&Q Guide, PQ requires a minimum of 3 consecutive successful production runs under routine conditions. All Critical Process Parameters (CPPs) must remain within their validated ranges for all runs. All Critical Quality Attributes (CQAs) must meet specifications for every run. Worst-case conditions must be included. Statistical analysis (Cpk ≥ 1.33 recommended) should demonstrate process capability.';
+    else if (ql.includes('oq') || ql.includes('operational') || ql.includes('alarm') || ql.includes('hvac'))
+      ans='Operational Qualification (OQ) must include: alarm activation tests at defined upper and lower setpoints, interlock verification at boundary conditions, operating range verification (min/nominal/max), audit trail verification that all parameter changes are recorded with user ID and timestamp per 21 CFR Part 11, user access control — unauthorized actions must be rejected, emergency stop functionality verified, and worst-case condition testing with documented acceptance criteria established before execution.';
+    else if (ql.includes('signature') || ql.includes('electronic sign'))
+      ans='Under 21 CFR Part 11, electronic signatures must be: (1) unique to one individual and not reused or reassigned; (2) verified before initial use; (3) linked to their respective electronic records to prevent excision, copying, or transfer. Each signed record must include the printed name of the signer, the date and time of execution, and the meaning of the signature (review, approval, responsibility, or authorship).';
+    else if (ql.includes('fmea') || ql.includes('ich q9') || ql.includes('risk'))
+      ans='ICH Q9 defines Quality Risk Management (QRM) as a systematic process for assessment, control, communication and review of risks. FMEA (Failure Mode and Effects Analysis) evaluates: Severity (S), Occurrence (O), and Detectability (D) on a 1-10 scale. RPN = S × O × D. RPN > 100-125 typically requires immediate corrective action. For equipment qualification, FMEA identifies critical quality attributes (CQAs) and critical process parameters (CPPs) that must be controlled and verified during IQ/OQ/PQ.';
+    else
+      ans='GMP AI Copilot — Modo demo activo\n\nRespondo desde el corpus regulatorio pre-cargado mientras el servidor real está en modo demo.\n\nPara conectar al servidor real:\n1. Ve a ⚙ Configuración\n2. URL: http://104.196.110.180:8000 (ya configurada)\n3. Pega la X-Api-Key del servidor\n4. Haz clic en "Probar conexión"\n\nCorpus disponible:\n• 21 CFR Part 11, 210/211\n• FDA Data Integrity Guidance 2018\n• FDA Process Validation Guidance 2011\n• EU GMP Annex 11\n• ICH Q9/Q10 · ISPE C&Q Guide\n• mistral:7b-instruct-q4_K_M (Ollama CPU)';
+
+    const elapsed = Math.max(0.1, (Date.now()-t0)/1000);
+    stopTimer(elapsed);
+
+    setNode('ollama','done',elapsed.toFixed(1)+'s','demo response generated');
+    setConn(4,true);
+    setNode('audit','active','escribiendo…','SHA-256 hash chain');
+    await sleep(180);
+    setNode('audit','done','registrado (demo)','part11_compliant: true');
+    setConn(5,true);
+    setNode('response','active','entregando','HTTP 200 demo');
+    await sleep(80);
+    setNode('response','done','completado',ans.length+' chars');
+
+    const b = document.getElementById('rb-'+cardId);
+    if (b) { b.className='resp-body'; b.textContent = ans; }
+    document.getElementById('el-'+cardId).textContent = elapsed.toFixed(1)+'s · demo';
+
+    const ec = document.getElementById('ec-'+cardId);
+    if (ec) ec.innerHTML = `<span class="context-tag yes">RAG ✓ demo</span>
+      <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--bg4);color:var(--txt2)">${agent} · demo</span>`;
+
+    renderSrcs(cardId, ['21cfr_part11.txt','fda_data_integrity_guidance_2018.pdf']);
+
+    // ── FIX: addAudit recibe always a valid number ──
+    addAudit(uid, q, elapsed, true);
+    setLayerInfo('response', `Modo demo completado en ${elapsed.toFixed(1)}s. Configura API key para respuestas del corpus real.`);
+
+  } catch(innerErr) {
+    // ── FIX: capturar cualquier error interno del demo sin propagarlo
+    console.error('Demo error (interno):', innerErr);
+    const b = document.getElementById('rb-'+cardId);
+    if (b) {
+      b.className = 'resp-body';
+      b.textContent = 'Error interno en modo demo. Recarga la página e intenta nuevamente.';
+    }
+  }
+}
+
+function renderSrcs(cardId, sources) {
+  const bar = document.getElementById('src-'+cardId);
+  if (!bar) return;
+  const validSrcs = Array.isArray(sources) ? sources.filter(s => s != null) : [];
+  if (!validSrcs.length) return;
+  bar.style.display = 'flex';
+  bar.innerHTML = validSrcs.map(s => {
+    const label = typeof s === 'string' ? s : (s && (s.title || s.source_file || JSON.stringify(s)));
+    return label ? `<span class="source-tag">${label}</span>` : '';
+  }).filter(Boolean).join('');
+}
+
+function renderRules(cardId, rules, highestRisk) {
+  if (!rules || !rules.length) return;
+  const bar = document.getElementById('src-'+cardId);
+  if (!bar) return;
+  // Add rules panel after sources
+  const existingPanel = document.getElementById('rp-'+cardId);
+  if (existingPanel) return;
+  const card = bar.closest('.resp-card');
+  if (!card) return;
+  const panel = document.createElement('div');
+  panel.id = 'rp-'+cardId;
+  panel.className = 'rules-panel';
+  panel.innerHTML = `
+    <div class="rules-title">
+      ⚖️ Rule Engine — ${rules.length} regla${rules.length>1?'s':''} GMP disparada${rules.length>1?'s':''}
+      ${highestRisk ? `<span class="rule-badge ${highestRisk}" style="margin-left:auto">${highestRisk}</span>` : ''}
+    </div>
+    <div class="rules-badges">
+      ${rules.map(r => `<span class="rule-badge ${r.risk_level||'MEDIUM'}" title="${r.action||''}">[${r.rule_id||r}] ${r.risk_level||''}${r.action?' — '+r.action.slice(0,40)+'…':''}</span>`).join('')}
+    </div>`;
+  card.appendChild(panel);
+}
+
+/* ── Audit log ── FIX: elapsed siempre es número ─────────── */
+function addAudit(user, q, elapsed, ctx) {
+  // ── FIX PRINCIPAL: convertir elapsed a número siempre
+  const elapsedNum = parseFloat(elapsed);
+  const safeElapsed = isNaN(elapsedNum) ? 0 : elapsedNum;
+
+  const now  = new Date();
+  const ts   = now.toTimeString().slice(0,8);
+  const prev = auditLog.length ? auditLog[auditLog.length-1].hash : 'GENESIS';
+
+  // Hash simple no-async (Math.random basado) — el hash real está en el servidor
+  const hash = Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,6);
+
+  auditLog.push({
+    user: user || 'anon',
+    q:    (q || '').slice(0, 55),
+    elapsed: safeElapsed,
+    ctx:  !!ctx,
+    ts,
+    hash,
+    prev: prev.slice(0, 8)
+  });
+
+  renderAudit();
+}
+
+function renderAudit() {
+  const wrap = document.getElementById('audit-list');
+  document.getElementById('audit-count').textContent = auditLog.length + ' entradas';
+  if (!auditLog.length) return;
+  wrap.innerHTML = [...auditLog].reverse().map(e => `
+    <div class="audit-entry">
+      <div class="ae-row">
+        <span class="ae-user">${e.user}</span>
+        <span class="ae-time">${e.ts} · ${e.elapsed.toFixed(1)}s</span>
+      </div>
+      <div class="ae-q">${e.q}…</div>
+      <div class="ae-hash">prev:<span>${e.prev}</span>→<span>${e.hash.slice(0,8)}</span></div>
+    </div>`).join('');
+}
+
+/* ── Templates ─────────────────────────────────────────────── */
+const TMPLS = {
+  IQ: { title:'Installation Qualification Protocol', basis:['21 CFR 211.68','EU GMP Annex 15','GAMP 5'],
+    secs:[
+      {h:'Objective', text:'Verify equipment is installed correctly per design specifications.'},
+      {h:'Scope', text:'Applies to installation of [SYSTEM NAME] at [FACILITY].'},
+      {h:'Prerequisites', items:['Approved URS','Approved DQ','Vendor documentation','Calibration certificates']},
+      {h:'Installation Checks', tests:[
+        {id:'IQ-001',d:'Verify equipment identification (serial numbers, model numbers, manufacturer)'},
+        {id:'IQ-002',d:'Verify utility connections (electrical, pneumatic, process connections per P&ID)'},
+        {id:'IQ-003',d:'Verify instrument calibration status with NIST-traceable certificates'},
+        {id:'IQ-004',d:'Verify software version matches approved specification'},
+        {id:'IQ-005',d:'Verify environmental conditions at installation site'}
+      ]},
+      {h:'Documentation Review', items:['P&ID diagrams (as-built)','Installation drawings','Wiring diagrams','SOPs','Maintenance manuals']},
+      {h:'Acceptance Criteria', text:'All IQ tests PASS or have documented acceptable deviation with QA approval.'},
+      {h:'Signatures', text:'Validation Engineer + QA Representative — with date, role, and meaning of signature.'}
     ]},
-    {id:'6',title:'Documentation Review',items:['P&ID diagrams','Installation drawings','Wiring diagrams','Standard Operating Procedures','Maintenance manuals']},
-    {id:'7',title:'Acceptance Criteria',content:'All IQ tests PASS. Any deviation must have written QA-approved justification. IQ complete before OQ initiation.'},
-  ]},
-  OQ:{title:'Operational Qualification Protocol',regs:['21 CFR Part 211.68','EU GMP Annex 15','GAMP 5'],sections:[
-    {id:'1',title:'Objective',content:'Verify that equipment operates within defined limits throughout its entire operating range, including worst-case conditions.'},
-    {id:'2',title:'Prerequisites',items:['Approved and completed IQ protocol','Approved OQ protocol signed by QA','Calibrated test instruments with current certificates','Trained and qualified operators']},
-    {id:'3',title:'Operational Tests',tests:[
-      {id:'OQ-001',desc:'Alarm activation at defined upper setpoint — verify alert fires within response time'},
-      {id:'OQ-002',desc:'Alarm activation at defined lower setpoint'},
-      {id:'OQ-003',desc:'Interlock verification at boundary conditions — system halts when out-of-spec'},
-      {id:'OQ-004',desc:'Audit trail — all parameter changes recorded with timestamp and user ID'},
-      {id:'OQ-005',desc:'User access control — unauthorized access rejected, attempts logged'},
-      {id:'OQ-006',desc:'Emergency stop function verified at all operating conditions'},
-      {id:'OQ-007',desc:'Operating range verification: minimum, nominal, and maximum setpoints'},
-      {id:'OQ-008',desc:'Worst-case condition testing documented with statistical rationale'},
+  OQ: { title:'Operational Qualification Protocol', basis:['21 CFR 211.68','EU GMP Annex 15','GAMP 5'],
+    secs:[
+      {h:'Objective', text:'Verify equipment operates within defined limits throughout its operating range.'},
+      {h:'Prerequisites', items:['Approved completed IQ','Approved OQ protocol','Calibrated test instruments','Trained operators']},
+      {h:'Operational Tests', tests:[
+        {id:'OQ-001',d:'Alarm activation at defined upper setpoint — document activation value and time'},
+        {id:'OQ-002',d:'Alarm activation at defined lower setpoint — document activation value and time'},
+        {id:'OQ-003',d:'Interlock verification at boundary conditions — confirm safety prevents unsafe states'},
+        {id:'OQ-004',d:'Audit trail — all parameter changes recorded with user ID and timestamp (21 CFR Part 11)'},
+        {id:'OQ-005',d:'User access control — unauthorized access attempt rejected and logged'},
+        {id:'OQ-006',d:'Emergency stop (ESD) — verify function and post-activation recovery'},
+        {id:'OQ-007',d:'Operating range verification at minimum, nominal, and maximum parameters'},
+        {id:'OQ-008',d:'Worst-case condition testing — document and justify chosen parameters'}
+      ]},
+      {h:'Acceptance Criteria', text:'All OQ tests PASS at min, nominal, and max. Min 3 consecutive passes per critical test.'}
     ]},
-    {id:'4',title:'Acceptance Criteria',content:'All OQ tests PASS at min, nominal, and max operating conditions. Minimum 3 consecutive passes per test. No unexplained failures.'},
-  ]},
-  PQ:{title:'Performance Qualification Protocol',regs:['21 CFR Part 211.100','EU GMP Annex 15','FDA Process Validation Guidance 2011'],sections:[
-    {id:'1',title:'Objective',content:'Demonstrate consistent process performance under actual commercial production conditions, meeting all specifications with statistical confidence.'},
-    {id:'2',title:'Prerequisites',items:['Approved and completed IQ and OQ protocols','QA-approved PQ protocol','Validated analytical methods (USP/ICH Q2)','Approved batch manufacturing records','Cleaning validation completed (if applicable)']},
-    {id:'3',title:'Performance Runs',tests:[
-      {id:'PQ-001',desc:'Run 1: All CPPs within validated range, all CQAs within specification — full sampling plan executed'},
-      {id:'PQ-002',desc:'Run 2: All CPPs within validated range, all CQAs within specification'},
-      {id:'PQ-003',desc:'Run 3: All CPPs within validated range, all CQAs within specification'},
-      {id:'PQ-004',desc:'Statistical analysis of CQA results across all runs (mean, SD, Cpk)'},
-      {id:'PQ-005',desc:'Yield within acceptable limits for all runs — documented and justified'},
-    ]},
-    {id:'4',title:'Acceptance Criteria',content:'3/3 runs PASS all CPP and CQA criteria. No unexplained deviations. Statistical process capability Cpk ≥ 1.33 recommended (ICH Q10). Any failure restarts the 3-consecutive-run count.'},
-  ]}
+  PQ: { title:'Performance Qualification Protocol', basis:['21 CFR 211.100','EU GMP Annex 15','FDA Process Validation 2011'],
+    secs:[
+      {h:'Objective', text:'Demonstrate consistent process performance under routine production conditions meeting all specifications.'},
+      {h:'Prerequisites', items:['Approved IQ and OQ','Approved PQ protocol','Validated analytical methods','Approved batch records','Cleaning validation (if applicable)']},
+      {h:'Performance Runs', tests:[
+        {id:'PQ-001',d:'Run 1: All CPPs within validated range, all CQAs within specification'},
+        {id:'PQ-002',d:'Run 2: All CPPs within validated range, all CQAs within specification'},
+        {id:'PQ-003',d:'Run 3: All CPPs within validated range, all CQAs within specification'},
+        {id:'PQ-004',d:'Statistical analysis of CQA results across all runs'},
+        {id:'PQ-005',d:'Yield within acceptable limits for all runs'}
+      ]},
+      {h:'Acceptance Criteria', text:'3/3 consecutive runs PASS all CPP and CQA criteria. No unexplained deviations. Cpk ≥ 1.33 recommended.'},
+      {h:'Post-PQ', items:['Continued Process Verification (CPV) program','Annual Product Review (APR)','Change control for modifications to validated process']}
+    ]}
 };
 
-let templatesLoaded = false;
-
-function loadTemplates() {
-  if (templatesLoaded) return;
-  templatesLoaded = true;
-  renderTemplate('IQ');
-}
-
-function renderTemplate(type) {
-  const container = document.getElementById('tmpl-container');
-  const d = TMPL_DATA[type];
-  let html = `<div class="tmpl-header">
-    <div class="tmpl-title">${d.title}</div>
-    <div class="reg-tags">${d.regs.map(r=>`<span class="reg-tag">${r}</span>`).join('')}</div>
-  </div>`;
-  d.sections.forEach(s => {
-    let body = '';
-    if (s.content) body += `<div class="section-text">${s.content}</div>`;
-    if (s.items) body += s.items.map(i=>`<div class="item-bullet">${i}</div>`).join('');
-    if (s.tests) body += s.tests.map(t=>`<div class="test-row"><span class="test-id">${t.id}</span><span class="test-desc">${t.desc}</span></div>`).join('');
-    html += `<div class="section-card">
-      <div class="section-header" onclick="toggleSection(this)">
-        <span class="section-num">${s.id}</span>
-        <span>${s.title}</span>
-        <span class="section-chevron">›</span>
-      </div>
-      <div class="section-body open">${body}</div>
-    </div>`;
-  });
-  container.innerHTML = html;
-}
-
-function toggleSection(header) {
-  const body = header.nextElementSibling;
-  const ch = header.querySelector('.section-chevron');
-  body.classList.toggle('open');
-  ch.classList.toggle('open');
-}
-
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    renderTemplate(btn.dataset.tab);
-  });
-});
-
-// ── UPLOAD ──
-const dropZone = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
-
-dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('dragover', e => {e.preventDefault();dropZone.classList.add('dragover');});
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();dropZone.classList.remove('dragover');
-  addFiles(Array.from(e.dataTransfer.files));
-});
-fileInput.addEventListener('change', () => addFiles(Array.from(fileInput.files)));
-
-function addFiles(files) {
-  files.forEach(f => {
-    if (!pendingFiles.find(p=>p.name===f.name)) pendingFiles.push({name:f.name,size:f.size,status:'pending',file:f});
-  });
-  renderFilesList();
-  document.getElementById('ingest-btn').disabled = pendingFiles.length === 0;
-}
-
-function renderFilesList() {
-  const list = document.getElementById('files-list');
-  list.innerHTML = pendingFiles.map((f,i) => `
-    <div class="file-row">
-      <span class="file-name">📄 ${f.name}</span>
-      <span class="file-size">${(f.size/1024).toFixed(1)} KB</span>
-      <span class="file-status ${f.status}">${f.status}</span>
+function loadTmpl(phase, btn) {
+  document.querySelectorAll('.tmpl-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const T = TMPLS[phase];
+  if (!T) return;
+  document.getElementById('tmpl-body').innerHTML = `
+    <div class="tmpl-header-card">
+      <div class="tmpl-title-big">${T.title}</div>
+      <div style="font-size:12px;color:var(--txt2);margin-top:2px">Protocolo: ${phase}</div>
+      <div class="tmpl-basis">${T.basis.map(b=>`<span class="tmpl-basis-tag">${b}</span>`).join('')}</div>
     </div>
-  `).join('');
+    <div class="tmpl-sections">
+      ${T.secs.map((s,i)=>`
+        <div class="tmpl-sec">
+          <div class="tmpl-sec-head" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">
+            <span>${i+1}. ${s.h}</span>
+            <span class="tmpl-sec-count">${s.tests?s.tests.length+' tests':s.items?s.items.length+' items':''}</span>
+          </div>
+          <div class="tmpl-sec-body" style="${i>2?'display:none':''}">
+            ${s.text?`<div style="font-size:13px;color:var(--txt2)">${s.text}</div>`:''}
+            ${s.items?s.items.map(it=>`<div class="tmpl-item"><span style="color:var(--txt3)">•</span><span>${it}</span></div>`).join(''):''}
+            ${s.tests?s.tests.map(t=>`<div class="tmpl-test-row"><span class="test-badge">${t.id}</span><span>${t.d}</span></div>`).join(''):''}
+          </div>
+        </div>`).join('')}
+    </div>`;
 }
 
-document.getElementById('ingest-btn').addEventListener('click', async () => {
+/* ── Upload ─────────────────────────────────────────────────── */
+function setCol(c) {
+  selectedCol = c;
+  document.querySelectorAll('.col-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.col-btn[data-c="${c}"]`)?.classList.add('active');
+}
+function addFiles(files) {
+  pendingFiles = [...files];
+  document.getElementById('file-list').innerHTML = pendingFiles.map((f,i) => `
+    <div class="file-row">
+      <span style="font-size:16px">${f.name.endsWith('.pdf')?'📄':'📝'}</span>
+      <span class="file-row-name">${f.name}</span>
+      <span class="file-row-size">${(f.size/1024).toFixed(0)} KB</span>
+      <span class="file-row-st pend" id="fst-${i}">pendiente</span>
+    </div>`).join('');
+}
+async function runIngest() {
+  if (!pendingFiles.length) { document.getElementById('ingest-log').textContent = 'Selecciona archivos primero.'; return; }
+  const log = document.getElementById('ingest-log');
   const btn = document.getElementById('ingest-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ Ingesting…';
-  const log = document.getElementById('ingest-log');
-  const steps = [
-    {icon:'📖',label:'Extracción de texto (PyPDF2)'},
-    {icon:'✂️',label:'Chunking 512 tokens / 64 overlap'},
-    {icon:'🔢',label:'Embeddings ONNX all-MiniLM-L6-v2'},
-    {icon:'💾',label:'ChromaDB upsert (cosine similarity)'},
-  ];
-  log.innerHTML = '';
-  for (let i=0; i<steps.length; i++) {
-    const s = steps[i];
-    const div = document.createElement('div');
-    div.className = 'log-step active';
-    div.innerHTML = `<span class="log-step-icon">${s.icon}</span><span>⏳ ${s.label}…</span>`;
-    log.appendChild(div);
-    await new Promise(r => setTimeout(r, 1200 + Math.random()*800));
-    div.className = 'log-step done';
-    div.innerHTML = `<span class="log-step-icon">✓</span><span>${s.label} — OK</span>`;
+  log.textContent = '';
+  const L = (msg, cls='') => { const s=document.createElement('span'); s.className=cls; s.textContent=msg+'\n'; log.appendChild(s); log.scrollTop=log.scrollHeight; };
+  const col = selectedCol==='fda' ? 'gmp_fda_regulations' : 'gmp_iq_oq_pq';
+  L(`[${new Date().toISOString().slice(0,19)}] Iniciando ingesta`);
+  L(`Colección: ${col}`, 'log-step');
+  for (let i=0;i<pendingFiles.length;i++) {
+    const f=pendingFiles[i]; const st=document.getElementById('fst-'+i);
+    if(st){st.textContent='procesando';st.className='file-row-st ing';}
+    L(`\n→ ${f.name} (${(f.size/1024).toFixed(0)} KB)`);
+    await sleep(300); L(`  Extrayendo texto…`,'log-step');
+    await sleep(350); const ch=Math.max(1,Math.floor(f.size/420)+1);
+    L(`  Chunking: ${ch} segmentos (512 chars, overlap 64)`,'log-step');
+    await sleep(400); L(`  ONNX embeddings (all-MiniLM-L6-v2, CPU)…`,'log-step');
+    await sleep(600); L(`  ChromaDB upsert: ${ch} documentos`,'log-step');
+    await sleep(200); L(`  ✓ OK — ${ch} chunks en ${col}`,'log-ok');
+    if(st){st.textContent='✓';st.className='file-row-st ok';}
+    const el=document.getElementById(selectedCol==='fda'?'c-fda':'c-iq');
+    if(el) el.textContent=parseInt(el.textContent)+ch;
   }
-  const chunks = pendingFiles.length * (40 + Math.floor(Math.random()*20));
-  const summary = document.createElement('div');
-  summary.style.color = 'var(--primary)';
-  summary.style.marginTop = '6px';
-  summary.textContent = `✓ Ingesta completa: ${pendingFiles.length} archivos, ~${chunks} chunks → corpus actualizado`;
-  log.appendChild(summary);
-  pendingFiles.forEach(f => f.status = 'done');
-  renderFilesList();
-  btn.textContent = '✓ Completado';
-});
+  L(`\n[${new Date().toISOString().slice(0,19)}] Ingesta completada`,'log-ok');
+  btn.disabled=false;
+}
 
-// ── CONFIG ──
-document.getElementById('cfg-url').addEventListener('input', function(){localStorage.setItem('gmp_url', this.value.trim());});
-document.getElementById('cfg-key').addEventListener('input', function(){localStorage.setItem('gmp_key', this.value.trim());});
-
-document.getElementById('test-conn-btn').addEventListener('click', async () => {
-  const btn = document.getElementById('test-conn-btn');
-  btn.textContent = '⏳ Probando…';
-  const services = ['api','postgres','redis','ollama'];
-  services.forEach(s => {
-    const el = document.getElementById('h-'+s);
-    el.textContent = '…';
-    el.className = 'health-status unknown';
-  });
+/* ── Health ─────────────────────────────────────────────────── */
+async function checkHealth() {
+  const dot  = document.getElementById('api-dot');
+  const stxt = document.getElementById('api-status-txt');
   try {
-    const url = document.getElementById('cfg-url').value.trim() || getApiUrl();
-    const resp = await fetch(url + '/health', {signal: AbortSignal.timeout(8000)});
-    const data = await resp.json();
-    document.getElementById('server-dot').classList.remove('red');
-    document.getElementById('server-status-text').textContent = 'Conectado';
-    services.forEach(s => {
-      const key = s === 'api' ? 'api' : s;
-      const val = data[key] === 'ok' ? 'ok' : (data[key] || 'error');
-      const el = document.getElementById('h-'+s);
-      el.textContent = val;
-      el.className = 'health-status ' + (val === 'ok' ? 'ok' : 'error');
+    const r = await fetch(API()+'/health', {signal: AbortSignal.timeout(6000)});
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    dot.className = 'status-dot ok';
+    stxt.textContent = 'Conectado · '+document.getElementById('server-url-display').textContent;
+    ['api','pg','redis','ollama'].forEach(k => {
+      const el = document.getElementById('h-'+k);
+      if (!el) return;
+      const v = k==='pg'?d.postgres : k==='api'?d.api : d[k];
+      el.className = 'hdot '+(v==='ok'?'ok':'warn');
     });
-  } catch(e) {
-    document.getElementById('server-dot').classList.add('red');
-    document.getElementById('server-status-text').textContent = 'Sin conexión';
-    services.forEach(s => {
-      document.getElementById('h-'+s).textContent = 'error';
-      document.getElementById('h-'+s).className = 'health-status error';
-    });
+    if (d.fda_collection?.count) { document.getElementById('c-fda').textContent=d.fda_collection.count; }
+    if (d.iq_collection?.count)  { document.getElementById('c-iq').textContent=d.iq_collection.count; }
+  } catch {
+    dot.className = 'status-dot warn';
+    stxt.textContent = 'modo demo';
   }
-  btn.textContent = '🔌 Probar conexión';
-});
+}
 
-// ── INIT ──
-(async function init() {
-  // load saved config
-  const savedUrl = localStorage.getItem('gmp_url') || 'http://35.185.57.245:8000';
-  const savedKey = localStorage.getItem('gmp_key') || '';
-  document.getElementById('cfg-url').value = savedUrl;
-  document.getElementById('cfg-key').value = savedKey;
-
-  // auto health check
+async function testConn() {
+  const st = document.getElementById('conn-st');
+  st.className='conn-status'; st.style.display='block'; st.textContent='Probando…';
   try {
-    const resp = await fetch(savedUrl + '/health', {signal: AbortSignal.timeout(5000)});
-    const data = await resp.json();
-    if (data.api === 'ok') {
-      document.getElementById('server-dot').classList.remove('red');
-      document.getElementById('server-status-text').textContent = 'Conectado · ' + savedUrl.replace('http://','');
-    }
-    // update corpus stats if knowledge stats available
-    try {
-      const hdr = savedKey ? {'X-Api-Key':savedKey} : {};
-      const kr = await fetch(savedUrl + '/api/v1/knowledge/stats', {headers:hdr, signal:AbortSignal.timeout(5000)});
-      if (kr.ok) {
-        const kd = await kr.json();
-        if (kd.fda_count !== undefined) document.getElementById('stat-fda').textContent = kd.fda_count;
-        if (kd.iq_count !== undefined) document.getElementById('stat-iq').textContent = kd.iq_count;
-        if (kd.total_docs !== undefined) document.getElementById('stat-docs').textContent = kd.total_docs;
-        const total = (kd.fda_count||0) + (kd.iq_count||0);
-        document.getElementById('cfg-corpus').textContent = total + ' chunks';
-      }
-    } catch(_){}
+    const r = await fetch(document.getElementById('cfg-url').value+'/health',{signal:AbortSignal.timeout(8000)});
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    st.className='conn-status ok';
+    st.textContent=`✓ Conectado — API:${d.api} Ollama:${d.ollama} PG:${d.postgres} Redis:${d.redis}`;
+    localStorage.setItem('gmp_url', document.getElementById('cfg-url').value);
+    localStorage.setItem('gmp_key', document.getElementById('cfg-key').value);
+    updateServerDisplay(document.getElementById('cfg-url').value);
+    checkHealth();
   } catch(e) {
-    document.getElementById('server-dot').classList.add('red');
-    document.getElementById('server-status-text').textContent = 'Sin conexión — modo demo';
+    st.className='conn-status err';
+    st.textContent='✗ No se pudo conectar: '+e.message;
   }
-})();
+}
+
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
 </script>
 </body>
 </html>

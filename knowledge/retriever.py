@@ -107,15 +107,18 @@ def get_collection_stats() -> dict:
     try:
         client = _get_client()
         stats = {}
-        for name, key in [
-            (CHROMA_FDA_COLLECTION, "fda_collection"),
-            (CHROMA_IQ_COLLECTION, "iq_collection"),
-        ]:
+        collections = client.list_collections()
+        total = 0
+        for col_obj in collections:
+            name = col_obj.name if hasattr(col_obj, "name") else str(col_obj)
             try:
                 col = client.get_collection(name)
-                stats[key] = {"name": name, "count": col.count()}
+                count = col.count()
             except Exception:
-                stats[key] = {"name": name, "count": 0, "status": "empty"}
+                count = 0
+            stats[name] = {"name": name, "count": count}
+            total += count
+        stats["_total"] = {"collections": len(collections), "total_chunks": total}
         return stats
     except Exception as exc:
         return {
@@ -124,11 +127,31 @@ def get_collection_stats() -> dict:
         }
 
 
-async def retrieve_context(question: str, n_results: int = 3) -> list[str]:
+async def retrieve_context(
+    question: str,
+    n_results: int = 2,
+    collection_name: str | None = None,
+) -> list[str]:
+    """Query one specific collection (if collection_name given) or the two defaults."""
+    texts, _ = await retrieve_context_with_sources(question, n_results, collection_name)
+    return texts
+
+
+async def retrieve_context_with_sources(
+    question: str,
+    n_results: int = 2,
+    collection_name: str | None = None,
+) -> tuple[list[str], list[dict]]:
+    """Same as retrieve_context but also returns source metadata per chunk."""
     try:
         client = _get_client()
-        contexts = []
-        for name in [CHROMA_FDA_COLLECTION, CHROMA_IQ_COLLECTION]:
+        texts: list[str] = []
+        sources: list[dict] = []
+        if collection_name:
+            names = [collection_name]
+        else:
+            names = [CHROMA_FDA_COLLECTION, CHROMA_IQ_COLLECTION]
+        for name in names:
             try:
                 col = client.get_collection(name)
                 if col.count() == 0:
@@ -136,11 +159,20 @@ async def retrieve_context(question: str, n_results: int = 3) -> list[str]:
                 results = col.query(
                     query_texts=[question],
                     n_results=min(n_results, col.count()),
+                    include=["documents", "metadatas"],
                 )
-                if results.get("documents"):
-                    contexts.extend(results["documents"][0])
+                docs = results.get("documents", [[]])[0]
+                metas = results.get("metadatas", [[]])[0]
+                texts.extend(docs)
+                for doc, meta in zip(docs, metas):
+                    sources.append({
+                        "file": meta.get("source", "unknown"),
+                        "chunk": meta.get("chunk", 0),
+                        "collection": name,
+                        "text_preview": doc[:120],
+                    })
             except Exception:
                 continue
-        return contexts
+        return texts, sources
     except Exception:
-        return []
+        return [], []
