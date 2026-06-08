@@ -57,11 +57,11 @@ _DEFAULT_AGENT = "csv"
 
 def detect_agent(question: str, explicit_agent: str | None = None) -> str:
     """
-    Si explicit_agent es un ID válido → retornarlo directamente.
-    Si no → keyword scoring sobre la pregunta para auto-detectar el agente.
+    Si explicit_agent es un ID válido (no 'auto', no None) → retornarlo directamente.
+    Si explicit_agent es 'auto', None, o cualquier valor no registrado → keyword scoring.
     En empate o sin match → retornar _DEFAULT_AGENT.
     """
-    if explicit_agent and explicit_agent in AGENT_REGISTRY:
+    if explicit_agent and explicit_agent != "auto" and explicit_agent in AGENT_REGISTRY:
         return explicit_agent
 
     q_lower = question.lower()

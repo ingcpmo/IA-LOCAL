@@ -52,7 +52,7 @@ async def verify_api_key(x_api_key: str = Header(default="")):
 
 class QueryRequest(BaseModel):
     question: str
-    agent: str = "csv"
+    agent: str = "auto"
 
 
 # ── UI ────────────────────────────────────────────────────────────────────────
