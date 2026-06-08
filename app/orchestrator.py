@@ -19,7 +19,7 @@ _AGENT_KEYWORDS: dict[str, list[str]] = {
         "annual product review", "pqr", "apr", "evento", "lote",
     ],
     "audit": [
-        "inspector", "483", "form 483", "fda visit", "readiness",
+        "inspector", "483", "form 483", "fda 483", "fda visit", "readiness",
         "fda audit", "regulatory audit", "inspeccion regulatoria",
         "inspección regulatoria", "inspection readiness", "warning letter",
         "observacion regulatoria", "observación regulatoria",
