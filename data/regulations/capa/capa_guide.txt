@@ -1,0 +1,404 @@
+CAPA GUIDE — 21 CFR 820.100 / ROOT CAUSE ANALYSIS / ISO 13485 / RPN
+=======================================================================
+
+SECTION 1: 21 CFR 820.100 CAPA REQUIREMENTS
+---------------------------------------------
+21 CFR 820.100 establishes CAPA requirements for medical device manufacturers.
+The same principles apply broadly to pharmaceutical GMP under 21 CFR 211.
+FDA considers CAPA one of the most critical quality system elements.
+
+21 CFR 820.100(a) requires procedures for:
+(1) Analyzing processes, work operations, concessions, quality audit reports,
+    quality records, service records, complaints, returned product, and other
+    sources of quality data to identify existing and potential causes of
+    nonconforming product or other quality problems.
+(2) Investigating the cause of nonconformities relating to product, processes,
+    and quality system.
+(3) Identifying the action needed to correct and prevent recurrence of
+    nonconforming product and other quality problems.
+(4) Verifying or validating the corrective and preventive action to ensure
+    that such action is effective and does not adversely affect finished device.
+(5) Implementing and recording changes in methods and procedures needed to
+    correct and prevent identified quality problems.
+(6) Ensuring that information related to quality problems or nonconforming
+    product is disseminated to those directly responsible for assuring the
+    quality of such product or the prevention of such problems.
+(7) Submitting relevant information on identified quality problems, as well
+    as corrective and preventive actions, for management review.
+
+21 CFR 820.100(b) requires documentation of all CAPA activities and results.
+CAPA records must be maintained per 21 CFR 820.180 for at least 2 years from
+the date of release or life of the device, whichever is longer.
+
+SECTION 2: ROOT CAUSE ANALYSIS — 5-WHY METHOD
+-----------------------------------------------
+The 5-Why method is a systematic approach to root cause analysis developed
+by Toyota and widely applied in GMP quality systems.
+
+Process:
+1. Define the problem statement clearly and factually
+2. Ask "Why did this happen?" — document the immediate cause
+3. Ask "Why did that happen?" — document the contributing cause
+4. Continue asking "Why?" until the fundamental systemic root cause is identified
+5. Typically 3-7 iterations required; stop when the cause can be addressed by action
+
+Example in GMP context:
+Problem: OOS result for API assay in batch 2026-001
+
+Why 1: Analyst prepared standard solution incorrectly
+Why 2: Analyst used incorrect solvent (methanol instead of acetonitrile)
+Why 3: Solvent bottles were stored adjacent and labels were damaged
+Why 4: No solvent labeling SOP specifying label inspection before use
+Why 5: Risk assessment for analytical procedure did not identify solvent selection
+       as a failure mode requiring procedural control
+
+Root Cause: Inadequate risk assessment for analytical procedure leading to
+missing procedural control for critical solvent selection step.
+
+CAPA: Update analytical procedure risk assessment; revise SOP to require
+label inspection and second-person verification for critical reagents.
+
+5-Why limitations:
+- Different investigators may arrive at different root causes
+- Complex problems may have multiple root causes
+- Linear approach may miss systemic causes
+- Best applied in combination with other RCA methods
+
+SECTION 3: ROOT CAUSE ANALYSIS — FISHBONE / ISHIKAWA DIAGRAM
+--------------------------------------------------------------
+The Fishbone (Ishikawa or Cause-and-Effect) diagram provides a structured
+visual method for identifying potential root causes across multiple categories.
+
+Standard categories (6M framework):
+- Man (People): Training, competency, human error, fatigue, communication
+- Machine (Equipment): Calibration, maintenance, age, software, setup
+- Method (Process): SOP inadequacy, procedure not followed, undefined process
+- Material: Raw material quality, supplier, storage, labeling
+- Measurement: Instrument accuracy, sampling method, measurement frequency
+- Mother Nature (Environment): Temperature, humidity, contamination, vibration
+
+Construction process:
+1. Define the problem (effect) and place at the head of the "fish"
+2. Draw main bones for each of the 6M categories
+3. Brainstorm potential causes in each category with subject matter experts
+4. Add sub-causes branching from each main cause
+5. Evaluate all identified causes and prioritize for investigation
+6. Verify or disprove each prioritized cause with evidence
+
+Fishbone advantages:
+- Visual and comprehensive — less likely to miss categories of causes
+- Team-based approach captures diverse expertise
+- Good documentation tool for CAPA record
+- Identifies both immediate and systemic causes
+
+For GMP investigations, the fishbone should be completed with cross-functional
+team including production, QC, QA, engineering, and/or validation as appropriate.
+
+SECTION 4: ROOT CAUSE ANALYSIS — FAULT TREE ANALYSIS (FTA)
+------------------------------------------------------------
+Fault Tree Analysis (FTA) is a top-down deductive analytical method that models
+the pathways through which a system can fail.
+
+FTA uses Boolean logic gates:
+- AND gate: All inputs must occur for output to occur
+- OR gate: Any one input can cause output to occur
+- Basic Event: Undeveloped fault event (component failure)
+- Undeveloped Event: Fault event not further analyzed
+- Inhibit Gate: Output occurs only when input and condition both occur
+
+FTA process:
+1. Define the top-level undesired event (top event)
+2. Identify all direct causes — connected by AND/OR gates
+3. Continue expanding each cause until basic events are reached
+4. Calculate probability of top event if failure probabilities known
+5. Identify minimum cut sets (minimal combination of basic events that cause top event)
+6. Prioritize corrective actions targeting minimum cut sets with highest probability
+
+FTA is particularly valuable for:
+- Critical system failures with potential safety impact
+- Complex multi-component failure scenarios
+- Identifying single points of failure requiring redundancy
+- Demonstrating that combined probability of failure meets safety targets
+
+FTA is required for process hazard analysis in pharmaceutical manufacturing
+when conducting risk assessments for complex automated systems.
+
+SECTION 5: EFFECTIVENESS CRITERIA FOR CAPA
+--------------------------------------------
+CAPA effectiveness verification is required to confirm that the corrective action
+resolved the root cause and that the problem did not recur.
+
+Types of effectiveness criteria:
+
+Quantitative Metrics:
+- Zero recurrence of same nonconformity classification within defined period
+- Reduction in OOS rate for specific analytical method below defined threshold
+- Reduction in deviation rate for specific process step
+- Audit trail review shows no repeat of identified data integrity violation
+- Employee competency assessment score above defined threshold
+
+Qualitative Criteria:
+- Updated SOP reviewed and approved
+- Training completed for all affected personnel with verified comprehension
+- Revised procedure followed correctly in subsequent batches (verified by supervision)
+- Control measure implemented and functioning as designed
+
+Timeframe for effectiveness verification:
+- Minimum observation period should be sufficient to allow recurrence if not fixed
+- Typically 3-6 months or 3-5 production batches, whichever is longer
+- High-risk CAPAs may require extended observation period
+
+Effectiveness check failure:
+- If effectiveness check fails, CAPA must be re-opened
+- Root cause analysis must be reviewed and expanded
+- Additional corrective actions implemented
+- FDA expectation: systematic approach escalated if initial CAPA fails
+
+Documentation of effectiveness:
+- Effectiveness verification plan defined at CAPA opening
+- Criteria, measurement method, responsible person, and due date documented
+- Effectiveness check results documented with objective evidence
+- QA approval of effectiveness determination before CAPA closure
+
+SECTION 6: CAPA CLOSURE REQUIREMENTS
+---------------------------------------
+CAPA closure is the formal determination that all required actions are complete
+and effective. Premature closure is a common FDA audit finding.
+
+Pre-closure checklist:
+□ Root cause identified and documented with supporting evidence
+□ All corrective actions implemented with objective evidence
+□ All preventive actions implemented
+□ Changed documents reviewed, approved, and in effect
+□ Training completed for all affected personnel with records
+□ Effectiveness verification completed per defined criteria
+□ Effectiveness criteria met with objective evidence
+□ Related CAPAs/deviations reviewed for similar root causes
+□ QA review and approval of closure package
+
+CAPA closure documentation package must include:
+- CAPA description and source reference (deviation, OOS, audit finding)
+- Root cause analysis with methodology and conclusion
+- Corrective action description, responsible person, and completion date
+- Preventive action description and implementation evidence
+- Training records or notification evidence
+- Effectiveness verification plan and results
+- QA approval signature and date
+
+Open CAPA management:
+- CAPAs open beyond 90 days require documented justification and management approval
+- CAPAs open beyond 180 days require escalation to site management review
+- Overdue CAPAs are a key quality metric for management review
+
+SECTION 7: RECURRING DEVIATION PREVENTION
+-------------------------------------------
+Recurring deviations indicate that previous corrective actions were ineffective
+or that the root cause was not correctly identified.
+
+Identification of recurring deviations:
+- Same description or category recurring within defined period (typically 12 months)
+- Same equipment, process step, personnel, or material involved
+- Pattern identified through deviation trending analysis (monthly/quarterly)
+
+Regulatory expectations for recurring deviations:
+- 21 CFR 211.192 requires investigation of discrepancies with conclusions
+- FDA Warning Letters cite "failure to adequately investigate recurring deviations"
+- EU GMP requires trend analysis to identify potential systemic issues
+
+Investigation approach for recurring deviations:
+1. Confirm recurrence: verify same or similar root cause, not coincidental similarity
+2. Review previous CAPA: was it fully implemented? Was effectiveness verified?
+3. Expand root cause analysis: initial analysis may have been too narrow
+4. Systemic assessment: is the problem isolated or representative of broader failure?
+5. Escalated CAPA: stronger corrective measures, process redesign if needed
+
+Common systemic causes for recurring deviations:
+- Training: procedure understood but not retained; need for refresher or retraining
+- Procedure design: procedure difficult to follow correctly; need redesign
+- Equipment reliability: underlying equipment issue not resolved
+- Organizational: workload or resource constraints driving shortcuts
+- Culture: lack of appreciation for importance of compliance
+
+SECTION 8: FDA EXPECTATIONS FOR CAPA DOCUMENTATION
+-----------------------------------------------------
+FDA Warning Letters consistently cite inadequate CAPA documentation.
+Key FDA expectations:
+
+Problem Description:
+- Clear, specific, unambiguous description of the nonconformance
+- Reference to applicable regulation, specification, or SOP
+- Scope determination: is this isolated or does it affect other products/processes?
+
+Root Cause Investigation:
+- Documented methodology (5-Why, fishbone, FTA)
+- Evidence supporting root cause conclusion
+- Evidence ruling out other potential causes
+- "Unknown" is not an acceptable root cause conclusion without exhaustive investigation
+
+CAPA Implementation:
+- Specific actions, not vague commitments ("will retrain staff")
+- Named responsible persons and specific due dates
+- Objective evidence of completion (training records, revised SOPs with dates)
+
+Effectiveness:
+- Predetermined criteria, not post-hoc determination
+- Objective measures, not subjective assessment
+- Adequate observation period
+
+Systemic Assessment:
+- Was the same nonconformance identified in other products, processes, or areas?
+- If yes: scope CAPA to all affected areas
+- If no: documented justification for limited scope
+
+FDA inspection preparation for CAPA:
+- Maintain CAPA log accessible for inspection review
+- Be able to walk through a CAPA end-to-end with documentation
+- Demonstrate that effectiveness checks were completed with evidence
+
+SECTION 9: ISO 13485 CAPA REQUIREMENTS
+----------------------------------------
+ISO 13485:2016 (Section 8.5.2 and 8.5.3) defines CAPA requirements for
+medical device quality management systems.
+
+Corrective Action (8.5.2):
+The organization shall document a procedure to define requirements for:
+a) Reviewing nonconformities (including complaints)
+b) Determining the causes of nonconformities
+c) Evaluating the need for action to ensure nonconformities do not recur
+d) Planning and implementing needed action, including updating documentation
+e) Verifying that corrective actions do not adversely affect the ability to meet
+   applicable regulatory requirements or the safety and performance of the device
+f) Reviewing the effectiveness of corrective action taken
+
+Preventive Action (8.5.3):
+The organization shall document a procedure to define requirements for:
+a) Determining potential nonconformities and their causes
+b) Evaluating the need for action to prevent occurrence of nonconformities
+c) Determining and implementing action needed
+d) Recording results of investigations and actions taken
+e) Reviewing the effectiveness of preventive action taken
+
+ISO 13485 differs from ISO 9001 in that it maintains separate requirements
+for corrective and preventive action, reflecting the medical device industry's
+need for explicit preventive quality management.
+
+Risk-based CAPA prioritization per ISO 14971 (Risk Management for Medical Devices):
+- High risk (high severity × high probability): immediate escalation, mandatory CAPA
+- Medium risk: CAPA required within defined timeframe
+- Low risk: may be addressed through process improvement rather than formal CAPA
+
+SECTION 10: RPN-BASED CAPA PRIORITIZATION
+------------------------------------------
+Risk Priority Number (RPN) is a quantitative risk assessment tool from FMEA
+(Failure Mode and Effects Analysis) used to prioritize CAPA actions.
+
+RPN = Severity (S) × Occurrence (O) × Detectability (D)
+
+Severity scale (1-10):
+1-3: Minor — no effect on safety or efficacy
+4-6: Moderate — potential impact on product quality
+7-9: Significant — potential safety or regulatory impact
+10: Critical — direct patient safety risk
+
+Occurrence scale (1-10):
+1-2: Remote — unlikely to occur (< 1 in 10,000)
+3-4: Low — occasional occurrence (1 in 1,000 to 1 in 10,000)
+5-6: Moderate — occasional occurrence (1 in 100 to 1 in 1,000)
+7-8: High — repeated occurrence (1 in 10 to 1 in 100)
+9-10: Very High — failure almost inevitable (> 1 in 10)
+
+Detectability scale (1-10):
+1-2: Almost certain detection — controls will almost certainly detect
+3-4: High detection — controls likely to detect before reaching patient
+5-6: Moderate — controls may detect
+7-8: Low — controls unlikely to detect
+9-10: Almost impossible — no controls capable of detection
+
+CAPA prioritization by RPN:
+- RPN > 200: Critical — immediate CAPA mandatory, escalate to management
+- RPN 100-200: High — CAPA required within 30 days
+- RPN 50-100: Medium — CAPA required within 90 days
+- RPN < 50: Low — monitor and address as part of continuous improvement
+
+Verification vs. Validation of CAPA Effectiveness:
+
+Verification of Effectiveness:
+- Confirms that the specific action was completed as described
+- Example: verify that training was completed (check training records)
+- Example: verify that SOP was revised (check document management system)
+- Does not confirm that the action actually solved the problem
+
+Validation of Effectiveness:
+- Confirms that the action actually resolved the root cause
+- Requires observation period and measurement against predefined criteria
+- Example: zero recurrence of same deviation in next 6 months / 10 batches
+- Example: OOS rate for specific method below defined threshold
+- This is what FDA inspectors look for when auditing CAPA effectiveness
+
+Both verification AND validation of effectiveness are required for complete CAPA closure.
+Verification confirms implementation; validation confirms impact on quality.
+
+SECTION: CAPA TRENDING AND SYSTEMIC ANALYSIS
+Per ICH Q10 and 21 CFR 820.100, CAPA data must be analyzed for trends to identify systemic issues.
+Trending must be proactive, not reactive — the goal is to detect patterns before they cause product failures.
+
+Monthly trending requirements for CAPA programs:
+All open CAPAs categorized by severity (Critical, Major, Minor), area (production, QC, QA, warehouse),
+and root cause category (human error, equipment, process, documentation, supplier, environment).
+Overdue CAPAs must be escalated to department management with updated action plan within 5 business days.
+New CAPAs opened in the period compared to prior periods to identify increasing failure rates by area.
+
+Quarterly management review of CAPA trends:
+Recurring root causes across different products, equipment, or departments must be identified and escalated.
+Cross-functional review required when same root cause appears in more than two CAPAs within 90 days.
+CAPA backlog analysis: confirm resources are adequate and timelines are realistic and being met.
+
+Annual effectiveness analysis of the CAPA program:
+Percentage of CAPAs with verified effectiveness versus total CAPAs closed in the year.
+Recurrence analysis: how many CAPAs resulted in the same or similar issue recurring within 12 months.
+Time-to-close metrics by CAPA category to identify systemic delays in the quality system.
+
+Systemic indicators requiring immediate escalation to senior management:
+Same root cause identified in more than two CAPAs within 90 days from any area.
+CAPA effectiveness failure where the same issue recurs within 1 year of CAPA closure.
+CAPA open for more than 120 days without documented progress update or extension approval.
+FDA or regulatory agency finding with a CAPA commitment not met by the committed date.
+
+SECTION: FDA EXPECTATIONS FOR CAPA DOCUMENTATION
+FDA inspectors evaluate CAPA programs against specific criteria during GMP inspections.
+A well-documented CAPA program is one of the strongest indicators of a mature quality system.
+
+Timeliness expectations by CAPA severity:
+Critical CAPAs must have an action plan within 30 days of opening.
+Major CAPAs must have an action plan within 60 days of opening.
+Minor CAPAs must have an action plan within 90 days of opening.
+Any CAPA extending beyond these timelines must have documented justification and QA approval.
+
+Root cause analysis quality requirements:
+CAPA must address the true root cause, not the symptom or the immediate cause.
+Acceptable root cause methods: 5-Why analysis, Fishbone (Ishikawa) diagram, Fault Tree Analysis.
+Root cause conclusion must be supported by evidence — not just "analyst error" without investigation.
+Extent of condition assessment must evaluate whether the root cause could affect other areas or products.
+
+Scope and systemic considerations:
+Every CAPA must consider whether the issue could occur in similar processes, equipment, or products.
+Scope of the CAPA action must be explicitly documented — "this product only" requires justification.
+When scope is expanded, affected products and batches must be evaluated for impact.
+
+Effectiveness verification requirements:
+Verification criteria must be defined before CAPA implementation, not selected after the fact.
+Criteria must be objective and measurable, for example: zero recurrence in the next 6 months,
+or OOS rate for the affected method below a defined threshold for the next 10 batches.
+Observation period must be sufficient to confirm effectiveness — typically 3 to 12 months depending on frequency.
+
+CAPA closure requirements per FDA expectations:
+Evidence of effectiveness must be objective data, not a statement that "the CAPA was effective."
+QA must review and sign off the effectiveness evidence before formal CAPA closure.
+Recurrence detection mechanism must be confirmed active before closure.
+
+Common FDA 483 observations for CAPA programs:
+"Failure to establish and maintain procedures for implementing corrective and preventive action" — 21 CFR 820.100.
+"CAPA system does not include requirements for verifying or validating corrective and preventive actions."
+"Trends in product failures and quality data not evaluated to identify recurring problems requiring systemic CAPA."
+"CAPAs closed without objective evidence that the corrective action was effective."
+"Extent of condition assessment not performed — CAPA limited to affected batch without evaluation of other products."

@@ -1,0 +1,428 @@
+GMP QUALITY SYSTEM GUIDE — ICH Q10 / ICH Q8 / OOS / CAPA / CHANGE CONTROL
+==========================================================================
+
+SECTION 1: ICH Q10 PHARMACEUTICAL QUALITY SYSTEM
+--------------------------------------------------
+ICH Q10 describes a model for an effective pharmaceutical quality system (PQS)
+based on ISO Quality concepts, GMP regulations, and ICH guidelines Q8 and Q9.
+
+The four main elements of ICH Q10 PQS are:
+1. Process Performance and Product Quality Monitoring
+2. Corrective Action and Preventive Action (CAPA) System
+3. Change Management System
+4. Management Review
+
+ICH Q10 applies throughout the product lifecycle: pharmaceutical development,
+technology transfer, commercial manufacturing, and product discontinuation.
+
+Senior management is responsible for establishing, implementing, and maintaining
+the PQS to achieve pharmaceutical quality objectives. Management must define
+organizational structure, resource requirements, and performance indicators.
+
+A well-designed PQS promotes continuous improvement, enabling the organization
+to identify opportunities for product and process improvement, reduce variation,
+and increase robustness.
+
+SECTION 2: CAPA SYSTEM REQUIREMENTS
+-------------------------------------
+CAPA (Corrective Action and Preventive Action) is a fundamental element of GMP.
+Under 21 CFR 211 and EU GMP Part I, CAPA processes must be established and maintained.
+
+Corrective Action: Action taken to eliminate the cause of a detected nonconformity
+or other undesirable situation to prevent recurrence.
+
+Preventive Action: Action taken to eliminate the cause of a potential nonconformity
+or other undesirable potential situation to prevent occurrence.
+
+CAPA sources include: deviations, OOS results, complaints, audit findings,
+trend analysis results, management review outputs, near-miss events.
+
+Required CAPA documentation:
+- Clear description of the problem or potential problem
+- Root cause analysis methodology and results
+- Description of corrective and/or preventive actions taken
+- Verification/validation that the action does not adversely affect product
+- Effectiveness check criteria and timeline
+- Closure criteria and approval signatures
+- Reference to regulatory basis where applicable
+
+CAPA closure must include evidence of implementation and effectiveness verification.
+Open CAPAs beyond 90 days require management escalation and justification.
+Recurring CAPAs for the same root cause indicate systemic failures requiring
+additional investigation and possible process redesign.
+
+SECTION 3: DEVIATION CLASSIFICATION
+-------------------------------------
+Deviations from approved procedures or specifications must be classified by risk:
+
+CRITICAL DEVIATION:
+- Actual or potential impact on product safety, identity, strength, purity, or quality
+- Affects a validated state of a critical process parameter (CPP)
+- Breach of primary containment or sterility
+- Potential risk to patient safety
+- Requires immediate CAPA and QA notification within 24 hours
+- Examples: sterility failure, mix-up of materials, unauthorized process change
+
+MAJOR DEVIATION:
+- Potential impact on product quality but not immediately life-threatening
+- Departure from GMP requirements not classified as critical
+- SOPs not followed for critical operations
+- Documentation errors affecting batch traceability
+- Requires CAPA within 30 days and thorough root cause investigation
+- Examples: environmental monitoring exceedance, equipment cleaning failure
+
+MINOR DEVIATION:
+- No direct or indirect impact on product quality
+- Low-risk procedural non-compliance
+- Administrative documentation errors
+- Requires corrective action but lower urgency
+- Examples: late signature on logbook, minor scheduling deviation
+
+All deviations regardless of classification must be documented, investigated,
+and tracked in the deviation management system.
+
+SECTION 4: TRENDING ANALYSIS
+------------------------------
+ICH Q10 requires systematic monitoring and trending of quality data to detect
+signals and opportunities for improvement.
+
+Key quality metrics to trend:
+- Batch rejection and rework rates
+- OOS and OOT (Out of Trend) results per product and per analytical method
+- CAPA open/close rates and overdue CAPAs
+- Deviation frequency by classification, product, process step, and equipment
+- Complaint rates (number per batch, number per 1000 units distributed)
+- Change control volume and cycle times
+- Environmental monitoring exceedances by room and organism type
+- Equipment calibration and PM overdue rates
+
+Statistical methods for trending: control charts (X-bar, R, CUSUM), Pareto analysis,
+run rules (Western Electric, Nelson), regression analysis for continuous data.
+
+Trend reviews must occur at minimum annually as part of Annual Product Review (APR)
+or Product Quality Review (PQR) per 21 CFR 211.180(e) and EU GMP Chapter 1.
+
+Emerging trends must trigger investigation before specification exceedances occur.
+OOT limits should be set tighter than OOS limits to provide early warning.
+
+SECTION 5: SOP COMPLIANCE AND MANAGEMENT
+------------------------------------------
+Standard Operating Procedures (SOPs) are controlled documents that describe
+GMP activities in sufficient detail to ensure consistent execution.
+
+SOP requirements per 21 CFR 211.100:
+- Written procedures required for all production and process control activities
+- Procedures must be followed and deviations documented
+- SOPs must be reviewed and approved by QA before implementation
+- Periodic review required (typically annually or based on risk)
+
+SOP management system requirements:
+- Unique document number and version control
+- Effective date and superseded document tracking
+- Distribution control and training requirements
+- Change control process for revisions
+- Archive of superseded versions with retention period
+
+Training to SOPs must be documented, verified for comprehension,
+and re-training required after revisions.
+
+SECTION 6: MANAGEMENT REVIEW
+------------------------------
+ICH Q10 Section 3.4 requires periodic management review of the PQS.
+Management review inputs must include:
+- Quality policy and objectives achievement
+- CAPA status (open, overdue, effectiveness)
+- Deviation and complaint trends
+- Audit results (internal, external, regulatory)
+- Change control status
+- Supplier qualification status
+- Resource adequacy assessment
+- PQR/APR summaries and conclusions
+
+Management review outputs must include:
+- Decisions and actions related to improvement of the PQS
+- Resource needs identified
+- Product and process improvement opportunities
+- Risk mitigation actions
+
+SECTION 7: ICH Q8 DESIGN SPACE AND QUALITY BY DESIGN
+------------------------------------------------------
+ICH Q8 introduces Quality by Design (QbD) concepts for pharmaceutical development.
+
+Design Space: The multidimensional combination and interaction of input variables
+(material attributes) and process parameters demonstrated to provide assurance of quality.
+
+Working within the design space is not considered a change and does not require
+regulatory notification. Movement out of design space is considered a change
+and requires regulatory post-approval change management.
+
+Quality Target Product Profile (QTPP): A prospective summary of quality characteristics
+of a drug product that ideally will be achieved to ensure the desired quality,
+safety, and efficacy.
+
+Critical Quality Attributes (CQAs): Physical, chemical, biological, or microbiological
+properties or characteristics that must be within an appropriate limit, range,
+or distribution to ensure product quality.
+
+Critical Process Parameters (CPPs): Process parameters whose variability has an
+impact on a CQA and must be monitored or controlled to ensure the process
+produces the desired quality.
+
+Control Strategy: A planned set of controls derived from current product and process
+understanding that assures process performance and product quality.
+
+SECTION 8: OOS INVESTIGATION PROCEDURE
+----------------------------------------
+Out-of-Specification (OOS) results must be investigated per FDA Guidance on
+Investigating OOS Test Results (2006) and 21 CFR 211.192.
+
+Phase 1 — Laboratory Investigation:
+- Conducted by analyst and laboratory supervisor
+- Review calculation errors, instrument calibration, reagent lot, standard preparation
+- Check sample preparation technique and sample integrity
+- If assignable cause found: invalidate result with full documentation
+- If no assignable cause: proceed to Phase 2
+
+Phase 2 — Full Investigation:
+- Extend investigation to manufacturing process
+- Review batch record for process deviations
+- Additional testing of retain and reserve samples
+- Statistical evaluation (if multiple results available)
+- Review of related batches
+
+OOS investigation timeline: Phase 1 within 3 business days,
+full investigation within 30 calendar days of OOS result.
+
+OOS results cannot be averaged with passing results to achieve conformance.
+Retesting is permissible only if an assignable cause is identified or for
+statistical justification per predefined protocol.
+
+SECTION 9: CHANGE CONTROL QA REVIEW
+--------------------------------------
+All changes to facilities, equipment, utilities, manufacturing processes, materials,
+specifications, and computer systems must pass through change control per
+21 CFR 211.100, EU GMP Chapter 1, and ICH Q10 Section 3.3.
+
+QA review responsibilities in change control:
+- Assess impact on product quality, safety, and regulatory compliance
+- Determine validation/qualification requirements
+- Identify required documentation updates (specifications, SOPs, batch records)
+- Assess need for regulatory notification or filing
+- Approve implementation timeline and risk mitigation measures
+- Verify completion of all pre-implementation requirements before release
+
+Change categories (based on risk assessment):
+- Major Change: Requires prior regulatory approval before implementation
+- Moderate Change: Requires regulatory notification (CBE-30 or Variation Type II)
+- Minor Change: Annual reportable or no notification required
+
+Post-implementation verification must confirm the change achieved intended
+result without adverse impact. Change control records must be retained per
+applicable retention schedule.
+
+SECTION 7: OOS INVESTIGATION PROCEDURE
+---------------------------------------
+Out-of-Specification (OOS) investigation is required per 21 CFR 211.192.
+Phase 1 - Laboratory Investigation (must be completed within 30 days):
+Step 1: Review analyst's notebook and raw data for transcription errors
+Step 2: Check instrument calibration status and last calibration date
+Step 3: Verify reagent and standard preparation records
+Step 4: Check system suitability results for chromatographic methods
+Step 5: Perform Phase 1 calculations review
+If assignable laboratory cause is found, document and retesting may proceed.
+If no assignable cause: proceed to Phase 2 (full-scale investigation)
+
+Phase 2 - Full-Scale OOS Investigation:
+- Manufacturing process review
+- Review of batch record for errors or deviations
+- Retained sample testing by second analyst
+- Statistical analysis if required
+- If OOS is confirmed: initiate CAPA, reject batch, notify QA management
+
+SECTION 8: ANNUAL PRODUCT REVIEW (APR/PQR)
+--------------------------------------------
+ICH Q10 requires Annual Product Review (APR) or Product Quality Review (PQR).
+APR must include analysis of:
+- All batches manufactured (% meeting specifications)
+- OOS results and investigations
+- Deviations and their CAPAs
+- Stability data review
+- Change control actions implemented
+- Complaints and adverse events
+- Returned goods analysis
+- Qualification status of equipment and utilities
+ICH Q10 4.2: APR should identify trends and determine product and process improvements.
+APR must be signed by QA director and reviewed by management.
+
+SECTION: DEVIATION MANAGEMENT AND CLASSIFICATION
+A deviation is any departure from an approved procedure, specification, or standard.
+Classification follows ICH Q10 and must be assigned within 24 hours of discovery.
+All deviations must be documented, investigated, and closed with a root cause analysis.
+
+DEVIATION CLASS: CRITICAL
+Potential direct impact on patient safety, product identity, strength, purity, or quality.
+Examples: sterility failure, identity error, out-of-specification potency greater than 10%,
+incorrect label applied to container, temperature excursion above defined limits for biologics.
+Required actions: Immediate QA notification within 1 hour, batch quarantine pending investigation,
+expedited investigation report within 72 hours, regulatory notification if applicable,
+mandatory CAPA with defined owner and target date.
+
+DEVIATION CLASS: MAJOR
+Significant GMP violation without immediate direct patient safety impact.
+Examples: equipment calibration overdue more than 30 days, incomplete or missing batch record entry,
+environmental monitoring exceedance in classified area, SOP deviation without documented impact assessment,
+missing second-person verification for critical calculations.
+Required actions: QA notification within 24 hours, formal investigation within 5 business days,
+CAPA required if deviation is recurring or systemic, management review at next scheduled meeting.
+
+DEVIATION CLASS: MINOR
+Minor procedural deviation with no direct quality impact, confirmed by impact assessment.
+Examples: documentation correction using approved method (single strikethrough, initials, date),
+minor labeling error corrected before labeling operation complete, procedural step performed
+out of sequence with no quality impact, minor delay within defined process time window.
+Required actions: Documented in deviation log with brief impact statement, trending review quarterly,
+CAPA at QA discretion based on frequency and risk.
+
+SECTION: QUALITY MANAGEMENT REVIEW
+Management review per ICH Q10 Section 3.4 must occur at defined intervals, minimum annually.
+The review must be documented with minutes, action items, owners, and due dates.
+
+Management review inputs must include all of the following:
+Summary of all deviations with CAPA status and open items requiring escalation.
+OOS results and investigations summary including any unresolved or repeated OOS events.
+Audit and inspection findings from internal audits, customer audits, and regulatory inspections.
+Product complaints, adverse events, and product recall or withdrawal history.
+
+Additional management review inputs required by ICH Q10:
+Change control summary including pending and recently implemented changes.
+Process performance data and CPV (Continued Process Verification) trending results.
+Equipment and utility qualification and calibration status overview.
+Personnel training compliance rates by department and role.
+Supplier qualification status including any new, changed, or disqualified suppliers.
+
+Management review outputs must be documented and tracked:
+Resource allocation decisions for quality infrastructure and staffing.
+Process improvement actions with assigned owners and completion timelines.
+Quality objectives for the next review period with measurable KPIs.
+Effectiveness assessment of all actions from previous management review.
+Any escalation decisions for unresolved quality issues.
+
+SECTION: SOP CONTROL AND COMPLIANCE
+Standard Operating Procedures must be controlled documents per 21 CFR 211.68 and EU GMP Chapter 4.
+Every SOP must have a unique identifier, version number, effective date, and authorized signatures.
+
+SOP lifecycle requirements:
+Review cycle must not exceed 2 years between formal periodic reviews.
+Revision triggers include: process changes, equipment changes, regulatory updates, deviation findings.
+All revisions must go through the same approval workflow as original document.
+Superseded versions must be archived and prevented from use at the point of care.
+
+SOP approval and training requirements:
+Quality Assurance must approve all SOPs before the effective date.
+All personnel performing tasks described in the SOP must be trained before the effective date.
+Training must be documented: trainer name, trainee name, date, SOP version, assessment method.
+Competency must be verified — reading acknowledgment alone is insufficient for GMP activities.
+
+SOP compliance monitoring:
+Periodic effectiveness review must confirm SOPs are being followed in practice.
+Self-inspection program must include random SOP compliance checks during operations.
+Any deviation from an approved SOP requires a deviation report, regardless of quality impact.
+SOPs found to be consistently not followed must be evaluated for revision or additional training.
+
+SECTION: CHANGE CONTROL MANAGEMENT
+Change control is a formal system to evaluate, approve, and document changes to GMP systems.
+Per 21 CFR 211.68 and ICH Q10, all changes that could affect product quality must be controlled.
+
+Change categories and requirements:
+Major change: Affects product specifications, validated processes, or regulatory filings.
+Requires: Risk assessment, validation/qualification plan, QA and regulatory approval before implementation.
+Minor change: Non-critical changes with documented low risk to product quality.
+Requires: Impact assessment by process owner, QA review and approval, no validation required unless risk-based.
+Emergency change: Immediate action required to prevent safety risk or production stoppage.
+Requires: Retrospective documentation within 24 hours and full change control within 5 business days.
+
+Change control documentation requirements:
+Change Request form with: description, reason, risk assessment, affected systems and documents.
+Pre-approval by Quality Assurance before any implementation begins.
+Implementation record: who performed the change, date and time, verification steps completed.
+Post-implementation review: confirmation that the change achieved its intent with no unexpected effects.
+Update of all affected SOPs, validation documents, and training materials.
+
+SECTION: SUPPLIER QUALIFICATION AND MANAGEMENT
+All suppliers of APIs, excipients, packaging materials, and critical services must be qualified.
+Per 21 CFR 211.84 and EU GMP Chapter 5, materials must not be used without supplier approval.
+
+Supplier qualification process:
+Initial qualification: supplier questionnaire, quality agreement, audit or audit waiver with justification.
+Approved Supplier List (ASL): maintained by QA, reviewed at minimum annually.
+Qualification categories: Approved (full audit), Conditionally Approved (audit pending), Disqualified.
+
+Ongoing supplier management requirements:
+Annual supplier performance review based on: delivery performance, complaint history, COA compliance.
+Re-qualification audit required if: product quality complaint confirmed, major change at supplier facility,
+FDA warning letter or import alert issued to supplier, lapse in supply greater than 2 years.
+Critical material suppliers (API, primary packaging) must have a signed Quality Technical Agreement.
+Quality agreements must address: specifications, change notification requirements, audit rights, GMP compliance.
+
+SECTION: OUT-OF-SPECIFICATION INVESTIGATIONS
+OOS results must be investigated per FDA OOS Guidance (2006) using a two-phase approach.
+All OOS results must be documented immediately and batch must be placed on hold.
+
+Phase 1: Laboratory Investigation (must be completed before any retest)
+Review all analyst records, calculations, and instrument logs for the failing test.
+Confirm sample preparation, instrument calibration, and standard performance were acceptable.
+Check for assignable laboratory errors: pipetting errors, incorrect standard, transcription errors.
+Document findings with specificity — general statements like "no errors found" are not acceptable.
+Phase 1 must be completed within 5 business days. If assignable error found: invalidate result, retest.
+
+Phase 2: Full-Scale OOS Investigation (when no laboratory error found in Phase 1)
+Expand investigation to manufacturing: review batch record, process parameters, equipment logs.
+Additional testing: retain samples from multiple time points, test additional units from same batch.
+Statistical analysis: apply appropriate statistical tools to distinguish process variability from failure.
+Root cause conclusion must be definitive — inconclusive is not acceptable for batch disposition.
+Batch must not be released until OOS investigation is formally closed with documented disposition decision.
+
+SECTION: ENVIRONMENTAL MONITORING IN GMP FACILITIES
+Environmental monitoring programs must be designed, validated, and executed per EU GMP Annex 1 and USP <1116>.
+All classified areas used for sterile or aseptic manufacturing require ongoing environmental controls.
+
+Classification and monitoring requirements for cleanrooms:
+Grade A (ISO 5): Highest risk zones — filling area, stopper bowl, open product containers, aseptic connections.
+Requires: Continuous particle monitoring, viable air sampling every session, surface sampling every session.
+Grade B (ISO 5 at rest, ISO 7 in operation): Background environment for Grade A zone.
+Requires: Particle monitoring at defined intervals, viable air and surface sampling per approved schedule.
+Grade C (ISO 8 in operation): Less critical manufacturing steps such as solution preparation for filtration.
+Grade D: Background area for handling of less-critical components.
+
+Action and alert limits for environmental monitoring:
+Alert limit: Trend indicator — result above this value triggers investigation but not batch rejection.
+Action limit: Regulatory limit — result above this value requires immediate CAPA and impact assessment on batch.
+Limits must be established based on historical data and approved in the monitoring program procedure.
+Exceeding action limit requires: batch impact assessment, investigation report, QA notification, and CAPA.
+
+Environmental monitoring trending requirements:
+Monthly review of all environmental monitoring data for trends toward action limits.
+Contamination events must be investigated for root cause regardless of whether action limit was exceeded.
+Annual review of alert and action limits to confirm they remain appropriate for the current process.
+
+SECTION: COMPLAINTS AND ADVERSE EVENT MANAGEMENT
+Customer complaints and adverse events must be managed per 21 CFR 211.198 and EU GMP Chapter 8.
+Every complaint must be evaluated for potential regulatory reporting obligation.
+
+Complaint intake and triage requirements:
+All complaints must be documented regardless of the communication channel: written, verbal, or electronic.
+Initial assessment within 24 hours to classify: product quality complaint, adverse event, or general feedback.
+Adverse events involving serious injury or death require expedited review within 24 hours by Medical Affairs and QA.
+Retain complaint sample if available — do not return to complainant until investigation is complete.
+
+Complaint investigation requirements:
+Investigation must verify: batch number, expiration date, manufacturing history, and distribution records.
+Laboratory analysis of retain samples required when complaint alleges quality defect.
+Root cause conclusion must address: was the complaint confirmed, what was the cause, was it isolated or systemic.
+Trending analysis required: same product, same batch, same defect type reported by multiple customers is a signal.
+
+Regulatory reporting thresholds:
+FDA MedWatch: report when the product may have caused or contributed to serious injury or death.
+Field Alert Report (FAR): within 3 business days for confirmed contamination, significant chemical or physical change.
+EU Rapid Alert: within 24 hours for serious quality defects that may require recall action.
+Failure to report within required timeframes is a GMP violation independent of the underlying complaint.

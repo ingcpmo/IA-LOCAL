@@ -1,0 +1,377 @@
+OT / AUTOMATION VALIDATION GUIDE — ISA-88/95, GAMP5, PLC/SCADA, EEMUA 191
+==========================================================================
+
+SECTION 1: ISA-88 BATCH CONTROL STANDARD
+------------------------------------------
+ISA-88 (IEC 61512) is the international standard for batch process control.
+It is the foundational framework for batch manufacturing in pharmaceuticals,
+food, chemical, and other regulated industries.
+
+ISA-88 Physical Model defines the equipment hierarchy:
+- Enterprise (Level 4): Business systems, ERP
+- Site (Level 3): Facility-wide systems, MES
+- Area (Level 2): Production areas, work centers
+- Process Cell (Level 1): Groups of related equipment
+- Unit: Smallest grouping performing a major processing activity (reactor, tank)
+- Equipment Module: Functional collection of equipment performing minor processing
+- Control Module: Smallest grouping with single coordinated function (valve, motor)
+
+ISA-88 Procedural Model defines the hierarchical control structure:
+- Procedure: Ordered set of phases required to complete a batch
+- Unit Procedure: Ordered set of operations performed in a single unit
+- Operation: Ordered set of phases to perform a major processing sequence
+- Phase: Smallest element of procedural control that accomplishes process-oriented task
+
+Master Recipe: Generic recipe that defines what equipment class is required.
+Control Recipe: Instance of master recipe bound to specific equipment for a specific batch.
+Recipe Procedure: The procedural element of the recipe that controls execution sequence.
+
+Electronic Master Batch Record (eMBR) validation per ISA-88 must verify:
+- Recipe execution follows procedural model correctly
+- Phase transitions respect defined logic and conditions
+- CPPs within validated ranges trigger correct actions
+- Exception handling follows defined escalation paths
+
+SECTION 2: ISA-95 ENTERPRISE INTEGRATION
+------------------------------------------
+ISA-95 (IEC 62264) defines the interface between enterprise (ERP) and
+control/manufacturing (MES/SCADA) systems. Critical for MES validation.
+
+ISA-95 information exchange categories:
+- Production scheduling: Work orders from ERP to MES
+- Production performance: Actual production data from MES to ERP
+- Product definition: Bills of materials, routing from ERP to MES
+- Resource management: Equipment, personnel, material availability
+
+ISA-95 Activity Models:
+- Production operations management: Production dispatch, tracking, analysis
+- Inventory operations management: Material tracking, consumption
+- Quality operations management: QC testing, laboratory management
+- Maintenance operations management: Preventive maintenance, calibration
+
+For GMP compliance, ISA-95 interfaces require:
+- Data integrity controls on all interfaced data
+- Audit trail for data transferred between systems
+- Validation of the interface including error handling
+- Reconciliation processes to detect data synchronization failures
+
+SECTION 3: GAMP5 SOFTWARE CATEGORIES FOR PLC/SCADA
+-----------------------------------------------------
+GAMP5 (Good Automated Manufacturing Practice, 5th Edition) classifies software
+into categories to guide the level of required validation effort.
+
+GAMP5 Categories:
+Category 1: Infrastructure software (OS, middleware) — configuration review
+Category 2: Non-configured standard software — discontinued in GAMP5
+Category 3: Non-configured standard software (e.g., office applications) — limited testing
+Category 4: Configured standard software (SCADA, DCS, LIMS, ERP modules) — configuration and functional testing
+Category 5: Custom software (bespoke code, custom scripts) — full development lifecycle validation
+
+For pharmaceutical manufacturing automation:
+
+GAMP5 Category 4 (Configured Standard Software — SCADA/DCS):
+- Vendor audit or assessment required for new systems
+- Vendor documentation reviewed (FAT/SAT protocols, functional specifications)
+- Supplier assessment including quality management system review
+- Configuration specification documenting all configured parameters
+- Configuration testing (automated and manual)
+- IQ: installation qualification verifying hardware, OS, application version
+- OQ: operational testing of all configured functions including alarms and interlocks
+- Regression testing required after all software updates
+- Change control required for all configuration changes
+
+GAMP5 Category 5 (Custom Software — Bespoke PLC Code):
+- Full software development lifecycle (SDLC) documentation required
+- Software Design Specification (SDS) / Functional Design Specification (FDS)
+- Software Module Testing (unit testing with test protocols)
+- Integration testing
+- Code review by qualified reviewer
+- Version control system required (git, SVN, etc.)
+- Backup and recovery of all source code versions
+
+SECTION 4: PLC/SCADA VALIDATION REQUIREMENTS
+----------------------------------------------
+PLC (Programmable Logic Controller) and SCADA (Supervisory Control and Data Acquisition)
+systems used in GMP manufacturing require validation per GAMP5 and 21 CFR Part 11.
+
+PLC Validation Lifecycle:
+1. User Requirements Specification (URS) — what the system must do
+2. Functional Design Specification (FDS) — how the system will meet URS
+3. Hardware Design Specification (HDS) — hardware configuration
+4. Software Design Specification (SDS) — software/firmware design
+5. Installation Qualification (IQ) — verified as installed
+6. Operational Qualification (OQ) — verified to operate as intended
+7. Performance Qualification (PQ) — verified to perform consistently in production
+
+PLC Validation critical test areas:
+- Input/Output (I/O) checkout: verify all field instruments mapped correctly
+- Alarm testing: all configured alarms trigger at correct setpoints
+- Interlock testing: safety and process interlocks function correctly
+- Setpoint verification: all process setpoints configurable and stored correctly
+- Sequence testing: all operating modes (auto, semi-auto, manual) tested
+- Failure mode testing: power loss, communication failure, sensor failure
+- Audit trail: all operator actions and parameter changes captured
+
+SCADA validation critical test areas:
+- Screen navigation and display accuracy
+- Real-time data acquisition accuracy vs. PLC/field instrument values
+- Historical data logging integrity (no data gaps, correct timestamps)
+- User access levels: operator vs. supervisor vs. administrator
+- Electronic signature functionality (if used for batch approval)
+- Report generation and data export accuracy
+- System backup and restore validation
+- Network redundancy/failover if applicable
+
+Any change to PLC firmware or SCADA configuration requires change control,
+impact assessment, and regression testing before return to GMP service.
+
+SECTION 5: ALARM RATIONALIZATION — EEMUA 191
+----------------------------------------------
+EEMUA Publication 191 "Alarm Systems: A Guide to Design, Management, and Procurement"
+is the industry standard for alarm management in process automation.
+
+Alarm rationalization is required for GMP-critical systems to ensure:
+- Each alarm requires operator action
+- Alarm priorities are correctly assigned
+- Alarm floods during upsets do not impede operator response
+
+EEMUA 191 alarm rate benchmarks:
+- Acceptable: Less than 1 alarm per 10 minutes on average
+- Manageable: 1 alarm per 10 minutes during upset conditions
+- Overloaded: More than 10 alarms per 10 minutes (operator cannot respond effectively)
+
+Alarm classification:
+- Emergency / Priority 1: Immediate action required — safety or product loss risk
+- High / Priority 2: Prompt attention within minutes — significant deviation
+- Low / Priority 3: Action required but delay acceptable — minor deviation
+- Informational / Journal: No action required — for awareness only
+
+Alarm rationalization process:
+1. Alarm inventory: complete list of all configured alarms
+2. Justification: each alarm must have defined cause, consequence, and required action
+3. Setpoint review: setpoints based on process data, not worst-case estimates
+4. Priority assignment: priority reflects consequence severity and time to respond
+5. Dead band setting: prevent nuisance chattering alarms
+6. Suppression logic: prevent alarm floods during startup/shutdown
+7. Documentation: Alarm Rationalization Record (ARR) for each alarm
+
+For pharmaceutical batch systems, alarm setpoints tied to CPPs require
+validation evidence that the setpoint provides adequate process control margin.
+
+SECTION 6: ELECTRONIC BATCH RECORDS (eBR)
+-------------------------------------------
+Electronic Batch Records (eBR) systems replace or augment paper batch records.
+Validation requirements per 21 CFR Part 11, EU GMP Annex 11, and GAMP5.
+
+eBR functional requirements that must be validated:
+- Recipe management: creation, versioning, approval, and activation of eMBRs
+- Batch execution: real-time data capture during production
+- Exception handling: deviation capture, hold status, investigation workflow
+- Review and approval: electronic signature workflow for batch disposition
+- Data integrity: prevention of unauthorized modification, complete audit trail
+- Archive: long-term retention and retrieval of completed batch records
+
+Electronic signatures for eBR must comply with 21 CFR Part 11:
+- Unique to each individual and not shareable
+- Require two distinct identification components (username + password minimum)
+- Linked to their respective electronic records
+- Include name of signer, date/time, and meaning of signature
+
+eBR critical data elements to validate:
+- Ingredient quantities: as-weighed values captured automatically or with verification
+- Process parameters: automated capture from PLC/instrument integration
+- Environmental conditions: temperature, humidity, pressure monitoring
+- Operator actions: all manual operations with timestamp and user ID
+- Equipment usage: equipment ID, calibration status at time of use
+- Deviations: automatic flagging of out-of-range values with mandatory comment
+
+SECTION 7: MES VALIDATION
+---------------------------
+Manufacturing Execution System (MES) validation is required for GMP use.
+MES typically covers production scheduling, execution, inventory, and quality.
+
+MES validation strategy per GAMP5 Category 4:
+- Vendor qualification: audit of vendor QMS and development practices
+- Requirements traceability: URS requirements traced to test cases
+- Configuration specification: all configured business rules documented
+- Standard test library: reusable test scripts for core functions
+- Risk-based testing: focus resources on critical and high-risk functions
+
+MES integration testing:
+- ERP integration (ISA-95): work orders, materials, production reporting
+- SCADA/PLC integration: actual production data capture
+- LIMS integration: quality results linked to batches
+- Label management: electronic routing of correct labels to production
+
+MES validation critical scenarios:
+- Enforcing material status (released vs. quarantine) at dispensing
+- Preventing processing steps out of sequence
+- Enforcing expiry date and FEFO (First Expired, First Out) logic
+- Generating eBR with all required data for batch disposition
+- Exception and deviation capture during batch execution
+
+SECTION 8: 21 CFR PART 11 FOR SCADA SYSTEMS
+---------------------------------------------
+21 CFR Part 11 applies to electronic records and electronic signatures created,
+modified, maintained, archived, retrieved, or transmitted under FDA requirements.
+
+Part 11 requirements for SCADA/DCS/MES systems:
+
+Closed Systems (§11.10):
+- Validation ensuring accuracy, reliability, performance, and ability to discern invalid records
+- Ability to generate accurate and complete copies in human readable form
+- Protection of records to enable accurate and ready retrieval throughout retention period
+- Limiting system access to authorized individuals
+- Use of operational system checks (audit trails)
+- Use of authority checks to ensure users have access only to permitted operations
+- Device checks to determine source of data input
+- Personnel training and education documentation
+- Written policies re: accountability of signatories
+- Use of appropriate controls over systems documentation
+
+Electronic Signatures (§11.50 / §11.100):
+- Unique to one individual and not reused by or reassigned to anyone else
+- Require verification before being established
+- Include printed name of signer, date/time, and meaning of signature
+
+Audit Trail requirements (§11.10(e)):
+- Computer-generated audit trail
+- Date and time entry and operator identification
+- Cannot be modified or deleted by users
+- Retained for period at least as long as the record itself
+
+SECTION 9: NAMUR NE 107 — PROCESS AUTOMATION DIAGNOSTICS
+----------------------------------------------------------
+NAMUR NE 107 "Self-Monitoring and Diagnosis of Field Devices" defines
+standardized status signals for process instruments in automation systems.
+
+NE 107 Status Signals:
+- FAILURE (Red): Device failure — measurement may be wrong, immediate action required
+- OUT OF SPECIFICATION (Yellow): Operating conditions outside specification — may affect accuracy
+- MAINTENANCE REQUIRED (Blue): Function degraded but still within specification — plan maintenance
+- FUNCTION CHECK (Orange): Normal device output blocked — inspection or test in progress
+- GOOD (Green): Device functioning normally
+
+NE 107 benefits for GMP:
+- Standardized interpretation of device status across vendors
+- Early warning of potential measurement failures before process impact
+- Clear distinction between device failure and process alarm
+- Integration with alarm management to suppress process alarms during device check
+
+For GMP systems, NE 107 status must be captured in the audit trail.
+Measurement values during FAILURE or OUT OF SPECIFICATION status must be
+flagged or excluded from CPP compliance calculations.
+
+SECTION 10: OT SECURITY ZONES (IEC 62443)
+-------------------------------------------
+Operational Technology (OT) security is increasingly relevant for GMP compliance
+as regulators recognize cybersecurity as a GMP risk.
+
+IEC 62443 defines security zones and conduits for industrial automation:
+- Zone: Grouping of assets with common security requirements
+- Conduit: Communication channel connecting zones with defined security controls
+- Security Level (SL 0-4): From no security to highest security
+
+GMP-relevant security zones:
+- Enterprise Zone (IT): Business systems, internet-connected
+- Manufacturing Zone (MES/SCADA): Production management systems
+- Control Zone (DCS/PLC): Direct process control
+- Field Zone: Physical instruments and actuators
+
+Minimum security requirements for GMP automation:
+- Network segmentation between IT and OT (firewall/DMZ)
+- Patch management policy and procedure for OT systems
+- Removable media controls (no unauthorized USB devices)
+- Remote access through approved secure channels only (VPN with MFA)
+- Annual penetration testing or vulnerability assessment
+- Incident response procedure for cybersecurity events
+- Change control for all network and security configuration changes
+
+FDA has cited cybersecurity vulnerabilities as potential CGMP violations
+where insecure systems could allow unauthorized alteration of GMP data.
+
+SECTION: PLC/DCS CHANGE CONTROL AND REVALIDATION
+Changes to PLC, DCS, or SCADA systems require formal change control per 21 CFR 211.68.
+All changes to GMP-critical automation systems must be classified and approved before implementation.
+
+Major change to automation systems: Affects controlled parameters, safety interlocks, or audit trail.
+Required actions: Full Operational Qualification (OQ) protocol execution, QA approval before implementation,
+retrospective Installation Qualification (IQ) if hardware was modified, updated validation documentation.
+
+Minor change to automation systems: Cosmetic display changes, non-GMP communication parameters,
+changes to non-GMP functions that have no path to affect product quality.
+Required actions: Impact assessment by Validation Engineer documenting no effect on validated state,
+QA review and approval, no OQ required but regression test of adjacent GMP functions recommended.
+
+Firmware and software update classification:
+Firmware updates are always classified as Major unless vendor provides documented evidence otherwise.
+Software patches require regression testing of all GMP-critical functions before return to service.
+Vendor-supplied qualification documentation (IQ/OQ protocols) may be used if properly reviewed by site QA.
+
+Required documentation package for any automation change:
+Change Request with: description of change, reason, risk assessment, affected systems and documents.
+Testing protocol with acceptance criteria defined before execution, not after.
+Test execution records with actual results, tester identification, and date.
+QA approval signature on test results and updated validation status.
+Updated System Description and Configuration Baseline document.
+Revised IQ/OQ summary if hardware or software baseline was modified.
+
+SECTION: BATCH RECORD REVIEW FOR AUTOMATED SYSTEMS
+Electronic Batch Records in Manufacturing Execution Systems must satisfy 21 CFR 211.192.
+The eBR must provide complete, accurate, and attributable documentation of all critical process steps.
+
+Required data elements for each critical process step in an eBR:
+Timestamp must be computer-generated from a secured, validated system clock.
+Operators must not be able to modify timestamps in any GMP computerized system.
+User ID must be unique to the individual — no shared accounts or group logins are permitted.
+All values entered and calculated must include units and be traceable to the instrument source.
+Any process deviations detected by the system must be captured with operator response documented.
+
+Audit trail review requirements during batch release:
+QA must review audit trail entries for all critical process steps before signing the batch record.
+Any suppressed alarms must have documented justification reviewed and approved by QA.
+All operator overrides of system-enforced limits must be reviewed and confirmed appropriate.
+Audit trail review must be documented as a defined step in the batch release procedure.
+
+eBR mandatory field requirements:
+Blank fields are not acceptable for critical process parameters in an approved eBR.
+The MES must enforce mandatory field completion before allowing progression to the next process step.
+Bypassing mandatory fields requires a formal deviation report and QA approval before batch can proceed.
+
+SECTION: PROCESS ANALYTICAL TECHNOLOGY IN AUTOMATION VALIDATION
+PAT tools integrated into automated manufacturing lines require special validation considerations.
+FDA PAT Guidance (2004) encourages real-time monitoring but requires the same GMP rigor as other systems.
+
+PAT system validation requirements:
+The measurement method must be validated for its intended purpose (accuracy, precision, specificity).
+The PAT model (chemometric or statistical) must be qualified using defined calibration and verification sets.
+Integration with the process control system must be validated to confirm correct signal transmission.
+Alarm limits and process control actions triggered by PAT measurements must be validated.
+
+Real-time release testing using PAT:
+When PAT data replaces end-product testing, the regulatory strategy must be filed with health authorities.
+The PAT model must be periodically recalibrated and revalidated when process or raw material changes occur.
+Traditional end-product testing must be maintained as a backup until the PAT approach is approved.
+Continuous monitoring of model performance metrics must be included in the Annual Product Review.
+
+SECTION: ALARM MANAGEMENT IN GMP AUTOMATION SYSTEMS
+Alarm management is a critical GMP requirement for automated manufacturing systems per ISA-18.2 standard.
+Poor alarm management leads to nuisance alarms, alarm floods, and missed critical process deviations.
+
+GMP requirements for alarm systems:
+Every process alarm that indicates a GMP-critical condition must be documented in the alarm list.
+The alarm list must specify: tag name, description, alarm type, setpoint, priority, and required operator response.
+Alarms must not be suppressed or shelved without documented authorization and time limit.
+All alarm suppression events must be captured in the audit trail with user ID and justification.
+
+Alarm rationalization requirements:
+Alarm rationalization is the formal process of evaluating every alarm for necessity and appropriateness.
+Each alarm must be justified: what process condition does it detect, what is the required operator action.
+Nuisance alarms (alarms that occur frequently without requiring operator action) must be eliminated or redesigned.
+Alarm rationalization documentation must be maintained and updated when process or alarm setpoints change.
+
+Alarm response documentation:
+Operators must document their response to critical process alarms in the batch record or electronic log.
+Unacknowledged alarms are not acceptable in GMP manufacturing — all alarms must be addressed and documented.
+At batch review: QA must confirm that all alarms were acknowledged and that operator responses were appropriate.
+Repeated alarms for the same condition during a batch may indicate a process deviation requiring investigation.
