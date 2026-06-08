@@ -103,6 +103,12 @@ textarea#q::placeholder { color: var(--txt3); }
 .resp-agent-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
 .resp-agent-badge.fda { background: var(--teal-dim); color: var(--teal); }
 .resp-agent-badge.iq  { background: var(--blue-dim);  color: var(--blue); }
+.resp-agent-badge.csv        { background: rgba(0,212,255,.12);   color: #00d4ff; }
+.resp-agent-badge.qa         { background: rgba(0,255,136,.10);   color: #00ff88; }
+.resp-agent-badge.audit      { background: rgba(255,102,68,.10);  color: #ff6644; }
+.resp-agent-badge.automation { background: rgba(255,170,0,.10);   color: #ffaa00; }
+.resp-agent-badge.integrity  { background: rgba(153,102,255,.10); color: #9966ff; }
+.resp-agent-badge.capa       { background: rgba(255,68,170,.10);  color: #ff44aa; }
 .resp-q { font-size: 12px; color: var(--txt2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 240px; }
 .resp-meta { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-shrink: 0; }
 .elapsed-tag { font-family: var(--mono); font-size: 11px; padding: 2px 7px; border-radius: 4px; background: var(--bg4); color: var(--teal); }
@@ -306,6 +312,7 @@ textarea#q::placeholder { color: var(--txt3); }
   </div>
   <span class="topbar-tag">FDA Qualification Platform</span>
   <span class="topbar-spacer"></span>
+  <!-- GMP AI Copilot | Multi-Agent Platform | 6 AGENTS: csv · qa · audit · automation · integrity · capa -->
   <div style="display:flex;align-items:center;gap:16px;margin-right:8px">
     <div class="tb-counter"><div class="tb-counter-val" style="color:var(--teal)">6</div><div class="tb-counter-lbl">AGENTS</div></div>
     <div class="tb-counter"><div class="tb-counter-val" style="color:var(--blue)">6</div><div class="tb-counter-lbl">LAYERS</div></div>
@@ -418,6 +425,7 @@ Auto: ¿firmware PLC modificado sin change control aprobado?"></textarea>
       </div>
     </div>
     <div class="lat-note">
+      <span id="mode-banner" style="font-weight:600;margin-right:8px;">&#9679; comprobando…</span>
       <span class="lat-icon">⚡</span>
       Latencia típica en CPU: 20–45 seg · La primera consulta puede tardar más mientras carga el modelo
     </div>
@@ -687,7 +695,8 @@ Auto: ¿firmware PLC modificado sin change control aprobado?"></textarea>
    ============================================================ */
 
 const API    = () => (localStorage.getItem('gmp_url') || 'http://104.196.110.180:8000').replace(/\/$/,'');
-const APIKEY = () => localStorage.getItem('gmp_key') || '';
+const DEFAULT_KEY = 'b20a5e5bc90fceaa76703a53b5e09be4';
+const APIKEY = () => localStorage.getItem('gmp_key') || DEFAULT_KEY;
 const HDR    = () => ({
   'Content-Type': 'application/json',
   'X-Api-Key': APIKEY(),
@@ -988,7 +997,13 @@ async function sendQuery() {
     const hasContent = b && b.textContent && !b.classList.contains('loading');
     if (!hasContent || (b && b.textContent.length < 10)) {
       // Solo si no hay respuesta, hacer demo
-      try { await doDemo(q, uid, cardId, t0); } catch(e2) { console.error(e2); }
+      try {
+        const b2 = document.getElementById('rb-'+cardId);
+        if (b2 && b2.className.includes('loading')) {
+          b2.textContent = '⚠ Servidor no disponible — usando respuesta demo…';
+        }
+        await doDemo(q, uid, cardId, t0);
+      } catch(e2) { console.error(e2); }
     }
   }
 
@@ -999,12 +1014,21 @@ async function sendQuery() {
   document.getElementById('query-count').textContent = queryCount;
 }
 
+const AGENT_BADGE = {
+  csv:        {l:'CSV/CSA',        c:'csv'},
+  qa:         {l:'QA Agent',       c:'qa'},
+  audit:      {l:'FDA Audit',      c:'audit'},
+  automation: {l:'Automation',     c:'automation'},
+  integrity:  {l:'Data Integrity', c:'integrity'},
+  capa:       {l:'CAPA Mgmt',      c:'capa'},
+};
 function buildCard(id, ag, q) {
   const d = document.createElement('div');
   d.className = 'resp-card';
+  const ab = AGENT_BADGE[ag] || {l: ag.toUpperCase(), c: ag};
   d.innerHTML = `
     <div class="resp-header">
-      <div class="resp-agent-badge ${ag}">${ag==='fda'?'FDA REGULATORY':'IQ/OQ/PQ'}</div>
+      <div class="resp-agent-badge ${ab.c}">${ab.l}</div>
       <div class="resp-q">${q.slice(0,60)}${q.length>60?'…':''}</div>
       <div class="resp-meta">
         <span id="ec-${id}"></span>
@@ -1063,6 +1087,21 @@ async function doQuery(q, uid, cardId, t0) {
     const agName = d.agent_name || d.agent_id || agent;
     ec.innerHTML = `<span class="context-tag ${d.context_used?'yes':'no'}">${d.context_used?'RAG ✓':'sin ctx'}</span>
       <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--bg4);color:var(--txt2)">${agName}</span>`;
+  }
+
+  // Si auto-detect está activo, actualizar visualmente la card del agente detectado
+  if (autoDetect && d.agent_id) {
+    // Quitar active de todas
+    document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+    // Activar la del agente detectado
+    const detectedCard = document.querySelector(`.agent-card[data-id="${d.agent_id}"]`);
+    if (detectedCard) {
+      detectedCard.classList.add('active');
+      detectedCard.scrollIntoView({behavior:'smooth', block:'nearest'});
+    }
+    // Actualizar la variable agent para los presets
+    agent = d.agent_id;
+    renderPresets();
   }
 
   renderSrcs(cardId, d.sources);
@@ -1136,22 +1175,36 @@ async function doDemo(q, uid, cardId, t0) {
 
     const ql = q.toLowerCase();
     let ans;
-    if (ql.includes('11.10') || ql.includes('audit trail'))
+    // Agent-first routing — each of the 6 agents gets a specific demo response
+    if (agent === 'csv') {
+      ans = 'CSV/CSA — Demo\n\nSegún GAMP5, los Sistemas Computarizados (CSV/CSA) requieren:\n\n• Categoría 4 (configurados): IQ + OQ + PQ con protocolos aprobados\n• Categoría 5 (desarrollados): SDLC completo con validación de código\n• 21 CFR Part 11: audit trail habilitado, acceso por roles, firmas electrónicas\n\nPara SCADA sin OQ documentado:\n1. OQ retrospectivo con evidencia histórica de operación correcta\n2. Documentar worst-case testing realizado\n3. Change Control para formalizar estado validado\n4. Establecer programa de revalidación periódica\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: GAMP5 Cat 4, EU GMP Annex 11, 21 CFR 211.68, ISPE C&Q Guide';
+    } else if (agent === 'qa') {
+      ans = 'QA Agent — Demo\n\nInvestigación de Desviación Crítica:\n\nPaso 1 — Contención inmediata:\n• Cuarentenar lote/producto afectado\n• Notificar QA Manager y Producción\n• Preservar evidencia (muestras, registros, equipos)\n\nPaso 2 — Análisis de impacto en lote:\n• Evaluar si el producto cumple especificaciones de liberación\n• Revisar lotes relacionados en el período\n• Determinar si se requiere notificación regulatoria\n\nPaso 3 — Investigación root cause (evento recurrente):\n• Aplicar 5-Why o Fishbone Diagram\n• Revisar cambios recientes en proceso/SOP\n• Análisis de tendencia: ¿por qué se repite?\n\nPaso 4 — CAPA con efectividad verificable:\n• Acción correctiva + preventiva sistémica\n• Criterios de efectividad medibles y fecha de verificación\n• Seguimiento mínimo 90 días post-implementación\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: ICH Q10, 21 CFR 211.192, EU GMP Chapter 8';
+    } else if (agent === 'audit') {
+      ans = 'FDA Audit — Simulador 483 — Demo\n\nOBSERVACIÓN 1 (Data Integrity — CRITICAL)\nEl sistema permite deshabilitar el audit trail sin autorización de QA.\nViolación: 21 CFR 211.68(b) y FDA Data Integrity Guidance 2018.\n→ Acción: Controles de acceso que prevengan deshabilitación sin doble aprobación.\n\nOBSERVACIÓN 2 (21 CFR Part 11 — HIGH)\nAudit trail habilitado pero no revisado periódicamente en batch release.\nNo existe SOP documentado para revisión del audit trail.\n→ Acción: SOP de revisión de audit trail como parte del batch release review.\n\nPlan de Remediación:\n• 0-30 días: cambios de configuración (acceso restringido)\n• 30-60 días: SOPs + entrenamiento documentado\n• 60-90 días: audit interno de efectividad\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: 21 CFR 211.68, FDA Warning Letters, MHRA Data Integrity Guidance';
+    } else if (agent === 'automation') {
+      ans = 'Automation — Demo\n\nPLC/SCADA — Cambio de firmware sin Change Control:\n\nAcciones Inmediatas:\n• Detener producción si el sistema controla lotes GMP activos\n• Documentar versión anterior vs actual del firmware\n• Evaluar lotes producidos en el período (riesgo de impacto en calidad)\n\nRevalidación requerida (GAMP5 Cat 4):\n• OQ de funciones modificadas por el firmware\n• Regression testing de funciones no modificadas (impact assessment)\n• Change Control retroactivo con aprobación QA/RA\n• Actualización del Validation Master Plan\n\nVerificaciones ISA-88 / EEMUA 191:\n• Alarmas: confirmar setpoints validados intactos\n• Interbloqueos de seguridad: re-verificar funcionamiento\n• Batch Record/MES: confirmar captura correcta de parámetros\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: GAMP5 Cat 4, 21 CFR 211.68, ISA-88, EEMUA 191';
+    } else if (agent === 'integrity') {
+      ans = 'Data Integrity — ALCOA+ — Demo\n\nEvaluación completa ALCOA+:\n\nA — Atribuible: ¿Cada dato vinculado a usuario único con fecha/hora?\n→ Gap: cuentas compartidas o acceso genérico sin trazabilidad individual\n\nL — Legible: ¿Registros permanentes y legibles durante retención?\n→ Gap: tinta borrable, backups sin verificación de integridad\n\nC — Contemporáneo: ¿Dato registrado en el momento de la actividad?\n→ Gap: transcripción diferida sin evidencia del dato original\n\nO — Original: ¿Fuente preservada? ¿No sobreescrita sin trazabilidad?\n→ Gap CRÍTICO: audit trail deshabilitado o modificable sin control\n\nA — Exacto: ¿Sin errores, sin alteraciones no autorizadas?\n→ Gap: cálculos sin trazabilidad a los datos raw\n\n+ Complete, Consistent, Enduring, Available\n\nBajo 21 CFR Part 11 §11.10: audit trail seguro, inmutable, con timestamp.\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: FDA Data Integrity Guidance 2018, MHRA DI Guidance 2018, EU GMP Annex 11';
+    } else if (agent === 'capa') {
+      ans = 'CAPA Mgmt — Demo\n\nAnálisis 5-Why — Desviación recurrente:\n\nWhy 1: El operador no siguió el procedimiento\nWhy 2: El SOP era ambiguo en el paso crítico\nWhy 3: El SOP no fue revisado tras el cambio de equipo (18 meses)\nWhy 4: El Change Control no incluyó SOP review como acción requerida\nWhy 5: El template de CC no tiene checklist de documentos GMP impactados\n\n→ Causa Raíz: sistema de Change Control sin evaluación de impacto en documentación GMP\n\nAcciones CAPA:\n• Correctiva: Actualizar SOP + re-entrenamiento documentado (inmediato)\n• Preventiva: Revisar template CC con checklist de documentos GMP impactados\n• Efectividad: Revisar próximos 5 Change Controls — ¿incluyen SOP review?\n\nCierre: evidencia de efectividad requerida antes de cerrar CAPA.\nRiesgo regulatorio: CAPA abierto >90 días sin verificación de efectividad = hallazgo FDA.\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: ICH Q10, 21 CFR 211.192, FDA CAPA Guidance';
+    } else if (ql.includes('11.10') || ql.includes('audit trail')) {
       ans='Per 21 CFR 11.10(e), audit trails must be secure, computer-generated, time-stamped records that independently document the date and time of operator entries and actions that create, modify, or delete electronic records. Record changes shall not obscure previously recorded information. Audit trail documentation shall be retained for a period at least as long as required for the subject electronic records and shall be available for agency review and copying.';
-    else if (ql.includes('alcoa'))
+    } else if (ql.includes('alcoa')) {
       ans='ALCOA+ stands for Attributable, Legible, Contemporaneous, Original, Accurate — plus Complete, Consistent, Enduring, and Available. These principles ensure GMP data is traceable to the individual who generated it, readable, recorded at the time of the activity, original/source data preserved, correct and truthful. Complete records, chronologically consistent, on durable media, and accessible throughout the retention period.';
-    else if (ql.includes('iq') || ql.includes('installation') || ql.includes('bioreactor'))
+    } else if (ql.includes('iq') || ql.includes('installation') || ql.includes('bioreactor')) {
       ans='Installation Qualification (IQ) must verify: (1) equipment identification — serial numbers, model, manufacturer confirmed; (2) utility connections — electrical, pneumatic, and process connections per approved P&ID; (3) instrument calibration — all critical instruments have current NIST-traceable certificates; (4) software version — installed version matches approved specification; (5) materials of construction — product-contact materials confirmed against URS; (6) documentation — P&IDs, drawings, and SOPs available and current revision.';
-    else if (ql.includes('pq') || ql.includes('performance') || ql.includes('minimum'))
+    } else if (ql.includes('pq') || ql.includes('performance') || ql.includes('minimum')) {
       ans='Per FDA Process Validation Guidance (2011) and ISPE C&Q Guide, PQ requires a minimum of 3 consecutive successful production runs under routine conditions. All Critical Process Parameters (CPPs) must remain within their validated ranges for all runs. All Critical Quality Attributes (CQAs) must meet specifications for every run. Worst-case conditions must be included. Statistical analysis (Cpk ≥ 1.33 recommended) should demonstrate process capability.';
-    else if (ql.includes('oq') || ql.includes('operational') || ql.includes('alarm') || ql.includes('hvac'))
+    } else if (ql.includes('oq') || ql.includes('operational') || ql.includes('alarm') || ql.includes('hvac')) {
       ans='Operational Qualification (OQ) must include: alarm activation tests at defined upper and lower setpoints, interlock verification at boundary conditions, operating range verification (min/nominal/max), audit trail verification that all parameter changes are recorded with user ID and timestamp per 21 CFR Part 11, user access control — unauthorized actions must be rejected, emergency stop functionality verified, and worst-case condition testing with documented acceptance criteria established before execution.';
-    else if (ql.includes('signature') || ql.includes('electronic sign'))
+    } else if (ql.includes('signature') || ql.includes('electronic sign')) {
       ans='Under 21 CFR Part 11, electronic signatures must be: (1) unique to one individual and not reused or reassigned; (2) verified before initial use; (3) linked to their respective electronic records to prevent excision, copying, or transfer. Each signed record must include the printed name of the signer, the date and time of execution, and the meaning of the signature (review, approval, responsibility, or authorship).';
-    else if (ql.includes('fmea') || ql.includes('ich q9') || ql.includes('risk'))
+    } else if (ql.includes('fmea') || ql.includes('ich q9') || ql.includes('risk')) {
       ans='ICH Q9 defines Quality Risk Management (QRM) as a systematic process for assessment, control, communication and review of risks. FMEA (Failure Mode and Effects Analysis) evaluates: Severity (S), Occurrence (O), and Detectability (D) on a 1-10 scale. RPN = S × O × D. RPN > 100-125 typically requires immediate corrective action. For equipment qualification, FMEA identifies critical quality attributes (CQAs) and critical process parameters (CPPs) that must be controlled and verified during IQ/OQ/PQ.';
-    else
+    } else {
       ans='GMP AI Copilot — Modo demo activo\n\nRespondo desde el corpus regulatorio pre-cargado mientras el servidor real está en modo demo.\n\nPara conectar al servidor real:\n1. Ve a ⚙ Configuración\n2. URL: http://104.196.110.180:8000 (ya configurada)\n3. Pega la X-Api-Key del servidor\n4. Haz clic en "Probar conexión"\n\nCorpus disponible:\n• 21 CFR Part 11, 210/211\n• FDA Data Integrity Guidance 2018\n• FDA Process Validation Guidance 2011\n• EU GMP Annex 11\n• ICH Q9/Q10 · ISPE C&Q Guide\n• mistral:7b-instruct-q4_K_M (Ollama CPU)';
+    }
 
     const elapsed = Math.max(0.1, (Date.now()-t0)/1000);
     stopTimer(elapsed);
@@ -1174,7 +1227,15 @@ async function doDemo(q, uid, cardId, t0) {
     if (ec) ec.innerHTML = `<span class="context-tag yes">RAG ✓ demo</span>
       <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--bg4);color:var(--txt2)">${agent} · demo</span>`;
 
-    renderSrcs(cardId, ['21cfr_part11.txt','fda_data_integrity_guidance_2018.pdf']);
+    const DEMO_SOURCES = {
+      csv:        ['gamp5_guide.pdf','21cfr_211.68.txt','eu_gmp_annex11.pdf'],
+      qa:         ['ich_q10.pdf','21cfr_211.192.txt','eu_gmp_chapter8.pdf'],
+      audit:      ['fda_data_integrity_guidance_2018.pdf','21cfr_part11.txt','fda_483_patterns.pdf'],
+      automation: ['gamp5_guide.pdf','isa88_standard.pdf','21cfr_211.68.txt'],
+      integrity:  ['fda_data_integrity_guidance_2018.pdf','mhra_di_guidance.pdf','21cfr_part11.txt'],
+      capa:       ['ich_q10.pdf','21cfr_211.192.txt','fda_capa_guidance.pdf'],
+    };
+    renderSrcs(cardId, DEMO_SOURCES[agent] || ['21cfr_part11.txt','fda_data_integrity_guidance_2018.pdf']);
 
     // ── FIX: addAudit recibe always a valid number ──
     addAudit(uid, q, elapsed, true);
@@ -1389,6 +1450,19 @@ async function runIngest() {
 }
 
 /* ── Health ─────────────────────────────────────────────────── */
+function updateModeBanner(isReal) {
+  const banner = document.getElementById('mode-banner');
+  if (!banner) return;
+  const serverHost = (localStorage.getItem('gmp_url') || 'http://104.196.110.180:8000').replace(/^https?:\/\//,'');
+  if (isReal) {
+    banner.style.color = '#16a34a';
+    banner.textContent = '● MODO REAL — ' + serverHost;
+  } else {
+    banner.style.color = '#d97706';
+    banner.textContent = '◉ MODO DEMO — configurar API key en ⚙ Configuración';
+  }
+}
+
 async function checkHealth() {
   const dot  = document.getElementById('api-dot');
   const stxt = document.getElementById('api-status-txt');
@@ -1406,9 +1480,11 @@ async function checkHealth() {
     });
     if (d.fda_collection?.count) { document.getElementById('c-fda').textContent=d.fda_collection.count; }
     if (d.iq_collection?.count)  { document.getElementById('c-iq').textContent=d.iq_collection.count; }
+    updateModeBanner(true);
   } catch {
     dot.className = 'status-dot warn';
     stxt.textContent = 'modo demo';
+    updateModeBanner(false);
   }
 }
 
