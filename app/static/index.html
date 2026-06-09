@@ -300,6 +300,50 @@ textarea#q::placeholder { color: var(--txt3); }
 /* Spinner */
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { width: 13px; height: 13px; border: 2px solid rgba(0,0,0,0.15); border-top-color: #000; border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; }
+
+/* ── Auto-detect visual states ────────────────────────────── */
+.agent-card.auto-muted {
+  opacity: 0.35;
+  filter: grayscale(60%);
+  pointer-events: none;
+}
+.agent-card.auto-muted::before {
+  background: transparent !important;
+}
+.auto-detect-banner {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: rgba(155,126,255,0.12);
+  border: 1px solid rgba(155,126,255,0.4);
+  border-radius: var(--r);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--purple, #9966ff);
+  font-family: var(--mono, monospace);
+  letter-spacing: 0.04em;
+}
+.auto-detect-banner.visible { display: flex; }
+.auto-detect-banner-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--purple, #9966ff);
+  animation: ac-ping 1.2s ease-in-out infinite;
+}
+.detected-agent-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 10px; border-radius: 4px;
+  background: rgba(155,126,255,0.15);
+  border: 1px solid rgba(155,126,255,0.4);
+  color: var(--purple, #9966ff);
+  font-family: var(--mono, monospace);
+}
+.supporting-domains {
+  font-size: 10px; color: var(--txt2, #8A96A8);
+  margin-top: 3px;
+  font-family: var(--mono, monospace);
+}
 </style>
 </head>
 <body>
@@ -403,6 +447,10 @@ textarea#q::placeholder { color: var(--txt3); }
             <div class="ac-head"><span class="ac-icon">🔧</span><span class="ac-name">CAPA Mgmt</span><div class="ac-dot" style="background:#ff44aa"></div></div>
             <div class="ac-abbr">ROOT CAUSE / CLOSURE</div>
           </div>
+        </div>
+        <div class="auto-detect-banner" id="auto-detect-banner">
+          <div class="auto-detect-banner-dot"></div>
+          AUTO-DETECT ACTIVE — El Orchestrator seleccionará el agente según tu pregunta
         </div>
         <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt3);cursor:pointer">
           <input type="checkbox" id="auto-detect" style="accent-color:var(--teal)"> Auto-detectar
@@ -703,14 +751,15 @@ const HDR    = () => ({
   'X-User-Id': document.getElementById('user-id').value || 'anon',
 });
 
-let agent      = 'csv';
-let streaming  = false;
-let queryCount = 0;
-let auditLog   = [];
-let timerHnd   = null;
-let selectedCol = 'fda';
+let manualAgent  = 'csv';        // selección manual del usuario
+let autoDetect   = false;        // estado del checkbox auto-detect
+// effectiveAgent es computed, no variable: autoDetect ? 'auto' : manualAgent
+let streaming    = false;
+let queryCount   = 0;
+let auditLog     = [];
+let timerHnd     = null;
+let selectedCol  = 'fda';
 let pendingFiles = [];
-let autoDetect  = false;
 
 /* ── Init ─────────────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
@@ -732,6 +781,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('auto-detect')?.addEventListener('change', e => {
     autoDetect = e.target.checked;
+    updateAgentVisual();
+    const banner = document.getElementById('auto-detect-banner');
+    if (banner) banner.classList.toggle('visible', autoDetect);
   });
 
   loadAgentsFromAPI();
@@ -769,11 +821,25 @@ function showView(id) {
 }
 
 function setAgent(a) {
-  agent = a;
-  document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
-  const card = document.querySelector(`.agent-card[data-id="${a}"]`);
-  if (card) card.classList.add('active');
+  manualAgent = a;
+  updateAgentVisual();
   renderPresets();
+}
+
+function updateAgentVisual() {
+  document.querySelectorAll('.agent-card').forEach(c => {
+    c.classList.remove('active', 'auto-muted');
+  });
+  if (autoDetect) {
+    // En modo auto: todas las cards se atenúan, ninguna activa
+    document.querySelectorAll('.agent-card').forEach(c => {
+      c.classList.add('auto-muted');
+    });
+  } else {
+    // En modo manual: activar la card del agente seleccionado
+    const activeCard = document.querySelector(`.agent-card[data-id="${manualAgent}"]`);
+    if (activeCard) activeCard.classList.add('active');
+  }
 }
 
 async function loadAgentsFromAPI() {
@@ -847,13 +913,13 @@ const PRESETS_FULL = {
 };
 function renderPresets() {
   const row = document.getElementById('preset-row');
-  const presets = PRESETS_SHORT[agent] || PRESETS_SHORT.csv;
+  const presets = PRESETS_SHORT[manualAgent] || PRESETS_SHORT.csv;
   row.innerHTML = presets.map((p,i) =>
     `<button class="preset-chip" onclick="usePreset(${i})">${p}</button>`
   ).join('');
 }
 function usePreset(i) {
-  const full = PRESETS_FULL[agent] || PRESETS_FULL.csv;
+  const full = PRESETS_FULL[manualAgent] || PRESETS_FULL.csv;
   document.getElementById('q').value = full[i] || '';
   document.getElementById('q').focus();
 }
@@ -957,7 +1023,8 @@ async function sendQuery() {
 
   document.getElementById('empty-state')?.remove();
   const cardId = 'c' + Date.now();
-  const card   = buildCard(cardId, agent, q);
+  const effectiveAgent = autoDetect ? 'auto' : manualAgent;
+  const card   = buildCard(cardId, effectiveAgent, q);
   document.getElementById('response-area').prepend(card);
 
   resetFlow();
@@ -983,10 +1050,11 @@ async function sendQuery() {
   const uid = document.getElementById('user-id').value || 'anon';
 
   try {
+    const effectiveAgentFinal = autoDetect ? 'auto' : manualAgent;
     if (APIKEY() && streaming) {
-      await doStream(q, uid, cardId, t0);
+      await doStream(q, uid, cardId, t0, effectiveAgentFinal);
     } else if (APIKEY()) {
-      await doQuery(q, uid, cardId, t0);
+      await doQuery(q, uid, cardId, t0, effectiveAgentFinal);
     } else {
       await doDemo(q, uid, cardId, t0);
     }
@@ -1022,13 +1090,19 @@ const AGENT_BADGE = {
   integrity:  {l:'Data Integrity', c:'integrity'},
   capa:       {l:'CAPA Mgmt',      c:'capa'},
 };
-function buildCard(id, ag, q) {
+function buildCard(id, effectiveAg, q) {
   const d = document.createElement('div');
   d.className = 'resp-card';
-  const ab = AGENT_BADGE[ag] || {l: ag.toUpperCase(), c: ag};
+
+  // Header inicial diferente según si es auto-detect o manual
+  const isAuto = (effectiveAg === 'auto');
+  const agentDisplay = isAuto
+    ? '<span class="detected-agent-badge" id="agent-badge-' + id + '">⟳ AUTO-DETECT — Detectando agente…</span>'
+    : `<div class="resp-agent-badge ${effectiveAg}" id="agent-badge-${id}">${effectiveAg.toUpperCase()}</div>`;
+
   d.innerHTML = `
     <div class="resp-header">
-      <div class="resp-agent-badge ${ab.c}">${ab.l}</div>
+      ${agentDisplay}
       <div class="resp-q">${q.slice(0,60)}${q.length>60?'…':''}</div>
       <div class="resp-meta">
         <span id="ec-${id}"></span>
@@ -1040,10 +1114,58 @@ function buildCard(id, ag, q) {
   return d;
 }
 
-async function doQuery(q, uid, cardId, t0) {
+function updateCardAgent(cardId, agentId, agentName, rulesTriggered) {
+  // Actualiza el badge del agente en la card cuando auto-detect resuelve
+  const badge = document.getElementById('agent-badge-' + cardId);
+  if (!badge) return;
+
+  // Determinar agentes de soporte desde reglas disparadas
+  const AGENT_DOMAINS = {
+    csv:       'CSV/CSA Validation',
+    qa:        'Quality Assurance',
+    audit:     'FDA Audit',
+    automation:'OT/Automation',
+    integrity: 'Data Integrity',
+    capa:      'CAPA Mgmt',
+  };
+
+  const primaryName = agentName || AGENT_DOMAINS[agentId] || agentId;
+
+  // Detectar dominios de soporte desde rules_triggered si los hay
+  let supportingAgents = [];
+  if (Array.isArray(rulesTriggered) && rulesTriggered.length > 0) {
+    const RULE_AGENTS = {
+      R002:'integrity', R007:'integrity', R012:'integrity',
+      R003:'capa',      R009:'capa',
+      R006:'qa',        R010:'qa',
+      R008:'automation',
+      R001:'csv',       R004:'csv',       R005:'csv',       R011:'csv',
+    };
+    const seen = new Set([agentId]);
+    rulesTriggered.forEach(ruleId => {
+      const ra = RULE_AGENTS[ruleId];
+      if (ra && !seen.has(ra)) { seen.add(ra); supportingAgents.push(AGENT_DOMAINS[ra] || ra); }
+    });
+  }
+
+  const supportHtml = supportingAgents.length > 0
+    ? `<div class="supporting-domains">Supporting: ${supportingAgents.join(' / ')}</div>`
+    : '';
+
+  badge.outerHTML = `
+    <div>
+      <span class="detected-agent-badge" style="border-color:rgba(0,255,136,.4);color:#00ff88;background:rgba(0,255,136,.1)">
+        ✓ Detected: ${primaryName}
+      </span>
+      ${supportHtml}
+    </div>`;
+}
+
+async function doQuery(q, uid, cardId, t0, effectiveAgent) {
+  effectiveAgent = effectiveAgent || manualAgent;
   const r = await fetch(API()+'/api/v1/query', {
     method:'POST', headers: HDR(),
-    body: JSON.stringify({question:q, agent: autoDetect ? 'auto' : agent})
+    body: JSON.stringify({question:q, agent: effectiveAgent})
   });
   if (!r.ok) throw new Error('HTTP '+r.status);
   const d = await r.json();
@@ -1084,36 +1206,28 @@ async function doQuery(q, uid, cardId, t0) {
 
   const ec = document.getElementById('ec-'+cardId);
   if (ec) {
-    const agName = d.agent_name || d.agent_id || agent;
+    const agName = d.agent_name || d.agent_id || manualAgent;
     ec.innerHTML = `<span class="context-tag ${d.context_used?'yes':'no'}">${d.context_used?'RAG ✓':'sin ctx'}</span>
       <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--bg4);color:var(--txt2)">${agName}</span>`;
   }
 
-  // Si auto-detect está activo, actualizar visualmente la card del agente detectado
+  renderSrcs(cardId, d.sources);
+
+  // Si era auto-detect, actualizar la card con el agente detectado
   if (autoDetect && d.agent_id) {
-    // Quitar active de todas
-    document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
-    // Activar la del agente detectado
-    const detectedCard = document.querySelector(`.agent-card[data-id="${d.agent_id}"]`);
-    if (detectedCard) {
-      detectedCard.classList.add('active');
-      detectedCard.scrollIntoView({behavior:'smooth', block:'nearest'});
-    }
-    // Actualizar la variable agent para los presets
-    agent = d.agent_id;
-    renderPresets();
+    updateCardAgent(cardId, d.agent_id, d.agent_name, d.rules_triggered);
   }
 
-  renderSrcs(cardId, d.sources);
   renderRules(cardId, rules, riskLvl);
   addAudit(uid, q, elapsed, !!d.context_used);
-  setLayerInfo('response', `${d.agent_name||agent} respondió en ${elapsed.toFixed(1)}s. ${rules.length} reglas GMP evaluadas. ${chunks} chunks de corpus.`);
+  setLayerInfo('response', `${d.agent_name||manualAgent} respondió en ${elapsed.toFixed(1)}s. ${rules.length} reglas GMP evaluadas. ${chunks} chunks de corpus.`);
 }
 
-async function doStream(q, uid, cardId, t0) {
+async function doStream(q, uid, cardId, t0, effectiveAgent) {
+  effectiveAgent = effectiveAgent || manualAgent;
   const r = await fetch(API()+'/api/v1/stream', {
     method:'POST', headers: HDR(),
-    body: JSON.stringify({question:q, agent: autoDetect ? 'auto' : agent})
+    body: JSON.stringify({question:q, agent: effectiveAgent})
   });
   if (!r.ok) throw new Error('HTTP '+r.status);
 
@@ -1151,12 +1265,60 @@ async function doStream(q, uid, cardId, t0) {
           setNode('response','active','stream completado','done: true');
           await sleep(100);
           setNode('response','done','completado');
+          if (autoDetect && obj.agent_id) {
+            updateCardAgent(cardId, obj.agent_id, obj.agent_name, obj.rules_triggered);
+          }
           addAudit(uid, q, el, true);
           setLayerInfo('response', `Stream completado en ${el.toFixed(1)}s. Tokens generados token a token.`);
         }
       } catch(e) {}
     }
   }
+}
+
+function detectAgentFromQuestion(q) {
+  // Replica la lógica del orchestrator.py del backend para modo demo
+  // Retorna {agentId, agentName, supporting[]}
+  const ql = q.toLowerCase();
+  const scores = {
+    csv:       0, qa: 0, audit: 0,
+    automation:0, integrity: 0, capa: 0,
+  };
+
+  // Keywords por dominio (espejo de orchestrator.py)
+  const kw = {
+    csv:       ['sistema','software','validacion','csv','csa','gamp','gamp5','iq','oq','pq',
+                'part 11','21 cfr 11','lims','erp','mes validacion','computer','computerized'],
+    qa:        ['deviation','desviacion','capa open','oos','sop','trending','quality system',
+                'calidad','icq q10','management review','annual review'],
+    audit:     ['inspector','483','fda audit','regulatory audit','inspection readiness',
+                'warning letter','gmp inspection','inspeccion','gap analysis','readiness'],
+    automation:['plc','scada','dcs','mes','isa-88','isa88','isa-95','batch record',
+                'alarm','ebr','historian','recipe','interlocks'],
+    integrity: ['alcoa','data integrity','audit trail','metadata','raw data','shared',
+                'administrator','shared account','shared user','not reviewed','hybrid',
+                'result modification','change result'],
+    capa:      ['capa','corrective','preventive','root cause','5-why','effectiveness',
+                'closure','recurrence','fishbone','fta','rca'],
+  };
+
+  Object.entries(kw).forEach(([ag, words]) => {
+    words.forEach(w => { if (ql.includes(w)) scores[ag] += 1; });
+  });
+
+  // Agente primario: mayor score
+  const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+  const primaryId   = sorted[0][1] > 0 ? sorted[0][0] : 'csv';
+  const NAMES = {
+    csv:'CSV/CSA Validation', qa:'Quality Assurance', audit:'FDA Audit Readiness',
+    automation:'OT/Automation', integrity:'Data Integrity', capa:'CAPA Management',
+  };
+  // Agentes de soporte: score > 0 y distintos del primario
+  const supporting = sorted.slice(1)
+    .filter(([,s]) => s > 0)
+    .map(([id]) => NAMES[id] || id);
+
+  return { agentId: primaryId, agentName: NAMES[primaryId], supporting };
 }
 
 /* ── FIX: doDemo nunca lanza excepciones al exterior ─────── */
@@ -1173,20 +1335,24 @@ async function doDemo(q, uid, cardId, t0) {
     setLayerInfo('ollama', 'Modo demo: respuestas pre-cargadas del corpus FDA. Configura la API key en ⚙ Configuración para usar el servidor real.');
     await sleep(1200);
 
+    // En modo auto-detect, detectar el agente correcto para la pregunta
+    const demoDetected = detectAgentFromQuestion(q);
+    const demoAgentId  = autoDetect ? demoDetected.agentId : manualAgent;
+
     const ql = q.toLowerCase();
     let ans;
     // Agent-first routing — each of the 6 agents gets a specific demo response
-    if (agent === 'csv') {
+    if (demoAgentId === 'csv') {
       ans = 'CSV/CSA — Demo\n\nSegún GAMP5, los Sistemas Computarizados (CSV/CSA) requieren:\n\n• Categoría 4 (configurados): IQ + OQ + PQ con protocolos aprobados\n• Categoría 5 (desarrollados): SDLC completo con validación de código\n• 21 CFR Part 11: audit trail habilitado, acceso por roles, firmas electrónicas\n\nPara SCADA sin OQ documentado:\n1. OQ retrospectivo con evidencia histórica de operación correcta\n2. Documentar worst-case testing realizado\n3. Change Control para formalizar estado validado\n4. Establecer programa de revalidación periódica\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: GAMP5 Cat 4, EU GMP Annex 11, 21 CFR 211.68, ISPE C&Q Guide';
-    } else if (agent === 'qa') {
+    } else if (demoAgentId === 'qa') {
       ans = 'QA Agent — Demo\n\nInvestigación de Desviación Crítica:\n\nPaso 1 — Contención inmediata:\n• Cuarentenar lote/producto afectado\n• Notificar QA Manager y Producción\n• Preservar evidencia (muestras, registros, equipos)\n\nPaso 2 — Análisis de impacto en lote:\n• Evaluar si el producto cumple especificaciones de liberación\n• Revisar lotes relacionados en el período\n• Determinar si se requiere notificación regulatoria\n\nPaso 3 — Investigación root cause (evento recurrente):\n• Aplicar 5-Why o Fishbone Diagram\n• Revisar cambios recientes en proceso/SOP\n• Análisis de tendencia: ¿por qué se repite?\n\nPaso 4 — CAPA con efectividad verificable:\n• Acción correctiva + preventiva sistémica\n• Criterios de efectividad medibles y fecha de verificación\n• Seguimiento mínimo 90 días post-implementación\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: ICH Q10, 21 CFR 211.192, EU GMP Chapter 8';
-    } else if (agent === 'audit') {
+    } else if (demoAgentId === 'audit') {
       ans = 'FDA Audit — Simulador 483 — Demo\n\nOBSERVACIÓN 1 (Data Integrity — CRITICAL)\nEl sistema permite deshabilitar el audit trail sin autorización de QA.\nViolación: 21 CFR 211.68(b) y FDA Data Integrity Guidance 2018.\n→ Acción: Controles de acceso que prevengan deshabilitación sin doble aprobación.\n\nOBSERVACIÓN 2 (21 CFR Part 11 — HIGH)\nAudit trail habilitado pero no revisado periódicamente en batch release.\nNo existe SOP documentado para revisión del audit trail.\n→ Acción: SOP de revisión de audit trail como parte del batch release review.\n\nPlan de Remediación:\n• 0-30 días: cambios de configuración (acceso restringido)\n• 30-60 días: SOPs + entrenamiento documentado\n• 60-90 días: audit interno de efectividad\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: 21 CFR 211.68, FDA Warning Letters, MHRA Data Integrity Guidance';
-    } else if (agent === 'automation') {
+    } else if (demoAgentId === 'automation') {
       ans = 'Automation — Demo\n\nPLC/SCADA — Cambio de firmware sin Change Control:\n\nAcciones Inmediatas:\n• Detener producción si el sistema controla lotes GMP activos\n• Documentar versión anterior vs actual del firmware\n• Evaluar lotes producidos en el período (riesgo de impacto en calidad)\n\nRevalidación requerida (GAMP5 Cat 4):\n• OQ de funciones modificadas por el firmware\n• Regression testing de funciones no modificadas (impact assessment)\n• Change Control retroactivo con aprobación QA/RA\n• Actualización del Validation Master Plan\n\nVerificaciones ISA-88 / EEMUA 191:\n• Alarmas: confirmar setpoints validados intactos\n• Interbloqueos de seguridad: re-verificar funcionamiento\n• Batch Record/MES: confirmar captura correcta de parámetros\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: GAMP5 Cat 4, 21 CFR 211.68, ISA-88, EEMUA 191';
-    } else if (agent === 'integrity') {
+    } else if (demoAgentId === 'integrity') {
       ans = 'Data Integrity — ALCOA+ — Demo\n\nEvaluación completa ALCOA+:\n\nA — Atribuible: ¿Cada dato vinculado a usuario único con fecha/hora?\n→ Gap: cuentas compartidas o acceso genérico sin trazabilidad individual\n\nL — Legible: ¿Registros permanentes y legibles durante retención?\n→ Gap: tinta borrable, backups sin verificación de integridad\n\nC — Contemporáneo: ¿Dato registrado en el momento de la actividad?\n→ Gap: transcripción diferida sin evidencia del dato original\n\nO — Original: ¿Fuente preservada? ¿No sobreescrita sin trazabilidad?\n→ Gap CRÍTICO: audit trail deshabilitado o modificable sin control\n\nA — Exacto: ¿Sin errores, sin alteraciones no autorizadas?\n→ Gap: cálculos sin trazabilidad a los datos raw\n\n+ Complete, Consistent, Enduring, Available\n\nBajo 21 CFR Part 11 §11.10: audit trail seguro, inmutable, con timestamp.\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: FDA Data Integrity Guidance 2018, MHRA DI Guidance 2018, EU GMP Annex 11';
-    } else if (agent === 'capa') {
+    } else if (demoAgentId === 'capa') {
       ans = 'CAPA Mgmt — Demo\n\nAnálisis 5-Why — Desviación recurrente:\n\nWhy 1: El operador no siguió el procedimiento\nWhy 2: El SOP era ambiguo en el paso crítico\nWhy 3: El SOP no fue revisado tras el cambio de equipo (18 meses)\nWhy 4: El Change Control no incluyó SOP review como acción requerida\nWhy 5: El template de CC no tiene checklist de documentos GMP impactados\n\n→ Causa Raíz: sistema de Change Control sin evaluación de impacto en documentación GMP\n\nAcciones CAPA:\n• Correctiva: Actualizar SOP + re-entrenamiento documentado (inmediato)\n• Preventiva: Revisar template CC con checklist de documentos GMP impactados\n• Efectividad: Revisar próximos 5 Change Controls — ¿incluyen SOP review?\n\nCierre: evidencia de efectividad requerida antes de cerrar CAPA.\nRiesgo regulatorio: CAPA abierto >90 días sin verificación de efectividad = hallazgo FDA.\n\n[DEMO — configura API key para respuestas del corpus real]\nReferencias: ICH Q10, 21 CFR 211.192, FDA CAPA Guidance';
     } else if (ql.includes('11.10') || ql.includes('audit trail')) {
       ans='Per 21 CFR 11.10(e), audit trails must be secure, computer-generated, time-stamped records that independently document the date and time of operator entries and actions that create, modify, or delete electronic records. Record changes shall not obscure previously recorded information. Audit trail documentation shall be retained for a period at least as long as required for the subject electronic records and shall be available for agency review and copying.';
@@ -1225,7 +1391,7 @@ async function doDemo(q, uid, cardId, t0) {
 
     const ec = document.getElementById('ec-'+cardId);
     if (ec) ec.innerHTML = `<span class="context-tag yes">RAG ✓ demo</span>
-      <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--bg4);color:var(--txt2)">${agent} · demo</span>`;
+      <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--bg4);color:var(--txt2)">${demoAgentId} · demo</span>`;
 
     const DEMO_SOURCES = {
       csv:        ['gamp5_guide.pdf','21cfr_211.68.txt','eu_gmp_annex11.pdf'],
@@ -1235,7 +1401,13 @@ async function doDemo(q, uid, cardId, t0) {
       integrity:  ['fda_data_integrity_guidance_2018.pdf','mhra_di_guidance.pdf','21cfr_part11.txt'],
       capa:       ['ich_q10.pdf','21cfr_211.192.txt','fda_capa_guidance.pdf'],
     };
-    renderSrcs(cardId, DEMO_SOURCES[agent] || ['21cfr_part11.txt','fda_data_integrity_guidance_2018.pdf']);
+    renderSrcs(cardId, DEMO_SOURCES[demoAgentId] || ['21cfr_part11.txt','fda_data_integrity_guidance_2018.pdf']);
+
+    // Actualizar badge del agente si era auto-detect
+    if (autoDetect) {
+      updateCardAgent(cardId, demoDetected.agentId, demoDetected.agentName,
+        demoDetected.supporting.length > 0 ? ['R002'] : []);
+    }
 
     // ── FIX: addAudit recibe always a valid number ──
     addAudit(uid, q, elapsed, true);
