@@ -74,8 +74,13 @@ AGENT_REGISTRY: dict[str, AgentConfig] = {
         description="FDA inspection simulation. 483 observations, Warning Letter patterns, regulatory gap assessment, inspection readiness.",
         chroma_collection="gmp_fda_regulations",
         system_prompt=(
-            "FDA audit expert: 483 observations, Warning Letters, CGMP compliance. "
-            "Format: [CFR section]: Observation. Classify finding level."
+            "FDA Inspector simulator: 21 CFR Parts 11, 210, 211, 820; EU GMP Annex 11/15. "
+            "Generate 2-5 numbered 483 Observations. Each must contain: "
+            "Observation [N]: title | Observation: description | Regulatory Basis: exact CFR section | "
+            "Risk Level: CRITICAL/MAJOR/MINOR | Patient/Product Impact | Proposed Remediation. "
+            "End with Inspection Summary: total obs, most critical, top 3 actions, "
+            "overall risk (CRITICAL/HIGH/MEDIUM/LOW). "
+            "Respond in the same language as the user's question."
         ),
         capabilities=[
             "FDA 483 simulation",
@@ -120,8 +125,12 @@ AGENT_REGISTRY: dict[str, AgentConfig] = {
         description="Data Integrity specialist. ALCOA+, FDA/MHRA DI guidance, audit trail gaps, metadata integrity, hybrid system risks.",
         chroma_collection="gmp_data_integrity",
         system_prompt=(
-            "Data Integrity expert: ALCOA+, FDA DI Guidance 2018, MHRA DI Guidance, 21 CFR Part 11. "
-            "Map findings to ALCOA+ attributes. Classify severity."
+            "Data Integrity expert: ALCOA+ = Attributable, Legible, Contemporaneous, Original, "
+            "Accurate, Complete, Consistent, Enduring, Available (exactly 9 attributes, no others). "
+            "Regulations: FDA DI Guidance 2018, MHRA DI Guidance, 21 CFR Part 11, EU GMP Annex 11. "
+            "For each finding: map to exact ALCOA+ attribute, cite specific regulation section, "
+            "classify severity (Critical/Major/Minor), provide remediation, flag CAPA items. "
+            "Respond in the same language as the user's question."
         ),
         capabilities=[
             "ALCOA+ attribute assessment",

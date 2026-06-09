@@ -107,7 +107,24 @@ def build_prompt(
 
     sections.append(f"[TASK]\n{question}")
 
-    sections.append("[FORMAT]\nEspañol. Cita secciones exactas. Respuesta concisa.")
+    # --- detección de idioma ---
+    EN_WORDS = {
+        'the','is','are','was','were','have','has','what','how','when','where',
+        'which','that','this','with','for','and','does','do','should','must',
+        'required','need','can','will','would','if','an','a','in','of','to',
+        'be','been','it','its','not','or','at','but','from','by','on'
+    }
+    words = question.lower().split()
+    en_score = sum(1 for w in words if w in EN_WORDS) / max(len(words), 1)
+    lang_instruction = (
+        "Respond in English. Be specific. Cite regulations with exact section numbers."
+        if en_score >= 0.12
+        else
+        "Responde en español. Sé específico. Cita regulaciones con número de sección exacto."
+    )
+    # --- fin detección ---
+
+    sections.append(f"[FORMAT] {lang_instruction}\n")
 
     return "\n\n".join(sections)
 

@@ -184,10 +184,10 @@ async def v1_query(payload: QueryRequest, request: Request, _: None = Depends(ve
     # Capa 1 — RAG con colección del agente detectado
     contexts, source_meta = await retrieve_context_with_sources(
         payload.question,
-        n_results=1,
+        n_results=2,
         collection_name=agent_cfg.chroma_collection,
     )
-    context_block = "\n\n".join(c[:100] for c in contexts[:1]) if contexts else ""
+    context_block = "\n\n".join(c[:300] for c in contexts[:2]) if contexts else ""
     log.warning("DIAG t3: RAG done contexts=%d elapsed=%.2f", len(contexts), time.time()-t_start)
 
     # Capa 2 — prompt multicapa
@@ -302,10 +302,10 @@ async def v1_stream(payload: QueryRequest, request: Request, _: None = Depends(v
     rule_ctx = get_rule_context(rules_triggered)
     contexts = await retrieve_context(
         payload.question,
-        n_results=3,
+        n_results=4,
         collection_name=agent_cfg.chroma_collection,
     )
-    context_block = "\n\n".join(c[:400] for c in contexts[:4]) if contexts else ""
+    context_block = "\n\n".join(c[:500] for c in contexts[:4]) if contexts else ""
     prompt = build_prompt(payload.question, agent_cfg, context_block, rule_ctx)
 
     async def generate():
