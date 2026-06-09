@@ -41,6 +41,9 @@ _AGENT_KEYWORDS: dict[str, list[str]] = {
         "hybrid system", "sistema hibrido", "sistema híbrido",
         "tipp-ex", "falsificacion", "falsificación", "backdating",
         "mhra di", "fda di", "di guidance", "balanza", "sin audit trail",
+        "shared account", "shared user", "shared admin", "shared login",
+        "not reviewed", "audit trail not", "modify result", "modify analytical",
+        "administrator user", "generic account", "cuenta compartida",
     ],
     "capa": [
         "capa", "corrective", "preventive", "root cause", "causa raiz", "causa raíz",
