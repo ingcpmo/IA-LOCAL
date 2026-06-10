@@ -1,0 +1,56 @@
+manifest_version: "1.0"
+
+project:
+  id: {{project_id}}
+  name: "{{project_name}}"
+  description: "{{project_description}}"
+  created_at: "{{created_at}}"
+
+source:
+  base_product_tag: "{{base_product_tag}}"
+  base_product_commit: "{{base_product_commit}}"
+  factory_commit: "{{factory_commit}}"
+  generated_by: factory_layer_8_claude_code_agent
+  generation_mode: manual_assisted
+
+deployment:
+  docker_project_name: "{{project_id}}"
+  api_port: {{api_port}}
+  postgres_port: {{postgres_port}}
+  redis_port: {{redis_port}}
+  use_shared_ollama: true
+  ollama_url: "http://host.docker.internal:11434"
+  ollama_model: "{{ollama_model}}"
+  resource_limits_applied: true
+
+agents:
+  inherited: {{agents_inherited}}
+  profiles: {}
+  custom: {}
+
+rag_collections: {}
+
+security:
+  api_key_in_env_only: true
+  api_key_not_in_frontend: true
+  env_gitignored: true
+
+quality_gates:
+  compose_syntax_valid: null
+  ports_validated_in_registry: null
+  health_ok: null
+  rag_stats_ok: null
+  min_chunks_per_collection_ok: null
+  routing_ok: null
+  inherited_questions_ok: null
+  new_questions_ok: null
+  audit_chain_ok: null
+  ui_loads_ok: null
+  api_key_not_in_frontend: null
+  git_clean: null
+  diff_archived: null
+  approval_granted: null
+  max_active_solutions_respected: null
+  ports_validated: null
+
+status: draft

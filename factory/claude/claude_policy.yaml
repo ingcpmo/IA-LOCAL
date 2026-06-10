@@ -1,0 +1,32 @@
+policy: claude_policy
+version: "1.0"
+description: Espejo operativo de code_agent_policy.yaml — reglas específicas para sesiones de Claude Code dentro de workspaces de la fábrica.
+
+workspace_scope:
+  rule: Claude Code trabaja ÚNICAMENTE dentro del workspace asignado
+  path_pattern: "/home/ing_cpmo/factory/workspaces/<project_id>/"
+  violation: todo cambio fuera del workspace es una violación que invalida la tarea
+
+mandatory_at_session_start:
+  - Leer CLAUDE.md del workspace
+  - Leer task.md del workspace
+  - Verificar que .claude/settings.json está activo
+
+mandatory_before_any_action:
+  - Verificar que la ruta del archivo está dentro del workspace
+  - Si hay duda: consultar al usuario antes de actuar
+
+mandatory_at_session_end:
+  - Mostrar tree del workspace (primer nivel)
+  - Mostrar git status --short del workspace
+  - Mostrar git diff --stat del workspace
+  - NO commitear sin aprobación explícita
+
+forbidden_commands:
+  - "git commit" (sin aprobación)
+  - "git push"
+  - "docker compose -f /home/ing_cpmo/docker-compose.yml *"
+  - "rm -rf"
+  - Editar cualquier archivo fuera del workspace
+
+mode: manual_assisted  # Modo A; Modo B (headless) solo tras validar Modo A en >= 1 proyecto

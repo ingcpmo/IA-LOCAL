@@ -1,0 +1,28 @@
+policy: approval_policy
+version: "1.0"
+description: Acciones que requieren aprobación explícita de Capa 9 (Cesar) antes de ejecutarse.
+
+actions_requiring_approval:
+  - aprobar_diseño_de_agentes
+  - crear_agente_nuevo
+  - exponer_puerto
+  - release
+  - deploy
+
+approval_format:
+  file: approval.json
+  schema:
+    action: string
+    project_id: string
+    version: string
+    approved_by: string
+    approved_at: ISO8601
+    base_commit: string
+    gates_report_hash: string
+    status: "pending_approval | approved | rejected"
+
+rules:
+  - deploy bloqueado sin approval.status=approved
+  - release puede generarse en estado pending_approval
+  - registro espejo de cada aprobación en factory/audit/factory_audit.jsonl
+  - ningún commit, release ni deploy sin aprobación explícita registrada

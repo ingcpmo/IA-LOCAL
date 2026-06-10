@@ -1,0 +1,90 @@
+catalog_version: "1.0"
+source: "GMP AI Copilot base — tag base-v1.0.0"
+
+base_agents:
+  csv:
+    agent_id: csv
+    name: "CSV/CSA Validation Agent"
+    description: "Computer System Validation / Computer Software Assurance specialist. GAMP5, IQ/OQ/PQ, 21 CFR Part 11."
+    rag_collection: gmp_iq_oq_pq
+    capabilities:
+      - GAMP5 category classification
+      - IQ/OQ/PQ scope determination
+      - 21 CFR Part 11 assessment
+      - Validation Master Plan review
+      - CSV gap analysis
+      - Regression test strategy
+    status: active
+
+  qa:
+    agent_id: qa
+    name: "Quality Assurance Agent"
+    description: "GMP Quality System expert. Deviation classification, CAPA management, SOP compliance, OOS investigation, trending."
+    rag_collection: gmp_qa_system
+    capabilities:
+      - Deviation classification (Critical/Major/Minor)
+      - CAPA generation with root cause
+      - OOS investigation guidance
+      - Trending and signal detection
+      - SOP compliance review
+      - Change control QA assessment
+    status: active
+
+  audit:
+    agent_id: audit
+    name: "FDA Audit Readiness Agent"
+    description: "FDA inspection simulation. 483 observations, Warning Letter patterns, regulatory gap assessment, inspection readiness."
+    rag_collection: gmp_fda_regulations
+    capabilities:
+      - FDA 483 simulation
+      - Warning Letter pattern analysis
+      - Inspection readiness assessment
+      - Regulatory gap identification
+      - 483 response adequacy review
+      - Pre-PAI/surveillance preparation
+    status: active
+
+  automation:
+    agent_id: automation
+    name: "OT/Automation Validation Agent"
+    description: "OT systems validation. ISA-88/95, GAMP5 Cat4/5, PLC/SCADA/MES, EEMUA 191, 21 CFR Part 11 for automation."
+    rag_collection: gmp_automation
+    capabilities:
+      - ISA-88 batch control compliance
+      - PLC/SCADA validation scope
+      - GAMP5 Cat 4/5 classification
+      - Alarm rationalization (EEMUA 191)
+      - eBR/MES validation
+      - OT cybersecurity assessment
+    status: active
+
+  integrity:
+    agent_id: integrity
+    name: "Data Integrity Agent"
+    description: "Data Integrity specialist. ALCOA+, FDA/MHRA DI guidance, audit trail gaps, metadata integrity, hybrid system risks."
+    rag_collection: gmp_data_integrity
+    capabilities:
+      - ALCOA+ attribute assessment
+      - Audit trail gap analysis
+      - Metadata integrity review
+      - Raw vs processed data assessment
+      - Hybrid system risk analysis
+      - DI gap report generation
+    status: active
+
+  capa:
+    agent_id: capa
+    name: "CAPA Management Agent"
+    description: "CAPA specialist. Root cause analysis (5-Why, Fishbone, FTA), effectiveness criteria, RPN prioritization, closure verification."
+    rag_collection: gmp_capa
+    capabilities:
+      - 5-Why root cause analysis
+      - Fishbone/Ishikawa facilitation
+      - Fault Tree Analysis (FTA)
+      - Effectiveness criteria definition
+      - RPN-based prioritization
+      - CAPA closure verification
+    status: active
+
+custom_agents: {}     # agentes nuevos creados por la fábrica se registran aquí
+derived_profiles: {}  # perfiles derivados se registran aquí

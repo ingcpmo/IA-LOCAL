@@ -1,0 +1,28 @@
+policy: resource_policy
+version: "1.0"
+description: Límites de recursos para soluciones custom y para factory-api. Servidor CPU-only con Ollama compartido.
+
+max_active_custom_solutions: 2
+
+limits_per_custom_solution:
+  api:
+    mem_limit: "768m"
+    cpus: "1.0"
+  postgres:
+    mem_limit: "512m"
+    cpus: "0.5"
+  redis:
+    mem_limit: "128m"
+    cpus: "0.25"
+
+factory_api:
+  mem_limit: "512m"
+  cpus: "0.5"
+
+rules:
+  - soluciones no en demostración deben quedar en estado "docker compose stop"
+  - gate de deploy incluye "docker stats --no-stream" + "free -m" + "df -h" comparados contra baseline de F0
+  - latencia esperada se multiplica con soluciones activas (Ollama CPU único — bottleneck conocido)
+  - upgrade futuro a GPU en roadmap (Llama 3.1 70B)
+
+baseline_reference: backups/pre_factory_20260610/baseline.txt

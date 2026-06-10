@@ -1,0 +1,37 @@
+policy: code_agent_policy
+version: "1.0"
+description: Permisos y restricciones para Claude Code trabajando en workspaces de la fábrica.
+
+read_allowed:
+  - "factory/**"
+  - "app/**"               # solo lectura — referencia del producto base
+  - ".claude/skills/**"
+
+write_allowed:
+  - "factory/workspaces/<project_id>/**"   # ÚNICAMENTE el workspace asignado
+
+forbidden:
+  - "app/"
+  - "docker-compose.yml"
+  - "Dockerfile"
+  - ".env"
+  - "data/chroma"
+  - "data/audit_logs"
+  - "backups/"
+  - "contenedores aria-*"
+  - "contenedores hotelbot-*"
+
+requires_human_approval:
+  - commit
+  - release
+  - deploy
+  - crear_agente_nuevo
+  - exponer_puerto
+  - borrar_workspace
+
+mandatory_validations:
+  - quality_gate_runner antes de proponer release
+
+enforcement:
+  mechanism: claude_bridge genera CLAUDE.md + .claude/settings.json (deny rules) desde esta política
+  note: las políticas YAML son fuente documental; CLAUDE.md y settings.json son su materialización ejecutable

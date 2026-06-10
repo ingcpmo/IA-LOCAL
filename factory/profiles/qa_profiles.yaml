@@ -1,0 +1,11 @@
+base_agent: qa
+profiles: {}
+# Ejemplo de perfil derivado:
+# qa_oos_profile:
+#   profile_id: qa_oos_profile
+#   base_agent: qa
+#   coverage_estimate: "80%"
+#   justification: "qa cubre el 80% del flujo OOS; se especializa con corpus FDA OOS Guidance 2022 y 21 CFR 211.160/165/194"
+#   system_prompt_delta: "TODO F5"
+#   rag_collection: "gmp_qa_oos"
+#   test_questions: []

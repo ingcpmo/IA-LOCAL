@@ -1,0 +1,40 @@
+policy: agent_creation_policy
+version: "1.0"
+description: Criterios para decidir entre agente existente, perfil derivado o agente nuevo.
+
+decision_tree:
+  usar_agente_existente:
+    when: el requerimiento cabe 100% en un agente actual, sin corpus nuevo, sin reglas nuevas, sin salida diferente
+  crear_perfil_derivado:
+    when: el agente base cubre 70-80% del alcance y solo se necesita prompt especializado y/o corpus especializado, sin lógica backend nueva
+    naming: "<base_agent_id>_<dominio>_profile"
+    location: "factory/profiles/<base>_profiles.yaml"
+  crear_agente_nuevo:
+    when: dominio nuevo, corpus propio, reglas propias, pruebas propias o salida distinta — o si mezclarlo con agentes actuales reduce precisión
+
+examples:
+  OOS_laboratorio: perfil de qa
+  Excel_sin_control: perfil de integrity
+  SCADA_firmware: perfil de automation
+  validacion_limpieza: agente nuevo
+  farmacovigilancia: agente nuevo
+  produccion_esteril: agente nuevo o paquete
+
+new_agent_checklist:
+  - agent_id (snake_case) y nombre visible
+  - descripción de alcance y límites
+  - system_prompt con idioma dinámico y formato de salida definido
+  - colección RAG propia con >= 60 chunks de fuentes regulatorias citables
+  - reglas asociadas (extensión del Rule Engine si aplica)
+  - ">= 5 preguntas de prueba con criterios de aceptación verificables"
+  - entrada en manifest.yaml (agents.custom)
+  - entrada en factory/registry/agents_catalog.yaml
+  - evidencia de validación archivada en el release
+  - aprobación humana registrada (approval_policy)
+
+derived_profile_checklist:
+  - perfil_id, agente base, % de cobertura estimado y justificación
+  - system_prompt especializado (delta sobre el base)
+  - colección RAG propia o compartida (declarar en manifest)
+  - ">= 3 preguntas de prueba con criterios de aceptación"
+  - entrada en profiles/<base>_profiles.yaml y en manifest (agents.profiles)

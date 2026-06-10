@@ -1,0 +1,11 @@
+base_agent: integrity
+profiles: {}
+# Ejemplo de perfil derivado:
+# integrity_lims_profile:
+#   profile_id: integrity_lims_profile
+#   base_agent: integrity
+#   coverage_estimate: "75%"
+#   justification: "integrity cubre ALCOA+ y audit trail; se especializa en LIMS con corpus FDA DI 2018 y USP <1058>"
+#   system_prompt_delta: "TODO F5"
+#   rag_collection: "gmp_integrity_lims"
+#   test_questions: []

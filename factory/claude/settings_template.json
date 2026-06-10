@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(/home/ing_cpmo/.env)",
+      "Edit(/home/ing_cpmo/app/**)",
+      "Write(/home/ing_cpmo/app/**)",
+      "Edit(/home/ing_cpmo/docker-compose.yml)",
+      "Edit(/home/ing_cpmo/data/**)",
+      "Write(/home/ing_cpmo/data/**)",
+      "Edit(/home/ing_cpmo/backups/**)",
+      "Write(/home/ing_cpmo/backups/**)",
+      "Bash(rm -rf*)",
+      "Bash(git push*)",
+      "Bash(git commit*)",
+      "Bash(docker compose -f /home/ing_cpmo/docker-compose.yml*)"
+    ]
+  }
+}

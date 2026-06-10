@@ -1,0 +1,6 @@
+workspaces/*
+deployments/*/.env
+logs/*
+*.tar.gz
+audit/factory_audit.jsonl
+.env

@@ -1,0 +1,24 @@
+policy: security_policy
+version: "1.0"
+description: Seguridad de API keys, puertos y workspaces.
+
+api_keys:
+  generation: "openssl rand -hex 16"
+  storage: solo en .env del proyecto (nunca commiteado)
+  exposure: PROHIBIDO hardcodear en frontend; la UI pide la key al usuario (variable JS de sesión)
+  gate: "grep de la key en frontend custom debe dar vacío"
+
+gitignore:
+  required_entries: [".env", "data/", "logs/"]
+  validation: gate G11 verifica antes de release
+
+ports:
+  rule: no exponer puertos fuera de los rangos definidos en registry/ports.yaml
+
+workspaces:
+  deletion_rule: PROHIBIDO borrar workspace sin backup tar.gz previo en backups/factory/
+
+technical_debt:
+  base_product_key_in_frontend:
+    description: La API key del producto base está hardcodeada en su UI (index.html)
+    action: registrada como deuda técnica del base; corregir SOLO en iteración autorizada del base, NO desde la fábrica

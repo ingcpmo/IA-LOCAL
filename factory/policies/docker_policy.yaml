@@ -1,0 +1,28 @@
+policy: docker_policy
+version: "1.0"
+description: Reglas de contenedores para soluciones custom generadas por la fábrica.
+
+ports:
+  source_of_truth: factory/registry/ports.yaml
+  reserved_intocable: [8000, 9000, 11434, 5432, 6379]
+  custom_api_range: "8101-8199"
+  custom_postgres_range: "5433-5499"
+  custom_redis_range: "6380-6449"
+  validation: "ss -tlnp obligatorio antes de asignar y antes de cada deploy"
+
+container_naming:
+  pattern: "<project_id>_<servicio>"
+  project_name_format: snake_case   # nunca guiones, ej: cliente_a_gmp
+
+networking:
+  per_project_network: "<project_id>_net"
+  volumes: propios por proyecto
+  ollama:
+    method: extra_hosts host-gateway
+    url: "http://host.docker.internal:11434"
+    rule: PROHIBIDO conectar redes nuevas a aria-ollama ni modificar su compose
+
+validation:
+  pre_up: "docker compose config -q obligatorio antes de cualquier up"
+
+max_active_custom_solutions: 2   # ver resource_policy.yaml
