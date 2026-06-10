@@ -1,0 +1,11 @@
+{
+  "action": "expose_port_9000",
+  "project_id": "factory",
+  "version": "F4",
+  "approved_by": "Cesar",
+  "approved_at": "2026-06-10T23:32:44Z",
+  "base_commit": "39a0f3681ba138f99b5b135f7c583fdbf53d4de9",
+  "gates_report_hash": "pending_F4_validation",
+  "notes": "Aprobación explícita de Capa 9 para exponer puerto 9000 (factory-api). Sesión F4.",
+  "status": "approved"
+}

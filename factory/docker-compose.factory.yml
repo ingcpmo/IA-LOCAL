@@ -1,0 +1,18 @@
+name: factory
+
+services:
+  factory-api:
+    build:
+      context: ..
+      dockerfile: factory/Dockerfile
+    container_name: factory-api
+    ports:
+      - "9000:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app/factory
+      - ../backups/factory:/app/backups_factory
+    mem_limit: 512m
+    cpus: "0.5"
+    restart: unless-stopped
