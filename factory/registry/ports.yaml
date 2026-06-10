@@ -1,10 +1,9 @@
 reserved:
-  8000:  gmp-api            # base, NO TOCAR
-  9000:  factory-api
-  11434: aria-ollama        # compartido, NO TOCAR
-  5432:  gmp-postgres       # base, NO TOCAR
-  6379:  gmp-redis          # base, NO TOCAR
-
+  8000: gmp-api
+  9000: factory-api
+  11434: aria-ollama
+  5432: gmp-postgres
+  6379: gmp-redis
 ranges:
   custom_api:
     start: 8101
@@ -15,7 +14,5 @@ ranges:
   custom_redis:
     start: 6380
     end: 6449
-
-allocations: {}              # la fábrica escribe aquí cada asignación (project_id, port, fecha)
-
-rule: "validar con 'ss -tlnp' antes de asignar y antes de cada deploy"
+allocations: {}
+rule: validar con 'ss -tlnp' antes de asignar y antes de cada deploy
