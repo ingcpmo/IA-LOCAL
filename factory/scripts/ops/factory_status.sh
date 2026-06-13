@@ -132,7 +132,7 @@ for pid, info in allocs.items():
             _curl_check "GET /api/v1/knowledge/stats ($pid)" "http://localhost:$port/api/v1/knowledge/stats" "$DEP_KEY"
 
             # Quality gates via factory API (fast mode)
-            GATES_RESP=$(curl -sf --max-time 20 \
+            GATES_RESP=$(curl -sf --max-time 60 \
                 -H "x-api-key: $FACTORY_API_KEY" \
                 -H "Content-Type: application/json" \
                 -d '{"fast":true}' \

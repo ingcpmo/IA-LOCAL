@@ -1,0 +1,119 @@
+manifest_version: '1.0'
+project:
+  id: lab_qc_project
+  name: Laboratorio QC
+  description: Solución GMP para laboratorio QC — LIMS, HPLC, OOS, Data Integrity y CAPA
+  created_at: '2026-06-10T23:43:16.762277+00:00'
+  regulatory_framework:
+    - "21 CFR Part 211 (pharmaceutical manufacturing)"
+    - "21 CFR Part 820 (medical device QSR)"
+    - "21 CFR Part 11 (electronic records)"
+source:
+  base_product_tag: base-v1.0.0
+  base_product_commit: 751748bd9146233ca035ea58354e94ea07386c42
+  factory_commit: f621799
+  generated_by: factory_layer_8_claude_code_agent
+  generation_mode: manual_assisted
+deployment:
+  docker_project_name: lab_qc_project
+  api_port: 8101
+  postgres_port: 5433
+  redis_port: 6380
+  use_shared_ollama: true
+  ollama_url: http://host.docker.internal:11434
+  ollama_model: mistral:7b-instruct-q4_K_M
+  resource_limits_applied: true
+agents:
+  inherited:
+    - id: capa
+      name: CAPA Management Agent
+      collection: gmp_capa
+      rationale: "95% coverage — lab CAPA uses standard 5-Why/Fishbone/FTA methodology"
+  profiles:
+    qa_oos_profile:
+      base_agent: qa
+      name: OOS Investigation Specialist
+      collection: lab_qc_oos
+      coverage_estimate: "80%"
+      delta: "FDA OOS Guidance 2022 Fase I/II, 21 CFR 211.160/165/192/194, dual 211+820"
+    integrity_lims_profile:
+      base_agent: integrity
+      name: LIMS Data Integrity Specialist
+      collection: lab_qc_lims_di
+      coverage_estimate: "75%"
+      delta: "LIMS 21 CFR Part 11/211.68, ALCOA+ applied, USP <1058> AIQ, dual 211+820"
+  custom:
+    hplc_data_review:
+      name: HPLC Data Review Agent
+      collection: lab_qc_hplc
+      corpus_status: pending_documents
+      rationale: "New domain: SST criteria, peak integration policy, 21 CFR 211.194, USP <621>"
+      pending_documents:
+        - "USP <621> Chromatography"
+        - "USP <1058> Analytical Instrument Qualification"
+        - "ICH Q2(R1) Validation of Analytical Procedures"
+rag_collections:
+  lab_qc_oos:
+    description: "OOS investigation, 21 CFR 211.160/165/192/194, FDA OOS Guidance"
+    expected_chunks: 60
+    corpus_status: partial
+    available_sources:
+      - "21 CFR 211.160 (general lab controls)"
+      - "21 CFR 211.165 (testing and release)"
+      - "21 CFR 211.192 (production record review)"
+      - "21 CFR 211.194 (laboratory records)"
+      - "21 CFR 820.198 (complaint files / CAPA for devices)"
+    pending_documents:
+      - "FDA OOS Guidance 2022 (October 2022, completo) — PDF"
+  lab_qc_lims_di:
+    description: "LIMS data integrity, 21 CFR Part 11/211.68, ALCOA+, FDA DI 2018"
+    expected_chunks: 60
+    corpus_status: partial
+    available_sources:
+      - "21 CFR Part 11 §11.10 (all controls)"
+      - "21 CFR 211.68 (automatic/mechanical/electronic equipment)"
+      - "21 CFR 820.70(i) (automated data processing — devices)"
+      - "ALCOA+ framework (public domain concept)"
+    pending_documents:
+      - "FDA Data Integrity Guidance 2018 (completo) — PDF"
+      - "MHRA Data Integrity Guidance 2021 — PDF (opcional)"
+  lab_qc_hplc:
+    description: "HPLC chromatographic data review, SST, USP <621>, 21 CFR 211.194, ICH Q2(R1)"
+    expected_chunks: 60
+    corpus_status: partial
+    actual_chunks: 89
+    available_sources:
+      - "21 CFR 211.194(a) (laboratory records — chromatograms)"
+      - "USP <621> Chromatography — SST requirements (GMP summary)"
+      - "HPLC Data Integrity requirements (21 CFR Part 11/ALCOA+ applied)"
+      - "HPLC Method Validation requirements (ICH Q2R1 principles)"
+    pending_documents:
+      - "USP <621> Chromatography — PDF (full compendial text, requires USP subscription)"
+      - "USP <1058> Analytical Instrument Qualification — PDF"
+      - "ICH Q2(R1) Validation of Analytical Procedures — PDF (full ICH document)"
+      - "FDA Data Integrity Guidance (chromatographic data section) — PDF"
+security:
+  api_key_in_env_only: true
+  api_key_not_in_frontend: true
+  env_gitignored: true
+quality_gates:
+  G01_compose_valid: PASS
+  G02_dockerfile_valid: PASS
+  G03_health_ok: PASS
+  G04_auth_rejects: PASS
+  G05_auth_accepts: PASS
+  G06_query_200: PASS
+  G07_corpus_populated: PASS
+  G08_agent_routing: PASS
+  G09_rule_engine: PASS
+  G10_audit_chain: PASS
+  G11_knowledge_stats: PASS
+  G12_audit_verify: PASS
+  G13_streaming: PASS
+  G14_approval: PASS
+deployment_gates_v0_2_0:
+  validated_at: "2026-06-13"
+  result: PASS=11 FAIL=0 SKIPPED=1
+  gate_set: deployment_functional (fast mode)
+  note: GD_QUERY_LLM skipped in fast mode; all functional gates PASS
+status: validated

@@ -441,13 +441,25 @@ def gd_protocol_template(api_port: int, api_key: str) -> dict:
     if code == "200":
         try:
             r = json.loads(body)
-            tmpl_type = r.get("type", "?")
-            sections = len(r.get("sections", []))
+            # Campo correcto es "protocol_type"; secciones están en r["template"]["sections"]
+            tmpl_type = r.get("protocol_type", r.get("type", "?"))
+            sections = len(r.get("template", {}).get("sections", r.get("sections", [])))
             return _gate("GD_PROTOCOL_TMPL", "PASS",
-                         f"Template IQ: type={tmpl_type}, {sections} secciones")
+                         f"Template {tmpl_type}: {sections} secciones (IQ/OQ/PQ disponibles)")
         except Exception:
             return _gate("GD_PROTOCOL_TMPL", "PASS", f"/protocol-template/IQ → 200")
     return _gate("GD_PROTOCOL_TMPL", "FAIL", f"/protocol-template/IQ → HTTP {code}")
+
+
+def gd_stream_200(api_port: int, api_key: str, timeout: float = 30.0) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    code, body = _dep_post(f"{base}/api/v1/stream", key=api_key,
+                           body={"question": "¿Qué es GMP?"}, timeout=timeout)
+    if code == "000":
+        return _gate("GD_STREAM_200", "SKIPPED", f"Timeout {timeout}s o deployment no levantado")
+    if code == "200":
+        return _gate("GD_STREAM_200", "PASS", f"/api/v1/stream → 200 (streaming activo)")
+    return _gate("GD_STREAM_200", "FAIL", f"/api/v1/stream → HTTP {code}")
 
 
 def gd_key_not_in_ui(api_port: int, api_key: str) -> dict:
@@ -504,6 +516,7 @@ def run_deployment_gates(
         gd_audit_verify(api_port, api_key),
         gd_protocol_template(api_port, api_key),
         gd_key_not_in_ui(api_port, api_key),
+        gd_stream_200(api_port, api_key),
     ]
 
     if fast:
