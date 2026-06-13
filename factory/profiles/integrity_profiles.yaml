@@ -1,11 +1,29 @@
 base_agent: integrity
-profiles: {}
-# Ejemplo de perfil derivado:
-# integrity_lims_profile:
-#   profile_id: integrity_lims_profile
-#   base_agent: integrity
-#   coverage_estimate: "75%"
-#   justification: "integrity cubre ALCOA+ y audit trail; se especializa en LIMS con corpus FDA DI 2018 y USP <1058>"
-#   system_prompt_delta: "TODO F5"
-#   rag_collection: "gmp_integrity_lims"
-#   test_questions: []
+profiles:
+  integrity_lims_profile:
+    profile_id: integrity_lims_profile
+    base_agent: integrity
+    coverage_estimate: "75%"
+    justification: >
+      El agente integrity cubre ALCOA+, audit trail y sistemas híbridos al 75%.
+      El delta especializa en: LIMS como sistema computarizado 21 CFR Part 11 /
+      211.68, cadena de custodia de muestras, acceso por roles, audit trail de
+      entradas manuales vs automáticas, AIQ (USP <1058>). Marco dual pharma+device.
+    rag_collection: lab_qc_lims_di
+    corpus_pending:
+      - "FDA Data Integrity Guidance 2018 (completo) — PDF"
+      - "MHRA Data Integrity Guidance 2021 — PDF (opcional)"
+    corpus_available:
+      - "21 CFR Part 11 §11.10 (todos los controles) — texto CFR público"
+      - "21 CFR 211.68 (computarized systems en drug manufacturing) — texto CFR público"
+      - "ALCOA+ 9 atributos — concepto documentado en guías FDA"
+    test_questions:
+      - question: "El administrador del LIMS puede deshabilitar el audit trail sin aprobación de QA. ¿Qué riesgo representa?"
+        expected_keywords: ["alcoa", "attributable", "critical", "21 cfr 11.10", "part 11", "capa"]
+        acceptance: "Debe mapear a ALCOA+ Attributable/Contemporaneous, citar 21 CFR 11.10(e), clasificar CRITICAL"
+      - question: "Los usuarios del LIMS comparten una cuenta genérica 'lab_user'. ¿Qué controles faltan?"
+        expected_keywords: ["individual", "unique", "11.10(d)", "attributable", "access control", "shared"]
+        acceptance: "Debe citar 21 CFR 11.10(d) acceso individual, ALCOA+ Attributable, remediation: cuentas individuales"
+      - question: "Los resultados de HPLC se ingresan manualmente al LIMS; los archivos .raw no están vinculados. ¿Es conforme?"
+        expected_keywords: ["original", "raw data", "datos originales", "link", "traceable", "11.10", "211.194"]
+        acceptance: "Debe identificar gap ALCOA+ Original, citar preservación de datos crudos, recomendar vinculación instrumental"

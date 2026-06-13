@@ -1,1 +1,17 @@
-{"projects": []}
+{
+  "projects": [
+    {
+      "id": "lab_qc_project",
+      "name": "Laboratorio QC",
+      "description": "Solución GMP para laboratorio QC — LIMS, HPLC, OOS, Data Integrity y CAPA",
+      "requirements": [
+        {
+          "text": "Crear solución GMP para laboratorio QC enfocada en LIMS, HPLC, OOS, Data Integrity y CAPA. Debe incluir revisión de integridad de datos de LIMS, investigación OOS siguiendo FDA OOS Guidance 2022, revisión de datos cromatográficos HPLC (SST, integración de picos, 21 CFR 211.194), y gestión de CAPA de laboratorio.",
+          "registered_at": "2026-06-10T23:38:50.520274+00:00"
+        }
+      ],
+      "status": "active",
+      "created_at": "2026-06-10T23:38:50.417054+00:00"
+    }
+  ]
+}

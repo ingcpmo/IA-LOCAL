@@ -1,11 +1,27 @@
 base_agent: qa
-profiles: {}
-# Ejemplo de perfil derivado:
-# qa_oos_profile:
-#   profile_id: qa_oos_profile
-#   base_agent: qa
-#   coverage_estimate: "80%"
-#   justification: "qa cubre el 80% del flujo OOS; se especializa con corpus FDA OOS Guidance 2022 y 21 CFR 211.160/165/194"
-#   system_prompt_delta: "TODO F5"
-#   rag_collection: "gmp_qa_oos"
-#   test_questions: []
+profiles:
+  qa_oos_profile:
+    profile_id: qa_oos_profile
+    base_agent: qa
+    coverage_estimate: "80%"
+    justification: >
+      El agente qa cubre desviaciones, CAPA y OOS investigation al 80%.
+      El delta especializa en: FDA OOS Guidance 2022 Fase I/II, criterios de
+      invalidación, retest/resample bajo 21 CFR 211.192, disposición de lote.
+      Marco dual: 21 CFR 211 (fármacos) y 21 CFR 820 (dispositivos).
+    rag_collection: lab_qc_oos
+    corpus_pending:
+      - "FDA OOS Guidance 2022 (October 2022, completo) — PDF"
+    corpus_available:
+      - "21 CFR 211.160, 211.165, 211.192, 211.194 — texto CFR público"
+      - "21 CFR 820.198 CAPA dispositivos — texto CFR público"
+    test_questions:
+      - question: "Resultado OOS en potencia: 87% vs límite ≥90%. Los cálculos son correctos. ¿Qué fase de investigación aplica?"
+        expected_keywords: ["phase i", "fase i", "assignable cause", "causa asignable", "lab error", "211.192"]
+        acceptance: "Debe identificar Fase I como primer paso y listar comprobaciones de error de laboratorio"
+      - question: "No se encontró causa asignable en Fase I. ¿Puedo invalidar el resultado?"
+        expected_keywords: ["no", "phase ii", "fase ii", "cannot invalidate", "no se puede invalidar", "fully investigate"]
+        acceptance: "Debe indicar que sin causa asignable NO se puede invalidar; se procede a Fase II"
+      - question: "¿Cuándo procede el retest en un OOS según FDA OOS Guidance?"
+        expected_keywords: ["retest", "phase i", "confirmed", "assignable", "211.192"]
+        acceptance: "Debe diferenciar retest permitido (tras causa asignable) vs no permitido (para promediar)"

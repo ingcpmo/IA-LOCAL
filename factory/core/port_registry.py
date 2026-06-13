@@ -24,12 +24,23 @@ def _save(data: dict) -> None:
 
 
 def validate_port_free(port: int) -> bool:
-    """True si el puerto NO está en uso según ss -tlnp."""
-    result = subprocess.run(
-        ["ss", "-tlnp"],
-        capture_output=True, text=True
-    )
-    return f":{port} " not in result.stdout and f":{port}\n" not in result.stdout
+    """True si el puerto NO está en uso. Usa ss -tlnp si disponible, socket Python si no."""
+    # Intentar con ss (disponible en host, no en contenedor slim)
+    try:
+        result = subprocess.run(["ss", "-tlnp"], capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            return f":{port} " not in result.stdout and f":{port}\n" not in result.stdout
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    # Fallback: intentar bind en el puerto (si falla, está ocupado)
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s.bind(("0.0.0.0", port))
+            return True
+        except OSError:
+            return False
 
 
 def assign_ports(project_id: str) -> dict[str, int]:

@@ -86,5 +86,49 @@ base_agents:
       - CAPA closure verification
     status: active
 
-custom_agents: {}     # agentes nuevos creados por la fábrica se registran aquí
-derived_profiles: {}  # perfiles derivados se registran aquí
+custom_agents:
+  hplc_data_review:
+    agent_id: hplc_data_review
+    name: "HPLC Data Review Agent"
+    description: "GMP specialist in HPLC chromatographic data review. SST pass/fail, peak integration policy, injection sequence integrity, 21 CFR 211.194, USP <621>, ICH Q2(R1), raw data DI."
+    rag_collection: lab_qc_hplc
+    corpus_status: pending_documents
+    pending_documents:
+      - "USP <621> Chromatography"
+      - "USP <1058> Analytical Instrument Qualification"
+      - "ICH Q2(R1) Validation of Analytical Procedures"
+    capabilities:
+      - SST pass/fail evaluation (USP <621>)
+      - Injection sequence integrity audit
+      - Peak integration compliance review
+      - Manual integration justification assessment
+      - Calibration curve verification (ICH Q2(R1))
+      - Chromatographic raw data DI review
+      - 21 CFR 211.194 compliance assessment
+    created_by: factory_f5_lab_qc_project
+    created_at: "2026-06-11"
+    status: active
+    project: lab_qc_project
+
+derived_profiles:
+  qa_oos_profile:
+    profile_id: qa_oos_profile
+    base_agent: qa
+    name: "OOS Investigation Specialist"
+    description: "OOS/OOT specialist. FDA OOS Guidance 2022, Phase I/II decision tree, 21 CFR 211.160/165/192/194, dual pharma+device framework."
+    rag_collection: lab_qc_oos
+    coverage_estimate: "80%"
+    created_by: factory_f5_lab_qc_project
+    created_at: "2026-06-11"
+    project: lab_qc_project
+
+  integrity_lims_profile:
+    profile_id: integrity_lims_profile
+    base_agent: integrity
+    name: "LIMS Data Integrity Specialist"
+    description: "LIMS DI specialist. ALCOA+ in LIMS, 21 CFR Part 11/211.68, audit trail requirements, USP <1058> AIQ, dual pharma+device framework."
+    rag_collection: lab_qc_lims_di
+    coverage_estimate: "75%"
+    created_by: factory_f5_lab_qc_project
+    created_at: "2026-06-11"
+    project: lab_qc_project
