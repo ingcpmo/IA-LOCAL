@@ -1,0 +1,36 @@
+project_id: lab_qc_project
+collections:
+- name: lims_audit_trail
+  domain: LIMS
+  sources:
+  - 21_CFR_PART_11
+  status: pending
+  note: PENDING_DOCUMENT — requiere PDF validado para ingesta. Ver pending_documents.
+- name: hplc_validation
+  domain: HPLC
+  sources:
+  - ICH_Q2R1
+  - USP_621
+  status: pending
+  note: PENDING_DOCUMENT — requiere PDF validado para ingesta. Ver pending_documents.
+- name: oos_investigations
+  domain: OOS
+  sources:
+  - FDA_OOS_GUIDANCE_2022
+  - 21_CFR_PART_211
+  status: pending
+  note: PENDING_DOCUMENT — requiere PDF validado para ingesta. Ver pending_documents.
+- name: data_integrity
+  domain: DATA_INTEGRITY
+  sources:
+  - FDA_DI_GUIDANCE_2018
+  - ALCOA_PLUS
+  status: pending
+  note: PENDING_DOCUMENT — requiere PDF validado para ingesta. Ver pending_documents.
+- name: capa_lab
+  domain: CAPA
+  sources:
+  - 21_CFR_PART_211
+  - 21_CFR_PART_820
+  status: pending
+  note: PENDING_DOCUMENT — requiere PDF validado para ingesta. Ver pending_documents.

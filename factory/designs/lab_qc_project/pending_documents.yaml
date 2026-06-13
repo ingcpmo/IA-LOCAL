@@ -1,0 +1,21 @@
+documents:
+- id: FDA_OOS_GUIDANCE_2022
+  title: FDA OOS Guidance 2022
+  status: PENDING_DOCUMENT
+  url_hint: https://www.fda.gov/media/xxxxxx/download (verificar URL oficial)
+- id: FDA_DI_GUIDANCE_2018
+  title: FDA Data Integrity Guidance 2018
+  status: PENDING_DOCUMENT
+  url_hint: https://www.fda.gov/media/xxxxxx/download (verificar URL oficial)
+- id: USP_621
+  title: USP <621> Chromatography
+  status: PENDING_DOCUMENT
+  url_hint: Requiere suscripción USP (https://www.usp.org/)
+- id: USP_1058
+  title: USP <1058> Analytical Instrument Qualification
+  status: PENDING_DOCUMENT
+  url_hint: Requiere suscripción USP (https://www.usp.org/)
+- id: ICH_Q2R1
+  title: ICH Q2(R1) Validation of Analytical Procedures
+  status: PENDING_DOCUMENT
+  url_hint: https://www.ich.org/page/quality-guidelines (verificar URL oficial)

@@ -11,7 +11,9 @@ Eventos registrados: project_created, requirement_registered, workspace_created,
 task_dispatched, gates_executed, diff_presented, approval_granted, approval_rejected,
 release_created, deployment_created, deployment_started,
 layer9_mission_created, layer9_mission_approved, layer9_requirement_submitted,
-layer9_decision_recorded, layer9_risk_accepted
+layer9_decision_recorded, layer9_risk_accepted,
+layer8_mission_started, layer8_requirement_interpreted, layer8_agent_design_generated,
+layer8_regulatory_matrix_generated, layer8_workspace_created, layer8_workspace_resumed
 """
 
 import hashlib
@@ -35,6 +37,10 @@ VALID_EVENTS = {
     "layer9_mission_created", "layer9_mission_approved",
     "layer9_requirement_submitted", "layer9_decision_recorded",
     "layer9_risk_accepted",
+    # Eventos Capa 8 Tier-1 diseño (F4.5b)
+    "layer8_mission_started", "layer8_requirement_interpreted",
+    "layer8_agent_design_generated", "layer8_regulatory_matrix_generated",
+    "layer8_workspace_created", "layer8_workspace_resumed",
 }
 
 

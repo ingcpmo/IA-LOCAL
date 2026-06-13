@@ -1,0 +1,37 @@
+project_id: lab_qc_project
+agents:
+- agent_id: capa_inherited
+  decision: inherit
+  base_agent: gmp_ai_copilot_base
+  profile_name: null
+  rationale: CAPA (5-Why, Fishbone, FTA) está cubierto por la capa base GMP AI Copilot
+    sin adaptación adicional. Heredar evita duplicación.
+  routing_key: capa
+- agent_id: qa_oos_profile
+  decision: profile
+  base_agent: gmp_ai_copilot_base
+  profile_name: qa_oos_profile
+  rationale: OOS requiere vocabulario QC específico (Fase I/II, FDA OOS Guidance 2022,
+    cálculos estadísticos). Un perfil derivado añade contexto sin redefinir flujos
+    base.
+  routing_key: oos
+- agent_id: integrity_lims_profile
+  decision: profile
+  base_agent: gmp_ai_copilot_base
+  profile_name: integrity_lims_profile
+  rationale: LIMS + Data Integrity comparten el dominio de audit trail y acceso a
+    datos. Un perfil unificado reduce complejidad de routing y cubre ALCOA+ / Part
+    11 con un único agente especializado.
+  routing_key: integrity|lims
+- agent_id: hplc_data_review_agent
+  decision: new_agent
+  base_agent: null
+  profile_name: null
+  rationale: HPLC (SST, integración de picos, secuencias de inyección) requiere lógica
+    de validación numérica y detección de anomalías cromatográficas no presentes en
+    la capa base. Se crea agente nuevo con tools propios.
+  routing_key: hplc
+routing_notes: 'Routing primario por intent_key. detect_agent analiza el primer mensaje;
+  si la consulta toca múltiples dominios se prioriza: hplc > integrity/lims > oos
+  > capa. hplc_data_review_agent y los perfiles qa_oos/integrity_lims no heredan detect_agent
+  directamente para evitar ambigüedad en clasificación cruzada.'

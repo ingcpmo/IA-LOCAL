@@ -1,0 +1,41 @@
+project_id: lab_qc_project
+domains:
+- LIMS
+- HPLC
+- OOS
+- DATA_INTEGRITY
+- CAPA
+regulatory_scope:
+- 21_CFR_PART_211
+- 21_CFR_PART_820
+- 21_CFR_PART_11
+- ALCOA+
+dual_use: false
+part11_required: true
+alcoa_plus_required: true
+client_needs:
+- Gestión de datos LIMS con audit trail y control de acceso
+- Revisión de datos HPLC (SST, integración de picos, secuencias)
+- Investigación OOS Fase I/II conforme FDA OOS Guidance 2022
+- Control de integridad de datos (ALCOA+ / 21 CFR Part 11)
+- Gestión de CAPA de laboratorio (5-Why, Fishbone, FTA)
+constraints:
+- no inventar texto regulatorio — toda fuente no disponible queda como PENDING_DOCUMENT
+- no tocar producto base (gmp-api puerto 8000)
+- docker independiente en puertos asignados por factory/registry/ports.yaml
+- trazabilidad completa via factory_audit.jsonl (21 CFR Part 11)
+- no guardar credenciales ni tokens en código ni en git
+- no usar --dangerously-skip-permissions
+- corpus completo con PDFs reales antes de go-live
+pending_documents:
+- FDA OOS Guidance 2022
+- FDA Data Integrity Guidance 2018
+- USP <621>
+- USP <1058>
+- ICH Q2(R1)
+raw_objective: 'Solución GMP para laboratorio QC: gestión de LIMS (datos, acceso,
+  audit trail), revisión de datos HPLC (SST, integración de picos, secuencia de inyección),
+  investigación OOS (Fase I/II, FDA OOS Guidance 2022), Data Integrity (ALCOA+, 21
+  CFR Part 11) y gestión de CAPA de laboratorio (5-Why, Fishbone, FTA).
+
+  '
