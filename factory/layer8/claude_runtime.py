@@ -1,15 +1,18 @@
 """
 Capa 8 Tier-2 — Claude Runtime.
 
-Valida workspace y task safety, prepara comandos manuales.
-headless_enabled=false por defecto — run_controlled_headless retorna {"status":"disabled"}.
+Valida workspace y task safety, prepara comandos manuales y ejecuta headless controlado.
+headless_enabled=false por defecto; F7 lo activa para UNA misión nueva.
 
 Nunca usa --dangerously-skip-permissions.
 """
 
 from __future__ import annotations
 
+import shutil
+import subprocess
 import sys
+import time
 from pathlib import Path
 
 import yaml
@@ -151,9 +154,61 @@ def run_controlled_headless(project_id: str, timeout: int = 1800) -> dict:
             "violations": safety["violations"],
         }
 
-    # Reservado para F4.5d — no implementado en esta fase
-    return {
-        "status": "disabled",
-        "reason": "Ejecución headless no implementada en F4.5c.",
-        "note": "Disponible en F4.5d con doble llave habilitada.",
-    }
+    # Localizar claude CLI
+    claude_path = shutil.which("claude")
+    if not claude_path:
+        write_event("layer8_claude_execution_failed", project_id, {"reason": "claude_cli_not_found"})
+        return {"status": "error", "reason": "claude CLI no encontrado en PATH"}
+
+    ws_path = WORKSPACES_BASE / project_id
+    task_content = (ws_path / "task.md").read_text(encoding="utf-8")
+    log_file = ws_path / f"headless_{int(time.time())}.log"
+    effective_timeout = config.get("headless_timeout_seconds", timeout)
+
+    write_event("layer8_claude_execution_started", project_id, {
+        "mode": "headless",
+        "claude_path": claude_path,
+        "timeout_seconds": effective_timeout,
+        "log_file": str(log_file),
+    })
+
+    try:
+        proc = subprocess.run(
+            [claude_path, "-p", task_content,
+             "--output-format", "json",
+             "--no-session-persistence",
+             "--permission-mode", "auto"],
+            cwd=str(ws_path),
+            capture_output=True,
+            text=True,
+            timeout=effective_timeout,
+        )
+
+        log_content = proc.stdout
+        if proc.stderr:
+            log_content += f"\n\n=== STDERR ===\n{proc.stderr}"
+        log_file.write_text(log_content, encoding="utf-8")
+
+        write_event("layer8_claude_execution_completed", project_id, {
+            "returncode": proc.returncode,
+            "log_file": str(log_file),
+            "stdout_bytes": len(proc.stdout),
+        })
+
+        return {
+            "status": "completed",
+            "returncode": proc.returncode,
+            "log_file": str(log_file),
+            "response_preview": proc.stdout[:800],
+        }
+
+    except subprocess.TimeoutExpired:
+        write_event("layer8_claude_execution_failed", project_id, {
+            "reason": "timeout",
+            "timeout_seconds": effective_timeout,
+        })
+        return {"status": "timeout", "timeout_seconds": effective_timeout}
+
+    except Exception as exc:
+        write_event("layer8_claude_execution_failed", project_id, {"reason": str(exc)})
+        return {"status": "error", "reason": str(exc)}

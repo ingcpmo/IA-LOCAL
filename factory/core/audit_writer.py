@@ -47,6 +47,8 @@ VALID_EVENTS = {
     "layer8_claude_status_checked", "layer8_claude_execution_started",
     "layer8_claude_execution_completed", "layer8_claude_execution_failed",
     "layer8_stop_condition_triggered", "layer8_recovery_required",
+    # Eventos F7 — headless controlado
+    "layer8_headless_enabled", "layer8_headless_result_reviewed",
 }
 
 
