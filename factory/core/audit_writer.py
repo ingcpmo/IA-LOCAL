@@ -13,7 +13,9 @@ release_created, deployment_created, deployment_started,
 layer9_mission_created, layer9_mission_approved, layer9_requirement_submitted,
 layer9_decision_recorded, layer9_risk_accepted,
 layer8_mission_started, layer8_requirement_interpreted, layer8_agent_design_generated,
-layer8_regulatory_matrix_generated, layer8_workspace_created, layer8_workspace_resumed
+layer8_regulatory_matrix_generated, layer8_workspace_created, layer8_workspace_resumed,
+layer8_claude_status_checked, layer8_claude_execution_started, layer8_claude_execution_completed,
+layer8_claude_execution_failed, layer8_stop_condition_triggered, layer8_recovery_required
 """
 
 import hashlib
@@ -41,6 +43,10 @@ VALID_EVENTS = {
     "layer8_mission_started", "layer8_requirement_interpreted",
     "layer8_agent_design_generated", "layer8_regulatory_matrix_generated",
     "layer8_workspace_created", "layer8_workspace_resumed",
+    # Eventos Capa 8 Tier-2 runtime (F4.5c)
+    "layer8_claude_status_checked", "layer8_claude_execution_started",
+    "layer8_claude_execution_completed", "layer8_claude_execution_failed",
+    "layer8_stop_condition_triggered", "layer8_recovery_required",
 }
 
 

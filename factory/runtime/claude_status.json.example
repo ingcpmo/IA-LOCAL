@@ -1,0 +1,9 @@
+{
+  "cli_found": true,
+  "cli_path": "/usr/local/bin/claude",
+  "version": "x.y.z",
+  "linux_user": "ing_cpmo",
+  "auth_status": "unknown",
+  "mode": "manual_assisted",
+  "checked_at": "2026-01-01T00:00:00+00:00"
+}
