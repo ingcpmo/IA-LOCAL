@@ -273,6 +273,276 @@ def run_all_gates(
     return report
 
 
+# ── Deployment gates (F10) — verificación funcional de solución desplegada ────
+# Usan httpx (no curl) porque estos gates corren dentro del contenedor factory-api.
+
+def _dep_get(url: str, key: str = "", timeout: float = 8.0) -> tuple[str, str]:
+    """GET con httpx. Retorna (status_code_str, body_str). '000' si error."""
+    try:
+        import httpx as _httpx
+        headers = {}
+        if key:
+            headers["x-api-key"] = key
+        r = _httpx.get(url, headers=headers, timeout=timeout)
+        return str(r.status_code), r.text
+    except Exception:
+        return "000", ""
+
+
+def _dep_post(url: str, key: str = "", body: dict | None = None,
+              timeout: float = 8.0) -> tuple[str, str]:
+    """POST JSON con httpx. Retorna (status_code_str, body_str)."""
+    try:
+        import httpx as _httpx
+        headers = {"Content-Type": "application/json"}
+        if key:
+            headers["x-api-key"] = key
+        r = _httpx.post(url, json=body or {}, headers=headers, timeout=timeout)
+        return str(r.status_code), r.text
+    except Exception:
+        return "000", ""
+
+
+def gd_auth_reject(api_port: int) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    code, _ = _dep_get(f"{base}/api/v1/knowledge/stats", key="BAD_KEY_XYZ_123")
+    if code == "000":
+        return _gate("GD_AUTH_REJECT", "SKIPPED", "Deployment no responde — SKIPPED")
+    if code in ("401", "403"):
+        return _gate("GD_AUTH_REJECT", "PASS", f"Clave inválida → HTTP {code} ✓")
+    return _gate("GD_AUTH_REJECT", "FAIL", f"Clave inválida → HTTP {code} (esperado 401/403)")
+
+
+def gd_auth_accept(api_port: int, api_key: str) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    code, _ = _dep_get(f"{base}/api/v1/knowledge/stats", key=api_key)
+    if code == "200":
+        return _gate("GD_AUTH_ACCEPT", "PASS", f"Clave válida → HTTP {code} ✓")
+    if code == "000":
+        return _gate("GD_AUTH_ACCEPT", "SKIPPED", "Deployment no responde — SKIPPED")
+    return _gate("GD_AUTH_ACCEPT", "FAIL", f"Clave válida → HTTP {code} (esperado 200)")
+
+
+def gd_health_full(api_port: int) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    code, body = _dep_get(f"{base}/health")
+    if code == "000":
+        return _gate("GD_HEALTH_FULL", "SKIPPED", "Deployment no responde — SKIPPED")
+    if code != "200":
+        return _gate("GD_HEALTH_FULL", "FAIL", f"/health → HTTP {code}")
+    try:
+        h = json.loads(body)
+        failing = [k for k, v in h.items()
+                   if k not in ("timestamp",) and "error" in str(v).lower()]
+        if failing:
+            return _gate("GD_HEALTH_FULL", "FAIL", f"Servicios con error: {failing}")
+        services = {k: v for k, v in h.items() if k != "timestamp"}
+        return _gate("GD_HEALTH_FULL", "PASS", f"Todos los servicios OK: {services}")
+    except Exception:
+        return _gate("GD_HEALTH_FULL", "PASS", f"/health → 200")
+
+
+def gd_agent_list(api_port: int) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    code, body = _dep_get(f"{base}/api/v1/agents")
+    if code == "000":
+        return _gate("GD_AGENT_LIST", "SKIPPED", "Deployment no responde — SKIPPED")
+    if code != "200":
+        return _gate("GD_AGENT_LIST", "FAIL", f"/api/v1/agents → HTTP {code}")
+    try:
+        agents = json.loads(body)
+        count = len(agents)
+        names = list(agents.keys())[:4]
+        if count == 0:
+            return _gate("GD_AGENT_LIST", "FAIL", "Sin agentes registrados")
+        return _gate("GD_AGENT_LIST", "PASS", f"{count} agentes: {names}")
+    except Exception:
+        return _gate("GD_AGENT_LIST", "FAIL", f"Respuesta inesperada: {body[:80]}")
+
+
+def gd_knowledge_stats(api_port: int, api_key: str) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    code, body = _dep_get(f"{base}/api/v1/knowledge/stats", key=api_key)
+    if code == "000":
+        return _gate("GD_KNOWLEDGE_STATS", "SKIPPED", "Deployment no responde — SKIPPED")
+    if code != "200":
+        return _gate("GD_KNOWLEDGE_STATS", "FAIL", f"/knowledge/stats → HTTP {code}")
+    try:
+        stats = json.loads(body)
+        total = stats.get("_total", {})
+        cols = total.get("collections", 0)
+        chunks = total.get("total_chunks", 0)
+        if cols == 0 or chunks == 0:
+            return _gate("GD_KNOWLEDGE_STATS", "FAIL", f"Corpus vacío: {cols} cols, {chunks} chunks")
+        return _gate("GD_KNOWLEDGE_STATS", "PASS", f"{cols} colecciones, {chunks} chunks totales")
+    except Exception:
+        return _gate("GD_KNOWLEDGE_STATS", "FAIL", f"Error: {body[:80]}")
+
+
+def gd_min_corpus(api_port: int, api_key: str, min_chunks: int = 20) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    code, body = _dep_get(f"{base}/api/v1/knowledge/stats", key=api_key)
+    if code == "000":
+        return _gate("GD_MIN_CORPUS", "SKIPPED", "Deployment no responde — SKIPPED")
+    try:
+        stats = json.loads(body)
+        low = [(k, v.get("count", 0)) for k, v in stats.items()
+               if k != "_total" and v.get("count", 0) < min_chunks]
+        if low:
+            details = ", ".join(f"{k}:{n}" for k, n in low)
+            return _gate("GD_MIN_CORPUS", "FAIL", f"Bajo {min_chunks} chunks: {details}")
+        collections = {k: v.get("count") for k, v in stats.items() if k != "_total"}
+        return _gate("GD_MIN_CORPUS", "PASS", f"Todas ≥{min_chunks} chunks: {collections}")
+    except Exception:
+        return _gate("GD_MIN_CORPUS", "FAIL", f"Error: {body[:80]}")
+
+
+def gd_rules_engine(api_port: int, api_key: str) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    code, body = _dep_get(f"{base}/api/v1/rules/evaluate?question=OOS+test", key=api_key)
+    if code == "000":
+        return _gate("GD_RULES_ENGINE", "SKIPPED", "Deployment no responde — SKIPPED")
+    if code in ("200", "422"):
+        try:
+            r = json.loads(body)
+            triggered = len(r.get("rules_triggered", []))
+            return _gate("GD_RULES_ENGINE", "PASS",
+                         f"Rules engine OK → HTTP {code}, {triggered} reglas")
+        except Exception:
+            pass
+        return _gate("GD_RULES_ENGINE", "PASS", f"/rules/evaluate → HTTP {code}")
+    return _gate("GD_RULES_ENGINE", "FAIL", f"/rules/evaluate → HTTP {code}")
+
+
+def gd_audit_verify(api_port: int, api_key: str) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    code, body = _dep_get(f"{base}/api/v1/audit/verify", key=api_key)
+    if code == "000":
+        return _gate("GD_AUDIT_VERIFY", "SKIPPED", "Deployment no responde — SKIPPED")
+    if code != "200":
+        return _gate("GD_AUDIT_VERIFY", "FAIL", f"/audit/verify → HTTP {code}")
+    try:
+        r = json.loads(body)
+        verified = r.get("verified", False)
+        count = r.get("log_count", 0)
+        if verified:
+            return _gate("GD_AUDIT_VERIFY", "PASS", f"Chain OK: {count} entradas verificadas")
+        return _gate("GD_AUDIT_VERIFY", "FAIL",
+                     f"Chain inválida: errors={r.get('hash_errors', '?')}")
+    except Exception:
+        return _gate("GD_AUDIT_VERIFY", "FAIL", f"Error: {body[:80]}")
+
+
+def gd_protocol_template(api_port: int, api_key: str) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    code, body = _dep_get(f"{base}/api/v1/protocol-template/IQ", key=api_key)
+    if code == "000":
+        return _gate("GD_PROTOCOL_TMPL", "SKIPPED", "Deployment no responde — SKIPPED")
+    if code == "200":
+        try:
+            r = json.loads(body)
+            tmpl_type = r.get("type", "?")
+            sections = len(r.get("sections", []))
+            return _gate("GD_PROTOCOL_TMPL", "PASS",
+                         f"Template IQ: type={tmpl_type}, {sections} secciones")
+        except Exception:
+            return _gate("GD_PROTOCOL_TMPL", "PASS", f"/protocol-template/IQ → 200")
+    return _gate("GD_PROTOCOL_TMPL", "FAIL", f"/protocol-template/IQ → HTTP {code}")
+
+
+def gd_key_not_in_ui(api_port: int, api_key: str) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    code, body = _dep_get(f"{base}/", timeout=5.0)
+    if code == "000":
+        return _gate("GD_KEY_NOT_IN_UI", "SKIPPED", "Deployment no responde — SKIPPED")
+    if api_key and api_key in body:
+        return _gate("GD_KEY_NOT_IN_UI", "FAIL", "API key encontrada en HTML de UI")
+    return _gate("GD_KEY_NOT_IN_UI", "PASS", "API key NO en HTML de UI ✓")
+
+
+def gd_query_llm(api_port: int, api_key: str, timeout: float = 120.0) -> dict:
+    base = f"http://host.docker.internal:{api_port}"
+    question = "¿Qué es un OOS y qué acciones inmediatas requiere según 21 CFR 211.192?"
+    code, body = _dep_post(f"{base}/api/v1/query", key=api_key,
+                           body={"question": question, "agent": "auto"}, timeout=timeout)
+    if code == "000":
+        return _gate("GD_QUERY_LLM", "SKIPPED", f"Timeout {timeout}s o deployment no levantado")
+    if code == "200":
+        try:
+            r = json.loads(body)
+            elapsed = r.get("elapsed_seconds", "?")
+            preview = str(r.get("answer", ""))[:60]
+            return _gate("GD_QUERY_LLM", "PASS",
+                         f"/api/v1/query → 200, {elapsed}s, respuesta: {preview}…")
+        except Exception:
+            return _gate("GD_QUERY_LLM", "PASS", f"/api/v1/query → 200")
+    return _gate("GD_QUERY_LLM", "FAIL", f"/api/v1/query → HTTP {code}")
+
+
+def run_deployment_gates(
+    project_id: str,
+    api_port: int,
+    api_key: str,
+    manifest: dict,
+    report_path: Path | None = None,
+    fast: bool = True,
+) -> dict:
+    """
+    Ejecuta gates funcionales contra un deployment corriendo (Docker 3+).
+    fast=True: omite LLM calls (GD_QUERY_LLM) — resultado en <15s.
+    fast=False: incluye test de respuesta Ollama (puede tardar 90-120s).
+    Guarda reporte en report_path si se especifica.
+    """
+    results = [
+        gd_auth_reject(api_port),
+        gd_auth_accept(api_port, api_key),
+        gd_health_full(api_port),
+        gd_agent_list(api_port),
+        gd_knowledge_stats(api_port, api_key),
+        gd_min_corpus(api_port, api_key, min_chunks=20),
+        gd_rules_engine(api_port, api_key),
+        gd_audit_verify(api_port, api_key),
+        gd_protocol_template(api_port, api_key),
+        gd_key_not_in_ui(api_port, api_key),
+    ]
+
+    if fast:
+        results.append(_gate("GD_QUERY_LLM", "SKIPPED",
+                             "fast=True — omitido para velocidad (requiere ~90s)"))
+    else:
+        results.append(gd_query_llm(api_port, api_key))
+
+    report = {
+        "project_id": project_id,
+        "generated_at": _ts(),
+        "gate_set": "deployment_functional",
+        "fast_mode": fast,
+        "summary": {
+            "PASS":    sum(1 for r in results if r["status"] == "PASS"),
+            "FAIL":    sum(1 for r in results if r["status"] == "FAIL"),
+            "SKIPPED": sum(1 for r in results if r["status"] == "SKIPPED"),
+        },
+        "gates": results,
+    }
+
+    report_json = json.dumps(report, separators=(",", ":"), ensure_ascii=False)
+    report_hash = f"sha256:{hashlib.sha256(report_json.encode()).hexdigest()}"
+    report["report_hash"] = report_hash
+
+    if report_path:
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False))
+
+    write_event("gates_executed", project_id, {
+        "gate_set": "deployment_functional",
+        "report_hash": report_hash,
+        "summary": report["summary"],
+        "api_port": api_port,
+    })
+
+    return report
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 3:

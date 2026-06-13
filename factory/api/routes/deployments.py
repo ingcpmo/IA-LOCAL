@@ -10,6 +10,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from factory.core.audit_writer import write_event
+from factory.core.quality_gate_runner import run_deployment_gates
 
 router = APIRouter(prefix="/api/v1/deployments", tags=["deployments"])
 
@@ -21,6 +22,10 @@ class IngestPayload(BaseModel):
     collection: str = "gmp_fda_regulations"
     text: str
     source_name: str = "factory_upload"
+
+
+class GatesPayload(BaseModel):
+    fast: bool = True
 
 
 def _get_deployment_port(project_id: str) -> int | None:
@@ -97,3 +102,61 @@ def ingest_to_deployment(project_id: str, body: IngestPayload):
         {"collection": body.collection, "source_name": body.source_name, "chars": len(body.text)},
     )
     return {"ok": True, "deployment": project_id, "result": r.json()}
+
+
+@router.post("/{project_id}/quality-gates")
+def run_deployment_quality_gates(project_id: str, body: GatesPayload):
+    """
+    Ejecuta los quality gates funcionales contra el deployment activo.
+    fast=True (default): sólo gates sin LLM (<15s).
+    fast=False: incluye test de respuesta Ollama (~90-120s adicionales).
+    """
+    port = _get_deployment_port(project_id)
+    if not port:
+        raise HTTPException(404, f"Puerto no encontrado para deployment '{project_id}'")
+
+    api_key = _get_deployment_api_key(project_id)
+    if not api_key:
+        raise HTTPException(500, "No se pudo leer la API key del deployment")
+
+    dep_dir = DEPLOYMENTS_DIR / project_id
+    if not dep_dir.exists():
+        raise HTTPException(404, f"Directorio del deployment '{project_id}' no encontrado")
+
+    # Leer manifest del deployment (no del workspace)
+    manifest_path = dep_dir / "manifest.yaml"
+    manifest: dict = {}
+    if manifest_path.exists():
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+
+    report_path = dep_dir / "quality_gates_report.json"
+
+    report = run_deployment_gates(
+        project_id=project_id,
+        api_port=port,
+        api_key=api_key,
+        manifest=manifest,
+        report_path=report_path,
+        fast=body.fast,
+    )
+
+    # Registrar resultado en audit
+    write_event(
+        "deployment_gates_validated",
+        project_id,
+        {
+            "api_port": port,
+            "fast": body.fast,
+            "summary": report["summary"],
+            "report_hash": report.get("report_hash", ""),
+        },
+    )
+
+    return {
+        "project_id": project_id,
+        "api_port": port,
+        "fast": body.fast,
+        "summary": report["summary"],
+        "gates": report["gates"],
+        "report_hash": report.get("report_hash"),
+    }

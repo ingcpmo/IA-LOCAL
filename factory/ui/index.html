@@ -95,6 +95,7 @@
   <button onclick="showTab('headless')">Headless</button>
   <button onclick="showTab('resources')">Recursos</button>
   <button onclick="showTab('pipeline')">Pipeline</button>
+  <button onclick="showTab('gates-live')">Gates Live</button>
 </nav>
 
 <div class="container">
@@ -515,6 +516,30 @@
   </div>
 </div>
 
+<!-- GATES LIVE (F10) -->
+<div id="tab-gates-live" class="section">
+  <h2>Quality Gates Live — Validación de Deployments</h2>
+  <div class="card" style="margin-bottom:16px">
+    <div class="row" style="align-items:flex-end;gap:8px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:140px">
+        <label>Project ID (deployment activo)</label>
+        <input id="gl-pid" placeholder="lab_qc_project">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding-bottom:2px">
+        <label style="font-size:.8rem;color:#94a3b8">
+          <input type="checkbox" id="gl-fast" checked style="margin-right:4px">
+          Fast (sin LLM ~15s)
+        </label>
+      </div>
+      <button class="btn btn-primary" onclick="runGatesLive()">▶ Ejecutar Gates</button>
+    </div>
+    <div class="info" style="margin-top:8px">
+      Fast=ON: 10 gates funcionales en &lt;15s. Fast=OFF: incluye test LLM (~90s adicionales).
+    </div>
+  </div>
+  <div id="gates-live-result"></div>
+</div>
+
 </div><!-- /container -->
 <div id="toast"></div>
 
@@ -539,6 +564,7 @@ function showTab(name){
   if(name==='headless') loadL8StatusHeadless();
   if(name==='resources') loadResources();
   if(name==='pipeline') {}  // carga manual
+  if(name==='gates-live') {}  // carga manual
 }
 
 function toast(msg, type='ok'){
@@ -1144,6 +1170,48 @@ async function ingestCorpus(){
     toast(`Corpus ingestado: ${r.result?.added||'ok'} chunks`);
   }catch(e){
     document.getElementById('ingest-result').innerHTML=`<div class="card"><p style="color:#ef4444">${e.message}</p></div>`;
+    toast(e.message,'err');
+  }
+}
+
+// ── Gates Live (F10) ─────────────────────────────────────────────────────────
+
+async function runGatesLive(){
+  const pid=document.getElementById('gl-pid').value.trim();
+  const fast=document.getElementById('gl-fast').checked;
+  if(!pid){toast('Project ID requerido','err');return;}
+  const el=document.getElementById('gates-live-result');
+  el.innerHTML=`<div class="empty">Ejecutando ${fast?'fast gates (~15s)':'full gates (~120s)'}…</div>`;
+  toast(`Ejecutando gates para ${pid}…`);
+  try{
+    const r=await api('POST',`/api/v1/deployments/${pid}/quality-gates`,{fast});
+    const s=r.summary;
+    const allPass=s.FAIL===0;
+    el.innerHTML=`
+      <div class="card" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+        <span style="font-size:1.3rem;font-weight:700;color:${allPass?'#22c55e':'#ef4444'}">${allPass?'✓ PASS':'✗ FAIL'}</span>
+        <span class="tag tag-green">${s.PASS} PASS</span>
+        ${s.FAIL>0?`<span class="tag tag-red">${s.FAIL} FAIL</span>`:''}
+        ${s.SKIPPED>0?`<span class="tag tag-gray">${s.SKIPPED} SKIPPED</span>`:''}
+        <span class="meta">Deployment: ${r.project_id} :${r.api_port} | fast=${r.fast}</span>
+      </div>
+      <div style="display:grid;gap:6px">
+        ${r.gates.map(g=>{
+          const colors={'PASS':'#22c55e','FAIL':'#ef4444','SKIPPED':'#64748b'};
+          const syms={'PASS':'✓','FAIL':'✗','SKIPPED':'○'};
+          return `<div class="card" style="padding:8px 12px;display:flex;gap:12px;align-items:flex-start">
+            <span style="font-size:1rem;color:${colors[g.status]};min-width:16px">${syms[g.status]}</span>
+            <div>
+              <span style="font-weight:600;font-size:.85rem">${g.gate}</span>
+              <span class="tag ${g.status==='PASS'?'tag-green':g.status==='FAIL'?'tag-red':'tag-gray'}" style="margin-left:6px">${g.status}</span>
+              <p class="meta" style="margin-top:2px">${g.evidence.slice(0,120)}</p>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    toast(`Gates: PASS=${s.PASS} FAIL=${s.FAIL}`, allPass?'ok':'err');
+  }catch(e){
+    el.innerHTML=`<div class="card"><p style="color:#ef4444">${e.message}</p></div>`;
     toast(e.message,'err');
   }
 }

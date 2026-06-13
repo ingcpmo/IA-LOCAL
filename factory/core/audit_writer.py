@@ -51,6 +51,8 @@ VALID_EVENTS = {
     "layer8_headless_enabled", "layer8_headless_result_reviewed",
     # Eventos F9 — ops
     "knowledge_ingested",
+    # Eventos F10 — quality gates live
+    "deployment_gates_validated",
 }
 
 
