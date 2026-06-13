@@ -90,6 +90,9 @@
   <button onclick="showTab('l8-jobs')">C8 Jobs</button>
   <button onclick="showTab('compliance')">Cumplimiento</button>
   <button onclick="showTab('recovery')">Recovery</button>
+  <span class="sep">|</span>
+  <button onclick="showTab('full-status')">Estado Global</button>
+  <button onclick="showTab('headless')">Headless</button>
 </nav>
 
 <div class="container">
@@ -326,7 +329,7 @@
 <!-- CAPA 8 — EJECUCIÓN -->
 <div id="tab-l8-exec" class="section">
   <h2>Capa 8 — Ejecución Autónoma</h2>
-  <div class="warn">headless_enabled: false — La ejecución es manual_assisted. No se ejecuta claude -p.</div>
+  <div class="info">Modo actual: manual_assisted. Headless disponible cuando headless_enabled=true. Usar tab "Headless" para ejecutar claude -p.</div>
   <div class="card">
     <h3>Estado Capa 8</h3>
     <button class="btn btn-primary" onclick="loadL8Status()">↻ Cargar estado</button>
@@ -415,6 +418,55 @@
   </div>
 </div>
 
+<!-- ESTADO GLOBAL (F8) -->
+<div id="tab-full-status" class="section">
+  <h2>Estado Global — Todos los stacks</h2>
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="btn btn-primary" onclick="loadFullStatus()">↻ Actualizar estado</button>
+  </div>
+  <div id="full-status-summary" style="margin-bottom:16px"></div>
+  <div id="full-status-stacks"></div>
+</div>
+
+<!-- HEADLESS (F7/F8) -->
+<div id="tab-headless" class="section">
+  <h2>Headless — Ejecución Autónoma Claude Code</h2>
+  <div class="info">Doble llave: (1) habilitar headless en config, (2) ejecutar misión. El log queda disponible para revisión humana.</div>
+  <div class="card">
+    <h3>Configuración headless</h3>
+    <div class="row" style="align-items:flex-end;gap:8px">
+      <button class="btn btn-success" onclick="setHeadless(true)">✓ Habilitar headless</button>
+      <button class="btn btn-danger" onclick="setHeadless(false)">✗ Deshabilitar headless</button>
+      <button class="btn btn-primary" onclick="loadL8StatusHeadless()">↻ Estado actual</button>
+    </div>
+    <div id="headless-config-result" style="margin-top:12px"></div>
+  </div>
+  <div class="card" style="margin-top:8px">
+    <h3>Ejecutar misión headless (claude -p)</h3>
+    <div class="warn">Requiere headless_enabled=true. El workspace debe tener CLAUDE.md, task.md y .claude/settings.json con allow rules.</div>
+    <div class="row">
+      <div class="form-group" style="flex:1">
+        <label>Project ID</label>
+        <input id="hl-pid" placeholder="oos_calculator">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Timeout (seg)</label>
+        <input id="hl-timeout" value="600" type="number">
+      </div>
+    </div>
+    <button class="btn btn-purple" onclick="runHeadless()">▶ Ejecutar headless</button>
+    <div id="headless-run-result" style="margin-top:12px"></div>
+  </div>
+  <div class="card" style="margin-top:8px">
+    <h3>Logs de ejecuciones headless</h3>
+    <div class="row" style="align-items:flex-end;gap:8px">
+      <input id="hl-log-pid" placeholder="oos_calculator" style="flex:1">
+      <button class="btn btn-primary" onclick="loadHeadlessLogs()">↻ Ver logs</button>
+    </div>
+    <div id="headless-logs-result" style="margin-top:12px"></div>
+  </div>
+</div>
+
 </div><!-- /container -->
 <div id="toast"></div>
 
@@ -435,6 +487,8 @@ function showTab(name){
   if(name==='l8-jobs') loadJobs();
   if(name==='l8-claude') loadClaudeStatus();
   if(name==='l8-exec') loadL8Status();
+  if(name==='full-status') loadFullStatus();
+  if(name==='headless') loadL8StatusHeadless();
 }
 
 function toast(msg, type='ok'){
@@ -858,6 +912,101 @@ async function runRecovery(){
     document.getElementById('recovery-result').innerHTML=`<div class="card"><pre>${JSON.stringify(r,null,2)}</pre></div>`;
     toast(r.recovery_plan?.recovery_needed?'Recuperación necesaria':'Sin problemas detectados',
           r.recovery_plan?.recovery_needed?'err':'ok');
+  }catch(e){toast(e.message,'err');}
+}
+
+// ── Estado Global (F8) ────────────────────────────────────────────────────────
+
+async function loadFullStatus(){
+  try{
+    const r=await api('GET','/api/v1/status/full');
+    const s=r.summary;
+    const summaryHtml=`
+      <div class="card" style="display:flex;gap:16px;flex-wrap:wrap">
+        <div><span style="font-size:1.4rem;font-weight:700;color:${s.stacks_error===0?'#22c55e':'#ef4444'}">${s.stacks_ok}/${s.stacks_total}</span><br><span class="meta">stacks OK</span></div>
+        <div><span style="font-size:1.4rem;font-weight:700;color:${s.audit_verified?'#22c55e':'#ef4444'}">${s.audit_entries}</span><br><span class="meta">entradas audit</span></div>
+        <div><span class="tag ${s.audit_verified?'tag-green':'tag-red'}">${s.audit_verified?'chain ✓':'chain ✗'}</span></div>
+      </div>`;
+    document.getElementById('full-status-summary').innerHTML=summaryHtml;
+
+    const stackHtml=(label, port, h, extra='')=>{
+      const ok=h.reachable&&h.status_code===200;
+      const body=h.body||{};
+      return `<div class="card">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+          <h3>${label}</h3>
+          <span class="tag ${ok?'tag-green':'tag-red'}">:${port}</span>
+          <span class="tag ${ok?'tag-green':'tag-red'}">${ok?'OK':'ERROR'}</span>
+        </div>
+        ${ok?`<p class="meta">${Object.entries(body).filter(([k])=>k!=='timestamp').map(([k,v])=>`${k}: ${v}`).join(' | ')}</p>`:`<p class="meta" style="color:#ef4444">${h.error||'sin respuesta'}</p>`}
+        ${extra}
+      </div>`;
+    };
+
+    let html=stackHtml('Docker 1 — Base GMP', 8000, r.docker_1_base.health);
+    html+=stackHtml('Docker 2 — Factory', 9000, r.docker_2_factory.health);
+    for(const c of r.custom_solutions){
+      html+=stackHtml(`Docker N — ${c.project_id}`, c.api_port, c.health,
+        `<p class="meta">Approval: ${tagStatus(c.approval_status)}</p>`);
+    }
+    document.getElementById('full-status-stacks').innerHTML=html;
+  }catch(e){toast(e.message,'err');}
+}
+
+// ── Headless (F7/F8) ──────────────────────────────────────────────────────────
+
+async function setHeadless(enabled){
+  try{
+    const r=await api('POST','/api/v1/layer8/headless/config',{
+      enabled, timeout_seconds:600, approved_by:'human'});
+    document.getElementById('headless-config-result').innerHTML=
+      `<div class="card"><pre>${JSON.stringify(r,null,2)}</pre></div>`;
+    toast(enabled?'Headless HABILITADO':'Headless DESHABILITADO', enabled?'ok':'err');
+  }catch(e){toast(e.message,'err');}
+}
+
+async function loadL8StatusHeadless(){
+  try{
+    const r=await api('GET','/api/v1/layer8/status');
+    document.getElementById('headless-config-result').innerHTML=
+      `<div class="card"><pre>${JSON.stringify(r,null,2)}</pre></div>`;
+  }catch(e){toast(e.message,'err');}
+}
+
+async function runHeadless(){
+  const pid=document.getElementById('hl-pid').value.trim();
+  const timeout=parseInt(document.getElementById('hl-timeout').value)||600;
+  if(!pid){toast('Project ID requerido','err');return;}
+  toast('Ejecutando headless… puede tardar varios minutos');
+  document.getElementById('headless-run-result').innerHTML=
+    '<div class="empty">Ejecutando claude -p en headless… espera</div>';
+  try{
+    const r=await api('POST',`/api/v1/layer8/missions/${pid}/headless`,{timeout});
+    document.getElementById('headless-run-result').innerHTML=
+      `<div class="card"><pre>${JSON.stringify(r,null,2)}</pre></div>`;
+    toast(`Headless: ${r.status}`,(r.status==='completed'&&r.returncode===0)?'ok':'err');
+  }catch(e){
+    document.getElementById('headless-run-result').innerHTML=
+      `<div class="card"><p style="color:#ef4444">${e.message}</p></div>`;
+    toast(e.message,'err');
+  }
+}
+
+async function loadHeadlessLogs(){
+  const pid=document.getElementById('hl-log-pid').value.trim();
+  if(!pid){toast('Project ID requerido','err');return;}
+  try{
+    const r=await api('GET',`/api/v1/layer8/missions/${pid}/headless/logs`);
+    const el=document.getElementById('headless-logs-result');
+    if(!r.logs||!r.logs.length){el.innerHTML='<div class="empty">Sin logs headless</div>';return;}
+    el.innerHTML=r.logs.map(l=>`
+      <div class="card" style="margin-bottom:8px">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+          <span class="tag tag-purple">${l.filename}</span>
+          <span class="meta">${(l.size_bytes/1024).toFixed(1)} KB</span>
+        </div>
+        <pre style="max-height:200px">${l.preview||l.error||''}</pre>
+      </div>`).join('');
   }catch(e){toast(e.message,'err');}
 }
 

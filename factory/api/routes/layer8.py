@@ -1,8 +1,8 @@
 """
-Capa 8 — Rutas API Runtime Controlado (F4.5d).
+Capa 8 — Rutas API Runtime Controlado (F4.5d/F8).
 
-Expone el estado de Capa 8, jobs, ejecución de misiones en modo plan-only/manual_assisted.
-NUNCA ejecuta headless. NUNCA ejecuta claude -p.
+Expone el estado de Capa 8, jobs, ejecución de misiones.
+Desde F7/F8: soporta headless controlado (doble llave: API call + headless_enabled=true).
 /deploy-if-authorized bloquea si approval.json sigue pending_approval.
 """
 
@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import yaml
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -207,3 +208,89 @@ def post_deploy_if_authorized(project_id: str):
         ),
         "next_step": "Confirmar deploy manualmente con: docker compose -f <workspace>/docker-compose.yml up -d",
     }
+
+
+# ── Headless (F7/F8) ───────────────────────────────────────────────────────────
+
+class HeadlessConfigPayload(BaseModel):
+    enabled: bool
+    timeout_seconds: int = 600
+    approved_by: str = "human"
+
+
+class HeadlessRunPayload(BaseModel):
+    timeout: int = 600
+
+
+@router.post("/headless/config")
+def post_headless_config(payload: HeadlessConfigPayload):
+    """
+    Habilita o deshabilita headless en runtime_config.yaml.
+    Requiere approved_by para registrar en audit quién autorizó.
+    """
+    try:
+        config = {}
+        if RUNTIME_CONFIG.exists():
+            with open(RUNTIME_CONFIG, encoding="utf-8") as f:
+                config = yaml.safe_load(f) or {}
+
+        config["headless_enabled"] = payload.enabled
+        config["headless_timeout_seconds"] = payload.timeout_seconds
+
+        with open(RUNTIME_CONFIG, "w", encoding="utf-8") as f:
+            yaml.dump(config, f, allow_unicode=True, default_flow_style=False)
+
+        event = "layer8_headless_enabled" if payload.enabled else "layer8_stop_condition_triggered"
+        write_event(event, "factory_headless_config", {
+            "headless_enabled": payload.enabled,
+            "timeout_seconds": payload.timeout_seconds,
+            "approved_by": payload.approved_by,
+            "source": "factory_api",
+        })
+
+        return {
+            "headless_enabled": payload.enabled,
+            "timeout_seconds": payload.timeout_seconds,
+            "config_file": str(RUNTIME_CONFIG),
+        }
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@router.post("/missions/{project_id}/headless")
+def post_run_headless(project_id: str, payload: HeadlessRunPayload = HeadlessRunPayload()):
+    """
+    Ejecuta misión en modo headless controlado (claude -p).
+    Requiere headless_enabled=true en runtime_config.yaml.
+    Doble llave: config + este endpoint. Nunca --dangerously-skip-permissions.
+    Retorna status + ruta del log para revisión humana.
+    """
+    try:
+        result = run_controlled_headless(project_id, timeout=payload.timeout)
+        return result
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@router.get("/missions/{project_id}/headless/logs")
+def get_headless_logs(project_id: str):
+    """Lista los logs de ejecuciones headless del workspace."""
+    ws_path = Path(__file__).parent.parent.parent / "workspaces" / project_id
+    if not ws_path.exists():
+        raise HTTPException(404, f"Workspace '{project_id}' no encontrado")
+
+    logs = sorted(ws_path.glob("headless_*.log"), reverse=True)
+    result = []
+    for log in logs[:10]:
+        try:
+            content = log.read_text(encoding="utf-8")
+            result.append({
+                "filename": log.name,
+                "path": str(log),
+                "size_bytes": log.stat().st_size,
+                "preview": content[:400],
+            })
+        except Exception:
+            result.append({"filename": log.name, "error": "no_legible"})
+
+    return {"project_id": project_id, "logs": result}

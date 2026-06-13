@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from factory.api.routes import projects, workspaces, agents, releases, deployments, approvals, layer9, layer8
+from factory.api.routes import projects, workspaces, agents, releases, deployments, approvals, layer9, layer8, status
 from factory.core.audit_writer import verify_chain
 
 FACTORY_API_KEY = os.getenv("FACTORY_API_KEY", "")
@@ -65,5 +65,6 @@ for router in [
     approvals.router,
     layer9.router,
     layer8.router,
+    status.router,
 ]:
     app.include_router(router, dependencies=[Depends(verify_api_key)])
