@@ -10,18 +10,21 @@
   header{background:#1e293b;border-bottom:1px solid #334155;padding:16px 24px;display:flex;align-items:center;gap:16px}
   header h1{font-size:1.2rem;font-weight:700;color:#f1f5f9}
   header .badge{background:#0284c7;color:#fff;font-size:.7rem;padding:2px 8px;border-radius:9999px;font-weight:600}
+  header .badge-9{background:#7c3aed}
   .key-bar{background:#1e293b;border-bottom:1px solid #334155;padding:10px 24px;display:flex;align-items:center;gap:12px}
   .key-bar label{font-size:.8rem;color:#94a3b8;white-space:nowrap}
   .key-bar input{flex:1;max-width:360px;background:#0f172a;border:1px solid #475569;border-radius:6px;padding:6px 10px;color:#e2e8f0;font-size:.85rem;font-family:monospace}
   .key-bar .status{font-size:.8rem;color:#94a3b8}
   .key-bar .status.ok{color:#22c55e}
   .key-bar .status.err{color:#ef4444}
-  nav{background:#1e293b;padding:0 24px;display:flex;gap:4px;border-bottom:1px solid #334155}
-  nav button{background:none;border:none;color:#94a3b8;padding:12px 16px;cursor:pointer;font-size:.85rem;border-bottom:2px solid transparent;transition:all .15s}
+  nav{background:#1e293b;padding:0 24px;display:flex;gap:2px;border-bottom:1px solid #334155;flex-wrap:wrap}
+  nav button{background:none;border:none;color:#94a3b8;padding:10px 14px;cursor:pointer;font-size:.8rem;border-bottom:2px solid transparent;transition:all .15s}
   nav button.active,nav button:hover{color:#f1f5f9;border-bottom-color:#0284c7}
+  nav .sep{color:#334155;padding:10px 4px;font-size:.8rem;align-self:center}
   .container{padding:24px;max-width:1100px}
   .section{display:none}.section.active{display:block}
   h2{font-size:1rem;font-weight:600;color:#f1f5f9;margin-bottom:16px}
+  h3{font-size:.9rem;font-weight:600;color:#cbd5e1;margin-bottom:10px}
   .card{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:12px}
   .card h3{font-size:.9rem;font-weight:600;color:#f1f5f9;margin-bottom:8px}
   .card p,.card .meta{font-size:.8rem;color:#94a3b8;margin-bottom:4px}
@@ -32,6 +35,7 @@
   .btn-primary{background:#0284c7;color:#fff}.btn-primary:hover{background:#0369a1}
   .btn-success{background:#16a34a;color:#fff}.btn-success:hover{background:#15803d}
   .btn-danger{background:#dc2626;color:#fff}.btn-danger:hover{background:#b91c1c}
+  .btn-purple{background:#7c3aed;color:#fff}.btn-purple:hover{background:#6d28d9}
   .btn-sm{padding:4px 10px;font-size:.75rem}
   .tag{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:600}
   .tag-blue{background:#1e40af;color:#93c5fd}
@@ -39,10 +43,13 @@
   .tag-yellow{background:#78350f;color:#fcd34d}
   .tag-red{background:#7f1d1d;color:#fca5a5}
   .tag-gray{background:#334155;color:#94a3b8}
+  .tag-purple{background:#4c1d95;color:#c4b5fd}
   pre{background:#0f172a;border:1px solid #334155;border-radius:6px;padding:12px;font-size:.75rem;overflow:auto;max-height:400px;color:#94a3b8}
   .form-group{margin-bottom:12px}
   .form-group label{display:block;font-size:.8rem;color:#94a3b8;margin-bottom:4px}
   .empty{color:#475569;font-size:.85rem;text-align:center;padding:32px}
+  .warn{color:#fcd34d;font-size:.8rem;background:#78350f22;border:1px solid #78350f;border-radius:6px;padding:8px 12px;margin-bottom:12px}
+  .info{color:#93c5fd;font-size:.8rem;background:#1e40af22;border:1px solid #1e40af;border-radius:6px;padding:8px 12px;margin-bottom:12px}
   .gate-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1e293b;font-size:.8rem}
   .gate-row:last-child{border:none}
   .gate-id{font-family:monospace;color:#94a3b8;width:40px;flex-shrink:0}
@@ -58,6 +65,7 @@
 <header>
   <h1>⚗️ GMP AI Factory</h1>
   <span class="badge">Capas 7-9</span>
+  <span class="badge badge-9">Mission Control</span>
   <span style="flex:1"></span>
   <span id="health-dot" style="font-size:.8rem;color:#475569">● desconectado</span>
 </header>
@@ -74,6 +82,14 @@
   <button onclick="showTab('gates')">Quality Gates</button>
   <button onclick="showTab('approvals')">Aprobaciones</button>
   <button onclick="showTab('audit')">Auditoría</button>
+  <span class="sep">|</span>
+  <button onclick="showTab('missions')">C9 Misiones</button>
+  <button onclick="showTab('mission-approvals')">C9 Decisiones</button>
+  <button onclick="showTab('l8-exec')">C8 Ejecución</button>
+  <button onclick="showTab('l8-claude')">C8 Claude</button>
+  <button onclick="showTab('l8-jobs')">C8 Jobs</button>
+  <button onclick="showTab('compliance')">Cumplimiento</button>
+  <button onclick="showTab('recovery')">Recovery</button>
 </nav>
 
 <div class="container">
@@ -139,7 +155,7 @@
   <div id="gates-report"></div>
 </div>
 
-<!-- APROBACIONES -->
+<!-- APROBACIONES (legacy) -->
 <div id="tab-approvals" class="section">
   <h2>Aprobaciones</h2>
   <div class="card">
@@ -175,23 +191,250 @@
   <div id="audit-result"></div>
 </div>
 
+<!-- CAPA 9 — MISIONES -->
+<div id="tab-missions" class="section">
+  <h2>Capa 9 — Misiones</h2>
+  <div class="info">Las misiones definen el alcance y la autorización de autonomía de Capa 8.</div>
+  <div class="row" style="margin-bottom:16px">
+    <button class="btn btn-purple" onclick="loadMissions()">↻ Cargar misiones</button>
+    <button class="btn btn-primary" onclick="loadMissions('approved')">Solo aprobadas</button>
+    <button class="btn" style="background:#1e293b;border:1px solid #334155" onclick="loadMissions('draft')">Solo draft</button>
+  </div>
+  <div id="missions-list"></div>
+  <div class="card" style="margin-top:16px">
+    <h3>Aprobar misión</h3>
+    <div class="row">
+      <div class="form-group" style="flex:1">
+        <label>Project ID</label>
+        <input id="m-approve-pid" placeholder="lab_qc_project">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Aprobado por</label>
+        <input id="m-approve-by" value="human">
+      </div>
+    </div>
+    <button class="btn btn-success" onclick="approveMission()">✓ Aprobar misión</button>
+  </div>
+  <div class="card" style="margin-top:8px">
+    <h3>Registrar requerimiento para misión</h3>
+    <div class="row">
+      <div class="form-group" style="flex:1">
+        <label>Project ID</label>
+        <input id="req-pid" placeholder="lab_qc_project">
+      </div>
+      <div class="form-group" style="flex:2">
+        <label>Título</label>
+        <input id="req-title" placeholder="Integración HPLC con SST">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Descripción</label>
+      <textarea id="req-desc" placeholder="Descripción detallada del requerimiento..."></textarea>
+    </div>
+    <div class="row">
+      <div class="form-group" style="flex:1">
+        <label>Dominios (coma)</label>
+        <input id="req-domains" placeholder="HPLC,OOS">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Prioridad</label>
+        <select id="req-priority">
+          <option value="normal">Normal</option>
+          <option value="high">Alta</option>
+          <option value="critical">Crítica</option>
+          <option value="low">Baja</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="submitRequirement()">+ Enviar requerimiento</button>
+  </div>
+</div>
+
+<!-- CAPA 9 — DECISIONES Y RIESGOS -->
+<div id="tab-mission-approvals" class="section">
+  <h2>Capa 9 — Decisiones &amp; Riesgos</h2>
+  <div class="card">
+    <h3>Registrar decisión</h3>
+    <div class="row">
+      <div class="form-group" style="flex:1">
+        <label>Project ID</label>
+        <input id="dec-pid" placeholder="lab_qc_project">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Acción</label>
+        <input id="dec-action" placeholder="agent_design">
+      </div>
+    </div>
+    <div class="row">
+      <div class="form-group" style="flex:1">
+        <label>Decisión</label>
+        <select id="dec-decision">
+          <option value="approve">approve</option>
+          <option value="reject">reject</option>
+          <option value="defer">defer</option>
+          <option value="conditional_approve">conditional_approve</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Decidido por</label>
+        <input id="dec-by" value="human">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Justificación</label>
+      <input id="dec-rationale" placeholder="Justificación de la decisión">
+    </div>
+    <button class="btn btn-primary" onclick="writeDecision()">Registrar decisión</button>
+  </div>
+  <div class="card" style="margin-top:8px">
+    <h3>Ver decisiones</h3>
+    <div class="row" style="align-items:flex-end;gap:8px">
+      <input id="dec-filter-pid" placeholder="Project ID (opcional)" style="flex:1">
+      <button class="btn btn-primary" onclick="loadDecisions()">↻ Cargar</button>
+    </div>
+    <div id="decisions-list" style="margin-top:12px"></div>
+  </div>
+  <div class="card" style="margin-top:8px">
+    <h3>Aceptar riesgo</h3>
+    <div class="row">
+      <div class="form-group" style="flex:1">
+        <label>Project ID</label>
+        <input id="risk-pid" placeholder="lab_qc_project">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Severidad</label>
+        <select id="risk-sev">
+          <option value="low">low</option>
+          <option value="medium">medium</option>
+          <option value="high">high</option>
+          <option value="critical">critical</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Descripción del riesgo</label>
+      <textarea id="risk-desc" placeholder="Describe el riesgo identificado..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Mitigación</label>
+      <input id="risk-mitigation" placeholder="Plan de mitigación">
+    </div>
+    <button class="btn btn-success" onclick="acceptRisk()">✓ Aceptar riesgo</button>
+  </div>
+</div>
+
+<!-- CAPA 8 — EJECUCIÓN -->
+<div id="tab-l8-exec" class="section">
+  <h2>Capa 8 — Ejecución Autónoma</h2>
+  <div class="warn">headless_enabled: false — La ejecución es manual_assisted. No se ejecuta claude -p.</div>
+  <div class="card">
+    <h3>Estado Capa 8</h3>
+    <button class="btn btn-primary" onclick="loadL8Status()">↻ Cargar estado</button>
+    <div id="l8-status" style="margin-top:12px"></div>
+  </div>
+  <div class="card" style="margin-top:8px">
+    <h3>Ejecutar misión (plan-only / manual_assisted)</h3>
+    <div class="form-group">
+      <label>Project ID</label>
+      <input id="l8-run-pid" placeholder="lab_qc_project">
+    </div>
+    <button class="btn btn-purple" onclick="runMission()">▶ Ejecutar plan-only</button>
+    <div id="l8-run-result" style="margin-top:12px"></div>
+  </div>
+  <div class="card" style="margin-top:8px">
+    <h3>Quality Gates</h3>
+    <div class="form-group">
+      <label>Project ID</label>
+      <input id="l8-gates-pid" placeholder="lab_qc_project">
+    </div>
+    <button class="btn btn-primary" onclick="runL8Gates()">▶ Ejecutar gates</button>
+    <div id="l8-gates-result" style="margin-top:12px"></div>
+  </div>
+  <div class="card" style="margin-top:8px">
+    <h3>Deploy (requiere release approved)</h3>
+    <div class="warn">BLOQUEADO si approval.json está en pending_approval.</div>
+    <div class="form-group">
+      <label>Project ID</label>
+      <input id="l8-deploy-pid" placeholder="lab_qc_project">
+    </div>
+    <button class="btn btn-danger" onclick="checkDeploy()">Verificar autorización deploy</button>
+    <div id="l8-deploy-result" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- CAPA 8 — CLAUDE STATUS -->
+<div id="tab-l8-claude" class="section">
+  <h2>Capa 8 — Claude CLI Status</h2>
+  <div class="info">Solo se almacenan: cli_found, cli_path, version, linux_user, auth_status, mode, checked_at. Sin credenciales ni tokens.</div>
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="btn btn-primary" onclick="loadClaudeStatus()">↻ Leer status</button>
+    <button class="btn btn-purple" onclick="checkClaudeStatus()">⟳ Re-verificar CLI</button>
+  </div>
+  <div id="claude-status-result"></div>
+</div>
+
+<!-- CAPA 8 — JOBS -->
+<div id="tab-l8-jobs" class="section">
+  <h2>Capa 8 — Job Queue</h2>
+  <div class="row" style="align-items:flex-end;gap:8px;margin-bottom:16px">
+    <select id="jobs-queue" style="width:160px">
+      <option value="">Todas las colas</option>
+      <option value="pending">pending</option>
+      <option value="running">running</option>
+      <option value="completed">completed</option>
+      <option value="failed">failed</option>
+    </select>
+    <input id="jobs-filter-pid" placeholder="Project ID (opcional)" style="flex:1">
+    <button class="btn btn-primary" onclick="loadJobs()">↻ Cargar jobs</button>
+  </div>
+  <div id="jobs-list"></div>
+</div>
+
+<!-- CUMPLIMIENTO REGULATORIO -->
+<div id="tab-compliance" class="section">
+  <h2>Cumplimiento Regulatorio</h2>
+  <div class="info">Los documentos regulatorios están en estado PENDING_DOCUMENT. El go-live requiere ingesta completa del corpus con PDFs validados.</div>
+  <div class="card">
+    <h3>Estado de documentos (lab_qc_project)</h3>
+    <button class="btn btn-primary" onclick="loadCompliance()">↻ Cargar artefactos de diseño</button>
+    <div id="compliance-result" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- RECOVERY / PENDIENTES -->
+<div id="tab-recovery" class="section">
+  <h2>Recovery &amp; Pendientes</h2>
+  <div class="card">
+    <h3>Detectar estado parcial</h3>
+    <div class="form-group">
+      <label>Project ID</label>
+      <input id="rec-pid" placeholder="lab_qc_project">
+    </div>
+    <button class="btn btn-primary" onclick="runRecovery()">↻ Detectar &amp; generar plan</button>
+    <div id="recovery-result" style="margin-top:12px"></div>
+  </div>
+</div>
+
 </div><!-- /container -->
 <div id="toast"></div>
 
 <script>
-let apiKey = '';
-
 function getKey(){ return document.getElementById('api-key').value.trim(); }
 function headers(){ return {'Content-Type':'application/json','X-Api-Key':getKey()}; }
 
 function showTab(name){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
+  const sec=document.getElementById('tab-'+name);
+  if(sec) sec.classList.add('active');
   event.target.classList.add('active');
   if(name==='projects') loadProjects();
   if(name==='workspaces') loadWorkspaces();
   if(name==='approvals') loadAllApprovals();
+  if(name==='missions') loadMissions();
+  if(name==='l8-jobs') loadJobs();
+  if(name==='l8-claude') loadClaudeStatus();
+  if(name==='l8-exec') loadL8Status();
 }
 
 function toast(msg, type='ok'){
@@ -227,6 +470,11 @@ async function api(method,path,body){
   const data=await r.json().catch(()=>({detail:r.statusText}));
   if(!r.ok) throw new Error(data.detail||r.statusText);
   return data;
+}
+
+function tagStatus(s){
+  const map={approved:'tag-green',draft:'tag-yellow',closed:'tag-gray',suspended:'tag-red',pending_approval:'tag-yellow',pending:'tag-yellow'};
+  return `<span class="tag ${map[s]||'tag-gray'}">${s}</span>`;
 }
 
 // ── Proyectos ────────────────────────────────────────────────────────────────
@@ -326,17 +574,15 @@ async function loadGates(){
       document.getElementById('gates-report').innerHTML='<div class="empty">Sin quality_gates_report.json en el workspace</div>';
       return;
     }
-    // Leer el reporte via el endpoint de releases o directamente desde el workspace status
-    document.getElementById('gates-report').innerHTML=`<div class="card"><p class="meta">Workspace encontrado — el reporte se genera via quality_gate_runner.py desde el workspace.</p><p class="meta">Path: ${ws.path}</p></div>`;
+    document.getElementById('gates-report').innerHTML=`<div class="card"><p class="meta">Workspace encontrado. Path: ${ws.path}</p></div>`;
   }catch(e){
     document.getElementById('gates-report').innerHTML=`<div class="empty">${e.message}</div>`;
   }
 }
 
-// ── Aprobaciones ──────────────────────────────────────────────────────────────
+// ── Aprobaciones (legacy) ──────────────────────────────────────────────────────
 
 async function loadAllApprovals(){
-  // No hay un endpoint /api/v1/approvals sin project_id; mostrar instrucción
   document.getElementById('approvals-list').innerHTML=
     '<div class="empty">Ingresa un Project ID arriba para aprobar o rechazar una acción</div>';
 }
@@ -348,7 +594,7 @@ async function postApproval(type){
   if(!pid||!action){toast('Project ID y Acción son requeridos','err');return;}
   try{
     const endpoint=type==='approve'?`/api/v1/approvals/${pid}`:`/api/v1/approvals/${pid}/reject`;
-    const r=await api('POST',endpoint,{action,notes,approved_by:'Cesar'});
+    const r=await api('POST',endpoint,{action,notes,approved_by:'human'});
     toast(type==='approve'?'✓ Aprobado':'✗ Rechazado', type==='approve'?'ok':'err');
     document.getElementById('approvals-list').innerHTML=`<div class="card"><pre>${JSON.stringify(r,null,2)}</pre></div>`;
   }catch(e){toast(e.message,'err');}
@@ -372,6 +618,246 @@ async function loadAudit(){
         <div class="meta">Entradas: ${r.log_count} | Verificadas: ${r.verified_count} | Hash errors: ${r.hash_errors} | Chain errors: ${r.chain_errors}</div>
         <div class="meta" style="margin-top:4px">Archivo: ${r.audit_file}</div>
       </div>`;
+  }catch(e){toast(e.message,'err');}
+}
+
+// ── Capa 9 — Misiones ─────────────────────────────────────────────────────────
+
+async function loadMissions(statusFilter){
+  try{
+    const qs=statusFilter?`?status=${statusFilter}`:'';
+    const ms=await api('GET','/api/v1/layer9/missions'+qs);
+    const el=document.getElementById('missions-list');
+    if(!ms.length){el.innerHTML='<div class="empty">Sin misiones</div>';return;}
+    el.innerHTML=ms.map(m=>`
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <h3>${m.project_id}</h3>
+          ${tagStatus(m.status)}
+          <span class="tag tag-purple">${m.mission_approval?.autonomy_level||''}</span>
+        </div>
+        <p class="meta">${m.objective?.slice(0,120)||''}…</p>
+        <p class="meta">Cliente: ${m.client_type} | Aprobado: ${m.approved_at?.slice(0,10)||'—'}</p>
+        <p class="meta">Scope: ${(m.regulatory_scope||[]).join(', ')}</p>
+        ${m.linked_release?.version?`<p class="meta">Release: ${m.linked_release.version} — ${m.linked_release.approval_status||''}</p>`:''}
+      </div>`).join('');
+  }catch(e){toast(e.message,'err');}
+}
+
+async function approveMission(){
+  const pid=document.getElementById('m-approve-pid').value.trim();
+  const by=document.getElementById('m-approve-by').value.trim()||'human';
+  if(!pid){toast('Project ID requerido','err');return;}
+  try{
+    const r=await api('POST',`/api/v1/layer9/missions/${pid}/approve`,{approved_by:by});
+    toast('Misión aprobada');
+    loadMissions();
+  }catch(e){toast(e.message,'err');}
+}
+
+async function submitRequirement(){
+  const pid=document.getElementById('req-pid').value.trim();
+  const title=document.getElementById('req-title').value.trim();
+  const desc=document.getElementById('req-desc').value.trim();
+  const domainsRaw=document.getElementById('req-domains').value.trim();
+  const priority=document.getElementById('req-priority').value;
+  if(!pid||!title||!desc){toast('Project ID, título y descripción son requeridos','err');return;}
+  const domains=domainsRaw?domainsRaw.split(',').map(s=>s.trim()):[];
+  try{
+    const r=await api('POST',`/api/v1/layer9/requirements/${pid}`,{title,description:desc,domains,priority});
+    toast('Requerimiento enviado: '+r.req_id);
+    document.getElementById('req-title').value='';
+    document.getElementById('req-desc').value='';
+  }catch(e){toast(e.message,'err');}
+}
+
+// ── Capa 9 — Decisiones ───────────────────────────────────────────────────────
+
+async function writeDecision(){
+  const pid=document.getElementById('dec-pid').value.trim();
+  const action=document.getElementById('dec-action').value.trim();
+  const decision=document.getElementById('dec-decision').value;
+  const by=document.getElementById('dec-by').value.trim()||'human';
+  const rationale=document.getElementById('dec-rationale').value.trim();
+  if(!pid||!action){toast('Project ID y Acción son requeridos','err');return;}
+  try{
+    const r=await api('POST',`/api/v1/layer9/decisions/${pid}`,{action,decision,rationale,decided_by:by});
+    toast('Decisión registrada: '+r.decision_id);
+    loadDecisions();
+  }catch(e){toast(e.message,'err');}
+}
+
+async function loadDecisions(){
+  const pid=document.getElementById('dec-filter-pid').value.trim();
+  try{
+    const qs=pid?`?project_id=${pid}`:'';
+    const ds=await api('GET','/api/v1/layer9/decisions'+qs);
+    const el=document.getElementById('decisions-list');
+    if(!ds.length){el.innerHTML='<div class="empty">Sin decisiones</div>';return;}
+    el.innerHTML=ds.map(d=>`
+      <div class="card" style="padding:10px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span class="tag ${d.decision==='approve'?'tag-green':d.decision==='reject'?'tag-red':'tag-yellow'}">${d.decision}</span>
+          <span style="font-size:.8rem;font-weight:600">${d.action}</span>
+          <span class="tag tag-blue">${d.project_id}</span>
+        </div>
+        <p class="meta">${d.rationale||'sin justificación'}</p>
+        <p class="meta">Por: ${d.decided_by} | ${d.timestamp?.slice(0,19).replace('T',' ')}</p>
+      </div>`).join('');
+  }catch(e){toast(e.message,'err');}
+}
+
+async function acceptRisk(){
+  const pid=document.getElementById('risk-pid').value.trim();
+  const sev=document.getElementById('risk-sev').value;
+  const desc=document.getElementById('risk-desc').value.trim();
+  const mit=document.getElementById('risk-mitigation').value.trim();
+  if(!pid||!desc){toast('Project ID y descripción son requeridos','err');return;}
+  try{
+    const r=await api('POST',`/api/v1/layer9/risks/${pid}/accept`,{risk_description:desc,severity:sev,mitigation:mit,accepted_by:'human'});
+    toast('Riesgo aceptado: '+r.risk_id);
+    document.getElementById('risk-desc').value='';
+  }catch(e){toast(e.message,'err');}
+}
+
+// ── Capa 8 — Status ───────────────────────────────────────────────────────────
+
+async function loadL8Status(){
+  try{
+    const r=await api('GET','/api/v1/layer8/status');
+    document.getElementById('l8-status').innerHTML=`
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+        <span class="tag ${r.headless_enabled?'tag-red':'tag-green'}">headless: ${r.headless_enabled?'ON':'OFF'}</span>
+        <span class="tag tag-blue">mode: ${r.default_mode}</span>
+        <span class="tag tag-gray">timeout: ${r.headless_timeout_seconds}s</span>
+      </div>
+      <div class="meta" style="margin-top:8px">Jobs — pending: ${r.jobs.pending} | running: ${r.jobs.running} | completed: ${r.jobs.completed} | failed: ${r.jobs.failed}</div>`;
+  }catch(e){toast(e.message,'err');}
+}
+
+async function runMission(){
+  const pid=document.getElementById('l8-run-pid').value.trim();
+  if(!pid){toast('Project ID requerido','err');return;}
+  toast('Ejecutando plan-only…');
+  try{
+    const r=await api('POST',`/api/v1/layer8/missions/${pid}/run`);
+    document.getElementById('l8-run-result').innerHTML=`
+      <div class="card">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          ${tagStatus(r.status)}
+          <span class="tag tag-blue">${r.mode}</span>
+          <span class="tag ${r.headless_executed?'tag-red':'tag-green'}">headless: ${r.headless_executed?'ON':'OFF'}</span>
+        </div>
+        <p class="meta">job_id: ${r.job_id}</p>
+        <p class="meta">Workspace: ${r.workspace?.workspace_path||'—'} (modo: ${r.workspace?.mode||'—'})</p>
+        <p class="meta">Artefactos: ${r.design_artifacts_path||'—'}</p>
+        <p class="meta">Cmd manual: <code>${r.task_package?.manual_command||'—'}</code></p>
+        <p class="meta">${r.task_package?.note||''}</p>
+      </div>`;
+    toast('Plan generado');
+  }catch(e){
+    document.getElementById('l8-run-result').innerHTML=`<div class="card"><p class="meta" style="color:#ef4444">${e.message}</p></div>`;
+    toast(e.message,'err');
+  }
+}
+
+async function runL8Gates(){
+  const pid=document.getElementById('l8-gates-pid').value.trim();
+  if(!pid){toast('Project ID requerido','err');return;}
+  try{
+    const r=await api('POST',`/api/v1/layer8/missions/${pid}/gates`);
+    document.getElementById('l8-gates-result').innerHTML=`<div class="card"><pre>${JSON.stringify(r,null,2)}</pre></div>`;
+    toast(r.gates_passed?'Gates OK':'Gates con fallos', r.gates_passed?'ok':'err');
+  }catch(e){toast(e.message,'err');}
+}
+
+async function checkDeploy(){
+  const pid=document.getElementById('l8-deploy-pid').value.trim();
+  if(!pid){toast('Project ID requerido','err');return;}
+  try{
+    const r=await api('POST',`/api/v1/layer8/missions/${pid}/deploy-if-authorized`);
+    document.getElementById('l8-deploy-result').innerHTML=`<div class="card"><pre>${JSON.stringify(r,null,2)}</pre></div>`;
+  }catch(e){
+    document.getElementById('l8-deploy-result').innerHTML=`<div class="card"><p class="meta" style="color:#fcd34d">${e.message}</p></div>`;
+  }
+}
+
+// ── Capa 8 — Claude Status ────────────────────────────────────────────────────
+
+async function loadClaudeStatus(){
+  try{
+    const r=await api('GET','/api/v1/layer8/claude/status');
+    document.getElementById('claude-status-result').innerHTML=`<div class="card"><pre>${JSON.stringify(r,null,2)}</pre></div>`;
+  }catch(e){toast(e.message,'err');}
+}
+
+async function checkClaudeStatus(){
+  try{
+    toast('Verificando CLI…');
+    const r=await api('POST','/api/v1/layer8/claude/status/check');
+    document.getElementById('claude-status-result').innerHTML=`<div class="card"><pre>${JSON.stringify(r,null,2)}</pre></div>`;
+    toast('CLI verificado');
+  }catch(e){toast(e.message,'err');}
+}
+
+// ── Capa 8 — Jobs ─────────────────────────────────────────────────────────────
+
+async function loadJobs(){
+  const queue=document.getElementById('jobs-queue').value||undefined;
+  const pid=document.getElementById('jobs-filter-pid').value.trim()||undefined;
+  try{
+    const qs=[];
+    if(queue) qs.push('queue='+queue);
+    if(pid) qs.push('project_id='+pid);
+    const jobs=await api('GET','/api/v1/layer8/jobs'+(qs.length?'?'+qs.join('&'):''));
+    const el=document.getElementById('jobs-list');
+    if(!jobs.length){el.innerHTML='<div class="empty">Sin jobs</div>';return;}
+    el.innerHTML=jobs.map(j=>`
+      <div class="card" style="padding:10px">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+          <span class="tag ${j.status==='completed'?'tag-green':j.status==='failed'?'tag-red':j.status==='running'?'tag-blue':'tag-gray'}">${j.status}</span>
+          <span style="font-size:.8rem;font-weight:600">${j.job_type}</span>
+          <span class="tag tag-blue">${j.project_id}</span>
+        </div>
+        <p class="meta">ID: ${j.job_id}</p>
+        <p class="meta">Creado: ${j.created_at?.slice(0,19).replace('T',' ')} | Actualizado: ${j.updated_at?.slice(0,19).replace('T',' ')}</p>
+        ${j.error?`<p class="meta" style="color:#ef4444">Error: ${j.error}</p>`:''}
+      </div>`).join('');
+  }catch(e){toast(e.message,'err');}
+}
+
+// ── Cumplimiento Regulatorio ──────────────────────────────────────────────────
+
+async function loadCompliance(){
+  try{
+    const m=await api('GET','/api/v1/layer9/missions/lab_qc_project');
+    const docs=m.documents||{};
+    const entries=Object.entries(docs).map(([k,v])=>`
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e293b;font-size:.8rem">
+        <span>${k}</span>
+        <span class="tag ${v==='pending'?'tag-yellow':'tag-green'}">${v}</span>
+      </div>`).join('');
+    document.getElementById('compliance-result').innerHTML=`
+      <div class="card">
+        <h3>Documentos regulatorios — ${m.project_id}</h3>
+        ${entries}
+        <p class="meta" style="margin-top:8px">Scope: ${(m.regulatory_scope||[]).join(', ')}</p>
+      </div>`;
+  }catch(e){
+    document.getElementById('compliance-result').innerHTML=`<div class="empty">${e.message}</div>`;
+  }
+}
+
+// ── Recovery ──────────────────────────────────────────────────────────────────
+
+async function runRecovery(){
+  const pid=document.getElementById('rec-pid').value.trim();
+  if(!pid){toast('Project ID requerido','err');return;}
+  try{
+    const r=await api('POST',`/api/v1/layer8/missions/${pid}/recover`);
+    document.getElementById('recovery-result').innerHTML=`<div class="card"><pre>${JSON.stringify(r,null,2)}</pre></div>`;
+    toast(r.recovery_plan?.recovery_needed?'Recuperación necesaria':'Sin problemas detectados',
+          r.recovery_plan?.recovery_needed?'err':'ok');
   }catch(e){toast(e.message,'err');}
 }
 
