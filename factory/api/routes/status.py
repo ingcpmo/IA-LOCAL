@@ -1,16 +1,18 @@
 """
-Factory Status — Ruta /api/v1/status/full (F8).
+Factory Status — Rutas /api/v1/status/* (F8/F9).
 
-Vista consolidada del estado de todos los stacks activos (Docker 1/2/3+).
-Lee deployments/ para descubrir soluciones activas y consulta sus health endpoints.
+Vista consolidada del estado de todos los stacks activos (Docker 1/2/3+),
+y monitoreo de recursos del servidor vs resource_policy.yaml.
 """
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
 
 import httpx
+import yaml
 from fastapi import APIRouter
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
@@ -20,6 +22,7 @@ router = APIRouter(prefix="/api/v1/status", tags=["status"])
 
 DEPLOYMENTS_BASE = Path(__file__).parent.parent.parent / "deployments"
 REGISTRY_BASE = Path(__file__).parent.parent.parent / "registry"
+POLICIES_BASE = Path(__file__).parent.parent.parent / "policies"
 
 
 def _check_health(url: str, timeout: float = 4.0) -> dict:
@@ -50,6 +53,107 @@ def _discover_custom_deployments() -> list[dict]:
         return result
     except Exception:
         return []
+
+
+def _read_meminfo() -> dict:
+    """Lee /proc/meminfo y devuelve MemTotal, MemFree, MemAvailable en MB."""
+    data = {}
+    try:
+        for line in Path("/proc/meminfo").read_text().splitlines():
+            parts = line.split()
+            if len(parts) >= 2:
+                key = parts[0].rstrip(":")
+                val_kb = int(parts[1])
+                data[key] = val_kb
+    except Exception:
+        return {}
+    total_mb = data.get("MemTotal", 0) // 1024
+    free_mb = data.get("MemFree", 0) // 1024
+    available_mb = data.get("MemAvailable", 0) // 1024
+    used_mb = total_mb - available_mb
+    return {
+        "total_mb": total_mb,
+        "used_mb": used_mb,
+        "available_mb": available_mb,
+        "free_mb": free_mb,
+        "used_pct": round(used_mb / total_mb * 100, 1) if total_mb else 0,
+    }
+
+
+def _read_disk() -> dict:
+    """Lee uso del disco raíz vía os.statvfs."""
+    try:
+        st = os.statvfs("/")
+        total_gb = round(st.f_blocks * st.f_frsize / 1024**3, 1)
+        free_gb = round(st.f_bfree * st.f_frsize / 1024**3, 1)
+        available_gb = round(st.f_bavail * st.f_frsize / 1024**3, 1)
+        used_gb = round(total_gb - free_gb, 1)
+        return {
+            "total_gb": total_gb,
+            "used_gb": used_gb,
+            "available_gb": available_gb,
+            "used_pct": round(used_gb / total_gb * 100, 1) if total_gb else 0,
+        }
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
+@router.get("/resources")
+def get_resources():
+    """
+    Monitoreo de recursos del servidor vs resource_policy.yaml.
+    Incluye RAM, disco y conteo de soluciones custom activas.
+    """
+    # Cargar política
+    policy_file = POLICIES_BASE / "resource_policy.yaml"
+    try:
+        with open(policy_file, encoding="utf-8") as f:
+            policy = yaml.safe_load(f)
+    except Exception as exc:
+        policy = {}
+        policy_error = str(exc)
+    else:
+        policy_error = None
+
+    max_custom = policy.get("max_active_custom_solutions", 2)
+
+    mem = _read_meminfo()
+    disk = _read_disk()
+    customs = _discover_custom_deployments()
+    active_custom_count = len(customs)
+
+    # Umbrales de compliance
+    mem_warn_pct = 85
+    disk_warn_pct = 80
+    mem_ok = mem.get("used_pct", 0) < mem_warn_pct
+    disk_ok = disk.get("used_pct", 0) < disk_warn_pct
+    custom_ok = active_custom_count <= max_custom
+
+    compliant = mem_ok and disk_ok and custom_ok
+
+    result = {
+        "compliant": compliant,
+        "policy_version": policy.get("version", "unknown"),
+        "memory": {
+            **mem,
+            "ok": mem_ok,
+            "threshold_warn_pct": mem_warn_pct,
+        },
+        "disk": {
+            **disk,
+            "ok": disk_ok,
+            "threshold_warn_pct": disk_warn_pct,
+        },
+        "custom_solutions": {
+            "active": active_custom_count,
+            "max_allowed": max_custom,
+            "ok": custom_ok,
+            "projects": [d["project_id"] for d in customs],
+        },
+    }
+    if policy_error:
+        result["policy_error"] = policy_error
+    return result
 
 
 @router.get("/full")

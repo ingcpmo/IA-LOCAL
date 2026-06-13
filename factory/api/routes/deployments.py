@@ -3,6 +3,10 @@ import subprocess
 import sys
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
+import httpx
+import yaml
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from factory.core.audit_writer import write_event
@@ -10,6 +14,31 @@ from factory.core.audit_writer import write_event
 router = APIRouter(prefix="/api/v1/deployments", tags=["deployments"])
 
 DEPLOYMENTS_DIR = Path(__file__).parent.parent.parent / "deployments"
+REGISTRY_FILE = Path(__file__).parent.parent.parent / "registry" / "ports.yaml"
+
+
+class IngestPayload(BaseModel):
+    collection: str = "gmp_fda_regulations"
+    text: str
+    source_name: str = "factory_upload"
+
+
+def _get_deployment_port(project_id: str) -> int | None:
+    if not REGISTRY_FILE.exists():
+        return None
+    data = yaml.safe_load(REGISTRY_FILE.read_text(encoding="utf-8")) or {}
+    return data.get("allocations", {}).get(project_id, {}).get("ports", {}).get("api")
+
+
+def _get_deployment_api_key(project_id: str) -> str | None:
+    env_file = DEPLOYMENTS_DIR / project_id / ".env"
+    if not env_file.exists():
+        return None
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line.startswith("GMP_API_KEY="):
+            return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return None
 
 
 @router.get("")
@@ -30,3 +59,41 @@ def get_deployment(project_id: str):
     if not meta.exists():
         raise HTTPException(404, f"Deployment '{project_id}' no encontrado")
     return json.loads(meta.read_text())
+
+
+@router.post("/{project_id}/ingest")
+def ingest_to_deployment(project_id: str, body: IngestPayload):
+    """
+    Proxy de ingesta de corpus hacia un deployment custom activo.
+    Lee la API key del deployment server-side y la usa para autenticar la petición.
+    """
+    port = _get_deployment_port(project_id)
+    if not port:
+        raise HTTPException(404, f"Puerto no encontrado para deployment '{project_id}'")
+
+    api_key = _get_deployment_api_key(project_id)
+    if not api_key:
+        raise HTTPException(500, "No se pudo leer la API key del deployment")
+
+    url = f"http://host.docker.internal:{port}/api/v1/ingest"
+    try:
+        r = httpx.post(
+            url,
+            json={"collection": body.collection, "text": body.text, "source_name": body.source_name},
+            headers={"x-api-key": api_key},
+            timeout=30.0,
+        )
+    except httpx.TimeoutException:
+        raise HTTPException(504, "El deployment no respondió en 30s")
+    except Exception as exc:
+        raise HTTPException(502, f"Error contactando deployment: {str(exc)[:80]}")
+
+    if r.status_code not in (200, 201):
+        raise HTTPException(r.status_code, r.text[:200])
+
+    write_event(
+        "knowledge_ingested",
+        project_id,
+        {"collection": body.collection, "source_name": body.source_name, "chars": len(body.text)},
+    )
+    return {"ok": True, "deployment": project_id, "result": r.json()}

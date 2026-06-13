@@ -93,6 +93,8 @@
   <span class="sep">|</span>
   <button onclick="showTab('full-status')">Estado Global</button>
   <button onclick="showTab('headless')">Headless</button>
+  <button onclick="showTab('resources')">Recursos</button>
+  <button onclick="showTab('pipeline')">Pipeline</button>
 </nav>
 
 <div class="container">
@@ -467,6 +469,52 @@
   </div>
 </div>
 
+<!-- RECURSOS (F9) -->
+<div id="tab-resources" class="section">
+  <h2>Recursos del Servidor</h2>
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="btn btn-primary" onclick="loadResources()">↻ Actualizar recursos</button>
+  </div>
+  <div id="resources-result"></div>
+</div>
+
+<!-- PIPELINE + INGEST (F9) -->
+<div id="tab-pipeline" class="section">
+  <h2>Pipeline del Proyecto</h2>
+  <div class="card" style="margin-bottom:16px">
+    <div class="row" style="align-items:flex-end;gap:8px">
+      <div class="form-group" style="flex:1">
+        <label>Project ID</label>
+        <input id="pl-pid" placeholder="lab_qc_project">
+      </div>
+      <button class="btn btn-primary" onclick="loadPipeline()">↻ Ver pipeline</button>
+    </div>
+    <div id="pipeline-result" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <h3>Ingestar corpus en deployment activo</h3>
+    <div class="warn">Añade texto al ChromaDB del deployment sin reiniciar contenedores.</div>
+    <div class="form-group">
+      <label>Project ID (deployment activo)</label>
+      <input id="ing-pid" placeholder="lab_qc_project">
+    </div>
+    <div class="form-group">
+      <label>Collection</label>
+      <input id="ing-col" value="gmp_fda_regulations">
+    </div>
+    <div class="form-group">
+      <label>Source Name</label>
+      <input id="ing-src" value="factory_upload">
+    </div>
+    <div class="form-group">
+      <label>Texto a ingestar</label>
+      <textarea id="ing-text" rows="5" placeholder="Pegar texto regulatorio, SOP, guía FDA/USP…" style="width:100%;font-size:.85rem;padding:8px;background:#1e293b;color:#f1f5f9;border:1px solid #334155;border-radius:6px;font-family:inherit;resize:vertical"></textarea>
+    </div>
+    <button class="btn btn-success" onclick="ingestCorpus()">▶ Ingestar corpus</button>
+    <div id="ingest-result" style="margin-top:12px"></div>
+  </div>
+</div>
+
 </div><!-- /container -->
 <div id="toast"></div>
 
@@ -489,6 +537,8 @@ function showTab(name){
   if(name==='l8-exec') loadL8Status();
   if(name==='full-status') loadFullStatus();
   if(name==='headless') loadL8StatusHeadless();
+  if(name==='resources') loadResources();
+  if(name==='pipeline') {}  // carga manual
 }
 
 function toast(msg, type='ok'){
@@ -1008,6 +1058,94 @@ async function loadHeadlessLogs(){
         <pre style="max-height:200px">${l.preview||l.error||''}</pre>
       </div>`).join('');
   }catch(e){toast(e.message,'err');}
+}
+
+// ── Recursos (F9) ────────────────────────────────────────────────────────────
+
+async function loadResources(){
+  try{
+    const r=await api('GET','/api/v1/status/resources');
+    const m=r.memory||{}; const d=r.disk||{}; const c=r.custom_solutions||{};
+    const bar=(pct,ok)=>`<div style="background:#334155;border-radius:4px;height:10px;overflow:hidden;margin-top:4px"><div style="width:${Math.min(pct,100)}%;height:100%;background:${ok?'#22c55e':'#ef4444'}"></div></div>`;
+    document.getElementById('resources-result').innerHTML=`
+      <div class="card" style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+        <span style="font-size:1.3rem;font-weight:700;color:${r.compliant?'#22c55e':'#ef4444'}">${r.compliant?'✓ Compliant':'✗ No Compliant'}</span>
+        <span class="meta">Política v${r.policy_version||'?'}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+        <div class="card">
+          <h3>RAM</h3>
+          ${bar(m.used_pct||0,m.ok!==false)}
+          <p class="meta" style="margin-top:6px">${m.used_mb||'?'} MB usado / ${m.total_mb||'?'} MB total (${m.used_pct||'?'}%)</p>
+          <p class="meta">Disponible: ${m.available_mb||'?'} MB</p>
+          <span class="tag ${m.ok!==false?'tag-green':'tag-red'}">${m.ok!==false?'OK':'WARN'}</span>
+        </div>
+        <div class="card">
+          <h3>Disco /</h3>
+          ${bar(d.used_pct||0,d.ok!==false)}
+          <p class="meta" style="margin-top:6px">${d.used_gb||'?'} GB / ${d.total_gb||'?'} GB (${d.used_pct||'?'}%)</p>
+          <p class="meta">Libre: ${d.available_gb||'?'} GB</p>
+          <span class="tag ${d.ok!==false?'tag-green':'tag-red'}">${d.ok!==false?'OK':'WARN'}</span>
+        </div>
+        <div class="card">
+          <h3>Soluciones Custom</h3>
+          <p style="font-size:1.6rem;font-weight:700;color:${c.ok!==false?'#22c55e':'#ef4444'};margin:8px 0">${c.active||0}/${c.max_allowed||2}</p>
+          <p class="meta">${(c.projects||[]).join(', ')||'ninguna'}</p>
+          <span class="tag ${c.ok!==false?'tag-green':'tag-red'}">${c.ok!==false?'OK':'LÍMITE'}</span>
+        </div>
+      </div>`;
+  }catch(e){
+    document.getElementById('resources-result').innerHTML=`<div class="empty">${e.message}</div>`;
+  }
+}
+
+// ── Pipeline + Ingest (F9) ────────────────────────────────────────────────────
+
+async function loadPipeline(){
+  const pid=document.getElementById('pl-pid').value.trim();
+  if(!pid){toast('Project ID requerido','err');return;}
+  try{
+    const r=await api('GET',`/api/v1/projects/${pid}/pipeline`);
+    const ws=r.workspace||{}; const deps=r.deployment||{}; const rels=r.releases||[];
+    const reg=r.registry||{};
+    document.getElementById('pipeline-result').innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+        <div class="card">
+          <h3>Workspace</h3>
+          <span class="tag ${ws.exists?'tag-green':'tag-gray'}">${ws.exists?'activo':'no existe'}</span>
+          ${ws.exists?`<p class="meta">${ws.file_count} archivos | task: ${ws.has_task?'✓':'✗'} | tests: ${ws.has_tests?'✓':'✗'}</p>`:''}
+        </div>
+        <div class="card">
+          <h3>Releases (${rels.length})</h3>
+          ${rels.length?rels.map(rv=>`<div style="margin-bottom:6px"><span class="tag tag-blue">${rv.version}</span> ${tagStatus(rv.approval_status||'unknown')} <span class="meta">${rv.created_at?.slice(0,10)||''}</span></div>`).join(''):'<p class="meta">Sin releases</p>'}
+        </div>
+        <div class="card">
+          <h3>Deployment</h3>
+          <span class="tag ${deps.exists?'tag-green':'tag-gray'}">${deps.exists?'desplegado':'no existe'}</span>
+          ${reg.ports?`<p class="meta">API :${reg.ports.api} | PG :${reg.ports.postgres} | Redis :${reg.ports.redis}</p>`:''}
+          ${reg.allocated_at?`<p class="meta">${reg.allocated_at.slice(0,10)}</p>`:''}
+        </div>
+      </div>`;
+  }catch(e){toast(e.message,'err');}
+}
+
+async function ingestCorpus(){
+  const pid=document.getElementById('ing-pid').value.trim();
+  const collection=document.getElementById('ing-col').value.trim()||'gmp_fda_regulations';
+  const source_name=document.getElementById('ing-src').value.trim()||'factory_upload';
+  const text=document.getElementById('ing-text').value.trim();
+  if(!pid){toast('Project ID requerido','err');return;}
+  if(!text){toast('El texto no puede estar vacío','err');return;}
+  toast('Ingestando corpus…');
+  document.getElementById('ingest-result').innerHTML='<div class="empty">Procesando…</div>';
+  try{
+    const r=await api('POST',`/api/v1/deployments/${pid}/ingest`,{collection,text,source_name});
+    document.getElementById('ingest-result').innerHTML=`<div class="card"><pre>${JSON.stringify(r,null,2)}</pre></div>`;
+    toast(`Corpus ingestado: ${r.result?.added||'ok'} chunks`);
+  }catch(e){
+    document.getElementById('ingest-result').innerHTML=`<div class="card"><p style="color:#ef4444">${e.message}</p></div>`;
+    toast(e.message,'err');
+  }
 }
 
 // Init

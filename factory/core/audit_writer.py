@@ -49,6 +49,8 @@ VALID_EVENTS = {
     "layer8_stop_condition_triggered", "layer8_recovery_required",
     # Eventos F7 — headless controlado
     "layer8_headless_enabled", "layer8_headless_result_reviewed",
+    # Eventos F9 — ops
+    "knowledge_ingested",
 }
 
 
