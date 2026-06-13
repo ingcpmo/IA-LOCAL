@@ -9,7 +9,9 @@ Patrón replicado de app/audit.py (21 CFR Part 11):
 
 Eventos registrados: project_created, requirement_registered, workspace_created,
 task_dispatched, gates_executed, diff_presented, approval_granted, approval_rejected,
-release_created, deployment_created, deployment_started
+release_created, deployment_created, deployment_started,
+layer9_mission_created, layer9_mission_approved, layer9_requirement_submitted,
+layer9_decision_recorded, layer9_risk_accepted
 """
 
 import hashlib
@@ -24,10 +26,15 @@ AUDIT_FILE = Path(__file__).parent.parent / "audit" / "factory_audit.jsonl"
 _last_entry_hash: str | None = None
 
 VALID_EVENTS = {
+    # Eventos de fábrica (F1-F4)
     "project_created", "requirement_registered", "workspace_created",
     "task_dispatched", "gates_executed", "diff_presented",
     "approval_granted", "approval_rejected",
     "release_created", "deployment_created", "deployment_started",
+    # Eventos Capa 9 Mission Control (F4.5a)
+    "layer9_mission_created", "layer9_mission_approved",
+    "layer9_requirement_submitted", "layer9_decision_recorded",
+    "layer9_risk_accepted",
 }
 
 
