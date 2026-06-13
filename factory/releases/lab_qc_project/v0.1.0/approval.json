@@ -1,7 +1,7 @@
 {
   "project_id": "lab_qc_project",
   "version": "v0.1.0",
-  "status": "pending_approval",
+  "status": "approved",
   "factory_commit": "568dd74",
   "base_product_tag": "base-v1.0.0",
   "base_product_commit": "751748bd9146233ca035ea58354e94ea07386c42",
@@ -9,15 +9,19 @@
     "PASS": 8,
     "FAIL": 0,
     "SKIPPED": 6,
-    "run_at": "2026-06-13T14:16:12.197541+00:00"
+    "run_at": "2026-06-13T14:16:12.197541+00:00",
+    "G14": "PASS"
   },
   "corpus_status": {
-    "lab_qc_oos": "partial — 115 chunks disponibles, FDA OOS Guidance PDF pendiente",
-    "lab_qc_lims_di": "partial — 111 chunks disponibles, FDA DI Guidance 2018 PDF pendiente",
-    "lab_qc_hplc": "partial — 87 chunks fuentes generales, USP <621>/<1058> PDF pendientes"
+    "lab_qc_oos": "partial \u2014 115 chunks disponibles, FDA OOS Guidance PDF pendiente",
+    "lab_qc_lims_di": "partial \u2014 111 chunks disponibles, FDA DI Guidance 2018 PDF pendiente",
+    "lab_qc_hplc": "partial \u2014 87 chunks fuentes generales, USP <621>/<1058> PDF pendientes"
   },
   "gates_skipped_reason": "G06-G08 (routing+baterias) pendientes validacion funcional; G12-G13 sin .git propio en workspace; G14 para deploy",
   "pending_approver": "human",
   "created_at": "2026-06-13T14:32:08.901422+00:00",
-  "notes": "Release v0.1.0 — corpus parcial aceptado para release; corpus completo requerido antes de go-live. Aprobación humana obligatoria para pasar a deploy (F6)."
+  "notes": "Release v0.1.0 \u2014 corpus parcial aceptado para release; corpus completo requerido antes de go-live. Aprobaci\u00f3n humana obligatoria para pasar a deploy (F6).",
+  "approved_at": "2026-06-13T18:53:31.205261+00:00",
+  "approved_by": "human",
+  "deploy_decision": "F6 \u2014 deploy autorizado expl\u00edcitamente"
 }

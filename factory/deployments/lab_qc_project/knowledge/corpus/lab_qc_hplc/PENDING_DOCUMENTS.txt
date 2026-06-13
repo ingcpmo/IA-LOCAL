@@ -1,0 +1,60 @@
+COLECCIÓN: lab_qc_hplc
+PROPÓSITO: HPLC Chromatographic Data Review — SST, integración, 21 CFR 211.194
+ESTADO: EMPTY — Todos los documentos fuente son standards propietarios o PDF específicos
+         El agente hplc_data_review funciona con system prompt hasta que se aportan los PDFs.
+
+═══════════════════════════════════════════════════════════════════
+DOCUMENTOS DISPONIBLES (texto CFR público — mínimo)
+═══════════════════════════════════════════════════════════════════
+✓ 21 CFR 211.194(a) — Laboratory records (chromatograms)
+  Texto: "Laboratory records shall include complete data derived from all
+  tests necessary to assure compliance with established specifications and
+  standards, including examinations and assays... All individual laboratory
+  raw data, graphs, charts, and spectra from laboratory instruments, properly
+  identified to show the specific component, drug product container, closure,
+  in-process material, or drug product, and lot examined are retained."
+
+═══════════════════════════════════════════════════════════════════
+DOCUMENTOS PENDIENTES — APORTAR EN PDF PARA INGESTA COMPLETA
+═══════════════════════════════════════════════════════════════════
+[PRIORIDAD 1 — CRÍTICO]
+[ ] USP <621> Chromatography
+    Fuente: USP-NF Online (suscripción) — Propietario USP
+    Contiene: SST criteria (N, Tf, Rs, %RSD), peak integration rules
+
+[PRIORIDAD 1 — CRÍTICO]
+[ ] USP <1058> Analytical Instrument Qualification (AIQ)
+    Fuente: USP-NF Online (suscripción) — Propietario USP
+    Contiene: IQ/OQ/PQ para instrumentos analíticos, HPLC qualification
+
+[PRIORIDAD 2 — IMPORTANTE]
+[ ] ICH Q2(R1) — Validation of Analytical Procedures: Text and Methodology
+    URL: https://www.ich.org/page/quality-guidelines (público)
+    Contiene: specificity, linearity, range, precision, accuracy, LOD/LOQ
+
+[PRIORIDAD 2 — IMPORTANTE]
+[ ] FDA Data Integrity Guidance (2018) — Sección V sobre cromatografía
+    URL: https://www.fda.gov/media/119267/download
+    Contiene: integración de picos, archivos raw, secuencias HPLC
+
+[PRIORIDAD 3 — COMPLEMENTARIO]
+[ ] FDA Warning Letters database entries on HPLC/Empower/OpenLAB
+    Fuente: FDA Warning Letters database
+    Contiene: patrones de 483 sobre re-integración, datos cromatográficos
+
+═══════════════════════════════════════════════════════════════════
+NOTA IMPORTANTE
+═══════════════════════════════════════════════════════════════════
+Sin los PDFs de USP <621> y USP <1058>, el agente hplc_data_review
+responde basado en su system prompt (criterios codificados):
+- Tailing factor ≤2.0
+- %RSD RT ≤1.0%, área ≤2.0%
+- Rs ≥2.0
+- R² ≥0.999 calibration curve
+Estos criterios son correctos per USP pero sin corpus RAG la calidad
+de respuesta será menor. Se recomienda poblar el corpus antes de producción.
+
+═══════════════════════════════════════════════════════════════════
+INSTRUCCIÓN DE INGESTA
+═══════════════════════════════════════════════════════════════════
+  bash scripts/ops/ingest_doc.sh lab_qc_hplc

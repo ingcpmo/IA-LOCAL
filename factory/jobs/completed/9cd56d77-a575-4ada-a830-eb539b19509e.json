@@ -1,0 +1,16 @@
+{
+  "job_id": "9cd56d77-a575-4ada-a830-eb539b19509e",
+  "project_id": "lab_qc_project",
+  "job_type": "layer8_run_mission",
+  "status": "completed",
+  "payload": {
+    "plan_only": true
+  },
+  "created_at": "2026-06-13T18:39:56.420068+00:00",
+  "updated_at": "2026-06-13T18:39:56.437233+00:00",
+  "result": {
+    "status": "plan_generated",
+    "design_dir": "/home/ing_cpmo/factory/designs/lab_qc_project"
+  },
+  "error": null
+}

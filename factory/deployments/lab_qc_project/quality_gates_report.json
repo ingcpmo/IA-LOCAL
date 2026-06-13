@@ -1,0 +1,97 @@
+{
+  "project_id": "lab_qc_project",
+  "generated_at": "2026-06-13T14:16:12.197541+00:00",
+  "for_deploy": false,
+  "summary": {
+    "PASS": 8,
+    "FAIL": 0,
+    "SKIPPED": 6
+  },
+  "gates": [
+    {
+      "gate": "G01",
+      "status": "PASS",
+      "evidence": "docker compose config -q OK",
+      "timestamp": "2026-06-13T14:16:11.876908+00:00"
+    },
+    {
+      "gate": "G02",
+      "status": "PASS",
+      "evidence": "Puertos en registry: {'api': 8101, 'postgres': 5433, 'redis': 6380}",
+      "timestamp": "2026-06-13T14:16:11.878496+00:00"
+    },
+    {
+      "gate": "G03",
+      "status": "PASS",
+      "evidence": "GET /health → {\"api\":\"ok\",\"postgres\":\"ok\",\"redis\":\"ok\",\"ollama\":\"ok\",\"timestamp\":1781360171}",
+      "timestamp": "2026-06-13T14:16:11.927671+00:00"
+    },
+    {
+      "gate": "G04",
+      "status": "PASS",
+      "evidence": "knowledge/stats → {\"gmp_capa\":{\"name\":\"gmp_capa\",\"count\":50},\"lab_qc_oos\":{\"name\":\"lab_qc_oos\",\"count\":115},\"lab_qc_lims_di\":{\"name\":\"lab_qc_lims_di\",\"count\":111},\"lab_qc_hplc\":{\"name\":\"lab_qc_hplc\",\"count\":87},\"_total",
+      "timestamp": "2026-06-13T14:16:11.956013+00:00"
+    },
+    {
+      "gate": "G05",
+      "status": "PASS",
+      "evidence": "Todas las colecciones >= 60 chunks",
+      "timestamp": "2026-06-13T14:16:11.975566+00:00"
+    },
+    {
+      "gate": "G06",
+      "status": "SKIPPED",
+      "evidence": "Routing verificable solo con batería completa de preguntas — pendiente F5",
+      "timestamp": "2026-06-13T14:16:12.026204+00:00"
+    },
+    {
+      "gate": "G07",
+      "status": "SKIPPED",
+      "evidence": "Baterías heredadas verificables en F5 con solución levantada",
+      "timestamp": "2026-06-13T14:16:12.075198+00:00"
+    },
+    {
+      "gate": "G08",
+      "status": "SKIPPED",
+      "evidence": "Baterías de agentes nuevos verificables en F5",
+      "timestamp": "2026-06-13T14:16:12.127422+00:00"
+    },
+    {
+      "gate": "G09",
+      "status": "PASS",
+      "evidence": "audit/verify → verified:true",
+      "timestamp": "2026-06-13T14:16:12.183882+00:00"
+    },
+    {
+      "gate": "G10",
+      "status": "PASS",
+      "evidence": "GET / → 200",
+      "timestamp": "2026-06-13T14:16:12.195527+00:00"
+    },
+    {
+      "gate": "G11",
+      "status": "PASS",
+      "evidence": "API key NO encontrada en frontend",
+      "timestamp": "2026-06-13T14:16:12.197455+00:00"
+    },
+    {
+      "gate": "G12",
+      "status": "SKIPPED",
+      "evidence": "Workspace sin .git — SKIPPED (F5 inicializa git en workspace)",
+      "timestamp": "2026-06-13T14:16:12.197510+00:00"
+    },
+    {
+      "gate": "G13",
+      "status": "SKIPPED",
+      "evidence": "Workspace sin .git — diff se archiva en F5",
+      "timestamp": "2026-06-13T14:16:12.197535+00:00"
+    },
+    {
+      "gate": "G14",
+      "status": "SKIPPED",
+      "evidence": "G14 solo requerido para deploy (for_deploy=False)",
+      "timestamp": "2026-06-13T14:16:12.197539+00:00"
+    }
+  ],
+  "report_hash": "sha256:6a40cb00dbe458fbf8dffa3fe7c3ae4858502c52efcf08c78922763c38704d0a"
+}

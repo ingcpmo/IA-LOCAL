@@ -1,0 +1,31 @@
+COLECCIÓN: lab_qc_lims_di
+PROPÓSITO: LIMS Data Integrity — 21 CFR Part 11, ALCOA+, FDA DI
+ESTADO: PARTIAL — Texto CFR disponible; guía DI FDA pendiente de PDF
+
+═══════════════════════════════════════════════════════════════════
+DOCUMENTOS DISPONIBLES (texto CFR público — pre-poblados en ingest)
+═══════════════════════════════════════════════════════════════════
+✓ 21 CFR Part 11 §11.10 — Controls for closed systems
+✓ 21 CFR Part 11 §11.50 — Signature manifestations
+✓ 21 CFR 211.68 — Automatic, mechanical, electronic equipment
+✓ 21 CFR 820.70(i) — Automated data processing (device context)
+✓ ALCOA+ framework — 9 attributes (Attributable, Legible,
+  Contemporaneous, Original, Accurate, Complete, Consistent,
+  Enduring, Available)
+
+═══════════════════════════════════════════════════════════════════
+DOCUMENTOS PENDIENTES — APORTAR EN PDF PARA INGESTA COMPLETA
+═══════════════════════════════════════════════════════════════════
+[ ] FDA Guidance: Data Integrity and Compliance with Drug CGMP —
+    Questions and Answers (January 2018)
+    URL: https://www.fda.gov/media/119267/download
+    Instrucción: copiar PDF a esta carpeta y ejecutar ingest_doc.sh lab_qc_lims_di
+
+[ ] MHRA GXP Data Integrity Guidance and Definitions (March 2021)
+    URL: https://assets.publishing.service.gov.uk/... (opcional)
+    Instrucción: copiar PDF a esta carpeta y ejecutar ingest_doc.sh lab_qc_lims_di
+
+═══════════════════════════════════════════════════════════════════
+INSTRUCCIÓN DE INGESTA
+═══════════════════════════════════════════════════════════════════
+  bash scripts/ops/ingest_doc.sh lab_qc_lims_di

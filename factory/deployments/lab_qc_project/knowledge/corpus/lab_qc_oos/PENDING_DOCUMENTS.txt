@@ -1,0 +1,32 @@
+COLECCIÓN: lab_qc_oos
+PROPÓSITO: OOS Investigation — Quality Assurance Lab QC
+ESTADO: PARTIAL — Texto CFR disponible; guía FDA OOS pendiente de PDF
+
+═══════════════════════════════════════════════════════════════════
+DOCUMENTOS DISPONIBLES (texto CFR público — pre-poblados en ingest)
+═══════════════════════════════════════════════════════════════════
+✓ 21 CFR 211.160 — General requirements for laboratory controls
+✓ 21 CFR 211.165 — Testing and release for distribution
+✓ 21 CFR 211.192 — Production record review (includes OOS)
+✓ 21 CFR 211.194 — Laboratory records
+✓ 21 CFR 820.198 — CAPA / Complaint handling (device context)
+
+═══════════════════════════════════════════════════════════════════
+DOCUMENTOS PENDIENTES — APORTAR EN PDF PARA INGESTA COMPLETA
+═══════════════════════════════════════════════════════════════════
+[ ] FDA Guidance: Investigating Out-of-Specification (OOS) Test
+    Results for Pharmaceutical Production (October 2006, reissued 2022)
+    URL: https://www.fda.gov/media/71001/download
+    Instrucción: copiar PDF a esta carpeta y ejecutar scripts/ops/ingest_doc.sh lab_qc_oos
+
+═══════════════════════════════════════════════════════════════════
+INSTRUCCIÓN DE INGESTA
+═══════════════════════════════════════════════════════════════════
+Cuando tengas el PDF, colócalo en esta carpeta y ejecuta:
+  bash scripts/ops/ingest_doc.sh lab_qc_oos
+
+O via API:
+  curl -X POST http://localhost:8101/api/v1/ingest \
+    -H "X-Api-Key: <tu_key>" \
+    -H "Content-Type: application/json" \
+    -d '{"collection":"lab_qc_oos","text":"<texto_del_pdf>","source_name":"fda_oos_guidance_2022"}'
