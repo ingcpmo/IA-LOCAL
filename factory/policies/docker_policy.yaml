@@ -1,5 +1,5 @@
 policy: docker_policy
-version: "1.0"
+version: "1.1"
 description: Reglas de contenedores para soluciones custom generadas por la fábrica.
 
 ports:
@@ -17,12 +17,53 @@ container_naming:
 networking:
   per_project_network: "<project_id>_net"
   volumes: propios por proyecto
+
   ollama:
+    host_process: true
+    description: >
+      Ollama corre como proceso NATIVO del host (systemd, PID efectivo 551,
+      /usr/local/bin/ollama serve, *:11434). No es publicado por aria-ollama.
+      Ver factory/registry/ollama_host.yaml para detalle completo.
     method: extra_hosts host-gateway
     url: "http://host.docker.internal:11434"
     rule: PROHIBIDO conectar redes nuevas a aria-ollama ni modificar su compose
 
+  ollama_ufw:
+    description: >
+      Cada red Docker custom necesita una regla UFW para acceder a :11434.
+      Usar factory/scripts/ops/ensure_ollama_access.sh <project_id> — idempotente.
+    ops_script: factory/scripts/ops/ensure_ollama_access.sh
+    command: "bash factory/scripts/ops/ensure_ollama_access.sh <project_id>"
+
+    # Subredes autorizadas (actualizadas automáticamente por ensure_ollama_access.sh):
+    # 172.18.0.0/16 — Docker 1 (ing_cpmo_default, gmp-api stack)
+    # 172.19.0.0/16 — Docker 2 (factory_default, factory-api)
+    # 172.20.0.0/16 — Docker 3 (lab_qc_project)
+
+    subnet_risk: >
+      RIESGO: Docker IPAM asigna subredes secuencialmente (172.17-172.31+).
+      Si se destruye y recrea una red, puede recibir una subred diferente,
+      invalidando la regla UFW anterior y bloqueando el acceso a Ollama
+      sin mensaje de error claro (timeout). ensure_ollama_access.sh detecta
+      y corrige esto en cada deploy.
+
+    fixed_subnet_recommendation: >
+      RECOMENDACIÓN: definir la subred explícitamente en docker-compose.yml
+      para que el mismo proyecto siempre use la misma subred y una sola
+      regla UFW sea suficiente para toda la vida del proyecto:
+
+        networks:
+          <project_id>_net:
+            driver: bridge
+            ipam:
+              config:
+                - subnet: "172.20.0.0/16"   # fijar según ports.yaml
+
+      Rango reservado para soluciones custom: 172.20.0.0/16 – 172.30.0.0/16.
+      Asignar un /16 por proyecto y registrar en factory/registry/ollama_host.yaml.
+
 validation:
   pre_up: "docker compose config -q obligatorio antes de cualquier up"
+  pre_deploy: "bash factory/scripts/ops/ensure_ollama_access.sh <project_id>"
 
 max_active_custom_solutions: 2   # ver resource_policy.yaml

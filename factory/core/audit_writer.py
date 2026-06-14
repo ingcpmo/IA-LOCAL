@@ -55,6 +55,8 @@ VALID_EVENTS = {
     "knowledge_ingested",
     # Eventos F10 — quality gates live
     "deployment_gates_validated",
+    # Eventos R3 — conectividad Ollama / UFW
+    "network_access_configured",
 }
 
 

@@ -1,0 +1,68 @@
+registry: ollama_host
+version: "1.0"
+last_updated: "2026-06-14"
+
+# Realidad observada del proceso Ollama en el host ivr-ia
+# Fuente: pgrep -a ollama + ss -tlnp + prueba de conectividad desde contenedor
+
+host_process:
+  description: >
+    Ollama corre como PROCESO NATIVO del host en *:11434.
+    No es aria-ollama quien publica el puerto — aria-ollama es un contenedor
+    legacy del proyecto ARIA que corre con --network host, lo que hace que su
+    proceso ollama (PID registrado: 2348, /bin/ollama serve) sea visible en el
+    namespace de PID del host pero NO es el proceso que atiende las peticiones
+    de las soluciones custom.
+    El proceso efectivo es el servicio systemd 'ollama' (PID registrado: 551,
+    /usr/local/bin/ollama serve, usuario 'ollama'), que escucha en *:11434.
+  listen: "*:11434"
+  observed_pids:
+    - pid: 551
+      binary: /usr/local/bin/ollama
+      args: serve
+      user: ollama
+      launcher: systemd_service
+      effective: true
+      note: Proceso nativo del host. Instalado vía paquete. Atiende :11434.
+    - pid: 2348
+      binary: /bin/ollama
+      args: serve
+      user: root
+      launcher: aria_ollama_container_network_host
+      effective: false
+      note: >
+        Proceso dentro del contenedor aria-ollama (--network host).
+        Visible en pgrep del host por compartir namespace PID.
+        NO tocar — pertenece al stack ARIA.
+
+access_from_containers:
+  method: extra_hosts host-gateway
+  url: "http://host.docker.internal:11434"
+  note: >
+    Los contenedores Docker custom acceden a Ollama mediante host.docker.internal
+    resuelto vía extra_hosts: ["host.docker.internal:host-gateway"].
+    Requiere regla UFW: allow from <subnet_docker_proyecto> to any port 11434 proto tcp.
+
+docker_networks_authorized:
+  - network: ing_cpmo_default
+    subnet: 172.18.0.0/16
+    project: docker1_base_stack
+    ufw_rule: "allow from 172.18.0.0/16 to any port 11434 proto tcp"
+    comment: "Allow GMP API to Ollama"
+  - network: factory_default
+    subnet: 172.19.0.0/16
+    project: docker2_factory
+    ufw_rule: "allow from 172.19.0.0/16 to any port 11434 proto tcp"
+    comment: "Allow factory-api to Ollama"
+    note: Verificar que regla UFW exista; ver ensure_ollama_access.sh
+  - network: lab_qc_project_lab_qc_project_net
+    subnet: 172.20.0.0/16
+    project: lab_qc_project
+    ufw_rule: "allow from 172.20.0.0/16 to any port 11434 proto tcp"
+    comment: "Allow Docker 3 lab_qc_project to Ollama"
+
+models_available:
+  - llama3.2:latest
+  - mistral:7b-instruct-q4_K_M
+
+ops_script: factory/scripts/ops/ensure_ollama_access.sh

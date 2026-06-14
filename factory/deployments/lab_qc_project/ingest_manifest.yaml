@@ -1,0 +1,122 @@
+manifest: ingest_manifest
+version: "1.0"
+project_id: lab_qc_project
+release: v0.2.0
+description: >
+  Artefacto de release R4: define el corpus que debe ingestarse en ChromaDB
+  después de cada deploy limpio. Reproducible y auditado con knowledge_ingested.
+  Fuente de verdad: este archivo. El estado real del ChromaDB debe coincidir
+  con el resultado acumulado de ejecutar los pasos aquí listados.
+generated_at: "2026-06-14"
+
+# Colecciones y sus fuentes documentales
+# Cada entrada tiene: collection, source_path (dentro del contenedor en /app/data/regulations/),
+# sha256 del archivo original, y el método de ingesta.
+
+ingest_steps:
+
+  - step: 1
+    collection: lab_qc_oos
+    description: "OOS investigation — 21 CFR 211.160/165/192/194, FDA OOS Guidance"
+    sources:
+      - path: qa_oos/21_cfr_211_laboratory.txt
+        sha256: bace12bdc6ae9915245842caf53de32935affc7dde720681f8e35ec425522a96
+        description: "21 CFR Part 211 Laboratory Controls (sections 160/165/192/194)"
+      - path: qa_oos/fda_oos_guidance_2022.txt
+        sha256: f0dd269836afba2b3cf627345ae7b0bf18d8c75b731173918da3f517c8e64bfd
+        description: "FDA OOS Guidance 2022 summary"
+      - path: qa_oos/oos_investigation_sop_reference.txt
+        sha256: 65bf7d363595b895f33a64e4f30ebb9c362362b9b1675b5db131988e306847d9
+        description: "OOS Investigation SOP reference"
+    expected_chunks_min: 60
+    actual_chunks_v0_2_0: 144
+
+  - step: 2
+    collection: lab_qc_hplc
+    description: "HPLC Data Review — USP <621>, 21 CFR 211.194, ICH Q2(R1)"
+    sources:
+      - path: hplc_di/usp_621_chromatography.txt
+        sha256: f0dcd22c54e222c0f61e90cb956b531568cd4e60321b969391fa2f45668f86ed
+        description: "USP <621> Chromatography — SST requirements (GMP summary)"
+      - path: hplc_di/hplc_data_integrity.txt
+        sha256: fc062b0672c907cb14060742add9096c6c3779c6368e033b2fd288c0b4039417
+        description: "HPLC Data Integrity requirements (21 CFR Part 11/ALCOA+)"
+      - path: hplc_di/hplc_method_validation.txt
+        sha256: 739450b78b1c0c26f7056a7ef6dafe95fee06fbc56eb3f1938888cf5aab6b316
+        description: "HPLC Method Validation (ICH Q2R1 principles)"
+    expected_chunks_min: 60
+    actual_chunks_v0_2_0: 89
+
+  - step: 3
+    collection: lab_qc_lims_di
+    description: "LIMS Data Integrity — 21 CFR Part 11/211.68, ALCOA+, FDA DI 2018"
+    sources:
+      - path: lims_di/fda_di_guidance_2018_lims.txt
+        sha256: bb26af6a4a41a7eaf7b4a6ca89beaf36589e5c3e3a13bf383077dc18a6a50a5d
+        description: "FDA Data Integrity Guidance 2018 (LIMS section)"
+      - path: lims_di/usp_1058_aiq_reference.txt
+        sha256: 8873c1207225d3cb526953d9ddb7ebb63155e51260f9cd6fa0907b3bc9afa4f6
+        description: "USP <1058> Analytical Instrument Qualification reference"
+      - path: lims_di/mhra_di_lims_reference.txt
+        sha256: 01411df031ea4eecf234a7d6a5586d0a6f894caaf5302939d06884536b67ccdd
+        description: "MHRA Data Integrity Guidance (LIMS reference)"
+    expected_chunks_min: 60
+    actual_chunks_v0_2_0: 199
+
+  - step: 4
+    collection: gmp_fda_regulations
+    description: "GMP base regulations — CAPA, FDA, EU GMP Annex 11, ICH Q9/Q10"
+    sources:
+      - path: capa/capa_guide.txt
+        sha256: 329ecf0ba33bd7ea8809482ebaabc73d10978f5d41e8179c10c8798e6254192a
+        description: "CAPA Management Guide (5-Why/Fishbone/FTA)"
+      - path: fda/eu_gmp_annex11.txt
+        sha256: 441a9c25f1f8e73494ad274bded04b6c88d9763213d1b81eb02420fff5866a56
+        description: "EU GMP Annex 11 (computerised systems)"
+      - path: ich/ich_q9_quality_risk.txt
+        sha256: 5e2eb983344f2de3e2661e59a57bf4e407d42db413a5de1e6f6229992a17f252
+        description: "ICH Q9 Quality Risk Management"
+      - path: ich/ich_q10_pharm_quality.txt
+        sha256: b315eddde0c7782ba6f3ecc32bcbd01c6c6bd7917295e69baeabe45b5432e84c
+        description: "ICH Q10 Pharmaceutical Quality System"
+      - path: di/data_integrity_guide.txt
+        sha256: 037d8d0104f1ce04dbbf422e666d8ada26d3d34e2ea8ab3450b58636c2720120
+        description: "Data Integrity Guide (general)"
+      - path: qa/qa_system_guide.txt
+        sha256: 4259def15ac6de9cc1ba536e603fee9cdedbe3effc0d381c2d5edc5f25a35fb9
+        description: "QA System Guide"
+      - path: automation/ot_validation_guide.txt
+        sha256: 15749cfd2ea540dd6b8600026844ee0fcdd0d89c887bce81e72075de8aa747d2
+        description: "OT/Automation Validation Guide"
+      - path: ispe/ispe_cq_guide.txt
+        sha256: 18dc44e48c674679000e6746cfefb70966af18119563e0cd61c61d727b650f13
+        description: "ISPE Commissioning & Qualification Guide"
+    expected_chunks_min: 60
+    actual_chunks_v0_2_0: 153
+
+# Instrucciones de re-ingesta post-deploy
+# El script de ingesta llama al endpoint /api/v1/knowledge/ingest dentro del contenedor.
+ingest_command: >
+  Para cada source de cada step, ejecutar:
+    docker exec <project_id>_api python3 /app/scripts/ingest_single.py \
+      --file /app/data/regulations/<path> \
+      --collection <collection>
+  O usar: bash factory/scripts/ops/run_ingest_manifest.sh lab_qc_project
+  (script pendiente de crear en redeploy R4)
+
+audit_event: knowledge_ingested
+validation:
+  after_ingest: "GET /api/v1/knowledge/stats — verificar chunks >= expected_chunks_min"
+  gate: G05
+
+pending_documents:
+  - collection: lab_qc_oos
+    document: "FDA OOS Guidance 2022 (October 2022, completo) — PDF"
+    note: Solo se tiene resumen; PDF completo pendiente de adquisición
+  - collection: lab_qc_lims_di
+    document: "FDA Data Integrity Guidance 2018 (completo) — PDF"
+    note: Solo sección LIMS disponible
+  - collection: lab_qc_hplc
+    document: "USP <621> Chromatography — PDF (requiere suscripción USP)"
+  - collection: lab_qc_hplc
+    document: "ICH Q2(R1) Validation of Analytical Procedures — PDF"
