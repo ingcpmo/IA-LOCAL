@@ -109,6 +109,9 @@ def create_mission(payload: dict) -> dict:
     return {k: v for k, v in mission.items() if k != "history"}
 
 
+_RESERVED_APPROVERS = {"human", "agent", "layer8_agent", "auto", "system", ""}
+
+
 def approve_mission(
     project_id: str,
     autonomy_level: str | None = None,
@@ -117,11 +120,27 @@ def approve_mission(
     final_human_decision_required: list[str] | None = None,
     deploy_docker_if_gates_pass: bool | None = None,
     approved_by: str = "human",
+    decision_origin: str = "human_confirmed",
+    recorded_by: str = "",
 ) -> dict:
     """
     Aprueba una misión (draft → approved).
-    Permite sobreescribir los parámetros de autonomía en el momento de aprobación.
+    decision_origin: 'human_confirmed' (única opción válida para aprobación real).
+    recorded_by: identidad del proceso que escribe ('layer8_agent' o nombre del usuario).
+    approved_by: nombre real del aprobador humano; no puede ser un valor reservado.
     """
+    if approved_by.lower().strip() in _RESERVED_APPROVERS:
+        raise ValueError(
+            f"approved_by='{approved_by}' es un valor reservado. "
+            "Usa el nombre real del aprobador humano (ej. 'Cesar', 'Maria')."
+        )
+
+    valid_origins = ("agent_proposed", "human_confirmed")
+    if decision_origin not in valid_origins:
+        raise ValueError(f"decision_origin='{decision_origin}' inválido. Válidos: {valid_origins}")
+
+    _recorded_by = recorded_by or approved_by
+
     mission = _load_mission(project_id)
     if mission["status"] not in ("draft",):
         raise ValueError(
@@ -164,11 +183,15 @@ def approve_mission(
         "event": "approved",
         "at": now,
         "by": approved_by,
+        "decision_origin": decision_origin,
+        "recorded_by": _recorded_by,
     })
     _save_mission(mission)
 
     write_event("layer9_mission_approved", project_id, {
         "approved_by": approved_by,
+        "decision_origin": decision_origin,
+        "recorded_by": _recorded_by,
         "autonomy_level": new_al,
         "allowed_actions": new_aa,
     })

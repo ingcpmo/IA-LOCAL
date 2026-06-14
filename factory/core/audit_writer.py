@@ -33,7 +33,9 @@ VALID_EVENTS = {
     # Eventos de fábrica (F1-F4)
     "project_created", "requirement_registered", "workspace_created",
     "task_dispatched", "gates_executed", "diff_presented",
-    "approval_granted", "approval_rejected",
+    # approval_proposed = agente propone (→ pending_human_confirmation)
+    # approval_granted  = humano confirma (→ approved, decision_origin=human_confirmed)
+    "approval_proposed", "approval_granted", "approval_rejected",
     "release_created", "deployment_created", "deployment_started",
     # Eventos Capa 9 Mission Control (F4.5a)
     "layer9_mission_created", "layer9_mission_approved",

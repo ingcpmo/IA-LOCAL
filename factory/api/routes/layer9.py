@@ -44,7 +44,9 @@ class MissionApprove(BaseModel):
     stop_conditions: list[str] | None = None
     final_human_decision_required: list[str] | None = None
     deploy_docker_if_gates_pass: bool | None = None
-    approved_by: str = "human"
+    approved_by: str                 # nombre real del aprobador humano (obligatorio)
+    decision_origin: str = "human_confirmed"
+    recorded_by: str = ""            # se hereda de approved_by si vacío
 
 
 class RequirementCreate(BaseModel):
@@ -59,7 +61,9 @@ class DecisionCreate(BaseModel):
     action: str
     decision: str
     rationale: str = ""
-    decided_by: str = "human"
+    decided_by: str                   # nombre real del actor (obligatorio)
+    decision_origin: str = "human_confirmed"
+    recorded_by: str = ""             # se hereda de decided_by si vacío
     metadata: dict[str, Any] = {}
 
 
@@ -96,11 +100,13 @@ def post_approve_mission(project_id: str, body: MissionApprove):
             final_human_decision_required=body.final_human_decision_required,
             deploy_docker_if_gates_pass=body.deploy_docker_if_gates_pass,
             approved_by=body.approved_by,
+            decision_origin=body.decision_origin,
+            recorded_by=body.recorded_by,
         )
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
     except ValueError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(422, str(e))
     except Exception as e:
         raise HTTPException(500, str(e))
 

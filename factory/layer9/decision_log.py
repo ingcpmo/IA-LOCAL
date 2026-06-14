@@ -33,15 +33,28 @@ def write_decision(
     decision: str,
     rationale: str = "",
     decided_by: str = "human",
+    decision_origin: str = "human_confirmed",
+    recorded_by: str = "layer8_agent",
     metadata: dict | None = None,
 ) -> dict:
     """
     Escribe una decisión en el log.
-    decision ∈ {approve, reject, defer, conditional_approve}
+    decision        ∈ {approve, reject, defer, conditional_approve}
+    decision_origin ∈ {agent_proposed, human_confirmed}
+      - agent_proposed:  el agente registra una propuesta; requiere confirmación humana.
+      - human_confirmed: el humano explícitamente aprobó/rechazó.
+    recorded_by: identidad del proceso que escribe la entrada (no el aprobador).
+      - "layer8_agent": fue escrita por el agente de Capa 8 / API de fábrica.
+      - nombre del usuario (ej. "Cesar"): fue escrita por un humano vía consola o endpoint /confirm.
+    decided_by: identidad del actor que toma la decisión (solo válido para human_confirmed).
     """
     valid_decisions = ("approve", "reject", "defer", "conditional_approve")
     if decision not in valid_decisions:
         raise ValueError(f"Decisión inválida: {decision!r}. Válidas: {valid_decisions}")
+
+    valid_origins = ("agent_proposed", "human_confirmed")
+    if decision_origin not in valid_origins:
+        raise ValueError(f"decision_origin inválido: {decision_origin!r}. Válidos: {valid_origins}")
 
     DECISIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
 
@@ -52,6 +65,8 @@ def write_decision(
         "decision": decision,
         "rationale": rationale,
         "decided_by": decided_by,
+        "decision_origin": decision_origin,
+        "recorded_by": recorded_by,
         "metadata": metadata or {},
         "timestamp": _ts(),
     }

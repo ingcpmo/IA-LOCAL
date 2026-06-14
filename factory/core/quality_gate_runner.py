@@ -185,16 +185,48 @@ def g13_diff_archived(workspace_path: str) -> dict:
 
 
 def g14_approval(workspace_path: str) -> dict:
+    """
+    Valida que la aprobación sea real:
+      1. status == approved
+      2. decision_origin == human_confirmed  (R2: agente no puede auto-aprobar)
+      3. approved_by no es un valor reservado genérico
+    """
+    _RESERVED = {"human", "agent", "layer8_agent", "auto", "system", "", None}
     approval_path = Path(workspace_path) / "approval.json"
     if not approval_path.exists():
         return _gate("G14", "FAIL", "approval.json no existe — requerido para deploy")
     try:
         approval = json.loads(approval_path.read_text())
-        if approval.get("status") == "approved":
-            return _gate("G14", "PASS",
-                         f"approval.json: status=approved, by={approval.get('approved_by')}")
-        return _gate("G14", "FAIL",
-                     f"approval.json: status={approval.get('status')} (requiere approved)")
+        status = approval.get("status")
+        origin = approval.get("decision_origin")
+        approved_by = approval.get("approved_by")
+
+        if status == "pending_human_confirmation":
+            return _gate("G14", "FAIL",
+                         "approval.json: status=pending_human_confirmation — "
+                         "requiere confirmación humana vía POST /approvals/{id}/confirm")
+
+        if status != "approved":
+            return _gate("G14", "FAIL",
+                         f"approval.json: status={status!r} (requiere 'approved')")
+
+        # Si tiene decision_origin, debe ser human_confirmed
+        if origin is not None and origin != "human_confirmed":
+            return _gate("G14", "FAIL",
+                         f"approval.json: decision_origin={origin!r} — "
+                         "solo 'human_confirmed' permite deploy. "
+                         "Usa POST /approvals/{id}/confirm para confirmar humanamente.")
+
+        # approved_by no puede ser un valor reservado
+        if approved_by in _RESERVED:
+            return _gate("G14", "FAIL",
+                         f"approval.json: approved_by={approved_by!r} es un valor reservado. "
+                         "Debe ser el nombre real del aprobador humano.")
+
+        origin_label = origin or "legacy (sin decision_origin)"
+        return _gate("G14", "PASS",
+                     f"approval.json: status=approved, "
+                     f"decision_origin={origin_label}, approved_by={approved_by}")
     except Exception as e:
         return _gate("G14", "FAIL", f"Error leyendo approval.json: {e}")
 
