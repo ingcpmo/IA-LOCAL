@@ -57,6 +57,11 @@ VALID_EVENTS = {
     "layer8_autonomy_policy_applied",
     # Eventos F9 — ops
     "knowledge_ingested",
+    "tests_executed",
+    "artifacts_collected",
+    "layer8_autobuild_started",
+    "layer8_autobuild_completed",
+    "layer8_autobuild_failed",
     # Eventos F10 — quality gates live
     "deployment_gates_validated",
     # Eventos R3 — conectividad Ollama / UFW
