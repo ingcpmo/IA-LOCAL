@@ -1,0 +1,1 @@
+{"rc_id": "lab_qc_project-rc-v0.3.0-20260615T185236", "project_id": "lab_qc_project", "enqueued_at": "2026-06-15T18:52:36.084584+00:00", "status": "pending", "summary": {"version": "v0.3.0", "artifacts": ["manifest.yaml", "test_report.json", "quality_gates_report.json", "headless_headless_validation_evidence.log", "diff.txt"], "proposed_at": "2026-06-15T18:52:36.084233+00:00"}}

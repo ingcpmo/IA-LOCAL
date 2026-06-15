@@ -1,0 +1,16 @@
+{
+  "job_id": "5ea6eac8-77c1-4c23-a27b-887ddc24ea91",
+  "project_id": "lab_qc_project",
+  "job_type": "headless_run",
+  "status": "failed",
+  "payload": {
+    "task_file": "task_headless_validation.md",
+    "source": "capa8_cierre_evidencia",
+    "approved_by": "Cesar",
+    "note": "Ejecución de validación controlada para generar evidencia de ciclo Capa 8"
+  },
+  "created_at": "2026-06-15T18:46:13.099397+00:00",
+  "updated_at": "2026-06-15T18:46:34.705938+00:00",
+  "result": null,
+  "error": "task_safety_violated: ['--dangerously-skip-permissions']"
+}

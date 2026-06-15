@@ -1,0 +1,157 @@
+manifest_version: '1.0'
+project:
+  id: lab_qc_project
+  name: Laboratorio QC
+  description: Solución GMP para laboratorio QC — LIMS, HPLC, OOS, Data Integrity y CAPA
+  created_at: '2026-06-10T23:43:16.762277+00:00'
+  regulatory_framework:
+    - "21 CFR Part 211 (pharmaceutical manufacturing)"
+    - "21 CFR Part 820 (medical device QSR)"
+    - "21 CFR Part 11 (electronic records)"
+source:
+  base_product_tag: base-v1.0.0
+  base_product_commit: 751748bd9146233ca035ea58354e94ea07386c42
+  factory_commit: f621799
+  generated_by: factory_layer_8_claude_code_agent
+  generation_mode: manual_assisted
+deployment:
+  docker_project_name: lab_qc_project
+  api_port: 8101
+  postgres_port: 5433
+  redis_port: 6380
+  use_shared_ollama: true
+  ollama_url: http://host.docker.internal:11434
+  ollama_model: mistral:7b-instruct-q4_K_M
+  resource_limits_applied: true
+agents:
+  inherited:
+    - id: capa
+      name: CAPA Management Agent
+      collection: gmp_capa
+      rationale: "95% coverage — lab CAPA uses standard 5-Why/Fishbone/FTA methodology"
+  profiles:
+    qa_oos_profile:
+      base_agent: qa
+      name: OOS Investigation Specialist
+      collection: lab_qc_oos
+      coverage_estimate: "80%"
+      delta: "FDA OOS Guidance 2022 Fase I/II, 21 CFR 211.160/165/192/194, dual 211+820"
+    integrity_lims_profile:
+      base_agent: integrity
+      name: LIMS Data Integrity Specialist
+      collection: lab_qc_lims_di
+      coverage_estimate: "75%"
+      delta: "LIMS 21 CFR Part 11/211.68, ALCOA+ applied, USP <1058> AIQ, dual 211+820"
+  custom:
+    hplc_data_review:
+      name: HPLC Data Review Agent
+      collection: lab_qc_hplc
+      corpus_status: pending_documents
+      rationale: "New domain: SST criteria, peak integration policy, 21 CFR 211.194, USP <621>"
+      pending_documents:
+        - "USP <621> Chromatography"
+        - "USP <1058> Analytical Instrument Qualification"
+        - "ICH Q2(R1) Validation of Analytical Procedures"
+corpus_provenance:
+  status_date: "2026-06-14"
+  note: "R1 completado. Todos los archivos son INTERNAL_SUMMARY (sin PDF oficial). Ver data/corpus_manifest.yaml, data/regulatory_matrix.yaml, data/compliance_assessment.json."
+  go_live_blocked: true
+  go_live_blocked_reason: "4 claims críticos sin PDF oficial (PD-01 a PD-04 en data/pending_documents.yaml)"
+  disclaimer_r4_pending: true
+  disclaimer_r4_doc: "data/nota_disclaimer_r4.md"
+
+rag_collections:
+  lab_qc_oos:
+    description: "OOS investigation, 21 CFR 211.160/165/192/194, FDA OOS Guidance"
+    expected_chunks: 60
+    corpus_status: partial
+    corpus_source_type: INTERNAL_SUMMARY
+    available_sources:
+      - name: "internal_summary_21_cfr_211_laboratory.txt"
+        source_type: INTERNAL_SUMMARY
+        simulates: "21 CFR Part 211 Subpart I"
+      - name: "internal_summary_fda_oos_guidance_2022.txt"
+        source_type: INTERNAL_SUMMARY
+        simulates: "FDA OOS Guidance 2022"
+        go_live_blocked: true
+      - name: "internal_summary_oos_investigation_sop_reference.txt"
+        source_type: INTERNAL_SUMMARY
+        simulates: "OOS investigation SOP reference"
+    pending_documents:
+      - "PD-01: FDA OOS Guidance 2022 (October 2022, completo) — PDF [CRÍTICO, BLOQUEANTE]"
+  lab_qc_lims_di:
+    description: "LIMS data integrity, 21 CFR Part 11/211.68, ALCOA+, FDA DI 2018"
+    expected_chunks: 60
+    corpus_status: partial
+    corpus_source_type: INTERNAL_SUMMARY
+    available_sources:
+      - name: "internal_summary_fda_di_guidance_2018_lims.txt"
+        source_type: INTERNAL_SUMMARY
+        simulates: "FDA DI Guidance 2018"
+        go_live_blocked: true
+      - name: "internal_summary_mhra_di_lims_reference.txt"
+        source_type: INTERNAL_SUMMARY
+        simulates: "MHRA DI Guidance 2018"
+        go_live_blocked: false
+      - name: "internal_summary_usp_1058_aiq_reference.txt"
+        source_type: INTERNAL_SUMMARY
+        simulates: "USP <1058> AIQ"
+        go_live_blocked: true
+      - name: "data_integrity_guide.txt"
+        source_type: INTERNAL_SUMMARY
+        simulates: "Guía interna ALCOA+ DI"
+      - name: "internal_summary_eu_gmp_annex11.txt"
+        source_type: INTERNAL_SUMMARY
+        simulates: "EU GMP Annex 11"
+    pending_documents:
+      - "PD-02: FDA Data Integrity Guidance 2018 (completo) — PDF [CRÍTICO, BLOQUEANTE]"
+      - "PD-04: USP <1058> AIQ — PDF (suscripción USP-NF) [CRÍTICO, BLOQUEANTE]"
+      - "PD-07: MHRA Data Integrity Guidance — PDF (opcional)"
+      - "PD-06: EU GMP Annex 11 — PDF (público)"
+  lab_qc_hplc:
+    description: "HPLC chromatographic data review, SST, USP <621>, 21 CFR 211.194, ICH Q2(R1)"
+    expected_chunks: 60
+    corpus_status: partial
+    corpus_source_type: INTERNAL_SUMMARY
+    actual_chunks: 89
+    available_sources:
+      - name: "internal_summary_hplc_data_integrity.txt"
+        source_type: INTERNAL_SUMMARY
+        simulates: "HPLC DI requirements (FDA/ALCOA+)"
+        go_live_blocked: false
+      - name: "internal_summary_hplc_method_validation.txt"
+        source_type: INTERNAL_SUMMARY
+        simulates: "HPLC method validation (ICH Q2R1)"
+        go_live_blocked: false
+      - name: "internal_summary_usp_621_chromatography.txt"
+        source_type: INTERNAL_SUMMARY
+        simulates: "USP <621> Chromatography"
+        go_live_blocked: true
+    pending_documents:
+      - "PD-03: USP <621> Chromatography — PDF (suscripción USP-NF) [CRÍTICO, BLOQUEANTE]"
+      - "PD-05: ICH Q2(R1) Validation of Analytical Procedures — PDF (público)"
+security:
+  api_key_in_env_only: true
+  api_key_not_in_frontend: true
+  env_gitignored: true
+quality_gates:
+  G01_compose_valid: PASS
+  G02_dockerfile_valid: PASS
+  G03_health_ok: PASS
+  G04_auth_rejects: PASS
+  G05_auth_accepts: PASS
+  G06_query_200: PASS
+  G07_corpus_populated: PASS
+  G08_agent_routing: PASS
+  G09_rule_engine: PASS
+  G10_audit_chain: PASS
+  G11_knowledge_stats: PASS
+  G12_audit_verify: PASS
+  G13_streaming: PASS
+  G14_approval: PASS
+deployment_gates_v0_2_0:
+  validated_at: "2026-06-13"
+  result: PASS=11 FAIL=0 SKIPPED=1
+  gate_set: deployment_functional (fast mode)
+  note: GD_QUERY_LLM skipped in fast mode; all functional gates PASS
+status: validated

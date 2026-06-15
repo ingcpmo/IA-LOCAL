@@ -1,0 +1,17 @@
+{
+  "rc_id": "lab_qc_project-rc-v0.3.0-20260615T185236",
+  "project_id": "lab_qc_project",
+  "version": "v0.3.0",
+  "status": "pending_human_confirmation",
+  "decision_origin": "agent_proposed",
+  "approved_by": null,
+  "artifacts_path": "/home/ing_cpmo/factory/release_candidates/lab_qc_project/lab_qc_project-rc-v0.3.0-20260615T185236/artifacts",
+  "proposed_at": "2026-06-15T18:52:36.084233+00:00",
+  "sha256sums": {
+    "headless_headless_validation_evidence.log": "4c630be055434c9bba94a09691f76b824666cf3eb62f184e6e42962117b32b15",
+    "test_report.json": "8d35b59e01e4687999063a9e9287b7ea4ca56ee5c376e2b57c002cf2870b4c5c",
+    "quality_gates_report.json": "aa17b5d94b1ec2a699f1a7f8df864111a097b2da3ddafd622392640269a1b986",
+    "manifest.yaml": "61d4a0c6bce21895123e0e6244529d651a56be3fcb012f02974325e75542996d",
+    "diff.txt": "a3d9646de606872c1b7f2a7e1a45eceb50fc42d05905bb779f0a484a443acb43"
+  }
+}
