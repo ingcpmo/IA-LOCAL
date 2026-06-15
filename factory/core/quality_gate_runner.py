@@ -10,6 +10,7 @@ import hashlib
 import json
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -308,31 +309,53 @@ def run_all_gates(
 # ── Deployment gates (F10) — verificación funcional de solución desplegada ────
 # Usan httpx (no curl) porque estos gates corren dentro del contenedor factory-api.
 
-def _dep_get(url: str, key: str = "", timeout: float = 8.0) -> tuple[str, str]:
-    """GET con httpx. Retorna (status_code_str, body_str). '000' si error."""
-    try:
-        import httpx as _httpx
-        headers = {}
-        if key:
-            headers["x-api-key"] = key
-        r = _httpx.get(url, headers=headers, timeout=timeout)
-        return str(r.status_code), r.text
-    except Exception:
-        return "000", ""
+def _dep_get(url: str, key: str = "", timeout: float = 8.0,
+             _retries: int = 2, _backoff: float = 2.0) -> tuple[str, str]:
+    """GET con httpx. Retorna (status_code_str, body_str). '000' si error.
+    Reintenta hasta _retries veces con backoff exponencial ante errores de red (P3)."""
+    for attempt in range(_retries + 1):
+        try:
+            import httpx as _httpx
+            headers = {}
+            if key:
+                headers["x-api-key"] = key
+            r = _httpx.get(url, headers=headers, timeout=timeout)
+            return str(r.status_code), r.text
+        except Exception:
+            if attempt < _retries:
+                time.sleep(_backoff * (2 ** attempt))
+    return "000", ""
 
 
 def _dep_post(url: str, key: str = "", body: dict | None = None,
-              timeout: float = 8.0) -> tuple[str, str]:
-    """POST JSON con httpx. Retorna (status_code_str, body_str)."""
-    try:
-        import httpx as _httpx
-        headers = {"Content-Type": "application/json"}
-        if key:
-            headers["x-api-key"] = key
-        r = _httpx.post(url, json=body or {}, headers=headers, timeout=timeout)
-        return str(r.status_code), r.text
-    except Exception:
-        return "000", ""
+              timeout: float = 8.0, _retries: int = 2, _backoff: float = 2.0) -> tuple[str, str]:
+    """POST JSON con httpx. Retorna (status_code_str, body_str).
+    Reintenta hasta _retries veces con backoff exponencial ante errores de red (P3)."""
+    for attempt in range(_retries + 1):
+        try:
+            import httpx as _httpx
+            headers = {"Content-Type": "application/json"}
+            if key:
+                headers["x-api-key"] = key
+            r = _httpx.post(url, json=body or {}, headers=headers, timeout=timeout)
+            return str(r.status_code), r.text
+        except Exception:
+            if attempt < _retries:
+                time.sleep(_backoff * (2 ** attempt))
+    return "000", ""
+
+
+def _wait_for_service(api_port: int, max_wait: float = 30.0, interval: float = 2.0) -> bool:
+    """Warm-up: espera hasta max_wait segundos a que /health responda 200 (P3).
+    Reduce flakiness por cold-start en gates de deployment."""
+    base = f"http://host.docker.internal:{api_port}"
+    deadline = time.monotonic() + max_wait
+    while time.monotonic() < deadline:
+        code, _ = _dep_get(f"{base}/health", timeout=3.0, _retries=0)
+        if code == "200":
+            return True
+        time.sleep(interval)
+    return False
 
 
 def gd_auth_reject(api_port: int) -> dict:
@@ -536,7 +559,11 @@ def run_deployment_gates(
     fast=True: omite LLM calls (GD_QUERY_LLM) — resultado en <15s.
     fast=False: incluye test de respuesta Ollama (puede tardar 90-120s).
     Guarda reporte en report_path si se especifica.
+    P3: warm-up de 30s antes de correr gates para reducir flakiness por cold-start.
     """
+    # Warm-up: esperar a que el servicio esté listo antes de correr gates (P3)
+    _wait_for_service(api_port, max_wait=30.0)
+
     results = [
         gd_auth_reject(api_port),
         gd_auth_accept(api_port, api_key),

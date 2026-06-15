@@ -23,7 +23,7 @@ from factory.layer8.requirement_interpreter import RequirementSpec
 _REGULATORY_TEXT_PATTERNS = [
     r"\b21\s+cfr\s+\d+\.\d+\b",                 # 21 CFR 211.68 etc.
     r"\bfda\s+(guidance|draft\s+guidance)\b",    # FDA guidance / draft guidance
-    r"\busp\s+<\d+>\b",                          # USP <621> etc.
+    r"\busp\s*<\d+>",                             # USP <621> etc.
     r"\bich\s+q\d+",                             # ICH Q2 etc.
     r"\b(section|§)\s+\d+\.\d+(\.\d+)?\b",      # Section 211.68.1 etc.
     r"shall\s+be\s+\w+\s+in\s+accordance\s+with",  # frase normativa típica
