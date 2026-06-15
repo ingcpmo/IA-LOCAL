@@ -66,6 +66,12 @@ VALID_EVENTS = {
     "deployment_gates_validated",
     # Eventos R3 — conectividad Ollama / UFW
     "network_access_configured",
+    # Eventos Fase F — Release Candidate + cola revisión humana
+    "release_candidate_created",
+    "release_candidate_approved",
+    "release_candidate_rejected",
+    "rc_enqueued",
+    "rc_reviewed",
 }
 
 

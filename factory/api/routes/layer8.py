@@ -26,6 +26,9 @@ from factory.layer8.job_queue import list_jobs, get_job, create_job
 from factory.layer8.layer8_orchestrator import run_mission
 from factory.layer8.recovery_manager import detect_partial_f5, create_recovery_plan
 from factory.layer8.validation_manager import run_quality_gates
+from factory.layer8.autonomous_build_orchestrator import run_build_mission
+from factory.layer8.release_candidate_builder import build_rc, list_pending_rcs
+from factory.layer8.diff_manager import collect_diff
 from factory.core.audit_writer import write_event
 
 router = APIRouter(prefix="/api/v1/layer8", tags=["layer8"])
@@ -305,3 +308,61 @@ def get_headless_logs(project_id: str):
             result.append({"filename": log.name, "error": "no_legible"})
 
     return {"project_id": project_id, "logs": result}
+
+
+# ── Build + Release Candidate ──────────────────────────────────────────────────
+
+class RCBuildPayload(BaseModel):
+    version: str
+
+
+@router.post("/missions/{project_id}/build")
+def post_build_mission(project_id: str):
+    """Lanza el lazo autónomo de build. Requiere headless_enabled=True."""
+    config = yaml.safe_load(RUNTIME_CONFIG.read_text(encoding="utf-8")) or {} if RUNTIME_CONFIG.exists() else {}
+    if not config.get("headless_enabled", False):
+        raise HTTPException(400, "headless_enabled=false — habilitar antes de ejecutar build")
+    try:
+        result = run_build_mission(project_id)
+        return result
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@router.post("/missions/{project_id}/release-candidate")
+def post_build_rc(project_id: str, body: RCBuildPayload):
+    """Construye un Release Candidate formal y lo encola para revisión humana."""
+    try:
+        result = build_rc(project_id, body.version)
+        return result
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@router.get("/missions/{project_id}/artifacts")
+def get_mission_artifacts(project_id: str):
+    """Vista previa de artefactos disponibles en el workspace."""
+    from factory.layer8.artifact_collector import WORKSPACES_BASE, RC_BASE
+    import os
+    ws_path = WORKSPACES_BASE / project_id
+    if not ws_path.exists():
+        raise HTTPException(404, f"Workspace '{project_id}' no encontrado")
+    artifacts = []
+    for fname in ["manifest.yaml", "test_report.json", "quality_gates_report.json"]:
+        f = ws_path / fname
+        if f.exists():
+            artifacts.append({"file": fname, "size_bytes": f.stat().st_size})
+    log_dir = ws_path / "logs"
+    if log_dir.exists():
+        for log in sorted(log_dir.glob("headless_*.log"), reverse=True)[:3]:
+            artifacts.append({"file": f"logs/{log.name}", "size_bytes": log.stat().st_size})
+    return {"project_id": project_id, "artifacts": artifacts}
+
+
+@router.get("/missions/{project_id}/diff")
+def get_mission_diff(project_id: str):
+    """Diff del workspace respecto al repositorio."""
+    try:
+        return collect_diff(project_id)
+    except Exception as e:
+        raise HTTPException(500, str(e))

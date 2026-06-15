@@ -56,6 +56,15 @@ def audit_verify():
 
 # ── Rutas protegidas ──────────────────────────────────────────────────────────
 
+@app.get("/mission-control", include_in_schema=False)
+async def mission_control_ui():
+    from fastapi.responses import FileResponse
+    ui = Path(__file__).parent.parent / "ui" / "mission_control.html"
+    if ui.exists():
+        return FileResponse(str(ui))
+    return {"error": "mission_control.html not installed yet", "hint": "cp docs_plan/09_consola_capa9_mission_control.html factory/ui/mission_control.html"}
+
+
 for router in [
     projects.router,
     workspaces.router,
