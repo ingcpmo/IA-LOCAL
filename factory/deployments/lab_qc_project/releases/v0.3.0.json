@@ -1,0 +1,50 @@
+{
+  "project_id": "lab_qc_project",
+  "version": "v0.3.0",
+  "release_type": "re_certification",
+  "status": "deployed_and_validated",
+  "release_note": "Re-certificación con ciclo Capa 8 completo. Código idéntico a v0.2.0; validación end-to-end ejecutada por agente headless (18/18 PASS, 11 gates PASS).",
+  "timeline": {
+    "rc_proposed_at": "2026-06-15T18:52:36+00:00",
+    "rc_approved_at": "2026-06-15T19:02:14+00:00",
+    "quality_gates_passed_at": "2026-06-15T19:06:50.498260+00:00",
+    "release_recorded_at": "2026-06-15T19:06:50.498260+00:00"
+  },
+  "approval": {
+    "approved_by": "Cesar",
+    "decision_origin": "human_confirmed",
+    "rc_id": "lab_qc_project-rc-v0.3.0-20260615T185236"
+  },
+  "infrastructure": {
+    "api_image_id": "sha256:dcf81a827689",
+    "api_port": 8101,
+    "postgres_port": 5433,
+    "redis_port": 6380,
+    "ollama_model": "mistral:7b-instruct-q4_K_M",
+    "code_diff_vs_v0_2_0": "none — código idéntico"
+  },
+  "quality_gates": {
+    "gate_set": "deployment_functional",
+    "summary": {
+      "PASS": 11,
+      "FAIL": 0,
+      "SKIPPED": 1
+    },
+    "skipped": [
+      "GD_QUERY_LLM"
+    ],
+    "fast_mode": true
+  },
+  "tests": {
+    "passed": 18,
+    "failed": 0,
+    "total": 18,
+    "source": "factory/workspaces/lab_qc_project/tests/test_agents.py",
+    "run_at": "2026-06-15T18:38:00+00:00"
+  },
+  "headless_validation": {
+    "job_id": "85157c2e-ff10-43f7-91d9-e0bdcfbfe661",
+    "returncode": 0,
+    "log": "factory/workspaces/lab_qc_project/logs/headless_1781549278.log"
+  }
+}
