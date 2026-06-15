@@ -2,9 +2,9 @@
   "rc_id": "lab_qc_project-rc-v0.3.0-20260615T185236",
   "project_id": "lab_qc_project",
   "version": "v0.3.0",
-  "status": "pending_human_confirmation",
-  "decision_origin": "agent_proposed",
-  "approved_by": null,
+  "status": "approved",
+  "decision_origin": "human_confirmed",
+  "approved_by": "Cesar",
   "artifacts_path": "/home/ing_cpmo/factory/release_candidates/lab_qc_project/lab_qc_project-rc-v0.3.0-20260615T185236/artifacts",
   "proposed_at": "2026-06-15T18:52:36.084233+00:00",
   "sha256sums": {
@@ -13,5 +13,7 @@
     "quality_gates_report.json": "aa17b5d94b1ec2a699f1a7f8df864111a097b2da3ddafd622392640269a1b986",
     "manifest.yaml": "61d4a0c6bce21895123e0e6244529d651a56be3fcb012f02974325e75542996d",
     "diff.txt": "a3d9646de606872c1b7f2a7e1a45eceb50fc42d05905bb779f0a484a443acb43"
-  }
+  },
+  "decided_at": "2026-06-15T19:02:14.440536+00:00",
+  "notes": "Ciclo Capa 8 completo: 18/18 tests PASS, 11/11 gates PASS, headless rc=0. Aprobado para deploy."
 }
