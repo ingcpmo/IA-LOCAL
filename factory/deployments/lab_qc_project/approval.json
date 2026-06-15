@@ -13,6 +13,7 @@
   },
   "pending_approver": null,
   "approved_by": "Cesar",
+  "decision_origin": "human_confirmed",
   "rc_id": "lab_qc_project-rc-v0.3.0-20260615T185236",
   "created_at": "2026-06-15T19:07:00.310612+00:00",
   "notes": "v0.3.0 — re-certificación con ciclo Capa 8 completo. 18/18 tests PASS, headless rc=0. Aprobado por Cesar."

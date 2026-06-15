@@ -46,5 +46,13 @@
     "job_id": "85157c2e-ff10-43f7-91d9-e0bdcfbfe661",
     "returncode": 0,
     "log": "factory/workspaces/lab_qc_project/logs/headless_1781549278.log"
-  }
+  },
+  "rollback": {
+    "strategy": "redeploy_previous_release",
+    "previous_stable": "v0.2.0",
+    "note": "v0.3.0 es re-certificación: código idéntico a v0.2.0, sin rebuild. Rollback = redeploy de v0.2.0 (imagen sha256:dcf81a827689) si una regresión apareciera; no hay cambio de imagen que revertir.",
+    "requires_human_approval": true
+  },
+  "deployment_reconciled": true,
+  "reconcile_note": "running == release v0.3.0 (misma imagen, mismos volúmenes)"
 }
