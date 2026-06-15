@@ -18,12 +18,11 @@ from pydantic import BaseModel
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from factory.layer8.claude_account_status import check_claude_cli, write_status
 from factory.layer8.claude_runtime import (
-    run_controlled_headless,
     validate_task_safety,
     validate_workspace,
     prepare_manual_command,
 )
-from factory.layer8.job_queue import list_jobs, get_job
+from factory.layer8.job_queue import list_jobs, get_job, create_job
 from factory.layer8.layer8_orchestrator import run_mission
 from factory.layer8.recovery_manager import detect_partial_f5, create_recovery_plan
 from factory.layer8.validation_manager import run_quality_gates
@@ -260,14 +259,26 @@ def post_headless_config(payload: HeadlessConfigPayload):
 @router.post("/missions/{project_id}/headless")
 def post_run_headless(project_id: str, payload: HeadlessRunPayload = HeadlessRunPayload()):
     """
-    Ejecuta misión en modo headless controlado (claude -p).
+    Encola un job headless_run para ejecución en el HOST (no en el contenedor).
     Requiere headless_enabled=true en runtime_config.yaml.
-    Doble llave: config + este endpoint. Nunca --dangerously-skip-permissions.
-    Retorna status + ruta del log para revisión humana.
+    El CLI de claude está en el host — el worker host-side lo ejecuta.
     """
     try:
-        result = run_controlled_headless(project_id, timeout=payload.timeout)
-        return result
+        config = yaml.safe_load(RUNTIME_CONFIG.read_text(encoding="utf-8")) or {} if RUNTIME_CONFIG.exists() else {}
+        if not config.get("headless_enabled", False):
+            return {"status": "disabled", "reason": "headless_enabled=false en runtime_config.yaml"}
+
+        job = create_job(project_id, "headless_run", {"timeout": payload.timeout})
+        write_event("layer8_claude_execution_started", project_id, {
+            "source": "api_enqueue",
+            "job_id": job["job_id"],
+            "note": "worker host-side ejecutará el CLI de claude",
+        })
+        return {
+            "status": "enqueued",
+            "job_id": job["job_id"],
+            "note": "worker host-side ejecuta el CLI. Ver /api/v1/layer8/jobs para estado.",
+        }
     except Exception as e:
         raise HTTPException(500, str(e))
 

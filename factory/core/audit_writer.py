@@ -52,6 +52,9 @@ VALID_EVENTS = {
     "layer8_stop_condition_triggered", "layer8_recovery_required",
     # Eventos F7 — headless controlado
     "layer8_headless_enabled", "layer8_headless_result_reviewed",
+    
+    # Fase B+C
+    "layer8_autonomy_policy_applied",
     # Eventos F9 — ops
     "knowledge_ingested",
     # Eventos F10 — quality gates live
