@@ -1,0 +1,22 @@
+project_id: c8_alcoa_validator
+requirements:
+- domain: DATA_INTEGRITY
+  regulation_ref: 21_CFR_PART_11
+  requirement: Electronic records
+  source_status: available_as_reference
+  text: null
+- domain: DATA_INTEGRITY
+  regulation_ref: ALCOA_PLUS
+  requirement: Principios ALCOA+
+  source_status: available_as_reference
+  text: null
+- domain: CAPA
+  regulation_ref: 21_CFR_PART_211
+  requirement: CAPA sistema
+  source_status: available_as_reference
+  text: null
+- domain: CAPA
+  regulation_ref: 21_CFR_PART_820
+  requirement: CAPA dispositivos
+  source_status: available_as_reference
+  text: null

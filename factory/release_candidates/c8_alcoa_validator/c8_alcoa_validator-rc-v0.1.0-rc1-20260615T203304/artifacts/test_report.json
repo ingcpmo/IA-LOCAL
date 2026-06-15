@@ -1,0 +1,13 @@
+{
+  "project_id": "c8_alcoa_validator",
+  "all_passed": true,
+  "passed": 6,
+  "failed": 0,
+  "skipped": 0,
+  "errors": 0,
+  "returncode": 0,
+  "output_preview": "......                                                                   [100%]\n6 passed in 0.01s\n",
+  "cmd": "python3 -m pytest tests/ -q --tb=short",
+  "duration_seconds": 0.28,
+  "timestamp": "2026-06-15T20:32:54.904293+00:00"
+}

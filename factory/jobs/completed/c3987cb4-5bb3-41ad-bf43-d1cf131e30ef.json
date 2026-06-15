@@ -1,0 +1,44 @@
+{
+  "job_id": "c3987cb4-5bb3-41ad-bf43-d1cf131e30ef",
+  "project_id": "c8_alcoa_validator",
+  "job_type": "headless_run",
+  "status": "completed",
+  "payload": {
+    "source": "autonomous_build_orchestrator",
+    "policy": {
+      "headless_allowed": true,
+      "deploy_allowed": false,
+      "settings_path": "/home/ing_cpmo/factory/workspaces/c8_alcoa_validator/.claude/settings.json",
+      "policy_summary": {
+        "allowed_actions": [
+          "analyze_requirement",
+          "design_agents",
+          "create_workspace",
+          "run_claude_code",
+          "generate_code",
+          "generate_tests",
+          "run_quality_gates",
+          "create_release"
+        ],
+        "stop_conditions": [
+          "product_base_change_detected",
+          "forbidden_path_detected",
+          "quality_gate_fail",
+          "claude_execution_failed",
+          "content_filter_blocked"
+        ],
+        "final_human_decision_required": [
+          "deploy_docker"
+        ]
+      }
+    }
+  },
+  "created_at": "2026-06-15T20:31:51.880116+00:00",
+  "updated_at": "2026-06-15T20:32:42.450051+00:00",
+  "result": {
+    "returncode": 0,
+    "log_file": "/home/ing_cpmo/factory/workspaces/c8_alcoa_validator/logs/headless_1781555511.log",
+    "completed_at": "2026-06-15T20:32:42.449880+00:00"
+  },
+  "error": null
+}

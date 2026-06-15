@@ -1,0 +1,15 @@
+{
+  "rc_id": "c8_alcoa_validator-rc-v0.1.0-rc1-20260615T203304",
+  "project_id": "c8_alcoa_validator",
+  "version": "v0.1.0-rc1",
+  "status": "pending_human_confirmation",
+  "decision_origin": "agent_proposed",
+  "approved_by": null,
+  "artifacts_path": "/home/ing_cpmo/factory/release_candidates/c8_alcoa_validator/c8_alcoa_validator-rc-v0.1.0-rc1-20260615T203304/artifacts",
+  "proposed_at": "2026-06-15T20:33:04.581464+00:00",
+  "sha256sums": {
+    "test_report.json": "fa6f79d881f75ccf61be349875383cdbd9f23780cf1d53be141299e001ed4f10",
+    "diff.txt": "a3d9646de606872c1b7f2a7e1a45eceb50fc42d05905bb779f0a484a443acb43",
+    "headless_headless_1781555511.log": "c7da754034f8e48d883c604e4921dcd3d98e7a8f4aa73583c33c07e406976f45"
+  }
+}

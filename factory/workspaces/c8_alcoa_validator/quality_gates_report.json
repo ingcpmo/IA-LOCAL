@@ -1,0 +1,30 @@
+{
+  "project_id": "c8_alcoa_validator",
+  "generated_at": "2026-06-15T20:34:03.853620+00:00",
+  "gate_set": "static",
+  "summary": {
+    "PASS": 1,
+    "FAIL": 0,
+    "SKIPPED": 2
+  },
+  "gates": [
+    {
+      "gate": "G01_COMPOSE_SYNTAX",
+      "status": "SKIPPED",
+      "evidence": "docker-compose.yml no encontrado en workspace"
+    },
+    {
+      "gate": "G11",
+      "status": "PASS",
+      "evidence": "API key vacía — nada que buscar en frontend",
+      "timestamp": "2026-06-15T20:34:03.851485+00:00"
+    },
+    {
+      "gate": "G12",
+      "status": "SKIPPED",
+      "evidence": "Workspace sin .git — SKIPPED (F5 inicializa git en workspace)",
+      "timestamp": "2026-06-15T20:34:03.851670+00:00"
+    }
+  ],
+  "report_hash": "sha256:c889679a26007d474cde51e4927d3dd54919b80c99ef66270ece70b3bb4e612c"
+}

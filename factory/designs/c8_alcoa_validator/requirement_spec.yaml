@@ -1,0 +1,24 @@
+project_id: c8_alcoa_validator
+domains:
+- DATA_INTEGRITY
+- CAPA
+regulatory_scope:
+- ALCOA+
+- 21_CFR_PART_11
+dual_use: false
+part11_required: false
+alcoa_plus_required: true
+client_needs:
+- Control de integridad de datos (ALCOA+ / 21 CFR Part 11)
+- Gestión de CAPA de laboratorio (5-Why, Fishbone, FTA)
+constraints:
+- Solo stdlib Python
+- Sin Docker
+- Sin corpus
+- Sin red
+- Confinado al workspace
+- Tests con pytest
+pending_documents: []
+raw_objective: Módulo Python puro (solo stdlib) que evalúa si un registro cumple los
+  atributos ALCOA+ y produce un sello de auditoría con timestamp UTC y hash SHA-256.
+  Demostración de generación de código por el agente headless de Capa 8. No productivo.
