@@ -1,6 +1,6 @@
 {
   "project_id": "lab_qc_project",
-  "version": "v0.1.0",
+  "version": "v0.2.0",
   "status": "pending_approval",
   "factory_commit": "568dd74",
   "base_product_tag": "base-v1.0.0",
@@ -19,5 +19,6 @@
   "gates_skipped_reason": "G06-G08 (routing+baterias) pendientes validacion funcional; G12-G13 sin .git propio en workspace; G14 para deploy",
   "pending_approver": "human",
   "created_at": "2026-06-13T14:32:08.901422+00:00",
-  "notes": "Release v0.1.0 — corpus parcial aceptado para release; corpus completo requerido antes de go-live. Aprobación humana obligatoria para pasar a deploy (F6)."
+  "notes": "Release v0.1.0 — corpus parcial aceptado para release; corpus completo requerido antes de go-live. Aprobación humana obligatoria para pasar a deploy (F6).",
+  "version_note": "Corregido Fase A: deployment redeployado limpio desde v0.2.0 (2026-06-14T17:04Z)"
 }

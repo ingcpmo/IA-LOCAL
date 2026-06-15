@@ -18,6 +18,7 @@ layer8_claude_status_checked, layer8_claude_execution_started, layer8_claude_exe
 layer8_claude_execution_failed, layer8_stop_condition_triggered, layer8_recovery_required
 """
 
+import fcntl
 import hashlib
 import json
 import os
@@ -100,24 +101,34 @@ def write_event(event_type: str, project_id: str, data: dict | None = None) -> d
         raise ValueError(f"Evento desconocido: {event_type}. Válidos: {VALID_EVENTS}")
     try:
         AUDIT_FILE.parent.mkdir(parents=True, exist_ok=True)
-        prev_hash = _get_prev_hash()
 
-        entry_body = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "entry_id": str(uuid.uuid4()),
-            "event_type": event_type,
-            "project_id": project_id,
-            "data": data or {},
-            "prev_entry_hash": prev_hash,
-        }
+        # Exclusive lock para serializar escrituras concurrentes (local + container)
+        lock_path = AUDIT_FILE.with_suffix(".lock")
+        with open(lock_path, "a") as lock_fh:
+            fcntl.flock(lock_fh, fcntl.LOCK_EX)
+            try:
+                _last_entry_hash = None  # forzar re-lectura dentro del lock
+                prev_hash = _get_prev_hash()
 
-        entry_hash = f"sha256:{_compute_entry_hash(entry_body)}"
-        entry_body["entry_hash"] = entry_hash
+                entry_body = {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "entry_id": str(uuid.uuid4()),
+                    "event_type": event_type,
+                    "project_id": project_id,
+                    "data": data or {},
+                    "prev_entry_hash": prev_hash,
+                }
 
-        with open(AUDIT_FILE, "a", encoding="utf-8") as f:
-            f.write(json.dumps(entry_body, separators=(",", ":"), ensure_ascii=False) + "\n")
+                entry_hash = f"sha256:{_compute_entry_hash(entry_body)}"
+                entry_body["entry_hash"] = entry_hash
 
-        _last_entry_hash = entry_hash
+                with open(AUDIT_FILE, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(entry_body, separators=(",", ":"), ensure_ascii=False) + "\n")
+
+                _last_entry_hash = entry_hash
+            finally:
+                fcntl.flock(lock_fh, fcntl.LOCK_UN)
+
         return entry_body
 
     except Exception as e:

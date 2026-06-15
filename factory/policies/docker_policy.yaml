@@ -67,3 +67,6 @@ validation:
   pre_deploy: "bash factory/scripts/ops/ensure_ollama_access.sh <project_id>"
 
 max_active_custom_solutions: 2   # ver resource_policy.yaml
+
+# OLLAMA: proceso nativo del host en *:11434 (no aria-ollama).
+# Para acceso desde Docker custom: extra_hosts host-gateway + ufw via ensure_ollama_access.sh

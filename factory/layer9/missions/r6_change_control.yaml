@@ -1,0 +1,65 @@
+approved_at: '2026-06-15T02:57:51.073759+00:00'
+client_type: pharma_mfg_site
+closed_at: null
+constraints:
+- no inventar texto regulatorio — toda fuente no disponible queda como PENDING_DOCUMENT
+- no tocar producto base (gmp-api puerto 8000)
+- docker independiente en puertos asignados por factory/registry/ports.yaml
+- trazabilidad completa via factory_audit.jsonl (21 CFR Part 11)
+- no guardar credenciales ni tokens en código ni en git
+- no usar --dangerously-skip-permissions
+- corpus completo con PDFs reales antes de go-live
+- workspace confinado a /home/ing_cpmo/factory/workspaces/r6_change_control/
+created_at: '2026-06-15T02:55:10.837323+00:00'
+documents:
+  FDA Process Validation Guidance 2011: pending
+  ICH Q10 Pharmaceutical Quality System: pending
+  ISPE GAMP 5 Computer System Validation: pending
+history:
+- at: '2026-06-15T02:57:51.073759+00:00'
+  by: Cesar
+  decision_origin: human_confirmed
+  event: approved
+  recorded_by: layer8_agent
+linked_release: {}
+mission_approval:
+  allowed_actions:
+  - analyze_requirement
+  - design_agents
+  - create_profiles
+  - create_custom_agents
+  - create_workspace
+  - run_claude_code
+  - generate_code
+  - generate_tests
+  - create_rag_structure
+  - run_temp_docker
+  - run_quality_gates
+  - create_release
+  autonomy_level: controlled_full
+  deploy_docker_if_gates_pass: false
+  final_human_decision_required:
+  - deploy_docker
+  - keep_docker_running
+  - expose_external_access
+  stop_conditions:
+  - product_base_change_detected
+  - forbidden_path_detected
+  - regulatory_source_missing_for_required_claim
+  - quality_gate_fail
+  - docker_runtime_fail
+  - resource_limit_exceeded
+  - claude_execution_failed
+  - content_filter_blocked
+objective: 'Módulo GMP de gestión de cambios: registro de change requests con audit
+  trail ALCOA+ (Part 11), evaluación de impacto, workflow de aprobación con CAPA vinculado,
+  trazabilidad completa de cambios implementados.'
+project_id: r6_change_control
+regulatory_scope:
+- 21 CFR Part 11
+- 21 CFR Part 211
+- ALCOA+
+status: parcial_headless_interrupted
+status_note: Código generado en sesión interactiva. Lazo autónomo (B2) se cierra en
+  Fase G.
+updated_at: '2026-06-15T13:53:02.655322+00:00'
