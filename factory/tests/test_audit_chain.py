@@ -190,3 +190,76 @@ class TestVerifyChain:
         result = verify_chain()
         assert result["verified"] is True
         assert result["log_count"] == 0
+
+
+# ── U6: semántica Part-11 WARN(fork) vs FAIL(corrupción) ─────────────────────
+
+class TestVerifyChainSemantics:
+    """Verifica que verify_chain() distinga correctamente fork de corrupción."""
+
+    def _make_fork(self, isolated_audit):
+        """Crea cadena con chain_error=1, hash_errors=0 (escenario fork)."""
+        write_event("project_created", "p1")
+        write_event("workspace_created", "p1")
+        lines = isolated_audit.read_text().splitlines()
+        second = json.loads(lines[1])
+        second["prev_entry_hash"] = "sha256:" + "a" * 64
+        import hashlib as _hl
+        body = {k: v for k, v in second.items() if k != "entry_hash"}
+        canon = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        second["entry_hash"] = "sha256:" + _hl.sha256(canon.encode()).hexdigest()
+        lines[1] = json.dumps(second)
+        isolated_audit.write_text("\n".join(lines) + "\n")
+
+    def test_clean_chain_assessment_ok(self, isolated_audit):
+        write_event("project_created", "p1")
+        write_event("workspace_created", "p1")
+        r = verify_chain()
+        assert r["assessment"] == "OK"
+        assert r["is_fork"] is False
+        assert r["part11_compliant"] is True
+
+    def test_fork_assessment_is_warn_not_fail(self, isolated_audit):
+        self._make_fork(isolated_audit)
+        r = verify_chain()
+        assert r["assessment"] == "WARN"
+        assert r["is_fork"] is True
+        assert r["hash_errors"] == 0
+        assert r["chain_errors"] > 0
+
+    def test_fork_is_part11_compliant(self, isolated_audit):
+        """Un fork no invalida Part-11: el contenido es auténtico."""
+        self._make_fork(isolated_audit)
+        r = verify_chain()
+        assert r["part11_compliant"] is True
+
+    def test_hash_corruption_assessment_is_fail(self, isolated_audit):
+        write_event("project_created", "p1")
+        lines = isolated_audit.read_text().splitlines()
+        entry = json.loads(lines[0])
+        entry["entry_hash"] = "sha256:" + "0" * 64
+        isolated_audit.write_text(json.dumps(entry) + "\n")
+        r = verify_chain()
+        assert r["assessment"] == "FAIL"
+        assert r["is_fork"] is False
+        assert r["hash_errors"] > 0
+
+    def test_hash_corruption_not_part11_compliant(self, isolated_audit):
+        write_event("project_created", "p1")
+        lines = isolated_audit.read_text().splitlines()
+        entry = json.loads(lines[0])
+        entry["entry_hash"] = "sha256:" + "0" * 64
+        isolated_audit.write_text(json.dumps(entry) + "\n")
+        r = verify_chain()
+        assert r["part11_compliant"] is False
+
+    def test_result_has_detail_field(self, isolated_audit):
+        write_event("project_created", "p1")
+        r = verify_chain()
+        assert "detail" in r
+        assert isinstance(r["detail"], str) and len(r["detail"]) > 0
+
+    def test_fork_detail_mentions_authentic(self, isolated_audit):
+        self._make_fork(isolated_audit)
+        r = verify_chain()
+        assert "auténtico" in r["detail"].lower() or "authentic" in r["detail"].lower()

@@ -54,6 +54,15 @@ def audit_verify():
     return verify_chain()
 
 
+@app.get("/api/v1/audit/summary", dependencies=[Depends(verify_api_key)])
+def audit_summary():
+    """
+    Resumen semántico Part-11 de la cadena de auditoría.
+    assessment: "OK" | "WARN" (fork concurrente) | "FAIL" (corrupción real).
+    """
+    return verify_chain()
+
+
 @app.get("/api/v1/audit/entries", dependencies=[Depends(verify_api_key)])
 def audit_entries(limit: int = 50):
     import json as _json

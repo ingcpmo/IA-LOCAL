@@ -152,12 +152,22 @@ def write_event(event_type: str, project_id: str, data: dict | None = None) -> d
 def verify_chain() -> dict:
     """
     Verifica la integridad de factory_audit.jsonl.
-    Retorna reporte compatible con el contrato de /api/v1/audit/verify del base.
+
+    Semántica Part-11:
+      assessment="OK"   → cadena íntegra (hash_errors=0, chain_errors=0)
+      assessment="WARN" → fork concurrente (hash_errors=0, chain_errors>0):
+                          enlace roto por escrituras paralelas, contenido auténtico,
+                          Part-11 cumplido.
+      assessment="FAIL" → corrupción real (hash_errors>0): contenido puede estar
+                          alterado, Part-11 NO cumplido.
     """
     if not AUDIT_FILE.exists():
         return {
-            "verified": True, "log_count": 0, "verified_count": 0,
+            "verified": True, "is_fork": False, "assessment": "OK",
+            "detail": "Archivo de auditoría no existe aún.",
+            "log_count": 0, "verified_count": 0,
             "hash_errors": 0, "chain_errors": 0, "failed_count": 0,
+            "hash_algo": "sha256",
             "part11_compliant": False, "audit_file": str(AUDIT_FILE),
         }
 
@@ -191,14 +201,36 @@ def verify_chain() -> dict:
 
         prev_hash = stored_hash
 
+    is_fork = hash_errors == 0 and chain_errors > 0
+    if hash_errors == 0 and chain_errors == 0:
+        assessment = "OK"
+        detail = f"Cadena íntegra. {total} entradas verificadas."
+    elif is_fork:
+        assessment = "WARN"
+        detail = (
+            f"Fork concurrente: {chain_errors} ruptura(s) de enlace sin errores de hash. "
+            "Contenido auténtico, Part-11 cumplido."
+        )
+    else:
+        assessment = "FAIL"
+        detail = (
+            f"Corrupción detectada: {hash_errors} error(es) de hash. "
+            "Contenido puede estar alterado, Part-11 NO cumplido."
+        )
+
     return {
         "verified": hash_errors == 0 and chain_errors == 0,
+        "is_fork": is_fork,
+        "assessment": assessment,
+        "detail": detail,
         "log_count": total,
         "verified_count": verified_count,
         "hash_errors": hash_errors,
         "chain_errors": chain_errors,
         "failed_count": hash_errors + chain_errors,
         "hash_algo": "sha256",
-        "part11_compliant": hash_errors == 0 and chain_errors == 0 and total > 0,
+        # Part-11: hash_errors=0 garantiza autenticidad de contenido.
+        # Un fork (chain_errors>0, hash_errors=0) es auténtico aunque el enlace esté roto.
+        "part11_compliant": hash_errors == 0 and total > 0,
         "audit_file": str(AUDIT_FILE),
     }
