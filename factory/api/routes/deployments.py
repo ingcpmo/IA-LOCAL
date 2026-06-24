@@ -146,6 +146,24 @@ def ingest_to_deployment(project_id: str, body: IngestPayload):
     return {"ok": True, "deployment": project_id, "result": r.json()}
 
 
+@router.get("/{project_id}/gates-report")
+def get_gates_report(project_id: str):
+    """
+    Lectura PURA del último quality_gates_report.json del deployment.
+    NO ejecuta gates. NO escribe auditoría. 404 limpio si no existe reporte.
+    """
+    dep_dir = DEPLOYMENTS_DIR / project_id
+    if not dep_dir.exists():
+        raise HTTPException(404, f"Deployment '{project_id}' no encontrado")
+    report_path = dep_dir / "quality_gates_report.json"
+    if not report_path.exists():
+        raise HTTPException(404, "Sin quality_gates_report.json para este deployment")
+    try:
+        return json.loads(report_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise HTTPException(500, f"Error leyendo reporte: {str(exc)[:80]}")
+
+
 @router.post("/{project_id}/quality-gates")
 def run_deployment_quality_gates(project_id: str, body: GatesPayload):
     """

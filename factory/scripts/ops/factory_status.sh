@@ -143,25 +143,20 @@ for pid, info in allocs.items():
             _curl_check "GET /health ($pid :$port)" "http://localhost:$port/health" "$DEP_KEY"
             _curl_check "GET /api/v1/knowledge/stats ($pid)" "http://localhost:$port/api/v1/knowledge/stats" "$DEP_KEY"
 
-            # Quality gates via factory API (fast mode) — solo si hay containers activos
-            if [[ -n "$CTRS" ]]; then
-                GATES_RESP=$(curl -sf --max-time 120 \
-                    -H "x-api-key: $FACTORY_API_KEY" \
-                    -H "Content-Type: application/json" \
-                    -d '{"fast":true}' \
-                    "http://localhost:9000/api/v1/deployments/$pid/quality-gates" 2>/dev/null || echo '{}')
-                G_PASS=$(echo "$GATES_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('summary',{}).get('PASS',0))" 2>/dev/null || echo "?")
-                G_FAIL=$(echo "$GATES_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('summary',{}).get('FAIL',0))" 2>/dev/null || echo "?")
-                G_SKIP=$(echo "$GATES_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('summary',{}).get('SKIPPED',0))" 2>/dev/null || echo "?")
-                if [[ "$G_FAIL" == "0" && "$G_PASS" != "?" && "$G_PASS" != "0" ]]; then
-                    pass "Quality gates ($pid): PASS=$G_PASS FAIL=$G_FAIL SKIPPED=$G_SKIP"
-                elif [[ "$G_FAIL" == "?" ]]; then
-                    warn "Quality gates ($pid): no se pudo obtener resultado"
-                else
-                    fail "Quality gates ($pid): PASS=$G_PASS FAIL=$G_FAIL SKIPPED=$G_SKIP"
-                fi
+            # Quality gates — lectura del reporte cacheado (READ-ONLY, sin ejecutar gates)
+            # U5: reemplaza POST /quality-gates (que escribía audit) por GET /gates-report
+            GATES_RESP=$(curl -sf --max-time 10 \
+                -H "x-api-key: $FACTORY_API_KEY" \
+                "http://localhost:9000/api/v1/deployments/$pid/gates-report" 2>/dev/null || echo '{}')
+            G_PASS=$(echo "$GATES_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('summary',{}).get('PASS',0))" 2>/dev/null || echo "?")
+            G_FAIL=$(echo "$GATES_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('summary',{}).get('FAIL',0))" 2>/dev/null || echo "?")
+            G_SKIP=$(echo "$GATES_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('summary',{}).get('SKIPPED',0))" 2>/dev/null || echo "?")
+            if [[ "$G_FAIL" == "0" && "$G_PASS" != "?" && "$G_PASS" != "0" ]]; then
+                pass "Quality gates ($pid): PASS=$G_PASS FAIL=$G_FAIL SKIPPED=$G_SKIP (reporte cacheado)"
+            elif [[ "$G_FAIL" == "?" || "$G_PASS" == "0" ]]; then
+                warn "Quality gates ($pid): sin reporte cacheado — correr gates manualmente"
             else
-                warn "Quality gates ($pid): omitido — sin containers activos"
+                fail "Quality gates ($pid): PASS=$G_PASS FAIL=$G_FAIL SKIPPED=$G_SKIP"
             fi
         done <<< "$ALLOCATIONS"
     fi
