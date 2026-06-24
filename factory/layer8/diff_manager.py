@@ -30,25 +30,37 @@ def collect_diff(project_id: str) -> str:
     if not ws_path.exists():
         return f"Workspace '{project_id}' no encontrado."
 
-    result = subprocess.run(
-        ["git", "diff"],
-        cwd=str(ws_path),
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
+    try:
+        result = subprocess.run(
+            ["git", "diff"],
+            cwd=str(ws_path),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except FileNotFoundError:
+        files = sorted(
+            str(p.relative_to(ws_path))
+            for p in ws_path.rglob("*")
+            if p.is_file() and not p.name.startswith(".")
+        )
+        return f"(git no disponible en el contenedor; {len(files)} archivos en workspace)\n" + "\n".join(files[:50])
+
     if result.returncode == 0:
         return result.stdout or "(sin cambios no staged)"
 
     # Fallback: listar archivos modificados
-    result2 = subprocess.run(
-        ["git", "status", "--short"],
-        cwd=str(ws_path),
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    return result2.stdout or "(workspace no es repo git o sin cambios)"
+    try:
+        result2 = subprocess.run(
+            ["git", "status", "--short"],
+            cwd=str(ws_path),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        return result2.stdout or "(workspace no es repo git o sin cambios)"
+    except FileNotFoundError:
+        return "(git no disponible en el contenedor)"
 
 
 def collect_diff_stat(project_id: str) -> str:
@@ -57,14 +69,17 @@ def collect_diff_stat(project_id: str) -> str:
     if not ws_path.exists():
         return f"Workspace '{project_id}' no encontrado."
 
-    result = subprocess.run(
-        ["git", "diff", "--stat"],
-        cwd=str(ws_path),
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    return result.stdout or "(sin cambios)"
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--stat"],
+            cwd=str(ws_path),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        return result.stdout or "(sin cambios)"
+    except FileNotFoundError:
+        return "(git no disponible en el contenedor)"
 
 
 def archive_diff(project_id: str) -> dict[str, Any]:

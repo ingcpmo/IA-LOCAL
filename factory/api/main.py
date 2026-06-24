@@ -54,6 +54,22 @@ def audit_verify():
     return verify_chain()
 
 
+@app.get("/api/v1/audit/entries", dependencies=[Depends(verify_api_key)])
+def audit_entries(limit: int = 50):
+    import json as _json
+    from factory.core.audit_writer import AUDIT_FILE
+    if not AUDIT_FILE.exists():
+        return []
+    lines = [l.strip() for l in AUDIT_FILE.read_text(encoding="utf-8").splitlines() if l.strip()]
+    entries = []
+    for raw in lines[-limit:]:
+        try:
+            entries.append(_json.loads(raw))
+        except Exception:
+            pass
+    return entries
+
+
 # ── Rutas protegidas ──────────────────────────────────────────────────────────
 
 @app.get("/mission-control", include_in_schema=False)

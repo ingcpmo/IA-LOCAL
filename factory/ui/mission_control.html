@@ -233,7 +233,7 @@ tr:hover td{background:#10161d}
     <div class="rail-foot">
       <div><span class="dotpass">●</span> base 8000 · factory 9000</div>
       <div><span class="dotpass">●</span> lab_qc 8101 · v0.2.0</div>
-      <div><span class="dotwarn">●</span> headless: revisar estado</div>
+      <div id="sidebar-hl"><span class="dotwarn">●</span> headless: revisar estado</div>
     </div>
   </aside>
 
@@ -279,13 +279,14 @@ tr:hover td{background:#10161d}
             <div class="node todo"><div><div class="ix">07</div><div class="lab">Release cand.</div></div><div class="st">pendiente</div><span class="led"></span></div>
             <div class="node gate"><div><div class="ix">08</div><div class="lab">Aprobación</div></div><div class="st">humano</div><span class="led"></span></div>
           </div>
-          <div class="meta" style="margin-top:8px">Misión en curso: <b class="mono">r6_change_control</b> — el código de la solución debe provenir del paso headless (Capa 8), no de la sesión interactiva.</div>
+          <div class="meta" style="margin-top:8px">Misión en curso: <b class="mono" id="dash-active-mission">r6_change_control</b> — el código de la solución debe provenir del paso headless (Capa 8), no de la sesión interactiva.</div>
         </div>
 
         <div class="grid g2" style="margin-top:18px">
           <div class="card">
             <div class="between"><h3>Misiones</h3><span class="chip c-mute">Capa 9</span></div>
             <div class="hr"></div>
+            <div id="missions-list">
             <div class="between" style="margin-bottom:10px">
               <div><b class="mono">lab_qc_project</b><div class="meta">Lab QC · LIMS/HPLC/OOS/DI/CAPA</div></div>
               <span class="chip c-pass">desplegada v0.2.0</span>
@@ -293,6 +294,7 @@ tr:hover td{background:#10161d}
             <div class="between">
               <div><b class="mono">r6_change_control</b><div class="meta">Change Control · LIMS/DI/CAPA</div></div>
               <span class="chip c-info">en construcción</span>
+            </div>
             </div>
           </div>
           <div class="card">
@@ -307,12 +309,12 @@ tr:hover td{background:#10161d}
         </div>
 
         <div class="sec-h"><h3>Stacks</h3><span class="bar"></span></div>
-        <div class="grid g3">
+        <div class="grid g3" id="dash-stacks">
           <div class="card"><div class="between"><h3>Docker 1 · Base</h3><span class="chip c-pass">:8000</span></div><div class="meta mono" style="margin-top:8px">api · postgres · redis · ollama → ok</div></div>
-          <div class="card"><div class="between"><h3>Docker 2 · Factory</h3><span class="chip c-pass">:9000</span></div><div class="meta mono" style="margin-top:8px">factory-api · ~45 rutas → ok</div></div>
-          <div class="card"><div class="between"><h3>Docker 3 · lab_qc</h3><span class="chip c-pass">:8101</span></div><div class="meta mono" style="margin-top:8px">api · postgres · redis → ok · 411 chunks</div></div>
+          <div class="card"><div class="between"><h3>Docker 2 · Factory</h3><span class="chip c-pass">:9000</span></div><div class="meta mono" style="margin-top:8px">factory-api · 51 rutas → ok</div></div>
+          <div class="card"><div class="between"><h3>Docker 3 · lab_qc</h3><span class="chip c-pass">:8101</span></div><div class="meta mono" style="margin-top:8px">api · postgres · redis → ok</div></div>
         </div>
-        <p class="note">Diseño de referencia. Los valores se reemplazan por datos en vivo al conectar con un factory-api real.</p>
+        <p class="note" id="dash-note">Diseño de referencia. Los valores se reemplazan por datos en vivo al conectar con un factory-api real.</p>
       </section>
 
       <!-- 02 CREATE -->
@@ -349,9 +351,10 @@ tr:hover td{background:#10161d}
 
       <!-- 03 APPROVE -->
       <section class="view" id="v-approve">
-        <p class="lead">Aprobar, rechazar o devolver a ajustes una misión. La aprobación exige el nombre real del aprobador; valores genéricos como “human” se rechazan. Toda decisión queda en la cadena de auditoría.</p>
-        <div class="banner warn"><span>⚠</span><div><b>Regla Part 11:</b> approved_by no puede ser “human”. La confirmación humana es un acto separado de la propuesta del agente (decision_origin: human_confirmed).</div></div>
+        <p class="lead">Aprobar, rechazar o devolver a ajustes una misión. La aprobación exige el nombre real del aprobador; valores genéricos como "human" se rechazan. Toda decisión queda en la cadena de auditoría.</p>
+        <div class="banner warn"><span>⚠</span><div><b>Regla Part 11:</b> approved_by no puede ser "human". La confirmación humana es un acto separado de la propuesta del agente (decision_origin: human_confirmed).</div></div>
 
+        <div id="approve-list">
         <div class="card">
           <div class="between"><h3 class="mono">r6_change_control</h3><span class="chip c-info">pending_approval</span></div>
           <div class="hr"></div>
@@ -380,6 +383,7 @@ tr:hover td{background:#10161d}
             <button class="btn warn" onclick="fakeSubmit('Misión devuelta a ajustes')">Devolver a ajustes</button>
             <button class="btn fail" onclick="fakeSubmit('Misión rechazada')">Rechazar</button>
           </div>
+        </div>
         </div>
       </section>
 
@@ -434,6 +438,7 @@ tr:hover td{background:#10161d}
       <section class="view" id="v-review">
         <p class="lead">Cola de release candidates a revisión humana. El despliegue permanece bloqueado hasta que un revisor real apruebe el RC. Aquí se ven el diff, los tests y los gates antes de decidir.</p>
 
+        <div id="review-list">
         <div class="rc">
           <div class="rc-head">
             <span class="seal" style="width:30px;height:30px;font-size:10px">RC</span>
@@ -477,6 +482,7 @@ tr:hover td{background:#10161d}
             </div>
           </div>
         </div>
+        </div>
         <p class="note">El deploy nunca es automático: aprobar el RC habilita la autorización de despliegue, que es un paso humano adicional.</p>
       </section>
 
@@ -485,9 +491,9 @@ tr:hover td{background:#10161d}
         <p class="lead">Cadena de auditoría 21 CFR Part 11. Cada evento encadena el hash del anterior (SHA-256); cualquier alteración rompe la cadena y queda en evidencia.</p>
         <div class="seal-line">
           <span class="seal">✓</span>
-          <div class="txt"><b>Cadena verificada</b> · 65 entradas · 0 errores de hash · 0 errores de cadena · part11_compliant: true</div>
+          <div class="txt" id="audit-seal-text"><b>Cadena verificada</b> · 65 entradas · 0 errores de hash · 0 errores de cadena · part11_compliant: true</div>
         </div>
-        <div class="chain">
+        <div class="chain" id="audit-chain">
           <div class="link"><span class="t">02:51:12Z</span><span class="ev">layer8_workspace_created</span><span class="meta mono">r6_change_control</span><span class="h">e7c2…a91f</span></div>
           <div class="link"><span class="t">02:52:40Z</span><span class="ev">layer8_headless_enabled</span><span class="meta mono">scope=r6 · approved_by=Cesar_R6</span><span class="h">b341…7d0c</span></div>
           <div class="link"><span class="t">01:39:48Z</span><span class="ev"><span style="color:var(--human)">approval_confirmed</span></span><span class="meta mono">lab_qc · by=Cesar</span><span class="h">8b6d…2e44</span></div>
@@ -500,16 +506,16 @@ tr:hover td{background:#10161d}
       <!-- 07 SYSTEM -->
       <section class="view" id="v-system">
         <p class="lead">Salud de los stacks y recursos del servidor frente a la política. Sin secretos: la API key se ingresa arriba y no se persiste.</p>
-        <div class="grid g3">
+        <div class="grid g3" id="sys-stacks">
           <div class="card"><div class="between"><h3>Base · 8000</h3><span class="chip c-pass">pass</span></div><div class="hr"></div><div class="meta mono">api·postgres·redis·ollama → ok</div></div>
           <div class="card"><div class="between"><h3>Factory · 9000</h3><span class="chip c-pass">pass</span></div><div class="hr"></div><div class="meta mono">factory-api → ok · selfcheck Gate 0</div></div>
           <div class="card"><div class="between"><h3>lab_qc · 8101</h3><span class="chip c-pass">pass</span></div><div class="hr"></div><div class="meta mono">api·postgres·redis → ok</div></div>
         </div>
         <div class="sec-h"><h3>Recursos vs política</h3><span class="bar"></span></div>
         <div class="grid g3">
-          <div class="card stat"><span class="k">RAM</span><span class="n" style="font-size:24px">29.5%<small> usado</small></span><span class="chip c-pass" style="width:max-content">dentro de política</span></div>
-          <div class="card stat"><span class="k">Disco /</span><span class="n" style="font-size:24px">49.5%<small> usado</small></span><span class="chip c-pass" style="width:max-content">ok</span></div>
-          <div class="card stat"><span class="k">Soluciones custom</span><span class="n" style="font-size:24px">1<small> / 2 máx</small></span><span class="chip c-pass" style="width:max-content">ok</span></div>
+          <div class="card stat"><span class="k">RAM</span><span class="n" id="sys-ram" style="font-size:24px">29.5%<small> usado</small></span><span class="chip c-pass" id="sys-ram-chip" style="width:max-content">dentro de política</span></div>
+          <div class="card stat"><span class="k">Disco /</span><span class="n" id="sys-disk" style="font-size:24px">49.5%<small> usado</small></span><span class="chip c-pass" id="sys-disk-chip" style="width:max-content">ok</span></div>
+          <div class="card stat"><span class="k">Soluciones custom</span><span class="n" id="sys-custom" style="font-size:24px">1<small> / 2 máx</small></span><span class="chip c-pass" id="sys-custom-chip" style="width:max-content">ok</span></div>
         </div>
         <div class="sec-h"><h3>Ollama</h3><span class="bar"></span></div>
         <div class="card"><div class="meta mono">proceso nativo del host · *:11434 · compartido por base/factory/custom vía host-gateway. (No publicado por aria-ollama.)</div></div>
@@ -520,12 +526,11 @@ tr:hover td{background:#10161d}
 </div>
 
 <script>
-/* ---- estado de sesión: la API key vive solo en memoria ---- */
-let API_KEY = "";
-let CONNECTED = false;
-const API_BASE = ""; // mismo origen cuando se sirve desde factory-api (:9000)
+/* ---- session: API key lives only in memory ---- */
+let API_KEY="", CONNECTED=false;
+const API_BASE="";
 
-const TITLES = {
+const TITLES={
   dash:["Panel general","mission-control / overview"],
   create:["Crear misión","mission-control / missions / new"],
   approve:["Aprobación de misión","mission-control / approvals"],
@@ -538,26 +543,27 @@ const TITLES = {
 document.querySelectorAll('#nav button').forEach(b=>{
   b.addEventListener('click',()=>show(b.dataset.v,b));
 });
+
 function show(v,btn){
   document.querySelectorAll('.view').forEach(s=>s.classList.remove('on'));
   document.getElementById('v-'+v).classList.add('on');
   document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('on'));
   (btn||document.querySelector('#nav button[data-v="'+v+'"]')).classList.add('on');
-  const t=TITLES[v]; document.getElementById('vtitle').textContent=t[0];
+  const t=TITLES[v];
+  document.getElementById('vtitle').textContent=t[0];
   document.getElementById('vcrumb').textContent=t[1];
   document.getElementById('rail').classList.remove('open');
   if(CONNECTED) refresh(v);
 }
 
-/* ---- conexión opcional a un factory-api real (no persiste la clave) ---- */
 async function connect(){
-  API_KEY = document.getElementById('apikey').value.trim();
-  const conn = document.getElementById('conn');
+  API_KEY=document.getElementById('apikey').value.trim();
+  const conn=document.getElementById('conn');
   if(!API_KEY){ conn.innerHTML='modo <b>diseño</b>'; CONNECTED=false; return; }
   try{
-    const r = await fetch(API_BASE + "/health");
+    const r=await fetch(API_BASE+"/health");
     if(!r.ok) throw new Error();
-    CONNECTED = true;
+    CONNECTED=true;
     conn.innerHTML='<span class="dotpass">●</span> conectado';
     refresh('dash');
   }catch(e){
@@ -565,29 +571,240 @@ async function connect(){
     conn.innerHTML='<span class="dotwarn">●</span> sin factory-api · <b>diseño</b>';
   }
 }
-function headers(){ return {'Content-Type':'application/json','X-Api-Key':API_KEY}; }
 
-/* refresca una vista con datos en vivo cuando hay conexión (degradación elegante) */
-async function refresh(v){
-  try{
-    if(v==='dash' || v==='system'){
-      const r = await fetch(API_BASE+"/api/v1/status/full",{headers:headers()});
-      if(r.ok){ const d=await r.json();
-        const ok=d.summary?.stacks_ok, tot=d.summary?.stacks_total;
-        if(ok!=null) document.getElementById('m-audit').firstChild &&
-          (document.getElementById('m-audit').innerHTML = (d.summary.audit_verified?'OK':'FALLA')+'<small> · '+(d.summary.audit_entries||'')+'</small>');
-      }
-    }
-    if(v==='approve' || v==='dash'){
-      const r = await fetch(API_BASE+"/api/v1/layer9/missions",{headers:headers()});
-      if(r.ok){ const ms=await r.json();
-        document.getElementById('m-active').textContent = Array.isArray(ms)? ms.length : '—';
-      }
-    }
-  }catch(e){ /* mantiene el diseño con datos de referencia */ }
+function headers(){ return {'Content-Type':'application/json','x-api-key':API_KEY}; }
+
+/* ---- chip helpers ---- */
+function chipOk(ok){ return ok?'c-pass':'c-fail'; }
+function chipTxt(ok,a,b){ return ok?(a||'pass'):(b||'fail'); }
+
+/* ---- render: stacks grid (dash + system) ---- */
+function renderStacks(d,gridId){
+  const el=document.getElementById(gridId); if(!el) return;
+  const b1=d.docker_1_base?.health, b2=d.docker_2_factory?.health;
+  const customs=Array.isArray(d.custom_solutions)?d.custom_solutions:[];
+  const rows=[
+    {name:'Base · 8000', ok:b1?.reachable,
+     detail:b1?.reachable?Object.entries(b1.body||{}).filter(([k])=>k!=='timestamp').map(([k,v])=>k+'·'+v).join(' '):(b1?.error||'error')},
+    {name:'Factory · 9000', ok:b2?.reachable,
+     detail:b2?.reachable?'factory-api → ok':(b2?.error||'error')},
+    ...customs.map(c=>({
+      name:c.project_id+' · '+c.api_port, ok:c.health?.reachable,
+      detail:c.health?.reachable
+        ?Object.entries(c.health.body||{}).filter(([k])=>k!=='timestamp').map(([k,v])=>k+'·'+v).join(' ')
+        :(c.health?.error||'no reachable')
+    }))
+  ];
+  el.className='grid g'+Math.min(rows.length,3);
+  el.innerHTML=rows.map(s=>`
+    <div class="card"><div class="between"><h3>${s.name}</h3><span class="chip ${chipOk(s.ok)}">${chipTxt(s.ok)}</span></div>
+    <div class="hr"></div><div class="meta mono">${s.detail||'—'}</div></div>`).join('');
 }
 
-/* ---- interacciones de diseño (no ejecutan nada destructivo) ---- */
+/* ---- render: missions list (dash) ---- */
+function missionChip(status){
+  const m={approved:['c-pass','aprobada'],parcial_headless_interrupted:['c-warn','interrumpida'],
+    pending_approval:['c-info','pend. aprobación'],in_progress:['c-info','en curso'],
+    rejected:['c-fail','rechazada'],completed:['c-pass','completada']};
+  const [cls,lbl]=m[status]||['c-mute',status||'—'];
+  return `<span class="chip ${cls}">${lbl}</span>`;
+}
+
+function renderMissions(ms){
+  const el=document.getElementById('missions-list'); if(!el) return;
+  el.innerHTML=ms.map(m=>`
+    <div class="between" style="margin-bottom:10px">
+      <div><b class="mono">${m.project_id}</b>
+      <div class="meta">${(m.objective||'').slice(0,55).replace(/</g,'&lt;')}…</div></div>
+      ${missionChip(m.status)}
+    </div>`).join('');
+  const active=ms.find(m=>!['approved','rejected','completed'].includes(m.status));
+  const amEl=document.getElementById('dash-active-mission');
+  if(amEl&&active) amEl.textContent=active.project_id;
+}
+
+/* ---- render: approve list (view 03) ---- */
+function renderApproveMissions(ms){
+  const el=document.getElementById('approve-list'); if(!el) return;
+  const pending=ms.filter(m=>!['approved','completed','rejected'].includes(m.status));
+  if(!pending.length){
+    el.innerHTML='<div class="card"><div class="meta" style="color:var(--pass)">✓ Sin misiones pendientes de decisión.</div></div>';
+    return;
+  }
+  el.innerHTML=pending.map(m=>`
+    <div class="card" style="margin-bottom:14px">
+      <div class="between"><h3 class="mono">${m.project_id}</h3>${missionChip(m.status)}</div>
+      <div class="hr"></div>
+      <div class="meta">${(m.objective||'').slice(0,120).replace(/</g,'&lt;')}…</div>
+      <div class="meta mono" style="margin-top:8px">created_at · ${(m.created_at||'').slice(0,16).replace('T',' ')}Z</div>
+      <div class="hr"></div>
+      <div class="field"><label>Aprobador (nombre real)</label><input id="approver" placeholder="p.ej. Cesar"></div>
+      <div class="actions" style="margin-top:12px">
+        <button class="btn human" onclick="needApprover()">Aprobar misión</button>
+        <button class="btn warn" onclick="fakeSubmit('Misión devuelta a ajustes')">Devolver</button>
+        <button class="btn fail" onclick="fakeSubmit('Misión rechazada')">Rechazar</button>
+      </div>
+    </div>`).join('');
+}
+
+/* ---- render: review queue (view 05) ---- */
+function renderReview(pending){
+  const el=document.getElementById('review-list'); if(!el) return;
+  if(!pending.length){
+    el.innerHTML='<div class="card"><div class="meta" style="color:var(--pass)">✓ Cola vacía — no hay release candidates pendientes.</div></div>';
+    return;
+  }
+  el.innerHTML=pending.map(rc=>{
+    const arts=(rc.summary?.artifacts||[]).map(a=>`<span class="ctx">${a}</span>`).join('\n');
+    return `
+    <div class="rc" style="margin-bottom:14px">
+      <div class="rc-head">
+        <span class="seal" style="width:30px;height:30px;font-size:10px">RC</span>
+        <div>
+          <div class="mono" style="font-weight:600">${rc.project_id} · ${rc.summary?.version||rc.rc_id}</div>
+          <div class="meta mono">enqueued ${(rc.enqueued_at||'').slice(0,16).replace('T',' ')}Z · ${rc.status}</div>
+        </div>
+        <div class="spacer"></div>
+        <span class="chip c-human">espera humano</span>
+      </div>
+      <div class="rc-body">
+        <div class="rc-col">
+          <div class="k" style="margin-bottom:8px">Artefactos</div>
+          <div class="diffbox">${arts||'(ninguno)'}</div>
+        </div>
+        <div class="rc-col">
+          <div class="k" style="margin-bottom:8px">RC ID</div>
+          <div class="meta mono" style="font-size:10.5px;word-break:break-all">${rc.rc_id}</div>
+          <div class="hr"></div>
+          <div class="field"><label>Revisor (nombre real)</label><input placeholder="p.ej. Cesar"></div>
+          <div class="actions">
+            <button class="btn pass" onclick="fakeSubmit('RC aprobado — deploy habilitado')">Aprobar RC</button>
+            <button class="btn fail" onclick="fakeSubmit('RC rechazado')">Rechazar</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---- render: audit seal + chain (view 06) ---- */
+function renderAuditSeal(d){
+  const el=document.getElementById('audit-seal-text'); if(!el) return;
+  const ok=d.verified&&d.part11_compliant;
+  const seal=el.parentElement?.querySelector('.seal');
+  if(seal){
+    seal.textContent=ok?'✓':'!';
+    seal.style.borderColor=ok?'var(--accent)':'var(--fail)';
+    seal.style.color=ok?'var(--accent)':'var(--fail)';
+  }
+  el.innerHTML=`<b>${ok?'Cadena verificada':'⚠ Cadena con errores'}</b> · ${d.log_count} entradas · ${d.hash_errors} errores de hash · ${d.chain_errors} errores de cadena · part11_compliant: ${d.part11_compliant}`;
+  el.style.color=ok?'#d7c79a':'var(--warn)';
+}
+
+function renderAuditChain(entries){
+  const el=document.getElementById('audit-chain'); if(!el) return;
+  if(!entries||!entries.length){
+    el.innerHTML='<div style="padding:12px 16px;color:var(--faint);font-size:12px">Sin entradas disponibles.</div>';
+    return;
+  }
+  el.innerHTML=[...entries].reverse().slice(0,20).map(e=>{
+    const ts=(e.timestamp||'').slice(11,19)||'—';
+    const ev=e.event_type||'?';
+    const proj=e.project_id||'';
+    const h=(e.entry_hash||'').replace('sha256:','');
+    const hShort=h.length>8?h.slice(0,4)+'…'+h.slice(-4):'————';
+    const isHuman=ev.includes('approval')&&ev.includes('granted');
+    const evSpan=isHuman?`<span style="color:var(--human)">${ev}</span>`:ev;
+    return `<div class="link"><span class="t">${ts}</span><span class="ev">${evSpan}</span><span class="meta mono">${proj}</span><span class="h">${hShort}</span></div>`;
+  }).join('');
+}
+
+/* ---- render: headless state (pipeline chip + sidebar) ---- */
+function updateHeadless(d){
+  const chip=document.getElementById('hl-state');
+  if(chip){
+    const on=d.headless_enabled;
+    chip.className='chip '+(on?'c-warn':'c-pass');
+    chip.textContent=on?'activo':'OFF';
+  }
+  const sb=document.getElementById('sidebar-hl');
+  if(sb){
+    const on=d.headless_enabled;
+    const jobs=d.jobs||{};
+    sb.innerHTML=`<span class="${on?'dotwarn':'dotpass'}">●</span> headless: ${on?'activo':'OFF'} · jobs: ${jobs.running||0} corriendo`;
+  }
+}
+
+/* ---- render: system resources ---- */
+function renderResources(d){
+  const ram=d.memory, disk=d.disk, cs=d.custom_solutions;
+  const $=(id)=>document.getElementById(id);
+  if(ram){
+    const el=$('sys-ram'); if(el) el.innerHTML=(ram.used_pct||0).toFixed(1)+'%<small> usado</small>';
+    const ch=$('sys-ram-chip'); if(ch){ ch.className='chip '+(ram.ok?'c-pass':'c-warn'); ch.textContent=ram.ok?'dentro de política':'revisar'; }
+  }
+  if(disk){
+    const el=$('sys-disk'); if(el) el.innerHTML=(disk.used_pct||0).toFixed(1)+'%<small> usado</small>';
+    const ch=$('sys-disk-chip'); if(ch){ ch.className='chip '+(disk.ok?'c-pass':'c-warn'); ch.textContent=disk.ok?'ok':'revisar'; }
+  }
+  if(cs){
+    const el=$('sys-custom'); if(el) el.innerHTML=cs.active+'<small> / '+cs.max_allowed+' máx</small>';
+    const ch=$('sys-custom-chip'); if(ch){ ch.className='chip '+(cs.ok?'c-pass':'c-warn'); ch.textContent=cs.ok?'ok':'revisar'; }
+  }
+}
+
+/* ---- main refresh dispatcher ---- */
+async function refresh(v){
+  try{
+    if(v==='dash'||v==='system'){
+      const r=await fetch(API_BASE+"/api/v1/status/full",{headers:headers()});
+      if(r.ok){ const d=await r.json();
+        const av=d.summary?.audit_verified, ae=d.summary?.audit_entries;
+        if(av!=null){
+          const el=document.getElementById('m-audit');
+          el.style.color=av?'var(--pass)':'var(--fail)';
+          el.innerHTML=(av?'OK':'FALLA')+'<small> · '+(ae||0)+'</small>';
+        }
+        renderStacks(d, v==='dash'?'dash-stacks':'sys-stacks');
+        const note=document.getElementById('dash-note');
+        if(note) note.style.display='none';
+      }
+    }
+    if(v==='dash'||v==='approve'){
+      const r=await fetch(API_BASE+"/api/v1/layer9/missions",{headers:headers()});
+      if(r.ok){ const ms=await r.json();
+        document.getElementById('m-active').textContent=Array.isArray(ms)?ms.length:'—';
+        const pend=ms.filter(m=>!['approved'].includes(m.status));
+        document.getElementById('m-pending').textContent=pend.length;
+        if(v==='dash') renderMissions(ms);
+        if(v==='approve') renderApproveMissions(ms);
+      }
+    }
+    if(v==='dash'||v==='review'){
+      const r=await fetch(API_BASE+"/api/v1/layer9/review-queue",{headers:headers()});
+      if(r.ok){ const d=await r.json();
+        document.getElementById('m-rc').innerHTML=(d.summary?.pending??0)+'<small> / revisar</small>';
+        if(v==='review') renderReview(d.pending||[]);
+      }
+    }
+    if(v==='pipeline'||v==='dash'){
+      const r=await fetch(API_BASE+"/api/v1/layer8/status",{headers:headers()});
+      if(r.ok){ const d=await r.json(); updateHeadless(d); }
+    }
+    if(v==='audit'){
+      const rv=await fetch(API_BASE+"/api/v1/audit/verify",{headers:headers()});
+      if(rv.ok){ const d=await rv.json(); renderAuditSeal(d); }
+      const re=await fetch(API_BASE+"/api/v1/audit/entries?limit=20",{headers:headers()});
+      if(re.ok){ const entries=await re.json(); renderAuditChain(entries); }
+    }
+    if(v==='system'){
+      const r=await fetch(API_BASE+"/api/v1/status/resources",{headers:headers()});
+      if(r.ok){ const d=await r.json(); renderResources(d); }
+    }
+  }catch(e){ /* mantiene datos de diseño */ }
+}
+
+/* ---- design interactions ---- */
 function toast(msg){
   let t=document.getElementById('_toast');
   if(!t){ t=document.createElement('div'); t.id='_toast';
@@ -596,11 +813,11 @@ function toast(msg){
   t.textContent=msg; t.style.opacity='1';
   clearTimeout(t._h); t._h=setTimeout(()=>t.style.opacity='0',2200);
 }
-function fakeSubmit(msg){ toast(msg + (CONNECTED?'':' · (vista de diseño)')); return false; }
+function fakeSubmit(msg){ toast(msg+(CONNECTED?'':' · (vista de diseño)')); return false; }
 function needApprover(){
-  const a=document.getElementById('approver').value.trim();
-  if(!a){ toast('Ingresa el nombre real del aprobador (no “human”).'); return; }
-  if(a.toLowerCase()==='human'){ toast('“human” no es válido — usa un nombre real.'); return; }
+  const a=(document.getElementById('approver')?.value||'').trim();
+  if(!a){ toast('Ingresa el nombre real del aprobador (no "human").'); return; }
+  if(a.toLowerCase()==='human'){ toast('"human" no es válido — usa un nombre real.'); return; }
   toast('Misión aprobada por '+a+' · decision_origin: human_confirmed'+(CONNECTED?'':' · (diseño)'));
 }
 </script>
