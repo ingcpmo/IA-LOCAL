@@ -60,10 +60,52 @@ def get_deployments():
 
 @router.get("/{project_id}")
 def get_deployment(project_id: str):
-    meta = DEPLOYMENTS_DIR / project_id / "deployment_meta.json"
-    if not meta.exists():
+    dep_dir = DEPLOYMENTS_DIR / project_id
+    if not dep_dir.exists():
         raise HTTPException(404, f"Deployment '{project_id}' no encontrado")
-    return json.loads(meta.read_text())
+
+    meta = dep_dir / "deployment_meta.json"
+    if meta.exists():
+        return json.loads(meta.read_text())
+
+    # Synthesize from available files when deployment_meta.json is absent
+    result: dict = {"project_id": project_id, "source": "synthesized"}
+
+    approval_file = dep_dir / "approval.json"
+    if approval_file.exists():
+        try:
+            a = json.loads(approval_file.read_text(encoding="utf-8"))
+            result["version"] = a.get("version")
+            result["status"] = a.get("status")
+            result["approved_by"] = a.get("approved_by")
+            result["approved_at"] = a.get("approved_at")
+            result["quality_gates"] = a.get("quality_gates_summary")
+        except Exception:
+            pass
+
+    manifest_file = dep_dir / "manifest.yaml"
+    if manifest_file.exists():
+        try:
+            m = yaml.safe_load(manifest_file.read_text(encoding="utf-8"))
+            if isinstance(m, dict):
+                result.setdefault("manifest_status", m.get("status"))
+        except Exception:
+            pass
+
+    gates_file = dep_dir / "quality_gates_report.json"
+    if gates_file.exists():
+        try:
+            g = json.loads(gates_file.read_text(encoding="utf-8"))
+            result["gates_summary"] = g.get("summary")
+            result["gates_generated_at"] = g.get("generated_at")
+        except Exception:
+            pass
+
+    port = _get_deployment_port(project_id)
+    if port:
+        result["api_port"] = port
+
+    return result
 
 
 @router.post("/{project_id}/ingest")

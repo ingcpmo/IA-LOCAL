@@ -232,7 +232,7 @@ tr:hover td{background:#10161d}
     </nav>
     <div class="rail-foot">
       <div><span class="dotpass">●</span> base 8000 · factory 9000</div>
-      <div><span class="dotpass">●</span> lab_qc 8101 · v0.2.0</div>
+      <div id="sidebar-deploy"><span class="dotpass">●</span> lab_qc 8101 · v0.2.0</div>
       <div id="sidebar-hl"><span class="dotwarn">●</span> headless: revisar estado</div>
     </div>
   </aside>
@@ -430,6 +430,27 @@ tr:hover td{background:#10161d}
             <div class="gate-line"><span class="gid">GD_AUTH / HEALTH / CORPUS</span><span class="chip c-mute">en espera</span></div>
             <div class="gate-line"><span class="gid">GD_AUDIT / KEY_NOT_IN_UI</span><span class="chip c-mute">en espera</span></div>
             <div class="gate-line"><span class="gid">GD_QUERY_LLM (fast=false)</span><span class="chip c-mute">en espera</span></div>
+          </div>
+        </div>
+
+        <div class="sec-h" style="margin-top:26px">
+          <h3>Workspace</h3><span class="bar"></span>
+          <select id="pipeline-project" style="background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 8px;font-family:var(--mono);font-size:11px" onchange="if(CONNECTED)refreshPipeline()">
+            <option value="r6_change_control">r6_change_control</option>
+            <option value="lab_qc_project">lab_qc_project</option>
+            <option value="c8_alcoa_validator">c8_alcoa_validator</option>
+          </select>
+        </div>
+        <div class="grid g2">
+          <div class="card">
+            <div class="between"><h3>Archivos del workspace</h3><span class="chip c-mute" id="ws-file-count">—</span></div>
+            <div class="hr"></div>
+            <div id="workspace-tree" class="meta mono" style="max-height:220px;overflow:auto;font-size:11px;line-height:1.7">(conectar para ver archivos)</div>
+          </div>
+          <div class="card">
+            <div class="between"><h3>Jobs</h3><span class="chip c-mute" id="pipeline-jobs-count">—</span></div>
+            <div class="hr"></div>
+            <div id="pipeline-jobs"><div class="meta" style="color:var(--faint)">(conectar para ver jobs)</div></div>
           </div>
         </div>
       </section>
@@ -791,6 +812,13 @@ async function refresh(v){
       const r=await fetch(API_BASE+"/api/v1/layer8/status",{headers:headers()});
       if(r.ok){ const d=await r.json(); updateHeadless(d); }
     }
+    if(v==='pipeline'){
+      await refreshPipeline();
+    }
+    if(v==='dash'){
+      const rd=await fetch(API_BASE+"/api/v1/deployments/lab_qc_project",{headers:headers()});
+      if(rd.ok){ renderSidebarDeploy(await rd.json()); }
+    }
     if(v==='audit'){
       const rv=await fetch(API_BASE+"/api/v1/audit/verify",{headers:headers()});
       if(rv.ok){ const d=await rv.json(); renderAuditSeal(d); }
@@ -802,6 +830,72 @@ async function refresh(v){
       if(r.ok){ const d=await r.json(); renderResources(d); }
     }
   }catch(e){ /* mantiene datos de diseño */ }
+}
+
+/* ---- render: sidebar deployment info ---- */
+function renderSidebarDeploy(d){
+  const el=document.getElementById('sidebar-deploy'); if(!el) return;
+  const v=d.version||'—';
+  const port=d.api_port||'';
+  const ok=d.status==='approved';
+  const proj=(d.project_id||'').replace('_project','');
+  el.innerHTML='<span class="'+(ok?'dotpass':'dotwarn')+'">&#x25CF;</span> '+proj+' '+(port?port+' \xb7 ':'')+v;
+}
+
+/* ---- render: workspace tree (pipeline) ---- */
+function renderWorkspaceTree(data){
+  const el=document.getElementById('workspace-tree'); if(!el) return;
+  const cnt=document.getElementById('ws-file-count');
+  if(cnt) cnt.textContent=data.file_count+' archivos';
+  if(!data.files||!data.files.length){ el.textContent='(workspace vacio)'; return; }
+  const byDir={};
+  data.files.forEach(function(f){
+    const parts=f.path.split('/');
+    const dir=parts.length>1?parts[0]:'(raiz)';
+    if(!byDir[dir]) byDir[dir]=[];
+    byDir[dir].push(f);
+  });
+  el.innerHTML=Object.entries(byDir).map(function(entry){
+    const dir=entry[0], files=entry[1];
+    return '<div style="color:var(--muted);margin-top:4px">'+dir+'/</div>'+
+      files.map(function(f){
+        const name=f.path.split('/').pop();
+        const kb=(f.size/1024).toFixed(1);
+        return '<div style="padding-left:12px;color:var(--text)">'+name+' <span style="color:var(--faint)">'+kb+'k</span></div>';
+      }).join('');
+  }).join('');
+}
+
+/* ---- render: pipeline jobs ---- */
+function renderPipelineJobs(jobs){
+  const el=document.getElementById('pipeline-jobs'); if(!el) return;
+  const cnt=document.getElementById('pipeline-jobs-count');
+  if(cnt) cnt.textContent=jobs.length+' jobs';
+  if(!jobs.length){
+    el.innerHTML='<div class="meta" style="color:var(--faint)">Sin jobs para este proyecto.</div>'; return;
+  }
+  const sc=function(s){
+    var m={completed:'c-pass',failed:'c-fail',running:'c-info',pending:'c-mute'};
+    return '<span class="chip '+(m[s]||'c-mute')+'">'+s+'</span>';
+  };
+  el.innerHTML=[].concat(jobs).reverse().slice(0,8).map(function(j){
+    var jt=j.job_type||j.job_id.slice(0,8);
+    var ts=(j.created_at||'').slice(0,16).replace('T',' ')+'Z';
+    var err=j.error?' \xb7 '+String(j.error).slice(0,40):'';
+    return '<div class="gate-line"><span class="gid">'+jt+'</span>'+sc(j.status)+'</div>'+
+      '<div class="meta mono" style="font-size:10.5px;padding-bottom:4px">'+ts+err+'</div>';
+  }).join('');
+}
+
+/* ---- pipeline refresh: tree + jobs for selected project ---- */
+async function refreshPipeline(){
+  var proj=(document.getElementById('pipeline-project')||{}).value||'r6_change_control';
+  try{
+    var rt=await fetch(API_BASE+'/api/v1/layer8/workspaces/'+proj+'/tree',{headers:headers()});
+    if(rt.ok) renderWorkspaceTree(await rt.json());
+    var rj=await fetch(API_BASE+'/api/v1/layer8/jobs?project_id='+proj,{headers:headers()});
+    if(rj.ok) renderPipelineJobs(await rj.json());
+  }catch(e){}
 }
 
 /* ---- design interactions ---- */

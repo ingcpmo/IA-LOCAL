@@ -1,6 +1,6 @@
 {
   "project_id": "lab_qc_project",
-  "generated_at": "2026-06-15T20:41:38.241668+00:00",
+  "generated_at": "2026-06-24T17:45:36.517729+00:00",
   "gate_set": "deployment_functional",
   "fast_mode": true,
   "summary": {
@@ -13,74 +13,74 @@
       "gate": "GD_AUTH_REJECT",
       "status": "PASS",
       "evidence": "Clave inválida → HTTP 401 ✓",
-      "timestamp": "2026-06-15T20:40:38.581699+00:00"
+      "timestamp": "2026-06-24T17:43:20.148856+00:00"
     },
     {
       "gate": "GD_AUTH_ACCEPT",
       "status": "PASS",
       "evidence": "Clave válida → HTTP 200 ✓",
-      "timestamp": "2026-06-15T20:40:38.600672+00:00"
+      "timestamp": "2026-06-24T17:43:20.167013+00:00"
     },
     {
       "gate": "GD_HEALTH_FULL",
       "status": "PASS",
       "evidence": "Todos los servicios OK: {'api': 'ok', 'postgres': 'ok', 'redis': 'ok', 'ollama': 'ok'}",
-      "timestamp": "2026-06-15T20:40:38.653731+00:00"
+      "timestamp": "2026-06-24T17:43:20.215919+00:00"
     },
     {
       "gate": "GD_AGENT_LIST",
       "status": "PASS",
       "evidence": "6 agentes: ['qa', 'integrity', 'capa', 'qa_oos_profile']",
-      "timestamp": "2026-06-15T20:40:38.663344+00:00"
+      "timestamp": "2026-06-24T17:43:20.223808+00:00"
     },
     {
       "gate": "GD_KNOWLEDGE_STATS",
       "status": "PASS",
       "evidence": "4 colecciones, 411 chunks totales",
-      "timestamp": "2026-06-15T20:40:38.682957+00:00"
+      "timestamp": "2026-06-24T17:43:20.241937+00:00"
     },
     {
       "gate": "GD_MIN_CORPUS",
       "status": "PASS",
       "evidence": "Todas ≥20 chunks: {'lab_qc_lims_di': 60, 'lab_qc_oos': 57, 'gmp_fda_regulations': 229, 'lab_qc_hplc': 65}",
-      "timestamp": "2026-06-15T20:40:38.701519+00:00"
+      "timestamp": "2026-06-24T17:43:20.259796+00:00"
     },
     {
       "gate": "GD_RULES_ENGINE",
       "status": "PASS",
       "evidence": "Rules engine OK → HTTP 200, 1 reglas",
-      "timestamp": "2026-06-15T20:40:38.710447+00:00"
+      "timestamp": "2026-06-24T17:43:20.268032+00:00"
     },
     {
       "gate": "GD_AUDIT_VERIFY",
       "status": "PASS",
-      "evidence": "Chain OK: 57 entradas verificadas",
-      "timestamp": "2026-06-15T20:40:38.720333+00:00"
+      "evidence": "Chain OK: 67 entradas verificadas",
+      "timestamp": "2026-06-24T17:43:20.278183+00:00"
     },
     {
       "gate": "GD_PROTOCOL_TMPL",
       "status": "PASS",
       "evidence": "Template IQ: 7 secciones (IQ/OQ/PQ disponibles)",
-      "timestamp": "2026-06-15T20:40:38.728957+00:00"
+      "timestamp": "2026-06-24T17:43:20.286294+00:00"
     },
     {
       "gate": "GD_KEY_NOT_IN_UI",
       "status": "PASS",
       "evidence": "API key NO en HTML de UI ✓",
-      "timestamp": "2026-06-15T20:40:38.739373+00:00"
+      "timestamp": "2026-06-24T17:43:20.296014+00:00"
     },
     {
       "gate": "GD_STREAM_200",
       "status": "PASS",
       "evidence": "/api/v1/stream → 200 (streaming activo)",
-      "timestamp": "2026-06-15T20:41:38.241648+00:00"
+      "timestamp": "2026-06-24T17:45:36.517714+00:00"
     },
     {
       "gate": "GD_QUERY_LLM",
       "status": "SKIPPED",
       "evidence": "fast=True — omitido para velocidad (requiere ~90s)",
-      "timestamp": "2026-06-15T20:41:38.241665+00:00"
+      "timestamp": "2026-06-24T17:45:36.517726+00:00"
     }
   ],
-  "report_hash": "sha256:dbb8427fc23e429bbc9472a042e6efc0d901a63a2fe409d035eb89018ced912a"
+  "report_hash": "sha256:676d4d305a99ec92ef750bd7fdc7d323a5c6b5f51e9dd7a4bea1bbe35502a744"
 }

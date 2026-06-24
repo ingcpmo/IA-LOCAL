@@ -366,3 +366,50 @@ def get_mission_diff(project_id: str):
         return collect_diff(project_id)
     except Exception as e:
         raise HTTPException(500, str(e))
+
+
+_WS_BASE = Path(__file__).parent.parent.parent / "workspaces"
+_SAFE_EXTS = {".py", ".yaml", ".yml", ".json", ".md", ".txt", ".toml", ".cfg", ".ini", ".sh", ".log", ".csv", ".sql"}
+_MAX_FILE_BYTES = 50_000
+
+
+@router.get("/workspaces/{project_id}/tree")
+def get_workspace_tree(project_id: str):
+    ws = _WS_BASE / project_id
+    if not ws.exists():
+        raise HTTPException(404, f"Workspace '{project_id}' no encontrado")
+    files = []
+    for p in sorted(ws.rglob("*")):
+        if not p.is_file():
+            continue
+        rel = p.relative_to(ws)
+        if any(part.startswith(".") or part == "__pycache__" for part in rel.parts):
+            continue
+        files.append({"path": str(rel), "size": p.stat().st_size, "ext": p.suffix})
+    return {"project_id": project_id, "file_count": len(files), "files": files[:300]}
+
+
+@router.get("/workspaces/{project_id}/file")
+def get_workspace_file(project_id: str, path: str):
+    ws = _WS_BASE / project_id
+    if not ws.exists():
+        raise HTTPException(404, f"Workspace '{project_id}' no encontrado")
+    try:
+        target = (ws / path).resolve()
+        target.relative_to(ws.resolve())
+    except (ValueError, RuntimeError):
+        raise HTTPException(400, "Path fuera del workspace")
+    if not target.exists() or not target.is_file():
+        raise HTTPException(404, f"Archivo no encontrado: {path}")
+    if target.suffix.lower() not in _SAFE_EXTS:
+        raise HTTPException(400, f"Extension no permitida: {target.suffix}")
+    size = target.stat().st_size
+    if size > _MAX_FILE_BYTES:
+        raise HTTPException(400, f"Archivo demasiado grande: {size} bytes (max {_MAX_FILE_BYTES})")
+    return {
+        "project_id": project_id,
+        "path": path,
+        "size": size,
+        "ext": target.suffix,
+        "content": target.read_text(encoding="utf-8", errors="replace"),
+    }
