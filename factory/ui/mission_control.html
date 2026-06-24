@@ -298,9 +298,9 @@ tr:hover td{background:#10161d}
             </div>
           </div>
           <div class="card">
-            <div class="between"><h3>Riesgos abiertos</h3><span class="chip c-warn">3</span></div>
+            <div class="between"><h3>Riesgos abiertos</h3><span class="chip c-warn" id="risks-count">3</span></div>
             <div class="hr"></div>
-            <div class="meta" style="line-height:2">
+            <div id="risks-list" class="meta" style="line-height:2">
               <div><span class="chip c-warn" style="margin-right:8px">alto</span> Plano de ejecución host-side del CLI no formalizado</div>
               <div><span class="chip c-warn" style="margin-right:8px">medio</span> Corpus interno sin etiqueta INTERNAL_SUMMARY (verificar)</div>
               <div><span class="chip c-warn" style="margin-right:8px">medio</span> headless pudo quedar habilitado — confirmar OFF</div>
@@ -417,15 +417,12 @@ tr:hover td{background:#10161d}
         <div class="sec-h"><h3>Tests &amp; Quality gates</h3><span class="bar"></span></div>
         <div class="grid g2">
           <div class="card">
-            <h3>Tests del módulo</h3><div class="hr"></div>
-            <div class="gate-line"><span>Suite del proyecto</span><span class="chip c-mute">pendiente</span></div>
-            <div class="meta" style="margin-top:8px">Se ejecutan tras la generación headless y se consolidan en el release candidate.</div>
-          </div>
-          <div class="card">
-            <h3>Quality gates (GD_*)</h3><div class="hr"></div>
-            <div class="gate-line"><span class="gid">GD_AUTH / HEALTH / CORPUS</span><span class="chip c-mute">en espera</span></div>
-            <div class="gate-line"><span class="gid">GD_AUDIT / KEY_NOT_IN_UI</span><span class="chip c-mute">en espera</span></div>
-            <div class="gate-line"><span class="gid">GD_QUERY_LLM (fast=false)</span><span class="chip c-mute">en espera</span></div>
+            <div class="between"><h3>Tests &amp; Quality gates</h3><span class="chip c-mute" id="gates-summary">—</span></div>
+            <div class="hr"></div>
+            <div id="gates-list">
+              <div class="gate-line"><span>Suite del proyecto</span><span class="chip c-mute">conectar para ver</span></div>
+              <div class="meta" style="margin-top:8px;color:var(--faint)">Se consolidan en quality_gates_report.json del workspace.</div>
+            </div>
           </div>
         </div>
 
@@ -831,6 +828,8 @@ async function refresh(v){
     if(v==='dash'){
       const rd=await fetch(API_BASE+"/api/v1/deployments/lab_qc_project",{headers:headers()});
       if(rd.ok){ renderSidebarDeploy(await rd.json()); }
+      const rr=await fetch(API_BASE+"/api/v1/status/risks",{headers:headers()});
+      if(rr.ok){ renderRisks(await rr.json()); }
     }
     if(v==='audit'){
       const rv=await fetch(API_BASE+"/api/v1/audit/verify",{headers:headers()});
@@ -912,6 +911,37 @@ function renderPipelineDesign(artifacts){
   }).join('');
 }
 
+/* ---- U4: risks card ---- */
+function renderRisks(data){
+  const el=document.getElementById('risks-list'); if(!el) return;
+  const cnt=document.getElementById('risks-count');
+  const risks=data.risks||[];
+  if(cnt){ cnt.textContent=risks.length; cnt.className='chip '+(risks.length?'c-warn':'c-pass'); }
+  if(!risks.length){
+    el.innerHTML='<div style="color:var(--pass)">Sin riesgos activos detectados.</div>'; return;
+  }
+  const sev={'alto':'c-fail','medio':'c-warn','info':'c-info'};
+  el.innerHTML=risks.map(r=>'<div><span class="chip '+(sev[r.severity]||'c-mute')+'" style="margin-right:8px">'+r.severity+'</span>'+r.description.replace(/</g,'&lt;')+'</div>').join('');
+}
+
+/* ---- U4: pipeline quality gates ---- */
+function renderPipelineGates(report){
+  const el=document.getElementById('gates-list'); if(!el) return;
+  const sum=document.getElementById('gates-summary');
+  const s=report.summary||{};
+  if(sum){
+    const ok=s.FAIL===0&&s.PASS>0;
+    sum.className='chip '+(ok?'c-pass':s.FAIL>0?'c-fail':'c-mute');
+    sum.textContent='P:'+( s.PASS||0)+' F:'+(s.FAIL||0)+(s.SKIPPED?' S:'+(s.SKIPPED):'');
+  }
+  const gates=report.gates||[];
+  if(!gates.length){
+    el.innerHTML='<div class="meta" style="color:var(--faint)">Sin reporte en este workspace.</div>'; return;
+  }
+  const chip=st=>st==='PASS'?'c-pass':st==='FAIL'?'c-fail':'c-mute';
+  el.innerHTML=gates.map(g=>'<div class="gate-line"><span class="gid">'+(g.gate||'—')+'</span><span class="chip '+chip(g.status)+'">'+g.status+'</span></div>').join('');
+}
+
 /* ---- render: sidebar deployment info ---- */
 function renderSidebarDeploy(d){
   const el=document.getElementById('sidebar-deploy'); if(!el) return;
@@ -977,6 +1007,9 @@ async function refreshPipeline(){
     if(rj.ok) renderPipelineJobs(await rj.json());
     var ra=await fetch(API_BASE+'/api/v1/layer8/missions/'+proj+'/artifacts',{headers:headers()});
     if(ra.ok){ var ad=await ra.json(); renderPipelineDesign(ad.artifacts||[]); }
+    var rg=await fetch(API_BASE+'/api/v1/layer8/workspaces/'+proj+'/file?path=quality_gates_report.json',{headers:headers()});
+    if(rg.ok){ try{ var gf=await rg.json(); renderPipelineGates(JSON.parse(gf.content)); }catch(e){} }
+    else{ renderPipelineGates({}); }
   }catch(e){}
 }
 

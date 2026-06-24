@@ -98,6 +98,87 @@ def _read_disk() -> dict:
         return {"error": str(exc)}
 
 
+RUNTIME_CONFIG = Path(__file__).parent.parent.parent / "runtime" / "runtime_config.yaml"
+
+
+@router.get("/risks")
+def get_risks():
+    """Deriva riesgos dinámicos del estado actual del sistema."""
+    risks = []
+
+    # R1: cadena de auditoría
+    try:
+        audit = verify_chain()
+        if not audit.get("part11_compliant"):
+            risks.append({
+                "id": "RISK_AUDIT_CHAIN",
+                "severity": "alto",
+                "description": (
+                    f"Cadena de auditoría no conforme Part 11: "
+                    f"{audit.get('chain_errors', 0)} errores de cadena, "
+                    f"{audit.get('hash_errors', 0)} errores de hash"
+                ),
+            })
+    except Exception:
+        pass
+
+    # R2: headless activo
+    try:
+        if RUNTIME_CONFIG.exists():
+            cfg = yaml.safe_load(RUNTIME_CONFIG.read_text(encoding="utf-8")) or {}
+            if cfg.get("headless_enabled"):
+                risks.append({
+                    "id": "RISK_HEADLESS_ON",
+                    "severity": "alto",
+                    "description": "headless_enabled=true — confirmar que la misión headless terminó y devolver a OFF",
+                })
+    except Exception:
+        pass
+
+    # R3: misiones interrumpidas
+    try:
+        from factory.layer9.mission_control import list_missions
+        for m in list_missions():
+            if "interrupted" in (m.get("status") or ""):
+                risks.append({
+                    "id": f"RISK_INTERRUPTED_{m['project_id'].upper()}",
+                    "severity": "medio",
+                    "description": f"Misión '{m['project_id']}' en estado '{m['status']}' — requiere revisión manual",
+                })
+    except Exception:
+        pass
+
+    # R4: disco
+    try:
+        disk = _read_disk()
+        if disk.get("used_pct", 0) > 70:
+            risks.append({
+                "id": "RISK_DISK_USAGE",
+                "severity": "medio",
+                "description": f"Disco al {disk['used_pct']}% — umbral de alerta: 80%",
+            })
+    except Exception:
+        pass
+
+    # R5: soluciones custom en límite
+    try:
+        customs = _discover_custom_deployments()
+        policy_file = POLICIES_BASE / "resource_policy.yaml"
+        max_c = 2
+        if policy_file.exists():
+            max_c = (yaml.safe_load(policy_file.read_text(encoding="utf-8")) or {}).get("max_active_custom_solutions", 2)
+        if len(customs) >= max_c:
+            risks.append({
+                "id": "RISK_CUSTOM_AT_LIMIT",
+                "severity": "info",
+                "description": f"Soluciones custom en el límite ({len(customs)}/{max_c}) — sin capacidad de nuevos deploys",
+            })
+    except Exception:
+        pass
+
+    return {"risks": risks, "count": len(risks)}
+
+
 @router.get("/resources")
 def get_resources():
     """
