@@ -137,3 +137,80 @@ def test_valid_project_tree_returns_200():
     data = r.json()
     assert "files" in data
     assert "file_count" in data
+
+
+# ── U9: headless/logs, artifacts y jobs UUID ──────────────────────────────────
+
+@pytest.mark.parametrize("bad_id", TRAVERSAL_IDS)
+def test_headless_logs_rejects_traversal(bad_id):
+    import httpx
+    key = _get_api_key()
+    url = f"http://localhost:9000/api/v1/layer8/missions/{bad_id}/headless/logs"
+    r = httpx.get(url, headers={"x-api-key": key}, timeout=10)
+    assert r.status_code in (400, 404, 422), (
+        f"headless/logs con project_id={bad_id!r} devolvió {r.status_code}"
+    )
+
+
+@pytest.mark.parametrize("bad_id", TRAVERSAL_IDS)
+def test_artifacts_rejects_traversal(bad_id):
+    import httpx
+    key = _get_api_key()
+    url = f"http://localhost:9000/api/v1/layer8/missions/{bad_id}/artifacts"
+    r = httpx.get(url, headers={"x-api-key": key}, timeout=10)
+    assert r.status_code in (400, 404, 422), (
+        f"artifacts con project_id={bad_id!r} devolvió {r.status_code}"
+    )
+
+
+def test_headless_logs_response_has_no_absolute_path():
+    """La respuesta de headless/logs no debe exponer rutas absolutas del filesystem."""
+    import httpx
+    key = _get_api_key()
+    r = httpx.get(
+        "http://localhost:9000/api/v1/layer8/missions/r6_change_control/headless/logs",
+        headers={"x-api-key": key},
+        timeout=10,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for log in data.get("logs", []):
+        assert "path" not in log, (
+            f"Campo 'path' expone ruta absoluta del FS: {log.get('path')}"
+        )
+
+
+def test_jobs_rejects_non_uuid_id():
+    """GET /jobs/{job_id} debe rechazar IDs que no sean UUID válidos.
+
+    Rutas con '/' son interceptadas por el router antes del handler (404).
+    IDs sin '/' pero con formato inválido llegan al handler y reciben 400.
+    En todos los casos no se sirve contenido sensible.
+    """
+    import httpx
+    key = _get_api_key()
+    # IDs con '/' → FastAPI los rutea como multi-segmento → 404 del router
+    # IDs sin '/' pero no UUID → llegan al handler → 400
+    for bad_id in ["../../../etc/passwd", "foo", "123", "notauuid"]:
+        r = httpx.get(
+            f"http://localhost:9000/api/v1/layer8/jobs/{bad_id}",
+            headers={"x-api-key": key},
+            timeout=10,
+        )
+        assert r.status_code in (400, 404, 422), (
+            f"jobs/{bad_id!r} devolvió {r.status_code}, esperado 400/404/422"
+        )
+
+
+def test_valid_artifacts_returns_200():
+    import httpx
+    key = _get_api_key()
+    r = httpx.get(
+        "http://localhost:9000/api/v1/layer8/missions/r6_change_control/artifacts",
+        headers={"x-api-key": key},
+        timeout=10,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert "artifacts" in data
+    assert "project_id" in data

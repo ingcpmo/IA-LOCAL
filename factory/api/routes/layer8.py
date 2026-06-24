@@ -128,6 +128,9 @@ def get_jobs(queue: str | None = None, project_id: str | None = None):
 @router.get("/jobs/{job_id}")
 def get_job_detail(job_id: str):
     """Retorna un job por ID."""
+    import re
+    if not re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', job_id):
+        raise HTTPException(400, "job_id debe ser un UUID válido")
     job = get_job(job_id)
     if job is None:
         raise HTTPException(404, f"Job '{job_id}' no encontrado")
@@ -289,24 +292,18 @@ def post_run_headless(project_id: str, payload: HeadlessRunPayload = HeadlessRun
 @router.get("/missions/{project_id}/headless/logs")
 def get_headless_logs(project_id: str):
     """Lista los logs de ejecuciones headless del workspace."""
-    ws_path = Path(__file__).parent.parent.parent / "workspaces" / project_id
-    if not ws_path.exists():
-        raise HTTPException(404, f"Workspace '{project_id}' no encontrado")
-
-    logs = sorted(ws_path.glob("headless_*.log"), reverse=True)
+    ws = _safe_workspace(project_id)
+    logs = sorted(ws.glob("headless_*.log"), reverse=True)
     result = []
     for log in logs[:10]:
         try:
-            content = log.read_text(encoding="utf-8")
             result.append({
                 "filename": log.name,
-                "path": str(log),
                 "size_bytes": log.stat().st_size,
-                "preview": content[:400],
+                "preview": log.read_text(encoding="utf-8", errors="replace")[:400],
             })
         except Exception:
             result.append({"filename": log.name, "error": "no_legible"})
-
     return {"project_id": project_id, "logs": result}
 
 
@@ -342,11 +339,7 @@ def post_build_rc(project_id: str, body: RCBuildPayload):
 @router.get("/missions/{project_id}/artifacts")
 def get_mission_artifacts(project_id: str):
     """Vista previa de artefactos disponibles en el workspace."""
-    from factory.layer8.artifact_collector import WORKSPACES_BASE, RC_BASE
-    import os
-    ws_path = WORKSPACES_BASE / project_id
-    if not ws_path.exists():
-        raise HTTPException(404, f"Workspace '{project_id}' no encontrado")
+    ws_path = _safe_workspace(project_id)
     artifacts = []
     for fname in ["manifest.yaml", "test_report.json", "quality_gates_report.json"]:
         f = ws_path / fname
