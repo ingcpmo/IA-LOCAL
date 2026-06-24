@@ -186,6 +186,43 @@ def get_risks():
     except Exception:
         pass
 
+    # R6: misiones en returned_to_adjustments (requieren remediación)
+    try:
+        from factory.layer9.mission_control import list_missions
+        for m in list_missions():
+            if m.get("status") == "returned_to_adjustments":
+                pid = m["project_id"]
+                reason = m.get("return_reason", "sin motivo registrado")
+                risks.append({
+                    "id": f"RISK_REMEDIATION_{pid.upper()}",
+                    "severity": "medio",
+                    "description": (
+                        f"Misión '{pid}' devuelta a ajustes por {m.get('returned_by', '?')} "
+                        f"— motivo: {reason}"
+                    ),
+                })
+    except Exception:
+        pass
+
+    # R7: puertos asignados en registry sin deployment activo (zombie allocation)
+    try:
+        ports_file = REGISTRY_BASE / "ports.yaml"
+        if ports_file.exists():
+            allocs = (yaml.safe_load(ports_file.read_text(encoding="utf-8")) or {}).get("allocations", {})
+            for pid, info in allocs.items():
+                if not (DEPLOYMENTS_BASE / pid).is_dir():
+                    api_port = info.get("ports", {}).get("api", "?")
+                    risks.append({
+                        "id": f"RISK_PORT_UNDEPLOYED_{pid.upper()}",
+                        "severity": "info",
+                        "description": (
+                            f"Puerto {api_port} asignado a '{pid}' en registry "
+                            f"pero sin deployment activo — asignación zombie"
+                        ),
+                    })
+    except Exception:
+        pass
+
     return {"risks": risks, "count": len(risks)}
 
 
