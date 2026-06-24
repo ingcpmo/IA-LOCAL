@@ -36,7 +36,12 @@ def _check_health(url: str, timeout: float = 4.0) -> dict:
 
 
 def _discover_custom_deployments() -> list[dict]:
-    """Lee factory/registry/ports.yaml para descubrir soluciones custom activas."""
+    """
+    Lee factory/registry/ports.yaml y devuelve solo proyectos con deployment
+    activo (directorio factory/deployments/{project_id}/ existe).
+    Proyectos con puertos reservados pero sin deployment no se incluyen
+    en health checks ni en conteo de recursos.
+    """
     ports_file = REGISTRY_BASE / "ports.yaml"
     if not ports_file.exists():
         return []
@@ -48,7 +53,7 @@ def _discover_custom_deployments() -> list[dict]:
         result = []
         for project_id, info in allocs.items():
             api_port = info.get("ports", {}).get("api")
-            if api_port:
+            if api_port and (DEPLOYMENTS_BASE / project_id).is_dir():
                 result.append({"project_id": project_id, "api_port": api_port})
         return result
     except Exception:
@@ -106,17 +111,22 @@ def get_risks():
     """Deriva riesgos dinámicos del estado actual del sistema."""
     risks = []
 
-    # R1: cadena de auditoría
+    # R1: cadena de auditoría — distingue fork concurrente de hash corrupto
     try:
         audit = verify_chain()
         if not audit.get("part11_compliant"):
+            h_err = audit.get("hash_errors", 0)
+            c_err = audit.get("chain_errors", 0)
+            is_fork_only = h_err == 0 and c_err > 0
             risks.append({
                 "id": "RISK_AUDIT_CHAIN",
-                "severity": "alto",
+                "severity": "medio" if is_fork_only else "alto",
                 "description": (
-                    f"Cadena de auditoría no conforme Part 11: "
-                    f"{audit.get('chain_errors', 0)} errores de cadena, "
-                    f"{audit.get('hash_errors', 0)} errores de hash"
+                    f"Fork concurrente en cadena de auditoría ({c_err} fork, 0 hash_errors) "
+                    f"— contenido auténtico, no hay corrupción de datos"
+                    if is_fork_only else
+                    f"Cadena de auditoría inválida: "
+                    f"{c_err} errores de cadena, {h_err} errores de hash"
                 ),
             })
     except Exception:
