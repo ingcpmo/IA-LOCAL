@@ -359,25 +359,35 @@ def get_mission_artifacts(project_id: str):
     return {"project_id": project_id, "artifacts": artifacts}
 
 
+_WS_BASE = Path(__file__).parent.parent.parent / "workspaces"
+_SAFE_EXTS = {".py", ".yaml", ".yml", ".json", ".md", ".txt", ".toml", ".cfg", ".ini", ".sh", ".log", ".csv", ".sql"}
+_MAX_FILE_BYTES = 50_000
+
+
+def _safe_workspace(project_id: str) -> Path:
+    """Convierte excepciones de path_policy a HTTPException para los endpoints."""
+    from factory.core.path_policy import resolve_workspace
+    try:
+        return resolve_workspace(project_id, _WS_BASE)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    except FileNotFoundError as exc:
+        raise HTTPException(404, str(exc))
+
+
 @router.get("/missions/{project_id}/diff")
 def get_mission_diff(project_id: str):
     """Diff del workspace respecto al repositorio."""
+    _safe_workspace(project_id)
     try:
         return collect_diff(project_id)
     except Exception as e:
         raise HTTPException(500, str(e))
 
 
-_WS_BASE = Path(__file__).parent.parent.parent / "workspaces"
-_SAFE_EXTS = {".py", ".yaml", ".yml", ".json", ".md", ".txt", ".toml", ".cfg", ".ini", ".sh", ".log", ".csv", ".sql"}
-_MAX_FILE_BYTES = 50_000
-
-
 @router.get("/workspaces/{project_id}/tree")
 def get_workspace_tree(project_id: str):
-    ws = _WS_BASE / project_id
-    if not ws.exists():
-        raise HTTPException(404, f"Workspace '{project_id}' no encontrado")
+    ws = _safe_workspace(project_id)
     files = []
     for p in sorted(ws.rglob("*")):
         if not p.is_file():
@@ -391,12 +401,10 @@ def get_workspace_tree(project_id: str):
 
 @router.get("/workspaces/{project_id}/file")
 def get_workspace_file(project_id: str, path: str):
-    ws = _WS_BASE / project_id
-    if not ws.exists():
-        raise HTTPException(404, f"Workspace '{project_id}' no encontrado")
+    ws = _safe_workspace(project_id)
     try:
         target = (ws / path).resolve()
-        target.relative_to(ws.resolve())
+        target.relative_to(ws)
     except (ValueError, RuntimeError):
         raise HTTPException(400, "Path fuera del workspace")
     if not target.exists() or not target.is_file():
