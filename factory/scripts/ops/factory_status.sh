@@ -16,6 +16,7 @@ BOLD='\033[1m'
 pass()  { echo -e "  ${G}PASS${NC}  $1"; PASS=$((PASS+1));  }
 warn()  { echo -e "  ${Y}WARN${NC}  $1"; WARN=$((WARN+1));  }
 fail()  { echo -e "  ${R}FAIL${NC}  $1"; FAIL=$((FAIL+1));  }
+info()  { echo -e "  ${B}INFO${NC}  $1"; }
 section() { echo -e "\n${BOLD}${B}=== $1 ===${NC}"; }
 
 # Leer API key con fallback (archivo → container env)
@@ -128,6 +129,13 @@ for pid, info in allocs.items():
         warn "No hay soluciones custom en registry"
     else
         while IFS=: read -r pid port; do
+            # U7: saltar health checks para proyectos sin deployment activo
+            DEP_DIR="$FACTORY_DIR/deployments/$pid"
+            if [[ ! -d "$DEP_DIR" ]]; then
+                info "Solución custom '$pid': puerto $port reservado, sin deployment activo aún"
+                continue
+            fi
+
             # Container healthcheck
             CTRS=$(docker ps --filter "name=${pid}" --format "{{.Names}}" 2>/dev/null || true)
             if [[ -n "$CTRS" ]]; then
