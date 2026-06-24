@@ -718,14 +718,16 @@ function renderReview(pending){
 function renderAuditSeal(d){
   const el=document.getElementById('audit-seal-text'); if(!el) return;
   const ok=d.verified&&d.part11_compliant;
+  const isFork=!ok&&(d.hash_errors??0)===0&&(d.chain_errors??0)>0;
   const seal=el.parentElement?.querySelector('.seal');
   if(seal){
     seal.textContent=ok?'✓':'!';
-    seal.style.borderColor=ok?'var(--accent)':'var(--fail)';
-    seal.style.color=ok?'var(--accent)':'var(--fail)';
+    seal.style.borderColor=ok?'var(--accent)':isFork?'var(--warn)':'var(--fail)';
+    seal.style.color=ok?'var(--accent)':isFork?'var(--warn)':'var(--fail)';
   }
-  el.innerHTML=`<b>${ok?'Cadena verificada':'⚠ Cadena con errores'}</b> · ${d.log_count} entradas · ${d.hash_errors} errores de hash · ${d.chain_errors} errores de cadena · part11_compliant: ${d.part11_compliant}`;
-  el.style.color=ok?'#d7c79a':'var(--warn)';
+  const estado=ok?'Cadena verificada':isFork?'Fork concurrente — contenido auténtico':'⚠ Hash corrupto — cadena inválida';
+  el.innerHTML=`<b>${estado}</b> · ${d.log_count} entradas · ${d.hash_errors} errores de hash · ${d.chain_errors} errores de cadena · part11_compliant: ${d.part11_compliant}`;
+  el.style.color=ok?'#d7c79a':isFork?'var(--warn)':'var(--fail)';
 }
 
 function renderAuditChain(entries){
@@ -787,10 +789,12 @@ async function refresh(v){
       const r=await fetch(API_BASE+"/api/v1/status/full",{headers:headers()});
       if(r.ok){ const d=await r.json();
         const av=d.summary?.audit_verified, ae=d.summary?.audit_entries;
+        const ahash=d.summary?.audit_hash_errors??0, achain=d.summary?.audit_chain_errors??0;
         if(av!=null){
           const el=document.getElementById('m-audit');
-          el.style.color=av?'var(--pass)':'var(--fail)';
-          el.innerHTML=(av?'OK':'FALLA')+'<small> · '+(ae||0)+'</small>';
+          const isFork=!av&&ahash===0&&achain>0;
+          el.style.color=av?'var(--pass)':isFork?'var(--warn)':'var(--fail)';
+          el.innerHTML=(av?'OK':isFork?'WARN':'FALLA')+'<small> · '+(ae||0)+'</small>';
         }
         renderStacks(d, v==='dash'?'dash-stacks':'sys-stacks');
         const note=document.getElementById('dash-note');
