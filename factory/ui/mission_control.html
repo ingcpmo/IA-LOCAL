@@ -320,28 +320,30 @@ tr:hover td{background:#10161d}
       <!-- 02 CREATE -->
       <section class="view" id="v-create">
         <p class="lead">Define una misión para el agente constructor. La misión fija el alcance, la regulación, el nivel de autonomía y las acciones permitidas. Crear una misión no autoriza nada todavía — la aprobación es un paso aparte.</p>
-        <form class="form" onsubmit="return fakeSubmit('Misión creada en estado borrador')">
+        <form class="form" id="create-mission-form" onsubmit="return submitCreateMission(event)">
           <div class="two">
-            <div class="field"><label>project_id</label><input placeholder="p.ej. r7_batch_review" required><span class="hint">minúsculas, sin espacios</span></div>
-            <div class="field"><label>Nombre del proyecto</label><input placeholder="Revisión de registros de lote" required></div>
+            <div class="field"><label>project_id</label><input id="create-pid" placeholder="p.ej. r7_batch_review" required autocomplete="off"><span class="hint">minúsculas, números, guiones bajos (sin espacios ni guiones)</span></div>
+            <div class="field"><label>Tipo de cliente</label><input id="create-client-type" placeholder="pharma_mfg_site"></div>
           </div>
-          <div class="field"><label>Objetivo</label><textarea placeholder="Qué debe construir la solución y para qué cliente."></textarea></div>
+          <div class="field"><label>Objetivo</label><textarea id="create-objective" placeholder="Qué debe construir la solución y para qué cliente." rows="3"></textarea></div>
           <div class="two">
-            <div class="field"><label>Tipo de cliente</label><input placeholder="pharma_mfg_site"></div>
-            <div class="field"><label>Dominios</label><input placeholder="LIMS, DATA_INTEGRITY, CAPA"><span class="hint">separados por coma</span></div>
+            <div class="field"><label>Alcance regulatorio</label><input id="create-regulatory" placeholder="21_CFR_PART_11, ALCOA_PLUS"><span class="hint">separados por coma</span></div>
+            <div class="field"><label>Documentos requeridos</label><input id="create-docs" placeholder="ICH Q10, FDA PV 2011, GAMP 5"><span class="hint">se marcan PENDING; no se fabrican</span></div>
           </div>
-          <div class="field"><label>Alcance regulatorio</label><input placeholder="21_CFR_PART_11, 21_CFR_PART_211, ALCOA+"></div>
           <div class="two">
             <div class="field"><label>Nivel de autonomía</label>
-              <select><option>controlled_full (hasta release candidate)</option><option>design_only (plan)</option><option>manual_assisted</option></select>
+              <select id="create-autonomy">
+                <option value="controlled_full">controlled_full — hasta release candidate</option>
+                <option value="supervised">supervised — con supervisión en cada etapa</option>
+                <option value="manual_only">manual_only — solo análisis y plan</option>
+              </select>
             </div>
-            <div class="field"><label>Documentos requeridos</label><input placeholder="ICH Q10, FDA PV 2011, GAMP 5"><span class="hint">se marcan PENDING; no se fabrican</span></div>
+            <div class="field"><label>Acciones permitidas</label>
+              <input id="create-actions" placeholder="analyze_requirement, design_agents, create_workspace, run_claude_code, generate_code, generate_tests, run_quality_gates, create_release">
+              <span class="hint">separadas por coma · deploy_docker_if_gates_pass=false siempre</span>
+            </div>
           </div>
-          <div class="field"><label>Acciones permitidas</label>
-            <textarea placeholder="analyze_requirement, design_agents, create_workspace, run_claude_code, generate_code, run_tests, run_quality_gates, create_release_candidate">analyze_requirement, design_agents, create_workspace, run_claude_code, generate_code, run_tests, run_quality_gates, create_release_candidate</textarea>
-            <span class="hint">deploy_docker queda en false — la decisión final es humana</span>
-          </div>
-          <div class="field"><label>Criterios de salida</label><textarea placeholder="Qué define que la misión está lista para revisión humana."></textarea></div>
+          <div class="field"><label>Criterios de salida (constraints)</label><textarea id="create-exit" placeholder="Cobertura de tests > 80%&#10;Sin acceso a datos reales de pacientes&#10;Aprobación regulatoria interna requerida" rows="3"></textarea><span class="hint">uno por línea o separados por coma — requerido ≥ 1</span></div>
           <div class="actions">
             <button class="btn primary" type="submit">Crear misión (borrador)</button>
             <button class="btn ghost" type="reset">Limpiar</button>
@@ -1090,6 +1092,62 @@ function toast(msg){
   t.textContent=msg; t.style.opacity='1';
   clearTimeout(t._h); t._h=setTimeout(()=>t.style.opacity='0',2200);
 }
+/* ---- U11: Crear misión — form real ---- */
+async function submitCreateMission(e){
+  e.preventDefault();
+  const pid=(document.getElementById('create-pid')?.value||'').trim().toLowerCase().replace(/\s+/g,'_');
+  const objective=(document.getElementById('create-objective')?.value||'').trim();
+  const clientType=(document.getElementById('create-client-type')?.value||'').trim()||'pharma_mfg_site';
+  const regRaw=(document.getElementById('create-regulatory')?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const docsRaw=(document.getElementById('create-docs')?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const autonomy=document.getElementById('create-autonomy')?.value||'controlled_full';
+  const actionsRaw=(document.getElementById('create-actions')?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const exitRaw=(document.getElementById('create-exit')?.value||'');
+  const constraints=exitRaw.split(/[\n,]/).map(s=>s.trim()).filter(Boolean);
+
+  if(!pid){ toast('project_id es obligatorio.'); return false; }
+  if(!/^[a-z0-9_]+$/.test(pid)){ toast('project_id: solo minúsculas, números y guiones bajos.'); return false; }
+  if(!objective){ toast('El objetivo es obligatorio.'); return false; }
+  if(!regRaw.length){ toast('Alcance regulatorio: ingresa al menos un valor (p.ej. 21_CFR_PART_11).'); return false; }
+  if(!docsRaw.length){ toast('Documentos requeridos: ingresa al menos uno (p.ej. ICH Q10).'); return false; }
+  if(!constraints.length){ toast('Criterios de salida: ingresa al menos uno.'); return false; }
+
+  const docs={};
+  docsRaw.forEach(d=>{ docs[d]='pending'; });
+
+  const DEFAULT_ACTIONS=['analyze_requirement','design_agents','create_workspace','run_claude_code',
+    'generate_code','generate_tests','run_quality_gates','create_release'];
+  const allowed=actionsRaw.length?actionsRaw:DEFAULT_ACTIONS;
+
+  const payload={
+    project_id: pid, client_type: clientType, objective: objective,
+    regulatory_scope: regRaw, documents: docs, constraints: constraints,
+    mission_approval:{
+      autonomy_level: autonomy, allowed_actions: allowed,
+      stop_conditions:['quality_gate_fail','resource_limit_exceeded','claude_execution_failed'],
+      final_human_decision_required:['deploy_docker'],
+      deploy_docker_if_gates_pass: false
+    }
+  };
+
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer9/missions',{
+      method:'POST', headers:headers(), body:JSON.stringify(payload)
+    });
+    if(r.status===201){
+      const d=await r.json();
+      toast('Misión creada: '+d.project_id+' · status='+d.status);
+      document.getElementById('create-mission-form')?.reset();
+      setTimeout(()=>refresh('approve'),800);
+    } else {
+      const err=await r.json().catch(()=>({}));
+      if(r.status===409) toast('Ya existe misión con project_id "'+pid+'".');
+      else toast('Error '+r.status+': '+(err.detail||JSON.stringify(err)).slice(0,150));
+    }
+  }catch(ex){ toast('Error de red: '+ex.message); }
+  return false;
+}
+
 function fakeSubmit(msg){ toast(msg+(CONNECTED?'':' · (vista de diseño)')); return false; }
 /* ---- U10: Devolver headless a OFF ---- */
 async function submitHeadlessOff(){
