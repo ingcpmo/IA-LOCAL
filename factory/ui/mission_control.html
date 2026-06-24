@@ -269,7 +269,7 @@ tr:hover td{background:#10161d}
 
         <div class="sec-h"><h3>Flujo gobernado</h3><span class="bar"></span><span class="chip c-human">decisión final humana</span></div>
         <div class="card" style="padding:14px">
-          <div class="flow">
+          <div class="flow" id="flow-diagram">
             <div class="node done"><div><div class="ix">01</div><div class="lab">Misión</div></div><div class="st">aprobada</div><span class="led"></span></div>
             <div class="node done"><div><div class="ix">02</div><div class="lab">Diseño</div></div><div class="st">generado</div><span class="led"></span></div>
             <div class="node active"><div><div class="ix">03</div><div class="lab">Headless</div></div><div class="st">en curso</div><span class="led"></span></div>
@@ -394,13 +394,9 @@ tr:hover td{background:#10161d}
 
         <div class="grid g2">
           <div class="card">
-            <h3>Diseño generado</h3><div class="hr"></div>
-            <div class="meta" style="line-height:2">
-              <div>Agentes: <b class="mono">capa</b> (heredado) · <b class="mono">integrity_lims_profile</b> (perfil)</div>
-              <div>Workspace: <span class="chip c-pass">resume</span> <span class="mono">factory/workspaces/r6_change_control</span></div>
-              <div>task package: <span class="chip c-pass">CLAUDE.md · task.md · settings.json</span></div>
-              <div>Validación regulatoria: <span class="chip c-pass">sin texto fabricado</span></div>
-            </div>
+            <div class="between"><h3>Diseño generado — Artefactos</h3><span class="chip c-mute" id="pipeline-design-count">—</span></div>
+            <div class="hr"></div>
+            <div id="pipeline-design-content" class="meta">(conectar para ver artefactos)</div>
           </div>
           <div class="card">
             <div class="between"><h3>Headless</h3><span class="chip c-warn" id="hl-state">verificar</span></div>
@@ -672,26 +668,24 @@ function renderApproveMissions(ms){
 function renderReview(pending){
   const el=document.getElementById('review-list'); if(!el) return;
   if(!pending.length){
-    el.innerHTML='<div class="card"><div class="meta" style="color:var(--pass)">✓ Cola vacía — no hay release candidates pendientes.</div></div>';
+    el.innerHTML='<div class="card"><div class="meta" style="color:var(--pass)">✓ Cola vac\xeda — no hay release candidates pendientes.</div></div>';
     return;
   }
-  el.innerHTML=pending.map(rc=>{
-    const arts=(rc.summary?.artifacts||[]).map(a=>`<span class="ctx">${a}</span>`).join('\n');
-    return `
+  el.innerHTML=pending.map(rc=>`
     <div class="rc" style="margin-bottom:14px">
       <div class="rc-head">
         <span class="seal" style="width:30px;height:30px;font-size:10px">RC</span>
         <div>
-          <div class="mono" style="font-weight:600">${rc.project_id} · ${rc.summary?.version||rc.rc_id}</div>
-          <div class="meta mono">enqueued ${(rc.enqueued_at||'').slice(0,16).replace('T',' ')}Z · ${rc.status}</div>
+          <div class="mono" style="font-weight:600">${rc.project_id} \xb7 ${rc.summary?.version||rc.rc_id}</div>
+          <div class="meta mono">enqueued ${(rc.enqueued_at||'').slice(0,16).replace('T',' ')}Z \xb7 ${rc.status}</div>
         </div>
         <div class="spacer"></div>
         <span class="chip c-human">espera humano</span>
       </div>
       <div class="rc-body">
         <div class="rc-col">
-          <div class="k" style="margin-bottom:8px">Artefactos</div>
-          <div class="diffbox">${arts||'(ninguno)'}</div>
+          <div class="k" style="margin-bottom:8px">Diff / archivos</div>
+          <div class="diffbox" id="rc-diff-${rc.project_id}">(cargando…)</div>
         </div>
         <div class="rc-col">
           <div class="k" style="margin-bottom:8px">RC ID</div>
@@ -704,8 +698,23 @@ function renderReview(pending){
           </div>
         </div>
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
+  pending.forEach(async rc=>{
+    try{
+      const r=await fetch(API_BASE+'/api/v1/layer8/missions/'+rc.project_id+'/diff',{headers:headers()});
+      if(!r.ok) return;
+      const txt=await r.json();
+      const box=document.getElementById('rc-diff-'+rc.project_id);
+      if(!box) return;
+      const lines=(typeof txt==='string'?txt:'').slice(0,1000).split('\n');
+      box.innerHTML=lines.map(l=>{
+        const s=l.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        if(l.startsWith('+')) return '<span class="add">'+s+'</span>';
+        if(l.startsWith('-')) return '<span class="del">'+s+'</span>';
+        return '<span class="ctx">'+s+'</span>';
+      }).join('\n');
+    }catch(e){}
+  });
 }
 
 /* ---- render: audit seal + chain (view 06) ---- */
@@ -799,6 +808,10 @@ async function refresh(v){
         document.getElementById('m-pending').textContent=pend.length;
         if(v==='dash') renderMissions(ms);
         if(v==='approve') renderApproveMissions(ms);
+        if(v==='dash'){
+          const rj=await fetch(API_BASE+"/api/v1/layer8/jobs",{headers:headers()});
+          renderFlowDiagram(ms, rj.ok?await rj.json():[]);
+        }
       }
     }
     if(v==='dash'||v==='review'){
@@ -830,6 +843,73 @@ async function refresh(v){
       if(r.ok){ const d=await r.json(); renderResources(d); }
     }
   }catch(e){ /* mantiene datos de diseño */ }
+}
+
+/* ---- U3: flow diagram ---- */
+const FLOW_NODES=[
+  {ix:'01',lab:'Misi\xf3n',dn:'aprobada',ac:'revisando',td:'pendiente'},
+  {ix:'02',lab:'Dise\xf1o',dn:'generado',ac:'generando',td:'pendiente'},
+  {ix:'03',lab:'Headless',dn:'completado',ac:'en curso',td:'pendiente'},
+  {ix:'04',lab:'C\xf3digo',dn:'generado',ac:'generando',td:'pendiente'},
+  {ix:'05',lab:'Tests',dn:'pass',ac:'corriendo',td:'pendiente'},
+  {ix:'06',lab:'Quality gates',dn:'pass',ac:'corriendo',td:'pendiente'},
+  {ix:'07',lab:'Release cand.',dn:'emitido',ac:'generando',td:'pendiente'},
+  {ix:'08',lab:'Aprobaci\xf3n',dn:'aprobado',ac:'humano',td:'humano',gate:true},
+];
+
+function missionStage(mission,jobs){
+  if(!mission) return 1;
+  const s=mission.status||'';
+  const pid=mission.project_id;
+  if(s==='completed') return 8;
+  if(s==='pending_approval') return 0;
+  if(s.includes('interrupted')) return 2;
+  const mj=(jobs||[]).filter(j=>j.project_id===pid)
+    .sort((a,b)=>(a.created_at||'')<(b.created_at||'')?1:-1);
+  if(!mj.length) return 1;
+  const jt=(mj[0].job_type||'').toLowerCase();
+  const js=mj[0].status;
+  if(jt.includes('headless')) return js==='completed'?3:2;
+  if(jt.includes('test'))     return js==='completed'?5:4;
+  if(jt.includes('gate')||jt.includes('quality')) return js==='completed'?6:5;
+  if(jt.includes('rc')||jt.includes('release'))   return js==='completed'?7:6;
+  if(jt.includes('run_mission')||jt.includes('build')) return 3;
+  return 2;
+}
+
+function renderFlowDiagram(missions,jobs){
+  const el=document.getElementById('flow-diagram'); if(!el) return;
+  const active=missions.find(m=>!['approved','rejected','completed'].includes(m.status))||missions[0];
+  const amEl=document.getElementById('dash-active-mission');
+  if(amEl&&active) amEl.textContent=active.project_id;
+  const stage=missionStage(active,jobs);
+  const interrupted=(active?.status||'').includes('interrupted');
+  el.innerHTML=FLOW_NODES.map((n,i)=>{
+    let cls;
+    if(stage>7)      cls='done';
+    else if(i<stage) cls='done';
+    else if(n.gate)  cls='gate';
+    else if(i===stage) cls='active';
+    else cls='todo';
+    const st=cls==='done'?n.dn
+      :cls==='active'?(interrupted&&i===stage?'interrumpido':n.ac)
+      :n.td;
+    return '<div class="node '+cls+'"><div><div class="ix">'+n.ix+'</div><div class="lab">'+n.lab+'</div></div><div class="st">'+st+'</div><span class="led"></span></div>';
+  }).join('');
+}
+
+/* ---- U3: pipeline design artifacts ---- */
+function renderPipelineDesign(artifacts){
+  const el=document.getElementById('pipeline-design-content'); if(!el) return;
+  const cnt=document.getElementById('pipeline-design-count');
+  if(cnt) cnt.textContent=(artifacts||[]).length+' artefactos';
+  if(!artifacts||!artifacts.length){
+    el.innerHTML='<div style="color:var(--faint)">Sin artefactos en workspace.</div>'; return;
+  }
+  el.innerHTML=artifacts.map(a=>{
+    const kb=(a.size_bytes/1024).toFixed(1);
+    return '<div class="gate-line"><span class="gid mono">'+a.file+'</span><span class="chip c-pass">'+kb+' k</span></div>';
+  }).join('');
 }
 
 /* ---- render: sidebar deployment info ---- */
@@ -887,7 +967,7 @@ function renderPipelineJobs(jobs){
   }).join('');
 }
 
-/* ---- pipeline refresh: tree + jobs for selected project ---- */
+/* ---- pipeline refresh: tree + jobs + artifacts for selected project ---- */
 async function refreshPipeline(){
   var proj=(document.getElementById('pipeline-project')||{}).value||'r6_change_control';
   try{
@@ -895,6 +975,8 @@ async function refreshPipeline(){
     if(rt.ok) renderWorkspaceTree(await rt.json());
     var rj=await fetch(API_BASE+'/api/v1/layer8/jobs?project_id='+proj,{headers:headers()});
     if(rj.ok) renderPipelineJobs(await rj.json());
+    var ra=await fetch(API_BASE+'/api/v1/layer8/missions/'+proj+'/artifacts',{headers:headers()});
+    if(ra.ok){ var ad=await ra.json(); renderPipelineDesign(ad.artifacts||[]); }
   }catch(e){}
 }
 
