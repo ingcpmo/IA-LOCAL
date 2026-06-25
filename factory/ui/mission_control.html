@@ -1130,6 +1130,8 @@ async function submitCreateMission(e){
     }
   };
 
+  const btn=document.querySelector('#create-mission-form button[type="submit"]');
+  if(btn){ btn.disabled=true; btn.textContent='Creando…'; }
   try{
     const r=await fetch(API_BASE+'/api/v1/layer9/missions',{
       method:'POST', headers:headers(), body:JSON.stringify(payload)
@@ -1141,10 +1143,20 @@ async function submitCreateMission(e){
       setTimeout(()=>refresh('approve'),800);
     } else {
       const err=await r.json().catch(()=>({}));
-      if(r.status===409) toast('Ya existe misión con project_id "'+pid+'".');
-      else toast('Error '+r.status+': '+(err.detail||JSON.stringify(err)).slice(0,150));
+      if(r.status===409){
+        toast('Ya existe una misión con project_id "'+pid+'".');
+      } else {
+        let msg;
+        if(Array.isArray(err.detail)){
+          msg=err.detail.map(function(e){ return e.msg||JSON.stringify(e); }).join(' · ');
+        } else {
+          msg=err.detail||JSON.stringify(err);
+        }
+        toast('Error '+r.status+': '+String(msg).slice(0,200));
+      }
     }
   }catch(ex){ toast('Error de red: '+ex.message); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='Crear misión (borrador)'; } }
   return false;
 }
 
