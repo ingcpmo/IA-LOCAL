@@ -93,6 +93,11 @@ class MissionReturn(BaseModel):
     reason: str = ""
 
 
+class MissionReject(BaseModel):
+    rejected_by: str
+    reason: str = ""
+
+
 # ── Misiones ───────────────────────────────────────────────────────────────────
 
 @router.post("/missions", status_code=201)
@@ -268,6 +273,36 @@ def post_return_mission(project_id: str, body: MissionReturn):
         })
         return {"project_id": project_id, "status": "returned_to_adjustments",
                 "returned_by": body.returned_by}
+    except FileNotFoundError:
+        raise HTTPException(404, f"Misión '{project_id}' no encontrada")
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@router.post("/missions/{project_id}/reject")
+def post_reject_mission(project_id: str, body: MissionReject):
+    """Rechaza permanentemente una misión (acción irreversible)."""
+    try:
+        from factory.layer9.mission_control import _load_mission, _save_mission
+        from factory.core.audit_writer import write_event as _we
+        from datetime import datetime, timezone
+        mission = _load_mission(project_id)
+        if mission.get("status") == "rejected":
+            raise HTTPException(409, f"Misión '{project_id}' ya fue rechazada.")
+        mission["status"] = "rejected"
+        mission["rejected_by"] = body.rejected_by
+        mission["rejection_reason"] = body.reason
+        mission["updated_at"] = datetime.now(timezone.utc).isoformat()
+        _save_mission(mission)
+        _we("layer9_decision_recorded", project_id, {
+            "action": "mission_rejected",
+            "rejected_by": body.rejected_by,
+            "reason": body.reason,
+        })
+        return {"project_id": project_id, "status": "rejected",
+                "rejected_by": body.rejected_by}
+    except HTTPException:
+        raise
     except FileNotFoundError:
         raise HTTPException(404, f"Misión '{project_id}' no encontrada")
     except Exception as e:

@@ -1,5 +1,5 @@
 <!--
-  GMP AI Factory — Capa 9 Mission Control (DISEÑO / MOCKUP)
+  GMP AI Factory — Capa 9 Mission Control
   Diseño profesional para revisión. No persiste secretos. La API key se ingresa
   en sesión y vive solo en memoria (sin localStorage). Si se conecta a un
   factory-api real (mismo origen, p.ej. http://IP:9000), consume /api/v1/*; si no,
@@ -383,7 +383,7 @@ tr:hover td{background:#10161d}
           <div class="actions">
             <button class="btn human" onclick="submitMissionDecision('r6_change_control','approve')">Aprobar misión</button>
             <button class="btn warn" onclick="submitMissionDecision('r6_change_control','return')">Devolver a ajustes</button>
-            <button class="btn fail" onclick="fakeSubmit('Sin endpoint de rechazo de misión')">Rechazar</button>
+            <button class="btn fail" onclick="submitMissionDecision('r6_change_control','reject')">Rechazar</button>
           </div>
         </div>
         </div>
@@ -413,9 +413,10 @@ tr:hover td{background:#10161d}
               <input id="headless-operator" placeholder="p.ej. Cesar" autocomplete="off" style="width:180px">
             </div>
             <div class="actions">
-              <button class="btn ghost" onclick="fakeSubmit('Ver logs: usar GET /api/v1/layer8/missions/{project_id}/headless/logs')">Ver log</button>
+              <button class="btn ghost" onclick="viewHeadlessLogs()">Ver log</button>
               <button class="btn warn" onclick="submitHeadlessOff()">Devolver headless a OFF</button>
             </div>
+            <pre id="headless-log-box" style="display:none;margin-top:10px;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:10px;font-size:10.5px;line-height:1.6;max-height:180px;overflow:auto;color:var(--faint);white-space:pre-wrap;word-break:break-all"></pre>
           </div>
         </div>
 
@@ -458,49 +459,7 @@ tr:hover td{background:#10161d}
         <p class="lead">Cola de release candidates a revisión humana. El despliegue permanece bloqueado hasta que un revisor real apruebe el RC. Aquí se ven el diff, los tests y los gates antes de decidir.</p>
 
         <div id="review-list">
-        <div class="rc">
-          <div class="rc-head">
-            <span class="seal" style="width:30px;height:30px;font-size:10px">RC</span>
-            <div>
-              <div class="mono" style="font-weight:600">lab_qc_project · rc-v0.2.0</div>
-              <div class="meta mono">propuesto por layer8 · pending_human_confirmation</div>
-            </div>
-            <div class="spacer"></div>
-            <span class="chip c-pass">gates 12/12</span>
-            <span class="chip c-pass">tests ok</span>
-            <span class="chip c-human">espera humano</span>
-          </div>
-          <div class="rc-body">
-            <div class="rc-col">
-              <div class="k" style="margin-bottom:8px">Diff (resumen)</div>
-              <div class="diffbox">
-<span class="ctx">app/main.py</span>
-<span class="add">+ collection lab_qc_hplc reingestada (89 chunks)</span>
-<span class="add">+ gate GD_STREAM_200 añadido</span>
-<span class="del">- placeholder de corpus vacío</span>
-<span class="ctx">manifest.yaml</span>
-<span class="add">+ status: validated · gates 12/12</span>
-<span class="ctx">releases/v0.2.0.json</span>
-<span class="add">+ registro de release inmutable</span>
-              </div>
-            </div>
-            <div class="rc-col">
-              <div class="k" style="margin-bottom:8px">Quality gates</div>
-              <div class="gate-line"><span class="gid">GD_HEALTH_FULL</span><span class="chip c-pass">pass</span></div>
-              <div class="gate-line"><span class="gid">GD_AUTH_REJECT/ACCEPT</span><span class="chip c-pass">pass</span></div>
-              <div class="gate-line"><span class="gid">GD_KNOWLEDGE_STATS</span><span class="chip c-pass">pass</span></div>
-              <div class="gate-line"><span class="gid">GD_AUDIT_VERIFY</span><span class="chip c-pass">pass</span></div>
-              <div class="gate-line"><span class="gid">GD_KEY_NOT_IN_UI</span><span class="chip c-pass">pass</span></div>
-              <div class="gate-line"><span class="gid">GD_STREAM_200</span><span class="chip c-pass">pass</span></div>
-              <div class="hr"></div>
-              <div class="field"><label>Revisor (nombre real)</label><input placeholder="p.ej. Cesar"></div>
-              <div class="actions">
-                <button class="btn pass" onclick="fakeSubmit('Release candidate aprobado — deploy habilitado para autorización')">Aprobar RC</button>
-                <button class="btn fail" onclick="fakeSubmit('Release candidate rechazado')">Rechazar</button>
-              </div>
-            </div>
-          </div>
-        </div>
+          <div class="card"><div class="meta" style="color:var(--faint)">(conectar para ver cola de revisión…)</div></div>
         </div>
         <p class="note">El deploy nunca es automático: aprobar el RC habilita la autorización de despliegue, que es un paso humano adicional.</p>
       </section>
@@ -650,19 +609,25 @@ async function submitMissionDecision(projectId, action){
   if(!actor){ toast('Ingresa el nombre real del '+(action==='approve'?'aprobador':'revisor')+'.'); return; }
   if(actor.toLowerCase()==='human'){ toast('"human" no es válido — usa un nombre real.'); return; }
   try{
-    let url, body;
+    let url, body, msg;
     if(action==='approve'){
       url='/api/v1/layer9/missions/'+encodeURIComponent(projectId)+'/approve';
       body={approved_by:actor, decision_origin:'human_confirmed'};
+      msg='Misión aprobada ✓';
+    } else if(action==='reject'){
+      url='/api/v1/layer9/missions/'+encodeURIComponent(projectId)+'/reject';
+      body={rejected_by:actor, reason:'rechazo de misión · vía Mission Control'};
+      msg='Misión rechazada';
     } else {
       url='/api/v1/layer9/missions/'+encodeURIComponent(projectId)+'/return';
       body={returned_by:actor, reason:'devolución a ajustes · vía Mission Control'};
+      msg='Misión devuelta a ajustes';
     }
     const r=await fetch(API_BASE+url,{
       method:'POST', headers:headers(), body:JSON.stringify(body)
     });
     if(r.ok){
-      toast((action==='approve'?'Misión aprobada ✓':'Misión devuelta a ajustes')+'  · '+actor);
+      toast(msg+'  · '+actor);
       setTimeout(()=>refresh('approve'),600);
     } else {
       const err=await r.json().catch(()=>({}));
@@ -694,7 +659,7 @@ function renderApproveMissions(ms){
       <div class="actions" style="margin-top:12px">
         <button class="btn human" onclick="submitMissionDecision('${m.project_id}','approve')">Aprobar misión</button>
         <button class="btn warn" onclick="submitMissionDecision('${m.project_id}','return')">Devolver</button>
-        <button class="btn fail" onclick="fakeSubmit('Sin endpoint de rechazo de misión')">Rechazar</button>
+        <button class="btn fail" onclick="submitMissionDecision('${m.project_id}','reject')">Rechazar</button>
       </div>
     </div>`;
   }).join('');
@@ -1161,6 +1126,21 @@ async function submitCreateMission(e){
 }
 
 function fakeSubmit(msg){ toast(msg+(CONNECTED?'':' · (vista de diseño)')); return false; }
+/* ---- U11: Ver logs headless ---- */
+async function viewHeadlessLogs(){
+  if(!CONNECTED){ toast('Sin conexión — no se pueden cargar logs.'); return; }
+  const proj=(document.getElementById('pipeline-project')||{}).value||'r6_change_control';
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer8/missions/'+encodeURIComponent(proj)+'/headless/logs',{headers:headers()});
+    if(!r.ok){ toast('Error '+r.status+' al cargar logs de '+proj); return; }
+    const d=await r.json();
+    const lines=Array.isArray(d.lines)?d.lines:(d.content||'').split('\n');
+    const txt=lines.length?lines.slice(-40).join('\n'):'(sin entradas de log)';
+    const box=document.getElementById('headless-log-box');
+    if(box){ box.textContent=txt; box.style.display='block'; }
+    else { toast('Logs (últimas 40 líneas):\n'+txt.slice(0,400)); }
+  }catch(e){ toast('Error de red: '+e.message); }
+}
 /* ---- U10: Devolver headless a OFF ---- */
 async function submitHeadlessOff(){
   const actor=(document.getElementById('headless-operator')?.value||'').trim();

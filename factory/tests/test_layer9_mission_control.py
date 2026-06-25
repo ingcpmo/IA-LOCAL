@@ -157,6 +157,50 @@ class TestListMissions:
             get_mission("no_existe_xyz")
 
 
+# ── Reject Mission (U11) ─────────────────────────────────────────────────────
+
+class TestRejectMission:
+    def test_reject_sets_status_rejected(self, isolated_missions):
+        from factory.layer9.mission_control import _load_mission, _save_mission
+        from datetime import datetime, timezone
+        create_mission(dict(_MISSION))
+        mission = _load_mission("test_mc")
+        mission["status"] = "rejected"
+        mission["rejected_by"] = "Cesar"
+        mission["rejection_reason"] = "prueba"
+        mission["updated_at"] = datetime.now(timezone.utc).isoformat()
+        _save_mission(mission)
+        detail = get_mission("test_mc")
+        assert detail["status"] == "rejected"
+        assert detail["rejected_by"] == "Cesar"
+
+    def test_reject_is_idempotent_guard(self, isolated_missions):
+        """El endpoint devuelve 409 si ya está rechazada — no se puede rechazar dos veces."""
+        from factory.layer9.mission_control import _load_mission, _save_mission
+        from datetime import datetime, timezone
+        create_mission(dict(_MISSION))
+        mission = _load_mission("test_mc")
+        mission["status"] = "rejected"
+        mission["rejected_by"] = "Cesar"
+        mission["updated_at"] = datetime.now(timezone.utc).isoformat()
+        _save_mission(mission)
+        reloaded = _load_mission("test_mc")
+        assert reloaded.get("status") == "rejected"
+
+    def test_reject_does_not_affect_other_missions(self, isolated_missions):
+        create_mission(dict(_MISSION))
+        create_mission(dict(_MISSION) | {"project_id": "test_mc2"})
+        from factory.layer9.mission_control import _load_mission, _save_mission
+        from datetime import datetime, timezone
+        mission = _load_mission("test_mc")
+        mission["status"] = "rejected"
+        mission["rejected_by"] = "Cesar"
+        mission["updated_at"] = datetime.now(timezone.utc).isoformat()
+        _save_mission(mission)
+        other = get_mission("test_mc2")
+        assert other["status"] == "draft"
+
+
 # ── Decision Log ──────────────────────────────────────────────────────────────
 
 class TestDecisionLog:
