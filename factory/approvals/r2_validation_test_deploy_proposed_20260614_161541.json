@@ -1,0 +1,13 @@
+{
+  "action": "deploy",
+  "project_id": "r2_validation_test",
+  "version": "v0.2.0",
+  "approved_by": null,
+  "proposed_at": "2026-06-14T16:15:41.555242+00:00",
+  "approved_at": null,
+  "gates_report_hash": "",
+  "notes": "propuesta del agente",
+  "status": "pending_human_confirmation",
+  "decision_origin": "agent_proposed",
+  "recorded_by": "layer8_agent"
+}

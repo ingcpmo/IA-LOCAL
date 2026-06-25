@@ -1,0 +1,16 @@
+{
+  "job_id": "62649678-aa64-46a2-830c-cb9a25794b1a",
+  "project_id": "r6_change_control",
+  "job_type": "layer8_run_mission",
+  "status": "completed",
+  "payload": {
+    "plan_only": true
+  },
+  "created_at": "2026-06-15T03:12:00.109900+00:00",
+  "updated_at": "2026-06-15T03:12:00.124704+00:00",
+  "result": {
+    "status": "plan_generated",
+    "design_dir": "/app/factory/designs/r6_change_control"
+  },
+  "error": null
+}

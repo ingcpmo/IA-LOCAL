@@ -1,0 +1,69 @@
+{
+  "project_id": "lab_qc_project",
+  "version": "v0.2.0",
+  "release_type": "redeploy_clean",
+  "status": "deployed_and_validated",
+
+  "timeline": {
+    "proposed_at": "2026-06-14T16:34:23.196742+00:00",
+    "approved_at": "2026-06-14T16:37:48.028003+00:00",
+    "volumes_deleted_and_recreated_at": "2026-06-14T17:04:04+00:00",
+    "container_started_at": "2026-06-14T17:04:15.853605837+00:00",
+    "quality_gates_passed_at": "2026-06-14T17:34:00.718174+00:00",
+    "release_recorded_at": "2026-06-14T17:36:00+00:00"
+  },
+
+  "approval": {
+    "approved_by": "Cesar",
+    "decision_origin": "human_confirmed",
+    "approval_file": "factory/approvals/lab_qc_project_redeploy_v0.2.0_confirmed_20260614_163748.json"
+  },
+
+  "infrastructure": {
+    "api_image_id": "sha256:dcf81a827689",
+    "volume_pgdata": "lab_qc_project_lab_qc_project_pgdata",
+    "volume_clean": true,
+    "api_port": 8101,
+    "postgres_port": 5433,
+    "redis_port": 6380,
+    "ollama_model": "mistral:7b-instruct-q4_K_M"
+  },
+
+  "quality_gates": {
+    "gate_set": "deployment_functional",
+    "summary": {
+      "PASS": 12,
+      "FAIL": 0,
+      "SKIPPED": 0
+    },
+    "report_file": "factory/deployments/lab_qc_project/quality_gates_report.json"
+  },
+
+  "corpus": {
+    "total_chunks": 411,
+    "collections": {
+      "lab_qc_lims_di": 60,
+      "lab_qc_oos": 57,
+      "gmp_fda_regulations": 229,
+      "lab_qc_hplc": 65
+    }
+  },
+
+  "audit": {
+    "part11_compliant": true,
+    "log_count": 17,
+    "hash_errors": 0,
+    "chain_errors": 0
+  },
+
+  "changes_from_v0.1.0": [
+    "Corpus HPLC agregado (65 chunks USP <621>/<1058>)",
+    "Corpus completado: lab_qc_lims_di 60 chunks, lab_qc_oos 57 chunks, gmp_fda_regulations 229 chunks",
+    "Streaming endpoint /api/v1/stream operativo",
+    "Quality gates pasaron de 8/14 a 12/12",
+    "Redeploy limpio: volúmenes eliminados y recreados"
+  ],
+
+  "recorded_by": "Claude Code (gmp-factory agent)",
+  "notes": "Release v0.2.0 — redeploy limpio aprobado por Cesar. Todos los quality gates de deployment_functional pasaron. Sistema production-ready."
+}

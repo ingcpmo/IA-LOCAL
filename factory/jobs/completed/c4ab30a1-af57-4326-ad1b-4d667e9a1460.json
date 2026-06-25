@@ -1,0 +1,16 @@
+{
+  "job_id": "c4ab30a1-af57-4326-ad1b-4d667e9a1460",
+  "project_id": "r6_change_control",
+  "job_type": "layer8_run_mission",
+  "status": "completed",
+  "payload": {
+    "plan_only": true
+  },
+  "created_at": "2026-06-15T02:58:01.282146+00:00",
+  "updated_at": "2026-06-15T02:58:01.294685+00:00",
+  "result": {
+    "status": "plan_generated",
+    "design_dir": "/home/ing_cpmo/factory/designs/r6_change_control"
+  },
+  "error": null
+}

@@ -1,0 +1,13 @@
+project_id: r6_change_control
+supported_claims:
+- 'Arquitectura de agentes diseñada para dominios: LIMS, DATA_INTEGRITY, CAPA'
+- Routing multi-agente con trazabilidad en factory_audit.jsonl
+- Estructura de corpus lista para ingesta cuando se aporten PDFs
+unsupported_claims:
+- Validación de texto regulatorio — requiere PDFs oficiales no disponibles
+- Cumplimiento afirmativo de CFR/USP/ICH — no evaluado sin fuente primaria
+limitations:
+- Todos los documentos regulatorios están en estado PENDING_DOCUMENT
+- go-live requiere ingesta completa del corpus con PDFs validados
+- No se ha generado ni reproducido texto de regulaciones para este artefacto
+dual_use_note: null

@@ -1,0 +1,13 @@
+{
+  "action": "redeploy_v0.2.0",
+  "project_id": "lab_qc_project",
+  "version": "v0.2.0",
+  "approved_by": "Cesar",
+  "proposed_at": "2026-06-14T16:34:23.196742+00:00",
+  "approved_at": "2026-06-14T16:37:48.028003+00:00",
+  "gates_report_hash": "sha256:7c7a9e38b417cef8aa4b9b5f2306507d99c00ad67f3eb4c7bf008102fef259e2",
+  "notes": "Confirmaci\u00f3n humana expl\u00edcita v\u00eda chat 2026-06-14. Ejecuta redeploy R4.",
+  "status": "approved",
+  "decision_origin": "human_confirmed",
+  "recorded_by": "Cesar"
+}

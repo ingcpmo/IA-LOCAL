@@ -1,0 +1,32 @@
+project_id: r6_change_control
+domains:
+- LIMS
+- DATA_INTEGRITY
+- CAPA
+regulatory_scope:
+- 21_CFR_PART_11
+- 21_CFR_PART_211
+- ALCOA+
+dual_use: false
+part11_required: true
+alcoa_plus_required: true
+client_needs:
+- Gestión de datos LIMS con audit trail y control de acceso
+- Control de integridad de datos (ALCOA+ / 21 CFR Part 11)
+- Gestión de CAPA de laboratorio (5-Why, Fishbone, FTA)
+constraints:
+- no inventar texto regulatorio — toda fuente no disponible queda como PENDING_DOCUMENT
+- no tocar producto base (gmp-api puerto 8000)
+- docker independiente en puertos asignados por factory/registry/ports.yaml
+- trazabilidad completa via factory_audit.jsonl (21 CFR Part 11)
+- no guardar credenciales ni tokens en código ni en git
+- no usar --dangerously-skip-permissions
+- corpus completo con PDFs reales antes de go-live
+- workspace confinado a /home/ing_cpmo/factory/workspaces/r6_change_control/
+pending_documents:
+- ICH Q10 Pharmaceutical Quality System
+- FDA Process Validation Guidance 2011
+- ISPE GAMP 5 Computer System Validation
+raw_objective: 'Módulo GMP de gestión de cambios: registro de change requests con
+  audit trail ALCOA+ (Part 11), evaluación de impacto, workflow de aprobación con
+  CAPA vinculado, trazabilidad completa de cambios implementados.'
