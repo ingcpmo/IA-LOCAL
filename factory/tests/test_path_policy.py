@@ -129,7 +129,7 @@ def test_valid_project_tree_returns_200():
     import httpx
     key = _get_api_key()
     r = httpx.get(
-        "http://localhost:9000/api/v1/layer8/workspaces/r6_change_control/tree",
+        "http://localhost:9000/api/v1/layer8/workspaces/c8_alcoa_validator/tree",
         headers={"x-api-key": key},
         timeout=10,
     )
@@ -168,7 +168,7 @@ def test_headless_logs_response_has_no_absolute_path():
     import httpx
     key = _get_api_key()
     r = httpx.get(
-        "http://localhost:9000/api/v1/layer8/missions/r6_change_control/headless/logs",
+        "http://localhost:9000/api/v1/layer8/missions/c8_alcoa_validator/headless/logs",
         headers={"x-api-key": key},
         timeout=10,
     )
@@ -206,7 +206,7 @@ def test_valid_artifacts_returns_200():
     import httpx
     key = _get_api_key()
     r = httpx.get(
-        "http://localhost:9000/api/v1/layer8/missions/r6_change_control/artifacts",
+        "http://localhost:9000/api/v1/layer8/missions/c8_alcoa_validator/artifacts",
         headers={"x-api-key": key},
         timeout=10,
     )

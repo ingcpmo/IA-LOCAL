@@ -1,0 +1,84 @@
+version: "3.9"
+
+# GMP Change Control Module — r6_change_control
+# Puertos asignados por factory/registry/ports.yaml
+# API: 8102 | Postgres: 5434 | Redis: 6381
+# NOTA: deploy_docker_if_gates_pass: false — NO iniciar sin confirmación humana
+
+services:
+  r6_cc_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: r6_cc_api
+    restart: unless-stopped
+    ports:
+      - "8102:8000"
+    environment:
+      - APP_NAME=GMP Change Control Module
+      - AUDIT_LOG_DIR=/app/data/audit_logs
+      - AUDIT_LOG_HASH_ALGO=sha256
+      - DATA_DIR=/app/data
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      r6_cc_postgres:
+        condition: service_healthy
+      r6_cc_redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - r6_net
+
+  r6_cc_postgres:
+    image: postgres:15-alpine
+    container_name: r6_cc_postgres
+    restart: unless-stopped
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: r6_change_control
+      POSTGRES_USER: r6_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    env_file:
+      - .env
+    volumes:
+      - r6_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U r6_user -d r6_change_control"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - r6_net
+
+  r6_cc_redis:
+    image: redis:7-alpine
+    container_name: r6_cc_redis
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - r6_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - r6_net
+
+networks:
+  r6_net:
+    name: r6_change_control_net
+
+volumes:
+  r6_postgres_data:
+  r6_redis_data:

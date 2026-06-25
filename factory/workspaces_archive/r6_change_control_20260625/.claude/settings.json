@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(*)",
+      "Write(factory/workspaces/r6_change_control/*)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(cat *)"
+    ],
+    "deny": [
+      "Bash(pip *)",
+      "Bash(pip3 *)",
+      "Bash(docker *)",
+      "Bash(git push*)",
+      "Bash(rm *)",
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(sudo *)"
+    ]
+  }
+}

@@ -1,9 +1,13 @@
 """
-Guard U8: riesgos de observabilidad — remediación r6 y zombie de puerto.
+Guard U8/U12: riesgos de observabilidad — lógica de endpoint y estado post-U12.
 
-Verifica que /api/v1/status/risks exponga:
-  R6 — RISK_REMEDIATION_*  para misiones en returned_to_adjustments
-  R7 — RISK_PORT_UNDEPLOYED_* para puertos asignados sin deployment activo
+U8  — verificó que /status/risks exponía R6+R7 para r6_change_control.
+U12 — r6_change_control cancelada y archivada; ambos riesgos resueltos.
+
+Tests actuales verifican:
+  - Endpoint con forma correcta siempre
+  - Estado limpio post-U12: sin RISK_REMEDIATION_R6 ni RISK_PORT_UNDEPLOYED_R6
+  - lab_qc_project activo sigue sin generar zombie
 """
 
 import sys
@@ -42,59 +46,30 @@ def test_risks_endpoint_returns_valid_shape():
     assert data["count"] == len(data["risks"])
 
 
-def test_remediation_risk_present_for_returned_mission():
-    """R6: misiones en returned_to_adjustments generan RISK_REMEDIATION_*."""
+def test_no_r6_remediation_risk_after_u12():
+    """U12: r6_change_control cancelada — RISK_REMEDIATION_R6 debe estar ausente."""
     data = _get_risks()
     ids = [r["id"] for r in data["risks"]]
-    remediation = [i for i in ids if i.startswith("RISK_REMEDIATION_")]
-    assert len(remediation) >= 1, (
-        f"Esperado al menos un RISK_REMEDIATION_*, risks actuales: {ids}"
+    assert "RISK_REMEDIATION_R6_CHANGE_CONTROL" not in ids, (
+        f"r6_change_control fue resuelta en U12 pero el riesgo persiste: {ids}"
     )
 
 
-def test_remediation_risk_r6_specifically():
-    """El riesgo de r6_change_control debe estar presente."""
+def test_no_zombie_port_r6_after_u12():
+    """U12: puerto 8102 liberado del registry — RISK_PORT_UNDEPLOYED_R6 debe estar ausente."""
     data = _get_risks()
     ids = [r["id"] for r in data["risks"]]
-    assert "RISK_REMEDIATION_R6_CHANGE_CONTROL" in ids, (
-        f"RISK_REMEDIATION_R6_CHANGE_CONTROL no encontrado. Risks: {ids}"
+    assert "RISK_PORT_UNDEPLOYED_R6_CHANGE_CONTROL" not in ids, (
+        f"Puerto 8102 liberado en U12 pero el riesgo zombie persiste: {ids}"
     )
 
 
-def test_remediation_risk_has_return_reason():
+def test_clean_state_post_u12():
+    """U12: sistema sin riesgos activos tras cierre operativo."""
     data = _get_risks()
-    for r in data["risks"]:
-        if r["id"] == "RISK_REMEDIATION_R6_CHANGE_CONTROL":
-            assert "motivo" in r["description"].lower() or "reason" in r["description"].lower()
-            assert r["severity"] == "medio"
-            return
-    pytest.fail("RISK_REMEDIATION_R6_CHANGE_CONTROL no encontrado")
-
-
-def test_zombie_port_risk_present():
-    """R7: puerto 8102 asignado sin deployment genera RISK_PORT_UNDEPLOYED_*."""
-    data = _get_risks()
-    ids = [r["id"] for r in data["risks"]]
-    zombie = [i for i in ids if i.startswith("RISK_PORT_UNDEPLOYED_")]
-    assert len(zombie) >= 1, (
-        f"Esperado al menos un RISK_PORT_UNDEPLOYED_*, risks actuales: {ids}"
+    assert data["count"] == 0, (
+        f"Se esperaba count=0 tras U12, encontrado: {data['risks']}"
     )
-
-
-def test_zombie_port_r6_specifically():
-    data = _get_risks()
-    ids = [r["id"] for r in data["risks"]]
-    assert "RISK_PORT_UNDEPLOYED_R6_CHANGE_CONTROL" in ids
-
-
-def test_zombie_port_risk_mentions_port_number():
-    data = _get_risks()
-    for r in data["risks"]:
-        if r["id"] == "RISK_PORT_UNDEPLOYED_R6_CHANGE_CONTROL":
-            assert "8102" in r["description"]
-            assert r["severity"] == "info"
-            return
-    pytest.fail("RISK_PORT_UNDEPLOYED_R6_CHANGE_CONTROL no encontrado")
 
 
 def test_no_spurious_risk_for_lab_qc_deployed():
