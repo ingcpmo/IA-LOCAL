@@ -1,0 +1,58 @@
+project_id: oos_hplc_investigator
+client_type: pharma_mfg_site
+objective: 'Módulo de gestión e investigación de resultados OOS (Out-of-Specification)
+  para análisis HPLC en laboratorio de control de calidad. El sistema debe guiar al
+  analista a través del flujo FDA OOS 2006 en dos fases: Fase 1 (investigación de
+  laboratorio: error del analista, cálculo, equipo, estándar, muestra) y Fase 2 (investigación
+  completa con segunda muestra, segunda analista, comité de revisión). Debe generar
+  el registro ALCOA+ con timestamp UTC, firma electrónica del analista y del supervisor,
+  decisión de disposición del lote (aprobado/rechazado/retesteo), y audit trail inmutable
+  compatible con 21 CFR Part 11. Cliente: laboratorio QC de manufactura de sólidos
+  orales.'
+regulatory_scope:
+- 21_CFR_PART_11
+- 21_CFR_211_192
+- ALCOA_PLUS
+- FDA_OOS_GUIDANCE_2006
+documents:
+  FDA OOS Guidance 2006: pending
+  FDA Data Integrity Guidance 2018: pending
+  USP 1058: pending
+constraints:
+- analyze_requirement
+- design_agents
+- create_workspace
+- run_claude_code
+- generate_code
+- run_tests
+- run_quality_gates
+- create_release_candidate
+mission_approval:
+  autonomy_level: controlled_full
+  allowed_actions:
+  - analyze_requirement
+  - design_agents
+  - create_workspace
+  - run_claude_code
+  - generate_code
+  - generate_tests
+  - run_quality_gates
+  - create_release
+  stop_conditions:
+  - quality_gate_fail
+  - resource_limit_exceeded
+  - claude_execution_failed
+  final_human_decision_required:
+  - deploy_docker
+  deploy_docker_if_gates_pass: false
+linked_release: {}
+status: approved
+created_at: '2026-06-25T21:13:30.004116+00:00'
+approved_at: '2026-06-25T21:13:54.594661+00:00'
+closed_at: null
+history:
+- event: approved
+  at: '2026-06-25T21:13:54.594661+00:00'
+  by: cesar
+  decision_origin: human_confirmed
+  recorded_by: cesar

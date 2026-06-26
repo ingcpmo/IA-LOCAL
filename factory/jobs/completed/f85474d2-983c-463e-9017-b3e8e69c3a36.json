@@ -1,0 +1,42 @@
+{
+  "job_id": "f85474d2-983c-463e-9017-b3e8e69c3a36",
+  "project_id": "oos_hplc_investigator",
+  "job_type": "headless_run",
+  "status": "completed",
+  "payload": {
+    "source": "autonomous_build_orchestrator",
+    "policy": {
+      "headless_allowed": true,
+      "deploy_allowed": false,
+      "settings_path": "/home/ing_cpmo/factory/workspaces/oos_hplc_investigator/.claude/settings.json",
+      "policy_summary": {
+        "allowed_actions": [
+          "analyze_requirement",
+          "design_agents",
+          "create_workspace",
+          "run_claude_code",
+          "generate_code",
+          "generate_tests",
+          "run_quality_gates",
+          "create_release"
+        ],
+        "stop_conditions": [
+          "quality_gate_fail",
+          "resource_limit_exceeded",
+          "claude_execution_failed"
+        ],
+        "final_human_decision_required": [
+          "deploy_docker"
+        ]
+      }
+    }
+  },
+  "created_at": "2026-06-26T18:34:47.454942+00:00",
+  "updated_at": "2026-06-26T18:38:08.642871+00:00",
+  "result": {
+    "returncode": 0,
+    "log_file": "/home/ing_cpmo/factory/workspaces/oos_hplc_investigator/logs/headless_1782498887.log",
+    "completed_at": "2026-06-26T18:38:08.642723+00:00"
+  },
+  "error": null
+}

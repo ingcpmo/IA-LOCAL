@@ -1,0 +1,41 @@
+project_id: oos_hplc_investigator
+domains:
+- LIMS
+- HPLC
+- OOS
+- DATA_INTEGRITY
+regulatory_scope:
+- 21_CFR_PART_11
+- 21_CFR_211_192
+- ALCOA_PLUS
+- FDA_OOS_GUIDANCE_2006
+dual_use: false
+part11_required: true
+alcoa_plus_required: true
+client_needs:
+- Gestión de datos LIMS con audit trail y control de acceso
+- Revisión de datos HPLC (SST, integración de picos, secuencias)
+- Investigación OOS Fase I/II conforme FDA OOS Guidance 2022
+- Control de integridad de datos (ALCOA+ / 21 CFR Part 11)
+constraints:
+- analyze_requirement
+- design_agents
+- create_workspace
+- run_claude_code
+- generate_code
+- run_tests
+- run_quality_gates
+- create_release_candidate
+pending_documents:
+- FDA OOS Guidance 2006
+- FDA Data Integrity Guidance 2018
+- USP 1058
+raw_objective: 'Módulo de gestión e investigación de resultados OOS (Out-of-Specification)
+  para análisis HPLC en laboratorio de control de calidad. El sistema debe guiar al
+  analista a través del flujo FDA OOS 2006 en dos fases: Fase 1 (investigación de
+  laboratorio: error del analista, cálculo, equipo, estándar, muestra) y Fase 2 (investigación
+  completa con segunda muestra, segunda analista, comité de revisión). Debe generar
+  el registro ALCOA+ con timestamp UTC, firma electrónica del analista y del supervisor,
+  decisión de disposición del lote (aprobado/rechazado/retesteo), y audit trail inmutable
+  compatible con 21 CFR Part 11. Cliente: laboratorio QC de manufactura de sólidos
+  orales.'

@@ -1,0 +1,42 @@
+project_id: oos_hplc_investigator
+requirements:
+- domain: LIMS
+  regulation_ref: 21_CFR_PART_11
+  requirement: Audit trail LIMS
+  source_status: available_as_reference
+  text: null
+- domain: LIMS
+  regulation_ref: ALCOA_PLUS
+  requirement: Trazabilidad de datos
+  source_status: available_as_reference
+  text: null
+- domain: HPLC
+  regulation_ref: 21_CFR_PART_211
+  requirement: Análisis de datos analíticos
+  source_status: available_as_reference
+  text: null
+- domain: HPLC
+  regulation_ref: ICH_Q2R1
+  requirement: Validación HPLC
+  source_status: PENDING_DOCUMENT
+  text: PENDING_DOCUMENT — fuente PDF requerida antes de go-live
+- domain: OOS
+  regulation_ref: 21_CFR_PART_211
+  requirement: Investigación OOS
+  source_status: available_as_reference
+  text: null
+- domain: OOS
+  regulation_ref: FDA_OOS_GUIDANCE_2022
+  requirement: Procedimiento OOS
+  source_status: PENDING_DOCUMENT
+  text: PENDING_DOCUMENT — fuente PDF requerida antes de go-live
+- domain: DATA_INTEGRITY
+  regulation_ref: 21_CFR_PART_11
+  requirement: Electronic records
+  source_status: available_as_reference
+  text: null
+- domain: DATA_INTEGRITY
+  regulation_ref: ALCOA_PLUS
+  requirement: Principios ALCOA+
+  source_status: available_as_reference
+  text: null

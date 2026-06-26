@@ -21,4 +21,10 @@ allocations:
       postgres: 5433
       redis: 6380
     allocated_at: '2026-06-10T23:43:09.022063+00:00'
+  oos_hplc_investigator:
+    ports:
+      api: 8102
+      postgres: 5434
+      redis: 6381
+    allocated_at: '2026-06-25T21:18:57.706072+00:00'
 rule: validar con 'ss -tlnp' antes de asignar y antes de cada deploy
