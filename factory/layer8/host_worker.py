@@ -104,19 +104,23 @@ def poll_and_execute(once: bool = True) -> dict:
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / f"headless_{int(time.time())}.log"
 
+    cfg_pre = yaml.safe_load(RUNTIME_CONFIG.read_text(encoding="utf-8")) or {} if RUNTIME_CONFIG.exists() else {}
     write_event("layer8_claude_execution_started", project_id, {
         "mode": "headless_host_worker",
         "job_id": job_id,
         "claude_path": claude_path,
         "log_file": str(log_file),
+        "claude_model": cfg_pre.get("claude_model", "claude-sonnet-4-6"),
     })
 
     try:
         cfg = yaml.safe_load(RUNTIME_CONFIG.read_text(encoding="utf-8")) or {} if RUNTIME_CONFIG.exists() else {}
         timeout = cfg.get("headless_timeout_seconds", 1800)
+        model = cfg.get("claude_model", "claude-sonnet-4-6")
 
         proc = subprocess.run(
             [claude_path, "-p", task_content,
+             "--model", model,
              "--output-format", "json",
              "--no-session-persistence",
              "--permission-mode", "auto"],

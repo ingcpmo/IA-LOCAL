@@ -72,6 +72,8 @@ VALID_EVENTS = {
     "release_candidate_rejected",
     "rc_enqueued",
     "rc_reviewed",
+    # V2 — configuración de modelo Claude Code
+    "claude_model_changed",
 }
 
 

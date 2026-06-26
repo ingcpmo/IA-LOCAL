@@ -65,10 +65,11 @@ def test_no_zombie_port_r6_after_u12():
 
 
 def test_clean_state_post_u12():
-    """U12: sistema sin riesgos activos tras cierre operativo."""
+    """U12+V1: sin riesgos WARNING/ERROR. INFO aceptable para RCs aprobados sin deploy aún."""
     data = _get_risks()
-    assert data["count"] == 0, (
-        f"Se esperaba count=0 tras U12, encontrado: {data['risks']}"
+    blocking = [r for r in data["risks"] if r.get("severity") not in ("info",)]
+    assert len(blocking) == 0, (
+        f"Se esperaban solo riesgos info, encontrado riesgos bloqueantes: {blocking}"
     )
 
 

@@ -420,6 +420,39 @@ tr:hover td{background:#10161d}
           </div>
         </div>
 
+        <!-- V2: Configuración de modelo Claude Code -->
+        <div class="sec-h" style="margin-top:26px"><h3>Modelo Claude Code</h3><span class="bar"></span></div>
+        <div class="grid g2" id="claude-model-panel">
+          <div class="card">
+            <div class="between"><h3>Modelo activo</h3><span class="chip c-mute" id="active-model-badge">cargando…</span></div>
+            <div class="hr"></div>
+            <div class="field"><label>Modelo para próximo headless</label>
+              <select id="claude-model-select" style="width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:11px">
+                <option value="">Cargando modelos…</option>
+              </select>
+            </div>
+            <div class="field"><label>Responsable del cambio (nombre real)</label>
+              <input id="claude-model-changed-by" type="text" placeholder="p.ej. Cesar" autocomplete="off" style="width:100%">
+            </div>
+            <div class="actions">
+              <button class="btn" onclick="submitModelChange()">Actualizar modelo</button>
+              <span id="model-change-status" class="meta" style="font-size:11px"></span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="between"><h3>CLI Estado</h3><span class="chip c-mute" id="cli-auth-badge">—</span></div>
+            <div class="hr"></div>
+            <div class="meta mono" style="line-height:2;font-size:11px">
+              instalado &nbsp; <span id="cli-installed-val">—</span><br>
+              versión &nbsp;&nbsp;&nbsp; <span id="cli-version-val">—</span><br>
+              modelo &nbsp;&nbsp;&nbsp;&nbsp; <span id="cli-model-val">—</span>
+            </div>
+            <div class="meta" style="margin-top:8px;font-size:10px;color:var(--faint)">
+              La clave de Anthropic vive en el host y nunca se expone aquí. El cambio queda auditado en cadena Part-11.
+            </div>
+          </div>
+        </div>
+
         <div class="sec-h"><h3>Tests &amp; Quality gates</h3><span class="bar"></span></div>
         <div class="grid g2">
           <div class="card">
@@ -859,6 +892,7 @@ async function refresh(v){
     }
     if(v==='pipeline'){
       await refreshPipeline();
+      await loadClaudeStatus();
     }
     if(v==='dash'){
       const rd=await fetch(API_BASE+"/api/v1/deployments/lab_qc_project",{headers:headers()});
@@ -1155,4 +1189,73 @@ async function submitHeadlessOff(){
     else { const e=await r.json().catch(()=>({})); toast('Error '+r.status+': '+(e.detail||'ver consola')); }
   }catch(e){ toast('Error de red: '+e.message); }
 }
+
+// === V2: Claude model config ===
+async function loadClaudeStatus(){
+  if(!CONNECTED) return;
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer8/claude/status',{headers:headers()});
+    if(!r.ok) return;
+    const d=await r.json();
+
+    const badge=document.getElementById('active-model-badge');
+    if(badge) badge.textContent=d.active_model||'—';
+
+    const sel=document.getElementById('claude-model-select');
+    if(sel && d.available_models){
+      sel.innerHTML=d.available_models.map(m=>
+        `<option value="${m.id}"${m.id===d.active_model?' selected':''}>${m.label}</option>`
+      ).join('');
+    }
+
+    const installed=d.cli_installed;
+    const authBadge=document.getElementById('cli-auth-badge');
+    if(authBadge){ authBadge.textContent=installed?'instalado':'no encontrado'; authBadge.className='chip '+(installed?'c-pass':'c-warn'); }
+    const instEl=document.getElementById('cli-installed-val');
+    if(instEl) instEl.textContent=installed?'sí':'no';
+    const verEl=document.getElementById('cli-version-val');
+    if(verEl) verEl.textContent=d.cli_version||'—';
+    const modEl=document.getElementById('cli-model-val');
+    if(modEl) modEl.textContent=d.active_model||'—';
+
+  }catch(e){ console.warn('claude/status no disponible:',e); }
+}
+
+let _modelChanging=false;
+async function submitModelChange(){
+  if(_modelChanging) return;
+  const model=document.getElementById('claude-model-select')?.value;
+  const changedBy=(document.getElementById('claude-model-changed-by')?.value||'').trim();
+  const statusEl=document.getElementById('model-change-status');
+
+  if(!model){ if(statusEl) statusEl.textContent='Selecciona un modelo'; return; }
+  if(!changedBy){ if(statusEl) statusEl.textContent='Escribe tu nombre real'; return; }
+  const reserved=['human','agent','system','admin','user','factory'];
+  if(reserved.includes(changedBy.toLowerCase())){
+    if(statusEl) statusEl.textContent='Nombre genérico rechazado — usa nombre real';
+    return;
+  }
+
+  _modelChanging=true;
+  if(statusEl) statusEl.textContent='Actualizando…';
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer8/claude/config',{
+      method:'POST', headers:headers(),
+      body:JSON.stringify({model, changed_by:changedBy})
+    });
+    const data=await r.json().catch(()=>({}));
+    if(r.ok && data.active_model){
+      const badge=document.getElementById('active-model-badge');
+      if(badge) badge.textContent=data.active_model;
+      const modEl=document.getElementById('cli-model-val');
+      if(modEl) modEl.textContent=data.active_model;
+      if(statusEl) statusEl.textContent='✓ Actualizado · auditado';
+      toast('Modelo: '+data.active_model+' · '+data.changed_by);
+    } else {
+      if(statusEl) statusEl.textContent=data.detail||'Error al actualizar';
+    }
+  }catch(e){ if(statusEl) statusEl.textContent='Error de red: '+e.message; }
+  _modelChanging=false;
+}
+// === fin V2 ===
 </script>

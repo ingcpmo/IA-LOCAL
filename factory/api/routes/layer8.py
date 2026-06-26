@@ -7,6 +7,8 @@ Desde F7/F8: soporta headless controlado (doble llave: API call + headless_enabl
 """
 
 import json
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -34,6 +36,21 @@ from factory.core.audit_writer import write_event
 router = APIRouter(prefix="/api/v1/layer8", tags=["layer8"])
 
 RELEASES_BASE = Path(__file__).parent.parent.parent / "releases"
+
+# V2: whitelist explícita de modelos (nunca dinámica)
+_ALLOWED_MODELS = [
+    {"id": "claude-haiku-4-5-20251001", "label": "Haiku 4.5  — rápido / económico",    "tier": "fast"},
+    {"id": "claude-sonnet-4-6",          "label": "Sonnet 4.6 — balance (recomendado)", "tier": "balanced"},
+    {"id": "claude-opus-4-6",            "label": "Opus 4.6   — máxima calidad",        "tier": "quality"},
+    {"id": "claude-opus-4-8",            "label": "Opus 4.8   — frontier",              "tier": "frontier"},
+]
+_ALLOWED_MODEL_IDS = {m["id"] for m in _ALLOWED_MODELS}
+_GENERIC_NAMES = {"human", "agent", "system", "admin", "user", "factory"}
+
+
+class ClaudeConfigUpdate(BaseModel):
+    model: str
+    changed_by: str
 RUNTIME_CONFIG = Path(__file__).parent.parent.parent / "runtime" / "runtime_config.yaml"
 STATUS_FILE = Path(__file__).parent.parent.parent / "runtime" / "claude_status.json"
 
@@ -92,16 +109,39 @@ def get_layer8_status():
 
 @router.get("/claude/status")
 def get_claude_status():
-    """Retorna el último claude_status.json (sin credenciales)."""
-    if not STATUS_FILE.exists():
-        return {"status": "not_checked", "note": "Ejecutar POST /check para generar."}
+    """Estado del CLI de Claude + modelo activo. Nunca expone credenciales."""
+    # Leer config de modelo desde runtime_config
     try:
-        d = json.loads(STATUS_FILE.read_text(encoding="utf-8"))
-        SENSITIVE = {"token", "password", "credential", "secret", "api_key", "auth_token"}
-        safe = {k: v for k, v in d.items() if k.lower() not in SENSITIVE}
-        return safe
-    except Exception as e:
-        raise HTTPException(500, str(e))
+        config = yaml.safe_load(RUNTIME_CONFIG.read_text(encoding="utf-8")) or {} if RUNTIME_CONFIG.exists() else {}
+    except Exception:
+        config = {}
+
+    # Base: leer claude_status.json si existe (escrito por host_worker o POST /check)
+    base: dict[str, Any] = {}
+    if STATUS_FILE.exists():
+        try:
+            d = json.loads(STATUS_FILE.read_text(encoding="utf-8"))
+            SENSITIVE = {"token", "password", "credential", "secret", "api_key", "auth_token"}
+            base = {k: v for k, v in d.items() if k.lower() not in SENSITIVE}
+        except Exception:
+            base = {"status": "unreadable"}
+    else:
+        base = {"status": "not_checked", "note": "Ejecutar POST /claude/status/check para generar."}
+
+    # cli_installed desde el status JSON del host (no desde shutil.which dentro del contenedor)
+    cli_installed = base.get("cli_found", False)
+    cli_version = base.get("version")
+
+    # V2: agregar info de modelo
+    base.update({
+        "cli_installed": cli_installed,
+        "cli_version": cli_version,
+        "active_model": config.get("claude_model", "claude-sonnet-4-6"),
+        "headless_enabled": config.get("headless_enabled", False),
+        "available_models": _ALLOWED_MODELS,
+        # La clave de Anthropic vive en el host — nunca se expone aquí
+    })
+    return base
 
 
 @router.post("/claude/status/check")
@@ -112,6 +152,52 @@ def post_claude_status_check():
         return result
     except Exception as e:
         raise HTTPException(500, str(e))
+
+
+@router.post("/claude/config")
+def post_claude_config(body: ClaudeConfigUpdate):
+    """
+    Actualiza el modelo de Claude Code para próximas ejecuciones headless.
+    Requiere nombre real del responsable (Part-11). Auditado en cadena.
+    NUNCA expone ni modifica la API key de Anthropic.
+    """
+    import datetime
+
+    # Validar modelo contra whitelist
+    if body.model not in _ALLOWED_MODEL_IDS:
+        raise HTTPException(422, f"Modelo no permitido: '{body.model}'. Permitidos: {sorted(_ALLOWED_MODEL_IDS)}")
+
+    # Validar nombre real (no genérico)
+    changed_by = body.changed_by.strip()
+    if not changed_by or changed_by.lower() in _GENERIC_NAMES:
+        raise HTTPException(422, f"changed_by debe ser nombre real, no genérico: '{body.changed_by}'")
+
+    try:
+        config = yaml.safe_load(RUNTIME_CONFIG.read_text(encoding="utf-8")) or {} if RUNTIME_CONFIG.exists() else {}
+    except Exception:
+        config = {}
+
+    prev_model = config.get("claude_model", "claude-sonnet-4-6")
+    config["claude_model"] = body.model
+    config["model_changed_by"] = changed_by
+    config["model_changed_at"] = datetime.datetime.utcnow().isoformat() + "Z"
+
+    RUNTIME_CONFIG.write_text(yaml.safe_dump(config, sort_keys=False, allow_unicode=True), encoding="utf-8")
+
+    write_event("claude_model_changed", "factory_config", {
+        "prev_model": prev_model,
+        "new_model": body.model,
+        "changed_by": changed_by,
+        "decision_origin": "human_confirmed",
+    })
+
+    return {
+        "status": "updated",
+        "prev_model": prev_model,
+        "active_model": body.model,
+        "changed_by": changed_by,
+        "audit": "event registered in chain",
+    }
 
 
 # ── Jobs ───────────────────────────────────────────────────────────────────────

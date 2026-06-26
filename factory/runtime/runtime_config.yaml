@@ -2,3 +2,6 @@ default_mode: manual_assisted
 headless_enabled: false
 headless_scope: oos_hplc_investigator
 headless_timeout_seconds: 600
+claude_model: claude-sonnet-4-6
+model_changed_by: Cesar
+model_changed_at: '2026-06-26T20:08:14.591269Z'
