@@ -1,0 +1,15 @@
+{
+  "rc_id": "oos_hplc_investigator-rc-v1.1-20260626T191819",
+  "project_id": "oos_hplc_investigator",
+  "version": "v1.1",
+  "status": "pending_human_confirmation",
+  "decision_origin": "agent_proposed",
+  "approved_by": null,
+  "artifacts_path": "/home/ing_cpmo/factory/release_candidates/oos_hplc_investigator/oos_hplc_investigator-rc-v1.1-20260626T191819/artifacts",
+  "proposed_at": "2026-06-26T19:18:19.902273+00:00",
+  "sha256sums": {
+    "test_report.json": "926a96d6023354a938d638b90b3795fae8339a9c880611e2db772b245c7e5397",
+    "headless_headless_1782498887.log": "5e3a2af4fe929fab890ccc6d68458d61bc1a8fc71eb020113345d26a1bbd867c",
+    "diff.txt": "a3d9646de606872c1b7f2a7e1a45eceb50fc42d05905bb779f0a484a443acb43"
+  }
+}

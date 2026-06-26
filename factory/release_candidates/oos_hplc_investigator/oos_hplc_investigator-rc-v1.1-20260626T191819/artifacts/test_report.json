@@ -1,0 +1,11 @@
+{
+  "project": "oos_hplc_investigator",
+  "generated_at": "2026-06-26T19:18:16.148014+00:00",
+  "note": "PENDING_DOCUMENT markers resueltos \u2014 hplc_validator.py referencia internal_summary_usp_621_chromatography.txt",
+  "summary": {
+    "passed": 12,
+    "failed": 0,
+    "returncode": 0
+  },
+  "output": "============================= test session starts ==============================\nplatform linux -- Python 3.11.2, pytest-9.1.0, pluggy-1.6.0 -- /usr/bin/python3\ncachedir: .pytest_cache\nrootdir: /home/ing_cpmo/factory/workspaces/oos_hplc_investigator\nplugins: anyio-4.13.0\ncollecting ... collected 12 items\n\ntests/test_oos_hplc.py::test_create_oos_record_initial_state_and_is_oos PASSED [  8%]\ntests/test_oos_hplc.py::test_add_finding_immutability PASSED             [ 16%]\ntests/test_oos_hplc.py::test_advance_to_phase2_without_findings_raises PASSED [ 25%]\ntests/test_oos_hplc.py::test_close_oos_in_phase1_raises PASSED           [ 33%]\ntests/test_oos_hplc.py::test_compute_record_hash_prefix_and_stability PASSED [ 41%]\ntests/test_oos_hplc.py::test_validate_alcoa_all_present PASSED           [ 50%]\ntests/test_oos_hplc.py::test_create_audit_stamp_required_fields PASSED   [ 58%]\ntests/test_oos_hplc.py::test_sign_record_invalid_role_raises PASSED      [ 66%]\ntests/test_oos_hplc.py::test_validate_sst_low_theoretical_plates PASSED  [ 75%]\ntests/test_oos_hplc.py::test_detect_peak_anomalies_negative_area PASSED  [ 83%]\ntests/test_oos_hplc.py::test_calculate_rsd_identical_values PASSED       [ 91%]\ntests/test_oos_hplc.py::test_evaluate_disposition_unclosed_record_raises PASSED [100%]\n\n============================== 12 passed in 0.02s ==============================\n"
+}
