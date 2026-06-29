@@ -74,6 +74,11 @@ VALID_EVENTS = {
     "rc_reviewed",
     # V2 — configuración de modelo Claude Code
     "claude_model_changed",
+    # W1 — RC canónico explícito
+    "rc_marked_canonical",
+    "rc_unmarked_canonical",
+    # W1 — revisión de misión
+    "layer9_mission_revised",
 }
 
 

@@ -500,3 +500,156 @@ def get_workspace_file(project_id: str, path: str):
         "ext": target.suffix,
         "content": target.read_text(encoding="utf-8", errors="replace"),
     }
+
+
+# ── Preflight F5 ───────────────────────────────────────────────────────────────
+
+_RC_BASE      = Path(__file__).parent.parent.parent / "release_candidates"
+_WS_BASE      = Path(__file__).parent.parent.parent / "workspaces"
+_JOBS_BASE    = Path(__file__).parent.parent.parent / "jobs"
+_MISSIONS_DIR = Path(__file__).parent.parent.parent / "layer9" / "missions"
+
+
+def _check_mission_approved(project_id: str) -> dict:
+    mission_file = _MISSIONS_DIR / f"{project_id}.yaml"
+    if not mission_file.exists():
+        return {"id": "mission_approved", "ok": False, "detail": "Misión no encontrada"}
+    m = yaml.safe_load(mission_file.read_text(encoding="utf-8"))
+    ok = m.get("status") == "approved"
+    approved_by = next(
+        (h.get("by", "") for h in (m.get("history") or []) if h.get("event") == "approved"),
+        m.get("approved_by", ""),
+    )
+    return {"id": "mission_approved", "ok": ok,
+            "detail": f"approved by {approved_by}" if ok else f"status={m.get('status')}"}
+
+
+def _check_headless_completed(project_id: str) -> dict:
+    best = None
+    for f in sorted((_JOBS_BASE / "completed").glob("*.json")):
+        try:
+            j = json.loads(f.read_text(encoding="utf-8"))
+            if j.get("project_id") == project_id and j.get("job_type") == "headless_run":
+                best = j
+        except Exception:
+            continue
+    if not best:
+        return {"id": "headless_completed", "ok": False, "detail": "Sin job headless completado"}
+    rc = (best.get("result") or {}).get("returncode", -1)
+    jid = best.get("job_id", "?")[:8]
+    return {"id": "headless_completed", "ok": rc == 0, "detail": f"rc={rc}, job {jid}"}
+
+
+def _check_tests_pass(project_id: str) -> dict:
+    report = None
+    ws_report = _WS_BASE / project_id / "test_report.json"
+    if ws_report.exists():
+        report = json.loads(ws_report.read_text(encoding="utf-8"))
+    else:
+        for f in sorted((_RC_BASE / project_id).rglob("test_report.json"), reverse=True):
+            report = json.loads(f.read_text(encoding="utf-8"))
+            break
+    if not report:
+        return {"id": "tests_pass", "ok": False, "detail": "Sin test_report.json"}
+    s = report.get("summary", {})
+    passed, failed = s.get("passed", 0), s.get("failed", 0)
+    ok = failed == 0 and passed > 0
+    return {"id": "tests_pass", "ok": ok, "detail": f"{passed}/{passed + failed} PASS"}
+
+
+def _check_gates_no_fail(project_id: str) -> dict:
+    gates_file = _WS_BASE / project_id / "quality_gates_report.json"
+    if not gates_file.exists():
+        return {"id": "gates_no_fail", "ok": True, "detail": "Sin reporte de quality gates (no bloquea)"}
+    d = json.loads(gates_file.read_text(encoding="utf-8"))
+    s = d.get("summary", {})
+    fail = s.get("FAIL", 0)
+    return {"id": "gates_no_fail", "ok": fail == 0,
+            "detail": f"PASS={s.get('PASS',0)} FAIL={fail} SKIP={s.get('SKIPPED',0)}"}
+
+
+def _check_rc_canonical(project_id: str) -> dict:
+    rc_dir = _RC_BASE / project_id
+    if rc_dir.exists():
+        for f in rc_dir.rglob("rc_manifest.json"):
+            try:
+                d = json.loads(f.read_text(encoding="utf-8"))
+                if d.get("is_canonical") is True:
+                    return {"id": "rc_canonical_marked", "ok": True,
+                            "detail": f"RC {d.get('version','?')} marcado como canónico"}
+            except Exception:
+                continue
+    return {"id": "rc_canonical_marked", "ok": False, "detail": "Sin RC canónico marcado"}
+
+
+def _check_port(project_id: str) -> tuple[dict, dict]:
+    from factory.core.port_registry import get_allocated_ports, validate_port_free
+    ports = get_allocated_ports(project_id)
+    if not ports:
+        return (
+            {"id": "port_reserved",    "ok": False, "detail": "Sin puerto reservado"},
+            {"id": "no_docker_active", "ok": True,  "detail": "Sin puerto → sin contenedor activo"},
+        )
+    api_port = ports["api"]
+    port_free = validate_port_free(api_port)
+    return (
+        {"id": "port_reserved",    "ok": True, "detail": str(api_port)},
+        {"id": "no_docker_active", "ok": port_free,
+         "detail": f"Sin contenedor activo en {api_port}" if port_free else f"Puerto {api_port} en uso"},
+    )
+
+
+def _check_pending_docs(project_id: str) -> dict:
+    ws_report = _WS_BASE / project_id / "test_report.json"
+    if not ws_report.exists():
+        return {"id": "no_pending_documents_blocking", "ok": True, "detail": "Sin test_report"}
+    d = json.loads(ws_report.read_text(encoding="utf-8"))
+    note = d.get("note", "")
+    if "PENDING_DOCUMENT" in note and "resueltos" not in note.lower():
+        return {"id": "no_pending_documents_blocking", "ok": False, "detail": note[:100]}
+    return {"id": "no_pending_documents_blocking", "ok": True, "detail": "PENDING_DOCUMENT no bloquean"}
+
+
+@router.get("/missions/{project_id}/f5/preflight")
+def get_f5_preflight(project_id: str):
+    """
+    Checklist read-only para determinar si el proyecto está listo para F5 (deploy Docker).
+    No ejecuta nada — solo informa si se PODRÍA ejecutar F5.
+    """
+    port_check, docker_check = _check_port(project_id)
+    checks = [
+        _check_mission_approved(project_id),
+        _check_headless_completed(project_id),
+        _check_tests_pass(project_id),
+        _check_gates_no_fail(project_id),
+        _check_rc_canonical(project_id),
+        port_check,
+        docker_check,
+        _check_pending_docs(project_id),
+    ]
+    blockers = [c["id"] for c in checks if not c["ok"]]
+    ready = len(blockers) == 0
+
+    next_action = None
+    if "rc_canonical_marked" in blockers:
+        next_action = "Marcar RC canónico desde Mission Control"
+    elif "mission_approved" in blockers:
+        next_action = "Aprobar la misión en Layer 9"
+    elif "headless_completed" in blockers:
+        next_action = "Ejecutar headless run de la misión"
+    elif "tests_pass" in blockers:
+        next_action = "Corregir tests fallidos en el workspace"
+    elif "port_reserved" in blockers:
+        next_action = "Reservar puerto con port_registry.assign_ports"
+    elif blockers:
+        next_action = f"Resolver: {blockers[0]}"
+    else:
+        next_action = "Listo para F5 — confirmar con Cesar antes de ejecutar"
+
+    return {
+        "project_id": project_id,
+        "ready_for_f5": ready,
+        "checks": checks,
+        "blockers": blockers,
+        "next_action": next_action,
+    }

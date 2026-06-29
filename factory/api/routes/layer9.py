@@ -4,6 +4,7 @@ Capa 9 — Rutas API Mission Control (F4.5d).
 Expone las operaciones de Mission Control de Capa 9 en el factory-api.
 """
 
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -213,9 +214,22 @@ def get_review_detail(rc_id: str):
 @router.post("/review/{rc_id}/approve")
 def post_approve_rc(rc_id: str, body: ReviewDecision):
     try:
+        rc = get_rc(rc_id)
+        if rc is None:
+            raise HTTPException(404, f"RC '{rc_id}' no encontrado")
+        if rc.get("status") in ("approved", "rejected"):
+            raise HTTPException(409, {
+                "error": "rc_already_finalized",
+                "rc_id": rc_id,
+                "current_status": rc["status"],
+                "previously_decided_by": rc.get("approved_by", "?"),
+                "previously_decided_at": rc.get("decided_at", "?"),
+            })
         result = confirm_rc(rc_id, body.approved_by, "approved", body.notes)
         mark_reviewed(rc_id, "approved", body.approved_by)
         return result
+    except HTTPException:
+        raise
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
     except ValueError as e:
@@ -227,9 +241,22 @@ def post_approve_rc(rc_id: str, body: ReviewDecision):
 @router.post("/review/{rc_id}/reject")
 def post_reject_rc(rc_id: str, body: ReviewDecision):
     try:
+        rc = get_rc(rc_id)
+        if rc is None:
+            raise HTTPException(404, f"RC '{rc_id}' no encontrado")
+        if rc.get("status") in ("approved", "rejected"):
+            raise HTTPException(409, {
+                "error": "rc_already_finalized",
+                "rc_id": rc_id,
+                "current_status": rc["status"],
+                "previously_decided_by": rc.get("approved_by", "?"),
+                "previously_decided_at": rc.get("decided_at", "?"),
+            })
         result = confirm_rc(rc_id, body.approved_by, "rejected", body.notes)
         mark_reviewed(rc_id, "rejected", body.approved_by)
         return result
+    except HTTPException:
+        raise
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
     except ValueError as e:
@@ -307,3 +334,253 @@ def post_reject_mission(project_id: str, body: MissionReject):
         raise HTTPException(404, f"Misión '{project_id}' no encontrada")
     except Exception as e:
         raise HTTPException(500, str(e))
+
+
+# ── RC Canónico ────────────────────────────────────────────────────────────────
+
+_RESERVED_CANONICAL = {"human", "agent", "system", "admin", "capa8", "capa9", "layer8"}
+
+
+class MarkCanonical(BaseModel):
+    marked_by: str
+
+
+@router.get("/projects/{project_id}/rcs")
+def get_project_rcs(project_id: str):
+    """Lista todos los RC manifests de un proyecto (read-only, para Mission Control)."""
+    rc_dir = _FACTORY_ROOT / "release_candidates" / project_id
+    if not rc_dir.exists():
+        return {"project_id": project_id, "rcs": []}
+    rcs = []
+    for f in sorted(rc_dir.rglob("rc_manifest.json")):
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+            rcs.append({
+                "rc_id": d.get("rc_id"),
+                "version": d.get("version"),
+                "status": d.get("status"),
+                "is_canonical": d.get("is_canonical"),
+                "approved_by": d.get("approved_by"),
+                "decided_at": d.get("decided_at"),
+                "proposed_at": d.get("proposed_at"),
+            })
+        except Exception:
+            continue
+    return {"project_id": project_id, "rcs": rcs}
+
+
+@router.get("/projects/{project_id}/canonical")
+def get_canonical_rc(project_id: str):
+    """Devuelve el RC marcado como canónico para el project_id. 404 si no hay ninguno."""
+    import json
+    from pathlib import Path
+    rc_base = Path(__file__).parent.parent.parent.parent / "factory" / "release_candidates" / project_id
+    if not rc_base.exists():
+        raise HTTPException(404, f"No hay RCs para '{project_id}'")
+    for manifest_file in rc_base.rglob("rc_manifest.json"):
+        try:
+            d = json.loads(manifest_file.read_text(encoding="utf-8"))
+            if d.get("is_canonical") is True:
+                return d
+        except Exception:
+            continue
+    raise HTTPException(404, f"Sin RC canónico marcado para '{project_id}'")
+
+
+@router.post("/review/{rc_id}/mark-canonical")
+def post_mark_canonical(rc_id: str, body: MarkCanonical):
+    """Marca un RC aprobado como canónico. Solo un RC canónico por project_id a la vez."""
+    import json
+    from datetime import datetime, timezone
+    from pathlib import Path
+    from factory.core.audit_writer import write_event as _we
+
+    if body.marked_by.lower().strip() in _RESERVED_CANONICAL:
+        raise HTTPException(422, f"marked_by='{body.marked_by}' es reservado. Usa el nombre real.")
+
+    rc = get_rc(rc_id)
+    if rc is None:
+        raise HTTPException(404, f"RC '{rc_id}' no encontrado")
+    if rc.get("status") != "approved":
+        raise HTTPException(409, {
+            "error": "rc_not_approved",
+            "rc_id": rc_id,
+            "current_status": rc.get("status"),
+            "detail": "Solo se puede marcar como canónico un RC con status=approved",
+        })
+
+    project_id = rc["project_id"]
+    now = datetime.now(timezone.utc).isoformat()
+    rc_base = Path(__file__).parent.parent.parent.parent / "factory" / "release_candidates" / project_id
+
+    prev_canonical_id = None
+    for manifest_file in rc_base.rglob("rc_manifest.json"):
+        try:
+            d = json.loads(manifest_file.read_text(encoding="utf-8"))
+            if d.get("is_canonical") is True and d.get("rc_id") != rc_id:
+                prev_canonical_id = d.get("rc_id")
+            d["is_canonical"] = (d.get("rc_id") == rc_id)
+            if d.get("rc_id") == rc_id:
+                d["is_canonical_marked_by"] = body.marked_by
+                d["is_canonical_marked_at"] = now
+            manifest_file.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            continue
+
+    if prev_canonical_id:
+        _we("rc_unmarked_canonical", project_id, {
+            "rc_id": prev_canonical_id,
+            "unmarked_by": body.marked_by,
+            "reason": f"superseded by {rc_id}",
+        })
+
+    _we("rc_marked_canonical", project_id, {
+        "rc_id": rc_id,
+        "marked_by": body.marked_by,
+        "prev_canonical": prev_canonical_id,
+    })
+
+    return {
+        "rc_id": rc_id,
+        "project_id": project_id,
+        "is_canonical": True,
+        "marked_by": body.marked_by,
+        "marked_at": now,
+        "prev_canonical_unmarked": prev_canonical_id,
+    }
+
+
+# ── Revisión de misión ─────────────────────────────────────────────────────────
+
+_RESERVED_REVISE  = {"human", "agent", "system", "admin", "capa8", "capa9", "layer8"}
+_EDITABLE_FIELDS  = {"objective", "client_type", "regulatory_scope", "documents",
+                     "constraints", "mission_approval", "linked_release"}
+_BLOCKED_STATUSES = {"rejected", "closed"}
+
+_FACTORY_ROOT = Path(__file__).parent.parent.parent
+
+
+class MissionRevise(BaseModel):
+    changes: dict[str, Any]
+    reason: str
+    changed_by: str
+
+
+def _has_generated_code(project_id: str) -> bool:
+    app_dir = _FACTORY_ROOT / "workspaces" / project_id / "app"
+    if not app_dir.exists():
+        return False
+    return any(app_dir.rglob("*.py"))
+
+
+def _has_approved_rc(project_id: str) -> bool:
+    rc_dir = _FACTORY_ROOT / "release_candidates" / project_id
+    if not rc_dir.exists():
+        return False
+    for f in rc_dir.rglob("rc_manifest.json"):
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+            if d.get("status") == "approved":
+                return True
+        except Exception:
+            continue
+    return False
+
+
+@router.post("/missions/{project_id}/revise")
+def post_revise_mission(project_id: str, body: MissionRevise):
+    """
+    Modifica campos de una misión según la matriz de estados W1.
+    Guarda snapshot previo en missions_history/ y audita el cambio.
+    """
+    from factory.layer9.mission_control import _load_mission, _save_mission
+    from factory.core.audit_writer import write_event as _we
+    from datetime import datetime, timezone
+    import yaml
+
+    if not body.reason.strip():
+        raise HTTPException(422, "El campo 'reason' es obligatorio y no puede estar vacío.")
+    if body.changed_by.lower().strip() in _RESERVED_REVISE:
+        raise HTTPException(422, f"changed_by='{body.changed_by}' es reservado. Usa el nombre real.")
+
+    invalid_fields = set(body.changes.keys()) - _EDITABLE_FIELDS
+    if invalid_fields:
+        raise HTTPException(422, {
+            "error": "campos_no_editables",
+            "fields": sorted(invalid_fields),
+            "editable": sorted(_EDITABLE_FIELDS),
+        })
+
+    try:
+        mission = _load_mission(project_id)
+    except FileNotFoundError:
+        raise HTTPException(404, f"Misión '{project_id}' no encontrada")
+
+    status = mission.get("status", "")
+
+    if status in _BLOCKED_STATUSES:
+        raise HTTPException(409, {
+            "error": "mission_not_editable",
+            "current_status": status,
+            "detail": f"Las misiones en estado '{status}' no pueden modificarse.",
+        })
+
+    re_approve_required = False
+
+    if status == "approved":
+        if _has_approved_rc(project_id):
+            raise HTTPException(409, {
+                "error": "rc_approved_exists",
+                "current_status": status,
+                "detail": "Existe un RC aprobado. Crea una nueva misión para la versión siguiente.",
+            })
+        if _has_generated_code(project_id):
+            raise HTTPException(409, {
+                "error": "code_already_generated",
+                "current_status": status,
+                "detail": "El workspace ya tiene código generado. Crea una nueva misión.",
+            })
+        re_approve_required = True
+
+    # Guardar snapshot en missions_history/
+    now = datetime.now(timezone.utc)
+    history_dir = _FACTORY_ROOT / "layer9" / "missions_history" / project_id
+    history_dir.mkdir(parents=True, exist_ok=True)
+    rev_id = f"rev_{now.strftime('%Y%m%dT%H%M%S')}"
+    snapshot = {
+        "rev_id": rev_id,
+        "changed_by": body.changed_by,
+        "reason": body.reason,
+        "changed_at": now.isoformat(),
+        "previous_version": dict(mission),
+    }
+    (history_dir / f"{rev_id}.yaml").write_text(
+        yaml.dump(snapshot, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+
+    # Aplicar cambios
+    for field, value in body.changes.items():
+        mission[field] = value
+    mission["updated_at"] = now.isoformat()
+    if re_approve_required:
+        mission["status"] = "draft"
+        mission["approved_at"] = None
+
+    _save_mission(mission)
+
+    _we("layer9_mission_revised", project_id, {
+        "rev_id": rev_id,
+        "changed_by": body.changed_by,
+        "reason": body.reason,
+        "fields_changed": sorted(body.changes.keys()),
+        "re_approve_required": re_approve_required,
+    })
+
+    return {
+        "project_id": project_id,
+        "rev_id": rev_id,
+        "status": mission["status"],
+        "fields_changed": sorted(body.changes.keys()),
+        "re_approve_required": re_approve_required,
+        "snapshot_saved": str(history_dir / f"{rev_id}.yaml"),
+    }

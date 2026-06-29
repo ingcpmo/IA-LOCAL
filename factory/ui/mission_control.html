@@ -204,6 +204,44 @@ tr:hover td{background:#10161d}
   .menu-btn{display:inline-flex!important}
 }
 .menu-btn{display:none;all:unset;cursor:pointer;font-size:18px;padding:2px 8px;border:1px solid var(--line);border-radius:8px}
+
+/* ── W1: Detail panel ── */
+.detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;display:none;cursor:pointer}
+.detail-overlay.open{display:block}
+.detail-panel{position:fixed;right:0;top:0;bottom:0;width:540px;max-width:96vw;
+  background:var(--panel);border-left:1px solid var(--line);z-index:21;
+  overflow-y:auto;display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.detail-panel.open{transform:none}
+.dp-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;
+  gap:12px;position:sticky;top:0;background:var(--panel);z-index:1}
+.dp-close{all:unset;cursor:pointer;font-size:17px;color:var(--muted);padding:3px 7px;
+  border-radius:4px;line-height:1}.dp-close:hover{color:var(--text);background:#172029}
+.dp-body{padding:14px 18px 28px;flex:1}
+.grp-block{margin-bottom:10px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.grp-toggle{all:unset;cursor:pointer;width:100%;display:flex;align-items:center;gap:10px;
+  padding:10px 14px;background:var(--panel-2);font-size:11.5px;font-weight:650;
+  letter-spacing:.4px;text-transform:uppercase;font-family:var(--mono);color:var(--muted)}
+.grp-toggle .arrow{font-size:9px;color:var(--faint);margin-left:auto;
+  display:inline-block;transition:transform .15s}
+.grp-toggle.open .arrow{transform:rotate(90deg)}
+.grp-content{padding:12px 14px;border-top:1px solid var(--line-soft);display:none}
+.grp-content.open{display:block}
+.pf-line{display:flex;align-items:flex-start;gap:10px;padding:5px 0;
+  border-bottom:1px solid var(--line-soft);font-size:12px}
+.pf-line:last-child{border-bottom:0}
+.pf-id{font-family:var(--mono);font-size:10.5px;color:var(--muted);width:190px;flex:0 0 190px}
+.pf-dot{width:10px;height:10px;border-radius:50%;flex:0 0 10px;margin-top:3px}
+.pf-detail{color:var(--faint);font-size:11px}
+.ftree{font-family:var(--mono);font-size:11px;line-height:1.8;max-height:180px;overflow:auto}
+.ftree .fname{cursor:pointer;color:var(--primary-h)}.ftree .fname:hover{text-decoration:underline}
+.fviewer{background:#0a0f14;border:1px solid var(--line);border-radius:6px;
+  font-family:var(--mono);font-size:10.5px;line-height:1.55;padding:10px;
+  max-height:220px;overflow:auto;color:var(--faint);white-space:pre-wrap;
+  word-break:break-all;margin-top:6px}
+.dp-sub{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--faint);margin:10px 0 5px}
+.mis-row{cursor:pointer;transition:background .1s}.mis-row:hover{background:#0f1922;border-radius:6px}
 </style>
 
 <div class="shell">
@@ -536,6 +574,23 @@ tr:hover td{background:#10161d}
   </div>
 </div>
 
+<!-- W1: Detail panel overlay -->
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="dp-head">
+    <span class="seal" style="width:26px;height:26px;font-size:9px">§11</span>
+    <div>
+      <div id="dp-title" style="font-weight:640;font-size:13.5px">—</div>
+      <div id="dp-status-chip" style="margin-top:3px"></div>
+    </div>
+    <div class="spacer"></div>
+    <button class="dp-close" onclick="closeDetail()" title="Cerrar">✕</button>
+  </div>
+  <div class="dp-body" id="dp-body">
+    <div class="meta" style="color:var(--faint)">Cargando…</div>
+  </div>
+</div>
+
 <script>
 /* ---- session: API key lives only in memory ---- */
 let API_KEY="", CONNECTED=false;
@@ -624,7 +679,8 @@ function missionChip(status){
 function renderMissions(ms){
   const el=document.getElementById('missions-list'); if(!el) return;
   el.innerHTML=ms.map(m=>`
-    <div class="between" style="margin-bottom:10px">
+    <div class="between mis-row" style="margin-bottom:6px;padding:5px 6px"
+         onclick="openMissionDetail('${m.project_id.replace(/'/g,"\\'")}')" title="Ver detalle">
       <div><b class="mono">${m.project_id}</b>
       <div class="meta">${(m.objective||'').slice(0,55).replace(/</g,'&lt;')}…</div></div>
       ${missionChip(m.status)}
@@ -875,7 +931,10 @@ async function refresh(v){
         if(v==='approve') renderApproveMissions(ms);
         if(v==='dash'){
           const rj=await fetch(API_BASE+"/api/v1/layer8/jobs",{headers:headers()});
-          renderFlowDiagram(ms, rj.ok?await rj.json():[]);
+          const rjd=rj.ok?await rj.json():[];
+          const rs=await fetch(API_BASE+"/api/v1/layer8/status",{headers:headers()});
+          const rsd=rs.ok?await rs.json():{};
+          renderFlowDiagram(ms, rjd, rsd.jobs);
         }
       }
     }
@@ -925,7 +984,7 @@ const FLOW_NODES=[
   {ix:'08',lab:'Aprobaci\xf3n',dn:'aprobado',ac:'humano',td:'humano',gate:true},
 ];
 
-function missionStage(mission,jobs){
+function missionStage(mission,jobs,jobsSummary){
   if(!mission) return 1;
   const s=mission.status||'';
   const pid=mission.project_id;
@@ -937,20 +996,22 @@ function missionStage(mission,jobs){
   if(!mj.length) return 1;
   const jt=(mj[0].job_type||'').toLowerCase();
   const js=mj[0].status;
-  if(jt.includes('headless')) return js==='completed'?3:2;
-  if(jt.includes('test'))     return js==='completed'?5:4;
-  if(jt.includes('gate')||jt.includes('quality')) return js==='completed'?6:5;
-  if(jt.includes('rc')||jt.includes('release'))   return js==='completed'?7:6;
-  if(jt.includes('run_mission')||jt.includes('build')) return 3;
+  // W1: si no hay jobs running/pending, el stage siempre es "completado" en ese paso
+  const noActive=(jobsSummary?.running??0)===0&&(jobsSummary?.pending??0)===0;
+  if(jt.includes('headless')) return (js==='completed'||noActive)?3:2;
+  if(jt.includes('test'))     return (js==='completed'||noActive)?5:4;
+  if(jt.includes('gate')||jt.includes('quality')) return (js==='completed'||noActive)?6:5;
+  if(jt.includes('rc')||jt.includes('release'))   return (js==='completed'||noActive)?7:6;
+  if(jt.includes('run_mission')||jt.includes('build')) return noActive?3:3;
   return 2;
 }
 
-function renderFlowDiagram(missions,jobs){
+function renderFlowDiagram(missions,jobs,jobsSummary){
   const el=document.getElementById('flow-diagram'); if(!el) return;
   const active=missions.find(m=>!['approved','rejected','completed'].includes(m.status))||missions[0];
   const amEl=document.getElementById('dash-active-mission');
   if(amEl&&active) amEl.textContent=active.project_id;
-  const stage=missionStage(active,jobs);
+  const stage=missionStage(active,jobs,jobsSummary);
   const interrupted=(active?.status||'').includes('interrupted');
   el.innerHTML=FLOW_NODES.map((n,i)=>{
     let cls;
@@ -1258,4 +1319,238 @@ async function submitModelChange(){
   _modelChanging=false;
 }
 // === fin V2 ===
+
+// ── W1: Mission detail panel ──────────────────────────────────────────────────
+const _FILTER_PATHS=['.pytest_cache',  '__pycache__', '.pyc', '.env', '.claude', 'data/chroma'];
+function _filterFile(path){ return !_FILTER_PATHS.some(p=>path.includes(p)); }
+
+function openMissionDetail(pid){
+  document.getElementById('dp-title').textContent=pid;
+  document.getElementById('dp-status-chip').innerHTML='<span class="chip c-mute">cargando…</span>';
+  document.getElementById('dp-body').innerHTML='<div class="meta" style="color:var(--faint)">Cargando detalle…</div>';
+  document.getElementById('detail-overlay').classList.add('open');
+  document.getElementById('detail-panel').classList.add('open');
+  if(CONNECTED) _loadDetail(pid);
+  else _renderDetailOffline(pid);
+}
+
+function closeDetail(){
+  document.getElementById('detail-overlay').classList.remove('open');
+  document.getElementById('detail-panel').classList.remove('open');
+}
+
+async function _loadDetail(pid){
+  const enc=encodeURIComponent(pid);
+  const [pf,tree,auditR,rcsR,missionR]=await Promise.allSettled([
+    fetch(API_BASE+'/api/v1/layer8/missions/'+enc+'/f5/preflight',{headers:headers()}).then(r=>r.ok?r.json():null),
+    fetch(API_BASE+'/api/v1/layer8/workspaces/'+enc+'/tree',{headers:headers()}).then(r=>r.ok?r.json():null),
+    fetch(API_BASE+'/api/v1/audit/entries?limit=50',{headers:headers()}).then(r=>r.ok?r.json():[]),
+    fetch(API_BASE+'/api/v1/layer9/projects/'+enc+'/rcs',{headers:headers()}).then(r=>r.ok?r.json():null),
+    fetch(API_BASE+'/api/v1/layer9/missions/'+enc,{headers:headers()}).then(r=>r.ok?r.json():null),
+  ]);
+  const preflight=pf.value, wsTree=tree.value;
+  const allAudit=(auditR.value||[]).filter(e=>e.project_id===pid);
+  const rcs=(rcsR.value?.rcs||[]);
+  const mission=missionR.value;
+
+  if(mission){
+    document.getElementById('dp-status-chip').innerHTML=missionChip(mission.status);
+  }
+
+  document.getElementById('dp-body').innerHTML=
+    _grp('estado','01 Estado',true)+
+    _grp('evidencia','02 Evidencia',false)+
+    _grp('acciones','03 Acciones',false);
+
+  _renderGrp1(pid, preflight, mission);
+  _renderGrp2(pid, wsTree, allAudit, rcs);
+  _renderGrp3(pid, preflight, rcs);
+}
+
+function _grp(id, label, open){
+  return `<div class="grp-block">
+    <button class="grp-toggle${open?' open':''}" onclick="toggleGrp(this)">
+      ${label}<span class="arrow">▶</span></button>
+    <div class="grp-content${open?' open':''}" id="grp-${id}">
+      <div class="meta" style="color:var(--faint)">cargando…</div>
+    </div></div>`;
+}
+
+function toggleGrp(btn){
+  btn.classList.toggle('open');
+  const c=btn.nextElementSibling;
+  c.classList.toggle('open');
+}
+
+function _renderGrp1(pid, pf, mission){
+  const el=document.getElementById('grp-estado'); if(!el) return;
+  if(!pf){ el.innerHTML='<div class="meta" style="color:var(--faint)">Sin datos de preflight (sin conexión o error).</div>'; return; }
+  const ready=pf.ready_for_f5;
+  const blockers=pf.blockers||[];
+  let html=`<div class="between" style="margin-bottom:10px">
+    <span class="k">Listo para F5</span>
+    <span class="chip ${ready?'c-pass':blockers.length===1&&blockers[0]==='rc_canonical_marked'?'c-warn':'c-fail'}">${ready?'SÍ':'NO — '+blockers.length+' bloqueo(s)'}</span>
+  </div>`;
+  if(pf.next_action) html+=`<div class="meta" style="margin-bottom:10px;color:var(--warn)">${pf.next_action}</div>`;
+  html+='<div class="dp-sub">Checklist preflight F5</div>';
+  html+=(pf.checks||[]).map(c=>{
+    const dot=c.ok?'var(--pass)':blockers.includes(c.id)?'var(--fail)':'var(--warn)';
+    return `<div class="pf-line">
+      <span class="pf-dot" style="background:${dot}"></span>
+      <span class="pf-id">${c.id}</span>
+      <span class="pf-detail">${(c.detail||'').replace(/</g,'&lt;')}</span>
+    </div>`;
+  }).join('');
+  if(mission){
+    html+=`<div class="dp-sub" style="margin-top:12px">Misión</div>
+    <div class="meta mono" style="font-size:11px;line-height:2">
+      estado &nbsp;&nbsp; ${mission.status||'—'}<br>
+      cliente &nbsp; ${mission.client_type||'—'}<br>
+      creada &nbsp;&nbsp; ${(mission.created_at||'').slice(0,10)||'—'}<br>
+      aprobada &nbsp; ${(mission.approved_at||'—').toString().slice(0,10)||'—'}
+    </div>`;
+  }
+  el.innerHTML=html;
+}
+
+function _renderGrp2(pid, tree, auditEntries, rcs){
+  const el=document.getElementById('grp-evidencia'); if(!el) return;
+  let html='';
+
+  // Archivos workspace
+  const files=(tree?.files||[]).filter(f=>_filterFile(f.path));
+  if(files.length){
+    html+=`<div class="dp-sub">Workspace (${files.length} archivos)</div>
+    <div class="ftree" id="ftree-${pid}">`;
+    const byDir={};
+    files.forEach(f=>{ const d=f.path.includes('/')?f.path.split('/')[0]:'(raíz)'; (byDir[d]=byDir[d]||[]).push(f); });
+    html+=Object.entries(byDir).map(([dir,fs])=>
+      `<div style="color:var(--muted)">${dir}/</div>`+
+      fs.map(f=>`<div style="padding-left:12px"><span class="fname"
+        onclick="loadFileContent('${pid.replace(/'/g,"\\'")}','${f.path.replace(/'/g,"\\'")}')"
+        >${f.path.split('/').pop()}</span> <span style="color:var(--faint)">${(f.size/1024).toFixed(1)}k</span></div>`).join('')
+    ).join('');
+    html+=`</div><div id="fviewer-${pid}" class="fviewer" style="display:none"></div>`;
+  } else {
+    html+='<div class="meta" style="color:var(--faint)">Sin workspace o sin archivos permitidos.</div>';
+  }
+
+  // RC manifests
+  if(rcs.length){
+    html+=`<div class="dp-sub" style="margin-top:12px">Release Candidates (${rcs.length})</div>`;
+    html+=rcs.map(rc=>{
+      const isCanon=rc.is_canonical===true;
+      const cls=rc.status==='approved'?(isCanon?'c-accent':'c-pass'):rc.status==='rejected'?'c-fail':'c-mute';
+      return `<div class="gate-line">
+        <span class="gid mono" style="font-size:10.5px">${rc.version||'?'} &nbsp;${isCanon?'★ canónico':''}</span>
+        <span class="chip ${cls}">${rc.status||'?'}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Auditoría filtrada
+  html+=`<div class="dp-sub" style="margin-top:12px">Últimos eventos de auditoría (${Math.min(auditEntries.length,20)})</div>`;
+  if(!auditEntries.length){
+    html+='<div class="meta" style="color:var(--faint)">Sin eventos de auditoría para este proyecto.</div>';
+  } else {
+    html+='<div class="chain" style="border-radius:6px;margin-top:4px">';
+    html+=[...auditEntries].reverse().slice(0,20).map(e=>{
+      const ts=(e.timestamp||'').slice(11,19)||'—';
+      const ev=e.event_type||'?';
+      const h=(e.entry_hash||'').replace('sha256:','');
+      const hShort=h.length>8?h.slice(0,4)+'…'+h.slice(-4):'————';
+      return `<div class="link" style="grid-template-columns:80px 1fr auto">
+        <span class="t">${ts}</span><span class="ev" style="font-size:11px">${ev}</span>
+        <span class="h">${hShort}</span></div>`;
+    }).join('');
+    html+='</div>';
+  }
+  el.innerHTML=html;
+}
+
+function _renderGrp3(pid, pf, rcs){
+  const el=document.getElementById('grp-acciones'); if(!el) return;
+  const ready=pf?.ready_for_f5;
+  const hasApprovedRCs=rcs.filter(r=>r.status==='approved');
+  const canonical=rcs.find(r=>r.is_canonical===true);
+
+  let html='';
+
+  // Mark canonical
+  if(hasApprovedRCs.length){
+    html+=`<div class="dp-sub">Marcar RC canónico</div>
+    <div style="margin-bottom:10px">
+      <select id="canonical-sel-${pid}" style="background:var(--panel-2);border:1px solid var(--line);
+        color:var(--text);border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:11px;width:100%">
+        ${hasApprovedRCs.map(r=>`<option value="${r.rc_id}"${r.is_canonical?' selected':''}>
+          ${r.version} — ${r.rc_id.slice(-16)}${r.is_canonical?' ★':''}</option>`).join('')}
+      </select>
+      <div class="field" style="margin-top:8px">
+        <label>Confirmado por (nombre real)</label>
+        <input id="canonical-by-${pid}" placeholder="p.ej. Cesar" autocomplete="off">
+      </div>
+      <div class="actions" style="margin-top:8px">
+        <button class="btn pass" onclick="submitMarkCanonical('${pid}')">Marcar como canónico</button>
+        ${canonical?`<span class="chip c-accent" style="margin-left:4px">Actual: ${canonical.version}</span>`:''}
+      </div>
+    </div>`;
+  }
+
+  // Preparar Docker F5
+  html+=`<div class="dp-sub" style="margin-top:10px">Docker F5</div>
+  <button class="btn${ready?' pass':' ghost'}" style="${ready?'':'opacity:.5;cursor:not-allowed'}"
+    ${ready?`onclick="confirmF5('${pid}')"`:'disabled title="Resolver blockers antes de F5"'}>
+    Preparar Docker F5
+  </button>`;
+  if(!ready&&pf?.blockers?.length){
+    html+=`<div class="meta" style="margin-top:6px;color:var(--warn);font-size:11px">
+      Blockers: ${pf.blockers.join(', ')}</div>`;
+  }
+
+  el.innerHTML=html;
+}
+
+async function loadFileContent(pid, path){
+  const vid=`fviewer-${pid}`;
+  const el=document.getElementById(vid); if(!el) return;
+  el.style.display='block';
+  el.textContent='Cargando…';
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer8/workspaces/'+encodeURIComponent(pid)+'/file?path='+encodeURIComponent(path),{headers:headers()});
+    if(!r.ok){ el.textContent='Error '+r.status+' al cargar '+path; return; }
+    const d=await r.json();
+    el.textContent=(d.content||'').slice(0,4000);
+  }catch(e){ el.textContent='Error: '+e.message; }
+}
+
+async function submitMarkCanonical(pid){
+  const rcId=(document.getElementById('canonical-sel-'+pid)?.value||'').trim();
+  const by=(document.getElementById('canonical-by-'+pid)?.value||'').trim();
+  if(!rcId){ toast('Selecciona un RC.'); return; }
+  if(!by){ toast('Ingresa el nombre real del responsable.'); return; }
+  const reserved=['human','agent','system','admin','capa8','capa9','layer8'];
+  if(reserved.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer9/review/'+encodeURIComponent(rcId)+'/mark-canonical',{
+      method:'POST', headers:headers(), body:JSON.stringify({marked_by:by})
+    });
+    if(r.ok){
+      toast('RC marcado como canónico ✓ · '+by);
+      setTimeout(()=>_loadDetail(pid),500);
+    } else {
+      const e=await r.json().catch(()=>({}));
+      toast('Error '+r.status+': '+(typeof e.detail==='object'?JSON.stringify(e.detail):e.detail||'error'));
+    }
+  }catch(e){ toast('Error de red: '+e.message); }
+}
+
+function confirmF5(pid){
+  toast('F5 aún no disponible — pendiente autorización explícita de Cesar. (W2)');
+}
+
+function _renderDetailOffline(pid){
+  document.getElementById('dp-body').innerHTML=
+    '<div class="meta" style="color:var(--warn)">Sin conexión. Conecta el factory-api para ver detalle en vivo.</div>';
+}
+// === fin W1 ===
 </script>
