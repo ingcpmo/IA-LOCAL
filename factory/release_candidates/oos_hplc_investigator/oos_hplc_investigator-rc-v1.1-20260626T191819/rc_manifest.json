@@ -14,5 +14,7 @@
   },
   "decided_at": "2026-06-29T16:12:35.571917+00:00",
   "notes": "decision_origin: human_confirmed · via Mission Control",
-  "is_canonical": null
+  "is_canonical": true,
+  "is_canonical_marked_by": "Cesar",
+  "is_canonical_marked_at": "2026-06-29T22:57:48.740107+00:00"
 }

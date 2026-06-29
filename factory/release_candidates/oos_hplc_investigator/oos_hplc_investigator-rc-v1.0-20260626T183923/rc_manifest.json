@@ -14,5 +14,5 @@
   },
   "decided_at": "2026-06-29T16:11:46.111546+00:00",
   "notes": "decision_origin: human_confirmed · via Mission Control",
-  "is_canonical": null
+  "is_canonical": false
 }

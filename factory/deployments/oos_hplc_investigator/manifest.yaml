@@ -1,0 +1,46 @@
+manifest_version: '1.0'
+project:
+  id: oos_hplc_investigator
+  name: OOS HPLC Investigator
+  description: Módulo GMP de investigación OOS para análisis HPLC en laboratorio QC — FDA OOS 2006 / 21 CFR Part 11 / USP <621>
+  created_at: '2026-06-29'
+  regulatory_framework:
+    - "21 CFR Part 11 (electronic records and signatures)"
+    - "21 CFR Part 211.192 (laboratory controls, OOS investigation)"
+    - "FDA OOS Guidance 2006"
+    - "USP <621> (chromatography)"
+source:
+  base_product_tag: oos_hplc_investigator-rc-v1.1
+  factory_commit: 9d89d6e
+  generated_by: factory_layer_8_claude_code_agent
+  generation_mode: manual_assisted
+  rc_canonical: oos_hplc_investigator-rc-v1.1-20260626T191819
+  rc_canonical_approved_by: cesar
+  rc_canonical_marked_by: Cesar
+  rc_canonical_marked_at: '2026-06-29T22:57:48Z'
+deployment:
+  docker_project_name: oos_hplc_investigator
+  api_port: 8102
+  postgres_port: 5434
+  redis_port: 6381
+  use_shared_ollama: true
+  ollama_url: http://host.docker.internal:11434
+  ollama_model: mistral:7b-instruct-q4_K_M
+  resource_limits_applied: true
+agents:
+  new_agents:
+    - id: hplc_data_review
+      name: HPLC Data Review Agent
+      domain: chromatography, SST, peak integration
+      routing_keys: ["hplc", "cromatografia", "peak", "sst", "integracion", "columna"]
+  profiles:
+    qa_oos_investigator_profile:
+      base_agent: qa
+      name: OOS Investigation Specialist
+      domain: OOS, FDA OOS 2006, 21 CFR 211.192
+      routing_keys: ["oos", "out-of-specification", "investigacion", "fase1", "fase2"]
+    integrity_part11_profile:
+      base_agent: integrity
+      name: Part 11 Integrity Specialist
+      domain: ALCOA+, 21 CFR Part 11, audit trail, firmas electrónicas
+      routing_keys: ["audit", "alcoa", "part11", "firma", "integridad", "timestamp"]
