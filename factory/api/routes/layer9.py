@@ -4,12 +4,15 @@ Capa 9 — Rutas API Mission Control (F4.5d).
 Expone las operaciones de Mission Control de Capa 9 en el factory-api.
 """
 
+import hashlib
 import json
 import sys
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+import httpx
+import yaml as _yaml
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
@@ -583,4 +586,597 @@ def post_revise_mission(project_id: str, body: MissionRevise):
         "fields_changed": sorted(body.changes.keys()),
         "re_approve_required": re_approve_required,
         "snapshot_saved": str(history_dir / f"{rev_id}.yaml"),
+    }
+
+
+# ── W3: Visor de evidencia por misión ────────────────────────────────────────
+# Todos estos endpoints son READ-ONLY — no escriben en la cadena de auditoría.
+
+_DESIGNS_BASE  = _FACTORY_ROOT / "designs"
+_RC_BASE_W3    = _FACTORY_ROOT / "release_candidates"
+_DEP_BASE      = _FACTORY_ROOT / "deployments"
+_WS_BASE_W3    = _FACTORY_ROOT / "workspaces"
+_AUDIT_FILE    = _FACTORY_ROOT / "audit" / "factory_audit.jsonl"
+
+_MAX_FILE_W3   = 256 * 1024  # 256 KB
+
+_FILTER_PARTS  = frozenset({
+    ".pytest_cache", "__pycache__", ".pyc", ".env", ".claude",
+    "data/chroma", "backups", ".ssh", ".key", ".pem", "credentials",
+})
+
+
+def _etag_of(paths: list[Path]) -> str:
+    h = hashlib.sha256()
+    for p in sorted(str(p) for p in paths):
+        fp = Path(p)
+        if fp.exists():
+            h.update(f"{p}:{fp.stat().st_mtime_ns}".encode())
+    return f'"{h.hexdigest()[:16]}"'
+
+
+def _safe_design(project_id: str) -> Path:
+    from factory.core.path_policy import resolve_design
+    try:
+        return resolve_design(project_id, _DESIGNS_BASE)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+
+
+def _parse_headless_log(ws: Path) -> dict | None:
+    logs = sorted(ws.glob("logs/headless_*.log"), reverse=True)
+    if not logs:
+        return None
+    log_path = logs[0]
+    try:
+        raw = log_path.read_text(encoding="utf-8", errors="replace").strip()
+        d = json.loads(raw)
+        mu = d.get("modelUsage") or {}
+        breakdown = {
+            m: {
+                "inputTokens": s.get("inputTokens", 0),
+                "outputTokens": s.get("outputTokens", 0),
+                "costUSD": round(s.get("costUSD", 0), 6),
+            }
+            for m, s in mu.items()
+        }
+        return {
+            "log_filename": log_path.name,
+            "log_size_bytes": log_path.stat().st_size,
+            "returncode": 0 if not d.get("is_error") else 1,
+            "subtype": d.get("subtype"),
+            "duration_ms": d.get("duration_ms"),
+            "duration_api_ms": d.get("duration_api_ms"),
+            "num_turns": d.get("num_turns"),
+            "terminal_reason": d.get("terminal_reason"),
+            "total_cost_usd": d.get("total_cost_usd"),
+            "models_used": list(mu.keys()),
+            "model_breakdown": breakdown,
+            "permission_denials": d.get("permission_denials", []),
+            "result_text": (d.get("result") or "")[:4096],
+            "session_id": d.get("session_id"),
+        }
+    except Exception:
+        return {"log_filename": log_path.name, "log_size_bytes": log_path.stat().st_size, "parse_error": True}
+
+
+def _parse_agents(design_dir: Path) -> dict:
+    proposal = design_dir / "agent_design_proposal.yaml"
+    if not proposal.exists():
+        return {"agents": [], "summary": {"profiles_inherited": 0, "new_agents": 0}}
+    try:
+        d = _yaml.safe_load(proposal.read_text(encoding="utf-8")) or {}
+        agents = []
+        for a in (d.get("agents") or []):
+            agents.append({
+                "agent_id": a.get("agent_id"),
+                "decision": a.get("decision"),
+                "is_inherited": a.get("decision") == "profile",
+                "base_agent": a.get("base_agent"),
+                "profile_name": a.get("profile_name"),
+                "rationale": a.get("rationale", "")[:200],
+                "routing_key": a.get("routing_key"),
+            })
+        profiles = sum(1 for a in agents if a["is_inherited"])
+        new = sum(1 for a in agents if not a["is_inherited"])
+        return {
+            "agents": agents,
+            "summary": {"profiles_inherited": profiles, "new_agents": new},
+            "routing_notes": d.get("routing_notes", "")[:300],
+        }
+    except Exception:
+        return {"agents": [], "summary": {"profiles_inherited": 0, "new_agents": 0}, "parse_error": True}
+
+
+def _deployment_health(project_id: str) -> dict:
+    dep_dir = _DEP_BASE / project_id
+    if not dep_dir.exists():
+        return {"exists": False}
+    # Puerto vía port_registry
+    api_port = None
+    try:
+        from factory.core.port_registry import get_allocated_ports
+        ports = get_allocated_ports(project_id)
+        api_port = ports.get("api") if ports else None
+    except Exception:
+        pass
+    health_ok = False
+    health_body = None
+    health_error = None
+    if api_port:
+        try:
+            r = httpx.get(f"http://host.docker.internal:{api_port}/health", timeout=4)
+            health_ok = r.status_code == 200
+            health_body = r.json() if health_ok else None
+        except Exception as e:
+            health_error = str(e)[:100]
+    # Archivos visibles (sin secretos)
+    visible = []
+    for p in sorted(dep_dir.rglob("*")):
+        if not p.is_file():
+            continue
+        rel = str(p.relative_to(dep_dir))
+        if any(blocked in rel for blocked in _FILTER_PARTS):
+            continue
+        visible.append({"path": rel, "size": p.stat().st_size, "ext": p.suffix})
+    return {
+        "exists": True,
+        "api_port": api_port,
+        "health_ok": health_ok,
+        "health_body": health_body,
+        "health_error": health_error,
+        "docs_url": f"http://localhost:{api_port}/docs" if api_port else None,
+        "files_visible": len(visible),
+        "files": visible[:100],
+    }
+
+
+# ── GET /missions/{project_id}/summary ───────────────────────────────────────
+
+@router.get("/missions/{project_id}/summary")
+def get_mission_summary(project_id: str, request: Request, response: Response):
+    """
+    Resumen consolidado de la misión: ~5KB, cacheable con ETag.
+    Si If-None-Match coincide con el ETag actual → 304 Not Modified.
+    Read-only: no escribe en la cadena de auditoría.
+    """
+    # ── Misión ──
+    mission_file = _FACTORY_ROOT / "layer9" / "missions" / f"{project_id}.yaml"
+    if not mission_file.exists():
+        raise HTTPException(404, f"Misión '{project_id}' no encontrada")
+    try:
+        m = _yaml.safe_load(mission_file.read_text(encoding="utf-8")) or {}
+    except Exception as e:
+        raise HTTPException(500, f"Error leyendo misión: {e}")
+
+    approved_by = next(
+        (h.get("by", "") for h in (m.get("history") or []) if h.get("event") == "approved"),
+        m.get("approved_by", ""),
+    )
+    mission_block = {
+        "status": m.get("status"),
+        "client_type": m.get("client_type"),
+        "created_at": m.get("created_at"),
+        "approved_at": m.get("approved_at"),
+        "approved_by": approved_by,
+    }
+
+    # ── Design ──
+    design_dir = _DESIGNS_BASE / project_id
+    design_files = []
+    agents_summary = {"profiles_inherited": 0, "new_agents": 0, "agent_ids": []}
+    pending_docs_count = 0
+    if design_dir.exists():
+        design_files = [p.name for p in sorted(design_dir.iterdir()) if p.is_file()]
+        ag = _parse_agents(design_dir)
+        agents_summary = ag["summary"]
+        agents_summary["agent_ids"] = [a["agent_id"] for a in ag.get("agents", [])]
+        pd_file = design_dir / "pending_documents.yaml"
+        if pd_file.exists():
+            try:
+                pd = _yaml.safe_load(pd_file.read_text(encoding="utf-8")) or {}
+                pending_docs_count = len(pd.get("documents", pd.get("pending", [])))
+            except Exception:
+                pass
+
+    # ── Workspace ──
+    ws = _WS_BASE_W3 / project_id
+    ws_files_visible = 0
+    ws_py_files = 0
+    ws_has_test_report = False
+    ws_has_headless_log = False
+    if ws.exists():
+        for p in ws.rglob("*"):
+            if not p.is_file():
+                continue
+            rel = str(p.relative_to(ws))
+            if any(bl in rel for bl in _FILTER_PARTS):
+                continue
+            ws_files_visible += 1
+            if p.suffix == ".py":
+                ws_py_files += 1
+        ws_has_test_report = (ws / "test_report.json").exists()
+        ws_has_headless_log = bool(list(ws.glob("logs/headless_*.log")))
+
+    # ── Headless ──
+    headless_block = None
+    if ws.exists():
+        hl = _parse_headless_log(ws)
+        if hl and not hl.get("parse_error"):
+            headless_block = {
+                "returncode": hl.get("returncode"),
+                "duration_seconds": round((hl.get("duration_ms") or 0) / 1000, 1),
+                "total_cost_usd": hl.get("total_cost_usd"),
+                "num_turns": hl.get("num_turns"),
+                "models_used": hl.get("models_used", []),
+                "terminal_reason": hl.get("terminal_reason"),
+            }
+
+    # ── Tests ──
+    tests_block = None
+    test_report = ws / "test_report.json" if ws.exists() else None
+    if test_report and test_report.exists():
+        try:
+            td = json.loads(test_report.read_text(encoding="utf-8"))
+            s = td.get("summary", {})
+            tests_block = {
+                "passed": s.get("passed", 0),
+                "failed": s.get("failed", 0),
+                "returncode": s.get("returncode", -1),
+            }
+        except Exception:
+            pass
+
+    # ── RCs ──
+    rc_dir = _RC_BASE_W3 / project_id
+    rc_list = []
+    rc_statuses: dict[str, int] = {}
+    canonical_id = None
+    if rc_dir.exists():
+        for f in sorted(rc_dir.rglob("rc_manifest.json")):
+            try:
+                d = json.loads(f.read_text(encoding="utf-8"))
+                rc_list.append(d)
+                st = d.get("status", "unknown")
+                rc_statuses[st] = rc_statuses.get(st, 0) + 1
+                if d.get("is_canonical"):
+                    canonical_id = d.get("rc_id")
+            except Exception:
+                continue
+
+    # ── Deployment ──
+    dep_exists = (_DEP_BASE / project_id).exists()
+    dep_health_ok = False
+    dep_api_port = None
+    if dep_exists:
+        try:
+            from factory.core.port_registry import get_allocated_ports
+            ports = get_allocated_ports(project_id)
+            dep_api_port = ports.get("api") if ports else None
+        except Exception:
+            pass
+        if dep_api_port:
+            try:
+                hr = httpx.get(f"http://host.docker.internal:{dep_api_port}/health", timeout=3)
+                dep_health_ok = hr.status_code == 200
+            except Exception:
+                pass
+
+    # ── Audit ──
+    audit_count = 0
+    last_event_at = None
+    last_event_type = None
+    if _AUDIT_FILE.exists():
+        for raw in _AUDIT_FILE.read_text(encoding="utf-8").splitlines():
+            try:
+                e = json.loads(raw)
+                if e.get("project_id") == project_id:
+                    audit_count += 1
+                    last_event_at = e.get("timestamp")
+                    last_event_type = e.get("event_type")
+            except Exception:
+                continue
+
+    # ── ETag ──
+    key_files = [
+        mission_file,
+        ws / "test_report.json" if ws.exists() else Path("/dev/null"),
+        *([rc_dir / f for f in []] if not rc_dir.exists() else
+          sorted(rc_dir.rglob("rc_manifest.json"))),
+    ]
+    etag = _etag_of(key_files)
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304)
+    response.headers["ETag"] = etag
+    response.headers["Cache-Control"] = "private, max-age=10"
+
+    return {
+        "project_id": project_id,
+        "mission": mission_block,
+        "design": {
+            "files_count": len(design_files),
+            "files": design_files,
+            "agents_summary": agents_summary,
+            "pending_documents_count": pending_docs_count,
+        },
+        "workspace": {
+            "files_visible": ws_files_visible,
+            "py_files": ws_py_files,
+            "has_test_report": ws_has_test_report,
+            "has_headless_log": ws_has_headless_log,
+        },
+        "headless": headless_block,
+        "tests": tests_block,
+        "rcs": {
+            "count": len(rc_list),
+            "canonical": canonical_id,
+            "statuses": rc_statuses,
+        },
+        "deployment": {
+            "exists": dep_exists,
+            "api_port": dep_api_port,
+            "health_ok": dep_health_ok,
+        },
+        "audit": {
+            "event_count_filtered": audit_count,
+            "last_event_at": last_event_at,
+            "last_event_type": last_event_type,
+        },
+        "etag": etag,
+    }
+
+
+# ── GET /missions/{project_id}/design ────────────────────────────────────────
+
+@router.get("/missions/{project_id}/design")
+def get_mission_design(project_id: str):
+    """Lista archivos en factory/designs/{project_id}/. Read-only."""
+    design_dir = _safe_design(project_id)
+    files = []
+    for p in sorted(design_dir.iterdir()):
+        if not p.is_file():
+            continue
+        entry: dict[str, Any] = {"name": p.name, "size": p.stat().st_size, "ext": p.suffix}
+        if p.suffix in (".yaml", ".yml"):
+            try:
+                d = _yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+                entry["keys"] = list(d.keys())[:10]
+            except Exception:
+                pass
+        files.append(entry)
+    return {"project_id": project_id, "files": files, "count": len(files)}
+
+
+# ── GET /missions/{project_id}/agents ────────────────────────────────────────
+
+@router.get("/missions/{project_id}/agents")
+def get_mission_agents(project_id: str):
+    """
+    Lee agent_design_proposal.yaml y devuelve lista estructurada.
+    Distingue profiles heredados de agents nuevos. Read-only.
+    """
+    design_dir = _safe_design(project_id)
+    result = _parse_agents(design_dir)
+    result["project_id"] = project_id
+    result["source_file"] = f"factory/designs/{project_id}/agent_design_proposal.yaml"
+    return result
+
+
+# ── GET /missions/{project_id}/headless ──────────────────────────────────────
+
+@router.get("/missions/{project_id}/headless")
+def get_mission_headless(project_id: str):
+    """
+    Parsea el log JSONL del CLI Claude del workspace.
+    Devuelve estructura plana con costo, turns, modelos. Read-only.
+    """
+    from factory.core.path_policy import resolve_workspace
+    try:
+        ws = resolve_workspace(project_id, _WS_BASE_W3)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    parsed = _parse_headless_log(ws)
+    if parsed is None:
+        return {"project_id": project_id, "found": False}
+    return {"project_id": project_id, "found": True, "result": parsed}
+
+
+# ── GET /missions/{project_id}/tests ─────────────────────────────────────────
+
+@router.get("/missions/{project_id}/tests")
+def get_mission_tests(project_id: str):
+    """Lee test_report.json del workspace. Read-only."""
+    ws = _WS_BASE_W3 / project_id
+    report_path = ws / "test_report.json"
+    if not ws.exists():
+        raise HTTPException(404, f"Workspace '{project_id}' no encontrado")
+    if not report_path.exists():
+        return {"project_id": project_id, "found": False}
+    try:
+        d = json.loads(report_path.read_text(encoding="utf-8"))
+        s = d.get("summary", {})
+        return {
+            "project_id": project_id,
+            "found": True,
+            "passed": s.get("passed", 0),
+            "failed": s.get("failed", 0),
+            "returncode": s.get("returncode", -1),
+            "note": d.get("note", ""),
+            "output": (d.get("output") or "")[:4096],
+        }
+    except Exception as e:
+        raise HTTPException(500, f"Error parseando test_report.json: {e}")
+
+
+# ── GET /missions/{project_id}/rcs ───────────────────────────────────────────
+
+@router.get("/missions/{project_id}/rcs")
+def get_mission_rcs(project_id: str):
+    """
+    Lista todos los RC manifests de un proyecto con detalle completo.
+    Read-only, no requiere escritura en auditoría.
+    """
+    rc_dir = _RC_BASE_W3 / project_id
+    if not rc_dir.exists():
+        return {"project_id": project_id, "rcs": [], "count": 0}
+    rcs = []
+    for f in sorted(rc_dir.rglob("rc_manifest.json")):
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+            artifacts_path = f.parent / "artifacts"
+            artifacts = []
+            if artifacts_path.exists():
+                for ap in sorted(artifacts_path.iterdir()):
+                    if ap.is_file():
+                        artifacts.append({"name": ap.name, "size": ap.stat().st_size, "ext": ap.suffix})
+            rcs.append({
+                "rc_id": d.get("rc_id"),
+                "version": d.get("version"),
+                "status": d.get("status"),
+                "is_canonical": d.get("is_canonical"),
+                "approved_by": d.get("approved_by"),
+                "decided_at": d.get("decided_at"),
+                "proposed_at": d.get("proposed_at"),
+                "notes": d.get("notes", ""),
+                "sha256sums": d.get("sha256sums", {}),
+                "artifacts": artifacts,
+            })
+        except Exception:
+            continue
+    return {"project_id": project_id, "rcs": rcs, "count": len(rcs)}
+
+
+# ── GET /missions/{project_id}/deployment ────────────────────────────────────
+
+@router.get("/missions/{project_id}/deployment")
+def get_mission_deployment(project_id: str):
+    """
+    Estado del deployment Docker del proyecto.
+    Hace health check en vivo vía host.docker.internal. Read-only.
+    """
+    return {"project_id": project_id, **_deployment_health(project_id)}
+
+
+# ── GET /missions/{project_id}/audit ─────────────────────────────────────────
+
+@router.get("/missions/{project_id}/audit")
+def get_mission_audit(project_id: str, limit: int = Query(default=50, le=200)):
+    """
+    Eventos de auditoría filtrados por project_id (últimos N).
+    Read-only — no escribe en cadena.
+    """
+    if not _AUDIT_FILE.exists():
+        return {"project_id": project_id, "events": [], "count": 0}
+    events = []
+    for raw in _AUDIT_FILE.read_text(encoding="utf-8").splitlines():
+        try:
+            e = json.loads(raw)
+            if e.get("project_id") == project_id:
+                events.append({
+                    "timestamp": e.get("timestamp"),
+                    "event_type": e.get("event_type"),
+                    "entry_hash": e.get("entry_hash"),
+                    "data": e.get("data", {}),
+                })
+        except Exception:
+            continue
+    events_trimmed = events[-limit:]
+    return {
+        "project_id": project_id,
+        "events": list(reversed(events_trimmed)),
+        "count": len(events_trimmed),
+        "total": len(events),
+    }
+
+
+# ── GET /missions/{project_id}/design/file ───────────────────────────────────
+
+@router.get("/missions/{project_id}/design/file")
+def get_design_file(project_id: str, path: str = Query(...)):
+    """
+    Lee un archivo de factory/designs/{project_id}/.
+    Política: solo .yaml, .yml, .md — bloquea traversal y secretos.
+    """
+    from factory.core.path_policy import resolve_design
+    try:
+        target = resolve_design(project_id, _DESIGNS_BASE, path)
+    except (ValueError, PermissionError) as e:
+        raise HTTPException(403, str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    if not target.exists() or not target.is_file():
+        raise HTTPException(404, f"Archivo no encontrado: {path}")
+    size = target.stat().st_size
+    if size > _MAX_FILE_W3:
+        raise HTTPException(400, f"Archivo demasiado grande: {size} bytes (max {_MAX_FILE_W3})")
+    return {
+        "project_id": project_id,
+        "path": path,
+        "size": size,
+        "ext": target.suffix,
+        "content": target.read_text(encoding="utf-8", errors="replace"),
+    }
+
+
+# ── GET /missions/{project_id}/rc/{rc_id}/file ───────────────────────────────
+
+@router.get("/missions/{project_id}/rc/{rc_id}/file")
+def get_rc_artifact_file(project_id: str, rc_id: str, path: str = Query(...)):
+    """
+    Lee un artefacto de factory/release_candidates/{project_id}/{rc_id}/.
+    Política: solo .json, .log, .txt, .md — bloquea traversal y secretos.
+    El path no puede escapar del rc_id solicitado.
+    """
+    from factory.core.path_policy import resolve_rc_artifact
+    try:
+        target = resolve_rc_artifact(project_id, rc_id, _RC_BASE_W3, path)
+    except (ValueError, PermissionError) as e:
+        raise HTTPException(403, str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    if not target.exists() or not target.is_file():
+        raise HTTPException(404, f"Archivo no encontrado: {path}")
+    size = target.stat().st_size
+    if size > _MAX_FILE_W3:
+        raise HTTPException(400, f"Archivo demasiado grande: {size} bytes (max {_MAX_FILE_W3})")
+    return {
+        "project_id": project_id,
+        "rc_id": rc_id,
+        "path": path,
+        "size": size,
+        "ext": target.suffix,
+        "content": target.read_text(encoding="utf-8", errors="replace"),
+    }
+
+
+# ── GET /missions/{project_id}/deployment/file ───────────────────────────────
+
+@router.get("/missions/{project_id}/deployment/file")
+def get_deployment_file(project_id: str, path: str = Query(...)):
+    """
+    Lee un archivo de factory/deployments/{project_id}/.
+    Política estricta: bloquea .env, data/, knowledge/corpus/, releases/, secretos.
+    """
+    from factory.core.path_policy import resolve_deployment
+    try:
+        target = resolve_deployment(project_id, _DEP_BASE, path)
+    except (ValueError, PermissionError) as e:
+        raise HTTPException(403, str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    if not target.exists() or not target.is_file():
+        raise HTTPException(404, f"Archivo no encontrado: {path}")
+    size = target.stat().st_size
+    if size > _MAX_FILE_W3:
+        raise HTTPException(400, f"Archivo demasiado grande: {size} bytes (max {_MAX_FILE_W3})")
+    return {
+        "project_id": project_id,
+        "path": path,
+        "size": size,
+        "ext": target.suffix,
+        "content": target.read_text(encoding="utf-8", errors="replace"),
     }
