@@ -8,6 +8,14 @@ set -euo pipefail
 FACTORY_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 PASS=0; FAIL=0
 
+# pytest necesita fastapi/pydantic/httpx (deps de factory/api/routes/*.py,
+# importadas directamente por varios tests). El python3 del sistema no las
+# tiene instaladas; el venv del proyecto sí.
+PYBIN="python3"
+if [[ -x "$FACTORY_DIR/../.venv/bin/python3" ]]; then
+    PYBIN="$FACTORY_DIR/../.venv/bin/python3"
+fi
+
 G='\033[0;32m'; R='\033[0;31m'; Y='\033[0;33m'; B='\033[0;34m'; NC='\033[0m'; BOLD='\033[1m'
 ok()      { printf "  ${G}PASS${NC}  %s\n" "$1"; PASS=$((PASS+1)); }
 ko()      { printf "  ${R}FAIL${NC}  %s\n" "$1"; FAIL=$((FAIL+1)); }
@@ -41,7 +49,7 @@ fi
 section "2/4  pytest"
 
 cd "$FACTORY_DIR/.."  # /home/ing_cpmo
-PYTEST_OUT=$(python3 -m pytest factory/tests/ -q --tb=short 2>&1 || true)
+PYTEST_OUT=$("$PYBIN" -m pytest factory/tests/ -q --tb=short 2>&1 || true)
 echo "$PYTEST_OUT"
 
 if echo "$PYTEST_OUT" | grep -qE "^[0-9]+ passed"; then

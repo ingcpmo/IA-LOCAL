@@ -606,6 +606,7 @@ tr:hover td{background:#10161d}
 /* ---- session: API key lives only in memory ---- */
 let API_KEY="", CONNECTED=false;
 const API_BASE="";
+let _selectedMissionId=null;  // W4/TAREA3: misión abierta en el detail panel; null = "Selecciona una misión"
 
 const TITLES={
   dash:["Panel general","mission-control / overview"],
@@ -941,11 +942,7 @@ async function refresh(v){
         if(v==='dash') renderMissions(ms);
         if(v==='approve') renderApproveMissions(ms);
         if(v==='dash'){
-          const rj=await fetch(API_BASE+"/api/v1/layer8/jobs",{headers:headers()});
-          const rjd=rj.ok?await rj.json():[];
-          const rs=await fetch(API_BASE+"/api/v1/layer8/status",{headers:headers()});
-          const rsd=rs.ok?await rs.json():{};
-          renderFlowDiagram(ms, rjd, rsd.jobs);
+          await refreshFlowDiagram();
         }
       }
     }
@@ -995,44 +992,66 @@ const FLOW_NODES=[
   {ix:'08',lab:'Aprobaci\xf3n',dn:'aprobado',ac:'humano',td:'humano',gate:true},
 ];
 
-function missionStage(mission,jobs,jobsSummary){
-  if(!mission) return 1;
-  const s=mission.status||'';
-  const pid=mission.project_id;
-  if(s==='completed') return 8;
-  if(s==='pending_approval') return 0;
-  if(s.includes('interrupted')) return 2;
-  const mj=(jobs||[]).filter(j=>j.project_id===pid)
-    .sort((a,b)=>(a.created_at||'')<(b.created_at||'')?1:-1);
-  if(!mj.length) return 1;
-  const jt=(mj[0].job_type||'').toLowerCase();
-  const js=mj[0].status;
-  // W1: si no hay jobs running/pending, el stage siempre es "completado" en ese paso
-  const noActive=(jobsSummary?.running??0)===0&&(jobsSummary?.pending??0)===0;
-  if(jt.includes('headless')) return (js==='completed'||noActive)?3:2;
-  if(jt.includes('test'))     return (js==='completed'||noActive)?5:4;
-  if(jt.includes('gate')||jt.includes('quality')) return (js==='completed'||noActive)?6:5;
-  if(jt.includes('rc')||jt.includes('release'))   return (js==='completed'||noActive)?7:6;
-  if(jt.includes('run_mission')||jt.includes('build')) return noActive?3:3;
-  return 2;
+// W4/TAREA3: cada nodo se evalúa de forma INDEPENDIENTE contra datos reales
+// de /summary (+ gates report) — no una escalera secuencial. Un artefacto
+// tardío (p.ej. gates-report ausente) no debe "tapar" evidencia real de
+// pasos posteriores (p.ej. un RC ya canónico y aprobado). Esto evita tanto
+// falsos "GENERANDO" (job ya terminado o nunca disparado) como falsos
+// "pendiente" (paso intermedio sin evidencia pero posterior ya cumplido).
+function computeNodeDone(summary,gatesSummary){
+  if(!summary) return null;
+  const m=summary.mission||{}, design=summary.design||{}, ws=summary.workspace||{},
+        hl=summary.headless, ts=summary.tests, rcs=summary.rcs||{};
+  return [
+    ['approved','completed'].includes(m.status||'') || !!m.approved_at,          // 01 Misión
+    (design.files_count||0) > 0,                                                 // 02 Diseño
+    !!(hl && hl.returncode===0),                                                 // 03 Headless
+    (ws.py_files||0) > 0,                                                        // 04 Código
+    !!(ts && ts.passed>0 && ts.failed===0),                                      // 05 Tests
+    !!(gatesSummary && (gatesSummary.FAIL||0)===0 && (gatesSummary.PASS||0)>0),  // 06 Quality gates
+    !!rcs.canonical || (rcs.count||0)>0,                                         // 07 Release cand.
+    !!rcs.canonical,                                                             // 08 Aprobación humana
+  ];
 }
 
-function renderFlowDiagram(missions,jobs,jobsSummary){
+async function refreshFlowDiagram(){
   const el=document.getElementById('flow-diagram'); if(!el) return;
-  const active=missions.find(m=>!['approved','rejected','completed'].includes(m.status))||missions[0];
   const amEl=document.getElementById('dash-active-mission');
-  if(amEl&&active) amEl.textContent=active.project_id;
-  const stage=missionStage(active,jobs,jobsSummary);
-  const interrupted=(active?.status||'').includes('interrupted');
+  const pid=_selectedMissionId;
+
+  if(!pid){
+    if(amEl) amEl.textContent='Selecciona una misión';
+    renderFlowDiagram(null,null,null,null);
+    return;
+  }
+  if(amEl) amEl.textContent=pid;
+
+  const enc=encodeURIComponent(pid);
+  const [sumR,gatesR,statusR]=await Promise.allSettled([
+    fetch(API_BASE+'/api/v1/layer9/missions/'+enc+'/summary',{headers:headers()}).then(r=>r.ok?r.json():null),
+    fetch(API_BASE+'/api/v1/deployments/'+enc+'/gates-report',{headers:headers()}).then(r=>r.ok?r.json():null),
+    fetch(API_BASE+'/api/v1/layer8/status',{headers:headers()}).then(r=>r.ok?r.json():null),
+  ]);
+  const summary=sumR.value, gatesReport=gatesR.value, status=statusR.value;
+  renderFlowDiagram(pid, summary, status?.jobs, gatesReport?.summary);
+}
+
+function renderFlowDiagram(pid,summary,jobsSummary,gatesSummary){
+  const el=document.getElementById('flow-diagram'); if(!el) return;
+  const done=computeNodeDone(summary,gatesSummary);
+  const firstPending=done?done.findIndex(x=>!x):-1;
+  // Regla dura: si no hay jobs running/pending, ningún nodo puede quedar "en curso".
+  const noActive=(jobsSummary?.running??0)===0&&(jobsSummary?.pending??0)===0;
+  const interrupted=(summary?.mission?.status||'').includes('interrupted');
   el.innerHTML=FLOW_NODES.map((n,i)=>{
+    const isDone=done?done[i]:false;
     let cls;
-    if(stage>7)      cls='done';
-    else if(i<stage) cls='done';
-    else if(n.gate)  cls='gate';
-    else if(i===stage) cls='active';
+    if(isDone) cls='done';
+    else if(n.gate) cls='gate';
+    else if(i===firstPending&&!noActive) cls='active';
     else cls='todo';
     const st=cls==='done'?n.dn
-      :cls==='active'?(interrupted&&i===stage?'interrumpido':n.ac)
+      :cls==='active'?(interrupted&&i===firstPending?'interrumpido':n.ac)
       :n.td;
     return '<div class="node '+cls+'"><div><div class="ix">'+n.ix+'</div><div class="lab">'+n.lab+'</div></div><div class="st">'+st+'</div><span class="led"></span></div>';
   }).join('');
@@ -1336,6 +1355,7 @@ const _FILTER_PATHS=['.pytest_cache','__pycache__','.pyc','.env','.claude','data
 function _filterFile(path){ return !_FILTER_PATHS.some(p=>path.includes(p)); }
 
 function openMissionDetail(pid){
+  _selectedMissionId=pid;  // W4/TAREA3: el flujo gobernado del dashboard sigue a esta misión
   document.getElementById('dp-title').textContent=pid;
   document.getElementById('dp-status-chip').innerHTML='<span class="chip c-mute">cargando…</span>';
   document.getElementById('dp-body').innerHTML='<div class="meta" style="color:var(--faint)">Cargando detalle…</div>';
@@ -1343,11 +1363,14 @@ function openMissionDetail(pid){
   document.getElementById('detail-panel').classList.add('open');
   if(CONNECTED) _loadDetail(pid);
   else _renderDetailOffline(pid);
+  if(CONNECTED) refreshFlowDiagram();
 }
 
 function closeDetail(){
   document.getElementById('detail-overlay').classList.remove('open');
   document.getElementById('detail-panel').classList.remove('open');
+  _selectedMissionId=null;  // W4/TAREA3: sin misión abierta -> banner "Selecciona una misión"
+  if(CONNECTED) refreshFlowDiagram();
 }
 
 async function _loadDetail(pid){
@@ -1367,12 +1390,14 @@ async function _loadDetail(pid){
     _grp('estado','01 Estado',true)+
     _grp('evidencia','02 Evidencia',false)+
     _grp('agentes','03 Agentes',false)+
-    _grp('acciones','04 Acciones',false);
+    _grp('acciones','04 Acciones',false)+
+    _grp('pruebas','05 Pruebas Funcionales',false);
 
   _renderGrp1(pid, summary, preflight);
   _renderGrp2(pid, summary);  // lazy subpanels — carga en expandir
   _renderGrp3_agents(pid);    // agentes: carga inmediata
   _renderGrp4(pid, preflight, summary);
+  _renderGrp5_tests(pid);     // W4: catálogo de pruebas — carga inmediata (reader, no audita)
 }
 
 function _grp(id, label, open){
@@ -1762,6 +1787,165 @@ async function _renderGrp4(pid, pf, summary){
     Ver endpoint de revisión</button>`;
 
   el.innerHTML=html;
+}
+
+// ── 05 Pruebas Funcionales (W4) ─────────────────────────────────────────────
+// Reader (GET test-catalog/test-results) vs Executor (POST test/run[-suite]):
+// el executor SIEMPRE pide nombre real del operador y deja evidencia auditada.
+const _RESERVED_RUN_BY=['human','agent','system','admin','user','factory'];
+
+async function _renderGrp5_tests(pid){
+  const el=document.getElementById('grp-pruebas'); if(!el) return;
+  el.innerHTML='<div class="meta" style="color:var(--faint)">Cargando catálogo…</div>';
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer9/missions/'+encodeURIComponent(pid)+'/test-catalog',{headers:headers()});
+    if(r.status===404){ el.innerHTML='<div class="meta" style="color:var(--faint)">Sin catálogo de pruebas para esta misión.</div>'; return; }
+    if(!r.ok){ el.innerHTML='<div class="meta" style="color:var(--fail)">Error '+r.status+'</div>'; return; }
+    const d=await r.json();
+    const ready=!!d.deployment_ready;
+    let html=`<div class="between" style="margin-bottom:8px">
+      <span class="meta">Deployment: puerto ${d.deployment?.api_port??'?'}</span>
+      <span class="chip ${ready?'c-pass':'c-fail'}">${ready?'VIVO':'NO VIVO'}</span>
+    </div>
+    <div class="meta" style="font-size:10.5px;color:var(--faint);margin-bottom:10px">
+      Ejecutar una prueba llama al endpoint real del deployment y DEJA EVIDENCIA AUDITADA (Part-11).
+      El payload SIEMPRE viene del catálogo — no es editable.</div>`;
+    if(!ready){
+      html+=`<div class="meta" style="color:var(--warn);margin-bottom:10px;font-size:11px">
+        El deployment no responde — los botones "Probar" están deshabilitados.</div>`;
+    }
+    html+=(d.agents||[]).map(a=>_agentTestCard(pid,a,ready)).join('');
+    html+=`<div class="dp-sub" style="margin-top:14px">Historial de pruebas</div>
+      <div id="test-history-${_esc(pid)}"><div class="meta" style="color:var(--faint)">cargando…</div></div>`;
+    el.innerHTML=html;
+    _loadTestHistory(pid);
+  }catch(e){ el.innerHTML='<div class="meta" style="color:var(--fail)">'+e.message+'</div>'; }
+}
+
+function _agentTestCard(pid,agent,ready){
+  const tests=agent.tests||[];
+  let html=`<div class="card" style="padding:10px 12px;margin-bottom:10px">
+    <div class="between" style="margin-bottom:4px">
+      <span class="k mono">${agent.agent_id}</span>
+      <button class="btn ghost" style="font-size:10px;padding:3px 9px" ${ready?'':'disabled title="Deployment no vivo"'}
+        onclick="runSuite('${_esc(pid)}','${agent.agent_id}')">Probar suite (${tests.length})</button>
+    </div>
+    ${agent.description?`<div class="meta" style="font-size:10.5px;color:var(--faint);margin-bottom:6px">${agent.description}</div>`:''}`;
+  html+=tests.map(t=>_testCaseRow(pid,t,ready)).join('');
+  html+='</div>';
+  return html;
+}
+
+function _testCaseRow(pid,t,ready){
+  const rid=_esc(pid)+'-'+t.test_id;
+  const payloadStr=JSON.stringify(t.payload,null,2).replace(/</g,'&lt;');
+  const expectStr=JSON.stringify(t.expect,null,2).replace(/</g,'&lt;');
+  return `<div class="gate-line" style="flex-direction:column;align-items:stretch;gap:4px">
+    <div class="between">
+      <span class="mono" style="font-size:11px">${t.title||t.test_id}</span>
+      <button class="btn ghost" style="font-size:10px;padding:2px 8px" ${ready?'':'disabled'}
+        onclick="promptRunTest('${_esc(pid)}','${t.test_id}')">Probar</button>
+    </div>
+    <div class="meta mono" style="font-size:10px;color:var(--faint)">${t.endpoint}</div>
+    <details><summary style="cursor:pointer;font-size:10px;color:var(--faint)">payload / expect (solo lectura)</summary>
+      <pre style="background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:8px;
+        font-size:10px;max-height:160px;overflow:auto;margin:4px 0 0">payload: ${payloadStr}
+
+expect: ${expectStr}</pre>
+    </details>
+    <div id="result-${rid}"></div>
+  </div>`;
+}
+
+function promptRunTest(pid,testId){
+  const by=(window.prompt('Nombre real del operador que ejecuta esta prueba (queda auditado):')||'').trim();
+  if(!by) return;
+  if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
+  _runTest(pid,testId,by);
+}
+
+async function _runTest(pid,testId,by){
+  const rid=pid+'-'+testId;
+  const resEl=document.getElementById('result-'+rid);
+  if(resEl) resEl.innerHTML='<div class="meta" style="color:var(--faint)">Ejecutando… (timeout 15s)</div>';
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer9/missions/'+encodeURIComponent(pid)+'/test/run',{
+      method:'POST', headers:headers(), body:JSON.stringify({test_id:testId,run_by:by})
+    });
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){
+      if(resEl) resEl.innerHTML='<div class="meta" style="color:var(--fail)">Error '+r.status+': '+
+        (typeof d.detail==='object'?JSON.stringify(d.detail):(d.detail||'error'))+'</div>';
+      return;
+    }
+    if(resEl) resEl.innerHTML=_renderTestResult(d);
+    toast((d.result==='PASS'?'✓ PASS':d.result==='FAIL'?'✗ FAIL':'⚠ ERROR')+' · '+testId+' · '+by);
+    _loadTestHistory(pid);
+  }catch(e){ if(resEl) resEl.innerHTML='<div class="meta" style="color:var(--fail)">Error de red: '+e.message+'</div>'; }
+}
+
+function runSuite(pid,agentId){
+  const by=(window.prompt('Nombre real del operador que ejecuta la suite de "'+agentId+'" (queda auditado):')||'').trim();
+  if(!by) return;
+  if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
+  _runSuite(pid,agentId,by);
+}
+
+async function _runSuite(pid,agentId,by){
+  toast('Ejecutando suite de '+agentId+'…');
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer9/missions/'+encodeURIComponent(pid)+'/test/run-suite',{
+      method:'POST', headers:headers(), body:JSON.stringify({agent_id:agentId,run_by:by})
+    });
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){
+      toast('Error '+r.status+': '+(typeof d.detail==='object'?JSON.stringify(d.detail):(d.detail||'error')));
+      return;
+    }
+    (d.results||[]).forEach(res=>{
+      const resEl=document.getElementById('result-'+pid+'-'+res.test_id);
+      if(resEl) resEl.innerHTML=_renderTestResult(res);
+    });
+    toast('Suite '+agentId+': '+d.passed+'/'+d.total+' PASS · '+by);
+    _loadTestHistory(pid);
+  }catch(e){ toast('Error de red: '+e.message); }
+}
+
+function _renderTestResult(d){
+  const cls=d.result==='PASS'?'c-pass':d.result==='FAIL'?'c-fail':'c-warn';
+  const a=d.assertion||{};
+  return `<div style="border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:2px;background:var(--panel-2)">
+    <div class="between">
+      <span class="chip ${cls}" style="font-size:9px">${d.result}</span>
+      <span class="meta mono" style="font-size:10px;color:var(--faint)">${d.latency_ms??'—'}ms · status ${d.response_status??'—'}</span>
+    </div>
+    ${d.detail?`<div class="meta" style="color:var(--warn);font-size:10.5px;margin-top:4px">${d.detail}</div>`:''}
+    <div class="meta mono" style="font-size:10px;margin-top:6px">
+      aserción ${a.json_path||'—'}: esperado=<b>${JSON.stringify(a.expected_value)}</b> · recibido=<b>${JSON.stringify(a.received_value)}</b>
+    </div>
+    <pre style="background:var(--panel);border:1px solid var(--line-soft);border-radius:6px;padding:6px;
+      font-size:10px;max-height:140px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin:6px 0 0">${
+      (d.response_excerpt||'').replace(/</g,'&lt;')}</pre>
+    <div class="meta" style="font-size:9.5px;color:var(--faint);margin-top:4px">run_by: ${d.run_by||'—'} · ${(d.run_at||'').slice(0,19).replace('T',' ')}</div>
+  </div>`;
+}
+
+async function _loadTestHistory(pid){
+  const el=document.getElementById('test-history-'+_esc(pid)); if(!el) return;
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer9/missions/'+encodeURIComponent(pid)+'/test-results?limit=20',{headers:headers()});
+    if(!r.ok){ el.innerHTML='<div class="meta" style="color:var(--fail)">Error '+r.status+'</div>'; return; }
+    const d=await r.json();
+    if(!d.total){ el.innerHTML='<div class="meta" style="color:var(--faint)">Sin pruebas ejecutadas todavía.</div>'; return; }
+    el.innerHTML=(d.results||[]).map(res=>{
+      const cls=res.result==='PASS'?'c-pass':res.result==='FAIL'?'c-fail':'c-warn';
+      return `<div class="gate-line">
+        <span class="gid mono" style="font-size:10.5px">${res.test_id}</span>
+        <span class="chip ${cls}" style="font-size:9px">${res.result}</span>
+        <span class="meta mono" style="font-size:10px;color:var(--faint)">${res.run_by||'—'} · ${(res.run_at||'').slice(0,19).replace('T',' ')}</span>
+      </div>`;
+    }).join('')+`<div class="meta" style="font-size:10.5px;color:var(--faint);margin-top:4px">Mostrando ${Math.min(d.total,20)} de ${d.total}</div>`;
+  }catch(e){ el.innerHTML='<div class="meta" style="color:var(--fail)">'+e.message+'</div>'; }
 }
 
 async function loadFileContent(pid, path){

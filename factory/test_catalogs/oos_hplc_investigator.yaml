@@ -1,73 +1,174 @@
-# Catálogo de pruebas — oos_hplc_investigator
-# GMP AI Factory — Capa 8 — Deployment F5
-# Preparado en W3.5 para que el executor W4 distinga, por prueba,
-# endpoints deterministicos (reglas Python) de endpoints que usan
-# inferencia LLM local (Ollama).
+# Catálogo de pruebas funcionales — oos_hplc_investigator
+# GMP AI Factory — W4 — Consola de pruebas funcionales por agente
+#
+# Payloads y json_path verificados contra el código real del deployment:
+#   factory/deployments/oos_hplc_investigator/app/main.py (schemas Pydantic)
+#   factory/deployments/oos_hplc_investigator/app/oos_workflow.py (is_oos)
+#   factory/deployments/oos_hplc_investigator/app/agents/hplc_data_review/hplc_validator.py
+#   factory/deployments/oos_hplc_investigator/app/audit_trail.py (validate_alcoa)
+#
+# Excluidos deliberadamente (no son casos de prueba aislados / no determinísticos):
+#   POST /api/v1/oos/records/{record_id}/findings|advance|close  → requieren
+#     record_id UUID generado por un POST previo (estado en memoria _OOS_STORE)
+#   POST /api/v1/lot/disposition                                  → requiere
+#     oos_record_ids existentes
+#   POST /api/v1/query                                            → no mapea a
+#     un agente único; depende de inferencia Ollama (no determinístico)
 project_id: oos_hplc_investigator
-base_url: http://localhost:8102
-tests:
-  - test_id: health_check
-    method: GET
-    path: /health
-    uses_llm: false
+deployment_base: "http://localhost:8102"
+catalog_version: "1.0"
+agents:
+  - agent_id: qa_oos_profile
+    description: "Gestión del flujo OOS Fase I — creación de registro y detección OOS"
+    tests:
+      - test_id: oos_create_in_spec
+        title: "Resultado dentro de especificación → no OOS"
+        endpoint: "POST /api/v1/oos/records"
+        payload:
+          sample_id: "SYNTH-0001"
+          test_method: "HPLC-ASSAY"
+          analyst_id: "analyst_test"
+          result_value: 99.5
+          spec_min: 95.0
+          spec_max: 105.0
+        expect:
+          status_code: 200
+          json_path: "$.is_oos"
+          equals: false
 
-  - test_id: oos_records_create
-    method: POST
-    path: /api/v1/oos/records
-    uses_llm: false
+      - test_id: oos_create_out_of_spec
+        title: "Resultado fuera de especificación → OOS detectado"
+        endpoint: "POST /api/v1/oos/records"
+        payload:
+          sample_id: "SYNTH-0002"
+          test_method: "HPLC-ASSAY"
+          analyst_id: "analyst_test"
+          result_value: 108.0
+          spec_min: 95.0
+          spec_max: 105.0
+        expect:
+          status_code: 200
+          json_path: "$.is_oos"
+          equals: true
 
-  - test_id: oos_records_list
-    method: GET
-    path: /api/v1/oos/records
-    uses_llm: false
+  - agent_id: hplc_data_review_agent
+    description: "Validación SST, detección de anomalías de picos y cálculo de %RSD"
+    tests:
+      - test_id: sst_pass_within_criteria
+        title: "SST dentro de criterios USP <621> → PASS"
+        endpoint: "POST /api/v1/hplc/sst/validate"
+        payload:
+          theoretical_plates: 2500
+          tailing_factor: 1.2
+          resolution: 2.5
+          rsd_retention: 0.5
+        expect:
+          status_code: 200
+          json_path: "$.pass"
+          equals: true
 
-  - test_id: oos_records_findings
-    method: POST
-    path: /api/v1/oos/records/{record_id}/findings
-    uses_llm: false
+      - test_id: sst_fail_low_plates
+        title: "Platos teóricos por debajo del mínimo (2000) → SST FAIL"
+        endpoint: "POST /api/v1/hplc/sst/validate"
+        payload:
+          theoretical_plates: 1500
+        expect:
+          status_code: 200
+          json_path: "$.pass"
+          equals: false
 
-  - test_id: oos_records_advance
-    method: POST
-    path: /api/v1/oos/records/{record_id}/advance
-    uses_llm: false
+      - test_id: peaks_no_anomalies
+        title: "Pico dentro de rangos normales → 0 anomalías"
+        endpoint: "POST /api/v1/hplc/peaks/anomalies"
+        payload:
+          peaks:
+            - name: "main_peak"
+              area: 1000.0
+              retention_time: 5.2
+              symmetry: 1.1
+        expect:
+          status_code: 200
+          json_path: "$.count"
+          equals: 0
 
-  - test_id: oos_records_close
-    method: POST
-    path: /api/v1/oos/records/{record_id}/close
-    uses_llm: false
+      - test_id: peaks_negative_area_anomaly
+        title: "Área negativa → anomalía detectada"
+        endpoint: "POST /api/v1/hplc/peaks/anomalies"
+        payload:
+          peaks:
+            - name: "main_peak"
+              area: -50.0
+              retention_time: 5.2
+              symmetry: 1.1
+        expect:
+          status_code: 200
+          json_path: "$.count"
+          equals: 1
 
-  - test_id: hplc_sst_validate
-    method: POST
-    path: /api/v1/hplc/sst/validate
-    uses_llm: false
+      - test_id: rsd_four_values
+        title: "%RSD sobre 4 valores sintéticos → cálculo completado (n=4)"
+        endpoint: "POST /api/v1/hplc/rsd"
+        payload: [99.1, 99.3, 98.9, 99.0]
+        expect:
+          status_code: 200
+          json_path: "$.n"
+          equals: 4
 
-  - test_id: hplc_peaks_anomalies
-    method: POST
-    path: /api/v1/hplc/peaks/anomalies
-    uses_llm: false
+  - agent_id: integrity_lims_profile
+    description: "Validación ALCOA+ y sellado de auditoría (Data Integrity / LIMS)"
+    tests:
+      - test_id: alcoa_all_present
+        title: "Los 9 atributos ALCOA+ presentes → compliant"
+        endpoint: "POST /api/v1/audit/alcoa/validate"
+        payload:
+          attributable: true
+          legible: true
+          contemporaneous: true
+          original: true
+          accurate: true
+          complete: true
+          consistent: true
+          enduring: true
+          available: true
+        expect:
+          status_code: 200
+          json_path: "$.compliant"
+          equals: true
 
-  - test_id: hplc_rsd
-    method: POST
-    path: /api/v1/hplc/rsd
-    uses_llm: false
+      - test_id: alcoa_missing_attributes
+        title: "Atributos 'consistent' y 'enduring' ausentes → no compliant"
+        endpoint: "POST /api/v1/audit/alcoa/validate"
+        payload:
+          attributable: true
+          legible: true
+          contemporaneous: true
+          original: true
+          accurate: true
+          complete: true
+          consistent: false
+          enduring: false
+          available: true
+        expect:
+          status_code: 200
+          json_path: "$.compliant"
+          equals: false
 
-  - test_id: audit_alcoa_validate
-    method: POST
-    path: /api/v1/audit/alcoa/validate
-    uses_llm: false
-
-  - test_id: audit_stamp
-    method: POST
-    path: /api/v1/audit/stamp
-    uses_llm: false
-
-  - test_id: lot_disposition
-    method: POST
-    path: /api/v1/lot/disposition
-    uses_llm: false
-
-  - test_id: query_llm
-    method: POST
-    path: /api/v1/query
-    uses_llm: true
-    llm_model: mistral:7b-instruct-q4_K_M
+      - test_id: audit_stamp_basic
+        title: "Sello de auditoría sobre registro completo → ALCOA validado embebido"
+        endpoint: "POST /api/v1/audit/stamp"
+        payload:
+          actor: "analyst_test"
+          action: "manual_review"
+          attributable: true
+          legible: true
+          contemporaneous: true
+          original: true
+          accurate: true
+          complete: true
+          consistent: true
+          enduring: true
+          available: true
+        expect:
+          status_code: 200
+          json_path: "$.alcoa_validation.compliant"
+          equals: true

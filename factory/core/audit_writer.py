@@ -79,6 +79,9 @@ VALID_EVENTS = {
     "rc_unmarked_canonical",
     # W1 — revisión de misión
     "layer9_mission_revised",
+    # W4 — consola de pruebas funcionales por agente
+    "agent_functional_test_executed",
+    "agent_suite_tested",
 }
 
 

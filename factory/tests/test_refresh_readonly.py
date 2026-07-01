@@ -54,6 +54,9 @@ REFRESH_ENDPOINTS = [
     # pipeline refresh endpoints
     "/api/v1/layer8/workspaces/r6_change_control/tree",
     "/api/v1/layer8/missions/r6_change_control/artifacts",
+    # W4: consola de pruebas funcionales — catálogo e historial son READER puro
+    "/api/v1/layer9/missions/oos_hplc_investigator/test-catalog",
+    "/api/v1/layer9/missions/oos_hplc_investigator/test-results?limit=50",
 ]
 
 
