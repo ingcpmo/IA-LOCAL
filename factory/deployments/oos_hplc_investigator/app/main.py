@@ -38,8 +38,12 @@ _OOS_STORE: dict[str, dict] = {}
 
 
 async def verify_api_key(x_api_key: str = Header(default="")):
-    if GMP_API_KEY and x_api_key != GMP_API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    if not GMP_API_KEY:
+        return
+    if not x_api_key:
+        raise HTTPException(status_code=401, detail="Missing API key")
+    if x_api_key != GMP_API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API key")
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
@@ -261,26 +265,59 @@ class QueryRequest(BaseModel):
 
 @app.post("/api/v1/query", dependencies=[Depends(verify_api_key)])
 async def query_oos(body: QueryRequest):
-    t_start = time.time()
+    t_start = time.monotonic()
     system_context = (
         "Eres un experto en investigación OOS (Out-of-Specification) para análisis HPLC "
         "en laboratorio farmacéutico QC. Aplicas FDA OOS Guidance 2006, 21 CFR 211.192, "
         "y USP <621>. Respondes en español de forma concisa y precisa."
     )
     prompt = f"{system_context}\n\nContexto adicional: {body.context}\n\nPregunta: {body.question}"
+    timeout = httpx.Timeout(connect=5.0, read=OLLAMA_TIMEOUT, write=5.0, pool=5.0)
     try:
-        async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=timeout) as client:
             resp = await client.post(
                 f"{OLLAMA_BASE_URL}/api/generate",
-                json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False},
+                json={
+                    "model": OLLAMA_MODEL,
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {"num_predict": 256, "temperature": 0.2},
+                },
             )
             resp.raise_for_status()
             data = resp.json()
             answer = data.get("response", "")
+    except httpx.ConnectError as e:
+        elapsed = round(time.monotonic() - t_start, 2)
+        raise HTTPException(503, {
+            "error": "ollama_unreachable",
+            "detail": str(e),
+            "model": OLLAMA_MODEL,
+            "elapsed_seconds": elapsed,
+            "ollama_status": "unreachable",
+        })
+    except httpx.ReadTimeout as e:
+        elapsed = round(time.monotonic() - t_start, 2)
+        raise HTTPException(504, {
+            "error": "ollama_timeout",
+            "detail": str(e),
+            "model": OLLAMA_MODEL,
+            "elapsed_seconds": elapsed,
+            "ollama_status": "timeout",
+        })
     except Exception as e:
-        raise HTTPException(503, f"Ollama error: {e}")
+        elapsed = round(time.monotonic() - t_start, 2)
+        raise HTTPException(500, {
+            "error": "ollama_error",
+            "detail": str(e),
+            "model": OLLAMA_MODEL,
+            "elapsed_seconds": elapsed,
+            "ollama_status": "error",
+        })
     return {
         "answer": answer,
         "model": OLLAMA_MODEL,
-        "elapsed_seconds": round(time.time() - t_start, 2),
+        "elapsed_seconds": round(time.monotonic() - t_start, 2),
+        "ollama_status": "ok",
+        "used_llm": True,
     }
