@@ -57,6 +57,8 @@ REFRESH_ENDPOINTS = [
     # W4: consola de pruebas funcionales — catálogo e historial son READER puro
     "/api/v1/layer9/missions/oos_hplc_investigator/test-catalog",
     "/api/v1/layer9/missions/oos_hplc_investigator/test-results?limit=50",
+    # W4.1: dashboard GMP — agregador de evidencia real, READER puro
+    "/api/v1/layer9/missions/oos_hplc_investigator/gmp-report",
 ]
 
 
