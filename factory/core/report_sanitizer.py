@@ -16,6 +16,12 @@ _SENSITIVE_KEY_RE = re.compile(
 # Patrones de valores que delatan un secreto aunque no se pase su valor exacto.
 _VALUE_PATTERNS = [
     re.compile(r"sk-ant-[A-Za-z0-9_-]+"),
+    # Credenciales embebidas en connection strings / URLs:
+    #   postgresql://user:password@host  →  postgresql://***REDACTED***@host
+    #   redis://:password@host           →  redis://***REDACTED***@host
+    # El usuario puede ser vacío (redis); el password nunca. No matchea URLs
+    # sin '@' (http://host:8000/path queda intacta).
+    re.compile(r"(?<=://)[^/\s:@]*:[^/\s@]+(?=@)"),
 ]
 
 
