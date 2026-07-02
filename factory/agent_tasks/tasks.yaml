@@ -1,0 +1,90 @@
+# W6 — Tareas operativas de agentes — ESPECIFICACIONES DE DISEÑO
+#
+# ESTADO: draft_design — NO EXISTE EJECUTOR NI SCHEDULER. Ninguna de estas
+# tareas corre ni puede correr: son especificaciones para revisión humana.
+# Activarlas requiere: ejecutor aprobado (fase futura), transición humana
+# pending_approval→approved→active, y auditoría por ejecución.
+# Esquema completo: factory/docs/W6_MISSION_CONTROL_ENTERPRISE.md §4.
+
+version: 1
+executor_implemented: false   # verdad dura: no hay runtime de tareas en W6
+
+tasks:
+  - task_id: review_oos_mission_evidence
+    status: draft_design
+    agent_id: qa                      # agente base existente (Quality Assurance)
+    objective: >
+      Revisar la evidencia acumulada de la misión oos_hplc_investigator
+      (test-results, gates report) y preparar un resumen para revisión humana.
+    task_type: revisar_evidencia_mision
+    source: mission_evidence
+    connector: factory/test_results/oos_hplc_investigator.jsonl
+    schedule: {mode: reactive, frequency: null, window: null}
+    limits: {max_runtime_s: 300, max_items: 200, max_external_requests: 0}
+    access_mode: read_only
+    ollama: {allowed: true, purpose: summarize, template_id: tmpl_evidence_summary_v1}
+    success_criteria:
+      - "El resumen referencia cada test_id incluido (validable por regla Python)"
+    alert_criteria:
+      - "Cualquier test FAIL nuevo respecto a la última corrida"
+    output: summary_md
+    report_path: factory/agent_tasks/outputs/review_oos_mission_evidence/
+    audit: true
+    human_owner: Cesar
+    autonomy_level: B
+    pause: {enabled: true}
+    escalation: "QA lead si aparece FAIL nuevo"
+    approval_required: true
+
+  - task_id: validate_results_against_rules
+    status: draft_design
+    agent_id: integrity               # agente base existente (ALCOA+ / Part 11)
+    objective: >
+      Validar resultados de pruebas funcionales contra reglas Python
+      deterministas y generar evidencia del resultado de validación.
+    task_type: validar_resultados_reglas
+    source: test_results
+    connector: factory/test_results/
+    schedule: {mode: scheduled, frequency: "0 6 * * 1", window: "06:00-07:00"}
+    limits: {max_runtime_s: 600, max_items: 500, max_external_requests: 0}
+    access_mode: write_controlled     # solo a su report_path
+    ollama: {allowed: false, purpose: none, template_id: null}
+    success_criteria:
+      - "100% de resultados evaluados por reglas; ninguna evaluación por LLM"
+    alert_criteria:
+      - "Discrepancia entre resultado registrado y regla determinista"
+    output: evidence_json
+    report_path: factory/agent_tasks/outputs/validate_results_against_rules/
+    audit: true
+    human_owner: Cesar
+    autonomy_level: C
+    pause: {enabled: true}
+    escalation: "QA/QC inmediato ante discrepancia"
+    approval_required: true
+
+  - task_id: search_similar_oos_cases
+    status: draft_design
+    agent_id: capa                    # agente base existente (Root Cause/CAPA)
+    objective: >
+      Buscar en la memoria local de casos regulatorios casos similares de
+      OOS/HPLC/Data Integrity relevantes a la desviación bajo análisis y
+      preparar citas con source pointers para el analista humano.
+    task_type: buscar_casos_similares
+    source: case_memory
+    connector: factory/regulatory/case_memory/
+    schedule: {mode: reactive, frequency: null, window: null}
+    limits: {max_runtime_s: 120, max_items: 20, max_external_requests: 0}
+    access_mode: read_only
+    ollama: {allowed: true, purpose: compare, template_id: tmpl_case_compare_v1}
+    success_criteria:
+      - "Toda cita incluye URL + autoridad + fecha de consulta + hash"
+    alert_criteria:
+      - "Caso con paralelismo crítico a la desviación actual"
+    output: qa_report
+    report_path: factory/agent_tasks/outputs/search_similar_oos_cases/
+    audit: true
+    human_owner: Cesar
+    autonomy_level: B
+    pause: {enabled: true}
+    escalation: "Analista de desviaciones ante paralelismo crítico"
+    approval_required: true

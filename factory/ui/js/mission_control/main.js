@@ -20,6 +20,7 @@ import {
 } from './detail_panel.js';
 import { promptRunTest, runSuite } from './tests_console.js';
 import { downloadGmpReportPdf } from './gmp_dashboard.js';
+import { doCaseSearch } from './intel_views.js';
 
 Object.assign(window, {
   show, connect, refresh, toast, fakeSubmit,
@@ -37,3 +38,7 @@ Object.assign(window, {
 document.querySelectorAll('#nav button').forEach(b=>{
   b.addEventListener('click',()=>show(b.dataset.v,b));
 });
+
+/* W6 — búsqueda de la memoria de casos (Enter o botón) */
+document.getElementById('memory-search-btn')?.addEventListener('click', doCaseSearch);
+document.getElementById('memory-q')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doCaseSearch(); });

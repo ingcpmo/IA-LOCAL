@@ -24,16 +24,23 @@
       </div>
     </div>
     <nav id="nav">
+      <div class="grp">Visión</div>
+      <button data-v="exec">Executive Overview</button>
+      <div class="grp">Misiones</div>
+      <button class="on" data-v="dash">Panel operativo</button>
       <div class="grp">Gobierno</div>
-      <button class="on" data-v="dash"><span class="ix">01</span> Panel general</button>
-      <button data-v="create"><span class="ix">02</span> Crear misión</button>
-      <button data-v="approve"><span class="ix">03</span> Aprobación de misión</button>
-      <div class="grp">Construcción</div>
-      <button data-v="pipeline"><span class="ix">04</span> Pipeline Capa 8</button>
-      <button data-v="review"><span class="ix">05</span> Revisión humana</button>
-      <div class="grp">Evidencia</div>
-      <button data-v="audit"><span class="ix">06</span> Auditoría</button>
-      <button data-v="system"><span class="ix">07</span> Estado del sistema</button>
+      <button data-v="create">Crear misión</button>
+      <button data-v="approve">Aprobación de misión</button>
+      <button data-v="review">Revisión humana</button>
+      <button data-v="pipeline">Pipeline Capa 8</button>
+      <div class="grp">Cumplimiento</div>
+      <button data-v="audit">Auditoría</button>
+      <button data-v="risks">Riesgos</button>
+      <button data-v="system">Estado del sistema</button>
+      <div class="grp">Inteligencia <span class="grp-tag">diseño</span></div>
+      <button data-v="tasks">Tareas de agentes</button>
+      <button data-v="sources">Fuentes regulatorias</button>
+      <button data-v="memory">Memoria de casos</button>
     </nav>
     <div class="rail-foot">
       <div><span class="dotpass">●</span> base 8000 · factory 9000</div>
@@ -60,6 +67,82 @@
     </header>
 
     <div class="wrap">
+
+      <!-- W6 · EXECUTIVE OVERVIEW -->
+      <section class="view" id="v-exec">
+        <p class="lead">Estado del sistema en un vistazo: misiones, decisiones humanas pendientes, salud de stacks y riesgos. Todo enlaza a su evidencia — ningún KPI existe sin fuente.</p>
+        <div class="grid g4">
+          <div class="card stat"><span class="k">Misiones</span><span class="n" id="ex-missions">—</span></div>
+          <div class="card stat"><span class="k">Decisiones pendientes</span><span class="n" id="ex-pending">—</span></div>
+          <div class="card stat"><span class="k">RC por revisar</span><span class="n" id="ex-rc">—</span></div>
+          <div class="card stat"><span class="k">Auditoría</span><span class="n" id="ex-audit">—</span></div>
+        </div>
+        <div class="grid g2" style="margin-top:18px">
+          <div class="card">
+            <div class="between"><h3>Misiones por estado</h3><span class="chip c-mute">Capa 9</span></div>
+            <div class="hr"></div>
+            <div id="ex-mission-list" class="meta">(conectar para ver misiones)</div>
+          </div>
+          <div class="card">
+            <div class="between"><h3>Riesgos principales</h3><span class="chip c-warn" id="ex-risk-count">—</span></div>
+            <div class="hr"></div>
+            <div id="ex-risk-list" class="meta">(conectar para ver riesgos)</div>
+          </div>
+        </div>
+        <div class="sec-h"><h3>Salud de stacks</h3><span class="bar"></span></div>
+        <div class="grid g3" id="ex-stacks">
+          <div class="card"><div class="meta" style="color:var(--faint)">(conectar para ver stacks)</div></div>
+        </div>
+      </section>
+
+      <!-- W6 · RISKS -->
+      <section class="view" id="v-risks">
+        <p class="lead">Riesgos vivos del sistema derivados de evidencia real (status/risks). Aceptar un riesgo es una decisión humana auditada — esta vista solo los muestra.</p>
+        <div id="risks-view-list">
+          <div class="card"><div class="meta" style="color:var(--faint)">(conectar para ver riesgos)</div></div>
+        </div>
+        <div class="sec-h"><h3>Readiness piloto / go-live</h3><span class="bar"></span><span class="chip c-warn">diseño</span></div>
+        <div class="card">
+          <div class="meta" style="line-height:2">La matriz de readiness (corpus regulatorio, paquete CSV, roles, LIMS/CDS, datos representativos) es parte del diseño W6 y aún no tiene endpoint: cada dimensión citará su evidencia o dirá <b>"sin evidencia"</b> — nunca un semáforo optimista sin soporte. Ver <span class="mono">factory/docs/W6_MISSION_CONTROL_ENTERPRISE.md</span> §V9.</div>
+        </div>
+      </section>
+
+      <!-- W6 · OPERATIONAL AGENT TASKS (MODO DISEÑO) -->
+      <section class="view" id="v-tasks">
+        <div class="banner design"><span>◆</span><div><b>MODO DISEÑO — sin ejecución real.</b> No existe ejecutor ni scheduler: estas son especificaciones de tarea (draft_design) para revisión humana. Activarlas requiere aprobación de una fase futura.</div></div>
+        <p class="lead">Tareas operativas asignables a agentes de Capa 6: cada especificación fija agente, objetivo, fuente, límites duros, uso permitido de Ollama, criterios y responsable humano. Sin loops libres — toda ejecución futura termina, se audita y es pausable.</p>
+        <div id="tasks-list">
+          <div class="card"><div class="meta" style="color:var(--faint)">(conectar para ver especificaciones)</div></div>
+        </div>
+        <div class="sec-h"><h3>Historial de ejecuciones</h3><span class="bar"></span></div>
+        <div class="card"><div class="meta">0 ejecuciones — el ejecutor no está implementado. La matriz de autonomía A–F y el ciclo de vida están en <span class="mono">factory/docs/W6_MISSION_CONTROL_ENTERPRISE.md</span> §4.</div></div>
+      </section>
+
+      <!-- W6 · REGULATORY SOURCES (MODO DISEÑO) -->
+      <section class="view" id="v-sources">
+        <div class="banner design"><span>◆</span><div><b>MODO DISEÑO — cero tráfico externo.</b> Este registro define qué fuentes oficiales se consultarían y con qué límites. No hay conectores: nada sale a internet desde esta vista ni desde su endpoint.</div></div>
+        <p class="lead">Source registry de fuentes regulatorias oficiales (FDA, EMA, EudraGMDP). Política por defecto: read-only, rate limits, sin scraping agresivo, sin descarga masiva, sin almacenar documentos completos.</p>
+        <div id="sources-list">
+          <div class="card"><div class="meta" style="color:var(--faint)">(conectar para ver el registro)</div></div>
+        </div>
+      </section>
+
+      <!-- W6 · CASE MEMORY (MODO DISEÑO) -->
+      <section class="view" id="v-memory">
+        <div class="banner design"><span>◆</span><div><b>MODO DISEÑO — memoria vacía por diseño.</b> Solo se poblará con casos reales de fuentes oficiales bajo aprobación. Nunca se inventan casos.</div></div>
+        <p class="lead">Memoria regulatoria de casos: pointer + metadata + resumen + embedding + selective fetch. Guarda solo URL, autoridad, fechas, resumen corto, etiquetas y hash — nunca el documento completo. Flujo: buscar en memoria → casos similares → recuperar solo el caso necesario → citar → análisis bajo reglas y revisión humana.</p>
+        <div class="card" style="margin-bottom:14px">
+          <div class="between"><h3>Buscar casos</h3><span class="chip c-mute" id="memory-count">0 casos</span></div>
+          <div class="hr"></div>
+          <div style="display:flex;gap:8px">
+            <input id="memory-q" placeholder="p.ej. OOS HPLC data integrity" autocomplete="off" style="flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 10px;font-size:12.5px">
+            <button class="btn ghost" id="memory-search-btn" type="button">Buscar</button>
+          </div>
+        </div>
+        <div id="memory-results">
+          <div class="card"><div class="meta" style="color:var(--faint)">(conectar para consultar la memoria)</div></div>
+        </div>
+      </section>
 
       <!-- 01 DASHBOARD -->
       <section class="view on" id="v-dash">

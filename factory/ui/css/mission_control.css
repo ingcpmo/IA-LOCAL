@@ -178,6 +178,21 @@ tr:hover td{background:#10161d}
 .banner.info{background:#0f1f29;border:1px solid #1c3645;color:#a9d2e6}
 .banner b{font-weight:650}
 
+/* W6 — banner de vistas en MODO DISEÑO (sin ejecución real) */
+.banner.design{background:#231a08;border:1px solid #4a3a12;color:#e2b64e}
+
+/* W6 — tag "diseño" en el grupo de navegación Inteligencia */
+nav .grp .grp-tag{margin-left:6px;padding:1px 6px;border-radius:4px;background:#231a08;
+  border:1px solid #4a3a12;color:#e2b64e;font-size:9px;letter-spacing:.8px;text-transform:lowercase}
+
+/* W6 — franja de severidad izquierda en tarjetas de riesgo */
+.card.sev-high{border-left:2px solid var(--fail)}
+.card.sev-med{border-left:2px solid var(--warn)}
+.card.sev-info{border-left:2px solid var(--primary)}
+
+/* W6 — números tabulares en KPIs y columnas numéricas */
+.card.stat .n{font-variant-numeric:tabular-nums}
+
 /* footer note */
 .note{margin-top:26px;font-size:11.5px;color:var(--faint);font-family:var(--mono);letter-spacing:.3px}
 

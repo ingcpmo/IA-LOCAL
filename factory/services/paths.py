@@ -19,6 +19,11 @@ AUDIT_FILE = FACTORY_ROOT / "audit" / "factory_audit.jsonl"
 TEST_CATALOGS_DIR = FACTORY_ROOT / "test_catalogs"
 TEST_RESULTS_DIR = FACTORY_ROOT / "test_results"
 
+# W6 — archivos de diseño (vistas MODO DISEÑO, read-only, sin ejecutor real)
+AGENT_TASKS_FILE = FACTORY_ROOT / "agent_tasks" / "tasks.yaml"
+SOURCE_REGISTRY_FILE = FACTORY_ROOT / "regulatory" / "source_registry.yaml"
+CASE_MEMORY_FILE = FACTORY_ROOT / "regulatory" / "case_memory" / "cases.jsonl"
+
 MAX_FILE_BYTES = 256 * 1024  # límite de lectura de archivos del visor W3
 
 FILTER_PARTS = frozenset({

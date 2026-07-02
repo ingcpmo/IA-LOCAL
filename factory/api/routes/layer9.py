@@ -31,6 +31,7 @@ from factory.layer9.decision_log import write_decision, list_decisions, get_proj
 from factory.layer9.risk_acceptance import accept_risk, list_risks
 from factory.layer9.human_review_queue import list_pending, get_queue_summary, mark_reviewed
 from factory.layer8.release_candidate_builder import get_rc, confirm_rc
+from factory.services import design_mode_service as _design
 from factory.services import gmp_report_service
 from factory.services import mission_evidence_service as _evidence
 from factory.services import test_console_service as _console
@@ -795,3 +796,36 @@ def get_gmp_report_pdf(project_id: str, record_by: str | None = Query(default=No
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ── W6 — Vistas MODO DISEÑO (read-only, NUNCA auditan, cero HTTP externo) ─────
+# Sirven especificaciones locales (yaml/jsonl) para las vistas de Inteligencia:
+# tareas operativas, fuentes regulatorias y memoria de casos. No existe ejecutor
+# ni conector real; ver factory/docs/W6_MISSION_CONTROL_ENTERPRISE.md.
+
+@router.get("/agent-tasks")
+def get_agent_tasks():
+    return _design.read_agent_tasks()
+
+
+@router.get("/agent-tasks/{task_id}")
+def get_agent_task(task_id: str):
+    task = _design.read_agent_task(task_id)
+    if task is None:
+        raise HTTPException(404, f"TaskSpec '{task_id}' no existe")
+    return task
+
+
+@router.get("/regulatory-sources")
+def get_regulatory_sources():
+    return _design.read_source_registry()
+
+
+@router.get("/case-memory")
+def get_case_memory(limit: int = Query(default=100, ge=1, le=1000)):
+    return _design.read_case_memory(limit=limit)
+
+
+@router.get("/case-memory/search")
+def search_case_memory(q: str = Query(default=""), limit: int = Query(default=20, ge=1, le=100)):
+    return _design.search_case_memory(q, limit=limit)

@@ -12,15 +12,23 @@ import {
 import { renderApproveMissions } from './missions.js';
 import { renderReview } from './review.js';
 import { refreshPipeline, loadClaudeStatus } from './pipeline.js';
+import { renderExecStatus, renderExecMissions, renderExecReview, renderExecRisks } from './exec.js';
+import { renderRisksView } from './risks_view.js';
+import { renderAgentTasks, renderRegSources, renderCaseMemory } from './intel_views.js';
 
 const TITLES={
-  dash:["Panel general","mission-control / overview"],
+  exec:["Executive Overview","mission-control / executive"],
+  dash:["Panel operativo","mission-control / overview"],
   create:["Crear misión","mission-control / missions / new"],
   approve:["Aprobación de misión","mission-control / approvals"],
   pipeline:["Pipeline Capa 8","mission-control / layer8 / pipeline"],
   review:["Revisión humana","mission-control / review-queue"],
   audit:["Auditoría","mission-control / audit / chain"],
-  system:["Estado del sistema","mission-control / system"]
+  risks:["Riesgos","mission-control / risks"],
+  system:["Estado del sistema","mission-control / system"],
+  tasks:["Tareas de agentes · MODO DISEÑO","mission-control / intel / agent-tasks"],
+  sources:["Fuentes regulatorias · MODO DISEÑO","mission-control / intel / sources"],
+  memory:["Memoria de casos · MODO DISEÑO","mission-control / intel / case-memory"]
 };
 
 export function show(v,btn){
@@ -113,6 +121,32 @@ export async function refresh(v){
     if(v==='system'){
       const r=await fetch(API_BASE+"/api/v1/status/resources",{headers:headers()});
       if(r.ok){ const d=await r.json(); renderResources(d); }
+    }
+    if(v==='exec'){
+      const rf=await fetch(API_BASE+"/api/v1/status/full",{headers:headers()});
+      if(rf.ok){ const d=await rf.json(); renderExecStatus(d); renderStacks(d,'ex-stacks'); }
+      const rm=await fetch(API_BASE+"/api/v1/layer9/missions",{headers:headers()});
+      if(rm.ok){ renderExecMissions(await rm.json()); }
+      const rq=await fetch(API_BASE+"/api/v1/layer9/review-queue",{headers:headers()});
+      if(rq.ok){ renderExecReview(await rq.json()); }
+      const rr=await fetch(API_BASE+"/api/v1/status/risks",{headers:headers()});
+      if(rr.ok){ renderExecRisks(await rr.json()); }
+    }
+    if(v==='risks'){
+      const r=await fetch(API_BASE+"/api/v1/status/risks",{headers:headers()});
+      if(r.ok){ renderRisksView(await r.json()); }
+    }
+    if(v==='tasks'){
+      const r=await fetch(API_BASE+"/api/v1/layer9/agent-tasks",{headers:headers()});
+      if(r.ok){ renderAgentTasks(await r.json()); }
+    }
+    if(v==='sources'){
+      const r=await fetch(API_BASE+"/api/v1/layer9/regulatory-sources",{headers:headers()});
+      if(r.ok){ renderRegSources(await r.json()); }
+    }
+    if(v==='memory'){
+      const r=await fetch(API_BASE+"/api/v1/layer9/case-memory",{headers:headers()});
+      if(r.ok){ renderCaseMemory(await r.json()); }
     }
   }catch(e){ /* mantiene datos de diseño */ }
 }
