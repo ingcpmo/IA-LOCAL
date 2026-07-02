@@ -30,7 +30,6 @@ from factory.layer9.risk_acceptance import accept_risk, list_risks
 from factory.layer9.human_review_queue import list_pending, get_queue_summary, mark_reviewed
 from factory.layer8.release_candidate_builder import get_rc, confirm_rc
 from factory.core.report_sanitizer import sanitize_for_report
-from factory.core.pdf_report import render_gmp_report_pdf
 
 router = APIRouter(prefix="/api/v1/layer9", tags=["layer9"])
 
@@ -1819,7 +1818,9 @@ def _build_gmp_report(project_id: str) -> dict:
 
     secret_values = [
         os.environ.get("FACTORY_API_KEY"),
+        os.environ.get("GMP_API_KEY"),
         os.environ.get("ANTHROPIC_API_KEY"),
+        os.environ.get("POSTGRES_PASSWORD"),
         _get_deployment_api_key(project_id),
     ]
     return sanitize_for_report(report, secret_values=secret_values)
@@ -1838,15 +1839,17 @@ def get_gmp_report(project_id: str):
 @router.get("/missions/{project_id}/gmp-report.pdf")
 def get_gmp_report_pdf(project_id: str, record_by: str | None = Query(default=None)):
     """
-    W4.1 — Genera el informe PDF congelado a partir del MISMO agregador que
-    /gmp-report. Read-only por defecto (NO audita). Si se pasa ?record_by=
-    con un nombre real, audita exactamente 1 evento de trazabilidad de
-    "informe generado" (no re-audita nada de W4).
+    W4.1.1 — Genera el informe PDF robusto (18 secciones) a partir del MISMO
+    agregador que /gmp-report. Read-only por defecto (NO audita). Si se pasa
+    ?record_by= con un nombre real, audita exactamente 1 evento de
+    trazabilidad de "informe generado" (no re-audita nada de W4).
     """
     from datetime import datetime, timezone
 
+    from factory.core.pdf_report_robust import compose_robust_report
+
     report = _build_gmp_report(project_id)
-    pdf_bytes = render_gmp_report_pdf(report)
+    pdf_bytes = compose_robust_report(report, project_id)
 
     if record_by:
         name = _validate_run_by(record_by)
