@@ -13,6 +13,7 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -127,6 +128,12 @@ async def verify_api_key(x_api_key: str = Header(default="")):
 
 
 # ── UI ────────────────────────────────────────────────────────────────────────
+
+# W5: assets estáticos de la UI (css/ + js/ de Mission Control). Solo archivos
+# de presentación — nunca secretos. Mismo nivel de exposición que el HTML que
+# ya se servía en /mission-control.
+app.mount("/ui", StaticFiles(directory=str(Path(__file__).parent.parent / "ui")), name="ui")
+
 
 @app.get("/", include_in_schema=False)
 def serve_ui():
