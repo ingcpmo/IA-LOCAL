@@ -31,3 +31,15 @@ export function _gmpNA(v){
   return v;
 }
 export function _gmpEscHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* W6.1 — llena un selector de misión conservando la selección actual.
+   Devuelve el project_id efectivo (seleccionado o primero). */
+export function fillMissionSelect(selectId, missions){
+  const sel=document.getElementById(selectId); if(!sel) return null;
+  const current=sel.value;
+  const ids=(missions||[]).map(m=>m.project_id);
+  sel.innerHTML=ids.map(id=>'<option value="'+_esc(id)+'">'+_esc(id)+'</option>').join('')
+    ||'<option value="">(sin misiones)</option>';
+  if(current&&ids.includes(current)) sel.value=current;
+  return sel.value||null;
+}

@@ -33,6 +33,7 @@ from factory.layer9.human_review_queue import list_pending, get_queue_summary, m
 from factory.layer8.release_candidate_builder import get_rc, confirm_rc
 from factory.services import design_mode_service as _design
 from factory.services import gmp_report_service
+from factory.services import validation_readiness_service as _valready
 from factory.services import mission_evidence_service as _evidence
 from factory.services import test_console_service as _console
 
@@ -829,3 +830,23 @@ def get_case_memory(limit: int = Query(default=100, ge=1, le=1000)):
 @router.get("/case-memory/search")
 def search_case_memory(q: str = Query(default=""), limit: int = Query(default=20, ge=1, le=100)):
     return _design.search_case_memory(q, limit=limit)
+
+
+# ── W6.1 — Reportes, paquete de validación y readiness (read-only, NO auditan) ─
+
+@router.get("/missions/{project_id}/reports")
+def get_mission_reports(project_id: str):
+    """V6 — artefactos de reporte ya presentes en disco + generables bajo demanda."""
+    return _valready.list_reports(project_id)
+
+
+@router.get("/missions/{project_id}/validation-package")
+def get_validation_package(project_id: str):
+    """V10 — estado del dossier CSV/GAMP 5 (22 documentos); sin dossier → todo not_started."""
+    return _valready.read_validation_package(project_id)
+
+
+@router.get("/missions/{project_id}/readiness")
+def get_mission_readiness(project_id: str):
+    """V9 — checklist go/no-go derivado solo de evidencia; sin dato → 'sin evidencia'."""
+    return _valready.build_readiness(project_id)

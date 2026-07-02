@@ -28,6 +28,9 @@
       <button data-v="exec">Executive Overview</button>
       <div class="grp">Misiones</div>
       <button class="on" data-v="dash">Panel operativo</button>
+      <button data-v="detail">Detalle de misión</button>
+      <button data-v="agentsv">Agentes</button>
+      <button data-v="reports">Reportes</button>
       <div class="grp">Gobierno</div>
       <button data-v="create">Crear misión</button>
       <button data-v="approve">Aprobación de misión</button>
@@ -35,7 +38,8 @@
       <button data-v="pipeline">Pipeline Capa 8</button>
       <div class="grp">Cumplimiento</div>
       <button data-v="audit">Auditoría</button>
-      <button data-v="risks">Riesgos</button>
+      <button data-v="risks">Riesgos y Readiness</button>
+      <button data-v="validation">Validación GAMP 5</button>
       <button data-v="system">Estado del sistema</button>
       <div class="grp">Inteligencia <span class="grp-tag">diseño</span></div>
       <button data-v="tasks">Tareas de agentes</button>
@@ -101,9 +105,65 @@
         <div id="risks-view-list">
           <div class="card"><div class="meta" style="color:var(--faint)">(conectar para ver riesgos)</div></div>
         </div>
-        <div class="sec-h"><h3>Readiness piloto / go-live</h3><span class="bar"></span><span class="chip c-warn">diseño</span></div>
-        <div class="card">
-          <div class="meta" style="line-height:2">La matriz de readiness (corpus regulatorio, paquete CSV, roles, LIMS/CDS, datos representativos) es parte del diseño W6 y aún no tiene endpoint: cada dimensión citará su evidencia o dirá <b>"sin evidencia"</b> — nunca un semáforo optimista sin soporte. Ver <span class="mono">factory/docs/W6_MISSION_CONTROL_ENTERPRISE.md</span> §V9.</div>
+        <div class="sec-h">
+          <h3>Readiness piloto / go-live</h3><span class="bar"></span>
+          <select id="readiness-project" class="mc-select"><option value="">(conectar)</option></select>
+        </div>
+        <div id="readiness-verdict"></div>
+        <div id="readiness-list">
+          <div class="card"><div class="meta" style="color:var(--faint)">Checklist derivado solo de evidencia del sistema: cada dimensión cita su fuente o dice <b>"sin evidencia"</b>. Cualquier dimensión no lista ⇒ veredicto no-go.</div></div>
+        </div>
+      </section>
+
+      <!-- W6.1 · MISSION DETAIL -->
+      <section class="view" id="v-detail">
+        <p class="lead">Detalle completo de la misión con su cadena de trazabilidad: objetivo → agentes → pruebas → evidencia → release → deployment. Cada eslabón muestra la evidencia real que lo soporta.</p>
+        <div class="sec-h">
+          <h3>Misión</h3><span class="bar"></span>
+          <select id="detail-project" class="mc-select"><option value="">(conectar)</option></select>
+        </div>
+        <div id="detail-content">
+          <div class="card"><div class="meta" style="color:var(--faint)">(conectar y seleccionar una misión)</div></div>
+        </div>
+      </section>
+
+      <!-- W6.1 · AGENTS -->
+      <section class="view" id="v-agentsv">
+        <p class="lead">Capa 6 visible: agentes base del producto, perfiles derivados y los agentes asignados a cada misión. Se muestra el alcance de cada agente, nunca su system prompt completo.</p>
+        <div class="sec-h">
+          <h3>Agentes de la misión</h3><span class="bar"></span>
+          <select id="agentsv-project" class="mc-select"><option value="">(conectar)</option></select>
+        </div>
+        <div id="agentsv-mission">
+          <div class="card"><div class="meta" style="color:var(--faint)">(conectar para ver agentes de la misión)</div></div>
+        </div>
+        <div class="sec-h"><h3>Catálogo de agentes</h3><span class="bar"></span></div>
+        <div id="agentsv-catalog">
+          <div class="card"><div class="meta" style="color:var(--faint)">(conectar para ver el catálogo)</div></div>
+        </div>
+      </section>
+
+      <!-- W6.1 · REPORTS -->
+      <section class="view" id="v-reports">
+        <p class="lead">Biblioteca de reportes por misión: artefactos ya presentes en disco (con hash y fecha) y reportes generables bajo demanda. Esta vista no genera nada nuevo, solo lista y enlaza.</p>
+        <div class="sec-h">
+          <h3>Misión</h3><span class="bar"></span>
+          <select id="reports-project" class="mc-select"><option value="">(conectar)</option></select>
+        </div>
+        <div id="reports-content">
+          <div class="card"><div class="meta" style="color:var(--faint)">(conectar y seleccionar una misión)</div></div>
+        </div>
+      </section>
+
+      <!-- W6.1 · VALIDATION / GAMP 5 -->
+      <section class="view" id="v-validation">
+        <p class="lead">Estado del paquete documental CSV/GAMP 5 por misión (22 documentos). Los estados salen del dossier en disco — sin dossier, todo aparece "sin iniciar": la brecha se muestra, no se simula.</p>
+        <div class="sec-h">
+          <h3>Misión</h3><span class="bar"></span>
+          <select id="validation-project" class="mc-select"><option value="">(conectar)</option></select>
+        </div>
+        <div id="validation-content">
+          <div class="card"><div class="meta" style="color:var(--faint)">(conectar y seleccionar una misión)</div></div>
         </div>
       </section>
 

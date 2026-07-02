@@ -24,6 +24,10 @@ AGENT_TASKS_FILE = FACTORY_ROOT / "agent_tasks" / "tasks.yaml"
 SOURCE_REGISTRY_FILE = FACTORY_ROOT / "regulatory" / "source_registry.yaml"
 CASE_MEMORY_FILE = FACTORY_ROOT / "regulatory" / "case_memory" / "cases.jsonl"
 
+# W6.1 — dossier CSV/GAMP 5 por misión (solo lectura; generación = fase futura)
+VALIDATION_BASE = FACTORY_ROOT / "validation"
+MISSIONS_DIR = FACTORY_ROOT / "layer9" / "missions"
+
 MAX_FILE_BYTES = 256 * 1024  # límite de lectura de archivos del visor W3
 
 FILTER_PARTS = frozenset({

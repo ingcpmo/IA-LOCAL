@@ -13,18 +13,27 @@ import { renderApproveMissions } from './missions.js';
 import { renderReview } from './review.js';
 import { refreshPipeline, loadClaudeStatus } from './pipeline.js';
 import { renderExecStatus, renderExecMissions, renderExecReview, renderExecRisks } from './exec.js';
-import { renderRisksView } from './risks_view.js';
+import { renderRisksView, renderReadiness } from './risks_view.js';
 import { renderAgentTasks, renderRegSources, renderCaseMemory } from './intel_views.js';
+import { renderMissionDetail } from './mission_detail_view.js';
+import { renderMissionAgents, renderAgentsCatalog } from './agents_view.js';
+import { renderReports } from './reports_view.js';
+import { renderValidationPackage } from './validation_view.js';
+import { fillMissionSelect } from './core.js';
 
 const TITLES={
   exec:["Executive Overview","mission-control / executive"],
   dash:["Panel operativo","mission-control / overview"],
+  detail:["Detalle de misión","mission-control / missions / detail"],
+  agentsv:["Agentes","mission-control / agents"],
+  reports:["Reportes","mission-control / reports"],
+  validation:["Validación GAMP 5","mission-control / validation"],
   create:["Crear misión","mission-control / missions / new"],
   approve:["Aprobación de misión","mission-control / approvals"],
   pipeline:["Pipeline Capa 8","mission-control / layer8 / pipeline"],
   review:["Revisión humana","mission-control / review-queue"],
   audit:["Auditoría","mission-control / audit / chain"],
-  risks:["Riesgos","mission-control / risks"],
+  risks:["Riesgos y Readiness","mission-control / risks"],
   system:["Estado del sistema","mission-control / system"],
   tasks:["Tareas de agentes · MODO DISEÑO","mission-control / intel / agent-tasks"],
   sources:["Fuentes regulatorias · MODO DISEÑO","mission-control / intel / sources"],
@@ -57,6 +66,15 @@ export async function connect(){
     state.connected=false;
     conn.innerHTML='<span class="dotwarn">●</span> sin factory-api · <b>diseño</b>';
   }
+}
+
+/* W6.1 — llena un selector con las misiones actuales y devuelve el pid activo */
+async function missionSelect(selectId){
+  try{
+    const r=await fetch(API_BASE+"/api/v1/layer9/missions",{headers:headers()});
+    if(!r.ok) return null;
+    return fillMissionSelect(selectId, await r.json());
+  }catch(e){ return null; }
 }
 
 /* ---- main refresh dispatcher ---- */
@@ -135,6 +153,41 @@ export async function refresh(v){
     if(v==='risks'){
       const r=await fetch(API_BASE+"/api/v1/status/risks",{headers:headers()});
       if(r.ok){ renderRisksView(await r.json()); }
+      const pid=await missionSelect('readiness-project');
+      if(pid){
+        const rr=await fetch(API_BASE+"/api/v1/layer9/missions/"+pid+"/readiness",{headers:headers()});
+        if(rr.ok){ renderReadiness(await rr.json()); }
+      }
+    }
+    if(v==='detail'){
+      const pid=await missionSelect('detail-project');
+      if(pid){
+        const r=await fetch(API_BASE+"/api/v1/layer9/missions/"+pid+"/summary",{headers:headers()});
+        if(r.ok){ renderMissionDetail(await r.json()); }
+      }
+    }
+    if(v==='agentsv'){
+      const pid=await missionSelect('agentsv-project');
+      if(pid){
+        const rm=await fetch(API_BASE+"/api/v1/layer9/missions/"+pid+"/agents",{headers:headers()});
+        if(rm.ok){ renderMissionAgents(await rm.json()); }
+      }
+      const rc=await fetch(API_BASE+"/api/v1/agents",{headers:headers()});
+      if(rc.ok){ renderAgentsCatalog(await rc.json()); }
+    }
+    if(v==='reports'){
+      const pid=await missionSelect('reports-project');
+      if(pid){
+        const r=await fetch(API_BASE+"/api/v1/layer9/missions/"+pid+"/reports",{headers:headers()});
+        if(r.ok){ renderReports(await r.json(), pid); }
+      }
+    }
+    if(v==='validation'){
+      const pid=await missionSelect('validation-project');
+      if(pid){
+        const r=await fetch(API_BASE+"/api/v1/layer9/missions/"+pid+"/validation-package",{headers:headers()});
+        if(r.ok){ renderValidationPackage(await r.json()); }
+      }
     }
     if(v==='tasks'){
       const r=await fetch(API_BASE+"/api/v1/layer9/agent-tasks",{headers:headers()});
