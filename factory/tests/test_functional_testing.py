@@ -12,6 +12,7 @@ import json
 import sys
 from pathlib import Path
 
+import httpx
 import pytest
 import yaml
 from fastapi import HTTPException
@@ -20,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import factory.api.routes.layer9 as layer9
 import factory.core.port_registry as port_registry
+import factory.services.paths as svc_paths
 
 
 PROJECT = "test_functional_proj"
@@ -83,9 +85,9 @@ def functional_test_env(tmp_path, monkeypatch, isolated_audit):
     dep_dir.mkdir(parents=True)
     (dep_dir / ".env").write_text("GMP_API_KEY=test-secret-key\n", encoding="utf-8")
 
-    monkeypatch.setattr(layer9, "_TEST_CATALOGS_DIR", catalogs_dir)
-    monkeypatch.setattr(layer9, "_TEST_RESULTS_DIR", results_dir)
-    monkeypatch.setattr(layer9, "_DEP_BASE", dep_base)
+    monkeypatch.setattr(svc_paths, "TEST_CATALOGS_DIR", catalogs_dir)
+    monkeypatch.setattr(svc_paths, "TEST_RESULTS_DIR", results_dir)
+    monkeypatch.setattr(svc_paths, "DEP_BASE", dep_base)
 
     monkeypatch.setattr(
         port_registry, "get_allocated_ports",
@@ -93,7 +95,7 @@ def functional_test_env(tmp_path, monkeypatch, isolated_audit):
     )
 
     # Health check OK por defecto — cada test puede sobreescribirlo (409 case).
-    monkeypatch.setattr(layer9.httpx, "get", lambda *a, **k: _FakeResponse(200, {"api": "ok"}))
+    monkeypatch.setattr(httpx,"get", lambda *a, **k: _FakeResponse(200, {"api": "ok"}))
 
     return {"catalogs_dir": catalogs_dir, "results_dir": results_dir, "dep_dir": dep_dir}
 
@@ -126,7 +128,7 @@ def test_get_test_results_empty_and_readonly(functional_test_env, isolated_audit
 
 
 def test_results_reader_reflects_executed_runs(functional_test_env, monkeypatch):
-    monkeypatch.setattr(layer9.httpx, "request", lambda *a, **k: _FakeResponse(200, {"ok": True}))
+    monkeypatch.setattr(httpx,"request", lambda *a, **k: _FakeResponse(200, {"ok": True}))
     layer9.post_run_test(PROJECT, layer9.TestRunRequest(test_id="fake_pass", run_by="Cesar"))
     # limit explícito: al llamar la ruta directo en Python (sin ASGI de por medio),
     # el default Query(default=50) no se resuelve a int — sí se resuelve en HTTP real
@@ -159,7 +161,7 @@ def test_run_rejects_unknown_test_id(functional_test_env):
 
 
 def test_run_rejects_when_deployment_down(functional_test_env, monkeypatch):
-    monkeypatch.setattr(layer9.httpx, "get", lambda *a, **k: _FakeResponse(500))
+    monkeypatch.setattr(httpx,"get", lambda *a, **k: _FakeResponse(500))
     body = layer9.TestRunRequest(test_id="fake_pass", run_by="Cesar")
     with pytest.raises(HTTPException) as exc:
         layer9.post_run_test(PROJECT, body)
@@ -169,7 +171,7 @@ def test_run_rejects_when_deployment_down(functional_test_env, monkeypatch):
 def test_run_rejects_when_health_check_raises(functional_test_env, monkeypatch):
     def _boom(*a, **k):
         raise ConnectionError("refused")
-    monkeypatch.setattr(layer9.httpx, "get", _boom)
+    monkeypatch.setattr(httpx,"get", _boom)
     body = layer9.TestRunRequest(test_id="fake_pass", run_by="Cesar")
     with pytest.raises(HTTPException) as exc:
         layer9.post_run_test(PROJECT, body)
@@ -185,7 +187,7 @@ def test_run_uses_catalog_payload_not_client_supplied(functional_test_env, monke
         captured["json"] = json
         return _FakeResponse(200, {"ok": True})
 
-    monkeypatch.setattr(layer9.httpx, "request", fake_request)
+    monkeypatch.setattr(httpx,"request", fake_request)
     body = layer9.TestRunRequest(test_id="fake_pass", run_by="Cesar")
     layer9.post_run_test(PROJECT, body)
     assert captured["json"] == {"x": 1}  # el payload real del catálogo, no algo inyectado
@@ -199,7 +201,7 @@ def test_run_uses_port_from_registry_not_catalog_deployment_base(functional_test
         captured["headers"] = headers
         return _FakeResponse(200, {"ok": True})
 
-    monkeypatch.setattr(layer9.httpx, "request", fake_request)
+    monkeypatch.setattr(httpx,"request", fake_request)
     body = layer9.TestRunRequest(test_id="fake_pass", run_by="Cesar")
     layer9.post_run_test(PROJECT, body)
     # El catálogo declara deployment_base=http://localhost:9999 (otro formato/host);
@@ -211,7 +213,7 @@ def test_run_uses_port_from_registry_not_catalog_deployment_base(functional_test
 # ── EXECUTOR: ejecución real y auditoría ─────────────────────────────────────
 
 def test_run_success_audits_exactly_one_event(functional_test_env, isolated_audit, monkeypatch):
-    monkeypatch.setattr(layer9.httpx, "request", lambda *a, **k: _FakeResponse(200, {"ok": True}))
+    monkeypatch.setattr(httpx,"request", lambda *a, **k: _FakeResponse(200, {"ok": True}))
     before = _count_lines(isolated_audit)
     body = layer9.TestRunRequest(test_id="fake_pass", run_by="Cesar")
     result = layer9.post_run_test(PROJECT, body)
@@ -222,7 +224,7 @@ def test_run_success_audits_exactly_one_event(functional_test_env, isolated_audi
 
 
 def test_run_returns_fail_when_assertion_mismatches(functional_test_env, monkeypatch):
-    monkeypatch.setattr(layer9.httpx, "request", lambda *a, **k: _FakeResponse(200, {"ok": False}))
+    monkeypatch.setattr(httpx,"request", lambda *a, **k: _FakeResponse(200, {"ok": False}))
     body = layer9.TestRunRequest(test_id="fake_pass", run_by="Cesar")
     result = layer9.post_run_test(PROJECT, body)
     assert result["result"] == "FAIL"
@@ -236,7 +238,7 @@ def test_run_returns_error_on_timeout(functional_test_env, monkeypatch):
     def _timeout(*a, **k):
         raise real_httpx.TimeoutException("timed out")
 
-    monkeypatch.setattr(layer9.httpx, "request", _timeout)
+    monkeypatch.setattr(httpx,"request", _timeout)
     body = layer9.TestRunRequest(test_id="fake_pass", run_by="Cesar")
     result = layer9.post_run_test(PROJECT, body)
     assert result["result"] == "ERROR"
@@ -244,7 +246,7 @@ def test_run_returns_error_on_timeout(functional_test_env, monkeypatch):
 
 
 def test_run_persists_result_with_run_by(functional_test_env, monkeypatch):
-    monkeypatch.setattr(layer9.httpx, "request", lambda *a, **k: _FakeResponse(200, {"ok": True}))
+    monkeypatch.setattr(httpx,"request", lambda *a, **k: _FakeResponse(200, {"ok": True}))
     body = layer9.TestRunRequest(test_id="fake_pass", run_by="Maria")
     layer9.post_run_test(PROJECT, body)
 
@@ -261,7 +263,7 @@ def test_run_persists_result_with_run_by(functional_test_env, monkeypatch):
 # ── EXECUTOR: run-suite ──────────────────────────────────────────────────────
 
 def test_run_suite_audits_exactly_one_event_for_n_tests(functional_test_env, isolated_audit, monkeypatch):
-    monkeypatch.setattr(layer9.httpx, "request", lambda *a, **k: _FakeResponse(200, {"ok": True}))
+    monkeypatch.setattr(httpx,"request", lambda *a, **k: _FakeResponse(200, {"ok": True}))
     before = _count_lines(isolated_audit)
     body = layer9.TestRunSuiteRequest(agent_id="fake_agent", run_by="Cesar")
     result = layer9.post_run_test_suite(PROJECT, body)

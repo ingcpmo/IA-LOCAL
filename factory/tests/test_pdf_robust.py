@@ -10,6 +10,7 @@ import json
 import sys
 from pathlib import Path
 
+import httpx
 import pytest
 import yaml
 
@@ -19,6 +20,7 @@ import factory.api.routes.layer9 as layer9
 import factory.core.pdf_report_robust as pdf_robust
 import factory.layer9.mission_control as mission_control
 import factory.core.port_registry as port_registry
+import factory.services.paths as svc_paths
 
 PROJECT = "test_pdf_robust_proj"
 GMP_SECRET = "gmp-super-secret-robust-key-0001"
@@ -249,14 +251,14 @@ def robust_pdf_env(tmp_path, monkeypatch, isolated_audit):
     for d in (missions_dir, designs_dir, rc_dir, dep_dir, ws_dir, catalogs_dir):
         d.mkdir(parents=True, exist_ok=True)
 
-    monkeypatch.setattr(layer9, "_FACTORY_ROOT", root)
-    monkeypatch.setattr(layer9, "_DESIGNS_BASE", designs_dir)
-    monkeypatch.setattr(layer9, "_RC_BASE_W3", rc_dir)
-    monkeypatch.setattr(layer9, "_DEP_BASE", dep_dir)
-    monkeypatch.setattr(layer9, "_WS_BASE_W3", ws_dir)
-    monkeypatch.setattr(layer9, "_AUDIT_FILE", isolated_audit)
-    monkeypatch.setattr(layer9, "_TEST_CATALOGS_DIR", catalogs_dir)
-    monkeypatch.setattr(layer9, "_TEST_RESULTS_DIR", results_dir)
+    monkeypatch.setattr(svc_paths, "FACTORY_ROOT", root)
+    monkeypatch.setattr(svc_paths, "DESIGNS_BASE", designs_dir)
+    monkeypatch.setattr(svc_paths, "RC_BASE", rc_dir)
+    monkeypatch.setattr(svc_paths, "DEP_BASE", dep_dir)
+    monkeypatch.setattr(svc_paths, "WS_BASE", ws_dir)
+    monkeypatch.setattr(svc_paths, "AUDIT_FILE", isolated_audit)
+    monkeypatch.setattr(svc_paths, "TEST_CATALOGS_DIR", catalogs_dir)
+    monkeypatch.setattr(svc_paths, "TEST_RESULTS_DIR", results_dir)
     monkeypatch.setattr(mission_control, "MISSIONS_DIR", missions_dir)
     monkeypatch.setattr(pdf_robust, "_DESIGNS_BASE", designs_dir)
 
@@ -264,7 +266,7 @@ def robust_pdf_env(tmp_path, monkeypatch, isolated_audit):
         port_registry, "get_allocated_ports",
         lambda pid: {"api": 9999} if pid == PROJECT else None,
     )
-    monkeypatch.setattr(layer9.httpx, "get", lambda *a, **k: _FakeResponse(200, {"api": "ok"}))
+    monkeypatch.setattr(httpx,"get", lambda *a, **k: _FakeResponse(200, {"api": "ok"}))
 
     _write_mission(missions_dir, PROJECT)
     return {
