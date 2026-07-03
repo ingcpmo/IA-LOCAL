@@ -19,6 +19,7 @@ import {
   submitMarkCanonical, confirmF5,
 } from './detail_panel.js';
 import { promptRunTest, runSuite } from './tests_console.js';
+import { promptGenerateDossier, promptApproveDoc, viewValidationDoc } from './validation_view.js';
 import { downloadGmpReportPdf } from './gmp_dashboard.js';
 import { doCaseSearch } from './intel_views.js';
 
@@ -33,6 +34,7 @@ Object.assign(window, {
   loadDesignFile, loadFileContent, loadRcFile, loadDepFile,
   submitMarkCanonical, confirmF5,
   promptRunTest, runSuite, downloadGmpReportPdf,
+  promptGenerateDossier, promptApproveDoc, viewValidationDoc,
 });
 
 document.querySelectorAll('#nav button').forEach(b=>{

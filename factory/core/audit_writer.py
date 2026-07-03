@@ -16,7 +16,7 @@ layer8_mission_started, layer8_requirement_interpreted, layer8_agent_design_gene
 layer8_regulatory_matrix_generated, layer8_workspace_created, layer8_workspace_resumed,
 layer8_claude_status_checked, layer8_claude_execution_started, layer8_claude_execution_completed,
 layer8_claude_execution_failed, layer8_stop_condition_triggered, layer8_recovery_required,
-gmp_report_generated
+gmp_report_generated, validation_dossier_generated, validation_doc_approved
 """
 
 import fcntl
@@ -85,6 +85,9 @@ VALID_EVENTS = {
     "agent_suite_tested",
     # W4.1 — informe PDF del Dashboard GMP (trazabilidad opcional de generación)
     "gmp_report_generated",
+    # W6.2 — dossier CSV/GAMP 5: generación asistida y aprobación humana por documento
+    "validation_dossier_generated",
+    "validation_doc_approved",
 }
 
 

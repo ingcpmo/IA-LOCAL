@@ -120,7 +120,10 @@ VALIDATION_DOCS = [
     ("retirement_plan", "Retirement Plan"),
 ]
 
-_DOC_STATUSES = {"not_started", "generated", "approved"}
+# W6.2 — estados del ciclo de vida documental (generated se acepta como
+# alias legado y se normaliza a draft)
+_DOC_STATUSES = {"not_started", "draft", "missing_evidence", "needs_human_review", "approved"}
+_LEGACY_STATUS = {"generated": "draft"}
 
 
 def read_validation_package(project_id: str) -> dict:
@@ -144,6 +147,7 @@ def read_validation_package(project_id: str) -> dict:
     for doc_id, title in VALIDATION_DOCS:
         entry = recorded.get(doc_id) or {}
         status = entry.get("status", "not_started")
+        status = _LEGACY_STATUS.get(status, status)
         if status not in _DOC_STATUSES:
             status = "not_started"
         counts[status] += 1
@@ -152,7 +156,8 @@ def read_validation_package(project_id: str) -> dict:
             "title": title,
             "status": status,
             "approved_by": entry.get("approved_by"),
-            "updated_at": entry.get("updated_at"),
+            "generated_at": entry.get("generated_at"),
+            "missing": entry.get("missing") or [],
         })
 
     return {
@@ -162,7 +167,7 @@ def read_validation_package(project_id: str) -> dict:
         "counts": counts,
         "total": len(VALIDATION_DOCS),
         "note": None if dossier_file.exists() else
-        "sin dossier: la generación del paquete CSV es una fase futura aprobada",
+        "sin dossier: aún no se han generado borradores para esta misión (W6.2)",
     }
 
 
@@ -229,14 +234,15 @@ def build_readiness(project_id: str) -> dict:
                      f"{audit.get('event_count_filtered', 0)} eventos de la misión en la cadena"))
 
     vp = read_validation_package(project_id)
-    approved_docs = vp["counts"]["approved"]
-    generated_docs = vp["counts"]["generated"]
-    csv_status = ("ready" if approved_docs == vp["total"] else
-                  "partial" if (approved_docs + generated_docs) > 0 else "not_ready")
+    c = vp["counts"]
+    in_progress = c["draft"] + c["needs_human_review"] + c["missing_evidence"]
+    csv_status = ("ready" if c["approved"] == vp["total"] else
+                  "partial" if (c["approved"] + in_progress) > 0 else "not_ready")
     dims.append(_dim("csv_package", "Paquete CSV / GAMP 5",
                      csv_status,
-                     f"{approved_docs} aprobados · {generated_docs} generados · "
-                     f"{vp['counts']['not_started']} sin iniciar (de {vp['total']})"))
+                     f"{c['approved']} aprobados · {c['draft']} draft · "
+                     f"{c['needs_human_review']} por revisar · {c['missing_evidence']} sin evidencia · "
+                     f"{c['not_started']} sin iniciar (de {vp['total']})"))
 
     reg = _design.read_source_registry()
     connected = [s for s in reg.get("sources", []) if s.get("status") == "connected"]

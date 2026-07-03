@@ -78,7 +78,8 @@ def test_validation_package_no_dossier(mission_env):
     out = svc.read_validation_package("demo")
     assert out["dossier_exists"] is False
     assert out["total"] == 22 and len(out["documents"]) == 22
-    assert out["counts"] == {"not_started": 22, "generated": 0, "approved": 0}
+    assert out["counts"] == {"not_started": 22, "draft": 0, "missing_evidence": 0,
+                             "needs_human_review": 0, "approved": 0}
 
 
 def test_validation_package_partial_dossier(mission_env):
@@ -86,13 +87,16 @@ def test_validation_package_partial_dossier(mission_env):
     (d / "dossier.yaml").write_text(
         "documents:\n"
         "  urs: {status: approved, approved_by: Cesar}\n"
-        "  iq: {status: generated}\n"
+        "  iq: {status: generated}\n"          # alias legado → draft
+        "  pq: {status: missing_evidence}\n"
         "  oq: {status: estado_invalido}\n",   # degrada a not_started
         encoding="utf-8")
     out = svc.read_validation_package("demo")
-    assert out["counts"] == {"not_started": 20, "generated": 1, "approved": 1}
+    assert out["counts"] == {"not_started": 19, "draft": 1, "missing_evidence": 1,
+                             "needs_human_review": 0, "approved": 1}
     by_id = {doc["doc_id"]: doc for doc in out["documents"]}
     assert by_id["urs"]["status"] == "approved" and by_id["urs"]["approved_by"] == "Cesar"
+    assert by_id["iq"]["status"] == "draft"
     assert by_id["oq"]["status"] == "not_started"
 
 

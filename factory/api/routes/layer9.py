@@ -32,6 +32,7 @@ from factory.layer9.risk_acceptance import accept_risk, list_risks
 from factory.layer9.human_review_queue import list_pending, get_queue_summary, mark_reviewed
 from factory.layer8.release_candidate_builder import get_rc, confirm_rc
 from factory.services import design_mode_service as _design
+from factory.services import dossier_generator_service as _dossier
 from factory.services import gmp_report_service
 from factory.services import validation_readiness_service as _valready
 from factory.services import mission_evidence_service as _evidence
@@ -850,3 +851,31 @@ def get_validation_package(project_id: str):
 def get_mission_readiness(project_id: str):
     """V9 — checklist go/no-go derivado solo de evidencia; sin dato → 'sin evidencia'."""
     return _valready.build_readiness(project_id)
+
+
+# ── W6.2 — Dossier CSV: generación asistida + aprobación humana ───────────────
+# Generación desde evidencia real (nunca inventa, nunca aprueba sola).
+# approved SOLO vía acto humano con nombre real. 1 evento de auditoría por acción.
+
+class DossierGenerate(BaseModel):
+    generated_by: str    # nombre real (regla run_by de W4)
+
+
+class DocApprove(BaseModel):
+    approved_by: str     # nombre real — NO es firma electrónica
+
+
+@router.post("/missions/{project_id}/validation-package/generate")
+def post_generate_dossier(project_id: str, body: DossierGenerate):
+    return _dossier.generate_dossier(project_id, body.generated_by)
+
+
+@router.post("/missions/{project_id}/validation-package/documents/{doc_id}/approve")
+def post_approve_validation_doc(project_id: str, doc_id: str, body: DocApprove):
+    return _dossier.approve_document(project_id, doc_id, body.approved_by)
+
+
+@router.get("/missions/{project_id}/validation-package/documents/{doc_id}")
+def get_validation_document(project_id: str, doc_id: str):
+    """Read-only: contenido del borrador. NO audita."""
+    return _dossier.read_document(project_id, doc_id)
