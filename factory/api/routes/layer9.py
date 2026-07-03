@@ -32,6 +32,7 @@ from factory.layer9.risk_acceptance import accept_risk, list_risks
 from factory.layer9.human_review_queue import list_pending, get_queue_summary, mark_reviewed
 from factory.layer8.release_candidate_builder import get_rc, confirm_rc
 from factory.services import design_mode_service as _design
+from factory.services import dossier_agent_review_service as _agent_review
 from factory.services import dossier_generator_service as _dossier
 from factory.services import case_presentation_service as _casepres
 from factory.services import regulatory_connector_service as _regconn
@@ -939,3 +940,40 @@ def post_approve_validation_doc(project_id: str, doc_id: str, body: DocApprove):
 def get_validation_document(project_id: str, doc_id: str):
     """Read-only: contenido del borrador. NO audita."""
     return _dossier.read_document(project_id, doc_id)
+
+
+# ── W6.5 — Agent Expert Review & Drafting (propuestas de agente, gobernadas) ──
+# El agente PROPONE con evidencia citada y verificada; el humano decide.
+# accept ≠ approve: la aprobación formal sigue siendo el endpoint de W6.2.
+# El trigger lo fija la API en "manual": la generación automática es un gate
+# futuro (TaskSpec + presupuesto + kill-switch + aprobación humana).
+
+class AgentProposalRequest(BaseModel):
+    requested_by: str          # nombre real (regla run_by de W4)
+    guidance: str | None = None  # instrucción humana opcional para el agente
+
+
+class AgentProposalDecision(BaseModel):
+    decision: str              # accept | reject | request_changes
+    decided_by: str            # nombre real — NO es firma electrónica
+    reason: str | None = None  # obligatorio en reject/request_changes
+
+
+@router.post("/missions/{project_id}/validation-package/documents/{doc_id}/agent-proposal")
+def post_agent_proposal(project_id: str, doc_id: str, body: AgentProposalRequest):
+    return _agent_review.propose_document(
+        project_id, doc_id,
+        {"mode": "manual", "principal": body.requested_by, "authorization_ref": None},
+        guidance=body.guidance)
+
+
+@router.get("/missions/{project_id}/validation-package/documents/{doc_id}/agent-proposal")
+def get_agent_proposal(project_id: str, doc_id: str, version: int | None = None):
+    """Read-only: propuesta + metadata + gobierno Ollama. NO audita."""
+    return _agent_review.read_proposal(project_id, doc_id, version)
+
+
+@router.post("/missions/{project_id}/validation-package/documents/{doc_id}/agent-proposal/decision")
+def post_agent_proposal_decision(project_id: str, doc_id: str, body: AgentProposalDecision):
+    return _agent_review.decide_proposal(
+        project_id, doc_id, body.decision, body.decided_by, body.reason)

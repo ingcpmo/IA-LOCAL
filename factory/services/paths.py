@@ -28,6 +28,11 @@ CONNECTOR_STATE_FILE = FACTORY_ROOT / "regulatory" / "connector_state.json"
 
 # W6.1/W6.2 — dossier CSV/GAMP 5 por misión (dossier.yaml + documents/*.md)
 VALIDATION_BASE = FACTORY_ROOT / "validation"
+
+# W6.5 — prompts expertos gobernados (configuración GxP versionada) y perfiles
+# de agentes (fuente del gate corpus_sufficiency)
+AGENT_PROMPTS_FILE = FACTORY_ROOT / "agent_prompts" / "dossier_review_prompts.yaml"
+PROFILES_DIR = FACTORY_ROOT / "profiles"
 MISSIONS_DIR = FACTORY_ROOT / "layer9" / "missions"
 
 MAX_FILE_BYTES = 256 * 1024  # límite de lectura de archivos del visor W3

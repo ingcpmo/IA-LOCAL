@@ -91,6 +91,10 @@ VALID_EVENTS = {
     # W6.3 — conector online controlado (openFDA): consulta limitada y selective fetch
     "regulatory_query_executed",
     "case_detail_fetched",
+    # W6.5 — propuestas de agente sobre el dossier: el agente propone, el humano decide
+    "dossier_agent_proposal_generated",
+    "dossier_agent_proposal_failed",
+    "dossier_agent_proposal_decision",
 }
 
 
