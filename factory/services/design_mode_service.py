@@ -52,7 +52,8 @@ def read_agent_task(task_id: str) -> dict | None:
 
 
 def read_source_registry() -> dict:
-    """Registro de fuentes oficiales. connected siempre False en W6."""
+    """Registro de fuentes oficiales. Desde W6.3 openfda_enforcement está
+    connected (el estado vivo lo superpone regulatory_connector_service)."""
     data = _load_yaml(paths.SOURCE_REGISTRY_FILE)
     if data is None:
         return {"design_mode": True, "connectors_implemented": False, "sources": [],

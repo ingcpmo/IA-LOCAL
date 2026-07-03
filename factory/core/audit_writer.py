@@ -88,6 +88,9 @@ VALID_EVENTS = {
     # W6.2 — dossier CSV/GAMP 5: generación asistida y aprobación humana por documento
     "validation_dossier_generated",
     "validation_doc_approved",
+    # W6.3 — conector online controlado (openFDA): consulta limitada y selective fetch
+    "regulatory_query_executed",
+    "case_detail_fetched",
 }
 
 

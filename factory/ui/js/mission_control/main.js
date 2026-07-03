@@ -21,7 +21,7 @@ import {
 import { promptRunTest, runSuite } from './tests_console.js';
 import { promptGenerateDossier, promptApproveDoc, viewValidationDoc } from './validation_view.js';
 import { downloadGmpReportPdf } from './gmp_dashboard.js';
-import { doCaseSearch } from './intel_views.js';
+import { doCaseSearch, submitRegQuery, promptCaseFetch } from './intel_views.js';
 
 Object.assign(window, {
   show, connect, refresh, toast, fakeSubmit,
@@ -35,6 +35,7 @@ Object.assign(window, {
   submitMarkCanonical, confirmF5,
   promptRunTest, runSuite, downloadGmpReportPdf,
   promptGenerateDossier, promptApproveDoc, viewValidationDoc,
+  submitRegQuery, promptCaseFetch,
 });
 
 document.querySelectorAll('#nav button').forEach(b=>{

@@ -23,6 +23,8 @@ TEST_RESULTS_DIR = FACTORY_ROOT / "test_results"
 AGENT_TASKS_FILE = FACTORY_ROOT / "agent_tasks" / "tasks.yaml"
 SOURCE_REGISTRY_FILE = FACTORY_ROOT / "regulatory" / "source_registry.yaml"
 CASE_MEMORY_FILE = FACTORY_ROOT / "regulatory" / "case_memory" / "cases.jsonl"
+# W6.3 — estado del rate limit del conector online (intervalo mínimo + cupo diario)
+CONNECTOR_STATE_FILE = FACTORY_ROOT / "regulatory" / "connector_state.json"
 
 # W6.1/W6.2 — dossier CSV/GAMP 5 por misión (dossier.yaml + documents/*.md)
 VALIDATION_BASE = FACTORY_ROOT / "validation"

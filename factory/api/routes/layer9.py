@@ -33,6 +33,7 @@ from factory.layer9.human_review_queue import list_pending, get_queue_summary, m
 from factory.layer8.release_candidate_builder import get_rc, confirm_rc
 from factory.services import design_mode_service as _design
 from factory.services import dossier_generator_service as _dossier
+from factory.services import regulatory_connector_service as _regconn
 from factory.services import gmp_report_service
 from factory.services import validation_readiness_service as _valready
 from factory.services import mission_evidence_service as _evidence
@@ -820,7 +821,8 @@ def get_agent_task(task_id: str):
 
 @router.get("/regulatory-sources")
 def get_regulatory_sources():
-    return _design.read_source_registry()
+    # W6.3 — el estado vivo del conector openFDA se superpone al registry
+    return _regconn.annotate_sources(_design.read_source_registry())
 
 
 @router.get("/case-memory")
@@ -831,6 +833,32 @@ def get_case_memory(limit: int = Query(default=100, ge=1, le=1000)):
 @router.get("/case-memory/search")
 def search_case_memory(q: str = Query(default=""), limit: int = Query(default=20, ge=1, le=100)):
     return _design.search_case_memory(q, limit=limit)
+
+
+# ── W6.3 — Conector online controlado (openFDA Drug Enforcement) ──────────────
+# Un solo sector. Cada llamada online exige nombre real y queda auditada.
+# Rate limit duro en el servicio: 60s entre llamadas · 10/día UTC · limit ≤ 10.
+
+class RegQuery(BaseModel):
+    search_term: str
+    limit: int = 5
+    run_by: str          # nombre real (regla run_by de W4)
+
+
+class CaseFetch(BaseModel):
+    run_by: str
+
+
+@router.post("/regulatory/query")
+def post_regulatory_query(body: RegQuery):
+    """1 consulta online limitada → memoria ligera (pointer+metadata+summary+hash)."""
+    return _regconn.query_recalls(body.search_term, body.limit, body.run_by)
+
+
+@router.post("/case-memory/{case_id}/fetch")
+def post_case_detail_fetch(case_id: str, body: CaseFetch):
+    """Selective fetch del detalle de UN caso conocido. NO persiste el detalle."""
+    return _regconn.fetch_case_detail(case_id, body.run_by)
 
 
 # ── W6.1 — Reportes, paquete de validación y readiness (read-only, NO auditan) ─

@@ -178,18 +178,18 @@
         <div class="card"><div class="meta">0 ejecuciones — el ejecutor no está implementado. La matriz de autonomía A–F y el ciclo de vida están en <span class="mono">factory/docs/W6_MISSION_CONTROL_ENTERPRISE.md</span> §4.</div></div>
       </section>
 
-      <!-- W6 · REGULATORY SOURCES (MODO DISEÑO) -->
+      <!-- W6 · REGULATORY SOURCES (W6.3: openFDA conectado, resto en diseño) -->
       <section class="view" id="v-sources">
-        <div class="banner design"><span>◆</span><div><b>MODO DISEÑO — cero tráfico externo.</b> Este registro define qué fuentes oficiales se consultarían y con qué límites. No hay conectores: nada sale a internet desde esta vista ni desde su endpoint.</div></div>
+        <div class="banner design"><span>◆</span><div><b>FASE ONLINE CONTROLADA (W6.3).</b> Un solo conector real: openFDA Drug Enforcement (read-only, 1 llamada/60s, 10/día UTC, ≤10 resultados, auditado, nombre real obligatorio). El resto de fuentes sigue en diseño sin tráfico externo.</div></div>
         <p class="lead">Source registry de fuentes regulatorias oficiales (FDA, EMA, EudraGMDP). Política por defecto: read-only, rate limits, sin scraping agresivo, sin descarga masiva, sin almacenar documentos completos.</p>
         <div id="sources-list">
           <div class="card"><div class="meta" style="color:var(--faint)">(conectar para ver el registro)</div></div>
         </div>
       </section>
 
-      <!-- W6 · CASE MEMORY (MODO DISEÑO) -->
+      <!-- W6 · CASE MEMORY (W6.3: casos reales de openFDA) -->
       <section class="view" id="v-memory">
-        <div class="banner design"><span>◆</span><div><b>MODO DISEÑO — memoria vacía por diseño.</b> Solo se poblará con casos reales de fuentes oficiales bajo aprobación. Nunca se inventan casos.</div></div>
+        <div class="banner design"><span>◆</span><div><b>MEMORIA LIGERA (W6.3).</b> Solo casos reales de fuentes oficiales: pointer + metadata + resumen + hash — nunca el documento completo. El detalle se recupera de la fuente bajo demanda (selective fetch auditado). Esta información NO alimenta decisiones GMP.</div></div>
         <p class="lead">Memoria regulatoria de casos: pointer + metadata + resumen + embedding + selective fetch. Guarda solo URL, autoridad, fechas, resumen corto, etiquetas y hash — nunca el documento completo. Flujo: buscar en memoria → casos similares → recuperar solo el caso necesario → citar → análisis bajo reglas y revisión humana.</p>
         <div class="card" style="margin-bottom:14px">
           <div class="between"><h3>Buscar casos</h3><span class="chip c-mute" id="memory-count">0 casos</span></div>

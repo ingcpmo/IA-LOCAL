@@ -1,13 +1,14 @@
-# W6 — Source Registry de fuentes regulatorias oficiales — MODO DISEÑO
+# W6 — Source Registry de fuentes regulatorias oficiales
 #
-# ESTADO: not_connected — NO EXISTE CONECTOR. Este registro define QUÉ fuentes
-# oficiales consultaría el sistema y bajo qué límites, pero en W6 no hay ningún
-# tráfico saliente: el registry es un archivo local que la UI muestra.
-# Conectar cualquier fuente requiere aprobación humana explícita (fase futura).
+# W6.3 (2026-07-03, aprobado por Cesar): PRIMERA fuente conectada —
+# openfda_enforcement (API REST JSON oficial). Conector read-only con rate
+# limit duro (60s entre llamadas, 10/día UTC, máx 10 resultados por consulta),
+# cada llamada exige nombre real y queda auditada. El resto de fuentes sigue
+# not_connected: conectarlas requiere aprobación humana explícita.
 # Diseño completo: factory/docs/W6_MISSION_CONTROL_ENTERPRISE.md §7.
 
-version: 1
-connectors_implemented: false   # verdad dura: cero HTTP externo en W6
+version: 2
+connectors_implemented: true    # SOLO openfda_enforcement (W6.3); el resto sin conector
 default_policy:
   access: read_only
   user_agent_identified: true
@@ -48,10 +49,10 @@ sources:
     name: openFDA Drug Enforcement / Recalls
     authority: FDA
     url: https://api.fda.gov/drug/enforcement.json
-    access_design: "API REST JSON oficial (key gratuita)"
-    rate_limit_design: "límite oficial openFDA"
-    status: not_connected
-    last_checked: null
+    access_design: "API REST JSON oficial (sin key; límite público 240 req/min)"
+    rate_limit_design: "propio (más estricto): 1 llamada/60s · 10/día UTC · ≤10 resultados"
+    status: connected            # W6.3 — único conector real; read-only auditado
+    last_checked: null           # se superpone en runtime desde connector_state.json
 
   - source_id: eudragmdp_nc
     name: EudraGMDP Non-Compliance Reports
