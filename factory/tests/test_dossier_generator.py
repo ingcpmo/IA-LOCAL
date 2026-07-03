@@ -109,6 +109,8 @@ def test_generate_classifies_by_kind(dossier_env):
     assert by_id["urs"]["status"] == "draft"                    # facts con evidencia
     assert by_id["traceability_matrix"]["status"] == "draft"
     assert by_id["intended_use"]["status"] == "needs_human_review"   # judgment
+    # estrategia de pruebas = justificación riesgo-basada → siempre juicio QA
+    assert by_id["test_strategy"]["status"] == "needs_human_review"
     assert by_id["pq"]["status"] == "missing_evidence"          # sin fuente posible
     assert by_id["periodic_review"]["status"] == "missing_evidence"
     # deployment no existe en el fixture → docs que lo requieren caen a missing
@@ -125,6 +127,13 @@ def test_generated_content_honest(dossier_env):
     assert "*Fuente: " in doc["content"]                        # pointers
     matrix = svc.read_document("demo", "traceability_matrix")["content"]
     assert "qa_oos_profile" in matrix and "T1" in matrix and "PASS" in matrix
+    assert "URS-01" in matrix and "Cesar" in matrix             # atribución del operador
+    urs = svc.read_document("demo", "urs")["content"]
+    assert "URS-01" in urs
+    assert "URS-02" not in urs      # constraints NO se numeran como URS (pueden
+    #                                 ser acciones de pipeline, no requisitos)
+    frs = svc.read_document("demo", "frs")["content"]
+    assert "FRS-01" in frs and "POST /api/v1/query" in frs      # matriz FRS del catálogo
 
 
 def test_generate_requires_real_name(dossier_env):

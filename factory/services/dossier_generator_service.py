@@ -122,16 +122,22 @@ def _objective(b):
     o = b["mission"].get("objective")
     if not o:
         return None
-    return (f"{o}\n\nCliente: {b['mission'].get('client_type') or SIN_EVIDENCIA}"
+    return (f"**URS-01 — requisito principal (verbatim de la misión):**\n\n{o}\n\n"
+            f"Cliente: {b['mission'].get('client_type') or SIN_EVIDENCIA}"
             + _src(f"layer9/missions/{b['project_id']}.yaml"))
 
 
 def _constraints(b):
+    """Verbatim, SIN numerar como URS: en misiones reales `constraints` puede
+    contener acciones de autonomía del pipeline, no requisitos de usuario —
+    clasificarlas como URS formales es juicio QA, no del generador."""
     cs = b["mission"].get("constraints") or []
     if not cs:
         return None
-    return _li(f"URS-{i:02d}: {c}" for i, c in enumerate(cs, 1)) \
-        + _src("misión · constraints")
+    return ("Declaradas en la misión (verbatim). Pueden ser requisitos de usuario "
+            "o acciones autorizadas del pipeline; su clasificación como URS "
+            "formales requiere juicio QA:\n" + _li(cs)
+            + _src("misión · constraints"))
 
 
 def _reg_scope(b):
@@ -214,23 +220,91 @@ def _audit_facts(b):
             + _src("audit/factory_audit.jsonl (cadena verificable)"))
 
 
+def _last_run_by_test(b) -> dict:
+    """Última ejecución registrada por test_id (el JSONL es cronológico; la
+    última línea gana). Entradas de suite anidan results[] — run_by/run_at
+    caen al nivel del run si el item no los trae."""
+    last: dict[str, dict] = {}
+    for r in b["runs"]:
+        for t in ([r] if r.get("test_id") else r.get("results", []) or []):
+            if t.get("test_id"):
+                last[t["test_id"]] = {
+                    "result": t.get("result", "—"),
+                    "run_by": t.get("run_by") or r.get("run_by") or "—",
+                    "run_at": (t.get("run_at") or r.get("run_at") or "")[:19] or "—",
+                    "latency_ms": t.get("latency_ms", r.get("latency_ms")),
+                    "assertion": t.get("assertion") or {},
+                }
+    return last
+
+
+def _frs_table(b):
+    """FRS numerados desde el catálogo curado W4: cada caso de prueba declara
+    una función esperada verificable (título + endpoint). Evidencia real, no
+    redacción del generador."""
+    cat = b["catalog"]
+    if not cat:
+        return None
+    rows = ["| FRS | Agente | Función esperada (título curado W4) | Endpoint |",
+            "|---|---|---|---|"]
+    n = 0
+    for ag in cat.get("agents", []):
+        for t in ag.get("tests", []):
+            n += 1
+            rows.append(f"| FRS-{n:02d} | {ag.get('agent_id')} "
+                        f"| {t.get('title') or t.get('test_id')} | `{t.get('endpoint')}` |")
+    if n == 0:
+        return None
+    return "\n".join(rows) + _src(f"test_catalogs/{b['project_id']}.yaml (catálogo curado W4)")
+
+
+def _catalog_meta(b):
+    cat = b["catalog"]
+    if not cat:
+        return None
+    n = sum(len(ag.get("tests") or []) for ag in cat.get("agents", []))
+    return (f"- Versión del catálogo: {cat.get('catalog_version') or SIN_EVIDENCIA}\n"
+            f"- Deployment objetivo: {cat.get('deployment_base') or SIN_EVIDENCIA}\n"
+            f"- Casos curados: {n} en {len(cat.get('agents', []))} agentes"
+            + _src(f"test_catalogs/{b['project_id']}.yaml"))
+
+
+def _oq_results_table(b):
+    """Última ejecución por prueba con aserción, latencia, operador y timestamp
+    — cada fila es localizable por su run_at en el JSONL de resultados."""
+    last = _last_run_by_test(b)
+    if not last:
+        return None
+    rows = ["| Prueba | Último resultado | Aserción (json_path: esperado → recibido) | ms | Operador | UTC |",
+            "|---|---|---|---|---|---|"]
+    for tid, r in sorted(last.items()):
+        a = r["assertion"]
+        asr = (f"`{a.get('json_path')}`: {json.dumps(a.get('expected_value'))} → "
+               f"{json.dumps(a.get('received_value'))}") if a else "—"
+        lat = "—" if r["latency_ms"] is None else r["latency_ms"]
+        rows.append(f"| {tid} | {r['result']} | {asr} | {lat} | {r['run_by']} | {r['run_at']} |")
+    return "\n".join(rows) + _src(f"test_results/{b['project_id']}.jsonl (última ejecución por prueba)")
+
+
 def _trace_matrix(b):
     cat = b["catalog"]
     if not cat or not b["agents"]:
         return None
-    last_result: dict[str, str] = {}
-    for r in b["runs"]:
-        for t in ([r] if r.get("test_id") else r.get("results", []) or []):
-            if t.get("test_id"):
-                last_result[t["test_id"]] = t.get("result", "—")
-    obj = (b["mission"].get("objective") or "")[:80]
-    rows = ["| Objetivo | Agente | Prueba (catálogo W4) | Último resultado | Documento |",
-            "|---|---|---|---|---|"]
+    last = _last_run_by_test(b)
+    rows = ["| Requisito | Agente | Prueba (catálogo W4) | Endpoint | Último resultado | Ejecutado por · UTC | Documento |",
+            "|---|---|---|---|---|---|---|"]
     for ag in cat.get("agents", []):
         for t in ag.get("tests", []):
-            rows.append(f"| {obj}… | {ag.get('agent_id')} | {t.get('test_id')} "
-                        f"| {last_result.get(t.get('test_id'), 'sin ejecución')} | OQ |")
-    return "\n".join(rows) + _src("misión + agent_design_proposal + catálogo W4 + test_results")
+            r = last.get(t.get("test_id"))
+            res = r["result"] if r else "sin ejecución"
+            who = f"{r['run_by']} · {r['run_at']}" if r else "—"
+            rows.append(f"| URS-01 | {ag.get('agent_id')} | {t.get('test_id')} "
+                        f"| `{t.get('endpoint')}` | {res} | {who} | OQ |")
+    return ("URS-01 = objetivo de la misión (verbatim en el documento URS). Evidencia "
+            "exacta de cada fila: la entrada con ese `run_at` en "
+            f"`test_results/{b['project_id']}.jsonl` (cronológico, append-only).\n\n"
+            + "\n".join(rows)
+            + _src("misión + agent_design_proposal + catálogo W4 + test_results"))
 
 
 def _pending_docs(b):
@@ -285,12 +359,15 @@ DOC_SPECS: dict = {
         ("Evaluación del proveedor/modelo (juicio QA)", _judgment),
     ]),
     "urs": ("facts", ["objective", "constraints"], [
-        ("Requisito de usuario principal (objetivo)", _objective),
-        ("Requisitos de usuario (constraints numerados)", _constraints),
+        ("Requisito de usuario principal (URS-01, verbatim)", _objective),
+        ("Alcance regulatorio declarado", _reg_scope),
+        ("Restricciones/acciones declaradas en la misión (verbatim)", _constraints),
         ("Documentos regulatorios requeridos por la misión", _pending_docs),
+        ("Descomposición en URS individuales verificables (juicio QA)", _judgment),
     ]),
-    "frs": ("facts", ["agents"], [
+    "frs": ("facts", ["agents", "catalog"], [
         ("Funciones por agente", _agents_block),
+        ("Matriz FRS — funciones esperadas verificables (catálogo curado W4)", _frs_table),
         ("Endpoints funcionales cubiertos por el catálogo W4", _catalog_endpoints),
     ]),
     "design_spec": ("facts", ["design_files"], [
@@ -316,12 +393,16 @@ DOC_SPECS: dict = {
     "traceability_matrix": ("facts", ["agents", "catalog"], [
         ("Matriz objetivo → agente → prueba → evidencia → documento", _trace_matrix),
     ]),
-    "test_strategy": ("facts", ["catalog"], [
-        ("Catálogo curado de pruebas funcionales (W4)", _catalog_endpoints),
+    # judgment: una estrategia de pruebas exige justificación riesgo-basada
+    # (qué se prueba, qué se excluye y por qué) — eso es juicio QA, no hechos.
+    "test_strategy": ("judgment", ["catalog"], [
+        ("Catálogo curado de pruebas funcionales (W4)", _catalog_meta),
+        ("Cobertura de endpoints", _catalog_endpoints),
         ("Resultados de construcción (workspace)", _ws_tests),
         ("Gates de calidad del sistema", lambda b: "14 quality gates obligatorios previos a release "
          "+ selfcheck Gate 0 (py_compile, pytest, cadena de auditoría, estado)."
          + _src("factory/scripts/ops/factory_selfcheck.sh · quality_gate_runner")),
+        ("Justificación riesgo-basada de la estrategia y exclusiones (juicio QA)", _judgment),
     ]),
     "iq": ("facts", ["deployment"], [
         ("Evidencia de instalación", _deployment_facts),
@@ -329,6 +410,7 @@ DOC_SPECS: dict = {
     ]),
     "oq": ("facts", ["runs"], [
         ("Ejecuciones funcionales registradas (W4)", _runs_facts),
+        ("Resultados por prueba — última ejecución con aserción y operador", _oq_results_table),
         ("Trazabilidad de pruebas", _trace_matrix),
     ]),
     "pq": ("no_evidence", ["__pq_production_data__"], [
@@ -379,6 +461,8 @@ def _render_doc(doc_id: str, bundle: dict, generated_by: str) -> tuple[str, list
     body = [f"# {_TITLES[doc_id]}", "",
             "> **BORRADOR GENERADO POR LA FACTORY — sin valor regulatorio hasta "
             "revisión y aprobación humana.**",
+            "> Revisión humana: verifique cada afirmación contra la fuente citada antes "
+            "de aprobar; las secciones \"SIN EVIDENCIA\" requieren aporte humano previo.",
             f"> Misión: `{bundle['project_id']}` · Generado: {_now()} · Por: {generated_by}",
             ""]
     sources = []
