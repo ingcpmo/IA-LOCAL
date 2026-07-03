@@ -904,8 +904,15 @@ def get_mission_reports(project_id: str):
 
 @router.get("/missions/{project_id}/validation-package")
 def get_validation_package(project_id: str):
-    """V10 — estado del dossier CSV/GAMP 5 (22 documentos); sin dossier → todo not_started."""
-    return _valready.read_validation_package(project_id)
+    """V10 — estado del dossier CSV/GAMP 5 (22 documentos); sin dossier → todo not_started.
+    W6.5: anota el routing doc→agente para que la UI sepa qué docs admiten
+    propuesta de agente (la elegibilidad real la valida el POST)."""
+    pkg = _valready.read_validation_package(project_id)
+    for doc in pkg["documents"]:
+        routing = _agent_review.DOC_ROUTING.get(doc["doc_id"])
+        doc["agent_routing"] = (
+            {"primary": routing[0], "supporting": list(routing[1])} if routing else None)
+    return pkg
 
 
 @router.get("/missions/{project_id}/readiness")

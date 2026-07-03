@@ -79,7 +79,7 @@ def test_validation_package_no_dossier(mission_env):
     assert out["dossier_exists"] is False
     assert out["total"] == 22 and len(out["documents"]) == 22
     assert out["counts"] == {"not_started": 22, "draft": 0, "missing_evidence": 0,
-                             "needs_human_review": 0, "approved": 0}
+                             "needs_human_review": 0, "agent_proposed": 0, "approved": 0}
 
 
 def test_validation_package_partial_dossier(mission_env):
@@ -93,11 +93,34 @@ def test_validation_package_partial_dossier(mission_env):
         encoding="utf-8")
     out = svc.read_validation_package("demo")
     assert out["counts"] == {"not_started": 19, "draft": 1, "missing_evidence": 1,
-                             "needs_human_review": 0, "approved": 1}
+                             "needs_human_review": 0, "agent_proposed": 0, "approved": 1}
     by_id = {doc["doc_id"]: doc for doc in out["documents"]}
     assert by_id["urs"]["status"] == "approved" and by_id["urs"]["approved_by"] == "Cesar"
     assert by_id["iq"]["status"] == "draft"
     assert by_id["oq"]["status"] == "not_started"
+
+
+def test_validation_package_agent_proposal_passthrough(mission_env):
+    """W6.5: agent_proposed es estado de primera clase en la vista de paquete y
+    el resumen agent_proposal del dossier.yaml llega tal cual (read-only)."""
+    d = mission_env / "validation" / "demo"; d.mkdir(parents=True)
+    (d / "dossier.yaml").write_text(
+        "documents:\n"
+        "  test_strategy:\n"
+        "    status: agent_proposed\n"
+        "    agent_proposal: {version: 2, status: agent_proposed, agent: qa_oos_profile,\n"
+        "                     confidence: media, corpus_sufficiency: partial}\n"
+        "  urs: {status: needs_human_review}\n",
+        encoding="utf-8")
+    out = svc.read_validation_package("demo")
+    assert out["counts"]["agent_proposed"] == 1
+    by_id = {doc["doc_id"]: doc for doc in out["documents"]}
+    ts = by_id["test_strategy"]
+    assert ts["status"] == "agent_proposed"
+    assert ts["agent_proposal"]["version"] == 2
+    assert ts["agent_proposal"]["confidence"] == "media"
+    # docs sin propuesta exponen el campo como None (contrato estable para la UI)
+    assert by_id["urs"]["agent_proposal"] is None
 
 
 # ── Readiness ─────────────────────────────────────────────────────────────────

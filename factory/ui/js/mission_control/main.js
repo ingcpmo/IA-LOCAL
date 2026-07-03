@@ -19,7 +19,8 @@ import {
   submitMarkCanonical, confirmF5,
 } from './detail_panel.js';
 import { promptRunTest, runSuite } from './tests_console.js';
-import { promptGenerateDossier, promptApproveDoc, viewValidationDoc } from './validation_view.js';
+import { promptGenerateDossier, promptApproveDoc, viewValidationDoc,
+  promptAgentProposal, viewAgentProposal, decideAgentProposal } from './validation_view.js';
 import { downloadGmpReportPdf } from './gmp_dashboard.js';
 import { doCaseSearch, submitRegQuery, promptCaseFetch,
   copyCaseCitation, toggleAnalyzeDesign, promptCaseCompare, runCaseCompare } from './intel_views.js';
@@ -36,6 +37,7 @@ Object.assign(window, {
   submitMarkCanonical, confirmF5,
   promptRunTest, runSuite, downloadGmpReportPdf,
   promptGenerateDossier, promptApproveDoc, viewValidationDoc,
+  promptAgentProposal, viewAgentProposal, decideAgentProposal,
   submitRegQuery, promptCaseFetch,
   copyCaseCitation, toggleAnalyzeDesign, promptCaseCompare, runCaseCompare,
 });

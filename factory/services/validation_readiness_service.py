@@ -122,7 +122,8 @@ VALIDATION_DOCS = [
 
 # W6.2 — estados del ciclo de vida documental (generated se acepta como
 # alias legado y se normaliza a draft)
-_DOC_STATUSES = {"not_started", "draft", "missing_evidence", "needs_human_review", "approved"}
+_DOC_STATUSES = {"not_started", "draft", "missing_evidence", "needs_human_review",
+                 "agent_proposed", "approved"}
 _LEGACY_STATUS = {"generated": "draft"}
 
 
@@ -158,6 +159,9 @@ def read_validation_package(project_id: str) -> dict:
             "approved_by": entry.get("approved_by"),
             "generated_at": entry.get("generated_at"),
             "missing": entry.get("missing") or [],
+            # W6.5 — resumen de la última propuesta de agente (puntero del
+            # dossier.yaml, read-only); None si nunca hubo propuesta
+            "agent_proposal": entry.get("agent_proposal"),
         })
 
     return {
