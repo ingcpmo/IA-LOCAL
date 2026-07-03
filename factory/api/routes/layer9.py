@@ -33,6 +33,7 @@ from factory.layer9.human_review_queue import list_pending, get_queue_summary, m
 from factory.layer8.release_candidate_builder import get_rc, confirm_rc
 from factory.services import design_mode_service as _design
 from factory.services import dossier_generator_service as _dossier
+from factory.services import case_presentation_service as _casepres
 from factory.services import regulatory_connector_service as _regconn
 from factory.services import gmp_report_service
 from factory.services import validation_readiness_service as _valready
@@ -827,12 +828,43 @@ def get_regulatory_sources():
 
 @router.get("/case-memory")
 def get_case_memory(limit: int = Query(default=100, ge=1, le=1000)):
-    return _design.read_case_memory(limit=limit)
+    # W6.4 — cada caso lleva bloque `presentation` determinista (read-only)
+    data = _design.read_case_memory(limit=limit)
+    data["cases"] = _casepres.enrich_cases(data["cases"])
+    return data
 
 
 @router.get("/case-memory/search")
 def search_case_memory(q: str = Query(default=""), limit: int = Query(default=20, ge=1, le=100)):
-    return _design.search_case_memory(q, limit=limit)
+    data = _design.search_case_memory(q, limit=limit)
+    data["results"] = _casepres.enrich_cases(data["results"])
+    return data
+
+
+# ── W6.4 — Presentación gobernada de la memoria (read-only, NUNCA audita) ─────
+# Interpretación determinista sobre datos ya locales: relevancia desde la
+# clasificación FDA, routing caso→agente, cita trazable, estado del detalle.
+# NO es juicio GMP. El compare es informativo (gmp_decision=False siempre).
+
+@router.get("/case-memory/{case_id}")
+def get_case_detail_enriched(case_id: str):
+    """Un caso enriquecido (record + presentation). Lectura local, sin auditar."""
+    case = _casepres.read_case(case_id)
+    if case is None:
+        raise HTTPException(404, f"Caso '{case_id}' no está en la memoria")
+    return case
+
+
+@router.get("/case-memory/{case_id}/compare/{project_id}")
+def get_case_mission_compare(case_id: str, project_id: str):
+    """Cruce informativo caso↔misión: tags, agentes, pruebas, dossier. Solo
+    hechos locales — jamás aprueba, decide ni escribe."""
+    out = _casepres.compare_with_mission(case_id, project_id)
+    if out is None:
+        raise HTTPException(404, f"Caso '{case_id}' no está en la memoria")
+    if out.get("error") == "mission_not_found":
+        raise HTTPException(404, f"Misión '{project_id}' no existe")
+    return out
 
 
 # ── W6.3 — Conector online controlado (openFDA Drug Enforcement) ──────────────

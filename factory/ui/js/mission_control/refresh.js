@@ -37,7 +37,7 @@ const TITLES={
   system:["Estado del sistema","mission-control / system"],
   tasks:["Tareas de agentes · MODO DISEÑO","mission-control / intel / agent-tasks"],
   sources:["Fuentes regulatorias · MODO DISEÑO","mission-control / intel / sources"],
-  memory:["Memoria de casos · MODO DISEÑO","mission-control / intel / case-memory"]
+  memory:["Memoria de casos · memoria ligera gobernada","mission-control / intel / case-memory"]
 };
 
 export function show(v,btn){

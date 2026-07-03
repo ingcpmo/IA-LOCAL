@@ -147,9 +147,10 @@ def _sanitize_term(term: str) -> str:
     return clean
 
 
-def _normalize(rec: dict, consulted_at: str) -> dict:
+def _normalize(rec: dict, consulted_at: str, found_by_query: str | None = None) -> dict:
     """Registro openFDA → case record ligero. NO conserva direcciones postales
-    ni el documento completo; el detalle vive en la fuente (selective fetch)."""
+    ni el documento completo; el detalle vive en la fuente (selective fetch).
+    W6.4: guarda la query que encontró el caso (trazabilidad de origen)."""
     rn = rec.get("recall_number") or f"sin-recall-number-{rec.get('event_id', '?')}"
     raw_hash = hashlib.sha256(
         json.dumps(rec, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
@@ -171,6 +172,7 @@ def _normalize(rec: dict, consulted_at: str) -> dict:
         "authority": AUTHORITY,
         "consulted_at": consulted_at,
         "last_checked": consulted_at,
+        "found_by_query": found_by_query,
         "case_type": "drug_recall",
         "classification": rec.get("classification"),
         "recall_status": rec.get("status"),
@@ -237,7 +239,7 @@ def query_recalls(search_term: str, limit: int, run_by: str) -> dict:
     existing = _existing_case_ids()
     saved_cases, skipped = [], 0
     for rec in results[:limit]:
-        case = _normalize(rec, now)
+        case = _normalize(rec, now, found_by_query=term)
         if case["case_id"] in existing:
             skipped += 1
             continue

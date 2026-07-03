@@ -187,10 +187,10 @@
         </div>
       </section>
 
-      <!-- W6 · CASE MEMORY (W6.3: casos reales de openFDA) -->
+      <!-- W6 · CASE MEMORY (W6.3: casos reales de openFDA · W6.4: interpretación primero) -->
       <section class="view" id="v-memory">
-        <div class="banner design"><span>◆</span><div><b>MEMORIA LIGERA (W6.3).</b> Solo casos reales de fuentes oficiales: pointer + metadata + resumen + hash — nunca el documento completo. El detalle se recupera de la fuente bajo demanda (selective fetch auditado). Esta información NO alimenta decisiones GMP.</div></div>
-        <p class="lead">Memoria regulatoria de casos: pointer + metadata + resumen + embedding + selective fetch. Guarda solo URL, autoridad, fechas, resumen corto, etiquetas y hash — nunca el documento completo. Flujo: buscar en memoria → casos similares → recuperar solo el caso necesario → citar → análisis bajo reglas y revisión humana.</p>
+        <div class="banner design"><span>◆</span><div><b>MEMORIA LIGERA GOBERNADA (W6.4).</b> Solo casos reales de fuentes oficiales: pointer + metadata + resumen + hash — nunca el documento completo. Cada caso muestra primero una interpretación <b>determinista</b> (relevancia desde la clasificación FDA, agente recomendado por señales) que NO es juicio GMP, y después la evidencia técnica. El detalle se recupera bajo demanda (selective fetch auditado). Esta información NO alimenta decisiones GMP ni aprobaciones CSV.</div></div>
+        <p class="lead">Flujo gobernado: consulta a fuente oficial → memoria ligera → búsqueda de casos similares → selective fetch del caso necesario → análisis por agente (fase futura, con aprobación) → cita trazable → revisión QA/QC → auditoría. "Analizar con agente" es diseño; "Comparar con misión" es cruce informativo read-only.</p>
         <div class="card" style="margin-bottom:14px">
           <div class="between"><h3>Buscar casos</h3><span class="chip c-mute" id="memory-count">0 casos</span></div>
           <div class="hr"></div>
