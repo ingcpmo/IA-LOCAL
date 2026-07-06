@@ -402,12 +402,13 @@ def test_invalid_decision_422(review_env):
 def test_governance_record_complete(review_env):
     svc.propose_document("demo", "intended_use", MANUAL)
     rec = svc.read_proposal("demo", "intended_use")
-    assert rec["prompt"]["set_version"] == "1.0.0"
+    assert rec["prompt"]["set_version"] == "1.0.1"
     assert rec["prompt"]["agent_prompt_version"] == "1.0.0"
     assert len(rec["prompt"]["template_sha256"]) == 64
     assert len(rec["prompt"]["rendered_sha256"]) == 64
     assert rec["model"]["name"] == svc.OLLAMA_MODEL
-    assert rec["model"]["options"] == {"num_predict": 1024, "temperature": 0.2}
+    assert rec["model"]["options"] == {"num_predict": 1024, "temperature": 0.2,
+                                       "num_ctx": svc.NUM_CTX}
     gov = rec["governance"]
     assert gov["trigger"]["mode"] == "manual" and gov["requested_by"] == "Cesar"
     assert "prompt_full" in gov and gov["latency_ms"] >= 0
@@ -427,8 +428,32 @@ def test_ollama_payload_limits_fixed(review_env, monkeypatch):
     monkeypatch.setattr(svc.httpx, "post", fake_post)
     svc.propose_document("demo", "intended_use", MANUAL)
     assert captured["url"].endswith("/api/generate")
-    assert captured["json"]["options"] == {"num_predict": 1024, "temperature": 0.2}
+    assert captured["json"]["options"] == {"num_predict": 1024, "temperature": 0.2,
+                                           "num_ctx": svc.NUM_CTX}
     assert captured["json"]["stream"] is False
+
+
+def test_prompt_too_long_fails_governed(review_env, isolated_audit, monkeypatch):
+    """W6.5 Fase D: si el prompt no cabe en el contexto, Ollama recorta el
+    INICIO en silencio (contrato + anti-injection). Debe fallar gobernado
+    ANTES de llamar a Ollama, con evento auditado."""
+    monkeypatch.setattr(svc, "NUM_CTX", 1200)  # presupuesto 1200-1024=176 tokens
+    called = {"n": 0}
+    def boom(prompt):
+        called["n"] += 1
+        return {"response": GOOD_RESPONSE}
+    monkeypatch.setattr(svc, "_ollama_generate", boom)
+    base = len(_audit_lines(isolated_audit))
+    with pytest.raises(HTTPException) as e:
+        svc.propose_document("demo", "intended_use", MANUAL)
+    assert e.value.status_code == 413
+    assert e.value.detail["error"] == "prompt_too_long"
+    assert called["n"] == 0  # nunca llegó a Ollama
+    ev = _events(isolated_audit, "dossier_agent_proposal_failed")[-1]["data"]
+    assert ev["reason"] == "prompt_too_long" and ev["doc_id"] == "intended_use"
+    assert len(_audit_lines(isolated_audit)) == base + 1
+    # el documento quedó intacto
+    assert gen._load_dossier("demo")["documents"]["intended_use"].get("agent_proposal") is None
 
 
 def test_exactly_one_event_per_act(review_env, isolated_audit):

@@ -50,7 +50,13 @@ OLLAMA_BASE_URL = os.getenv("FACTORY_OLLAMA_BASE_URL", "http://host.docker.inter
 OLLAMA_MODEL = os.getenv("FACTORY_OLLAMA_MODEL", "mistral:7b-instruct-q4_K_M")
 NUM_PREDICT = 1024
 TEMPERATURE = 0.2
-TIMEOUT_READ_S = 120.0
+# El contexto DEBE cubrir prompt completo + respuesta: si el prompt excede el
+# contexto, Ollama recorta el INICIO en silencio y el modelo pierde el contrato
+# de formato y la cláusula anti-injection (hallazgo real de Fase D)
+NUM_CTX = int(os.getenv("FACTORY_OLLAMA_NUM_CTX", "8192"))
+# Ollama corre en CPU (~10 tok/s): una pasada toma ~9 min y el retry de
+# formato puede requerir una segunda
+TIMEOUT_READ_S = float(os.getenv("FACTORY_OLLAMA_TIMEOUT_READ_S", "1200"))
 
 # Topes de longitud del sanitizador (defensa injection §7 del diseño)
 MAX_INTERNAL_CHARS = 6000
@@ -299,7 +305,8 @@ def _ollama_generate(prompt: str) -> dict:
     r = httpx.post(
         f"{OLLAMA_BASE_URL}/api/generate",
         json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
-              "options": {"num_predict": NUM_PREDICT, "temperature": TEMPERATURE}},
+              "options": {"num_predict": NUM_PREDICT, "temperature": TEMPERATURE,
+                          "num_ctx": NUM_CTX}},
         timeout=httpx.Timeout(connect=5.0, read=TIMEOUT_READ_S, write=10.0, pool=5.0))
     r.raise_for_status()
     return r.json()
@@ -473,6 +480,16 @@ def propose_document(project_id: str, doc_id: str, trigger: dict,
                                          corpus["level"], items, guidance)
     agent_prompt_version = ((prompts_meta.get("prompts") or {}).get(primary) or {}).get("prompt_version")
 
+    # Guard anti-truncado: estimación conservadora (~3 chars/token en español
+    # técnico sobreestima) + margen para el sufijo de corrección del retry.
+    # Fallar gobernado es mejor que un contrato recortado en silencio.
+    est_tokens = len(prompt) // 3 + 128
+    budget = NUM_CTX - NUM_PREDICT
+    if est_tokens > budget:
+        _fail(project_id, doc_id, primary, "prompt_too_long", trigger, name, 413,
+              f"~{est_tokens} tokens estimados > presupuesto {budget} "
+              f"(num_ctx {NUM_CTX} - num_predict {NUM_PREDICT})")
+
     t0 = datetime.now(timezone.utc)
     response, retried = None, False
     for attempt in (1, 2):
@@ -512,7 +529,8 @@ def propose_document(project_id: str, doc_id: str, trigger: dict,
                   "supporting_note": "dominios de revisión recomendados para el "
                                      "revisor humano (no ejecutados en W6.5)"},
         "model": {"name": OLLAMA_MODEL,
-                  "options": {"num_predict": NUM_PREDICT, "temperature": TEMPERATURE}},
+                  "options": {"num_predict": NUM_PREDICT, "temperature": TEMPERATURE,
+                              "num_ctx": NUM_CTX}},
         "prompt": {"set_version": prompts_meta.get("prompt_set_version"),
                    "agent_prompt_version": agent_prompt_version,
                    "template_sha256": template_sha, "rendered_sha256": _sha(prompt)},

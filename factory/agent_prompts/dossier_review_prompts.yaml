@@ -8,15 +8,19 @@
 # El placeholder {corpus_sufficiency} del contrato común se sustituye en
 # generación con el nivel determinista del gate de corpus (§4 del diseño).
 
-prompt_set_version: "1.0.0"
+prompt_set_version: "1.0.1"
 
 changelog:
+  - version: "1.0.1"
+    date: "2026-07-06"
+    author: "Fase D W6.5 — aprobado por Cesar"
+    change: "Ejemplo few-shot de formato en el contrato común + instrucción de brevedad: mistral 7B produjo format_invalid (0 claims etiquetados, salida repetitiva cortada en num_predict) en las 2 pasadas reales del 2026-07-03/06 pese a contexto completo (num_ctx 8192)"
   - version: "1.0.0"
     date: "2026-07-03"
     author: "Capa 8 — diseño W6.5 aprobado por Cesar"
     change: "Versión inicial: contrato común + qa_oos_profile + integrity_lims_profile + hplc_data_review_agent"
 
-common_contract_sha256: "aeed9804c734bdef7c3bf0710f456d1934994dc52c79594d7060d322cba5c738"
+common_contract_sha256: "8076c819cd3bd47b4d7aacdf10ab8ab2a1deee0d1e3883a413b32aad0cb30530"
 common_contract: |
   Eres un agente experto de un sistema GMP. Redactas ANÁLISIS PROPUESTOS para un
   documento de validación CSV/GAMP 5. Tu texto NO tiene valor regulatorio: será
@@ -44,6 +48,20 @@ common_contract: |
      experta completa. Añade toda limitación adicional que identifiques.
   6. Responde en español, tono técnico QA, conciso. Estructura: las secciones
      solicitadas + sección final "## Limitaciones".
+  7. BREVEDAD: máximo 12 viñetas analíticas en total. No repitas la misma
+     afirmación con distinto sujeto; agrupa. Una respuesta corta y bien
+     etiquetada vale más que una larga sin etiquetas.
+
+  EJEMPLO DEL FORMATO EXIGIDO (ilustra SOLO la estructura — no copies su
+  contenido; cita únicamente ids de evidencia de ESTA tarea):
+
+  ### Nombre de la sección analizada
+  - [E: runs] Las ejecuciones OQ registradas tienen resultado PASS con operador identificado y timestamp.
+  - [SE] No hay evidencia de un SOP de revisión periódica del audit trail; sin él no puede evaluarse la revisión continua.
+  - [REF: 21 CFR 11.10(e)] La norma exige audit trail seguro, generado por computadora y con sello de tiempo.
+
+  ## Limitaciones
+  - Corpus regulatorio parcial: toda referencia normativa queda sujeta a verificación humana.
 
 prompts:
   qa_oos_profile:
