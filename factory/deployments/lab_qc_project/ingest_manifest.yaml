@@ -94,6 +94,90 @@ ingest_steps:
     expected_chunks_min: 60
     actual_chunks_v0_2_0: 153
 
+# ── Fase 1-2 PLAN_CORPUS_REGULATORIO (2026-07-06): corpus OFICIAL ingestado ──
+# Vía real de ingesta: POST /api/v1/ingest (texto plano, chunks 500/80).
+# Originales en data/regulations/official/ (PDF/XML fuente + TXT extraído).
+# Los internal summaries REEMPLAZADOS por oficial fueron: (a) eliminados de la
+# colección (delete por metadata source), (b) movidos a
+# data/regulations/_archived_internal_summaries/ (Part 11: no borrar).
+# Cada ingesta auditada con knowledge_ingested (sha256 + chunks + source_type).
+
+  - step: 5
+    collection: lab_qc_oos
+    description: "OFICIAL — 21 CFR 211 Subparts I+J (eCFR 2026-07-01) + FDA OOS Guidance"
+    sources:
+      - path: official/OFFICIAL_ECFR_21CFR_part211_subparts_I_J.txt
+        sha256: c2c41069a73e27ed190e6eec3b64456697acca8a58901d7a9794c4230e4648a1
+        description: "21 CFR Part 211 Subparts I (Laboratory Controls) + J (Records and Reports) — eCFR oficial"
+        chunks: 66
+      - path: official/OFFICIAL_FDA_OOS_GUIDANCE_2006.pdf
+        sha256: 1afc6ccebfe155f4f4d868567fd4d2d47bc7b03c0120c2b00c2d6a2c27e2c145
+        description: "FDA Guidance for Industry: Investigating OOS Test Results — fda.gov/media/71001"
+        chunks: 106
+    replaced_internal: [qa_oos/21_cfr_211_laboratory.txt, qa_oos/fda_oos_guidance_2022.txt]
+    official_chunks: 172
+
+  - step: 6
+    collection: lab_qc_lims_di
+    description: "OFICIAL — 21 CFR Part 11 + FDA DI 2018 + MHRA GXP DI 2018 + EU Annex 11"
+    sources:
+      - path: official/OFFICIAL_ECFR_21CFR_part11.txt
+        sha256: e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e
+        description: "21 CFR Part 11 completo — eCFR oficial vigente 2026-07-01"
+        chunks: 40
+      - path: official/OFFICIAL_FDA_DI_GUIDANCE_2018.pdf
+        sha256: 1b5074c592ed75035022566b6e151c219b5b6349414beaf4229e73117a0997c6
+        description: "FDA Data Integrity and Compliance With Drug CGMP Q&A — fda.gov/media/119267"
+        chunks: 105
+      - path: official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf
+        sha256: e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d
+        description: "MHRA GXP Data Integrity Guidance and Definitions Rev.1 March 2018 — gov.uk"
+        chunks: 145
+      - path: official/OFFICIAL_EU_GMP_ANNEX11.pdf
+        sha256: 8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb
+        description: "EU GMP Annex 11 Computerised Systems — health.ec.europa.eu"
+        chunks: 28
+    replaced_internal: [lims_di/fda_di_guidance_2018_lims.txt, lims_di/mhra_di_lims_reference.txt]
+    official_chunks: 318
+
+  - step: 7
+    collection: lab_qc_hplc
+    description: "OFICIAL — ICH Q2(R1) + 21 CFR 211.194"
+    sources:
+      - path: official/OFFICIAL_ICH_Q2R1.pdf
+        sha256: a22ff5f9a9f851eebcac99fe8895d62ee510a6359d8c0cc9b2888ae68e6f293a
+        description: "ICH Q2(R1) Validation of Analytical Procedures — database.ich.org"
+        chunks: 87
+      - path: official/OFFICIAL_ECFR_21CFR_211_194.txt
+        sha256: 1cf7003d2347d8fd369dcc0a29c3a04e240070f14b73938d64bdda24242091d2
+        description: "21 CFR 211.194 Laboratory records — eCFR oficial"
+        chunks: 8
+    replaced_internal: [hplc_di/hplc_method_validation.txt]
+    official_chunks: 95
+
+  - step: 8
+    collection: gmp_fda_regulations
+    description: "OFICIAL — ICH Q9 + ICH Q10 + EU Annex 11 + 21 CFR Part 11"
+    sources:
+      - path: official/OFFICIAL_ICH_Q9.pdf
+        sha256: 7d2acf6d7a291e991b2b944ee93d002fc2971da299975f1ab5f2f80ad6206890
+        description: "ICH Q9 Quality Risk Management — database.ich.org"
+        chunks: 120
+      - path: official/OFFICIAL_ICH_Q10.pdf
+        sha256: 396b99197692a2fd386089b886dc7345e22b726fd6ebd0bbb5d2a0173b0ec292
+        description: "ICH Q10 Pharmaceutical Quality System — database.ich.org"
+        chunks: 108
+      - path: official/OFFICIAL_EU_GMP_ANNEX11.pdf
+        sha256: 8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb
+        description: "EU GMP Annex 11 (compartido con lab_qc_lims_di)"
+        chunks: 28
+      - path: official/OFFICIAL_ECFR_21CFR_part11.txt
+        sha256: e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e
+        description: "21 CFR Part 11 (compartido con lab_qc_lims_di)"
+        chunks: 40
+    replaced_internal: [fda/eu_gmp_annex11.txt, ich/ich_q9_quality_risk.txt, ich/ich_q10_pharm_quality.txt]
+    official_chunks: 296
+
 # Instrucciones de re-ingesta post-deploy
 # El script de ingesta llama al endpoint /api/v1/knowledge/ingest dentro del contenedor.
 ingest_command: >
@@ -104,19 +188,20 @@ ingest_command: >
   O usar: bash factory/scripts/ops/run_ingest_manifest.sh lab_qc_project
   (script pendiente de crear en redeploy R4)
 
+
 audit_event: knowledge_ingested
 validation:
   after_ingest: "GET /api/v1/knowledge/stats — verificar chunks >= expected_chunks_min"
   gate: G05
+  g05_official_2026_07_06: "lab_qc_oos 172 · lab_qc_lims_di 318 · lab_qc_hplc 95 · gmp_fda_regulations 296 (todas >= 60 solo con oficiales)"
 
 pending_documents:
-  - collection: lab_qc_oos
-    document: "FDA OOS Guidance 2022 (October 2022, completo) — PDF"
-    note: Solo se tiene resumen; PDF completo pendiente de adquisición
   - collection: lab_qc_lims_di
-    document: "FDA Data Integrity Guidance 2018 (completo) — PDF"
-    note: Solo sección LIMS disponible
+    document: "USP <1058> AIQ — requiere suscripción USP-NF (Fase 3 del plan)"
+    note: internal summary permanece en colección con disclaimer default-deny
   - collection: lab_qc_hplc
-    document: "USP <621> Chromatography — PDF (requiere suscripción USP)"
-  - collection: lab_qc_hplc
-    document: "ICH Q2(R1) Validation of Analytical Procedures — PDF"
+    document: "USP <621> Chromatography — requiere suscripción USP (Fase 3)"
+    note: sustituido funcionalmente por ICH Q2(R1) oficial (opción C del plan); internal summary permanece con disclaimer
+  - collection: gmp_fda_regulations
+    document: "ISPE C&Q Guide — requiere membresía ISPE (Fase 3)"
+    note: internal summary permanece con disclaimer

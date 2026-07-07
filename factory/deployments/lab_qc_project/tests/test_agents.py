@@ -91,14 +91,15 @@ def test_audit_verify():
 
 
 def test_knowledge_stats_structure():
-    """P2: /knowledge/stats must contain fda_collection and iq_collection."""
+    """P2: /knowledge/stats must contain gmp_fda_regulations and gmp_iq_oq_pq collections."""
     r = httpx.get(f"{BASE_URL}/api/v1/knowledge/stats", headers=_AUTH, timeout=10)
     assert r.status_code == 200
     data = r.json()
-    assert "fda_collection" in data
-    assert "iq_collection" in data
-    assert "count" in data["fda_collection"]
-    assert "count" in data["iq_collection"]
+    # Nombres reales de colecciones verificados 2026-06-15
+    assert "gmp_fda_regulations" in data
+    assert "gmp_iq_oq_pq" in data
+    assert "count" in data["gmp_fda_regulations"]
+    assert "count" in data["gmp_iq_oq_pq"]
 
 
 def test_audit_verify_structure():
@@ -270,6 +271,32 @@ def test_streaming_endpoint():
         assert len(tokens) >= 3, f"Expected ≥3 tokens, got {len(tokens)}"
 
 
+# ─── G07-bis: disclaimer de corpus interno (1) ───────────────────────────────
+
+
+def test_g07bis_internal_source_disclaimer():
+    """G07-bis: todo chunk recuperado de fuente NO oficial debe llevar el
+    disclaimer INTERNAL_DISCLAIMER antepuesto (default-deny: sin marca
+    OFFICIAL_ en la fuente, se declara resumen interno)."""
+    r = httpx.post(
+        f"{BASE_URL}/api/v1/query",
+        json={"question": "What is ALCOA+ according to FDA?",
+              "agent": "integrity_lims_profile"},
+        headers=_AUTH,
+        timeout=OLLAMA_TIMEOUT,
+    )
+    assert r.status_code == 200
+    sources = r.json().get("sources", [])
+    assert sources, "El query debe recuperar contexto RAG (sources vacío)"
+    for s in sources:
+        assert "official" in s, f"Fuente sin campo 'official': {s.get('file')}"
+        if not s["official"]:
+            assert s["text_preview"].startswith("[RESUMEN INTERNO"), (
+                f"Fuente interna sin disclaimer: {s.get('file')} → "
+                f"{s['text_preview'][:60]}"
+            )
+
+
 # ─── Standalone runner ────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -294,6 +321,7 @@ if __name__ == "__main__":
         test_query_iq_checks,
         test_query_equipment_reloc,
         test_streaming_endpoint,
+        test_g07bis_internal_source_disclaimer,
     ]
     passed = failed = 0
     for t in tests:

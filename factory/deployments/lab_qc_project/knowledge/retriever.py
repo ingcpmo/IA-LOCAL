@@ -8,6 +8,18 @@ CHROMA_IQ_COLLECTION = os.getenv("CHROMA_IQ_COLLECTION", "gmp_iq_oq_pq")
 _CHUNK_SIZE = 600
 _CHUNK_OVERLAP = 80
 
+# Fase 0 plan corpus regulatorio: mientras un chunk no provenga de un documento
+# oficial verificado, el agente debe declararlo. Default-deny: solo se libra
+# del disclaimer la fuente marcada explícitamente como oficial en la ingesta.
+INTERNAL_DISCLAIMER = ("[RESUMEN INTERNO — No es cita del texto regulatorio "
+                       "oficial. Verificar contra el documento original.]")
+_OFFICIAL_PREFIX = "OFFICIAL_"
+
+
+def _is_official_source(meta: dict) -> bool:
+    src = str(meta.get("source", ""))
+    return src.startswith(_OFFICIAL_PREFIX) or "/OFFICIAL_" in src
+
 
 def _get_client():
     import chromadb
@@ -163,12 +175,16 @@ async def retrieve_context_with_sources(
                 )
                 docs = results.get("documents", [[]])[0]
                 metas = results.get("metadatas", [[]])[0]
-                texts.extend(docs)
                 for doc, meta in zip(docs, metas):
+                    official = _is_official_source(meta)
+                    if not official:
+                        doc = INTERNAL_DISCLAIMER + "\n\n" + doc
+                    texts.append(doc)
                     sources.append({
                         "file": meta.get("source", "unknown"),
                         "chunk": meta.get("chunk", 0),
                         "collection": name,
+                        "official": official,
                         "text_preview": doc[:120],
                     })
             except Exception:

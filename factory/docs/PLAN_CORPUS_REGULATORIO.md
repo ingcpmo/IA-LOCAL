@@ -1,9 +1,27 @@
 # Plan — Ingesta de Corpus Regulatorio Real
 
 **Fecha:** 2026-06-25  
-**Estado:** PLANIFICACIÓN  
-**Bloqueador de go-live:** sí — `go_live_blocked: true` en todas las colecciones  
-**Siguiente sesión de código:** Fase 0 (disclaimer) → Fase 1 (documentos públicos)
+**Estado:** FASES 0–2 EJECUTADAS (2026-07-06) · Fases 3–4 pendientes  
+**Bloqueador de go-live:** levantado — `go_live_blocked: false` en las 4 colecciones (corpus_manifest v2.0)  
+**Siguiente paso:** Fase 3 (USP <621>/<1058>, ISPE — suscripción/licencia) · Fase 4 (SOPs del cliente)
+
+## Ejecución 2026-07-06 (fases 0–2) — desviaciones del plan documentadas
+
+- **Fase 0**: disclaimer implementado **default-deny** (más estricto que lo
+  planeado): todo chunk sin fuente `OFFICIAL_*` recibe el prefijo
+  `[RESUMEN INTERNO…]`; `sources[].official` expuesto; test G07-bis añadido.
+- **Fase 1**: 9 documentos oficiales descargados y verificados (SHA-256 en
+  `deployments/lab_qc_project/ingest_manifest.yaml` steps 5–8). eCFR vía API
+  versioner oficial (vigencia 2026-07-01, XML fuente conservado).
+- **Fase 2 — desviación**: `ingest_doc.sh` NO se usó (apunta al proyecto BASE
+  prohibido y a una clase DocumentIngester inexistente). Vía real:
+  `POST /api/v1/ingest` del deployment (la misma que creó el corpus original).
+  12 ingestas → chunks oficiales: oos 172 · lims_di 318 · hplc 95 ·
+  gmp_fda_regulations 296 (G05 ≥60 con solo oficiales en las 4). 12 eventos
+  `knowledge_ingested` auditados (cadena verificada). Internal summaries
+  reemplazados: chunks eliminados de ChromaDB y archivos movidos a
+  `data/regulations/_archived_internal_summaries/` (Part 11: no borrar).
+  USP <621>/<1058> e ISPE permanecen internos con disclaimer (Fase 3).
 
 ---
 
