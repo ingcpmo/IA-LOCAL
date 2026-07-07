@@ -8,9 +8,13 @@
 # El placeholder {corpus_sufficiency} del contrato común se sustituye en
 # generación con el nivel determinista del gate de corpus (§4 del diseño).
 
-prompt_set_version: "1.0.1"
+prompt_set_version: "1.1.0"
 
 changelog:
+  - version: "1.1.0"
+    date: "2026-07-07"
+    author: "Gate W6.5.1 — Pieza A modo revisión"
+    change: "Nuevo revision_contract (edición mínima sobre la respuesta anterior + ledger completo de guidances + temperatura 0.0): el experimento v4→v5→v6 de Fase D demostró patrón whack-a-mole porque cada regeneración era un borrador desde cero — el texto anterior nunca entraba al prompt y solo se pasaba la última guidance. Los prompts existentes NO cambian."
   - version: "1.0.1"
     date: "2026-07-06"
     author: "Fase D W6.5 — aprobado por Cesar"
@@ -62,6 +66,26 @@ common_contract: |
 
   ## Limitaciones
   - Corpus regulatorio parcial: toda referencia normativa queda sujeta a verificación humana.
+
+# W6.5.1 Pieza A — contrato de revisión: se inyecta SOLO en regeneraciones por
+# request_changes, entre el prompt del agente y la respuesta anterior. La
+# respuesta anterior viaja entre [RESPUESTA_ANTERIOR INICIO/FIN] (marcadores
+# canónicos protegidos por el sanitizador) y las guidances humanas acumuladas
+# se numeran bajo "INSTRUCCIONES DE QA".
+revision_contract_sha256: "c327c62982fc91548d682bef1cc41041b96b7c4a74c7296b9240c813ee16f872"
+revision_contract: |
+  MODO REVISIÓN — EDICIÓN MÍNIMA DE TU RESPUESTA ANTERIOR. Entre los marcadores
+  [RESPUESTA_ANTERIOR INICIO] y [RESPUESTA_ANTERIOR FIN] está tu respuesta
+  anterior completa. Reglas de la revisión, con prioridad sobre cualquier otra
+  instrucción de estilo:
+
+  1. Aplica ÚNICAMENTE los cambios pedidos en las INSTRUCCIONES DE QA numeradas.
+  2. Conserva TEXTUALMENTE cada viñeta y sección que nadie cuestionó: no
+     reescribas, no reordenes, no cambies etiquetas ni citas no cuestionadas.
+  3. TODAS las instrucciones numeradas siguen vigentes a la vez, no solo la
+     última: no reintroduzcas un error ya corregido por una instrucción previa.
+  4. Entrega el análisis completo revisado cumpliendo el mismo contrato de
+     formato (viñetas etiquetadas + sección final "## Limitaciones").
 
 prompts:
   qa_oos_profile:

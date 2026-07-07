@@ -1,6 +1,7 @@
 # Gate W6.5.1 — Revisión dirigida + Verificador v2 (OBLIGATORIO antes de W7)
 
-Estado: **GATE ABIERTO — no implementado** · Definido: 2026-07-06 (cierre Fase D)
+Estado: **GATE CERRADO — implementado 2026-07-07, aprobado por Cesar
+2026-07-07** · Definido: 2026-07-06 (cierre Fase D)
 Fundamento: evidencia real v1–v6 en `W6_5_FASE_D_CIERRE_EXPERIMENTO.md`
 Decisión de arquitectura aprobada por Cesar (delegada a Fable, sesión 2026-07-06).
 
@@ -52,19 +53,56 @@ Las propuestas archivadas
 `validation/oos_hplc_investigator/agent_proposals/data_integrity_assessment/v01–v06.json`
 son fixtures de regresión obligatorios:
 
-- [ ] Verificador v2 sobre v5 → flag `unverified_reference` en §11.30(a)/(c)
-      y en "FDA Data Integrity Guidance 2018, §3.4".
-- [ ] Verificador v2 sobre v6 → flag `negation_contradicted` en el [SE]
+- [x] Verificador v2 sobre v5 → flag `unverified_reference` en §11.30(a)/(c)
+      y en "FDA Data Integrity Guidance 2018, §3.4"
+      (`test_gate_v05_flags_unverified_references` — exactamente 3 findings).
+- [x] Verificador v2 sobre v6 → flag `negation_contradicted` en el [SE]
       "no hay evidencia de aprobaciones humanas" (audit contiene
-      validation_doc_approved).
-- [ ] Verificador v2 sobre v4 → flag `multi_claim_line`.
-- [ ] Verificador v2 sobre v6 → SIN flag en las citas §11.10(e)/(k) y
-      Subparte C (no falsos positivos sobre citas correctas).
-- [ ] Modo revisión (con LLM mockeado): el prompt de revisión contiene la
-      respuesta anterior íntegra y TODAS las guidances del ledger.
-- [ ] Confianza computada penalizada por los flags nuevos (regla a definir en
-      diseño, misma filosofía anti-optimismo).
-- [ ] Suite completa verde + selfcheck PASS + aprobación de Cesar.
+      validation_doc_approved) (`test_gate_v06_flags_negation_contradicted` —
+      exactamente 1 finding; las demás negaciones de v6 no señalan).
+- [x] Verificador v2 sobre v4 → flag `multi_claim_line`
+      (`test_gate_v04_flags_multi_claim_line` — 3 viñetas agrupadas).
+- [x] Verificador v2 sobre v6 → SIN flag en las citas §11.10(e)/(k) y
+      Subparte C (`test_gate_v06_no_false_positives_on_correct_references`).
+- [x] Modo revisión (con LLM mockeado): el prompt de revisión contiene la
+      respuesta anterior íntegra y TODAS las guidances del ledger
+      (`test_revision_mode_prompt_and_ledger`).
+- [x] Confianza computada penalizada por los flags nuevos: regla definida —
+      `negation_contradicted` | `unverified_reference` ⇒ baja (texto
+      potencialmente falso); `multi_claim_line` ⇒ nunca alta (verificación
+      incompleta) (`test_gate_confidence_penalized_by_v2_flags`).
+- [x] Suite completa verde (393 passed) + selfcheck PASS=4 FAIL=0.
+- [x] **Aprobación de Cesar** (2026-07-07) — gate CERRADO; W7 puede consumir
+      el pipeline LLM de propuestas.
+
+## Implementación (2026-07-07)
+
+- `services/claim_verifier.py` (NUEVO, puro: sin HTTP/auditoría/escritura):
+  verificador v2 + derivación de grants + `items_from_prompt` para
+  re-verificar propuestas archivadas. Reutilizable por W7.
+- **Decisión: la whitelist NO es un archivo nuevo** — se deriva de las
+  declaraciones de corpus existentes (corpus_available + corpus_pending +
+  regulatory_scope de la misión). Granularidad: sección CFR citable solo si
+  enumerada; Parte declarada autoriza Parte/Subparte, nunca secciones;
+  documentos citables a nivel documento (numeral ⇒ flag); corpus_pending
+  otorga citabilidad de título.
+- **Decisión: negaciones contrastadas SOLO contra evidencia operacional**
+  (runs/audit/rc/deployment) — la intención (mission/agents/catalog) no
+  contradice hechos; léxico ES→EN mínimo explícito (aprobaciones→approv…);
+  regla ALL-tokens para precisión (un flag falso erosiona al revisor).
+- `services/dossier_agent_review_service.py`: modo revisión (revision_of,
+  ledger acumulado con fallback legado, temperatura 0.0, bloque
+  [RESPUESTA_ANTERIOR] sanitizado anti-forgery), verifier v2 integrado,
+  confianza penalizada, mode/ledger en record y evento (esquema aditivo).
+- `agent_prompts/dossier_review_prompts.yaml` v1.1.0: `revision_contract`
+  gobernado (+SHA, changelog); los 3 prompts de agente NO cambian.
+- Fixtures v01–v06 archivados en `tests/fixtures/agent_proposals/` (los
+  originales de factory/validation/ no están bajo git y los escribe el
+  contenedor); grants de los tests derivadas de los perfiles y misión REALES
+  — si una fase de corpus cambia las declaraciones, la suite lo hace visible.
+- Sin endpoints nuevos y sin cambios de UI (los flags nuevos se muestran con
+  el renderizado genérico de chips existente). La regla del gate sigue
+  vigente: ningún endpoint nuevo consume el pipeline hasta el cierre formal.
 
 ## Disparadores de retoma anticipada (cualquiera reabre este trabajo antes de W7)
 

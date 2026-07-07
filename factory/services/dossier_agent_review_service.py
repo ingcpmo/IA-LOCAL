@@ -40,6 +40,7 @@ import yaml as _yaml
 from fastapi import HTTPException
 
 from factory.services import case_presentation_service as _cases
+from factory.services import claim_verifier as _verifier
 from factory.services import dossier_generator_service as _dossier
 from factory.services import paths
 from factory.services import test_console_service as _console
@@ -50,6 +51,9 @@ OLLAMA_BASE_URL = os.getenv("FACTORY_OLLAMA_BASE_URL", "http://host.docker.inter
 OLLAMA_MODEL = os.getenv("FACTORY_OLLAMA_MODEL", "mistral:7b-instruct-q4_K_M")
 NUM_PREDICT = 1024
 TEMPERATURE = 0.2
+# W6.5.1 Pieza A: las revisiones son EDICIÓN MÍNIMA determinista del texto
+# anterior — temperatura 0.0; la creatividad solo aplica al primer borrador
+TEMPERATURE_REVISION = 0.0
 # El contexto DEBE cubrir prompt completo + respuesta: si el prompt excede el
 # contexto, Ollama recorta el INICIO en silencio y el modelo pierde el contrato
 # de formato y la cláusula anti-injection (hallazgo real de Fase D)
@@ -169,8 +173,10 @@ def corpus_sufficiency(project_id: str, agent_id: str) -> dict:
 
 def _sanitize(text: str, max_chars: int) -> str:
     text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", str(text))
-    # anti marker-forgery: la evidencia no puede abrir/cerrar bloques EVIDENCIA
+    # anti marker-forgery: ni la evidencia ni una respuesta previa pueden
+    # abrir/cerrar bloques canónicos del prompt
     text = text.replace("[EVIDENCIA", "(EVIDENCIA")
+    text = text.replace("[RESPUESTA_ANTERIOR", "(RESPUESTA_ANTERIOR")
     return text[:max_chars]
 
 
@@ -275,14 +281,21 @@ def _evidence_items(project_id: str, doc_id: str, bundle: dict, primary: str) ->
 # ── Prompt final ──────────────────────────────────────────────────────────────
 
 def _build_prompt(prompts: dict, primary: str, doc_id: str, corpus_level: str,
-                  items: list, guidance: str | None) -> tuple[str, str]:
-    """→ (prompt_final, template_sha256). El template es contrato+prompt del
-    agente SIN evidencia (reproducibilidad: qué configuración GxP se usó)."""
+                  items: list, guidance: str | None,
+                  prev_response: str | None = None,
+                  guidance_ledger: list | None = None) -> tuple[str, str]:
+    """→ (prompt_final, template_sha256). El template es contrato(s)+prompt del
+    agente SIN evidencia (reproducibilidad: qué configuración GxP se usó).
+
+    Modo revisión (W6.5.1 Pieza A, prev_response no None): el prompt incluye
+    la respuesta anterior ÍNTEGRA en bloque canónico + el contrato de edición
+    mínima gobernado + TODAS las guidances acumuladas de la cadena de
+    versiones — las restricciones ya conquistadas no salen del prompt
+    (causa raíz del patrón whack-a-mole v4→v5→v6)."""
     contract = prompts.get("common_contract") or ""
     agent_prompt = ((prompts.get("prompts") or {}).get(primary) or {}).get("system_prompt")
     if not agent_prompt:
         raise HTTPException(500, f"No hay prompt experto gobernado para '{primary}'")
-    template_sha = _sha(contract + agent_prompt)
 
     parts = [contract.replace("{corpus_sufficiency}", corpus_level), agent_prompt,
              f"DOCUMENTO OBJETIVO: {_dossier._TITLES[doc_id]} ({doc_id}).",
@@ -290,9 +303,24 @@ def _build_prompt(prompts: dict, primary: str, doc_id: str, corpus_level: str,
              "(bloque de evidencia doc_actual) marcadas como juicio pendiente "
              "(\"SIN EVIDENCIA — requiere aporte humano\"). Una subsección `###` por "
              "sección analizada; cada afirmación como viñeta etiquetada."]
-    if guidance:
-        parts.append("AJUSTE SOLICITADO POR QA (instrucción humana con prioridad):\n"
-                     + _sanitize(guidance, 1500))
+    if prev_response is not None:
+        revision_contract = prompts.get("revision_contract") or ""
+        if not revision_contract.strip():
+            raise HTTPException(500, "El set de prompts no define revision_contract "
+                                     "(requerido por el gate W6.5.1 para request_changes)")
+        template_sha = _sha(contract + revision_contract + agent_prompt)
+        parts.append(revision_contract)
+        parts.append("[RESPUESTA_ANTERIOR INICIO]\n"
+                     + _sanitize(prev_response, MAX_INTERNAL_CHARS)
+                     + "\n[RESPUESTA_ANTERIOR FIN]")
+        parts.append("INSTRUCCIONES DE QA (acumuladas, TODAS vigentes a la vez):\n"
+                     + "\n".join(f"{n}. {_sanitize(g, 1500)}"
+                                 for n, g in enumerate(guidance_ledger or [], 1)))
+    else:
+        template_sha = _sha(contract + agent_prompt)
+        if guidance:
+            parts.append("AJUSTE SOLICITADO POR QA (instrucción humana con prioridad):\n"
+                         + _sanitize(guidance, 1500))
     parts.append("EVIDENCIA DISPONIBLE — ids citables con [E: <id>]: "
                  + ", ".join(it["id"] for it in items))
     parts.extend(_wrap(it["id"], it["trust"], it["content"]) for it in items)
@@ -301,11 +329,11 @@ def _build_prompt(prompts: dict, primary: str, doc_id: str, corpus_level: str,
 
 # ── Ollama (único egreso HTTP del módulo; monkeypatcheable en tests) ──────────
 
-def _ollama_generate(prompt: str) -> dict:
+def _ollama_generate(prompt: str, temperature: float = TEMPERATURE) -> dict:
     r = httpx.post(
         f"{OLLAMA_BASE_URL}/api/generate",
         json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
-              "options": {"num_predict": NUM_PREDICT, "temperature": TEMPERATURE,
+              "options": {"num_predict": NUM_PREDICT, "temperature": temperature,
                           "num_ctx": NUM_CTX}},
         timeout=httpx.Timeout(connect=5.0, read=TIMEOUT_READ_S, write=10.0, pool=5.0))
     r.raise_for_status()
@@ -375,13 +403,19 @@ def _claims_summary(verified: list) -> dict:
     return counts
 
 
-def _confidence(corpus_level: str, counts: dict) -> str:
-    """SIEMPRE computada, jamás autodeclarada por el LLM (regla del diseño §8)."""
+def _confidence(corpus_level: str, counts: dict, flags: list | tuple = ()) -> str:
+    """SIEMPRE computada, jamás autodeclarada por el LLM (regla del diseño §8).
+    W6.5.1: los flags del verificador v2 penalizan (filosofía anti-optimismo):
+    una negación contradicha por registros o una cita fuera del alcance
+    declarado señalan texto potencialmente falso → baja; claims agrupadas en
+    una línea impiden la verificación completa → nunca alta."""
     if counts["unsupported"] > 0 or corpus_level == "insufficient":
         return "baja"
+    if "negation_contradicted" in flags or "unverified_reference" in flags:
+        return "baja"
     verifiable = counts["supported"] + counts["partially_supported"]
-    if (corpus_level == "sufficient" and verifiable
-            and counts["supported"] / verifiable >= 0.7):
+    if ("multi_claim_line" not in flags and corpus_level == "sufficient"
+            and verifiable and counts["supported"] / verifiable >= 0.7):
         return "alta"
     return "media"
 
@@ -459,10 +493,25 @@ def _fail(project_id: str, doc_id: str, agent: str, reason: str, trigger: dict,
                                       "model": OLLAMA_MODEL, "doc_id": doc_id})
 
 
+def _guidance_ledger_of(record: dict) -> list:
+    """Ledger acumulado de guidances humanas de un record; fallback para
+    propuestas previas al gate W6.5.1 (sin bloque revision)."""
+    rev = record.get("revision")
+    if isinstance(rev, dict) and rev.get("guidance_ledger") is not None:
+        return list(rev["guidance_ledger"])
+    legacy = (record.get("governance") or {}).get("guidance")
+    return [legacy] if legacy else []
+
+
 def propose_document(project_id: str, doc_id: str, trigger: dict,
-                     guidance: str | None = None) -> dict:
+                     guidance: str | None = None,
+                     revision_of: int | None = None) -> dict:
     """Genera una propuesta de análisis experto. NUNCA cambia nada a estado
-    aprobado; ante cualquier fallo el documento queda intacto."""
+    aprobado; ante cualquier fallo el documento queda intacto.
+
+    revision_of (W6.5.1 Pieza A): número de versión de la propuesta a revisar
+    — activa el modo revisión (respuesta anterior íntegra en el prompt, ledger
+    completo de guidances, temperatura 0.0)."""
     trigger = trigger or {}
     if trigger.get("mode") != "manual":
         raise HTTPException(403, "W6.5 solo admite trigger manual: la generación "
@@ -472,12 +521,21 @@ def propose_document(project_id: str, doc_id: str, trigger: dict,
     dossier = _require_eligible(project_id, doc_id)
     primary, supporting = DOC_ROUTING[doc_id]
 
+    mode = "revision" if revision_of else "draft"
+    prev_response, ledger = None, ([guidance] if guidance else [])
+    if revision_of:
+        prev = _load_proposal(project_id, doc_id, revision_of)
+        prev_response = prev.get("response") or ""
+        ledger = _guidance_ledger_of(prev) + ([guidance] if guidance else [])
+
     corpus = corpus_sufficiency(project_id, primary)
     bundle = _dossier.build_evidence_bundle(project_id)
     items = _evidence_items(project_id, doc_id, bundle, primary)
     prompts_meta = _load_prompts()
     prompt, template_sha = _build_prompt(prompts_meta, primary, doc_id,
-                                         corpus["level"], items, guidance)
+                                         corpus["level"], items, guidance,
+                                         prev_response=prev_response,
+                                         guidance_ledger=ledger if revision_of else None)
     agent_prompt_version = ((prompts_meta.get("prompts") or {}).get(primary) or {}).get("prompt_version")
 
     # Guard anti-truncado: estimación conservadora (~3 chars/token en español
@@ -490,6 +548,7 @@ def propose_document(project_id: str, doc_id: str, trigger: dict,
               f"~{est_tokens} tokens estimados > presupuesto {budget} "
               f"(num_ctx {NUM_CTX} - num_predict {NUM_PREDICT})")
 
+    temperature = TEMPERATURE_REVISION if mode == "revision" else TEMPERATURE
     t0 = datetime.now(timezone.utc)
     response, retried = None, False
     for attempt in (1, 2):
@@ -498,7 +557,7 @@ def propose_document(project_id: str, doc_id: str, trigger: dict,
             "contrato. Cada afirmación DEBE ser una viñeta '- [E: id] ...', '- [SE] ...' "
             "o '- [REF: norma] ...' y DEBE existir la sección final '## Limitaciones'.")
         try:
-            data = _ollama_generate(current_prompt)
+            data = _ollama_generate(current_prompt, temperature)
         except httpx.ConnectError as e:
             _fail(project_id, doc_id, primary, "ollama_unreachable", trigger, name, 503, str(e))
         except httpx.TimeoutException as e:
@@ -516,10 +575,18 @@ def propose_document(project_id: str, doc_id: str, trigger: dict,
     format_ok = _format_valid(claims, response)
     verified = _verify_claims(claims, items)
     counts = _claims_summary(verified)
-    confidence = _confidence(corpus["level"], counts)
     flags = _output_flags(response)
     if counts["unsupported"] > 0:
         flags.append("unsupported_claims")
+    # W6.5.1 Pieza B — verificador v2: whitelist de citas derivada de las
+    # declaraciones de corpus del agente + regulatory_scope de la misión;
+    # negaciones contra evidencia operacional; claims agrupadas por línea
+    grants = _verifier.parse_reference_grants(
+        list(corpus["available"]) + list(corpus["pending"])
+        + list(bundle["mission"].get("regulatory_scope") or []))
+    v2 = _verifier.verify_v2(response, verified, items, grants)
+    flags.extend(f for f in v2["flags"] if f not in flags)
+    confidence = _confidence(corpus["level"], counts, flags)
 
     version = _next_version(project_id, doc_id)
     record = {
@@ -529,7 +596,7 @@ def propose_document(project_id: str, doc_id: str, trigger: dict,
                   "supporting_note": "dominios de revisión recomendados para el "
                                      "revisor humano (no ejecutados en W6.5)"},
         "model": {"name": OLLAMA_MODEL,
-                  "options": {"num_predict": NUM_PREDICT, "temperature": TEMPERATURE,
+                  "options": {"num_predict": NUM_PREDICT, "temperature": temperature,
                               "num_ctx": NUM_CTX}},
         "prompt": {"set_version": prompts_meta.get("prompt_set_version"),
                    "agent_prompt_version": agent_prompt_version,
@@ -538,6 +605,9 @@ def propose_document(project_id: str, doc_id: str, trigger: dict,
         "evidence_sources": [{"id": it["id"], "trust": it["trust"], "pointer": it["pointer"]}
                              for it in items],
         "claims": {**counts, "detail": verified},
+        "verifier": {"version": v2["version"], "findings": v2["findings"]},
+        "revision": {"mode": mode, "based_on_version": revision_of,
+                     "guidance_ledger": ledger},
         "confidence": confidence,
         "flags": flags,
         "response": response,
@@ -557,9 +627,11 @@ def propose_document(project_id: str, doc_id: str, trigger: dict,
         write_event("dossier_agent_proposal_failed", project_id, {
             "doc_id": doc_id, "agent": primary, "reason": "format_invalid",
             "trigger": trigger, "requested_by": name, "version": version,
+            "mode": mode, "based_on_version": revision_of,
         })
         return {"project_id": project_id, "doc_id": doc_id, "version": version,
-                "status": "format_invalid", "confidence": confidence, "flags": flags}
+                "status": "format_invalid", "mode": mode,
+                "confidence": confidence, "flags": flags}
 
     entry = dossier["documents"][doc_id]
     entry["status"] = "agent_proposed"
@@ -583,12 +655,14 @@ def propose_document(project_id: str, doc_id: str, trigger: dict,
         "response_sha256": _sha(response),
         "corpus_sufficiency": corpus["level"],
         "claims": counts, "confidence": confidence, "flags": flags,
+        "mode": mode, "based_on_version": revision_of,
+        "guidance_ledger_sha256": [_sha(g) for g in ledger],
         "trigger": trigger, "requested_by": name,
     })
     return {"project_id": project_id, "doc_id": doc_id, "version": version,
             "status": "agent_proposed", "agent": record["agent"],
-            "corpus_sufficiency": corpus["level"], "claims": counts,
-            "confidence": confidence, "flags": flags}
+            "mode": mode, "corpus_sufficiency": corpus["level"],
+            "claims": counts, "confidence": confidence, "flags": flags}
 
 
 # ── Lectura (nunca audita) ────────────────────────────────────────────────────
@@ -687,11 +761,13 @@ def decide_proposal(project_id: str, doc_id: str, decision: str,
            "doc_status": dossier["documents"][doc_id]["status"]}
 
     if decision == "request_changes":
-        # nueva versión con la instrucción humana como guidance (mismo gobierno;
+        # nueva versión en MODO REVISIÓN (W6.5.1): la respuesta anterior entra
+        # íntegra al prompt con el ledger completo de guidances (mismo gobierno;
         # genera su propio evento). Si Ollama falla, la decisión queda registrada
         # y el doc permanece agent_proposed con la propuesta marcada.
         regen = propose_document(project_id, doc_id,
                                  {"mode": "manual", "principal": name,
-                                  "authorization_ref": None}, guidance=reason)
+                                  "authorization_ref": None}, guidance=reason,
+                                 revision_of=version)
         out["new_proposal"] = regen
     return out

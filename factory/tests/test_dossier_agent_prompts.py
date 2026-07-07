@@ -69,6 +69,18 @@ def test_agent_prompts_invariants():
     assert "USP <621>" in d["prompts"]["hplc_data_review_agent"]["system_prompt"]
 
 
+def test_revision_contract_sha_and_invariants():
+    """W6.5.1 Pieza A: el contrato de revisión es configuración GxP gobernada
+    con las garantías que el gate exige (edición mínima + ledger vigente)."""
+    d = _load()
+    assert d["revision_contract_sha256"] == _sha(d["revision_contract"])
+    rc = d["revision_contract"]
+    assert "[RESPUESTA_ANTERIOR INICIO]" in rc and "[RESPUESTA_ANTERIOR FIN]" in rc
+    assert "ÚNICAMENTE" in rc and "TEXTUALMENTE" in rc     # edición mínima
+    assert "TODAS las instrucciones" in rc                 # ledger completo vigente
+    assert "## Limitaciones" in rc                         # mismo contrato de formato
+
+
 def test_changelog_covers_current_versions():
     d = _load()
     logged = {e["version"] for e in d["changelog"]}
