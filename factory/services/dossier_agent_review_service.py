@@ -406,12 +406,14 @@ def _claims_summary(verified: list) -> dict:
 def _confidence(corpus_level: str, counts: dict, flags: list | tuple = ()) -> str:
     """SIEMPRE computada, jamás autodeclarada por el LLM (regla del diseño §8).
     W6.5.1: los flags del verificador v2 penalizan (filosofía anti-optimismo):
-    una negación contradicha por registros o una cita fuera del alcance
-    declarado señalan texto potencialmente falso → baja; claims agrupadas en
-    una línea impiden la verificación completa → nunca alta."""
+    una negación contradicha por registros, una cita fuera del alcance
+    declarado o una contradicción interna entre viñetas (v2.1, W7) señalan
+    texto potencialmente falso → baja; claims agrupadas en una línea impiden
+    la verificación completa → nunca alta."""
     if counts["unsupported"] > 0 or corpus_level == "insufficient":
         return "baja"
-    if "negation_contradicted" in flags or "unverified_reference" in flags:
+    if ("negation_contradicted" in flags or "unverified_reference" in flags
+            or "intra_proposal_contradiction" in flags):
         return "baja"
     verifiable = counts["supported"] + counts["partially_supported"]
     if ("multi_claim_line" not in flags and corpus_level == "sufficient"

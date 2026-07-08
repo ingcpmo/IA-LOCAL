@@ -36,16 +36,28 @@ el texto del agente ni bloquean el flujo) y todos deterministas (sin LLM):
 3. multi_claim_line — más de una etiqueta [E:]/[SE]/[REF:] en la misma línea:
    el parser de claims solo cuenta la primera y el resto escapa a la
    verificación (evidencia real: v04 agrupó ~8 claims en 3 viñetas).
+4. intra_proposal_contradiction (v2.1, W7 Fase A/B — limitación 1 del
+   preflight de Fase 0) — viñeta [SE] cuya negación contradice una viñeta
+   [E:] verificada (supported/partially_supported) de la MISMA respuesta.
+   Evidencia real: v08 afirmó "[E: agents] qa_oos_profile es el perfil
+   específico para la gestión OOS" y a la vez "[SE] No hay evidencia de un
+   perfil de agente dedicado a la gestión OOS" — el v2.0 no lo veía (solo
+   contrastaba contra evidencia operacional) y lo detectó Cesar a mano.
+   Precisión sobre exhaustividad: regla ALL-tokens sobre el sujeto negado
+   (≥2 tokens no genéricos — un solo sustantivo es señal demasiado débil) y
+   los segmentos negados DENTRO de las [E:] se excluyen del contraste (dos
+   negaciones coincidentes son acuerdo, no contradicción).
 
 Fixtures de regresión obligatorios del gate: v01–v06 reales de
 data_integrity_assessment, archivados en tests/fixtures/ (tests/
-test_claim_verifier_v2.py). Módulo puro: sin I/O, sin HTTP, sin auditoría.
+test_claim_verifier_v2.py); v08 real fija la regla 4. Módulo puro: sin I/O,
+sin HTTP, sin auditoría.
 """
 
 import re
 import unicodedata
 
-VERIFIER_VERSION = "2.0"
+VERIFIER_VERSION = "2.1"
 
 # Evidencia operacional: registros de hechos ocurridos. La evidencia de
 # intención (mission, agents, catalog, doc_actual) y la externa (case:*) no
@@ -154,6 +166,9 @@ _GENERIC_SUBJECT_TOKENS = frozenset({
     "humano", "humana", "humanos", "humanas", "especifico", "especifica",
     "actual", "explicito", "explicita", "formal", "formales", "adecuado",
     "adecuada", "correspondiente", "correspondientes",
+    # calificadores (v2.1): misma categoría que "especifico"/"adecuado" —
+    # no identifican al sujeto negado (test fija la extensión del léxico)
+    "dedicado", "dedicada", "dedicados", "dedicadas",
     "cfr", "fda", "mhra", "usp", "part", "parte", "subpart", "subparte",
     "norma", "normas", "guia", "guias", "guidance",
 })
@@ -214,6 +229,55 @@ def check_negations(claims: list, items: list) -> list:
     return findings
 
 
+def _negation_subject_tokens(text_norm: str) -> list:
+    """Sujetos negados de un texto normalizado → [lista de tokens no genéricos
+    por negación]. Mismo recorte y filtrado que check_negations."""
+    out = []
+    for m in _NEGATION_RE.finditer(text_norm):
+        subject = m.group("subject").split(" que ")[0].strip()
+        tokens = [t for t in re.findall(r"[a-z0-9+]+", subject)
+                  if t not in _GENERIC_SUBJECT_TOKENS
+                  and not t.isdigit() and len(t) > 2]
+        if tokens:
+            out.append((subject, tokens))
+    return out
+
+
+# ── 4. intra_proposal_contradiction (v2.1) ────────────────────────────────────
+
+def check_intra_contradictions(claims: list) -> list:
+    """Negaciones en viñetas [SE] contra las afirmaciones de las viñetas [E:]
+    verificadas de la MISMA respuesta. Un finding por claim [SE] como máximo.
+    Los segmentos negados dentro de la [E:] se excluyen del contraste: si la
+    [E:] también niega el sujeto, hay acuerdo, no contradicción."""
+    targets = []
+    for c in claims:
+        if c.get("tag") == "E" and c.get("support") in ("supported",
+                                                        "partially_supported"):
+            affirmative = _NEGATION_RE.sub(" ", _norm(c["text"]))
+            targets.append((c, affirmative))
+    findings = []
+    if not targets:
+        return findings
+    for c in claims:
+        if c.get("tag") != "SE":
+            continue
+        for subject, tokens in _negation_subject_tokens(_norm(c["text"])):
+            if len(tokens) < 2:      # un solo sustantivo: señal demasiado débil
+                continue
+            hit = next((e for e, aff in targets
+                        if all(t in aff for t in tokens)), None)
+            if hit is not None:
+                findings.append({"type": "intra_proposal_contradiction",
+                                 "claim": c["text"],
+                                 "negated_subject": subject,
+                                 "subject_tokens": tokens,
+                                 "contradicted_by": hit["text"],
+                                 "contradicted_by_pointer": hit.get("pointer")})
+                break
+    return findings
+
+
 # ── 3. multi_claim_line ───────────────────────────────────────────────────────
 
 _CLAIM_TAG_RE = re.compile(r"\[(?:E:[^\]]*|SE|REF:[^\]]*)\]")
@@ -245,6 +309,7 @@ def verify_v2(response: str, claims: list, items: list, grants: dict) -> dict:
                                  "claim": c["text"], **detail})
     findings += check_negations(claims, items)
     findings += check_multi_claim_lines(response)
+    findings += check_intra_contradictions(claims)
     flags = []
     for f in findings:
         if f["type"] not in flags:

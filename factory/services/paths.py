@@ -35,6 +35,12 @@ AGENT_PROMPTS_FILE = FACTORY_ROOT / "agent_prompts" / "dossier_review_prompts.ya
 PROFILES_DIR = FACTORY_ROOT / "profiles"
 MISSIONS_DIR = FACTORY_ROOT / "layer9" / "missions"
 
+# W7 — análisis de casos regulatorios por agente: prompts gobernados propios
+# (set independiente del dossier) y registros versionados inmutables por
+# (misión × caso); el estado vigente es el status del último vNN.json
+CASE_ANALYSIS_PROMPTS_FILE = FACTORY_ROOT / "agent_prompts" / "case_analysis_prompts.yaml"
+CASE_ANALYSES_BASE = FACTORY_ROOT / "regulatory" / "case_analyses"
+
 MAX_FILE_BYTES = 256 * 1024  # límite de lectura de archivos del visor W3
 
 FILTER_PARTS = frozenset({

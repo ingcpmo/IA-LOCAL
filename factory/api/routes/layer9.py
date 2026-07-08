@@ -31,6 +31,7 @@ from factory.layer9.decision_log import write_decision, list_decisions, get_proj
 from factory.layer9.risk_acceptance import accept_risk, list_risks
 from factory.layer9.human_review_queue import list_pending, get_queue_summary, mark_reviewed
 from factory.layer8.release_candidate_builder import get_rc, confirm_rc
+from factory.services import case_analysis_service as _case_analysis
 from factory.services import design_mode_service as _design
 from factory.services import dossier_agent_review_service as _agent_review
 from factory.services import dossier_generator_service as _dossier
@@ -984,3 +985,42 @@ def get_agent_proposal(project_id: str, doc_id: str, version: int | None = None)
 def post_agent_proposal_decision(project_id: str, doc_id: str, body: AgentProposalDecision):
     return _agent_review.decide_proposal(
         project_id, doc_id, body.decision, body.decided_by, body.reason)
+
+
+# ── W7 — Análisis de casos regulatorios por agente (gobernado) ────────────────
+# El agente que el routing W6.4 recomienda analiza UN caso contra una misión;
+# el humano decide. Informativo: jamás toca dossier ni cases.jsonl. El trigger
+# lo fija la API en "manual" (la generación automática es un gate futuro).
+
+class CaseAnalyzeRequest(BaseModel):
+    project_id: str            # misión contra la que se analiza el caso
+    requested_by: str          # nombre real (regla run_by de W4)
+    guidance: str | None = None  # instrucción humana opcional para el agente
+
+
+class CaseAnalysisDecision(BaseModel):
+    project_id: str
+    decision: str              # accept | reject | request_changes
+    decided_by: str            # nombre real — NO es firma electrónica
+    reason: str | None = None  # obligatorio en reject/request_changes
+
+
+@router.post("/case-memory/{case_id}/analyze")
+def post_case_analysis(case_id: str, body: CaseAnalyzeRequest):
+    return _case_analysis.analyze_case(
+        body.project_id, case_id,
+        {"mode": "manual", "principal": body.requested_by, "authorization_ref": None},
+        guidance=body.guidance)
+
+
+@router.get("/case-memory/{case_id}/analysis")
+def get_case_analysis(case_id: str, project_id: str, version: int | None = None):
+    """Read-only: análisis + gobierno completo. NO audita. Sin version → el
+    último (estado vigente del par caso×misión)."""
+    return _case_analysis.read_analysis(project_id, case_id, version)
+
+
+@router.post("/case-memory/{case_id}/analysis/decision")
+def post_case_analysis_decision(case_id: str, body: CaseAnalysisDecision):
+    return _case_analysis.decide_analysis(
+        body.project_id, case_id, body.decision, body.decided_by, body.reason)

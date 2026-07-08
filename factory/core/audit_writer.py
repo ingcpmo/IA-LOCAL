@@ -95,6 +95,10 @@ VALID_EVENTS = {
     "dossier_agent_proposal_generated",
     "dossier_agent_proposal_failed",
     "dossier_agent_proposal_decision",
+    # W7 — análisis de casos regulatorios por agente (project_id = misión real)
+    "case_analysis_generated",
+    "case_analysis_failed",
+    "case_analysis_decision",
 }
 
 

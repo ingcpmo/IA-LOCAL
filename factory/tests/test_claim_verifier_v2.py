@@ -204,6 +204,99 @@ def test_negation_without_operational_evidence_never_flags():
     assert cv.check_negations(claims, only_intent) == []
 
 
+# ── intra_proposal_contradiction (v2.1, W7) ───────────────────────────────────
+
+def test_w7_v08_flags_intra_proposal_contradiction():
+    """[W7 Fase A/B] v08 REAL → intra_proposal_contradiction: la viñeta [SE]
+    'No hay evidencia de un perfil de agente dedicado a la gestión OOS'
+    contradice la [E: agents] 'qa_oos_profile es el perfil específico para la
+    gestión OOS' de la misma respuesta. El v2.0 no lo veía (solo contrastaba
+    contra evidencia operacional); lo detectó Cesar a mano — limitación 1 del
+    preflight de Fase 0, cerrada con este fixture."""
+    out = _verify(8)
+    intra = [f for f in out["findings"]
+             if f["type"] == "intra_proposal_contradiction"]
+    assert "intra_proposal_contradiction" in out["flags"]
+    assert len(intra) == 1
+    assert "perfil de agente dedicado" in intra[0]["claim"]
+    assert intra[0]["contradicted_by_pointer"] == "agents"
+    assert "qa_oos_profile" in intra[0]["contradicted_by"]
+
+
+def test_w7_archived_v01_v07_no_intra_regressions():
+    """Precisión: la regla nueva NO dispara en ninguna versión archivada
+    previa (v01–v07) y sus flags existentes no cambian."""
+    expected = {1: [], 2: [], 3: [], 4: ["multi_claim_line"],
+                5: ["unverified_reference"], 6: ["negation_contradicted"],
+                7: []}
+    for v, flags in expected.items():
+        out = _verify(v)
+        assert out["flags"] == flags, f"v{v:02d}"
+
+
+def test_intra_contradiction_requires_two_subject_tokens():
+    """Un solo sustantivo negado ('reglas') es señal demasiado débil: v08 real
+    contiene '[SE] no hay evidencia de reglas que garanticen...' junto a
+    '[E: catalog] el catálogo incluye reglas...' y NO es contradicción."""
+    claims = [
+        {"tag": "E", "pointer": "catalog", "support": "supported",
+         "text": "El catálogo incluye reglas para la validación ALCOA+."},
+        {"tag": "SE", "pointer": None, "support": "unverifiable",
+         "text": "No hay evidencia de reglas que garanticen la consistencia."},
+    ]
+    assert cv.check_intra_contradictions(claims) == []
+
+
+def test_intra_contradiction_ignores_negated_segments_in_e_claims():
+    """Dos negaciones coincidentes son ACUERDO, no contradicción: el segmento
+    negado dentro de la [E:] se excluye del contraste."""
+    claims = [
+        {"tag": "E", "pointer": "runs", "support": "partially_supported",
+         "text": "Las ejecuciones tienen PASS, pero no hay evidencia de "
+                 "firmas electrónicas conformes."},
+        {"tag": "SE", "pointer": None, "support": "unverifiable",
+         "text": "No hay evidencia de firmas electrónicas en los registros."},
+    ]
+    assert cv.check_intra_contradictions(claims) == []
+
+
+def test_intra_contradiction_only_against_verified_e_claims():
+    """Una [E:] unsupported no sirve de base para señalar contradicción: su
+    propio contenido ya está en duda (flag unsupported_claims)."""
+    claims = [
+        {"tag": "E", "pointer": "agents", "support": "unsupported",
+         "text": "El perfil qa_oos_profile cubre la gestión OOS del flujo."},
+        {"tag": "SE", "pointer": None, "support": "unverifiable",
+         "text": "No hay evidencia de un perfil para la gestión OOS del flujo."},
+    ]
+    assert cv.check_intra_contradictions(claims) == []
+
+
+def test_qualifier_lexicon_extension_dedicado():
+    """v2.1 añadió 'dedicado/a(s)' a los tokens genéricos (misma categoría que
+    'específico'): el calificador no identifica al sujeto negado. Test que
+    fija la extensión del léxico, como exige el módulo."""
+    assert "dedicado" in cv._GENERIC_SUBJECT_TOKENS
+    claims = [
+        {"tag": "E", "pointer": "agents", "support": "supported",
+         "text": "qa_oos_profile es el perfil de agente para la gestión OOS."},
+        {"tag": "SE", "pointer": None, "support": "unverifiable",
+         "text": "No hay evidencia de un perfil de agente dedicado a la "
+                 "gestión OOS; sin él no se garantiza el flujo."},
+    ]
+    f = cv.check_intra_contradictions(claims)
+    assert len(f) == 1 and f[0]["contradicted_by_pointer"] == "agents"
+
+
+def test_w7_confidence_penalized_by_intra_contradiction():
+    """Contradicción interna = texto potencialmente falso → confianza baja
+    (misma filosofía anti-optimismo que negation/reference)."""
+    clean = {"supported": 3, "partially_supported": 0,
+             "unsupported": 0, "unverifiable": 0}
+    assert svc._confidence("sufficient", clean,
+                           ["intra_proposal_contradiction"]) == "baja"
+
+
 # ── multi_claim_line ──────────────────────────────────────────────────────────
 
 def test_multi_claim_line_detection():

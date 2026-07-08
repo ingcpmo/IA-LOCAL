@@ -570,7 +570,8 @@ def test_v2_flags_recorded_in_live_flow(review_env, monkeypatch):
     assert "multi_claim_line" in out["flags"]               # 2 etiquetas en la línea 1
     assert out["confidence"] == "baja"                      # penalización anti-optimismo
     rec = svc.read_proposal("demo", "intended_use")
-    assert rec["verifier"]["version"] == "2.0"
+    # pin consciente: v2.1 = W7 añadió intra_proposal_contradiction (Fase A §7)
+    assert rec["verifier"]["version"] == "2.1"
     types = {f["type"] for f in rec["verifier"]["findings"]}
     assert {"unverified_reference", "multi_claim_line"} <= types
 
