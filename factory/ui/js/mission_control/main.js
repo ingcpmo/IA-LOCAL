@@ -23,7 +23,9 @@ import { promptGenerateDossier, promptApproveDoc, viewValidationDoc,
   promptAgentProposal, viewAgentProposal, decideAgentProposal } from './validation_view.js';
 import { downloadGmpReportPdf } from './gmp_dashboard.js';
 import { doCaseSearch, submitRegQuery, promptCaseFetch,
-  copyCaseCitation, toggleAnalyzeDesign, promptCaseCompare, runCaseCompare } from './intel_views.js';
+  copyCaseCitation, promptCaseCompare, runCaseCompare,
+  toggleCaseAnalysis, loadCaseAnalysis, runCaseAnalysis,
+  decideCaseAnalysis } from './intel_views.js';
 
 Object.assign(window, {
   show, connect, refresh, toast, fakeSubmit,
@@ -39,7 +41,8 @@ Object.assign(window, {
   promptGenerateDossier, promptApproveDoc, viewValidationDoc,
   promptAgentProposal, viewAgentProposal, decideAgentProposal,
   submitRegQuery, promptCaseFetch,
-  copyCaseCitation, toggleAnalyzeDesign, promptCaseCompare, runCaseCompare,
+  copyCaseCitation, promptCaseCompare, runCaseCompare,
+  toggleCaseAnalysis, loadCaseAnalysis, runCaseAnalysis, decideCaseAnalysis,
 });
 
 document.querySelectorAll('#nav button').forEach(b=>{

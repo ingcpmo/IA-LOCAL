@@ -2,10 +2,16 @@
    Fuentes regulatorias · Memoria de casos.
    W6.3 — fase online controlada: la fuente `connected` (openFDA) expone un
    formulario de consulta limitada y cada caso permite selective fetch. Ambas
-   acciones exigen nombre real, van rate-limited en el backend y se auditan. */
+   acciones exigen nombre real, van rate-limited en el backend y se auditan.
+   W7 Fase C — "Analizar con agente" es FLUJO REAL: form INLINE (sin
+   window.prompt — hallazgo UX de Fase 0: los diálogos nativos son
+   suprimibles y descartaban la solicitud en silencio), gobierno completo,
+   claims coloreadas por el verificador y decisión humana con motivo. El
+   análisis es informativo: jamás toca dossier ni cases.jsonl. */
 
 import { state, API_BASE, headers } from './state.js';
 import { toast, _gmpEscHtml } from './core.js';
+import { _claimsBar, _renderResponse, _CONF_CHIP } from './validation_view.js';
 
 const _RESERVED_RUN_BY=['human','agent','system','admin','user','factory'];
 
@@ -95,7 +101,7 @@ export function submitRegQuery(){
   const limit=parseInt(document.getElementById('regq-limit')?.value||'5',10);
   if(!term){ toast('Escribe un término de búsqueda.'); return; }
   const by=(window.prompt('Nombre real de quien ejecuta esta consulta ONLINE (queda auditada):')||'').trim();
-  if(!by) return;
+  if(!by){ toast('Consulta cancelada — no se envió nada (sin nombre).'); return; }
   if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
   _regQuery(term,limit,by);
 }
@@ -194,7 +200,7 @@ export function renderCaseResults(cases, note){
         <button class="btn ghost" style="font-size:10px;padding:2px 8px"
           onclick="promptCaseFetch('${_gmpEscHtml(c.case_id)}', ${i})">Recuperar detalle (fetch selectivo, auditado)</button>
         <button class="btn ghost" style="font-size:10px;padding:2px 8px"
-          onclick="toggleAnalyzeDesign(${i})">Analizar con agente · DISEÑO</button>
+          onclick="toggleCaseAnalysis(${i})">Analizar con agente (real, auditado)</button>
         <button class="btn ghost" style="font-size:10px;padding:2px 8px"
           onclick="promptCaseCompare(${i})">Comparar con misión</button>
       </div>
@@ -225,25 +231,210 @@ function _copyFallback(text,done){
   ta.remove();
 }
 
-/* "Analizar con agente" — FLUJO DISEÑADO, no ejecuta (W6.4). El endpoint
-   futuro POST /case-memory/{id}/analyze requiere aprobación de fase (W7):
-   gobierno de Ollama + primer consumo de memoria regulatoria por Capa 6. */
-export function toggleAnalyzeDesign(i){
+/* ---- W7 Fase C — "Analizar con agente": FLUJO REAL gobernado ----
+   Form INLINE (nombre real + instrucción opcional): sin window.prompt, con
+   feedback SIEMPRE — nada se descarta en silencio (hallazgo UX de Fase 0).
+   El POST puede tardar ~7–9 min (qwen en CPU): spinner con cronómetro y
+   botón de recarga por si la conexión se corta antes de la respuesta. */
+
+const _ANALYSIS_URL=(caseId)=>API_BASE+'/api/v1/layer9/case-memory/'
+  +encodeURIComponent(caseId)+'/analysis';
+
+const _AN_ST={agent_analysis_proposed:['c-accent','propuesto — decisión pendiente'],
+  accepted:['c-pass','aceptado'], rejected:['c-fail','rechazado'],
+  changes_requested:['c-warn','ajuste pedido'], format_invalid:['c-fail','formato inválido']};
+
+export async function toggleCaseAnalysis(i){
   const el=document.getElementById('case-analyze-'+i); if(!el) return;
   if(el.innerHTML){ el.innerHTML=''; return; }
   const c=_lastCases[i]||{}; const rec=c.presentation?.recommended_agent||{};
+  el.innerHTML='<div class="meta" style="color:var(--faint);margin-top:8px">Cargando misiones…</div>';
+  let missions=[];
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer9/missions',{headers:headers()});
+    if(r.ok){ const d=await r.json(); missions=d.missions||d||[]; }
+  }catch(e){ /* sin misiones: se informa abajo */ }
+  const ids=(Array.isArray(missions)?missions:[]).map(m=>m.project_id).filter(Boolean);
+  if(!ids.length){ el.innerHTML='<div class="meta" style="color:var(--fail);margin-top:8px">Sin misiones disponibles para analizar.</div>'; return; }
+  const def=ids.includes(state.selectedMissionId)?state.selectedMissionId:(ids.includes('oos_hplc_investigator')?'oos_hplc_investigator':ids[0]);
   el.innerHTML=`
-    <div style="border:1px dashed var(--warn);border-radius:6px;padding:10px;margin-top:8px">
-      <div class="meta" style="color:var(--warn);font-size:10.5px;margin-bottom:6px">
-        ◆ DISEÑO — este botón NO ejecuta análisis. El análisis real por agente es una fase futura (W7) que requiere aprobación humana.</div>
-      <div class="meta" style="font-size:11px;line-height:2">
-        Agente propuesto: <b class="mono">${_gmpEscHtml(rec.agent_id||'—')}</b><br>
-        Motivo: ${_gmpEscHtml(rec.reason||'—')}<br>
-        Flujo diseñado: selective fetch del caso → prompt al perfil con su corpus RAG →
-        respuesta con cita obligatoria → cola de revisión QA/QC → auditoría.<br>
-        Endpoint futuro: <span class="mono">POST /api/v1/layer9/case-memory/{id}/analyze</span>
-        (run_by real, gated, auditado, vía aria-ollama central).</div>
+    <div style="border:1px solid var(--accent);border-radius:6px;padding:10px;margin-top:8px">
+      <div class="meta" style="font-size:10.5px;color:var(--faint);margin-bottom:6px">
+        Análisis REAL por agente (Ollama local, auditado). Agente por routing determinista:
+        <b class="mono">${_gmpEscHtml(rec.agent_id||'—')}</b>. El resultado es INFORMATIVO:
+        no es evaluación de impacto GMP ni toca el dossier — el humano decide.</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <select id="case-an-pid-${i}" class="mc-select" style="flex:1" onchange="loadCaseAnalysis(${i})">
+          ${ids.map(id=>'<option value="'+_gmpEscHtml(id)+'"'+(id===def?' selected':'')+'>'+_gmpEscHtml(id)+'</option>').join('')}
+        </select>
+        <button class="btn ghost" style="font-size:10px" onclick="loadCaseAnalysis(${i})">Recargar análisis</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="case-an-by-${i}" placeholder="Nombre real (queda auditado)" autocomplete="off"
+          style="width:220px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 10px;font-size:12px">
+        <input id="case-an-guidance-${i}" placeholder="Instrucción opcional al agente — 1 acción por instrucción (calibración 7B)" autocomplete="off"
+          style="flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 10px;font-size:12px">
+        <button class="btn ghost" id="case-an-run-${i}" style="font-size:10px;white-space:nowrap"
+          onclick="runCaseAnalysis(${i})">Solicitar análisis (~7–9 min)</button>
+      </div>
+      <div id="case-an-out-${i}"></div>
     </div>`;
+  loadCaseAnalysis(i);
+}
+
+export function runCaseAnalysis(i){
+  const c=_lastCases[i]||{};
+  const pid=document.getElementById('case-an-pid-'+i)?.value;
+  const by=(document.getElementById('case-an-by-'+i)?.value||'').trim();
+  const guidance=(document.getElementById('case-an-guidance-'+i)?.value||'').trim();
+  if(!c.case_id||!pid){ toast('Selecciona una misión primero.'); return; }
+  if(!by){ toast('Solicitud NO enviada: falta el nombre real (queda auditado).'); return; }
+  if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
+  _runAnalysis(i, c.case_id, pid, by, guidance||null);
+}
+
+async function _runAnalysis(i, caseId, pid, by, guidance){
+  const out=document.getElementById('case-an-out-'+i);
+  const btn=document.getElementById('case-an-run-'+i);
+  if(btn) btn.disabled=true;
+  const t0=Date.now();
+  const timer=setInterval(()=>{
+    const s=Math.round((Date.now()-t0)/1000);
+    const sp=document.getElementById('case-an-wait-'+i);
+    if(sp) sp.textContent=Math.floor(s/60)+'m '+(s%60)+'s';
+  },1000);
+  if(out) out.innerHTML='<div class="meta" style="color:var(--warn);margin-top:6px">⏳ El agente está '
+    +'redactando el análisis (Ollama en CPU, ~7–9 min)… <span id="case-an-wait-'+i+'" class="mono">0m 0s</span>'
+    +' — si la conexión se corta, usa "Recargar análisis": la generación sigue en el servidor.</div>';
+  try{
+    const r=await fetch(API_BASE+'/api/v1/layer9/case-memory/'+encodeURIComponent(caseId)+'/analyze',{
+      method:'POST', headers:headers(),
+      body:JSON.stringify({project_id:pid, requested_by:by, guidance:guidance})
+    });
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){
+      if(out) out.innerHTML='<div class="meta" style="color:var(--fail);margin-top:6px">Error '+r.status+': '
+        +_gmpEscHtml(typeof d.detail==='object'?JSON.stringify(d.detail):(d.detail||'error'))+'</div>';
+      return;
+    }
+    if(d.status==='format_invalid'){
+      toast('⚠ El análisis v'+d.version+' no cumplió el contrato de formato — archivado; nada cambió.');
+    }else{
+      toast('Análisis v'+d.version+' generado · confianza '+(d.confidence||'—')
+        +((d.flags||[]).length?' · ⚠ flags: '+d.flags.join(', '):''));
+    }
+    loadCaseAnalysis(i);
+  }catch(e){
+    if(out) out.innerHTML='<div class="meta" style="color:var(--fail);margin-top:6px">Error de red: '
+      +_gmpEscHtml(e.message)+' — la generación puede seguir en el servidor; usa "Recargar análisis" en unos minutos.</div>';
+  }finally{ clearInterval(timer); if(btn) btn.disabled=false; }
+}
+
+export async function loadCaseAnalysis(i){
+  const c=_lastCases[i]||{};
+  const pid=document.getElementById('case-an-pid-'+i)?.value;
+  const out=document.getElementById('case-an-out-'+i);
+  if(!c.case_id||!pid||!out) return;
+  out.innerHTML='<div class="meta" style="color:var(--faint);margin-top:6px">Buscando análisis existente…</div>';
+  try{
+    const r=await fetch(_ANALYSIS_URL(c.case_id)+'?project_id='+encodeURIComponent(pid),{headers:headers()});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===404){
+      out.innerHTML='<div class="meta" style="color:var(--faint);margin-top:6px">Sin análisis para esta misión todavía — solicita el primero.</div>';
+      return;
+    }
+    if(!r.ok){
+      out.innerHTML='<div class="meta" style="color:var(--fail);margin-top:6px">Error '+r.status+': '
+        +_gmpEscHtml(typeof d.detail==='object'?JSON.stringify(d.detail):(d.detail||'error'))+'</div>';
+      return;
+    }
+    _renderCaseAnalysis(i, d);
+  }catch(e){ out.innerHTML='<div class="meta" style="color:var(--fail);margin-top:6px">Error de red: '+_gmpEscHtml(e.message)+'</div>'; }
+}
+
+function _renderCaseAnalysis(i, d){
+  const out=document.getElementById('case-an-out-'+i); if(!out) return;
+  const ag=d.agent||{}, mo=d.model||{}, pr=d.prompt||{}, co=d.corpus_sufficiency||{},
+        cl=d.claims||{}, gov=d.governance||{}, dec=d.decision, rev=d.revision||{},
+        ref=d.case_ref||{};
+  const flags=(d.flags||[]);
+  const [stChip,stLabel]=_AN_ST[d.status]||['c-mute',d.status||'—'];
+  const decidable=d.status==='agent_analysis_proposed' && !dec;
+  out.innerHTML=`<div class="card" style="border-color:var(--accent);margin-top:8px">
+    <div class="between" style="margin-bottom:8px">
+      <b style="font-size:12.5px">Análisis de caso · <span class="mono">${_gmpEscHtml(d.case_id||'')}</span>
+        <span class="chip ${stChip}" style="margin-left:6px">v${_gmpEscHtml(String(d.version))} · ${_gmpEscHtml(stLabel)}</span>
+        <span class="chip ${_CONF_CHIP[d.confidence]||'c-mute'}" style="margin-left:4px">confianza ${_gmpEscHtml(d.confidence||'—')} (computada)</span></b>
+    </div>
+    <div class="banner warn" style="margin-bottom:10px"><span>⚠</span><div>${_gmpEscHtml(d.regulatory_note||'ANÁLISIS PROPUESTO POR AGENTE — informativo, sin valor regulatorio.')}</div></div>
+    <div class="meta" style="font-size:10px;color:var(--faint);margin-bottom:4px">
+      agente: <b>${_gmpEscHtml(ag.primary||'—')}</b> (routing determinista W6.4)
+      ${(ag.supporting||[]).length?' · revisión recomendada: '+_gmpEscHtml(ag.supporting.join(', ')):''}
+      · modelo <span class="mono">${_gmpEscHtml(mo.name||'—')}</span>
+      (temp ${_gmpEscHtml(String((mo.options||{}).temperature ?? '—'))}, modo ${_gmpEscHtml(rev.mode||'draft')})</div>
+    <div class="meta" style="font-size:10px;color:var(--faint);margin-bottom:4px">
+      prompt set ${_gmpEscHtml(pr.set_version||'—')} · prompt agente v${_gmpEscHtml(pr.agent_prompt_version||'—')}
+      · template <span class="mono">${_gmpEscHtml((pr.template_sha256||'').slice(0,12))}…</span>
+      · rendered <span class="mono">${_gmpEscHtml((pr.rendered_sha256||'').slice(0,12))}…</span></div>
+    <div class="meta" style="font-size:10px;color:var(--faint);margin-bottom:4px">
+      corpus: <b>${_gmpEscHtml(co.level||'—')}</b> · evidencia: ${_gmpEscHtml((d.evidence_sources||[]).map(s=>s.id).join(', '))}
+      · caso: hash <span class="mono">${_gmpEscHtml((ref.content_hash||'').slice(0,19))}…</span>${ref.stale?' · <span style="color:var(--warn)">⚠ caso stale (>30 días)</span>':''}</div>
+    <div class="meta" style="font-size:10px;margin-bottom:4px">afirmaciones: ${_claimsBar(cl)}</div>
+    ${flags.length?'<div class="meta" style="font-size:10px;margin-bottom:4px">'+flags.map(f=>'<span class="chip c-fail" style="margin-right:4px">⚠ '+_gmpEscHtml(f)+'</span>').join('')+'</div>':''}
+    <div class="meta" style="font-size:10px;color:var(--faint);margin-bottom:8px">
+      solicitado por <span style="color:var(--human)">${_gmpEscHtml(gov.requested_by||'—')}</span>
+      · ${_gmpEscHtml(gov.generated_at||'—')} · ${_gmpEscHtml(String(gov.latency_ms??'—'))} ms
+      ${gov.format_retry?' · reintento de formato':''}
+      ${(rev.guidance_ledger||[]).length?' · instrucciones QA acumuladas: '+rev.guidance_ledger.length:''}</div>
+    ${dec?'<div class="meta" style="font-size:10px;color:var(--human);margin-bottom:8px">decisión: <b>'+_gmpEscHtml(dec.decision||'')+'</b> por '+_gmpEscHtml(dec.decided_by||'')+' · '+_gmpEscHtml(dec.decided_at||'')+(dec.reason?' · motivo: “'+_gmpEscHtml(dec.reason)+'”':'')+'</div>':''}
+    <pre style="background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:12px;
+      font-size:11px;max-height:420px;overflow:auto;white-space:pre-wrap">${_renderResponse(d.response, cl.detail)}</pre>
+    ${decidable?`
+    <div class="meta" style="font-size:10px;color:var(--faint);margin-top:10px">
+      Decisión humana (auditada — NO es aprobación de dossier ni firma electrónica). Usa el
+      nombre real del formulario superior; reject/ajuste exigen motivo. Calibración 7B:
+      1 acción por instrucción y pide eliminar viñetas compañeras contradictorias.</div>
+    <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
+      <input id="case-an-reason-${i}" placeholder="Motivo (obligatorio para rechazar / pedir ajuste)" autocomplete="off"
+        style="flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 10px;font-size:12px">
+      <button class="btn human" style="font-size:10px;padding:3px 10px" onclick="decideCaseAnalysis(${i},'accept')">Aceptar (solo registro)</button>
+      <button class="btn ghost" style="font-size:10px;padding:3px 10px;color:var(--fail)" onclick="decideCaseAnalysis(${i},'reject')">Rechazar</button>
+      <button class="btn ghost" style="font-size:10px;padding:3px 10px" onclick="decideCaseAnalysis(${i},'request_changes')">Pedir ajuste (regenera, ~7–9 min)</button>
+    </div>`:''}
+  </div>`;
+}
+
+export function decideCaseAnalysis(i, decision){
+  const c=_lastCases[i]||{};
+  const pid=document.getElementById('case-an-pid-'+i)?.value;
+  const by=(document.getElementById('case-an-by-'+i)?.value||'').trim();
+  const reason=(document.getElementById('case-an-reason-'+i)?.value||'').trim();
+  if(!c.case_id||!pid) return;
+  if(!by){ toast('Decisión NO enviada: falta el nombre real en el formulario superior.'); return; }
+  if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
+  if(decision!=='accept' && !reason){ toast('Decisión NO enviada: el motivo es obligatorio para '+decision+'.'); return; }
+  _decideAnalysis(i, c.case_id, pid, decision, by, decision==='accept'?(reason||null):reason);
+}
+
+async function _decideAnalysis(i, caseId, pid, decision, by, reason){
+  const out=document.getElementById('case-an-out-'+i);
+  if(decision==='request_changes' && out){
+    out.insertAdjacentHTML('afterbegin','<div class="meta" style="color:var(--warn)">⏳ Registrando decisión y regenerando en modo revisión (~7–9 min)…</div>');
+  }
+  try{
+    const r=await fetch(_ANALYSIS_URL(caseId)+'/decision',{
+      method:'POST', headers:headers(),
+      body:JSON.stringify({project_id:pid, decision:decision, decided_by:by, reason:reason})
+    });
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){ toast('Error '+r.status+': '+(typeof d.detail==='object'?JSON.stringify(d.detail):(d.detail||'error'))); loadCaseAnalysis(i); return; }
+    toast('✓ '+decision+' registrado por '+by+' · análisis → '+(d.analysis_status||'—')
+      +(d.new_analysis?' · nueva versión v'+d.new_analysis.version:''));
+    loadCaseAnalysis(i);
+  }catch(e){
+    toast('Error de red: '+e.message+' — usa "Recargar análisis": la decisión/regeneración puede haber quedado registrada.');
+    loadCaseAnalysis(i);
+  }
 }
 
 /* "Comparar con misión" — READ-ONLY real: cruce informativo de datos locales
@@ -307,7 +498,7 @@ export async function runCaseCompare(i){
 
 export function promptCaseFetch(caseId, idx){
   const by=(window.prompt('Recuperar detalle de "'+caseId+'" desde la fuente (llamada ONLINE auditada). Nombre real:')||'').trim();
-  if(!by) return;
+  if(!by){ toast('Recuperación cancelada — no se envió nada (sin nombre).'); return; }
   if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
   _caseFetch(caseId, idx, by);
 }

@@ -86,7 +86,7 @@ export function renderValidationPackage(d){
 export function promptGenerateDossier(){
   if(!_pid){ toast('Selecciona una misión primero.'); return; }
   const by=(window.prompt('Nombre real de quien genera los borradores (queda auditado):')||'').trim();
-  if(!by) return;
+  if(!by){ toast('Generación cancelada — no se envió nada (sin nombre).'); return; }
   if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
   _generateDossier(_pid, by);
 }
@@ -110,7 +110,7 @@ async function _generateDossier(pid, by){
 export function promptApproveDoc(docId){
   if(!_pid) return;
   const by=(window.prompt('Aprobar "'+docId+'": nombre real del aprobador (queda auditado — NO es firma electrónica):')||'').trim();
-  if(!by) return;
+  if(!by){ toast('Aprobación cancelada — no se envió nada (sin nombre).'); return; }
   if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
   _approveDoc(_pid, docId, by);
 }
@@ -140,13 +140,15 @@ const _SUPPORT_COLOR={
   supported:'var(--pass)', partially_supported:'var(--warn)',
   unsupported:'var(--fail)', unverifiable:'var(--faint)',
 };
-const _CONF_CHIP={alta:'c-pass', media:'c-warn', baja:'c-fail'};
+export const _CONF_CHIP={alta:'c-pass', media:'c-warn', baja:'c-fail'};
 
 export function promptAgentProposal(docId){
   if(!_pid){ toast('Selecciona una misión primero.'); return; }
   const by=(window.prompt('Solicitar análisis de agente para "'+docId+'".\n'
     +'Nombre real de quien solicita (queda auditado):')||'').trim();
-  if(!by) return;
+  // Fase 0 W7 (hallazgo UX): jamás descartar en silencio — el diálogo nativo
+  // puede volver vacío por cancelación O por supresión del navegador
+  if(!by){ toast('Solicitud cancelada — no se envió nada (sin nombre).'); return; }
   if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
   const guidance=(window.prompt('Instrucción opcional para el agente (vacío = ninguna):')||'').trim();
   _requestProposal(_pid, docId, by, guidance || null);
@@ -172,14 +174,14 @@ async function _requestProposal(pid, docId, by, guidance){
   }catch(e){ toast('Error de red: '+e.message); }
 }
 
-function _claimsBar(c){
+export function _claimsBar(c){
   return `<span style="color:var(--pass)">${c.supported ?? 0} supported</span> /
     <span style="color:var(--warn)">${c.partially_supported ?? 0} partially</span> /
     <span style="color:var(--fail)">${c.unsupported ?? 0} unsupported</span> /
     <span style="color:var(--faint)">${c.unverifiable ?? 0} unverifiable</span>`;
 }
 
-function _renderResponse(response, detail){
+export function _renderResponse(response, detail){
   // Colorea cada viñeta-afirmación con el veredicto del verificador (en orden);
   // el texto del agente NUNCA se reescribe, solo se pinta.
   const claims=(detail||[]).slice();
@@ -256,7 +258,7 @@ export function decideAgentProposal(docId, decision){
     reject:'RECHAZAR (la propuesta queda archivada)',
     request_changes:'PEDIR AJUSTE (regenera una nueva versión con tu instrucción — puede tardar varios minutos)'};
   const by=(window.prompt(labels[decision]+'\n\nNombre real de quien decide (queda auditado — NO es firma electrónica):')||'').trim();
-  if(!by) return;
+  if(!by){ toast('Decisión cancelada — no se envió nada (sin nombre).'); return; }
   if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
   let reason=null;
   if(decision!=='accept'){
