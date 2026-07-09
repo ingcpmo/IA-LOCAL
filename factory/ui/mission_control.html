@@ -190,7 +190,7 @@
       <!-- W6 · CASE MEMORY (W6.3: casos reales de openFDA · W6.4: interpretación primero) -->
       <section class="view" id="v-memory">
         <div class="banner design"><span>◆</span><div><b>MEMORIA LIGERA GOBERNADA (W6.4).</b> Solo casos reales de fuentes oficiales: pointer + metadata + resumen + hash — nunca el documento completo. Cada caso muestra primero una interpretación <b>determinista</b> (relevancia desde la clasificación FDA, agente recomendado por señales) que NO es juicio GMP, y después la evidencia técnica. El detalle se recupera bajo demanda (selective fetch auditado). Esta información NO alimenta decisiones GMP ni aprobaciones CSV.</div></div>
-        <p class="lead">Flujo gobernado: consulta a fuente oficial → memoria ligera → búsqueda de casos similares → selective fetch del caso necesario → análisis por agente (fase futura, con aprobación) → cita trazable → revisión QA/QC → auditoría. "Analizar con agente" es diseño; "Comparar con misión" es cruce informativo read-only.</p>
+        <p class="lead">Flujo gobernado: consulta a fuente oficial → memoria ligera → búsqueda de casos similares → selective fetch del caso necesario → análisis por agente (W7: real, gobernado y auditado) → cita trazable → decisión humana con motivo → auditoría. "Analizar con agente" ejecuta el pipeline real (qwen local, verificador v2.1, ~7–9 min); "Comparar con misión" es cruce informativo read-only. El análisis es INFORMATIVO: no es evaluación de impacto GMP ni toca el dossier.</p>
         <div class="card" style="margin-bottom:14px">
           <div class="between"><h3>Buscar casos</h3><span class="chip c-mute" id="memory-count">0 casos</span></div>
           <div class="hr"></div>
