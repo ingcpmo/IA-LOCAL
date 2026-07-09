@@ -1,0 +1,12 @@
+[Unit]
+Description=W8 F0 - Reglas DOCKER-USER (puertos de datos no expuestos a internet)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/docker-user-hardening.sh
+
+[Install]
+WantedBy=multi-user.target

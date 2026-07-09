@@ -66,6 +66,16 @@ acceso local a 5432/6379/5434/6381 intacto · `aria-*` (6) y `hotelbot-*` (2)
 Up y sin tocar · backup de los 3 compose en
 `backups/factory/w8_fase0_20260709T051938Z/`.
 
+### 2.5 Trazabilidad de los artefactos del host (cierre de fase)
+El script y la unidad de §2.3 se instalaron primero como estado manual del
+host. Para el cierre de fase quedaron **versionados en
+`factory/scripts/ops/host-hardening/`** (v1.0.0): copias byte-exactas,
+`SHA256SUMS` (`8849b20f…` el script, `609ed9a6…` la unidad), procedimiento
+de instalación/rollback en su `README.md`, y `verify_installed.sh` (solo
+lectura) que comprueba hash instalado = repo, unidad enabled+active y las 6
+reglas presentes. Ejecutado en el cierre: **PASS 5/5**. Fuente de verdad: el
+repo; el host es artefacto instalado.
+
 ## 3. Decisiones de Cesar en esta fase (2026-07-09)
 
 1. **Acceso a Mission Control: directo por IP pública.** Por tanto las APIs
@@ -102,4 +112,6 @@ Exposición crítica **mitigada y persistente**: el Redis sin auth del stack
 base ya no es alcanzable desde `ens4`, y la mitigación sobrevive a un
 reinicio. Superficie de datos de las soluciones custom **cerrada de raíz**.
 Riesgo residual §4 documentado con dueño. Fase 0 **cerrada** en su alcance
-aprobado; §4.2 se propone como W8 F0.1. Sin commit: pendiente de aprobación.
+aprobado; §4.2 se propone como W8 F0.1. Alcance principal commiteado en
+`e59a553`; el cierre añade la trazabilidad §2.5 (artefactos del host
+versionados con SHA-256, verificador PASS 5/5).
