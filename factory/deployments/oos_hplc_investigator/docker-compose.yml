@@ -32,8 +32,12 @@ services:
   oos_hplc_investigator_postgres:
     image: postgres:16-alpine
     container_name: oos_hplc_investigator_postgres
+    # W8 F0: solo loopback. Los servicios se hablan por DNS de Docker
+    # (oos_hplc_investigator_postgres:5432); publicar en 0.0.0.0 exponía la
+    # base a internet saltando UFW (Docker escribe DNAT antes que la cadena
+    # de UFW). El puerto sigue disponible en el host para psql/backups.
     ports:
-      - "5434:5432"
+      - "127.0.0.1:5434:5432"
     environment:
       - POSTGRES_USER=oos_hplc_user
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -54,8 +58,9 @@ services:
   oos_hplc_investigator_redis:
     image: redis:7-alpine
     container_name: oos_hplc_investigator_redis
+    # W8 F0: solo loopback (este Redis no tiene requirepass — ver §4 del doc).
     ports:
-      - "6381:6379"
+      - "127.0.0.1:6381:6379"
     mem_limit: 128m
     cpus: "0.25"
     restart: unless-stopped
