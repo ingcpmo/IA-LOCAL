@@ -1,0 +1,61 @@
+# W8 F0.1 — Reverse proxy TLS para Mission Control y las 3 APIs.
+# Fuente de verdad: este archivo (factory/scripts/ops/reverse-proxy/Caddyfile).
+# Instalado en /etc/caddy/Caddyfile. No editar el host directamente: editar
+# aquí, versionar (SHA256SUMS), reinstalar (ver README.md de este directorio).
+#
+# TOPOLOGÍA: un solo puerto público (443), 4 sitios distinguidos por nombre
+# (SNI/Host), todos con `tls internal` (CA local de Caddy — no hay dominio
+# público para esta VM y GCP la expone por NAT 1:1, ver nota IP más abajo).
+#
+# Por qué NO se usó la IP pública como nombre de sitio (probado y descartado
+# en despliegue): Caddy, cuando el cliente no manda SNI (típico al conectar
+# directo por IP, la SNI con literal de IP es inválida per RFC 6066), resuelve
+# el certificado por la IP LOCAL del socket que aceptó la conexión. Detrás del
+# NAT 1:1 de GCP esa IP local es siempre la interna del host, nunca la pública
+# — un certificado emitido para la IP pública no calzaría jamás. Con un
+# nombre de host, el cliente SÍ manda SNI real y Caddy resuelve el
+# certificado correcto sin depender de la IP local ni del NAT.
+#
+# REQUISITO EN EL CLIENTE (una vez, en la máquina de Cesar, no en el
+# servidor): agregar al archivo hosts 4 líneas que apunten estos nombres a
+# la IP pública de la VM (ver README.md §"Configuración del cliente").
+#
+# No se tocan los puertos directos de contenedor (8000/9000/8101/8102) desde
+# este archivo: ese cierre lo hace docker-user-hardening.sh (Fase 2, DROP en
+# DOCKER-USER solo para tráfico externo por ens4). Caddy llega a los backends
+# por 127.0.0.1, que nunca se bloquea.
+
+{
+	admin off
+	skip_install_trust
+}
+
+# Mission Control (factory-api). Segunda barrera de auth para la consola
+# (además de TLS); no aplica a las 3 APIs de abajo por diseño (podrían tener
+# consumidores automatizados que solo mandan x-api-key, no Basic Auth).
+https://mission-control.gmp-factory.local {
+	tls internal
+	basicauth {
+		cesar $2a$14$1Ab7pEbJiB5M.LeF9A0iu.GcFiY5LjuJZK0dj1RCzZjFlwqEjsp5S
+	}
+	reverse_proxy 127.0.0.1:9000
+}
+
+# gmp-api (stack base, producto). Sin basic_auth: auth propia vía x-api-key,
+# sin cambios en su contrato.
+https://gmp-api.gmp-factory.local {
+	tls internal
+	reverse_proxy 127.0.0.1:8000
+}
+
+# lab_qc_project (custom, capa 9)
+https://lab-qc.gmp-factory.local {
+	tls internal
+	reverse_proxy 127.0.0.1:8101
+}
+
+# oos_hplc_investigator (custom, capa 9)
+https://oos-hplc.gmp-factory.local {
+	tls internal
+	reverse_proxy 127.0.0.1:8102
+}
