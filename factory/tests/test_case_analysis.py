@@ -281,6 +281,26 @@ def test_request_changes_regenerates_in_revision_mode(case_env):
     assert v1_after["governance"]["prompt_full"] == v1["governance"]["prompt_full"]
 
 
+def test_w71_revision_identical_flags_guidance_unapplied(case_env):
+    """[A6/A9] W7.1: el mock devuelve SIEMPRE la misma respuesta → la
+    revisión es idéntica a v1 → flag en record + evento y confianza baja;
+    el draft v1 no se flaggea (prev_response solo existe en revisión)."""
+    svc.analyze_case("demo", CASE_ID, MANUAL)
+    svc.decide_analysis("demo", CASE_ID, "request_changes", "Cesar",
+                        reason="elimina la viñeta redundante")
+    v1 = svc.read_analysis("demo", CASE_ID, version=1)
+    assert "guidance_unapplied" not in v1["flags"]
+    v2 = svc.read_analysis("demo", CASE_ID, version=2)
+    assert "guidance_unapplied" in v2["flags"]
+    assert v2["confidence"] == "baja"
+    assert any(f["type"] == "guidance_unapplied"
+               for f in v2["verifier"]["findings"])
+    gen = [e for e in _audit_events(case_env)
+           if e["event_type"] == "case_analysis_generated"]
+    assert "guidance_unapplied" not in gen[-2]["data"]["flags"]   # draft
+    assert "guidance_unapplied" in gen[-1]["data"]["flags"]       # revisión
+
+
 # ── Fallos gobernados ─────────────────────────────────────────────────────────
 
 def test_format_invalid_archived_and_audited(case_env, monkeypatch):

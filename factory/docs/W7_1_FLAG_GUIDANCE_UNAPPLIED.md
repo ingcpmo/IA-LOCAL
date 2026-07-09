@@ -84,24 +84,24 @@ Fixtures: copiar `v01/v02/v03.json` del caso real
 (mismo patrón que los v01–v06 del dossier en W6.5.1; validation/ y
 case_analyses/ no están en git).
 
-- [ ] **A1** v2 real vs v1 real (idénticas) ⇒ flag `guidance_unapplied` +
+- [x] **A1** v2 real vs v1 real (idénticas) ⇒ flag `guidance_unapplied` +
       confianza `baja` (regresión del caso vivo de Fase D).
-- [ ] **A2** v3 real vs v2 real (1 viñeta eliminada) ⇒ SIN flag.
-- [ ] **A3** Modo draft (`prev_response=None`) ⇒ SIN flag, jamás.
-- [ ] **A4** Diferencia de solo whitespace/líneas vacías ⇒ flag (la
+- [x] **A2** v3 real vs v2 real (1 viñeta eliminada) ⇒ SIN flag.
+- [x] **A3** Modo draft (`prev_response=None`) ⇒ SIN flag, jamás.
+- [x] **A4** Diferencia de solo whitespace/líneas vacías ⇒ flag (la
       normalización la absorbe).
-- [ ] **A5** Cualquier cambio real de contenido, aun de 1 carácter ⇒ SIN
+- [x] **A5** Cualquier cambio real de contenido, aun de 1 carácter ⇒ SIN
       flag (conservador: cero heurística de casi-igualdad).
-- [ ] **A6** Pipeline de dossier con LLM mockeado devolviendo la respuesta
+- [x] **A6** Pipeline de dossier con LLM mockeado devolviendo la respuesta
       previa ⇒ mismo flag + confianza baja (paridad entre pipelines).
-- [ ] **A7** `verify_v2` sin el parámetro nuevo (llamada legada) ⇒
+- [x] **A7** `verify_v2` sin el parámetro nuevo (llamada legada) ⇒
       comportamiento idéntico al actual (retrocompatibilidad).
-- [ ] **A8** `claim_verifier.py` sigue puro: test estructural anti-httpx/
+- [x] **A8** `claim_verifier.py` sigue puro: test estructural anti-httpx/
       audit/IO existente cubre el código nuevo.
-- [ ] **A9** Registro generado en revisión idéntica lleva el flag en
+- [x] **A9** Registro generado en revisión idéntica lleva el flag en
       `record.flags`, en el evento `*_generated` y se renderiza en UI sin
       cambios de JS (verificación en vivo post-restart).
-- [ ] **A10** Suite completa verde + selfcheck PASS=4 FAIL=0.
+- [x] **A10** Suite completa verde + selfcheck PASS=4 FAIL=0.
 
 ## 5. Plan de Fase B (para aprobación separada)
 

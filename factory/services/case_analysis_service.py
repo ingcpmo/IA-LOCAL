@@ -378,7 +378,8 @@ def analyze_case(project_id: str, case_id: str, trigger: dict,
     grants = _verifier.parse_reference_grants(
         list(corpus["available"]) + list(corpus["pending"])
         + list(mission.get("regulatory_scope") or []))
-    v2 = _verifier.verify_v2(response, verified, items, grants)
+    v2 = _verifier.verify_v2(response, verified, items, grants,
+                             prev_response=prev_response)
     flags.extend(f for f in v2["flags"] if f not in flags)
     stale = _case_stale(case)
     if stale and "stale_case" not in flags:

@@ -48,16 +48,26 @@ el texto del agente ni bloquean el flujo) y todos deterministas (sin LLM):
    los segmentos negados DENTRO de las [E:] se excluyen del contraste (dos
    negaciones coincidentes son acuerdo, no contradicción).
 
+5. guidance_unapplied (v2.2, W7.1 — limitación §7.1 del cierre de Fase D) —
+   revisión cuya respuesta es idéntica a la de su based_on_version
+   (comparación de líneas no vacías con .strip(): inmune a whitespace, cero
+   heurística de casi-igualdad — un cambio real de 1 carácter NO flaggea).
+   Evidencia real: v2 del caso D-0554-2026 reprodujo v1 byte a byte
+   ignorando la guidance de borrado y pasó v2.1 sin señal alguna. Solo
+   aplica si quien llama pasa prev_response (modo revisión); en draft y en
+   re-verificación de archivados (sin prev_response) jamás flaggea.
+
 Fixtures de regresión obligatorios del gate: v01–v06 reales de
 data_integrity_assessment, archivados en tests/fixtures/ (tests/
-test_claim_verifier_v2.py); v08 real fija la regla 4. Módulo puro: sin I/O,
-sin HTTP, sin auditoría.
+test_claim_verifier_v2.py); v08 real fija la regla 4; v01–v03 reales del
+análisis de caso D-0554-2026 (tests/fixtures/case_analyses/) fijan la
+regla 5. Módulo puro: sin I/O, sin HTTP, sin auditoría.
 """
 
 import re
 import unicodedata
 
-VERIFIER_VERSION = "2.1"
+VERIFIER_VERSION = "2.2"
 
 # Evidencia operacional: registros de hechos ocurridos. La evidencia de
 # intención (mission, agents, catalog, doc_actual) y la externa (case:*) no
@@ -293,9 +303,26 @@ def check_multi_claim_lines(response: str) -> list:
     return findings
 
 
+def check_guidance_unapplied(response: str, prev_response: str | None) -> list:
+    """Regla 5 (v2.2, W7.1): revisión idéntica a la versión que debía corregir.
+    prev_response None = modo draft o re-verificación de archivados → nunca
+    flaggea. Igualdad de la secuencia de líneas no vacías .strip(): absorbe
+    diferencias de solo whitespace; cualquier cambio real de contenido, aun
+    de 1 carácter, NO flaggea (precisión sobre exhaustividad)."""
+    if prev_response is None:
+        return []
+    norm = lambda t: [l.strip() for l in (t or "").splitlines() if l.strip()]
+    if norm(response) != norm(prev_response):
+        return []
+    return [{"type": "guidance_unapplied",
+             "detail": "la revisión es idéntica a la versión revisada — la "
+                       "instrucción QA no tuvo efecto observable"}]
+
+
 # ── Orquestación ──────────────────────────────────────────────────────────────
 
-def verify_v2(response: str, claims: list, items: list, grants: dict) -> dict:
+def verify_v2(response: str, claims: list, items: list, grants: dict,
+              prev_response: str | None = None) -> dict:
     """→ {version, flags, findings}. Advisory: quien llama decide qué hacer
     con los flags (registro + penalización de confianza); aquí no se bloquea,
     no se reescribe y no se audita."""
@@ -310,6 +337,7 @@ def verify_v2(response: str, claims: list, items: list, grants: dict) -> dict:
     findings += check_negations(claims, items)
     findings += check_multi_claim_lines(response)
     findings += check_intra_contradictions(claims)
+    findings += check_guidance_unapplied(response, prev_response)
     flags = []
     for f in findings:
         if f["type"] not in flags:
