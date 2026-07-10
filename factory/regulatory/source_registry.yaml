@@ -6,9 +6,16 @@
 # cada llamada exige nombre real y queda auditada. El resto de fuentes sigue
 # not_connected: conectarlas requiere aprobación humana explícita.
 # Diseño completo: factory/docs/W6_MISSION_CONTROL_ENTERPRISE.md §7.
+#
+# W9 Bloque 3 (2026-07-10, aprobado por Cesar): SEGUNDA y TERCERA fuente —
+# openfda_device_enforcement y openfda_food_enforcement, mismo patrón que
+# W6.3 (factory/services/regulatory_connector_extra_service.py), CUPO
+# COMPARTIDO con openfda_enforcement (mismo connector_state.json, mismo
+# rate limit 60s/10 por día — protege a openFDA de la fábrica en conjunto).
+# Diseño: factory/docs/W9_BLOQUE3_SEGUNDA_FUENTE.md.
 
-version: 2
-connectors_implemented: true    # SOLO openfda_enforcement (W6.3); el resto sin conector
+version: 3
+connectors_implemented: true    # openfda_enforcement (W6.3) + device/food (W9 Bloque 3)
 default_policy:
   access: read_only
   user_agent_identified: true
@@ -52,6 +59,24 @@ sources:
     access_design: "API REST JSON oficial (sin key; límite público 240 req/min)"
     rate_limit_design: "propio (más estricto): 1 llamada/60s · 10/día UTC · ≤10 resultados"
     status: connected            # W6.3 — único conector real; read-only auditado
+    last_checked: null           # se superpone en runtime desde connector_state.json
+
+  - source_id: openfda_device_enforcement
+    name: openFDA Device Enforcement / Recalls
+    authority: FDA
+    url: https://api.fda.gov/device/enforcement.json
+    access_design: "API REST JSON oficial (sin key; límite público 240 req/min)"
+    rate_limit_design: "cupo COMPARTIDO con openfda_enforcement: 1 llamada/60s · 10/día UTC (drug+device+food) · ≤10 resultados"
+    status: connected            # W9 Bloque 3 — read-only auditado
+    last_checked: null           # se superpone en runtime desde connector_state.json
+
+  - source_id: openfda_food_enforcement
+    name: openFDA Food Enforcement / Recalls
+    authority: FDA
+    url: https://api.fda.gov/food/enforcement.json
+    access_design: "API REST JSON oficial (sin key; límite público 240 req/min)"
+    rate_limit_design: "cupo COMPARTIDO con openfda_enforcement: 1 llamada/60s · 10/día UTC (drug+device+food) · ≤10 resultados"
+    status: connected            # W9 Bloque 3 — read-only auditado
     last_checked: null           # se superpone en runtime desde connector_state.json
 
   - source_id: eudragmdp_nc

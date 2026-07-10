@@ -88,16 +88,18 @@ def test_source_registry_missing_file(design_files):
     assert out["sources"] == []
 
 
-def test_real_source_registry_single_connector():
-    """El registry real (W6.3): 7 fuentes, SOLO openfda_enforcement connected
-    — conectar cualquier otra requiere aprobación humana explícita."""
+def test_real_source_registry_connectors():
+    """El registry real: 9 fuentes (W6.3 + W9 Bloque 3), SOLO los 3 conectores
+    openFDA connected — conectar cualquier otra requiere aprobación humana
+    explícita."""
     out = svc.read_source_registry()
     assert out["connectors_implemented"] is True
-    assert len(out["sources"]) == 7
-    connected = [s["source_id"] for s in out["sources"] if s["status"] == "connected"]
-    assert connected == ["openfda_enforcement"]
+    assert len(out["sources"]) == 9
+    connected = {s["source_id"] for s in out["sources"] if s["status"] == "connected"}
+    assert connected == {"openfda_enforcement", "openfda_device_enforcement",
+                         "openfda_food_enforcement"}
     assert all(s["status"] == "not_connected" for s in out["sources"]
-               if s["source_id"] != "openfda_enforcement")
+               if s["source_id"] not in connected)
     assert out["default_policy"]["store_full_documents"] is False
 
 

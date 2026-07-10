@@ -38,6 +38,7 @@ from factory.services import dossier_case_reference_service as _case_ref
 from factory.services import dossier_generator_service as _dossier
 from factory.services import case_presentation_service as _casepres
 from factory.services import regulatory_connector_service as _regconn
+from factory.services import regulatory_connector_extra_service as _regconn_extra
 from factory.services import gmp_report_service
 from factory.services import validation_readiness_service as _valready
 from factory.services import mission_evidence_service as _evidence
@@ -825,8 +826,12 @@ def get_agent_task(task_id: str):
 
 @router.get("/regulatory-sources")
 def get_regulatory_sources():
-    # W6.3 — el estado vivo del conector openFDA se superpone al registry
-    return _regconn.annotate_sources(_design.read_source_registry())
+    # W6.3 — el estado vivo del conector openFDA (drug) se superpone al registry.
+    # W9 Bloque 3 — + device/food, mismo cupo compartido; se anexan sin pisar
+    # los connected_sources de W6.3.
+    reg = _regconn.annotate_sources(_design.read_source_registry())
+    reg["connected_sources"] = reg.get("connected_sources", []) + _regconn_extra.annotate_sources(reg)
+    return reg
 
 
 @router.get("/case-memory")
@@ -870,14 +875,18 @@ def get_case_mission_compare(case_id: str, project_id: str):
     return out
 
 
-# ── W6.3 — Conector online controlado (openFDA Drug Enforcement) ──────────────
-# Un solo sector. Cada llamada online exige nombre real y queda auditada.
-# Rate limit duro en el servicio: 60s entre llamadas · 10/día UTC · limit ≤ 10.
+# ── W6.3 — Conector online controlado (openFDA Drug/Device/Food Enforcement) ──
+# W6.3: openfda_enforcement (drug). W9 Bloque 3: + openfda_device_enforcement
+# y openfda_food_enforcement (regulatory_connector_extra_service.py), MISMO
+# cupo compartido (regulatory_connector_service._rate_gate). source_id
+# omitido → drug, retrocompatible con toda llamada anterior a Bloque 3.
+# Cada llamada online exige nombre real y queda auditada.
 
 class RegQuery(BaseModel):
     search_term: str
     limit: int = 5
     run_by: str          # nombre real (regla run_by de W4)
+    source_id: str = _regconn.SOURCE_ID   # W9 Bloque 3: default retrocompatible (drug)
 
 
 class CaseFetch(BaseModel):
@@ -887,12 +896,19 @@ class CaseFetch(BaseModel):
 @router.post("/regulatory/query")
 def post_regulatory_query(body: RegQuery):
     """1 consulta online limitada → memoria ligera (pointer+metadata+summary+hash)."""
-    return _regconn.query_recalls(body.search_term, body.limit, body.run_by)
+    if body.source_id == _regconn.SOURCE_ID:
+        return _regconn.query_recalls(body.search_term, body.limit, body.run_by)
+    return _regconn_extra.query_recalls(body.source_id, body.search_term, body.limit, body.run_by)
 
 
 @router.post("/case-memory/{case_id}/fetch")
 def post_case_detail_fetch(case_id: str, body: CaseFetch):
-    """Selective fetch del detalle de UN caso conocido. NO persiste el detalle."""
+    """Selective fetch del detalle de UN caso conocido. NO persiste el detalle.
+    El conector se decide por el source_id ya guardado en el case record."""
+    case = _casepres.read_case(case_id)
+    source_id = (case or {}).get("source_id")
+    if source_id in _regconn_extra.SOURCES:
+        return _regconn_extra.fetch_case_detail(case_id, body.run_by)
     return _regconn.fetch_case_detail(case_id, body.run_by)
 
 
