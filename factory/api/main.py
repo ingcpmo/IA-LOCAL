@@ -23,7 +23,7 @@ from factory.core.audit_writer import verify_chain
 from factory.core.rate_limit import RateLimitCounter
 
 FACTORY_API_KEY = os.getenv("FACTORY_API_KEY", "")
-UI_FILE = Path(__file__).parent.parent / "ui" / "index.html"
+UI_FILE = Path(__file__).parent.parent / "ui" / "mission_control.html"
 _ACCESS_LOG = Path(__file__).parent.parent / "logs" / "access.jsonl"
 
 
