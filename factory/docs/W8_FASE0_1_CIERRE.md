@@ -1,5 +1,69 @@
 # W8 Fase 0.1 — CIERRE TOTAL (443 desbloqueado, Fase 2 ejecutada, keys rotadas)
 
+## Verificación consolidada (2026-07-10, segunda pasada — a pedido de Cesar)
+
+Cesar pidió no asumir "sin pendientes" solo por haber cerrado la rotación
+de la key base; exigió verificación consolidada contra repo+runtime antes
+de seguir. Resultado, punto por punto:
+
+1. **¿Las 4 API keys realmente rotadas?** Al verificar, se encontró un
+   **bug real**: `docker restart` (usado tras editar los `.env`) **no
+   vuelve a leer `env_file`** — los 4 contenedores seguían corriendo con
+   las keys VIEJAS pese a que los `.env` ya tenían las nuevas (confirmado
+   comparando hash SHA-256 del valor en el `.env` vs. `docker exec ...
+   printenv`: no coincidían en ninguno de los 4). Es decir: el cierre
+   anterior (`ec89438`+`15d8b40`) rotó los archivos pero **no la rotación
+   efectiva en runtime** — las keys expuestas por HTTP seguían siendo
+   válidas. **Corregido en esta verificación**: se identificó el
+   compose+servicio exacto de cada contenedor (`docker inspect` →
+   `com.docker.compose.project.config_files`) y se ejecutó
+   `docker compose -f <archivo> up -d --force-recreate --no-deps <servicio>`
+   para cada uno (factory-api, api de gmp-api, lab_qc_project_api,
+   oos_hplc_investigator_api) — recreación puntual, sin tocar otros
+   servicios del mismo compose (postgres/redis intactos). Reverificado tras
+   recrear: hash del `.env` = hash en el contenedor en los 4 casos.
+   Confirmado además contra un **endpoint protegido real** (`POST
+   /api/v1/query`, no `/health` — `/health` no exige key en gmp-api/lab_qc/
+   oos_hplc por diseño, por eso no sirve para esta prueba): key vieja →
+   `401`/`403` en los 4; key nueva → `422` (pasa auth, falla solo por
+   payload vacío) en los 4. **Ahora sí: las 4 rotaciones son efectivas.**
+   `factory_selfcheck.sh` repetido tras recrear los 4 contenedores:
+   PASS=4, FAIL=0.
+2. **¿Los 4 puertos legacy realmente cerrados?** Confirmado: `iptables -S
+   DOCKER-USER` mantiene las 4 reglas `W8-F0.1:` (no se tocan al recrear
+   contenedores individuales, solo se resetean si se reinicia el propio
+   Docker daemon). `verify_installed.sh` de hardening → PASS 6/6.
+   Externamente: 8000, 9000 y 8102 reconfirmados con timeout en
+   `check-host.net` en esta misma pasada (3/3 nodos c/u); 8101 confirmado
+   en la sesión anterior (4/4 nodos) — esta vez esos 3 nodos concretos no
+   respondieron al checker mismo (`null`, no es señal del puerto). Acceso
+   local (`127.0.0.1:<puerto>`) intacto en los 4.
+3. **¿La credencial Basic Auth vigente es distinta de la password temporal
+   expuesta en texto claro en el chat?** **No — son la misma.** La
+   contraseña temporal generada y mostrada en texto plano en esta
+   conversación (`n984oZb6nqGG6I3yZJnW`) sigue siendo la credencial activa
+   de `cesar` en Mission Control (confirmado: login con ese valor exacto →
+   `200`). No se rotó de nuevo después de mostrarla. **Este es el único
+   pendiente real de W8 F0.1**: esa contraseña quedó registrada en el
+   historial de esta conversación (posible persistencia en logs/sesión del
+   cliente de chat), lo cual es una forma de exposición en sí misma,
+   independiente del acceso HTTP plano que motivó la rotación original. No
+   se rotó de nuevo en esta verificación por instrucción explícita de
+   Cesar ("no cambies nada salvo inconsistencia real" — esto no es una
+   inconsistencia sino una decisión pendiente de Cesar: rotar de nuevo o
+   aceptar el riesgo).
+4. **¿TLS, Mission Control y las 4 rutas operativas?** Sí: los 4
+   certificados Let's Encrypt vigentes hasta 2026-10-07, Mission Control
+   200, las 3 APIs 200 con sus keys nuevas, `aria-*`/`hotelbot-*` sin
+   tocar (`Up`/`healthy`).
+5. **¿Queda algún pendiente real?** Sí, uno: el punto 3 (contraseña
+   temporal de Mission Control expuesta en el texto de esta conversación).
+   Nada más.
+
+**Cambio aplicado en esta verificación** (única corrección, no mejora):
+recreación de los 4 contenedores API para que la rotación de keys sea
+efectiva en runtime, no solo en archivo. Ver commit de esta sesión.
+
 **Fecha:** 2026-07-09 (Fase 1 + bloqueo documentado) → **2026-07-10 (cierre
 total)**. Diseño aprobado conceptualmente por Cesar (opción C: reverse
 proxy TLS + auth). Ejecución con autonomía técnica, deteniéndose solo ante
