@@ -43,7 +43,7 @@
 # consumidores automatizados que solo mandan x-api-key, no Basic Auth).
 https://mission-control.35-243-160-0.sslip.io {
 	basicauth {
-		cesar $2a$14$50oQ4ZYLrEux849Q2i7oQuGAkUoQzkxfBuwzhqzSR/lNnFh1rlJY.
+		cesar $2a$14$65PxPE/6w5mLOBwVKjUhJudVAfjXophHAy8xVIkAwkZghmmpD/q6C
 	}
 	reverse_proxy 127.0.0.1:9000
 }

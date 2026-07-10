@@ -1,4 +1,18 @@
-# W8 Fase 0.1 — CIERRE TOTAL (443 desbloqueado, Fase 2 ejecutada, keys rotadas)
+# W8 Fase 0.1 — CIERRE DEFINITIVO (443 desbloqueado, Fase 2 ejecutada, keys y credencial rotadas)
+
+## Cierre definitivo (2026-07-10, tercera pasada)
+
+Único pendiente que quedaba tras la verificación consolidada (§ siguiente):
+la contraseña temporal de Basic Auth había quedado expuesta en texto claro
+en el historial de chat. **Rotada de nuevo**: nueva contraseña generada,
+hash bcrypt actualizado en `Caddyfile` (repo, `SHA256SUMS` recalculado),
+reinstalada, Caddy reiniciado. Verificado: password anterior (la expuesta)
+→ `401`; password nueva → `200`; sin credenciales → `401`; operación real
+autenticada (`/api/v1/status/full`) → `200`; certificado TLS intacto
+(Let's Encrypt, vigente hasta 2026-10-07); `verify_installed.sh` →
+PASS 4/4; `factory_selfcheck.sh` → PASS=4 FAIL=0; los 8 contenedores
+`aria-*`/`hotelbot-*` sin tocar. **Sin pendientes reales de ningún punto
+de la verificación consolidada.** W8 Fase 0.1 queda CERRADA DEFINITIVAMENTE.
 
 ## Verificación consolidada (2026-07-10, segunda pasada — a pedido de Cesar)
 
@@ -39,19 +53,11 @@ de seguir. Resultado, punto por punto:
    respondieron al checker mismo (`null`, no es señal del puerto). Acceso
    local (`127.0.0.1:<puerto>`) intacto en los 4.
 3. **¿La credencial Basic Auth vigente es distinta de la password temporal
-   expuesta en texto claro en el chat?** **No — son la misma.** La
-   contraseña temporal generada y mostrada en texto plano en esta
-   conversación (`n984oZb6nqGG6I3yZJnW`) sigue siendo la credencial activa
-   de `cesar` en Mission Control (confirmado: login con ese valor exacto →
-   `200`). No se rotó de nuevo después de mostrarla. **Este es el único
-   pendiente real de W8 F0.1**: esa contraseña quedó registrada en el
-   historial de esta conversación (posible persistencia en logs/sesión del
-   cliente de chat), lo cual es una forma de exposición en sí misma,
-   independiente del acceso HTTP plano que motivó la rotación original. No
-   se rotó de nuevo en esta verificación por instrucción explícita de
-   Cesar ("no cambies nada salvo inconsistencia real" — esto no es una
-   inconsistencia sino una decisión pendiente de Cesar: rotar de nuevo o
-   aceptar el riesgo).
+   expuesta en texto claro en el chat?** En el momento de esta verificación,
+   no — eran la misma. **Resuelto en el cierre definitivo** (ver arriba):
+   Cesar pidió rotarla de nuevo, se generó una contraseña nueva, se verificó
+   que la expuesta (`n984oZb6nqGG6I3yZJnW`) ya devuelve `401` y la nueva
+   `200`. Ya no queda pendiente.
 4. **¿TLS, Mission Control y las 4 rutas operativas?** Sí: los 4
    certificados Let's Encrypt vigentes hasta 2026-10-07, Mission Control
    200, las 3 APIs 200 con sus keys nuevas, `aria-*`/`hotelbot-*` sin
