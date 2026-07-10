@@ -34,6 +34,7 @@ from factory.layer8.release_candidate_builder import get_rc, confirm_rc
 from factory.services import case_analysis_service as _case_analysis
 from factory.services import design_mode_service as _design
 from factory.services import dossier_agent_review_service as _agent_review
+from factory.services import dossier_case_reference_service as _case_ref
 from factory.services import dossier_generator_service as _dossier
 from factory.services import case_presentation_service as _casepres
 from factory.services import regulatory_connector_service as _regconn
@@ -948,6 +949,23 @@ def post_approve_validation_doc(project_id: str, doc_id: str, body: DocApprove):
 def get_validation_document(project_id: str, doc_id: str):
     """Read-only: contenido del borrador. NO audita."""
     return _dossier.read_document(project_id, doc_id)
+
+
+# ── W9 Bloque 2 (Opción A) — el dossier cita análisis de casos por ID+versión ─
+# Nunca copia el texto del análisis: solo un puntero verificable (case_id,
+# version, mission_id, estado accepted, hash del registro, decisión humana,
+# evento de auditoría). Aprobado por Cesar, W8_GROUNDING_PLAN.md §Bloque 2.
+
+class CaseReferenceLink(BaseModel):
+    case_id: str
+    analysis_version: int
+    linked_by: str             # nombre real (regla run_by de W4)
+
+
+@router.post("/missions/{project_id}/validation-package/documents/{doc_id}/case-references")
+def post_link_case_reference(project_id: str, doc_id: str, body: CaseReferenceLink):
+    return _case_ref.link_case_reference(
+        project_id, doc_id, body.case_id, body.analysis_version, body.linked_by)
 
 
 # ── W6.5 — Agent Expert Review & Drafting (propuestas de agente, gobernadas) ──

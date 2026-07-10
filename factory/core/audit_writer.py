@@ -99,6 +99,9 @@ VALID_EVENTS = {
     "case_analysis_generated",
     "case_analysis_failed",
     "case_analysis_decision",
+    # W9 Bloque 2 — el dossier referencia (por ID+versión) un análisis de
+    # caso aceptado; nunca copia su texto
+    "dossier_case_reference_linked",
 }
 
 
