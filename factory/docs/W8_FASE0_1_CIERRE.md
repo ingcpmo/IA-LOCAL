@@ -37,16 +37,20 @@ Con eso, en esta sesión:
    script (idempotente) → 4 de nuevo, sin tocar las 6 de Fase 0. Se detectó
    y corrigió un bug real en el comando de rollback documentado (faltaba
    `eval`, sin él `iptables` fallaba por *word splitting* del comentario).
-4. **3 de 4 API keys rotadas**: `FACTORY_API_KEY` (factory-api),
+4. **Las 4 API keys rotadas**: `FACTORY_API_KEY` (factory-api),
    `GMP_API_KEY` de `lab_qc_project` y de `oos_hplc_investigator` — las 3
    viven en `.env` de fábrica/deployments (no base), backup previo en
    `backups/factory/w8_f01_apikey_rotation_<timestamp>/`, contenedores
    reiniciados, re-verificadas funcionando por HTTPS, key vieja de lab_qc
-   confirmada inválida. **La `GMP_API_KEY` de `gmp-api` (producto base) NO
-   se rotó**: vive en `/home/ing_cpmo/.env`, el `.env` base, archivo
-   explícitamente prohibido de tocar por las reglas del proyecto. Queda
-   pendiente de decisión explícita de Cesar (rotarla es una acción puntual
-   fuera de este cierre automático).
+   confirmada inválida. La `GMP_API_KEY` de `gmp-api` (producto base) vive
+   en `/home/ing_cpmo/.env` (el `.env` base, archivo prohibido por regla
+   general del proyecto) — se rotó como **excepción puntual con
+   autorización explícita de Cesar en esta misma sesión**, tras señalar la
+   restricción y esperar confirmación. Backup previo en
+   `backups/factory/w8_f01_apikey_rotation_gmpapi_base_<timestamp>/`,
+   `gmp-api` reiniciado (no rebuild — solo cambió el `.env`, no código),
+   re-verificado por HTTPS y por loopback, `factory_selfcheck.sh` repetido
+   tras el reinicio: PASS=4 de nuevo.
 5. **Suite + selfcheck + verify_installed x2**: `factory_selfcheck.sh` →
    PASS=4 FAIL=0 (441 tests, cadena de auditoría íntegra, 315 entradas).
    `verify_installed.sh` de `host-hardening` → PASS 6/6 (10 reglas totales).
@@ -58,8 +62,7 @@ Con eso, en esta sesión:
    `data/chroma`, `data/audit_logs`, `backups/pre_factory`, `aria-*` ni
    `hotelbot-*`.
 
-**Pendiente real, no bloqueante:** rotar `GMP_API_KEY` de `gmp-api` (base) —
-requiere decisión explícita de Cesar por tocar un archivo prohibido.
+**Sin pendientes reales de esta fase.**
 
 ## 1. Historial de la topología (por qué se corrigió dos veces)
 
@@ -205,15 +208,14 @@ pendiente de decisión explícita de Cesar.
 
 ## 7. Estado FINAL (2026-07-10)
 
-**W8 Fase 0.1 CERRADA.** Los 4 sitios se sirven por HTTPS con certificado
-real de Let's Encrypt, Mission Control con Basic Auth rotada, los 4 puertos
-directos cerrados externamente (Fase 2 aplicada y verificada, rollback
-probado), 3 de 4 API keys rotadas. Único pendiente real: rotar la
-`GMP_API_KEY` de `gmp-api` (base), condicionado a decisión explícita de
-Cesar por vivir en el `.env` base prohibido. Ningún comportamiento
-previamente validado (W8 Fase 0, selfcheck, `aria-*`, `hotelbot-*`) se vio
-afectado en ningún momento de esta sesión. Commit de cierre:
-ver hash en el mensaje de commit `factory: W8 F0.1 CERRADA...`.
+**W8 Fase 0.1 CERRADA, sin pendientes.** Los 4 sitios se sirven por HTTPS
+con certificado real de Let's Encrypt, Mission Control con Basic Auth
+rotada, los 4 puertos directos cerrados externamente (Fase 2 aplicada y
+verificada, rollback probado), **las 4 API keys rotadas** (la de `gmp-api`
+base como excepción puntual autorizada explícitamente por Cesar). Ningún
+comportamiento previamente validado (W8 Fase 0, selfcheck, `aria-*`,
+`hotelbot-*`) se vio afectado en ningún momento de esta sesión. Commit de
+cierre: ver hash en el mensaje de commit `factory: W8 F0.1 CERRADA...`.
 
 Siguiente: W8 grounding regulatorio (bloque principal ya aprobado por
 Cesar) — ver [[project-w6-checkpoint]] / `project_w8_hardening.md` para el
