@@ -152,6 +152,21 @@ def test_citation_is_traceable(pres_env):
                      "2026-07-03T16:00:00Z", "api.fda.gov/drug/enforcement.json",
                      "«sterility»", "sha256:abc123"):
         assert fragment in cit
+    assert "Drug Enforcement Report" in cit
+
+
+def test_citation_names_the_real_sector_w9_bloque3(pres_env):
+    """La cita nunca dice 'Drug' para un caso device/food (bug real corregido
+    en la validación de W9 Bloque 3 contra el pipeline W7)."""
+    device_cit = svc.enrich_case(_case(case_type="device_recall"))["presentation"]["citation"]
+    assert "Device Enforcement Report" in device_cit and "Drug Enforcement Report" not in device_cit
+
+    food_cit = svc.enrich_case(_case(case_type="food_recall"))["presentation"]["citation"]
+    assert "Food Enforcement Report" in food_cit and "Drug Enforcement Report" not in food_cit
+
+    unknown_cit = svc.enrich_case(_case(case_type="something_new"))["presentation"]["citation"]
+    assert unknown_cit.split(" — ")[0].endswith("Enforcement Report")
+    assert "Drug" not in unknown_cit and "Device" not in unknown_cit and "Food" not in unknown_cit
 
 
 # ── Lectura y garantía read-only ──────────────────────────────────────────────

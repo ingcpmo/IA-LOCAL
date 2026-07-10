@@ -171,8 +171,18 @@ def _detail_status(case: dict, ctx: dict) -> dict:
     }
 
 
+# W9 Bloque 3: la cita debe nombrar el sector real del recall (drug/device/
+# food), no asumir "Drug" para toda la memoria — case_type ya lo declara.
+_ENFORCEMENT_LABEL_BY_CASE_TYPE = {
+    "drug_recall": "Drug Enforcement Report",
+    "device_recall": "Device Enforcement Report",
+    "food_recall": "Food Enforcement Report",
+}
+
+
 def _citation(case: dict, query: str | None) -> str:
-    return (f"{case.get('authority', '—')} Drug Enforcement Report — "
+    label = _ENFORCEMENT_LABEL_BY_CASE_TYPE.get(case.get("case_type"), "Enforcement Report")
+    return (f"{case.get('authority', '—')} {label} — "
             f"{case.get('case_id', '—')} ({case.get('classification') or 'sin clasificación'}). "
             f"Consultado {case.get('consulted_at', '—')} vía {case.get('url', '—')}. "
             f"Query: {('«' + query + '»') if query else 'no registrada (caso pre-W6.4)'}. "
