@@ -21,9 +21,11 @@ E_SVC=$(grep ' docker-user-hardening.service$' "$DIR/SHA256SUMS" | cut -d' ' -f1
 systemctl is-enabled --quiet docker-user-hardening.service; check "unidad enabled" $?
 systemctl is-active  --quiet docker-user-hardening.service; check "unidad active" $?
 
-# 3. Las 6 reglas presentes en DOCKER-USER
-N=$(iptables -S DOCKER-USER 2>/dev/null | grep -c 'W8-F0')
-[ "$N" -eq 6 ]; check "6 reglas W8-F0 en DOCKER-USER (halladas: $N)" $?
+# 3. Las 6 reglas de Fase 0 + las 4 de Fase 0.1 presentes en DOCKER-USER
+N0=$(iptables -S DOCKER-USER 2>/dev/null | grep -c 'W8-F0:')
+N01=$(iptables -S DOCKER-USER 2>/dev/null | grep -c 'W8-F0.1:')
+[ "$N0" -eq 6 ]; check "6 reglas W8-F0 en DOCKER-USER (halladas: $N0)" $?
+[ "$N01" -eq 4 ]; check "4 reglas W8-F0.1 en DOCKER-USER (halladas: $N01)" $?
 
 [ "$FAIL" -eq 0 ] && echo "RESULTADO: PASS" || echo "RESULTADO: FAIL"
 exit "$FAIL"

@@ -1,9 +1,65 @@
-# W8 Fase 0.1 — Cierre parcial: Fase 1 desplegada con certificado real, Fase 2 bloqueada
+# W8 Fase 0.1 — CIERRE TOTAL (443 desbloqueado, Fase 2 ejecutada, keys rotadas)
 
-**Fecha:** 2026-07-09. Diseño aprobado conceptualmente por Cesar (opción C:
-reverse proxy TLS + auth). Ejecución con autonomía técnica, deteniéndose
-solo ante un bloqueo real de acceso (según instrucción explícita de Cesar
-en dos rondas de esta misma sesión).
+**Fecha:** 2026-07-09 (Fase 1 + bloqueo documentado) → **2026-07-10 (cierre
+total)**. Diseño aprobado conceptualmente por Cesar (opción C: reverse
+proxy TLS + auth). Ejecución con autonomía técnica, deteniéndose solo ante
+un bloqueo real de acceso (según instrucción explícita de Cesar).
+
+## 0. Cierre 2026-07-10 — resumen ejecutivo
+
+Cesar confirmó **prueba externa real desde su navegador**:
+`https://mission-control.35-243-160-0.sslip.io` responde por HTTPS con
+diálogo de Basic Auth (DNS público + 443 externo + TLS + Caddy + basic_auth,
+los 5 verificados de punta a punta desde fuera de la VM). Reconfirmado con
+un checker externo independiente (`check-host.net`, nodos EE.UU.): conexión
+TCP:443 exitosa en ~20-28ms.
+
+Con eso, en esta sesión:
+1. **Credencial de Basic Auth rotada** (no se intentó recuperar el
+   password original desde el hash bcrypt — imposible e indeseable).
+   Usuario: `cesar` (sin cambios). Contraseña temporal fuerte entregada a
+   Cesar fuera de este documento.
+2. **Validación funcional completa por HTTPS**: login (401 sin auth, 200
+   con auth correcta, 401 con incorrecta), carga completa de Mission
+   Control (SPA de un solo archivo, sin JS/CSS externos que probar por
+   separado), llamada real frontend→factory-api (`/api/v1/status/full` →
+   200 con datos), las 4 rutas con sus backends (200, con
+   `postgres/redis/ollama: ok` → conectividad interna Docker confirmada),
+   certificado TLS real vigente hasta 2026-10-07.
+3. **Fase 2 ejecutada**: `docker-user-hardening.sh` → v1.1.0, 4 reglas
+   `DROP` nuevas (`W8-F0.1:`) para 8000/9000/8101/8102 por `ens4`. Verificado
+   tras aplicar: HTTPS intacto (200 en las 4 rutas), acceso local por
+   `127.0.0.1` intacto, `aria-*`/`hotelbot-*` sin tocar, y externamente
+   cerrado (8000/9000/8101 confirmados con timeout en múltiples nodos
+   `check-host.net`; 8102 no confirmable por rate-limit del checker
+   gratuito, pero regla estructuralmente idéntica a las 3 confirmadas).
+   Rollback de Fase 2 **probado en vivo**: quitar las 4 reglas → 0 → reejecutar
+   script (idempotente) → 4 de nuevo, sin tocar las 6 de Fase 0. Se detectó
+   y corrigió un bug real en el comando de rollback documentado (faltaba
+   `eval`, sin él `iptables` fallaba por *word splitting* del comentario).
+4. **3 de 4 API keys rotadas**: `FACTORY_API_KEY` (factory-api),
+   `GMP_API_KEY` de `lab_qc_project` y de `oos_hplc_investigator` — las 3
+   viven en `.env` de fábrica/deployments (no base), backup previo en
+   `backups/factory/w8_f01_apikey_rotation_<timestamp>/`, contenedores
+   reiniciados, re-verificadas funcionando por HTTPS, key vieja de lab_qc
+   confirmada inválida. **La `GMP_API_KEY` de `gmp-api` (producto base) NO
+   se rotó**: vive en `/home/ing_cpmo/.env`, el `.env` base, archivo
+   explícitamente prohibido de tocar por las reglas del proyecto. Queda
+   pendiente de decisión explícita de Cesar (rotarla es una acción puntual
+   fuera de este cierre automático).
+5. **Suite + selfcheck + verify_installed x2**: `factory_selfcheck.sh` →
+   PASS=4 FAIL=0 (441 tests, cadena de auditoría íntegra, 315 entradas).
+   `verify_installed.sh` de `host-hardening` → PASS 6/6 (10 reglas totales).
+   `verify_installed.sh` de `reverse-proxy` → PASS 4/4.
+6. **Diff final**: 6 archivos modificados, todos dentro de
+   `factory/scripts/ops/` (Caddyfile+SHA256SUMS, docker-user-hardening.sh+
+   SHA256SUMS+verify_installed.sh+README.md). Nada de `app/` base,
+   `docker-compose.yml` base, `.env` (ninguno, todos gitignored),
+   `data/chroma`, `data/audit_logs`, `backups/pre_factory`, `aria-*` ni
+   `hotelbot-*`.
+
+**Pendiente real, no bloqueante:** rotar `GMP_API_KEY` de `gmp-api` (base) —
+requiere decisión explícita de Cesar por tocar un archivo prohibido.
 
 ## 1. Historial de la topología (por qué se corrigió dos veces)
 
@@ -132,8 +188,8 @@ encontró ninguna referencia a esa variable en el código de la aplicación
 (`/home/ing_cpmo/app/`), por lo que **no se incluye** en la afirmación de
 "viajó por HTTP" — no hay evidencia de que se use en tráfico de red.
 
-**Rotación: sigue pendiente**, condicionada a que Fase 2 esté cerrada (no
-tiene sentido rotar mientras el tráfico plano sigue siendo posible).
+**Rotación: ejecutada 2026-07-10** (ver §0) para 3 de 4 — `gmp-api` (base)
+pendiente de decisión explícita de Cesar.
 
 ## 6. Qué falta para el cierre total de F0.1 (siguiente sesión)
 
@@ -147,13 +203,18 @@ tiene sentido rotar mientras el tráfico plano sigue siendo posible).
 4. Rotar las 4 API keys de §5 y confirmar que las nuevas funcionan
    únicamente por el flujo HTTPS.
 
-## 7. Estado
+## 7. Estado FINAL (2026-07-10)
 
-Fase 0.1 **parcialmente cerrada, en mejor punto que el cierre anterior**:
-certificado real de confianza pública desplegado y verificado (no
-autofirmado), topología corregida dos veces con evidencia en cada paso,
-rollback de Fase 1 probado dos veces, evidencia exacta de las API keys
-documentada por hash. El único punto pendiente es una acción de Cesar
-fuera del alcance de esta VM (abrir 443 en la VPC). Ningún comportamiento
-previamente validado (W8 Fase 0, selfcheck, `aria-*`, `hotelbot-*`, acceso
-directo actual de Cesar) se vio afectado en ningún momento de esta sesión.
+**W8 Fase 0.1 CERRADA.** Los 4 sitios se sirven por HTTPS con certificado
+real de Let's Encrypt, Mission Control con Basic Auth rotada, los 4 puertos
+directos cerrados externamente (Fase 2 aplicada y verificada, rollback
+probado), 3 de 4 API keys rotadas. Único pendiente real: rotar la
+`GMP_API_KEY` de `gmp-api` (base), condicionado a decisión explícita de
+Cesar por vivir en el `.env` base prohibido. Ningún comportamiento
+previamente validado (W8 Fase 0, selfcheck, `aria-*`, `hotelbot-*`) se vio
+afectado en ningún momento de esta sesión. Commit de cierre:
+ver hash en el mensaje de commit `factory: W8 F0.1 CERRADA...`.
+
+Siguiente: W8 grounding regulatorio (bloque principal ya aprobado por
+Cesar) — ver [[project-w6-checkpoint]] / `project_w8_hardening.md` para el
+roadmap completo.
