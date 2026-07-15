@@ -1,0 +1,70 @@
+GMP AI Factory — sesion manual-assisted de Claude Code (no headless subprocess)
+Mision: gmpai_document_validation
+Workspace: /home/ing_cpmo/factory/workspaces/gmpai_document_validation
+Modo: task_package.mode = plan_only_manual_assisted (headless_available=false)
+
+Nota de trazabilidad: esta sesion se ejecuto de forma interactiva (el
+"manual_command: cd <workspace> && claude" indicado por Capa 8), no via el
+job queue headless_run del host_worker. Este log documenta el trabajo REAL
+realizado en la sesion, con el mismo nombre de archivo (headless_*.log) que
+usa release_candidate_builder/artifact_collector para localizar evidencia
+de ejecucion de Claude Code sobre el workspace.
+
+Resumen de acciones reales ejecutadas (ver factory/audit/factory_audit.jsonl
+para el detalle auditado con hash chain, project_id=gmpai_document_validation):
+
+1. Preflight: sha256sum recursivo de los 32 archivos en GMPAI/source,
+   comparado byte a byte contra GMPAI/manifests/SHA256SUMS.txt -> 32/32 OK.
+2. POST /api/v1/projects -> proyecto gmpai_document_validation creado.
+3. POST /api/v1/layer9/missions -> mision creada en estado draft, con los
+   32 documentos reales como 'documents' (status=available).
+4. Bloqueo real encontrado: factory/layer8/agent_design_engine.py y
+   factory/layer8/requirement_interpreter.py solo reconocian los dominios
+   LIMS/HPLC/OOS/DATA_INTEGRITY/CAPA (mision lab_qc) -> con la mision real
+   de validacion documental OT (Rockwell/SCADA) el motor no proponia NINGUN
+   agente. Corregido: se agregaron dominios DOC_INVENTORY_VERSION,
+   DOC_CLASSIFICATION, TRACEABILITY, COMPLIANCE_RISK, FINAL_REVIEW_GATE,
+   flag annex11_required, y las 8 decisiones de agente correspondientes,
+   preservando el comportamiento de las misiones existentes (verificado con
+   pytest, incluye tests nuevos de regresion). Bug relacionado corregido en
+   regulatory_compliance_engine.py (generate_pending_documents caia a una
+   lista fija de guias de laboratorio cuando la mision no tenia nada
+   pendiente -> falsos PENDING_DOCUMENT).
+5. POST /api/v1/layer9/missions/gmpai_document_validation/approve
+   approved_by=Cesar, decision_origin=human_confirmed.
+6. POST /api/v1/layer8/missions/gmpai_document_validation/run (plan-only)
+   -> requirement_spec, agent_design_proposal (8 agentes: 1 inherit + 3
+   profile + 4 new_agent), regulatory_matrix, corpus_manifest,
+   pending_documents (vacio, correcto), compliance_assessment, workspace
+   creado. Nota: factory-api corre en un contenedor sin --reload; se
+   reinicio 2 veces (docker restart factory-api) para que recogiera los
+   fixes de codigo antes de la corrida definitiva. Confirmado con /health.
+7. Implementados en este workspace (app/): extraction.py (PDF/DOCX/DOCM/
+   XLSX real, .doc/.pptx marcados fuera de alcance sin fabricar contenido;
+   fallback de lectura raw-zip-xml para .docm que NUNCA abre ni ejecuta
+   word/vbaProject.bin), version_selection.py, classification_agent.py,
+   inventory_agent.py, compliance_agents.py (Part11/Annex11/ALCOA+/
+   Traceability), risk_agent.py, final_review_agent.py,
+   traceability_grouping.py, pipeline.py, report_writer.py.
+8. Perfiles derivados registrados en factory/profiles/: integrity_profiles.yaml
+   (integrity_part11_ot_profile, integrity_annex11_ot_profile) y
+   csv_profiles.yaml (csv_ot_traceability_profile).
+9. Pruebas: 37 tests en workspaces/gmpai_document_validation/tests/ (todos
+   contra datos reales de GMPAI/source, no mocks) + 477 tests de regresion
+   de factory/tests/ (via /home/ing_cpmo/.venv) -> todos en verde.
+10. Piloto (familia Rockwell, 14 archivos) ejecutado y revisado antes de
+    correr el conjunto completo -> encontro un bug real de agrupacion en
+    el Requirements Traceability Agent (evaluaba por archivo individual en
+    vez de por sistema/equipo) -> corregido (traceability_grouping.py) y
+    reverificado antes de la corrida completa.
+11. Corrida completa (32 archivos): 582 hallazgos, 0 declaraciones de
+    'cumple' fabricadas, 463 evidencia_insuficiente, 114 cumple_parcialmente,
+    5 no_cumple. 2 conflictos de version reales (FS_v1.2 duplicado exacto,
+    T-039 docm-vs-pdf). 10 reportes generados en /home/ing_cpmo/GMPAI/reports/.
+12. Quality gates estaticos (G01/G11/G12, mision sin Docker): PASS=1
+    FAIL=0 SKIPPED=2 (identico patron a c8_alcoa_validator).
+
+Gobierno: este sistema NO declaro cumplimiento GMP final ni aprobo ningun
+documento. Todos los hallazgos quedan pendientes de decision humana
+(accept/reject/request_changes) por Cesar via el mecanismo oficial de
+Capa 9.

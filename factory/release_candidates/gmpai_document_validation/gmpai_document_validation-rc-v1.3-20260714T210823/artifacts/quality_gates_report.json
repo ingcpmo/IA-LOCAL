@@ -1,0 +1,27 @@
+{
+  "all_pass": true,
+  "gates": [
+    {
+      "gate": "G01_COMPOSE_SYNTAX",
+      "status": "SKIPPED",
+      "evidence": "docker-compose.yml no encontrado en workspace"
+    },
+    {
+      "gate": "G11",
+      "status": "PASS",
+      "evidence": "API key vacía — nada que buscar en frontend",
+      "timestamp": "2026-07-14T21:08:16.349707+00:00"
+    },
+    {
+      "gate": "G12",
+      "status": "SKIPPED",
+      "evidence": "Workspace sin .git — SKIPPED (F5 inicializa git en workspace)",
+      "timestamp": "2026-07-14T21:08:16.349765+00:00"
+    }
+  ],
+  "summary": {
+    "PASS": 1,
+    "FAIL": 0,
+    "SKIPPED": 2
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "project_id": "gmpai_document_validation",
+  "all_passed": true,
+  "passed": 37,
+  "failed": 0,
+  "skipped": 0,
+  "errors": 0,
+  "returncode": 0,
+  "summary": {
+    "passed": 37,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0
+  },
+  "output_preview": ".....................................                                    [100%]\n37 passed in 118.16s (0:01:58)\n",
+  "cmd": "./.venv/bin/python3 -m pytest tests/ -q",
+  "note": "Suite real ejecutada contra el corpus GMPAI/source (32 archivos reales), incluye pdfplumber sobre PDF de 136MB escaneado. No se usa mock del corpus.",
+  "timestamp": "2026-07-14T05:06:30.180716+00:00"
+}

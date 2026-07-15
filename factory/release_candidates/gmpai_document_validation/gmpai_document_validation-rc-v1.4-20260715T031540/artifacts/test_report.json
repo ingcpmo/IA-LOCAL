@@ -1,0 +1,19 @@
+{
+  "project_id": "gmpai_document_validation",
+  "all_passed": true,
+  "passed": 55,
+  "failed": 0,
+  "skipped": 0,
+  "errors": 0,
+  "returncode": 0,
+  "summary": {
+    "passed": 55,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0
+  },
+  "output_preview": ".......................................................                  [100%]\n55 passed in 145.99s (0:02:25)\n",
+  "cmd": "./.venv/bin/python3 -m pytest tests/ -q",
+  "note": "Fase C del diseno: 6 tests nuevos (llm_traceability_agent: extraccion+cobertura encadenadas) sobre los 49 de Fase B, sin regresion. LIMITACION REAL ENCONTRADA en la corrida real del piloto (no en tests): MAX_DOC_CHARS=6000 trunca el URS real de Rockwell (45998 caracteres) antes de llegar a la seccion de requisitos (que empieza despues del indice, ~char 8000+) -> el modelo vio solo portada+indice y devolvio lista vacia de requisitos (comportamiento CORRECTO segun su contrato: no inventar requisitos sin evidencia), y el pipeline cayo al fallback deterministico de familia (1 Finding, igual que compliance_agents.evaluate_traceability). No es un fallo del modelo ni del verificador de anclaje: es un limite de truncamiento a ajustar en una fase futura.",
+  "timestamp": "2026-07-15T01:27:52.932998+00:00"
+}

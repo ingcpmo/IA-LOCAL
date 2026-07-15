@@ -1,0 +1,16 @@
+{
+  "job_id": "0c5a06bd-c729-4982-a2e6-188abe1563ab",
+  "project_id": "gmpai_document_validation",
+  "job_type": "layer8_run_mission",
+  "status": "completed",
+  "payload": {
+    "plan_only": true
+  },
+  "created_at": "2026-07-14T04:28:59.233588+00:00",
+  "updated_at": "2026-07-14T04:28:59.269085+00:00",
+  "result": {
+    "status": "plan_generated",
+    "design_dir": "/app/factory/designs/gmpai_document_validation"
+  },
+  "error": null
+}

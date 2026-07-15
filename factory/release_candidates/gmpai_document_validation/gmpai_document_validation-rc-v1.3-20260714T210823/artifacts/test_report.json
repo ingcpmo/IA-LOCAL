@@ -1,0 +1,19 @@
+{
+  "project_id": "gmpai_document_validation",
+  "all_passed": true,
+  "passed": 49,
+  "failed": 0,
+  "skipped": 0,
+  "errors": 0,
+  "returncode": 0,
+  "summary": {
+    "passed": 49,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0
+  },
+  "output_preview": ".................................................                        [100%]\n49 passed in 118.61s (0:01:58)\n",
+  "cmd": "./.venv/bin/python3 -m pytest tests/ -q",
+  "note": "Fase B del diseno: 4 tests nuevos (llm_annex11_agent, llm_alcoa_agent) sobre los 45 de Fase A, sin regresion. Motor compartido llm_integrity_engine.py extraido de Fase A. Ollama SIEMPRE mockeado en pytest. Suite ejecutada contra el corpus GMPAI/source real (32 archivos).",
+  "timestamp": "2026-07-14T21:08:11.680071+00:00"
+}

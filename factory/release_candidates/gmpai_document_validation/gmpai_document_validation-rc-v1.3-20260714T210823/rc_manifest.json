@@ -1,0 +1,21 @@
+{
+  "rc_id": "gmpai_document_validation-rc-v1.3-20260714T210823",
+  "project_id": "gmpai_document_validation",
+  "version": "v1.3",
+  "status": "approved",
+  "decision_origin": "human_confirmed",
+  "approved_by": "Cesar",
+  "artifacts_path": "/app/factory/release_candidates/gmpai_document_validation/gmpai_document_validation-rc-v1.3-20260714T210823/artifacts",
+  "proposed_at": "2026-07-14T21:08:23.918450+00:00",
+  "sha256sums": {
+    "test_report.json": "d9aba4ae70d76aba7c8ea62f5ad4c0de826eca4d52d97fc061f4ab40a84236c6",
+    "pipeline_pilot_llm.json": "141185cce93bd7f60cdcf3319f16c30b45051b19355089756ccac22d02e48349",
+    "quality_gates_report.json": "3e46f5fca4d90816c3e906c711b6bf2c620403edaa15bf32f2cb6656aec5b010",
+    "integrity_llm_vs_keyword_comparison.json": "836855dd64eba2feb0438b17b1fde8ab607989a83f291eabe50971ef694e73ad",
+    "diff.txt": "d309987c978211f32bf553bf9799a4fae4c9c13365eabae00355730ffe7be925",
+    "headless_headless_1784005695.log": "2c2a355b9eaad1d3cab75c17cff925920d4ac6cdabac16586b97bff5c90cbad7"
+  },
+  "decided_at": "2026-07-14T21:14:35.081900+00:00",
+  "notes": "Aprobado: eu_annex11_agent y alcoa_plus_agent conectados a Ollama real, mismo motor compartido llm_integrity_engine.py de Fase A. 266 pares comparados, 118 cambios de estado, 16 citas descartadas por verificador de anclaje en produccion (no solo en tests). 49/49 tests. Alcance de v1.3: los 3 agentes de integridad regulatoria. Trazabilidad real, borrador corregido y Mission Control siguen pendientes (Fases C/D/E).",
+  "is_canonical": false
+}

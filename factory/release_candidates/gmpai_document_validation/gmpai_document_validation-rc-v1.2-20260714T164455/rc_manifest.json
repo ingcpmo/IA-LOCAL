@@ -1,0 +1,21 @@
+{
+  "rc_id": "gmpai_document_validation-rc-v1.2-20260714T164455",
+  "project_id": "gmpai_document_validation",
+  "version": "v1.2",
+  "status": "approved",
+  "decision_origin": "human_confirmed",
+  "approved_by": "Cesar",
+  "artifacts_path": "/app/factory/release_candidates/gmpai_document_validation/gmpai_document_validation-rc-v1.2-20260714T164455/artifacts",
+  "proposed_at": "2026-07-14T16:44:55.809079+00:00",
+  "sha256sums": {
+    "test_report.json": "412b040472fad4a9e0cca65c9e1242be7f777aaca90667f399e6aea650d9ab46",
+    "part11_llm_vs_keyword_comparison.json": "eaff1db52767f70beaa3a381756315f71163ac86d30fe67d3e78fb290ec08296",
+    "pipeline_pilot_llm.json": "dd23ecacdfd5f69ac66ff859f53a4ba5531b683714da8ab4fe2c48eb0e2498bd",
+    "quality_gates_report.json": "c62457b092ba6a3250978ff41c382aa1472026b319c42380e47b3bb8bda60d21",
+    "diff.txt": "d309987c978211f32bf553bf9799a4fae4c9c13365eabae00355730ffe7be925",
+    "headless_headless_1784005695.log": "2c2a355b9eaad1d3cab75c17cff925920d4ac6cdabac16586b97bff5c90cbad7"
+  },
+  "decided_at": "2026-07-14T16:46:35.102064+00:00",
+  "notes": "Aprobado: fda_part11_agent conectado a Ollama real (qwen2.5:7b-instruct-q4_K_M), 70 hallazgos verificados por anclaje de evidencia, 0 citas alucinadas, comparacion side-by-side contra el motor keyword revisada. 45/45 tests. Alcance de v1.2 es solo Part11 — Annex11/ALCOA+ siguen keyword-scan (Fase B) y el generador de borrador corregido sigue pendiente (Fase D).",
+  "is_canonical": false
+}

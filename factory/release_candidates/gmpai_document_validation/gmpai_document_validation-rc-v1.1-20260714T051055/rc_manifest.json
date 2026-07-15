@@ -1,0 +1,19 @@
+{
+  "rc_id": "gmpai_document_validation-rc-v1.1-20260714T051055",
+  "project_id": "gmpai_document_validation",
+  "version": "v1.1",
+  "status": "returned_to_adjustments",
+  "decision_origin": "human_confirmed",
+  "approved_by": "Cesar",
+  "artifacts_path": "/app/factory/release_candidates/gmpai_document_validation/gmpai_document_validation-rc-v1.1-20260714T051055/artifacts",
+  "proposed_at": "2026-07-14T05:10:55.231879+00:00",
+  "sha256sums": {
+    "test_report.json": "64d3dc122e79fb578e25dfbbbfbf829ff63cd4a895ba5d8b4b0e3fc959bd9d0b",
+    "quality_gates_report.json": "f82e67a7587d61e9d0709f9586e2d7d8e4a4c6c469e9979f25b9a072e3a1c4ac",
+    "diff.txt": "d309987c978211f32bf553bf9799a4fae4c9c13365eabae00355730ffe7be925",
+    "headless_headless_1784005695.log": "2c2a355b9eaad1d3cab75c17cff925920d4ac6cdabac16586b97bff5c90cbad7"
+  },
+  "decided_at": "2026-07-14T15:21:33.258011+00:00",
+  "notes": "Auditoria GMPAI_DOCUMENT_EXPERT_AGENTS_ASSESSMENT.md: los agentes fda_part11_agent/eu_annex11_agent/alcoa_plus_agent estan implementados como keyword-scan determinista, sin ninguna llamada a Ollama, pese a tener perfiles correctamente disenados en factory/profiles/integrity_profiles.yaml para el agente base integrity. No existe generador de borrador corregido (seccion F del encargo). Ver GMPAI_DOCUMENT_EXPERT_AGENTS_DESIGN.md Fases A-D para el camino de correccion.\nAjustes: 1) Conectar fda_part11_agent, eu_annex11_agent y alcoa_plus_agent al agente base integrity real via gmp-api (Ollama), usando los perfiles ya disenados, en vez del escaneo de palabras clave en compliance_agents.py. 2) Implementar generador de borrador corregido trazable (Markdown/DOCX/XLSX) con changelog cambio->hallazgo->requisito. 3) Agregar agent_version/prompt_version/verifier_version a cada Finding. 4) Mostrar esos campos en Mission Control (agents_view.js).",
+  "is_canonical": false
+}

@@ -1,0 +1,21 @@
+{
+  "rc_id": "gmpai_document_validation-rc-v1.4-20260715T012759",
+  "project_id": "gmpai_document_validation",
+  "version": "v1.4",
+  "status": "rejected",
+  "decision_origin": "human_confirmed",
+  "approved_by": "Cesar",
+  "artifacts_path": "/app/factory/release_candidates/gmpai_document_validation/gmpai_document_validation-rc-v1.4-20260715T012759/artifacts",
+  "proposed_at": "2026-07-15T01:28:00.048654+00:00",
+  "sha256sums": {
+    "test_report.json": "d77adc07e3a032bcd5062f2e597824e6ddbf90305c27520285081d619b8b9798",
+    "pipeline_pilot_llm.json": "9b6527c47b4615915afaa7bc73f9a2d0d21e703026e942b29b1f55402342b1ef",
+    "quality_gates_report.json": "bbc1a880991ec3b37a0781febaf53c2e416fe1140cced817777141ca007940d2",
+    "integrity_llm_vs_keyword_comparison.json": "18ab2bdbbb26191ebaa8f8b11b9c56510c11eab51ced95c06dc0b47311025d8a",
+    "diff.txt": "d309987c978211f32bf553bf9799a4fae4c9c13365eabae00355730ffe7be925",
+    "headless_headless_1784005695.log": "2c2a355b9eaad1d3cab75c17cff925920d4ac6cdabac16586b97bff5c90cbad7"
+  },
+  "decided_at": "2026-07-15T03:20:38.781717+00:00",
+  "notes": "Superseded by gmpai_document_validation-rc-v1.4-20260715T031540: este RC se empaqueto a las 01:27:57Z, antes de que terminara el rerun de requirements_traceability_agent (Fase C, fix MAX_DOC_CHARS, 02:40:11Z). No refleja el resultado corregido.",
+  "is_canonical": false
+}

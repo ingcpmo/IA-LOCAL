@@ -1,0 +1,18 @@
+{
+  "rc_id": "gmpai_document_validation-rc-v1.0-20260714T050830",
+  "project_id": "gmpai_document_validation",
+  "version": "v1.0",
+  "status": "rejected",
+  "decision_origin": "human_confirmed",
+  "approved_by": "Cesar",
+  "artifacts_path": "/app/factory/release_candidates/gmpai_document_validation/gmpai_document_validation-rc-v1.0-20260714T050830/artifacts",
+  "proposed_at": "2026-07-14T05:08:30.686102+00:00",
+  "sha256sums": {
+    "test_report.json": "64d3dc122e79fb578e25dfbbbfbf829ff63cd4a895ba5d8b4b0e3fc959bd9d0b",
+    "diff.txt": "d309987c978211f32bf553bf9799a4fae4c9c13365eabae00355730ffe7be925",
+    "headless_headless_1784005695.log": "2c2a355b9eaad1d3cab75c17cff925920d4ac6cdabac16586b97bff5c90cbad7"
+  },
+  "decided_at": "2026-07-14T15:23:14.055156+00:00",
+  "notes": "Obsoleto: superado por gmpai_document_validation-rc-v1.1-20260714T051055 (superset, incluye quality_gates_report.json). El contenido de fondo de v1.1 fue devuelto a ajustes (returned_to_adjustments) por GMPAI_DOCUMENT_EXPERT_AGENTS_ASSESSMENT.md; v1.0 no aporta nada adicional a revisar y queda rechazado por redundancia.",
+  "is_canonical": false
+}
