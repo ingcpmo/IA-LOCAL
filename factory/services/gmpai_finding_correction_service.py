@@ -107,6 +107,37 @@ def _sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def build_evidence_request_record(documento: str, sha256: str, pages_with_text: int,
+                                   total_pages: int, extraction_confidence: float,
+                                   raw_text_sample: str) -> dict:
+    """Registro de SOLICITUD DE EVIDENCIA para documentos sin texto util
+    extraible (OCR_OR_EXTRACTION_REQUIRED) — NUNCA un DOCX 'corregido'. No
+    hay mecanismo de OCR autorizado/disponible en este entorno (sin
+    tesseract/pytesseract/pymupdf instalados) — no se instala ninguno aqui;
+    se declara el gap y se solicita evidencia o extraccion manual."""
+    return {
+        "tipo": "evidence_request",
+        "documento": documento,
+        "sha256": sha256,
+        "paginas_totales": total_pages,
+        "paginas_con_texto_real": pages_with_text,
+        "confianza_extraccion": extraction_confidence,
+        "muestra_texto_extraido_raw": raw_text_sample[:200],
+        "mecanismo_ocr_disponible": False,
+        "hallazgo": (
+            f"Documento sin texto util extraible ({pages_with_text}/{total_pages} paginas con "
+            "contenido real). No se genera correccion ni se infiere contenido: se requiere "
+            "OCR o extraccion manual confiable antes de poder evaluar este documento."
+        ),
+        "accion_requerida": [
+            "Ejecutar OCR con una herramienta autorizada (no incluida en este entorno) sobre el documento original",
+            "o aportar una version del documento con texto nativo/embebido",
+        ],
+        "revision_humana_requerida": True,
+        "estado_correccion": "evidence_required",
+    }
+
+
 def build_document_correction_draft_docx(
     documento: str, findings_for_doc: list[dict], agent_versions: dict, source_sha256: str | None = None,
 ) -> tuple[bytes, str]:
