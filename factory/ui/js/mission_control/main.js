@@ -22,6 +22,7 @@ import { promptRunTest, runSuite } from './tests_console.js';
 import { promptGenerateDossier, promptApproveDoc, viewValidationDoc,
   promptAgentProposal, viewAgentProposal, decideAgentProposal } from './validation_view.js';
 import { downloadGmpReportPdf } from './gmp_dashboard.js';
+import { gmpaiViewArtifact, gmpaiDownloadArtifact, gmpaiGeneratePackage, gmpaiRenderArtifactsPanel } from './gmpai_artifacts.js';
 import { doCaseSearch, submitRegQuery, promptCaseFetch,
   copyCaseCitation, promptCaseCompare, runCaseCompare,
   toggleCaseAnalysis, loadCaseAnalysis, runCaseAnalysis,
@@ -38,6 +39,7 @@ Object.assign(window, {
   loadDesignFile, loadFileContent, loadRcFile, loadDepFile,
   submitMarkCanonical, confirmF5,
   promptRunTest, runSuite, downloadGmpReportPdf,
+  gmpaiViewArtifact, gmpaiDownloadArtifact, gmpaiGeneratePackage, gmpaiRenderArtifactsPanel,
   promptGenerateDossier, promptApproveDoc, viewValidationDoc,
   promptAgentProposal, viewAgentProposal, decideAgentProposal,
   submitRegQuery, promptCaseFetch,

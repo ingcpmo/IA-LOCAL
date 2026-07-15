@@ -1,0 +1,35 @@
+{
+  "items": [
+    {
+      "id": "REM-GMPAI-001",
+      "project_id": "gmpai_document_validation",
+      "sistema": "Rockwell::MCCPDC-215115305 (automatizacion PLC/SCADA-PCS)",
+      "rc_relacionado": "gmpai_document_validation-rc-v1.4-20260715T031540",
+      "finding_relacionado": "requirements_traceability_agent — familia documental Rockwell::MCCPDC-215115305",
+      "hallazgo": "Protocolo IQ/OQ/PQ (o protocolo previo bajo el cual se ejecuto y aprobo el SAT) no disponible en el material entregado",
+      "estado": "open",
+      "clasificacion": "Gap documental confirmado en el material entregado (no es limitacion del pipeline ni del agente)",
+      "severidad": "mayor",
+      "evidencia_revisada": [
+        "Los 32 archivos del manifiesto (GMPAI/manifests/SHA256SUMS.txt) — corpus completo, no un subconjunto",
+        "GMPAI/incoming/Rockwell.zip (archivo original, pre-curacion) — mismos 14 archivos que source/Rockwell/, ninguno adicional",
+        "Busqueda completa en /home/ing_cpmo por nombre (protocol, IQ, OQ, 215115305, MCCPDC) — sin resultado relevante; unico archivo tipo PROTOCOL_TEMPLATE encontrado (SCADA/ETG_ET_[System Name]_IQ w appendices.pdf) es plantilla generica de OTRO sistema",
+        "GMPAI/reports/matriz_trazabilidad_documental_full.json (corrida de scope completo) — mismo hallazgo, texto identico, corrobora que no es artefacto del recorte del piloto"
+      ],
+      "impacto": "No puede verificarse contra que protocolo y criterios de aceptacion se ejecuto/aprobo el SAT (215115305 SCADA-PCS Misc PLC SAT3 Scanned-1.pdf / 215115305-T-041 SAT3 Completed.pdf). Rompe la cadena de trazabilidad GAMP 5 URS-FS-DS-IQ/OQ/PQ-SAT en la etapa PROTOCOL_TEMPLATE.",
+      "responsable_propuesto": "Rockwell / Validacion",
+      "fecha_objetivo": "pendiente de asignacion humana",
+      "accion_requerida": [
+        "Localizar y aportar el protocolo original bajo el cual se ejecuto el SAT",
+        "o generar una justificacion formal de no aplicabilidad, aprobada por QA/Validacion"
+      ],
+      "criterio_cierre": [
+        "El protocolo se incorpora al expediente y se reevalua la trazabilidad afectada (solo la familia Rockwell::MCCPDC-215115305, sin reprocesar los 32 documentos)",
+        "o la justificacion formal de no aplicabilidad queda aprobada y auditada"
+      ],
+      "notas": "No modificar silenciosamente el RC v1.4. No cerrar automaticamente este finding — el cierre requiere una de las dos condiciones anteriores, confirmada por un humano.",
+      "registrado_en": "factory/docs/GMPAI_REMEDIATION_TRACKER.md",
+      "created_at": "2026-07-15T04:00:00+00:00"
+    }
+  ]
+}

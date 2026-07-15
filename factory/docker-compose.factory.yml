@@ -13,6 +13,7 @@ services:
     volumes:
       - .:/app/factory
       - ../backups/factory:/app/backups_factory
+      - ../GMPAI:/home/ing_cpmo/GMPAI
     extra_hosts:
       - "host.docker.internal:host-gateway"
     mem_limit: 512m

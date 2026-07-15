@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
@@ -40,6 +41,7 @@ from factory.services import case_presentation_service as _casepres
 from factory.services import regulatory_connector_service as _regconn
 from factory.services import regulatory_connector_extra_service as _regconn_extra
 from factory.services import gmp_report_service
+from factory.services import gmpai_artifact_service as _gmpai
 from factory.services import validation_readiness_service as _valready
 from factory.services import mission_evidence_service as _evidence
 from factory.services import test_console_service as _console
@@ -1058,3 +1060,70 @@ def get_case_analysis(case_id: str, project_id: str, version: int | None = None)
 def post_case_analysis_decision(case_id: str, body: CaseAnalysisDecision):
     return _case_analysis.decide_analysis(
         body.project_id, case_id, body.decision, body.decided_by, body.reason)
+
+
+# ── GMPAI — artefactos de cierre (REM-GMPAI-001, informe final, descargas) ───
+# Solo empaqueta datos YA aprobados (RC canónico + tracker de remediación).
+# Nunca reprocesa los 32 documentos ni invoca agentes. Auth: misma
+# dependency verify_api_key aplicada a todo el router en main.py.
+
+class GmpaiPackageRequest(BaseModel):
+    recorded_by: str | None = None
+
+
+@router.post("/missions/gmpai_document_validation/gmpai-artifacts/generate")
+def post_gmpai_generate_artifacts(body: GmpaiPackageRequest = GmpaiPackageRequest()):
+    try:
+        return _gmpai.run_packaging(recorded_by=body.recorded_by)
+    except _gmpai.ArtifactNotFound as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@router.get("/missions/gmpai_document_validation/gmpai-artifacts")
+def get_gmpai_artifacts(run_id: str | None = None):
+    """Lista runs disponibles; con run_id, el manifest de ese run. Sin
+    run_id, el manifest del run más reciente (o {"runs": [...]} si no hay
+    ninguno generado todavía)."""
+    runs = _gmpai.list_runs()
+    if not runs:
+        return {"runs": [], "latest": None}
+    target = run_id or runs[0]
+    try:
+        manifest = _gmpai.get_manifest(target)
+    except _gmpai.ArtifactNotFound as e:
+        raise HTTPException(404, str(e))
+    return {"runs": runs, "latest": manifest}
+
+
+def _gmpai_artifact_response(run_id: str, artifact_path: str, disposition: str) -> FileResponse:
+    try:
+        path = _gmpai.resolve_artifact_path(run_id, artifact_path)
+    except _gmpai.PathTraversalError as e:
+        raise HTTPException(400, str(e))
+    except _gmpai.ArtifactNotFound as e:
+        raise HTTPException(404, str(e))
+
+    mime = _gmpai._ARTIFACT_MIME.get(path.suffix, "application/octet-stream")
+    from factory.core.audit_writer import write_event as _we
+    _we("gmp_report_generated", _gmpai.PROJECT_ID, {
+        "record_by": "mission_control_ui",
+        "canonical_rc": None,
+        "artifact_kind": "gmpai_artifact_access",
+        "run_id": run_id,
+        "artifact": artifact_path,
+        "mode": disposition,
+    })
+    headers = {"Content-Disposition": f'{disposition}; filename="{path.name}"'}
+    return FileResponse(str(path), media_type=mime, headers=headers)
+
+
+@router.get("/missions/gmpai_document_validation/gmpai-artifacts/{run_id}/{artifact_path:path}/view")
+def get_gmpai_artifact_view(run_id: str, artifact_path: str):
+    return _gmpai_artifact_response(run_id, artifact_path, "inline")
+
+
+@router.get("/missions/gmpai_document_validation/gmpai-artifacts/{run_id}/{artifact_path:path}/download")
+def get_gmpai_artifact_download(run_id: str, artifact_path: str):
+    return _gmpai_artifact_response(run_id, artifact_path, "attachment")
