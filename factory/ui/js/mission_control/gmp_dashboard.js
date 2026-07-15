@@ -73,16 +73,34 @@ export function _renderGmpDashboard(pid, d){
         ${(ae.new_agents||[]).map(a=>`<span class="chip c-info" style="font-size:9px;margin:2px">${_gmpEscHtml(a)}</span>`).join('')||_gmpNA(null)}</div>
     </div>`;
 
-  html+=`<div class="dp-sub">Resultados por agente</div>`;
+  // Estado real de ejecucion por agente (distinto de los findings de abajo):
+  // solo presente para misiones tipo gmpai_document_validation, donde los
+  // "resultados por agente" son findings de evaluacion documental, no
+  // pruebas tecnicas PASS/FAIL. Ver gmpai_agent_execution_status.py.
+  const aes=d.agent_execution_status;
+  if(aes && aes.length){
+    const aesCls={EXECUTED_VERIFIED:'c-pass',RESULT_RECOVERED:'c-warn',CONFIGURED_ONLY:'c-mute',FAILED:'c-fail',NOT_APPLICABLE:'c-mute'};
+    html+=`<div class="dp-sub">Estado real de ejecución por agente <span class="chip c-info" style="font-size:8px">no confundir con findings</span></div>
+      <div class="card" style="padding:10px 12px;margin-bottom:10px">
+        <div class="meta" style="font-size:10px;margin-bottom:6px">EXECUTED_VERIFIED requiere run_id+task_id+timestamps+log por ejecución. RESULT_RECOVERED: resultado real y verificable, sin esa metadata individual. CONFIGURED_ONLY: sin evidencia de ejecución.</div>`+
+      aes.map(row=>`<div class="between" style="margin-bottom:4px">
+          <span style="font-size:10.5px">${_gmpEscHtml(row.agent_id)}</span>
+          <span class="chip ${aesCls[row.estado_evidencia]||'c-mute'}" style="font-size:8.5px">${_gmpEscHtml(row.estado_evidencia)}</span>
+        </div>`).join('')+
+      `</div>`;
+  }
+
+  html+=`<div class="dp-sub">${_gmpEscHtml(d.results_by_agent_label || 'Resultados por agente')}</div>`;
   if(!rba.length){
     html+=`<div class="meta" style="color:var(--faint);margin-bottom:10px">No se han ejecutado pruebas funcionales aún para esta misión.</div>`;
   }
   html+=rba.map(block=>{
     const passed=block.tests.filter(t=>t.result==='PASS').length;
+    const passLabel=aes?'conformes':'PASS';
     return `<div class="card" style="padding:10px 12px;margin-bottom:8px">
       <div class="between" style="margin-bottom:6px">
         <span class="k mono">${_gmpEscHtml(block.agent_id)}</span>
-        <span class="chip ${passed===block.tests.length?'c-pass':'c-warn'}" style="font-size:9px">${passed}/${block.tests.length} PASS</span>
+        <span class="chip ${passed===block.tests.length?'c-pass':'c-warn'}" style="font-size:9px">${passed}/${block.tests.length} ${passLabel}</span>
       </div>`+
       block.tests.map(t=>{
         const cls=t.result==='PASS'?'c-pass':t.result==='FAIL'?'c-fail':'c-warn';
@@ -101,11 +119,17 @@ export function _renderGmpDashboard(pid, d){
       ${(d.pharma_interpretation||[]).map(s=>`<div style="margin-bottom:4px;font-size:11px">• ${_gmpEscHtml(s)}</div>`).join('')}
     </div>`;
 
+  // Los dominios que no aplican a esta misión (p.ej. OOS/HPLC en una misión
+  // de validación documental, no de laboratorio) se ocultan en vez de
+  // mostrarse como una etiqueta "ajena" con valor "no aplica" al lado —
+  // así el dashboard nunca sugiere que esta misión toca ese dominio.
+  const _gmpImplicationLines=[['OOS',gi.oos],['HPLC/SST',gi.hplc],['ALCOA+',gi.alcoa]]
+    .filter(([,v])=>!(typeof v==='string' && v.toLowerCase().startsWith('no aplica')))
+    .map(([label,v])=>`<div style="margin-bottom:4px;font-size:11px"><b>${label}:</b> ${_gmpNA(v && _gmpEscHtml(v))}</div>`)
+    .join('');
   html+=`<div class="dp-sub">Implicación GMP</div>
     <div class="card" style="padding:10px 12px;margin-bottom:10px">
-      <div style="margin-bottom:4px;font-size:11px"><b>OOS:</b> ${_gmpNA(gi.oos && _gmpEscHtml(gi.oos))}</div>
-      <div style="margin-bottom:4px;font-size:11px"><b>HPLC/SST:</b> ${_gmpNA(gi.hplc && _gmpEscHtml(gi.hplc))}</div>
-      <div style="font-size:11px"><b>ALCOA+:</b> ${_gmpNA(gi.alcoa && _gmpEscHtml(gi.alcoa))}</div>
+      ${_gmpImplicationLines || '<div class="meta" style="color:var(--faint)">Sin dominios de laboratorio aplicables a esta misión.</div>'}
     </div>`;
 
   html+=`<div class="dp-sub">Reglas Python vs LLM local (Ollama)</div>
@@ -117,6 +141,20 @@ export function _renderGmpDashboard(pid, d){
 
   html+=`<div class="dp-sub">Impacto operativo esperado <span class="chip c-warn" style="font-size:8px">ESTIMACIÓN</span></div>
     <div class="card" style="padding:10px 12px;margin-bottom:10px;font-size:10.5px">${_gmpEscHtml(d.operational_impact)}</div>`;
+
+  const fcs=d.finding_correction_summary;
+  if(fcs){
+    html+=`<div class="dp-sub">Matriz finding → corrección (resumen)</div>
+      <div class="card" style="padding:10px 12px;margin-bottom:10px">
+        <div class="meta mono" style="font-size:10.5px;line-height:1.9">
+          findings totales &nbsp; ${_gmpNA(fcs.findings_totales)}<br>
+          documentos afectados &nbsp; ${_gmpNA(fcs.documentos_afectados)}<br>
+          corregibles (propuesta generable) &nbsp; ${_gmpNA(fcs.corregibles)}<br>
+          evidencia requerida &nbsp; ${_gmpNA(fcs.evidencia_requerida)}<br>
+          decisión humana requerida &nbsp; ${_gmpNA(fcs.decision_humana_requerida)}
+        </div>
+      </div>`;
+  }
 
   html+=`<div class="dp-sub">Limitaciones</div>
     <div class="card" style="padding:10px 12px;margin-bottom:10px">

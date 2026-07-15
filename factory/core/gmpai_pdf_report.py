@@ -222,6 +222,30 @@ def build_final_report_pdf(data: dict) -> bytes:
         _kv(pdf, "  findings generados", meta.get("findings_count"), label_w=55)
         pdf.ln(1)
 
+    _h1(pdf, "4b. Estado real de ejecucion por agente (no confundir con findings)")
+    _p(pdf, "Los findings de la seccion 4 son el RESULTADO de una ejecucion, no la ejecucion "
+            "en si. Esta seccion clasifica cada agente segun evidencia de runtime real "
+            "(no autodeclarada): EXECUTED_VERIFIED requiere run_id+task_id+timestamps+log "
+            "por ejecucion; RESULT_RECOVERED significa que el resultado es real y "
+            "verificable pero sin esa metadata individual; CONFIGURED_ONLY significa que "
+            "no hay evidencia de ejecucion.", size=8)
+    aes = data.get("agent_execution_summary", {})
+    _kv(pdf, "EXECUTED_VERIFIED", aes.get("executed_verified", 0))
+    _kv(pdf, "RESULT_RECOVERED", aes.get("result_recovered", 0))
+    _kv(pdf, "CONFIGURED_ONLY", aes.get("configured_only", 0))
+    _kv(pdf, "FAILED", aes.get("failed", 0))
+    pdf.ln(1)
+    for row in data.get("agent_execution_status", []):
+        _p(pdf, f"{row['agent_id']} — {row['estado_evidencia']}", bold=True, size=9)
+        _p(pdf, f"  {row['funcion']}", size=7.8, color=(90, 90, 90))
+        _kv(pdf, "  modelo/regla", row.get("modelo_o_regla"), label_w=55)
+        _kv(pdf, "  llamadas reales detectadas", row.get("llamadas_reales_detectadas"), label_w=55)
+        _kv(pdf, "  llamadas fallback (sin texto)", row.get("llamadas_fallback_sin_texto"), label_w=55)
+        _kv(pdf, "  documentos asignados", row.get("documentos_asignados"), label_w=55)
+        _kv(pdf, "  findings producidos", row.get("findings_producidos"), label_w=55)
+        _p(pdf, "  " + row.get("justificacion", ""), size=7.2, color=(90, 90, 90))
+        pdf.ln(1)
+
     _h1(pdf, "5. Resultados por estado (findings de cumplimiento)")
     fs = data["findings_by_status"]
     for st in ("cumple", "cumple_parcialmente", "no_cumple", "evidencia_insuficiente", "no_aplica"):
@@ -241,6 +265,21 @@ def build_final_report_pdf(data: dict) -> bytes:
         if len(rows) > 25:
             _p(pdf, f"... y {len(rows) - 25} findings adicionales (ver compliance_matrices/{aid}.json)", size=7.5)
         pdf.ln(2)
+
+    _h1(pdf, "6b. Matriz finding -> correccion (resumen)")
+    fcs = data.get("finding_correction_summary", {})
+    _p(pdf, "Clasificacion determinista (sin reprocesar nada) de los findings reales en: "
+            "correccion generable (no_cumple/cumple_parcialmente, con recomendacion "
+            "trazable del propio agente), evidencia requerida (evidencia_insuficiente — "
+            "nunca se inventan hechos), o decision humana. Matriz completa en "
+            "compliance_matrices/finding_correction_matrix.json.", size=8)
+    _kv(pdf, "Findings totales", fcs.get("findings_totales", 0))
+    _kv(pdf, "Documentos afectados", fcs.get("documentos_afectados", 0))
+    _kv(pdf, "Corregibles (propuesta generable)", fcs.get("corregibles", 0))
+    _kv(pdf, "Evidencia requerida", fcs.get("evidencia_requerida", 0))
+    _kv(pdf, "No aplica (requiere justificacion)", fcs.get("no_aplica_requiere_justificacion", 0))
+    _kv(pdf, "Decision humana requerida", fcs.get("decision_humana_requerida", 0))
+    pdf.ln(2)
 
     _h1(pdf, "7. Top riesgos (no_cumple / cumple_parcialmente, priorizados)")
     for r in data.get("top_risks", []):

@@ -69,6 +69,74 @@ def is_llm_endpoint(endpoint: str) -> bool:
     return "/api/v1/query" in (endpoint or "")
 
 
+# ── gmpai_document_validation — integracion de evidencia real ───────────────
+# Esta mision NO usa el catalogo de pruebas funcionales (factory/test_catalogs/,
+# console.read_catalog) ni un contenedor propio: es un pipeline de analisis
+# documental (agentes deterministas + 1 agente LLM real via Ollama) cuya
+# evidencia real vive en el RC canonico (pipeline_pilot_llm.json) y en
+# factory/docs/gmpai_remediation_tracker.json. Sin esta rama, build_gmp_report()
+# reportaba 0 ejecuciones, "Ollama no ejecutado" y texto generico de OOS/HPLC
+# (heredado del pilot oos_hplc_investigator) para esta mision, pese a que la
+# evidencia real de 267 hallazgos sobre 32 documentos ya existia y estaba
+# aprobada. Esta funcion NO reprocesa documentos ni invoca agentes: solo
+# reutiliza gmpai_artifact_service.build_final_report_data() (mismos datos ya
+# validados en el paquete de cierre) y los remapea al contrato generico.
+GMPAI_DOC_VALIDATION_PROJECT_ID = "gmpai_document_validation"
+_GMPAI_LLM_AGENTS = {"requirements_traceability_agent"}
+_GMPAI_ESTADO_TO_RESULT = {
+    "cumple": "PASS",
+    "no_cumple": "FAIL",
+    "cumple_parcialmente": "FAIL",
+    "evidencia_insuficiente": "FAIL",
+    "no_aplica": "SKIP",
+}
+_GMPAI_MAX_FINDINGS_PER_AGENT = 30
+
+
+def _load_gmpai_document_validation_data() -> dict | None:
+    from factory.services import gmpai_artifact_service as gmpai_svc
+    try:
+        return gmpai_svc.build_final_report_data()
+    except gmpai_svc.ArtifactNotFound:
+        return None
+
+
+def _gmpai_results_by_agent(gmpai_data: dict) -> list[dict]:
+    """Mapea las matrices de cumplimiento reales (findings del RC canonico) al
+    formato results_by_agent[*].tests[*] que ya consume el dashboard/PDF
+    genericos — cada finding real se expone como un registro de ejecucion,
+    en vez de dejar la lista vacia por no existir un catalogo de pruebas."""
+    rc_decided_at = gmpai_data.get("rc_canonical", {}).get("decided_at") or NO_DATA
+    out = []
+    for aid, rows in gmpai_data.get("matrices", {}).items():
+        uses_llm = aid in _GMPAI_LLM_AGENTS
+        tests = []
+        for r in rows[:_GMPAI_MAX_FINDINGS_PER_AGENT]:
+            estado = r.get("estado") or NO_DATA
+            tests.append({
+                "test_id": (r.get("documento") or NO_DATA)[:80],
+                "title": r.get("requisito_regulatorio") or estado,
+                "endpoint": f"agente_documental:{aid}" + (
+                    " (LLM local Ollama)" if uses_llm else " (reglas deterministicas Python)"),
+                "result": _GMPAI_ESTADO_TO_RESULT.get(estado, "FAIL"),
+                "run_by": "pipeline_pilot_llm (RC canonico)",
+                "run_at": rc_decided_at,
+                "relevant_datum": r.get("brecha") or r.get("confianza") or NO_DATA,
+                "uses_llm": uses_llm,
+                "llm_evidence": None,
+            })
+        if len(rows) > _GMPAI_MAX_FINDINGS_PER_AGENT:
+            tests.append({
+                "test_id": NO_DATA,
+                "title": f"... y {len(rows) - _GMPAI_MAX_FINDINGS_PER_AGENT} hallazgos adicionales "
+                          f"(ver informe final GMPAI / compliance_matrices/{aid}.json)",
+                "endpoint": NO_DATA, "result": "SKIP", "run_by": NO_DATA, "run_at": NO_DATA,
+                "relevant_datum": NO_DATA, "uses_llm": uses_llm, "llm_evidence": None,
+            })
+        out.append({"agent_id": aid, "uses_llm": uses_llm, "tests": tests})
+    return out
+
+
 def build_gmp_report(project_id: str) -> dict:
     """
     Agregador read-only del Dashboard GMP (W4.1). NO audita. Reutiliza
@@ -100,6 +168,15 @@ def build_gmp_report(project_id: str) -> dict:
     requirement_spec = read_yaml_or_none(design_dir / "requirement_spec.yaml")
     pending_docs_yaml = read_yaml_or_none(design_dir / "pending_documents.yaml") or {}
     task_md = read_text_excerpt(paths.WS_BASE / project_id / "task.md")
+
+    gmpai_data = (
+        _load_gmpai_document_validation_data()
+        if project_id == GMPAI_DOC_VALIDATION_PROJECT_ID else None
+    )
+    gmpai_rem_open = (
+        [i for i in gmpai_data.get("remediation_items", []) if i.get("estado") == "open"]
+        if gmpai_data else []
+    )
 
     # ── meta ──
     mission_block = summary["mission"]
@@ -155,10 +232,15 @@ def build_gmp_report(project_id: str) -> dict:
             "uses_llm": is_llm_endpoint(endpoint if isinstance(endpoint, str) else ""),
             "llm_evidence": rec.get("llm_evidence"),
         })
-    results_by_agent = [
-        {"agent_id": aid, "uses_llm": any(t["uses_llm"] for t in tests), "tests": tests}
-        for aid, tests in results_by_agent_map.items()
-    ]
+    if gmpai_data:
+        # Esta mision no tiene catalogo de pruebas funcionales (factory/test_catalogs/):
+        # su evidencia real de ejecucion vive en el RC canonico, no en test-results.
+        results_by_agent = _gmpai_results_by_agent(gmpai_data)
+    else:
+        results_by_agent = [
+            {"agent_id": aid, "uses_llm": any(t["uses_llm"] for t in tests), "tests": tests}
+            for aid, tests in results_by_agent_map.items()
+        ]
 
     # ── interpretación farmacéutica (derivada de conteos reales, no inventada) ──
     pharma_interpretation = []
@@ -187,34 +269,74 @@ def build_gmp_report(project_id: str) -> dict:
         passed = sum(1 for t in matched if t["result"] == "PASS")
         return f"{passed}/{len(matched)} pruebas PASS sobre evidencia real ejecutada."
 
-    gmp_implication = {
-        "oos": _domain_summary(("oos_",)),
-        "hplc": _domain_summary(("sst_", "peaks_", "rsd_")),
-        "alcoa": _domain_summary(("alcoa_", "audit_")),
-    }
+    if gmpai_data:
+        # Esta mision es de validacion documental, no de laboratorio: OOS/HPLC
+        # no aplican. ALCOA+ si aplica y tiene evidencia real (alcoa_plus_agent).
+        def _gmpai_agent_summary(aid: str) -> str:
+            rows = gmpai_data["matrices"].get(aid, [])
+            if not rows:
+                return NO_DATA
+            passed = sum(1 for r in rows if r.get("estado") == "cumple")
+            return f"{passed}/{len(rows)} conformes (agente {aid}, evidencia real del RC canonico)."
+
+        gmp_implication = {
+            "oos": "no aplica a esta mision (validacion documental, no laboratorio de OOS).",
+            "hplc": "no aplica a esta mision (validacion documental, no laboratorio HPLC/SST).",
+            "alcoa": _gmpai_agent_summary("alcoa_plus_agent"),
+        }
+    else:
+        gmp_implication = {
+            "oos": _domain_summary(("oos_",)),
+            "hplc": _domain_summary(("sst_", "peaks_", "rsd_")),
+            "alcoa": _domain_summary(("alcoa_", "audit_")),
+        }
 
     # ── reglas vs LLM ──
-    all_catalog_tests = [
-        (a.get("agent_id"), t)
-        for a in (catalog.get("agents", []) if catalog else [])
-        for t in a.get("tests", [])
-    ]
-    deterministic_endpoints = sorted({
-        t.get("endpoint") for _, t in all_catalog_tests if not is_llm_endpoint(t.get("endpoint", ""))
-    })
-    llm_endpoints = sorted({
-        t.get("endpoint") for _, t in all_catalog_tests if is_llm_endpoint(t.get("endpoint", ""))
-    })
-    rules_vs_llm = {
-        "deterministic_endpoints": deterministic_endpoints,
-        "llm_endpoints": llm_endpoints,
-        "explanation": (
-            "Los endpoints deterministicos ejecutan logica Python de reglas fijas "
-            "(sin LLM); los endpoints LLM invocan Ollama local para inferencia. "
-            "El catalogo curado de esta mision se limita a casos aislados y "
-            "deterministicos (ver notas del catalogo)."
-        ),
-    }
+    if gmpai_data:
+        agents_meta = gmpai_data.get("agents", {})
+        deterministic_endpoints = sorted(
+            f"agente_documental:{aid}" for aid in agents_meta if aid not in _GMPAI_LLM_AGENTS
+        )
+        llm_endpoints = sorted(
+            f"agente_documental:{aid} (modelo Ollama)" for aid in agents_meta if aid in _GMPAI_LLM_AGENTS
+        )
+        model_used = next((m.get("model") for m in agents_meta.values() if m.get("model")), NO_DATA)
+        rules_vs_llm = {
+            "deterministic_endpoints": deterministic_endpoints,
+            "llm_endpoints": llm_endpoints,
+            "explanation": (
+                "fda_part11_agent, eu_annex11_agent y alcoa_plus_agent son deterministicos "
+                "(modulos Python puros, reglas fijas, sin LLM). requirements_traceability_agent "
+                "es el unico agente LLM real: invoca Ollama local (modelo del RC: "
+                f"{model_used}) via httpx directo a la API REST de Ollama (no via paquete "
+                "Python ollama), para evaluar trazabilidad GAMP 5 URS->FS->DS->IQ/OQ/PQ->SAT. "
+                "Nota: requirements_traceability_agent no registra el campo 'model' en sus "
+                "propios findings (limitacion conocida); el modelo mostrado es el declarado "
+                "por los otros agentes del mismo RC."
+            ),
+        }
+    else:
+        all_catalog_tests = [
+            (a.get("agent_id"), t)
+            for a in (catalog.get("agents", []) if catalog else [])
+            for t in a.get("tests", [])
+        ]
+        deterministic_endpoints = sorted({
+            t.get("endpoint") for _, t in all_catalog_tests if not is_llm_endpoint(t.get("endpoint", ""))
+        })
+        llm_endpoints = sorted({
+            t.get("endpoint") for _, t in all_catalog_tests if is_llm_endpoint(t.get("endpoint", ""))
+        })
+        rules_vs_llm = {
+            "deterministic_endpoints": deterministic_endpoints,
+            "llm_endpoints": llm_endpoints,
+            "explanation": (
+                "Los endpoints deterministicos ejecutan logica Python de reglas fijas "
+                "(sin LLM); los endpoints LLM invocan Ollama local para inferencia. "
+                "El catalogo curado de esta mision se limita a casos aislados y "
+                "deterministicos (ver notas del catalogo)."
+            ),
+        }
 
     # ── auditoría y trazabilidad ──
     canonical_rc_manifest = next(
@@ -266,6 +388,18 @@ def build_gmp_report(project_id: str) -> dict:
     if not pending_before_golive:
         pending_before_golive = [NO_DATA]
 
+    if gmpai_data:
+        # Esta mision es analisis documental puro, sin despliegue Docker por
+        # diseno (mission.yaml: "sin Docker — analisis documental puro") — el
+        # aviso generico de deployment no aplica y es enganoso aqui. Los
+        # pendientes reales son las remediaciones abiertas del tracker
+        # (REM-GMPAI-001+), no un pending_documents.yaml vacio.
+        limitations = gmpai_data.get("limitations") or [NO_DATA]
+        pending_before_golive = [
+            f"{i['id']} [{i.get('severidad', '?')}] {i.get('hallazgo', '')}"
+            for i in gmpai_rem_open
+        ] or [NO_DATA]
+
     # ── resumen ejecutivo (derivado de conteos reales) ──
     total_tests = sum(len(b["tests"]) for b in results_by_agent)
     total_pass = sum(1 for b in results_by_agent for t in b["tests"] if t["result"] == "PASS")
@@ -288,7 +422,27 @@ def build_gmp_report(project_id: str) -> dict:
             "Existen documentos regulatorios PENDING_DOCUMENT sin confirmar; deben "
             "resolverse antes de un go-live regulatorio."
         )
+    if gmpai_data and gmpai_rem_open:
+        conclusion_parts.append(
+            f"Existe(n) {len(gmpai_rem_open)} remediacion(es) abierta(s) sin cerrar "
+            f"(p.ej. {gmpai_rem_open[0]['id']}: {gmpai_rem_open[0].get('hallazgo', '')}) "
+            "pendiente(s) de decision humana antes de cierre regulatorio completo."
+        )
     conclusion = " ".join(conclusion_parts)
+
+    operational_impact = (
+        (
+            "Los 8 agentes de esta mision (doc_inventory_version_agent, "
+            "doc_classification_agent, fda_part11_agent, eu_annex11_agent, alcoa_plus_agent, "
+            "requirements_traceability_agent, compliance_risk_agent, final_review_agent) "
+            "analizan documentacion de validacion (URS, FS, DS, SAT, arquitectura, narrativas "
+            "de control) contra FDA 21 CFR Part 11, EU GMP Annex 11 y ALCOA+, generando "
+            "matrices de cumplimiento y hallazgos trazables a documento y seccion. Esta es "
+            "una EVALUACION ASISTIDA por IA, no una aprobacion GMP automatica. Esta mision "
+            "analiza documentacion de validacion de sistemas (URS/FS/DS/SAT/arquitectura); "
+            "no analiza resultados analiticos de muestras de laboratorio."
+        ) if gmpai_data else OPERATIONAL_IMPACT_TEXT
+    )
 
     report = {
         "meta": meta,
@@ -301,11 +455,20 @@ def build_gmp_report(project_id: str) -> dict:
         "gmp_implication": gmp_implication,
         "rules_vs_llm": rules_vs_llm,
         "audit_traceability": audit_traceability,
-        "operational_impact": OPERATIONAL_IMPACT_TEXT,
+        "operational_impact": operational_impact,
         "limitations": limitations,
         "pending_before_golive": pending_before_golive,
         "conclusion": conclusion,
     }
+    if gmpai_data:
+        # Separacion explicita findings vs ejecuciones (ver auditoria REM-GMPAI-001):
+        # resultados_by_agent son FINDINGS, no pruebas tecnicas ni ejecuciones
+        # verificadas. Este bloque adicional es la clasificacion real de
+        # ejecucion por agente y el resumen de la matriz finding->correccion.
+        report["results_by_agent_label"] = "Findings por agente (evaluacion de documentos, NO pruebas tecnicas)"
+        report["agent_execution_status"] = gmpai_data.get("agent_execution_status", [])
+        report["agent_execution_summary"] = gmpai_data.get("agent_execution_summary", {})
+        report["finding_correction_summary"] = gmpai_data.get("finding_correction_summary", {})
 
     secret_values = [
         os.environ.get("FACTORY_API_KEY"),

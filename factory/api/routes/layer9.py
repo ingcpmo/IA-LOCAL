@@ -783,20 +783,35 @@ def get_gmp_report_pdf(project_id: str, record_by: str | None = Query(default=No
     agregador que /gmp-report. Read-only por defecto (NO audita). Si se pasa
     ?record_by= con un nombre real, audita exactamente 1 evento de
     trazabilidad de "informe generado" (no re-audita nada de W4).
+
+    gmpai_document_validation NO usa este camino: pdf_report_robust.py fue
+    escrito para el pilot oos_hplc_investigator (secciones y texto de dominio
+    de laboratorio OOS/HPLC/SST hardcodeados, catalogo de pruebas funcionales
+    inexistente para esta mision documental) y producia un PDF con contenido
+    ajeno a esta mision. Se reusa el generador ya validado de
+    gmpai_artifact_service/gmpai_pdf_report (mismo RC canonico, sin
+    reprocesar documentos ni agentes) — ver auditoria en factory/docs/
+    GMPAI_REMEDIATION_TRACKER.md y el commit que corrige este bug.
     """
     from datetime import datetime, timezone
 
-    from factory.core.pdf_report_robust import compose_robust_report
-
-    report = gmp_report_service.build_gmp_report(project_id)
-    pdf_bytes = compose_robust_report(report, project_id)
+    if project_id == _gmpai.PROJECT_ID:
+        from factory.core.gmpai_pdf_report import build_final_report_pdf
+        report_data = _gmpai.build_final_report_data()
+        pdf_bytes = build_final_report_pdf(report_data)
+        canonical_rc = report_data["rc_canonical"]["rc_id"]
+    else:
+        from factory.core.pdf_report_robust import compose_robust_report
+        report = gmp_report_service.build_gmp_report(project_id)
+        pdf_bytes = compose_robust_report(report, project_id)
+        canonical_rc = report["meta"]["canonical_rc"]
 
     if record_by:
         name = _console.validate_run_by(record_by)
         from factory.core.audit_writer import write_event as _we
         _we("gmp_report_generated", project_id, {
             "record_by": name,
-            "canonical_rc": report["meta"]["canonical_rc"],
+            "canonical_rc": canonical_rc,
         })
 
     ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")

@@ -100,6 +100,8 @@ def test_run_packaging_creates_all_required_artifacts(tmp_reports_base):
         "corrected_documents/REM-GMPAI-001_propuesta_remediacion_draft_v1.docx",
         "corrected_documents/README_limitaciones.md",
         "audit_summary/audit_verify.json",
+        "agent_reports/agent_execution_status.json",
+        "compliance_matrices/finding_correction_matrix.json",
     ]
     for rel in required:
         assert (run_dir / rel).exists(), f"falta {rel}"

@@ -156,7 +156,7 @@ def build_final_report_data() -> dict:
         key=lambda f: {"critica": 0, "mayor": 1, "menor": 2, "": 3, "no_determinada": 3}.get(f.get("severidad", ""), 3),
     )[:10]
 
-    return {
+    report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "project": {
             "project_id": PROJECT_ID,
@@ -229,6 +229,17 @@ def build_final_report_data() -> dict:
         ),
     }
 
+    # Estado de ejecucion real por agente (distinto de findings) y resumen de
+    # la matriz finding->correccion — ambos derivados solo de datos ya
+    # presentes en `report`, sin reprocesar nada.
+    from factory.services import gmpai_agent_execution_status as _aes
+    from factory.services import gmpai_finding_correction_service as _fcs
+    report["agent_execution_status"] = _aes.build_agent_execution_status(report)
+    report["agent_execution_summary"] = _aes.summarize_agent_execution_status(report["agent_execution_status"])
+    report["finding_correction_summary"] = _fcs.summarize_correction_matrix(
+        _fcs.build_finding_correction_matrix(report))
+    return report
+
 
 def build_remediation_tracker_data() -> dict:
     return {
@@ -251,6 +262,7 @@ def run_packaging(run_id: str | None = None, recorded_by: str | None = None) -> 
     RC canónico ya aprobado y empaqueta."""
     from factory.core.gmpai_pdf_report import build_final_report_pdf, build_remediation_tracker_pdf
     from factory.services.gmpai_docx_draft import build_remediation_draft_docx
+    from factory.services import gmpai_finding_correction_service as _fcs
 
     run_id = run_id or _new_run_id()
     run_dir = GMPAI_REPORTS_BASE / run_id
@@ -263,6 +275,11 @@ def run_packaging(run_id: str | None = None, recorded_by: str | None = None) -> 
 
     report_data = build_final_report_data()
     tracker_data = build_remediation_tracker_data()
+
+    agent_execution_status = report_data["agent_execution_status"]
+    agent_execution_summary = report_data["agent_execution_summary"]
+    correction_matrix = _fcs.build_finding_correction_matrix(report_data)
+    correction_matrix_summary = report_data["finding_correction_summary"]
 
     artifacts: list[dict] = []
 
@@ -307,23 +324,56 @@ def run_packaging(run_id: str | None = None, recorded_by: str | None = None) -> 
         content = json.dumps(payload, indent=2, ensure_ascii=False).encode("utf-8")
         _write(f"agent_reports/{agente}.json", content, agente=agente)
 
-    # 4. Documento corregido controlado (DOCX) — solo REM-GMPAI-001, el único
-    # finding con suficiente especificidad (familia + brecha + recomendacion
-    # concreta) para una propuesta controlada. Los otros 266 findings son
-    # gaps de evidencia (Part11/Annex11/ALCOA+), no ediciones de texto sobre
-    # un documento original — NO se fabrica una correccion sin soporte.
+    # 4. Documento corregido controlado (DOCX) para REM-GMPAI-001 (gap de
+    # protocolo IQ/OQ/PQ, finding a nivel de familia documental).
     docx_bytes, docx_sha256 = build_remediation_draft_docx(report_data)
     _write("corrected_documents/REM-GMPAI-001_propuesta_remediacion_draft_v1.docx", docx_bytes,
            agente="requirements_traceability_agent", estado="draft")
+
+    # 4b. Estado de ejecucion real de los 8 agentes (EXECUTED_VERIFIED /
+    # RESULT_RECOVERED / CONFIGURED_ONLY / FAILED / NOT_APPLICABLE) — separa
+    # findings de ejecuciones (ver auditoria de runtime, factory/services/
+    # gmpai_agent_execution_status.py).
+    _write("agent_reports/agent_execution_status.json",
+           json.dumps({"agents": agent_execution_status, "summary": agent_execution_summary},
+                      indent=2, ensure_ascii=False).encode("utf-8"))
+
+    # 4c. Matriz finding -> correccion sobre los 267 findings reales (no
+    # reprocesa nada: clasificacion determinista sobre datos ya aprobados).
+    _write("compliance_matrices/finding_correction_matrix.json",
+           json.dumps({"matrix": correction_matrix, "summary": correction_matrix_summary},
+                      indent=2, ensure_ascii=False).encode("utf-8"))
+
+    # 4d. Borrador consolidado del piloto controlado de verificacion (familia
+    # Rockwell::MCCPDC-215115305, 1 documento real, 3 ejecuciones EXECUTED_
+    # VERIFIED con run_id/task_id/timestamps — ver
+    # factory/workspaces/gmpai_document_validation/run_pilot_verification.py
+    # y pilot_verification_result.json). Opcional: solo se incluye si el
+    # piloto ya se ejecuto; no se genera aqui ni se reprocesan los 32
+    # documentos si no existe.
+    pilot_path = paths.WS_BASE / PROJECT_ID / "pilot_verification_result.json"
+    if pilot_path.exists():
+        from factory.services.gmpai_finding_correction_service import build_document_correction_draft_docx
+        pilot = json.loads(pilot_path.read_text(encoding="utf-8"))
+        pilot_docx, pilot_sha = build_document_correction_draft_docx(
+            pilot["pilot_document"], pilot["findings"], report_data["agents"],
+            pilot["pilot_document_sha256"])
+        _write(
+            f"corrected_documents/PILOTO_{pilot['pilot_document']}_correccion_consolidada_draft_v1.docx",
+            pilot_docx, estado="draft",
+        )
+        _write("agent_reports/pilot_verification_result.json",
+               json.dumps(pilot, indent=2, ensure_ascii=False).encode("utf-8"))
+
     limitation_note = (
-        "LIMITACION DECLARADA: solo se genero un borrador controlado para "
-        "REM-GMPAI-001 (gap de protocolo IQ/OQ/PQ, finding a nivel de familia "
-        "documental con recomendacion concreta). Los 266 findings restantes "
-        "(fda_part11_agent, eu_annex11_agent, alcoa_plus_agent) son hallazgos "
-        "de evidencia insuficiente o no-cumplimiento sobre AUSENCIA de "
-        "informacion en los documentos originales, no errores de texto "
-        "puntuales corregibles — generar una 'correccion' ahi implicaria "
-        "fabricar contenido regulatorio no verificado. No se modifico ni "
+        "LIMITACION DECLARADA: el borrador consolidado por documento (DOCX) solo se "
+        "genero para REM-GMPAI-001 (nivel de familia documental) y, si el piloto de "
+        "verificacion se ejecuto, para el documento del piloto. La matriz finding -> "
+        "correccion (compliance_matrices/finding_correction_matrix.json) SI clasifica "
+        "los 267 findings reales (83 corregibles / 184 con evidencia insuficiente), pero "
+        "generar el DOCX consolidado para los 14 documentos Rockwell restantes es "
+        "trabajo pendiente (no se genera aqui para evitar declarar terminada una "
+        "capacidad que solo se demostro sobre 1-2 documentos). No se modifico ni "
         "sobrescribio ningun documento original en GMPAI/source/."
     )
     _write("corrected_documents/README_limitaciones.md", limitation_note.encode("utf-8"))
