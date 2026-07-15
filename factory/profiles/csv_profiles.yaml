@@ -1,2 +1,28 @@
 base_agent: csv
-profiles: {}
+profiles:
+  csv_ot_traceability_profile:
+    profile_id: csv_ot_traceability_profile
+    base_agent: csv
+    coverage_estimate: "70%"
+    justification: >
+      El agente base csv ya cubre IQ/OQ/PQ, clasificacion GAMP5 y CSV gap
+      analysis (~70%). El delta añade trazabilidad explicita de requisitos
+      URS->FS->DS->IQ->OQ->PQ para documentacion de ingenieria OT
+      Rockwell/SCADA: verifica que cada etapa del V-model tenga al menos un
+      documento asociado por sistema/equipo, y detecta huecos (p.ej. un URS
+      de equipo sin FS/DS/protocolo/SAT correspondiente en el corpus).
+      Mision de origen: gmpai_document_validation.
+    rag_collection: n/a — evaluacion estructural sobre inventario documental, no requiere corpus RAG regulatorio
+    corpus_pending: []
+    corpus_available:
+      - "GAMP 5 V-model (URS/FS/DS/IQ/OQ/PQ) — estructura publica, sin texto normativo reproducido"
+    test_questions:
+      - question: "El sistema Autoclave solo tiene un documento URS en el corpus, sin FS/DS/SAT asociados. ¿Cual es el estado de trazabilidad?"
+        expected_keywords: ["no_cumple", "faltan", "fs", "ds", "sat"]
+        acceptance: "Debe reportar no_cumple con severidad critica y listar explicitamente las etapas faltantes (FS, DS, protocolo, SAT)"
+      - question: "El proyecto Rockwell 215115305 tiene URS, FS, DS y SAT pero no protocolo IQ/OQ/PQ formal. ¿Cumple la trazabilidad V-model?"
+        expected_keywords: ["cumple_parcialmente", "protocol", "iq", "oq", "pq"]
+        acceptance: "Debe reportar cumple_parcialmente identificando la unica etapa faltante (protocolo de calificacion)"
+      - question: "¿Puede este agente declarar trazabilidad requisito-por-requisito dentro del contenido de cada documento?"
+        expected_keywords: ["fuera de alcance", "no verifico", "conjunto documental"]
+        acceptance: "Debe reconocer honestamente que esta pasada evalua cobertura de ETAPAS documentales, no trazabilidad linea-por-linea de cada requisito individual"

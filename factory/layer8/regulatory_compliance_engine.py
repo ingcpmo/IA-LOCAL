@@ -78,6 +78,11 @@ def generate_regulatory_matrix(spec: RequirementSpec) -> dict[str, Any]:
         "OOS": [("21_CFR_PART_211", "Investigación OOS"), ("FDA_OOS_GUIDANCE_2022", "Procedimiento OOS")],
         "DATA_INTEGRITY": [("21_CFR_PART_11", "Electronic records"), ("ALCOA_PLUS", "Principios ALCOA+")],
         "CAPA": [("21_CFR_PART_211", "CAPA sistema"), ("21_CFR_PART_820", "CAPA dispositivos")],
+        # Dominios de validación documental OT (Rockwell/SCADA).
+        "DOC_INVENTORY_VERSION": [("21_CFR_PART_11", "Control de registro documental con hash SHA-256 y versión")],
+        "DOC_CLASSIFICATION": [("21_CFR_PART_11", "Clasificación de registros electrónicos por tipo documental")],
+        "TRACEABILITY": [("ISPE_GAMP5", "Trazabilidad de requisitos URS→FS→DS→IQ→OQ→PQ")],
+        "COMPLIANCE_RISK": [("ICH_Q9", "Gestión de riesgo de calidad")],
     }
 
     source_status = {
@@ -85,6 +90,9 @@ def generate_regulatory_matrix(spec: RequirementSpec) -> dict[str, Any]:
         "21_CFR_PART_211": "available_as_reference",
         "21_CFR_PART_820": "available_as_reference",
         "ALCOA_PLUS": "available_as_reference",
+        "EU_GMP_ANNEX_11": "available_as_reference",
+        "ISPE_GAMP5": "available_as_reference",
+        "ICH_Q9": "available_as_reference",
         "FDA_OOS_GUIDANCE_2022": "PENDING_DOCUMENT",
         "ICH_Q2R1": "PENDING_DOCUMENT",
         "FDA_DI_GUIDANCE_2018": "PENDING_DOCUMENT",
@@ -102,6 +110,19 @@ def generate_regulatory_matrix(spec: RequirementSpec) -> dict[str, Any]:
                 "source_status": status,
                 "text": "PENDING_DOCUMENT — fuente PDF requerida antes de go-live" if status == "PENDING_DOCUMENT" else None,
             })
+
+    # Part 11 / Annex 11 / ALCOA+ se resuelven por el flag explícito de
+    # regulatory_scope (mismo criterio que agent_design_engine), no solo por
+    # keyword-matching de dominio — evita depender de que "DATA_INTEGRITY" se
+    # haya detectado por casualidad léxica.
+    if spec.annex11_required and "EU_ANNEX_11" not in {r["domain"] for r in matrix["requirements"]}:
+        matrix["requirements"].append({
+            "domain": "EU_ANNEX_11",
+            "regulation_ref": "EU_GMP_ANNEX_11",
+            "requirement": "Sistemas computarizados — EU GMP Annex 11",
+            "source_status": source_status["EU_GMP_ANNEX_11"],
+            "text": None,
+        })
 
     write_event("layer8_regulatory_matrix_generated", spec.project_id, {
         "domains_covered": spec.domains,
@@ -156,10 +177,19 @@ def generate_pending_documents(spec: RequirementSpec) -> list[dict[str, Any]]:
         {"id": "ICH_Q2R1", "title": "ICH Q2(R1) Validation of Analytical Procedures", "status": "PENDING_DOCUMENT",
          "url_hint": "https://www.ich.org/page/quality-guidelines (verificar URL oficial)"},
     ]
-    # Filtrar solo los relevantes según los documentos declarados en la misión
+    # Filtrar solo los relevantes según los documentos declarados PENDING en la
+    # misión. Antes: si spec.pending_documents venía vacío (todos los documentos
+    # de la misión están 'available', p.ej. gmpai_document_validation) el "or"
+    # caía a la lista completa de guías de laboratorio — falso PENDING_DOCUMENT
+    # para misiones que nunca las mencionan (documentación OT/SCADA sin HPLC/OOS).
+    # Correcto: sin coincidencia real, no hay pendientes que reportar aquí.
+    def _norm(s: str) -> str:
+        return re.sub(r"[\s_<>]+", " ", s.lower()).strip()
+
     relevant_ids = [d["id"] for d in pending if any(
-        p.lower() in d["title"].lower() for p in spec.pending_documents
-    )] or [d["id"] for d in pending]
+        _norm(p) in _norm(d["title"]) or _norm(d["title"]) in _norm(p)
+        for p in spec.pending_documents
+    )]
     return [d for d in pending if d["id"] in relevant_ids]
 
 

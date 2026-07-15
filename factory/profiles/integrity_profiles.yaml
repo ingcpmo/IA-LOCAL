@@ -27,3 +27,54 @@ profiles:
       - question: "Los resultados de HPLC se ingresan manualmente al LIMS; los archivos .raw no están vinculados. ¿Es conforme?"
         expected_keywords: ["original", "raw data", "datos originales", "link", "traceable", "11.10", "211.194"]
         acceptance: "Debe identificar gap ALCOA+ Original, citar preservación de datos crudos, recomendar vinculación instrumental"
+
+  integrity_part11_ot_profile:
+    profile_id: integrity_part11_ot_profile
+    base_agent: integrity
+    coverage_estimate: "70-75%"
+    justification: >
+      El agente integrity cubre ALCOA+, audit trail y 21 CFR Part 11 al 70-75%
+      para sistemas de datos de laboratorio/manufactura. El delta especializa
+      el contexto a sistemas OT (PLC/SCADA/HMI, Rockwell) donde los "registros
+      electrónicos" son logs de controlador, configuraciones de proyecto PLC y
+      credenciales de acceso a paneles/HMI en vez de LIMS. Mision de origen:
+      gmpai_document_validation (validacion documental Rockwell/SCADA).
+    rag_collection: ot_part11_reference
+    corpus_pending:
+      - "21 CFR Part 11 texto completo (PDF oficial FDA) — no disponible en la fabrica, solo se citan numeros de clausula publicos (11.10, 11.50, 11.70)"
+    corpus_available:
+      - "Identificadores de clausula 21 CFR 11.10(a)/(d)/(e)/(g), 11.50, 11.70 — numeracion publica, sin texto normativo reproducido"
+    test_questions:
+      - question: "Un panel PLC permite login con una cuenta generica 'operator' compartida por todo el turno. ¿Que clausula de Part 11 aplica y que riesgo representa?"
+        expected_keywords: ["11.10(d)", "access", "individual", "authorized", "shared account"]
+        acceptance: "Debe citar 21 CFR 11.10(d), identificar riesgo de atribucion (ALCOA+ Attributable) y recomendar cuentas individuales"
+      - question: "El HMI de MCCPDC no registra quien reconocio (acknowledge) una alarma critica. ¿Que brecha existe?"
+        expected_keywords: ["audit trail", "11.10(e)", "timestamp", "trazabilidad"]
+        acceptance: "Debe citar 21 CFR 11.10(e) (audit trail) y clasificar severidad segun impacto en trazabilidad de alarmas GMP"
+      - question: "La documentacion SAT no menciona validacion del software del PLC antes de puesta en marcha. ¿Es evidencia suficiente de cumplimiento 11.10(a)?"
+        expected_keywords: ["evidencia insuficiente", "validation", "11.10(a)"]
+        acceptance: "Debe responder 'evidencia insuficiente', nunca asumir cumplimiento sin evidencia documental explicita"
+
+  integrity_annex11_ot_profile:
+    profile_id: integrity_annex11_ot_profile
+    base_agent: integrity
+    coverage_estimate: "70%"
+    justification: >
+      Annex 11 comparte con Part 11/ALCOA+ el dominio de integridad de
+      registros electronicos y control de sistemas computarizados (~70% de
+      cobertura comun con el agente base integrity). El delta cubre los
+      clausulados propios de EU GMP Annex 11 (gestion de riesgo de CSV,
+      personal, proveedores/terceros, ciclo de vida, respaldo) para
+      documentacion OT Rockwell/SCADA. Mision de origen: gmpai_document_validation.
+    rag_collection: ot_annex11_reference
+    corpus_pending:
+      - "EU GMP Annex 11 texto completo (PDF oficial EMA) — no disponible en la fabrica, solo se citan numeros de clausula publicos (§4, §7.1, §9, §12, §17)"
+    corpus_available:
+      - "Identificadores de clausula Annex 11 §4 (risk management), §7.1 (data storage), §9 (audit trail), §12 (security), §17 (archiving) — numeracion publica"
+    test_questions:
+      - question: "No existe evaluacion de riesgo documentada para el sistema SCADA-PCS antes de su puesta en marcha. ¿Que clausula de Annex 11 aplica?"
+        expected_keywords: ["annex 11", "§4", "risk management", "risk assessment"]
+        acceptance: "Debe citar Annex 11 §4 (gestion de riesgo) y marcar evidencia insuficiente si no hay documento de risk assessment"
+      - question: "Los respaldos del proyecto PLC se guardan en un USB sin control de acceso. ¿Que riesgo de Annex 11 representa?"
+        expected_keywords: ["§7.1", "backup", "data storage", "security"]
+        acceptance: "Debe citar Annex 11 §7.1 y §12 (seguridad), clasificar severidad mayor/critica segun exposicion"

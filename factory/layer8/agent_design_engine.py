@@ -128,7 +128,7 @@ def decide_inherited_profiles_custom(spec: RequirementSpec) -> list[AgentDecisio
             routing_key="oos",
         ))
 
-    if "LIMS" in domains or "DATA_INTEGRITY" in domains:
+    if "LIMS" in domains:
         decisions.append(AgentDecision(
             agent_id="integrity_lims_profile",
             decision="profile",
@@ -140,6 +140,133 @@ def decide_inherited_profiles_custom(spec: RequirementSpec) -> list[AgentDecisio
                 "con un único agente especializado."
             ),
             routing_key="integrity|lims",
+        ))
+
+    # ── Validación documental OT (Rockwell/SCADA) — sin LIMS de laboratorio ──
+    # Los 3 dominios de integridad se separan explícitamente en vez de colapsar
+    # en integrity_lims_profile (ese perfil es específico de LIMS de lab, no aplica
+    # a documentación de ingeniería OT/PLC/SCADA).
+
+    if "DOC_INVENTORY_VERSION" in domains:
+        decisions.append(AgentDecision(
+            agent_id="doc_inventory_version_agent",
+            decision="new_agent",
+            base_agent=None,
+            profile_name=None,
+            rationale=(
+                "Inventario recursivo, verificación SHA-256 contra manifiesto y selección de "
+                "versión vigente (revisión/fecha/semver, con marcado de version_conflict ante "
+                "ambigüedad) es una capacidad determinista de control de ficheros. Ningún agente "
+                "base la cubre: son agentes conversacionales sobre corpus RAG, no herramientas "
+                "de inventario/hashing."
+            ),
+            routing_key="doc_inventory",
+        ))
+
+    if "DOC_CLASSIFICATION" in domains:
+        decisions.append(AgentDecision(
+            agent_id="doc_classification_agent",
+            decision="new_agent",
+            base_agent=None,
+            profile_name=None,
+            rationale=(
+                "Clasificar documentos de ingeniería OT (URS/FS/DS/arquitectura/narrativa de "
+                "control/listado de alarmas/protocolo/SAT/reporte) requiere heurísticas sobre "
+                "estructura, nombre y metadatos del archivo — no cubierto por agentes base "
+                "orientados a preguntas GMP conversacionales."
+            ),
+            routing_key="doc_classification",
+        ))
+
+    if spec.part11_required and "LIMS" not in domains:
+        decisions.append(AgentDecision(
+            agent_id="fda_part11_agent",
+            decision="profile",
+            base_agent="integrity",
+            profile_name="integrity_part11_ot_profile",
+            rationale=(
+                "El agente base integrity ya cubre ALCOA+, audit trail y 21 CFR Part 11 al "
+                "~70-75%. El delta especializa el contexto a registros/firmas electrónicas "
+                "generados por sistemas OT (PLC/SCADA/HMI) en vez de LIMS de laboratorio."
+            ),
+            routing_key="part11_ot",
+        ))
+
+    if spec.annex11_required:
+        decisions.append(AgentDecision(
+            agent_id="eu_annex11_agent",
+            decision="profile",
+            base_agent="integrity",
+            profile_name="integrity_annex11_ot_profile",
+            rationale=(
+                "Annex 11 comparte con Part 11/ALCOA+ el dominio de integridad de registros "
+                "electrónicos y controles de sistemas computarizados (~70% de cobertura común). "
+                "El delta cubre los clausulados propios de EU GMP Annex 11 (gestión de riesgo "
+                "de CSV, personal, proveedores/terceros, ciclo de vida) ausentes en un agente "
+                "base orientado a normativa FDA."
+            ),
+            routing_key="annex11_ot",
+        ))
+
+    if spec.alcoa_plus_required and "LIMS" not in domains:
+        decisions.append(AgentDecision(
+            agent_id="alcoa_plus_agent",
+            decision="inherit",
+            base_agent="integrity",
+            profile_name=None,
+            rationale=(
+                "La evaluación de los 9 atributos ALCOA+ es la capacidad central ya descrita "
+                "del agente base integrity ('ALCOA+ attribute assessment'). Se hereda "
+                "directamente sin adaptación — crear un perfil aquí duplicaría al agente "
+                "Part 11/Annex 11."
+            ),
+            routing_key="alcoa_plus",
+        ))
+
+    if "TRACEABILITY" in domains:
+        decisions.append(AgentDecision(
+            agent_id="requirements_traceability_agent",
+            decision="profile",
+            base_agent="csv",
+            profile_name="csv_ot_traceability_profile",
+            rationale=(
+                "El agente base csv ya cubre IQ/OQ/PQ y clasificación GAMP5 (~70%). El delta "
+                "añade trazabilidad explícita URS→FS→DS→IQ→OQ→PQ para documentación OT "
+                "Rockwell/SCADA: verifica que cada requisito de URS tenga cobertura en FS/DS "
+                "y en el protocolo de prueba correspondiente."
+            ),
+            routing_key="traceability_ot",
+        ))
+
+    if "COMPLIANCE_RISK" in domains:
+        decisions.append(AgentDecision(
+            agent_id="compliance_risk_agent",
+            decision="new_agent",
+            base_agent=None,
+            profile_name=None,
+            rationale=(
+                "Consolidar hallazgos de los demás agentes en una matriz de riesgo (severidad × "
+                "probabilidad × detectabilidad) y priorizar brechas es una función de síntesis "
+                "cruzada entre agentes, no una conversación sobre corpus RAG de un solo dominio. "
+                "Ningún agente base la cubre."
+            ),
+            routing_key="compliance_risk",
+        ))
+
+    if "FINAL_REVIEW_GATE" in domains:
+        decisions.append(AgentDecision(
+            agent_id="final_review_agent",
+            decision="new_agent",
+            base_agent=None,
+            profile_name=None,
+            rationale=(
+                "El agente de revisión final consolida todos los hallazgos, aplica el gate de "
+                "gobierno (no declarar cumplimiento GMP final ni aprobar documentos "
+                "automáticamente) y prepara el paquete para decisión humana. Es lógica de "
+                "orquestación/gobierno propia de esta misión, no una capacidad de ningún "
+                "agente base."
+            ),
+            routing_key="final_review",
         ))
 
     if "HPLC" in domains:

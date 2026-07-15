@@ -12,6 +12,14 @@
       ],
       "status": "active",
       "created_at": "2026-06-10T23:38:50.417054+00:00"
+    },
+    {
+      "id": "gmpai_document_validation",
+      "name": "Evaluacion documental GMP — Rockwell y SCADA",
+      "description": "Analizar los 32 documentos de Rockwell y SCADA, seleccionar las versiones vigentes, crear agentes especializados y determinar si la documentacion esta completa, trazable y alineada con FDA 21 CFR Part 11, EU GMP Annex 11 y principios ALCOA+.",
+      "requirements": [],
+      "status": "active",
+      "created_at": "2026-07-14T04:18:30.028641+00:00"
     }
   ]
 }

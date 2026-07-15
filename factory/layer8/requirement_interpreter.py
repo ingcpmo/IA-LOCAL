@@ -23,6 +23,26 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
     "OOS": ["oos", "out of specification", "out-of-specification", "investigación", "fase i", "fase ii", "oos guidance"],
     "DATA_INTEGRITY": ["data integrity", "integridad de datos", "alcoa", "21 cfr part 11", "part 11", "audit trail"],
     "CAPA": ["capa", "corrective action", "preventive action", "5-why", "fishbone", "fta", "fault tree"],
+    # Dominios de misiones de validación documental (inventario/clasificación/
+    # trazabilidad de documentación de ingeniería OT — Rockwell/SCADA/CSV).
+    "DOC_INVENTORY_VERSION": [
+        "inventariar", "sha256", "version vigente", "versiones vigentes",
+        "control de versiones", "duplicad", "conflicto de version",
+    ],
+    "DOC_CLASSIFICATION": [
+        "clasificar", "clasificacion documental", "urs, fs, ds", "tipo de documento",
+    ],
+    "TRACEABILITY": [
+        "urs-fs-ds", "urs–fs–ds", "trazabilidad", "iq-oq-pq", "iq/oq/pq", "requisitos trazables",
+    ],
+    "COMPLIANCE_RISK": [
+        "evaluacion de riesgos", "evaluación de riesgos", "gestion de riesgos",
+        "gestión de riesgos", "matriz de riesgo",
+    ],
+    "FINAL_REVIEW_GATE": [
+        "revision humana", "revisión humana", "decision humana", "decisión humana",
+        "accept/reject/request_changes", "no declara cumplimiento",
+    ],
 }
 
 REGULATORY_KEYWORDS: dict[str, list[str]] = {
@@ -30,6 +50,7 @@ REGULATORY_KEYWORDS: dict[str, list[str]] = {
     "21_CFR_PART_820": ["21 cfr part 820", "21 cfr 820", "part 820", "cfr 820"],
     "21_CFR_PART_11": ["21 cfr part 11", "21 cfr 11", "part 11", "cfr 11"],
     "ALCOA_PLUS": ["alcoa+", "alcoa plus", "alcoa"],
+    "EU_GMP_ANNEX_11": ["eu gmp annex 11", "annex 11", "anexo 11"],
 }
 
 PENDING_DOC_MARKERS = [
@@ -49,6 +70,7 @@ class RequirementSpec:
     dual_use: bool
     part11_required: bool
     alcoa_plus_required: bool
+    annex11_required: bool
     client_needs: list[str]
     constraints: list[str]
     pending_documents: list[str]
@@ -62,6 +84,7 @@ class RequirementSpec:
             "dual_use": self.dual_use,
             "part11_required": self.part11_required,
             "alcoa_plus_required": self.alcoa_plus_required,
+            "annex11_required": self.annex11_required,
             "client_needs": self.client_needs,
             "constraints": self.constraints,
             "pending_documents": self.pending_documents,
@@ -111,6 +134,7 @@ def extract_regulatory_scope(mission: dict) -> dict[str, Any]:
         "dual_use": dual_use,
         "part11_required": scope_flags.get("21_CFR_PART_11", False),
         "alcoa_plus_required": scope_flags.get("ALCOA_PLUS", False),
+        "annex11_required": scope_flags.get("EU_GMP_ANNEX_11", False),
     }
 
 
@@ -124,6 +148,11 @@ def extract_client_needs(objective: str) -> list[str]:
         "OOS": "Investigación OOS Fase I/II conforme FDA OOS Guidance 2022",
         "DATA_INTEGRITY": "Control de integridad de datos (ALCOA+ / 21 CFR Part 11)",
         "CAPA": "Gestión de CAPA de laboratorio (5-Why, Fishbone, FTA)",
+        "DOC_INVENTORY_VERSION": "Inventario documental, verificación SHA-256 y selección de versión vigente",
+        "DOC_CLASSIFICATION": "Clasificación de documentos por tipo (URS/FS/DS/arquitectura/narrativa/SAT/reporte)",
+        "TRACEABILITY": "Trazabilidad de requisitos URS→FS→DS→IQ→OQ→PQ",
+        "COMPLIANCE_RISK": "Evaluación de riesgos y priorización de brechas de cumplimiento",
+        "FINAL_REVIEW_GATE": "Consolidación final con gate de revisión humana (sin auto-aprobación)",
     }
     for domain, keywords in DOMAIN_KEYWORDS.items():
         if any(kw in text for kw in keywords):
@@ -168,6 +197,7 @@ def generate_requirement_spec(project_id: str, mission: dict) -> RequirementSpec
         dual_use=reg_scope["dual_use"],
         part11_required=reg_scope["part11_required"],
         alcoa_plus_required=reg_scope["alcoa_plus_required"],
+        annex11_required=reg_scope["annex11_required"],
         client_needs=client_needs,
         constraints=constraints,
         pending_documents=pending_docs,

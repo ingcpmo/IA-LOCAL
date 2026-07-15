@@ -94,6 +94,23 @@ class TestRequirementInterpreter:
         scope = extract_regulatory_scope(mission)
         assert scope["alcoa_plus_required"] is True
 
+    def test_regulatory_scope_detects_eu_annex11(self):
+        mission = {**_LAB_QC_MISSION, "objective": _LAB_QC_MISSION["objective"] + " EU GMP Annex 11"}
+        scope = extract_regulatory_scope(mission)
+        assert scope["annex11_required"] is True
+
+    def test_regulatory_scope_annex11_false_by_default(self):
+        scope = extract_regulatory_scope(_LAB_QC_MISSION)
+        assert scope["annex11_required"] is False
+
+    def test_detects_doc_inventory_version_domain(self):
+        domains = extract_domains("inventariar 32 archivos y verificar contra SHA256SUMS, seleccionar versiones vigentes")
+        assert "DOC_INVENTORY_VERSION" in domains
+
+    def test_detects_traceability_domain(self):
+        domains = extract_domains("trazabilidad URS-FS-DS-IQ-OQ-PQ de la documentacion")
+        assert "TRACEABILITY" in domains
+
     def test_generate_requirement_spec_returns_all_domains(self, isolated_audit):
         spec = _make_spec(isolated_audit)
         for domain in ("LIMS", "HPLC", "OOS", "DATA_INTEGRITY"):
@@ -111,14 +128,16 @@ class TestRequirementInterpreter:
 # ── Agent Design Engine ───────────────────────────────────────────────────────
 
 class TestAgentDesignEngine:
-    def _spec_with_domains(self, domains: list[str]) -> RequirementSpec:
+    def _spec_with_domains(self, domains: list[str], part11_required: bool = False,
+                            alcoa_plus_required: bool = False, annex11_required: bool = False) -> RequirementSpec:
         return RequirementSpec(
             project_id="test_design",
             domains=domains,
             regulatory_scope=[],
             dual_use=False,
-            part11_required=False,
-            alcoa_plus_required=False,
+            part11_required=part11_required,
+            alcoa_plus_required=alcoa_plus_required,
+            annex11_required=annex11_required,
             client_needs=[],
             constraints=[],
             pending_documents=[],
@@ -143,11 +162,59 @@ class TestAgentDesignEngine:
         assert any(d.agent_id == "integrity_lims_profile" and d.decision == "profile"
                    for d in decisions), "LIMS debe generar perfil integrity_lims_profile"
 
-    def test_data_integrity_proposes_lims_profile(self):
+    def test_data_integrity_domain_alone_proposes_nothing_without_lims_or_scope_flags(self):
+        """DATA_INTEGRITY es solo una señal léxica débil (p.ej. 'audit trail' suelto);
+        sin LIMS ni regulatory_scope declarado no debe generar ningún agente — evita
+        proponer integrity_lims_profile (perfil de LIMS de laboratorio) para misiones
+        que no tienen nada que ver con LIMS (p.ej. documentación OT/SCADA)."""
         spec = self._spec_with_domains(["DATA_INTEGRITY"])
         decisions = decide_inherited_profiles_custom(spec)
-        assert any(d.agent_id == "integrity_lims_profile"
-                   for d in decisions), "DATA_INTEGRITY debe generar integrity_lims_profile"
+        assert decisions == []
+
+    def test_lims_domain_still_proposes_lims_profile_even_with_data_integrity(self):
+        spec = self._spec_with_domains(["LIMS", "DATA_INTEGRITY"])
+        decisions = decide_inherited_profiles_custom(spec)
+        assert any(d.agent_id == "integrity_lims_profile" for d in decisions)
+
+    def test_part11_and_alcoa_flags_without_lims_propose_separate_ot_agents(self):
+        """Para misiones de integridad de datos sin LIMS (p.ej. documentación OT
+        Rockwell/SCADA), Part 11 y ALCOA+ deben separarse del perfil de LIMS."""
+        spec = self._spec_with_domains([], part11_required=True, alcoa_plus_required=True)
+        decisions = decide_inherited_profiles_custom(spec)
+        agent_ids = {d.agent_id for d in decisions}
+        assert "fda_part11_agent" in agent_ids
+        assert "alcoa_plus_agent" in agent_ids
+        assert "integrity_lims_profile" not in agent_ids
+        part11 = next(d for d in decisions if d.agent_id == "fda_part11_agent")
+        assert part11.decision == "profile" and part11.base_agent == "integrity"
+        alcoa = next(d for d in decisions if d.agent_id == "alcoa_plus_agent")
+        assert alcoa.decision == "inherit" and alcoa.base_agent == "integrity"
+
+    def test_annex11_flag_proposes_profile(self):
+        spec = self._spec_with_domains([], annex11_required=True)
+        decisions = decide_inherited_profiles_custom(spec)
+        assert any(d.agent_id == "eu_annex11_agent" and d.decision == "profile"
+                   and d.base_agent == "integrity" for d in decisions)
+
+    def test_doc_inventory_and_classification_domains_propose_new_agents(self):
+        spec = self._spec_with_domains(["DOC_INVENTORY_VERSION", "DOC_CLASSIFICATION"])
+        decisions = decide_inherited_profiles_custom(spec)
+        agent_ids = {d.agent_id: d.decision for d in decisions}
+        assert agent_ids.get("doc_inventory_version_agent") == "new_agent"
+        assert agent_ids.get("doc_classification_agent") == "new_agent"
+
+    def test_traceability_domain_proposes_csv_profile(self):
+        spec = self._spec_with_domains(["TRACEABILITY"])
+        decisions = decide_inherited_profiles_custom(spec)
+        assert any(d.agent_id == "requirements_traceability_agent" and d.decision == "profile"
+                   and d.base_agent == "csv" for d in decisions)
+
+    def test_compliance_risk_and_final_review_domains_propose_new_agents(self):
+        spec = self._spec_with_domains(["COMPLIANCE_RISK", "FINAL_REVIEW_GATE"])
+        decisions = decide_inherited_profiles_custom(spec)
+        agent_ids = {d.agent_id: d.decision for d in decisions}
+        assert agent_ids.get("compliance_risk_agent") == "new_agent"
+        assert agent_ids.get("final_review_agent") == "new_agent"
 
     def test_hplc_domain_proposes_new_agent(self):
         spec = self._spec_with_domains(["HPLC"])
