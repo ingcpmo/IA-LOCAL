@@ -84,7 +84,11 @@ export function renderPipelineJobs(jobs){
 
 /* ---- pipeline refresh: tree + jobs + artifacts for selected project ---- */
 export async function refreshPipeline(){
-  var proj=(document.getElementById('pipeline-project')||{}).value||'r6_change_control';
+  /* Corrección operativa: el fallback apuntaba a r6_change_control (misión
+     rechazada, sin workspace real) -> 404 permanente. Ahora, sin selección
+     real, no se consulta nada en vez de apuntar a un proyecto muerto. */
+  var proj=(document.getElementById('pipeline-project')||{}).value||'';
+  if(!proj) return;
   try{
     var rt=await fetch(API_BASE+'/api/v1/layer8/workspaces/'+proj+'/tree',{headers:headers()});
     if(rt.ok) renderWorkspaceTree(await rt.json());
@@ -105,7 +109,8 @@ export function refreshPipelineIfConnected(){ if(state.connected) refreshPipelin
 /* ---- U11: Ver logs headless ---- */
 export async function viewHeadlessLogs(){
   if(!state.connected){ toast('Sin conexión — no se pueden cargar logs.'); return; }
-  const proj=(document.getElementById('pipeline-project')||{}).value||'r6_change_control';
+  const proj=(document.getElementById('pipeline-project')||{}).value||'';
+  if(!proj){ toast('Selecciona un workspace primero.'); return; }
   try{
     const r=await fetch(API_BASE+'/api/v1/layer8/missions/'+encodeURIComponent(proj)+'/headless/logs',{headers:headers()});
     if(!r.ok){ toast('Error '+r.status+' al cargar logs de '+proj); return; }

@@ -19,7 +19,7 @@ import { renderMissionDetail } from './mission_detail_view.js';
 import { renderMissionAgents, renderAgentsCatalog } from './agents_view.js';
 import { renderReports } from './reports_view.js';
 import { renderValidationPackage } from './validation_view.js';
-import { fillMissionSelect } from './core.js';
+import { fillMissionSelect, toast } from './core.js';
 
 const TITLES={
   exec:["Executive Overview","mission-control / executive"],
@@ -77,11 +77,46 @@ async function missionSelect(selectId){
   }catch(e){ return null; }
 }
 
+/* Corrección operativa (diagnóstico Mission Control 2026-07-14):
+   #pipeline-project vivía como <option> estáticos en el HTML
+   (r6_change_control/lab_qc_project/c8_alcoa_validator), nunca poblado por
+   JS — misiones nuevas (p.ej. gmpai_document_validation) no aparecían nunca
+   en el selector, y r6_change_control ya no tiene workspace real (misión
+   rechazada y archivada) -> 404 permanente en tree/artifacts/file, dejando
+   "conectar para ver" pese a estar conectado. Se puebla desde
+   /api/v1/workspaces (solo proyectos con workspace real en disco). */
+async function workspaceSelect(selectId){
+  try{
+    const r=await fetch(API_BASE+"/api/v1/workspaces",{headers:headers()});
+    if(!r.ok) return null;
+    const ws=await r.json();
+    return fillMissionSelect(selectId, (ws||[]).map(w=>({project_id:w.project_id})));
+  }catch(e){ return null; }
+}
+
+/* Corrección operativa: antes, cualquier 401/403 (p.ej. api key vencida o
+   rotada) dejaba el header "conectado" intacto mientras cada panel fallaba
+   en silencio (if(r.ok) sin rama else) -> "conectado" arriba, módulos
+   internos vacíos/"conectar para ver" abajo, sin explicación. Ahora se
+   detecta en los dos fetches de mayor tráfico (status/full y missions,
+   presentes en casi toda navegación) y se refleja honestamente. */
+function _checkAuthFailure(r){
+  if(r.status===401||r.status===403){
+    state.connected=false;
+    const conn=document.getElementById('conn');
+    if(conn) conn.innerHTML='<span class="dotwarn">●</span> sesión expirada · reconectar';
+    toast('Sesión expirada (HTTP '+r.status+') — ingresa la API key de nuevo.');
+    return true;
+  }
+  return false;
+}
+
 /* ---- main refresh dispatcher ---- */
 export async function refresh(v){
   try{
     if(v==='dash'||v==='system'){
       const r=await fetch(API_BASE+"/api/v1/status/full",{headers:headers()});
+      if(_checkAuthFailure(r)) return;
       if(r.ok){ const d=await r.json();
         const av=d.summary?.audit_verified, ae=d.summary?.audit_entries;
         const ahash=d.summary?.audit_hash_errors??0, achain=d.summary?.audit_chain_errors??0;
@@ -98,6 +133,7 @@ export async function refresh(v){
     }
     if(v==='dash'||v==='approve'){
       const r=await fetch(API_BASE+"/api/v1/layer9/missions",{headers:headers()});
+      if(_checkAuthFailure(r)) return;
       if(r.ok){ const ms=await r.json();
         document.getElementById('m-active').textContent=Array.isArray(ms)?ms.length:'—';
         const pend=ms.filter(m=>!['approved'].includes(m.status));
@@ -121,6 +157,7 @@ export async function refresh(v){
       if(r.ok){ const d=await r.json(); updateHeadless(d); }
     }
     if(v==='pipeline'){
+      await workspaceSelect('pipeline-project');
       await refreshPipeline();
       await loadClaudeStatus();
     }
@@ -201,5 +238,11 @@ export async function refresh(v){
       const r=await fetch(API_BASE+"/api/v1/layer9/case-memory",{headers:headers()});
       if(r.ok){ renderCaseMemory(await r.json()); }
     }
-  }catch(e){ /* mantiene datos de diseño */ }
+  }catch(e){
+    /* Corrección operativa: antes se tragaba en silencio cualquier error
+       (red, CORS, JSON inválido) dejando el panel con contenido estático
+       obsoleto sin ninguna señal al usuario. Ahora se reporta. */
+    console.error('[mission-control] refresh("'+v+'") falló:', e);
+    toast('Error actualizando "'+v+'": '+(e?.message||e));
+  }
 }
