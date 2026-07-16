@@ -54,5 +54,40 @@
   "conclusion": "Ninguno de los 6 criterios que obligarian a consultar Internet se cumple. Las 4 contradicciones son problemas de ASIGNACION de evidencia a checkpoints (interpretacion documental), no de incertidumbre sobre el texto regulatorio vigente. No se realizo ninguna consulta externa.",
   "fuentes_externas_consultadas": [],
   "regulatory_source_decision_record_generado": false,
-  "nota": "Este registro documenta la decision de NO navegar, cumpliendo el requisito de verificar y registrar la fuente local ANTES de decidir."
+  "nota": "Este registro documenta la decision de NO navegar, cumpliendo el requisito de verificar y registrar la fuente local ANTES de decidir.",
+  "revalidated_at_v3": "2026-07-16T16:28:54.800813+00:00",
+  "sha256_recalculado_v3": {
+    "OFFICIAL_ECFR_21CFR_part11.txt": {
+      "sha256_recalculado_ahora": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+      "sha256_registrado_en_ingest_manifest": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+      "match": true,
+      "fuente_ingest_manifest": "factory/deployments/lab_qc_project/ingest_manifest.yaml"
+    },
+    "OFFICIAL_EU_GMP_ANNEX11.pdf": {
+      "sha256_recalculado_ahora": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+      "sha256_registrado_en_ingest_manifest": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+      "match": true,
+      "fuente_ingest_manifest": "factory/deployments/lab_qc_project/ingest_manifest.yaml"
+    },
+    "OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf": {
+      "sha256_recalculado_ahora": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+      "sha256_registrado_en_ingest_manifest": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+      "match": true,
+      "fuente_ingest_manifest": "factory/deployments/lab_qc_project/ingest_manifest.yaml"
+    }
+  },
+  "annex11_revision_2025_verificada": {
+    "verificado_en_internet": true,
+    "motivo_de_consulta": "Incertidumbre real declarada por el usuario sobre si existe una revision posterior de Annex 11 que pudiera afectar vigencia.",
+    "hallazgo": "Draft de revision de Annex 11 (EMA GMP/GDP IWG + PIC/S) publicado 2025-07-07, consulta publica cerrada 2025-10-07. Version final esperada 'mid-2026' segun fuentes secundarias -- no confirmado como efectiva a la fecha de este cierre (2026-07-16).",
+    "estado": "draft",
+    "consultation_status": "closed_consultation",
+    "effective_status": "not_effective",
+    "usado_para_cambiar_findings_vigentes": false,
+    "fuentes": [
+      "https://health.ec.europa.eu/consultations/stakeholders-consultation-eudralex-volume-4-good-manufacturing-practice-guidelines-chapter-4-annex_en",
+      "https://www.gmp-compliance.org/guidelines/gmp-guideline/eu-gmp-annex-11-draft-2025-computerised-systems"
+    ],
+    "nota": "No se sustituye la version oficial vigente (Annex 11, revision efectiva desde 2013) sin aprobacion humana explicita. Los 19 findings de este cierre siguen evaluados contra la version oficial VIGENTE, no contra el draft."
+  }
 }

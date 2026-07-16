@@ -455,6 +455,158 @@ def get_manifest(run_id: str) -> dict:
     return json.loads(manifest_path.read_text(encoding="utf-8"))
 
 
+# ── FS_v1.2 — registro explícito de cierre para Mission Control ────────────
+# Distinto del RC canónico (que cubre los 32 documentos sin chunking): esto
+# registra, para el documento FS_v1.2 puntual, cuál run de gmpai-artifacts es
+# el vigente ("is_current") y cuál queda legado ("supersedes_run_id"). No
+# reprocesa nada — solo lee fs_v1_2_status.json + manifest del run + la
+# decisión Capa 9 ya registrada en factory/layer9/decisions/decisions.jsonl.
+
+FS_V1_2_DIR = Path(__file__).parent.parent / "docs" / "gmpai_reanalysis" / "fs_v1_2"
+FS_V1_2_CLOSURE_REGISTRY = GMPAI_REPORTS_BASE / "_fs_v1_2_closure_registry.json"
+
+
+def _decision_record(decision_id: str) -> dict | None:
+    decisions_path = Path(__file__).parent.parent / "layer9" / "decisions" / "decisions.jsonl"
+    if not decisions_path.exists():
+        return None
+    for line in decisions_path.read_text(encoding="utf-8").splitlines():
+        d = json.loads(line)
+        if d.get("decision_id") == decision_id:
+            return d
+    return None
+
+
+def record_fs_v1_2_closure(
+    run_id: str,
+    supersedes_run_id: str,
+    commit: str,
+    decision_id: str,
+    recorded_by: str | None = None,
+    version: str = "v2",
+    zip_filename: str = "paquete_final.zip",
+    metrics_filename: str | None = None,
+    receipt_filename: str | None = None,
+) -> dict:
+    """Registra explícitamente, en un archivo persistente, cuál run de
+    gmpai-artifacts es el vigente para el cierre de FS_v1.2 y la CADENA de
+    versiones anteriores (superseded_runs) hasta el paquete histórico legado
+    (legacy_runs, RC v1.4 pre-Piloto-B). Idempotente: se puede volver a
+    llamar y solo actualiza el registro, nunca reprocesa documentos ni toca
+    los runs en disco. No asume el nombre del zip ni la clasificación del
+    run superado -- cada versión puede tener su propio zip_filename y su
+    propia clasificación (legado vs. simplemente superseded)."""
+    status = json.loads((FS_V1_2_DIR / "fs_v1_2_status.json").read_text(encoding="utf-8"))
+    decision = _decision_record(decision_id)
+
+    cobertura = {
+        agente: f"{d['chunks_ok']}/{d['chunks_total']}"
+        for agente, d in status["agentes"].items()
+    }
+
+    metrics = None
+    if metrics_filename and (FS_V1_2_DIR / metrics_filename).exists():
+        metrics = json.loads((FS_V1_2_DIR / metrics_filename).read_text(encoding="utf-8"))
+
+    receipt = None
+    receipt_path = GMPAI_REPORTS_BASE / run_id / (receipt_filename or "package_receipt.json")
+    if receipt_path.exists():
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+
+    record = {
+        "mission_id": PROJECT_ID,
+        "documento": status["documento"],
+        "document_sha256": status["document_sha256"],
+        "run_id": run_id,
+        "version": version,
+        "commit": commit,
+        "estado": status["classification"],
+        "is_current": True,
+        "supersedes_run_id": supersedes_run_id,
+        "capa9_decision_id": decision_id,
+        "capa9_decision": decision,
+        "cobertura_por_agente": cobertura,
+        "findings_totales": status["findings_totales"],
+        "contradicciones_totales": status["contradicciones_totales"],
+        "contradicciones_resueltas": status["contradicciones_resueltas"],
+        "matriz_finding_correccion": status["matriz_finding_correccion"],
+        "open_items": ["COR-1", "COR-5", "REM-GMPAI-001"],
+        "human_review_required": status["revision_humana_requerida"],
+        "human_review_status": "AWAITING_HUMAN_REVIEW",
+        "registered_at": datetime.now(timezone.utc).isoformat(),
+        "registered_by": recorded_by or "system",
+        "zip_filename": zip_filename,
+        "zip_sha256": _sha256_file(GMPAI_REPORTS_BASE / run_id / zip_filename),
+        "regulatory_metrics": metrics,
+        "package_receipt": receipt,
+    }
+
+    prior = {}
+    if FS_V1_2_CLOSURE_REGISTRY.exists():
+        prior = json.loads(FS_V1_2_CLOSURE_REGISTRY.read_text(encoding="utf-8"))
+
+    registry = {"current": record, "superseded_runs": [], "legacy_runs": prior.get("legacy_runs", [])}
+
+    # La versión anterior (si existía como "current") pasa a superseded_runs,
+    # NO a legacy_runs (legacy_runs es solo el RC v1.4 pre-Piloto-B).
+    prior_current = prior.get("current")
+    superseded_runs = [r for r in prior.get("superseded_runs", []) if r["run_id"] != supersedes_run_id]
+    if prior_current and prior_current.get("run_id") == supersedes_run_id:
+        superseded_runs.append({
+            "run_id": prior_current["run_id"],
+            "version": prior_current.get("version", "v?"),
+            "classification": ["SUPERSEDED_FOR_OPERATIONAL_USE"],
+            "zip_filename": prior_current.get("zip_filename", "paquete_final.zip"),
+            "zip_sha256": prior_current.get("zip_sha256"),
+            "superseded_by_run_id": run_id,
+        })
+    elif supersedes_run_id not in {r["run_id"] for r in prior.get("legacy_runs", [])}:
+        # supersedes_run_id no es ni el 'current' previo ni un legacy ya
+        # conocido -- registrarlo igual como superseded, sin inventar datos
+        # que no tenemos (zip_sha256 se recalcula si el archivo existe).
+        candidate_zip = GMPAI_REPORTS_BASE / supersedes_run_id / zip_filename
+        superseded_runs.append({
+            "run_id": supersedes_run_id,
+            "version": "v?",
+            "classification": ["SUPERSEDED_FOR_OPERATIONAL_USE"],
+            "zip_filename": zip_filename,
+            "zip_sha256": _sha256_file(candidate_zip) if candidate_zip.exists() else None,
+            "superseded_by_run_id": run_id,
+        })
+    registry["superseded_runs"] = superseded_runs
+
+    legacy_status_path = GMPAI_REPORTS_BASE / "20260715T171646Z" / "LEGACY_STATUS.json"
+    if legacy_status_path.exists() and not any(r["run_id"] == "20260715T171646Z" for r in registry["legacy_runs"]):
+        registry["legacy_runs"].append({
+            "run_id": "20260715T171646Z",
+            "classification": ["LEGACY_RC_V1.4_PRE_FS_REANALYSIS", "SUPERSEDED_FOR_OPERATIONAL_USE"],
+            "superseded_by_run_id": run_id,
+            "legacy_status_detail": json.loads(legacy_status_path.read_text(encoding="utf-8")),
+        })
+
+    FS_V1_2_CLOSURE_REGISTRY.parent.mkdir(parents=True, exist_ok=True)
+    FS_V1_2_CLOSURE_REGISTRY.write_text(json.dumps(registry, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    write_event("gmp_report_generated", PROJECT_ID, {
+        "record_by": recorded_by or "system",
+        "artifact_kind": "gmpai_fs_v1_2_closure_registered",
+        "run_id": run_id,
+        "supersedes_run_id": supersedes_run_id,
+        "commit_reference": commit,
+        "decision_id_reference": decision_id,
+        "cor1_abierto": True,
+        "cor5_abierto": True,
+        "rem_gmpai_001_abierto": True,
+    })
+    return registry
+
+
+def get_fs_v1_2_closure_status() -> dict:
+    if not FS_V1_2_CLOSURE_REGISTRY.exists():
+        raise ArtifactNotFound("Registro de cierre FS_v1.2 no generado todavía")
+    return json.loads(FS_V1_2_CLOSURE_REGISTRY.read_text(encoding="utf-8"))
+
+
 def resolve_artifact_path(run_id: str, rel_path: str) -> Path:
     """Resuelve un artefacto dentro de un run de forma segura — bloquea
     path traversal (.., rutas absolutas, symlinks fuera del run_dir)."""

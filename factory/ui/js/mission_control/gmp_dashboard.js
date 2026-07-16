@@ -7,7 +7,7 @@
 
 import { API_BASE, headers } from './state.js';
 import { toast, _esc, _gmpNA, _gmpEscHtml } from './core.js';
-import { gmpaiRenderArtifactsPanel } from './gmpai_artifacts.js';
+import { gmpaiRenderArtifactsPanel, gmpaiRenderFsV12ClosurePanel } from './gmpai_artifacts.js';
 
 export async function _renderGrp6_gmpDashboard(pid){
   const el=document.getElementById('grp-gmp_dashboard'); if(!el) return;
@@ -18,8 +18,11 @@ export async function _renderGrp6_gmpDashboard(pid){
     const d=await r.json();
     el.innerHTML=_renderGmpDashboard(pid, d);
     if(pid==='gmpai_document_validation'){
-      el.innerHTML+=`<div class="dp-sub" style="margin-top:14px">Artefactos de cierre (REM-GMPAI-001, informe, descargas)</div>
+      el.innerHTML+=`<div class="dp-sub" style="margin-top:14px">Cierre FS_v1.2 (Piloto B) — vigente</div>
+        <div id="gmpai-fs-v1-2-closure-panel"></div>
+        <div class="dp-sub" style="margin-top:14px">Todos los paquetes generados (histórico + vigente)</div>
         <div class="card" id="gmpai-artifacts-panel" style="padding:10px 12px"></div>`;
+      gmpaiRenderFsV12ClosurePanel();
       gmpaiRenderArtifactsPanel();
     }
   }catch(e){ el.innerHTML='<div class="meta" style="color:var(--fail)">Error de red: '+e.message+'</div>'; }

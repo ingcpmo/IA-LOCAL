@@ -1,0 +1,78 @@
+{
+  "documento": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "version": "v3",
+  "generated_at": "2026-07-16T16:28:54.795529+00:00",
+  "commit_reference": "0d69f8409d9bd8b936e1eed8b4551e3423e9d713",
+  "capa9_decision_id": "ff640643-b767-426b-af5f-720f4edee78b",
+  "contradicciones_c1_c4": [
+    {
+      "item": "21_CFR_11.10(d)",
+      "estado_anterior": "contradiccion_interna_detectada (evidencia en conflicto entre paginas/chunks)",
+      "error_identificado": "Cita anclada fuera de tema (evidencia mal asignada al checkpoint)",
+      "cambio_realizado": "Reclasificado a no_cumple_documentalmente (falso positivo)",
+      "fundamento_regulatorio": "ver REGULATORY_SOURCE_CHECK.json",
+      "impacto_esperado": "Elimina una contradiccion interna falsa del borrador; no cambia el estado de cumplimiento real del sistema.",
+      "prueba_de_validacion": "fs_v1_2_status.json.contradicciones -> resolucion.estado_resolucion='resuelta_por_decision_humana', decision_id ff640643.",
+      "riesgo_residual": "Bajo -- decision documentada con changelog trazable; pendiente aprobacion QA/Validacion formal del documento corregido completo (no solo de la interpretacion tecnica)."
+    },
+    {
+      "item": "ANNEX11_7.1",
+      "estado_anterior": "contradiccion_interna_detectada (evidencia en conflicto entre paginas/chunks)",
+      "error_identificado": "Diferencia de alcance confundida con contradiccion (chunks not_observed_in_chunk tratados como evidencia en contra)",
+      "cambio_realizado": "Mantenido cumple_parcialmente, brecha reescrita (diferencia de alcance, no contradiccion real)",
+      "fundamento_regulatorio": "European Commission - EudraLex Volume 4, Annex 11 (health.ec.europa.eu) -- 7. Data Storage (7.1, 7.2) y 12. Security (12.1, 12.2, 12.3)",
+      "impacto_esperado": "Elimina una contradiccion interna falsa del borrador; no cambia el estado de cumplimiento real del sistema.",
+      "prueba_de_validacion": "fs_v1_2_status.json.contradicciones -> resolucion.estado_resolucion='resuelta_por_decision_humana', decision_id ff640643.",
+      "riesgo_residual": "Bajo -- decision documentada con changelog trazable; pendiente aprobacion QA/Validacion formal del documento corregido completo (no solo de la interpretacion tecnica)."
+    },
+    {
+      "item": "ANNEX11_12",
+      "estado_anterior": "contradiccion_interna_detectada (evidencia en conflicto entre paginas/chunks)",
+      "error_identificado": "Cita anclada fuera de tema (evidencia mal asignada al checkpoint)",
+      "cambio_realizado": "Reclasificado a no_cumple_documentalmente (falso positivo)",
+      "fundamento_regulatorio": "European Commission - EudraLex Volume 4, Annex 11 (health.ec.europa.eu) -- 7. Data Storage (7.1, 7.2) y 12. Security (12.1, 12.2, 12.3)",
+      "impacto_esperado": "Elimina una contradiccion interna falsa del borrador; no cambia el estado de cumplimiento real del sistema.",
+      "prueba_de_validacion": "fs_v1_2_status.json.contradicciones -> resolucion.estado_resolucion='resuelta_por_decision_humana', decision_id ff640643.",
+      "riesgo_residual": "Bajo -- decision documentada con changelog trazable; pendiente aprobacion QA/Validacion formal del documento corregido completo (no solo de la interpretacion tecnica)."
+    },
+    {
+      "item": "ALCOA_AVAILABLE",
+      "estado_anterior": "contradiccion_interna_detectada (evidencia en conflicto entre paginas/chunks)",
+      "error_identificado": "Diferencia de alcance confundida con contradiccion (chunks not_observed_in_chunk tratados como evidencia en contra)",
+      "cambio_realizado": "Mantenido cumple_parcialmente, brecha reescrita (diferencia de alcance, no contradiccion real)",
+      "fundamento_regulatorio": "MHRA GXP Data Integrity Guidance and Definitions, Revision 1, March 2018 -- 3.10 - define ALCOA+ y el atributo 'Available' (datos completos, consistentes, perdurables y disponibles durante todo el ciclo de vida)",
+      "impacto_esperado": "Elimina una contradiccion interna falsa del borrador; no cambia el estado de cumplimiento real del sistema.",
+      "prueba_de_validacion": "fs_v1_2_status.json.contradicciones -> resolucion.estado_resolucion='resuelta_por_decision_humana', decision_id ff640643.",
+      "riesgo_residual": "Bajo -- decision documentada con changelog trazable; pendiente aprobacion QA/Validacion formal del documento corregido completo (no solo de la interpretacion tecnica)."
+    }
+  ],
+  "citas_trasladadas": [
+    {
+      "de": "C1-FDA-11.10d (COR-1)",
+      "a": "COR-2 (audit trail)",
+      "pagina": "pag 46-47",
+      "cita": "UR5.2.3 [URS-PCS-SR-009] Logins, logouts, and login attempts..."
+    },
+    {
+      "de": "C3-ANNEX11-12 (COR-1)",
+      "a": "ALCOA_CONSISTENT",
+      "pagina": "pag 20-21",
+      "cita": "The alarm and events service saves all alarms and events in Universal Coordinated Time (UTC)..."
+    }
+  ],
+  "cambio_de_logica_del_motor": {
+    "componente": "factory/engines/gmpai_integrity/chunked_engine.py",
+    "cambios": [
+      "_is_topically_relevant(): exige relevancia tematica (palabra significativa del label del checkpoint presente en la cita) ademas del anclaje literal -- corrige TE-03.",
+      "Distincion not_observed_in_chunk vs no_cumple activo en la consolidacion por checkpoint -- corrige TE-04."
+    ],
+    "tests_agregados": 3,
+    "suite_resultado": "540/540 passed (ver mensaje de commit 0d69f84)",
+    "reproceso_de_documentos_existentes": false
+  },
+  "estados_de_gobernanza": {
+    "TECHNICAL_CONTRADICTION_RESOLUTION": "CONDITIONALLY_APPROVED",
+    "DRAFT_DOCUMENT_STATUS": "AWAITING_HUMAN_REVIEW_AND_APPROVAL",
+    "REGULATORY_COMPLIANCE_STATUS": "NOT_DETERMINED"
+  }
+}

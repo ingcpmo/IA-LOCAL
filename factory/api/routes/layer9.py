@@ -1099,17 +1099,66 @@ def post_gmpai_generate_artifacts(body: GmpaiPackageRequest = GmpaiPackageReques
 @router.get("/missions/gmpai_document_validation/gmpai-artifacts")
 def get_gmpai_artifacts(run_id: str | None = None):
     """Lista runs disponibles; con run_id, el manifest de ese run. Sin
-    run_id, el manifest del run más reciente (o {"runs": [...]} si no hay
-    ninguno generado todavía)."""
+    run_id, el run marcado como vigente en el registro de cierre FS_v1.2 si
+    existe (ver /gmpai-artifacts/fs-v1-2-closure), o si no, el más reciente
+    por nombre de carpeta (o {"runs": [...]} si no hay ninguno todavía)."""
     runs = _gmpai.list_runs()
     if not runs:
         return {"runs": [], "latest": None}
-    target = run_id or runs[0]
+    default_run = runs[0]
+    try:
+        default_run = _gmpai.get_fs_v1_2_closure_status()["current"]["run_id"]
+    except _gmpai.ArtifactNotFound:
+        pass
+    target = run_id or default_run
     try:
         manifest = _gmpai.get_manifest(target)
     except _gmpai.ArtifactNotFound as e:
         raise HTTPException(404, str(e))
     return {"runs": runs, "latest": manifest}
+
+
+class GmpaiFsV12ClosureRequest(BaseModel):
+    run_id: str
+    supersedes_run_id: str
+    commit: str
+    decision_id: str
+    recorded_by: str | None = None
+    version: str = "v2"
+    zip_filename: str = "paquete_final.zip"
+    metrics_filename: str | None = None
+    receipt_filename: str | None = None
+
+
+@router.post("/missions/gmpai_document_validation/gmpai-artifacts/fs-v1-2-closure")
+def post_gmpai_fs_v1_2_closure(body: GmpaiFsV12ClosureRequest):
+    """Registro explícito (Capa 9 / Mission Control) de qué run de
+    gmpai-artifacts es el vigente para el cierre de FS_v1.2, la cadena de
+    versiones superseded y el paquete histórico legado. No reprocesa nada —
+    solo agrega un registro persistente sobre datos ya generados y una
+    decisión humana ya registrada."""
+    try:
+        return _gmpai.record_fs_v1_2_closure(
+            run_id=body.run_id,
+            supersedes_run_id=body.supersedes_run_id,
+            commit=body.commit,
+            decision_id=body.decision_id,
+            recorded_by=body.recorded_by,
+            version=body.version,
+            zip_filename=body.zip_filename,
+            metrics_filename=body.metrics_filename,
+            receipt_filename=body.receipt_filename,
+        )
+    except _gmpai.ArtifactNotFound as e:
+        raise HTTPException(404, str(e))
+
+
+@router.get("/missions/gmpai_document_validation/gmpai-artifacts/fs-v1-2-closure")
+def get_gmpai_fs_v1_2_closure():
+    try:
+        return _gmpai.get_fs_v1_2_closure_status()
+    except _gmpai.ArtifactNotFound as e:
+        raise HTTPException(404, str(e))
 
 
 def _gmpai_artifact_response(run_id: str, artifact_path: str, disposition: str) -> FileResponse:
