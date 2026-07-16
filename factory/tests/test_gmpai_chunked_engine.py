@@ -57,6 +57,7 @@ def test_evaluate_chunked_covers_start_middle_end(monkeypatch):
 
     monkeypatch.setattr(ollama_client, "generate", fake_generate)
     monkeypatch.setattr(ollama_client, "show_digest", lambda: "sha256:fake-digest")
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
     result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                                   "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test")
     assert len(calls) == len(result["chunk_executions"]) >= 2
@@ -79,6 +80,7 @@ def test_no_cumple_does_not_require_anchoring(monkeypatch):
     })
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
     monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
     result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                                   "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test")
     firma = next(f for f in result["findings"] if f["requisito_regulatorio"].startswith("21_CFR_11.50_11.70"))
@@ -94,6 +96,7 @@ def test_cumple_parcialmente_still_requires_anchoring(monkeypatch):
     })
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
     monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
     result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                                   "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test")
     audit = next(f for f in result["findings"] if f["requisito_regulatorio"].startswith("21_CFR_11.10(e)"))
@@ -123,6 +126,7 @@ def test_contradiction_between_chunks_is_detected_not_silently_resolved(monkeypa
 
     monkeypatch.setattr(ollama_client, "generate", fake_generate)
     monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
     result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                                   "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test")
     assert len(result["contradictions"]) == 1
@@ -146,6 +150,8 @@ def test_topically_irrelevant_citation_is_rejected(monkeypatch):
         },
     })
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
     result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                                   "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test")
     finding = next(f for f in result["findings"] if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
@@ -161,6 +167,8 @@ def test_no_cumple_without_citation_is_not_observed_not_demonstrated(monkeypatch
                              "evidencia_exacta": "", "brecha": "", "recomendacion": ""},
     })
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
     result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                                   "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test")
     finding = next(f for f in result["findings"] if f["requisito_regulatorio"].startswith("21_CFR_11.10(g)"))
@@ -193,6 +201,8 @@ def test_unqualified_no_cumple_does_not_create_false_contradiction(monkeypatch):
         return _ollama_response(payload)
 
     monkeypatch.setattr(ollama_client, "generate", fake_generate)
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
     result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                                   "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test")
     assert len(result["contradictions"]) == 0
@@ -206,6 +216,7 @@ def test_chunk_execution_metadata_complete(monkeypatch):
 
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
     monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
     result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                                   "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test")
     exe = result["chunk_executions"][0]
@@ -229,6 +240,7 @@ def test_checkpoint_resume_skips_already_completed_chunks(tmp_path, monkeypatch)
 
     monkeypatch.setattr(ollama_client, "generate", flaky_generate)
     monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
 
     result_1 = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                                     "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-resume",
@@ -268,6 +280,7 @@ def test_audit_event_written(monkeypatch, tmp_path):
     pages = ["texto " * 500]
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
     monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
     result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                                   "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-audit")
 
@@ -277,3 +290,100 @@ def test_audit_event_written(monkeypatch, tmp_path):
     assert entry["event_type"] == "gmpai_chunked_analysis_run"
     assert entry["data"]["run_id"] == result["run_id"]
     assert entry["data"]["document_sha256"] == "sha-audit"
+
+
+def test_extract_json_repairs_trailing_comma():
+    """Fix TE-01: reparacion acotada de comas colgantes antes de reintentar
+    json.loads (no inventa contenido, solo corrige sintaxis comun)."""
+    raw = '{"checkpoints": [{"req_id": "21_CFR_11.10(a)", "estado": "no_cumple",},]}'
+    parsed = ce._extract_json(raw)
+    assert parsed is not None
+    assert parsed["checkpoints"][0]["req_id"] == "21_CFR_11.10(a)"
+
+
+def test_extract_json_strips_markdown_fences():
+    """Fix TE-01: el modelo a veces envuelve el JSON en cercas ```json pese
+    a 'format':'json' -- deben quitarse antes de parsear."""
+    raw = '```json\n{"checkpoints": [{"req_id": "21_CFR_11.10(a)", "estado": "no_cumple"}]}\n```'
+    parsed = ce._extract_json(raw)
+    assert parsed is not None
+
+
+def test_extract_json_rejects_valid_json_with_wrong_schema():
+    """Fix TE-01: JSON sintacticamente valido pero sin la forma esperada
+    (checkpoints ausente/vacio, o sin req_id) debe rechazarse -- no basta con
+    ser JSON valido."""
+    assert ce._extract_json('{"algo_distinto": true}') is None
+    assert ce._extract_json('{"checkpoints": []}') is None
+    assert ce._extract_json('{"checkpoints": [{"estado": "no_cumple"}]}') is None  # sin req_id
+
+
+def test_technical_execution_failure_tracked_and_not_silently_evidencia_insuficiente(monkeypatch):
+    """Fix TE-01: un chunk con JSON invalido/esquema invalido se marca
+    technical_execution_failure=True en su chunk_execution, y el finding
+    resultante (si el checkpoint queda sin candidatos) se marca
+    technical_execution_failure_pending=True -- no se presenta como una
+    conclusion de contenido definitiva."""
+    pages = ["contenido irrelevante " * 100]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: {"response": "esto no es json"})
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-te01")
+
+    assert len(result["technical_execution_failures"]) == 1
+    assert "technical_execution_failure" in result["chunk_executions"][0]["error"]
+
+    finding = next(f for f in result["findings"]
+                   if f["requisito_regulatorio"].startswith("21_CFR_11.10(a)"))
+    assert finding["estado"] == "evidencia_insuficiente"
+    assert finding["technical_execution_failure_pending"] is True
+    assert "PROVISIONAL" in finding["brecha"]
+
+
+def test_preflight_metadata_captured_before_first_inference(monkeypatch):
+    """Requisito de preflight: modelo, model_digest, version de Ollama,
+    agent_version, prompt_version, verifier_version, documento, SHA-256 y
+    run_id deben capturarse y quedar disponibles en el resultado."""
+    pages = ["texto " * 500]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: "sha256:abc123")
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.5.1")
+
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-preflight")
+
+    pf = result["preflight_metadata"]
+    assert pf["model"] == ollama_client.OLLAMA_MODEL
+    assert pf["model_digest"] == "sha256:abc123"
+    assert pf["ollama_version"] == "0.5.1"
+    assert pf["agent_version"] == "1.0.0"
+    assert pf["prompt_version"]
+    assert pf["verifier_version"]
+    assert pf["documento"] == "doc.pdf"
+    assert pf["document_sha256"] == "sha-preflight"
+    assert pf["run_id"] == result["run_id"]
+
+
+def test_ollama_unavailable_fails_fast_before_any_chunk_call(monkeypatch):
+    """Fix TE-02: si Ollama no esta disponible, evaluate_chunked debe fallar
+    en la captura de metadata (antes de gastar ninguna llamada de chunk),
+    no capturar la excepcion en silencio."""
+    def _boom():
+        raise ollama_client.OllamaUnavailableError("Ollama no alcanzable (simulado)")
+
+    calls = {"n": 0}
+
+    def _generate_should_not_be_called(*a, **k):
+        calls["n"] += 1
+        return _ollama_response(_all_insufficient())
+
+    monkeypatch.setattr(ollama_client, "show_digest", _boom)
+    monkeypatch.setattr(ollama_client, "generate", _generate_should_not_be_called)
+
+    import pytest
+    with pytest.raises(ollama_client.OllamaUnavailableError):
+        ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", ["texto " * 500],
+                            "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-unavail")
+    assert calls["n"] == 0

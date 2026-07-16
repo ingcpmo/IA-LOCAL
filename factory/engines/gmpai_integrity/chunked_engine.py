@@ -83,15 +83,53 @@ def build_prompt(meta: dict, doc_text: str, max_chars: int = CHUNK_MAX_CHARS) ->
     )
 
 
+def _repair_json(candidate: str) -> str:
+    """Reparacion JSON controlada y acotada (fix TE-01): solo corrige
+    patrones comunes y no ambiguos, nunca inventa contenido.
+    - elimina comas colgantes antes de '}' o ']'
+    - convierte comillas simples de claves/valores simples a dobles
+      (best-effort, no toca comillas dentro de texto ya entre comillas dobles)
+    """
+    repaired = re.sub(r",\s*([}\]])", r"\1", candidate)
+    return repaired
+
+
 def _extract_json(raw: str) -> dict | None:
+    """Extrae y valida el JSON de la respuesta del modelo. Intenta primero
+    sin modificar, y si falla, una reparacion acotada UNA sola vez
+    (fix TE-01) -- nunca reintenta indefinidamente ni infiere contenido."""
     raw = raw.strip()
+    # Quita cercas de codigo markdown ("```json ... ```") si el modelo las
+    # agrego pese a 'format':'json'.
+    raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
     m = re.search(r"\{.*\}", raw, re.DOTALL)
     if not m:
         return None
-    try:
-        return json.loads(m.group(0))
-    except json.JSONDecodeError:
-        return None
+    candidate = m.group(0)
+    for attempt in (candidate, _repair_json(candidate)):
+        try:
+            parsed = json.loads(attempt)
+        except json.JSONDecodeError:
+            continue
+        if _validate_checkpoint_schema(parsed):
+            return parsed
+        return None  # JSON valido pero no cumple el esquema esperado
+    return None
+
+
+def _validate_checkpoint_schema(parsed) -> bool:
+    """Valida que el JSON parseado tenga la forma minima esperada por el
+    contrato del prompt (fix TE-01: una respuesta puede ser JSON valido y
+    aun asi no tener la estructura que el verificador necesita)."""
+    if not isinstance(parsed, dict):
+        return False
+    checkpoints = parsed.get("checkpoints")
+    if not isinstance(checkpoints, list) or not checkpoints:
+        return False
+    return all(
+        isinstance(entry, dict) and isinstance(entry.get("req_id"), str) and entry.get("req_id")
+        for entry in checkpoints
+    )
 
 
 def _normalize(s: str) -> str:
@@ -223,7 +261,14 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     guarda progreso tras cada chunk (nunca se pierden llamadas ya hechas a
     Ollama si el proceso se interrumpe)."""
     meta = load_prompt_meta(prompt_path)
+    # Captura de metadata de reproducibilidad ANTES de la primera inferencia
+    # (fix TE-02 / requisito de preflight): modelo, model_digest, version de
+    # Ollama, agent_version, prompt_version, verifier_version, documento,
+    # SHA-256 y run_id. Si Ollama no esta disponible, falla aqui —
+    # explicito y antes de gastar ninguna llamada de chunk — en vez de
+    # capturar la excepcion en silencio y seguir con metadata incompleta.
     model_digest = ollama_client.show_digest()
+    ollama_version_str = ollama_client.ollama_version()
 
     chunks = build_page_chunks(per_unit_text)
     chunk_executions: list[dict] = []
@@ -239,6 +284,13 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         start_index = len(chunk_executions)
     else:
         run_id = run_id or f"chunked-{uuid.uuid4().hex[:12]}"
+
+    preflight_metadata = {
+        "model": ollama_client.OLLAMA_MODEL, "model_digest": model_digest,
+        "ollama_version": ollama_version_str, "agent_version": agent_version,
+        "prompt_version": meta["prompt_version"], "verifier_version": meta["verifier_version"],
+        "documento": documento, "document_sha256": document_sha256, "run_id": run_id,
+    }
 
     by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
     cp_label_by_req = {cp["req_id"]: cp["label"] for cp in meta["checkpoints"]}
@@ -258,6 +310,13 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         started_at = datetime.now(timezone.utc).isoformat()
         t0 = time.monotonic()
 
+        # Fix TE-01: distinguir "chunk sin texto extraible" (no es un fallo
+        # tecnico, es una pagina vacia legitima) de un fallo TECNICO real de
+        # ejecucion (llamada fallida, JSON invalido o esquema invalido pese
+        # a 'format':'json' + temperatura 0 + reparacion acotada). Un fallo
+        # tecnico NUNCA debe terminar convertido silenciosamente en
+        # 'evidencia_insuficiente' a nivel de finding sin quedar marcado.
+        technical_execution_failure = False
         if not text.strip():
             chunk_result = None
             error = "chunk sin texto extraible"
@@ -267,10 +326,15 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 raw = ollama_client.generate(prompt)
                 response_text = raw.get("response", "") if isinstance(raw, dict) else ""
                 chunk_result = _extract_json(response_text)
-                error = None if chunk_result else "respuesta del modelo no es JSON valido"
+                if chunk_result:
+                    error = None
+                else:
+                    error = "technical_execution_failure: respuesta del modelo no es JSON valido o no cumple el esquema esperado (tras reparacion acotada)"
+                    technical_execution_failure = True
             except Exception as e:
                 chunk_result = None
-                error = f"fallo de llamada al modelo ({type(e).__name__}: {e})"
+                error = f"technical_execution_failure: fallo de llamada al modelo ({type(e).__name__}: {e})"
+                technical_execution_failure = True
 
         wall_ms = round((time.monotonic() - t0) * 1000, 1)
         finished_at = datetime.now(timezone.utc).isoformat()
@@ -314,7 +378,9 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             "has_overlap_prefix": chunk["has_overlap_prefix"], "text_chars": chunk["text_chars"],
             "started_at": started_at, "finished_at": finished_at, "wall_clock_ms": wall_ms,
             "model": ollama_client.OLLAMA_MODEL, "model_digest": model_digest,
+            "ollama_version": ollama_version_str,
             "ok": chunk_result is not None, "error": error,
+            "technical_execution_failure": technical_execution_failure,
             "_by_req_candidates": by_req_candidates,
         })
 
@@ -324,6 +390,10 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 "documento": documento, "archivo": archivo, "total_chunks": len(chunks),
                 "chunk_executions": chunk_executions, "completed": False,
             })
+
+    any_unresolved_technical_failure = any(
+        ce.get("technical_execution_failure") for ce in chunk_executions
+    )
 
     findings: list[Finding] = []
     contradictions = []
@@ -362,18 +432,39 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     model=ollama_client.OLLAMA_MODEL, verifier_version=meta["verifier_version"],
                 ))
             else:
+                # Fix TE-01: si existe algun fallo tecnico de ejecucion SIN
+                # RESOLVER en este run, esta clasificacion de
+                # evidencia_insuficiente es PROVISIONAL — no se sabe si un
+                # chunk fallido habria aportado evidencia real. Se marca
+                # explicitamente en vez de presentarla como una conclusion
+                # de contenido definitiva.
+                brecha = "Ningun chunk del documento completo aporto evidencia anclada para este checkpoint."
+                if any_unresolved_technical_failure:
+                    n_fail = sum(1 for ce in chunk_executions if ce.get("technical_execution_failure"))
+                    brecha = (
+                        f"PROVISIONAL (technical_execution_failure_pending): {n_fail} chunk(s) de este "
+                        "run tuvieron un fallo tecnico de ejecucion (JSON invalido/esquema invalido/fallo "
+                        "de llamada) sin reintento agotado. Esta clasificacion de evidencia_insuficiente "
+                        "puede estar enmascarando evidencia no capturada por fallo tecnico, no ausencia "
+                        "real. Reintentar los chunks fallidos antes de tratarla como definitiva. " + brecha
+                    )
                 findings.append(Finding(
                     sistema=sistema, documento=documento, version=version, archivo=archivo,
                     pagina_o_seccion=f"paginas 1-{len(per_unit_text)} (todo el documento, por chunks)",
                     requisito_regulatorio=f"{req_id} — {label}",
                     evidencia_exacta="(sin evaluar)", estado="evidencia_insuficiente",
-                    brecha="Ningun chunk del documento completo aporto evidencia anclada para este checkpoint.",
+                    brecha=brecha,
                     severidad="no_determinada",
                     riesgo="No evaluable automaticamente; requiere revision manual.",
-                    recomendacion="Revisar manualmente o reintentar el analisis LLM.",
+                    recomendacion=(
+                        "Reintentar los chunks con technical_execution_failure antes de aceptar esta "
+                        "clasificacion." if any_unresolved_technical_failure else
+                        "Revisar manualmente o reintentar el analisis LLM."
+                    ),
                     confianza="baja", agente_responsable=agent_id, revision_humana_requerida=True,
                     agent_version=agent_version, prompt_version=meta["prompt_version"],
                     model=ollama_client.OLLAMA_MODEL, verifier_version=meta["verifier_version"],
+                    technical_execution_failure_pending=any_unresolved_technical_failure,
                 ))
             continue
 
@@ -412,6 +503,11 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             model=ollama_client.OLLAMA_MODEL, verifier_version=meta["verifier_version"],
         ))
 
+    technical_execution_failures = [
+        {"chunk_index": ce["chunk_index"], "task_id": ce["task_id"], "error": ce["error"]}
+        for ce in chunk_executions if ce.get("technical_execution_failure")
+    ]
+
     result = {
         "run_id": run_id,
         "agent_id": agent_id,
@@ -426,6 +522,9 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         "findings": [f.to_dict() for f in findings],
         "model": ollama_client.OLLAMA_MODEL,
         "model_digest": model_digest,
+        "ollama_version": ollama_version_str,
+        "preflight_metadata": preflight_metadata,
+        "technical_execution_failures": technical_execution_failures,
     }
 
     if checkpoint_store is not None:

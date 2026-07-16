@@ -32,6 +32,12 @@ class Finding:
     prompt_version: str | None = None
     model: str | None = None
     verifier_version: str | None = None
+    # Fix TE-01 (post-mortem FS_v1.2 v3): distingue "evidencia_insuficiente
+    # por ausencia real" de "evidencia_insuficiente porque uno o mas chunks
+    # relevantes tuvieron un fallo tecnico de ejecucion sin reintento
+    # agotado". True == esta clasificacion es PROVISIONAL, requiere
+    # reintentar los chunks fallidos antes de tratarla como definitiva.
+    technical_execution_failure_pending: bool = False
 
     def to_dict(self) -> dict:
         return self.__dict__.copy()

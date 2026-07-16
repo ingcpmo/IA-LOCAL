@@ -1,0 +1,61 @@
+{
+  "generated_at": "2026-07-16T17:00:00Z",
+  "selection_source": "factory/services/gmpai_document_readiness_service.py (build_readiness_matrix) sobre pipeline_pilot_llm.json del RC canonico gmpai_document_validation-rc-v1.4-20260715T031540",
+  "exclusion_criteria_applied": [
+    "duplicados exactos (mismo SHA256 dentro de la misma familia documental)",
+    "documentos escaneados sin OCR autorizado (es_escaneado=true / calidad_extraccion=degradada_sin_texto_util)",
+    "formatos/tipos no aplicables a los 3 agentes (decision_preparacion=NO_APPLICABLE_CORRECTION o algun marco regulatorio=False)",
+    "URS v2.1.pdf y FS_v1.2.pdf explicitamente excluidos por instruccion (no reprocesar)"
+  ],
+  "excluded": [
+    {"nombre": "215115305 MCCPDC PLC Panel Rev 0 09-07-22.pdf", "motivo": "escaneado, sin texto util (es_escaneado=true)"},
+    {"nombre": "215115305 SCADA-PCS Misc PLC SAT3 Scanned-1.pdf", "motivo": "escaneado, sin texto util"},
+    {"nombre": "215115305 SCADA-PCS Misc PLC System FS_v1.2-2.pdf", "motivo": "duplicado exacto de FS_v1.2.pdf (mismo SHA256) -- ya cerrado"},
+    {"nombre": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf", "motivo": "ya cerrado (v3), no reprocesar por instruccion explicita"},
+    {"nombre": "215115305 SCADA-PCS Misc PLC System URS v2.1.pdf", "motivo": "no reprocesar por instruccion explicita"},
+    {"nombre": "215115305-T-039 Design Docs for ASantiago.docm", "motivo": "escaneado, sin texto util"},
+    {"nombre": "215115305_SYS_ARCH_10-11-2022.pdf", "motivo": "NO_APPLICABLE_CORRECTION -- ALCOA+ no aplica (documento de diseno estatico, no es un registro GxP)"},
+    {"nombre": "MCCPDC EMS Control Block Narrative revB.pdf", "motivo": "NO_APPLICABLE_CORRECTION -- ALCOA+ no aplica"},
+    {"nombre": "MCCPDC PCS Signal Interface Control Block Narrative.pdf", "motivo": "NO_APPLICABLE_CORRECTION -- ALCOA+ no aplica"},
+    {"nombre": "MCCPDC PCS-CP01 Alarms Hard Soft IO Listing revH.xlsx", "motivo": "NO_APPLICABLE_CORRECTION -- Part11 y ALCOA+ no aplican (listado de I/O, no registro GxP ni sistema con firma electronica)"},
+    {"nombre": "MCCPDC WFI Control Block Narrative revB.pdf", "motivo": "NO_APPLICABLE_CORRECTION -- ALCOA+ no aplica"}
+  ],
+  "candidatos_restantes": [
+    {
+      "nombre": "215115305 MCCPDC SCADA-PCS Misc PLC SI Prop for MCCPDCa.pdf",
+      "sha256": "910e384d1af4c229f864f069cbb7f359cd58576349f76563a955060c312a121c",
+      "tipo_documental": "URS",
+      "clasificacion_confianza": 0.55,
+      "paginas": 60,
+      "chars_extraidos": 192545,
+      "aplicabilidad": {"part11": true, "annex11": true, "alcoa_plus": "parcial (ver nota tipo URS)"},
+      "conflicto_de_version": false,
+      "hash_match_manifiesto": true,
+      "extraction_ok": true
+    },
+    {
+      "nombre": "215115305-T-039 Design Docs for ASantiago.pdf",
+      "sha256": "84e7b4dbdac47a03ba556dc963a2dd8d38a61e8fbb51127b81af7f397f6db352",
+      "tipo_documental": "DS",
+      "clasificacion_confianza": 0.8,
+      "paginas": 3,
+      "chars_extraidos": 5591,
+      "aplicabilidad": {"part11": true, "annex11": true, "alcoa_plus": "parcial (ver nota tipo DS)"},
+      "conflicto_de_version": true,
+      "nota_conflicto": "Version conflict solo frente al .docm homónimo (escaneado, excluido) -- este .pdf es la unica version con texto extraible del par."
+    }
+  ],
+  "seleccionado": {
+    "nombre": "215115305 MCCPDC SCADA-PCS Misc PLC SI Prop for MCCPDCa.pdf",
+    "razon_seleccion": "Documento canonico (hash_match=true contra manifiesto), texto extraible de calidad aceptable (no escaneado), sin conflicto de version, aplicable a los 3 marcos (Part11/Annex11 plena, ALCOA+ parcial por ser tipo URS), y con cobertura sustancial (60 paginas, 192545 caracteres) que ejercita el motor de chunking corregido de forma comparable a FS_v1.2 -- a diferencia del otro candidato (Design Docs, solo 3 paginas), aporta suficiente cobertura para una validacion significativa del fix TE-01/TE-02/TE-03/TE-04 ya aplicado al motor.",
+    "sha256": "910e384d1af4c229f864f069cbb7f359cd58576349f76563a955060c312a121c",
+    "paginas": 60,
+    "tipo_documental": "URS",
+    "aplicabilidad_por_agente": {
+      "fda_part11_agent": true,
+      "eu_annex11_agent": true,
+      "alcoa_plus_agent": "parcial -- URS debe ESPECIFICAR requisitos ALCOA+, no demostrarlos ejecutados"
+    },
+    "chunks_estimados": "~39 (estimado por proporcion respecto a FS_v1.2: 192545 chars / (132506 chars / 27 chunks) ~= 39.3; el numero real depende de la distribucion de texto por pagina, se confirma al ejecutar build_page_chunks)"
+  }
+}
