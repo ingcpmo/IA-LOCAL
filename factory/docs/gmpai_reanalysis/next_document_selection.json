@@ -1,4 +1,5 @@
 {
+  "status": "SUPERSEDED -- ver next_document_classification_review.json. La seleccion automatica de esta matriz (SI Prop como URS 0.55, Design Docs como DS 0.8) no resistio inspeccion manual real: ambos son documentos administrativos/comerciales (SYSTEM_INTEGRATOR_PROPOSAL y TRANSMITTAL respectivamente), no aplicables a los 3 agentes. No usar este 'seleccionado' para lanzar ningun analisis.",
   "generated_at": "2026-07-16T17:00:00Z",
   "selection_source": "factory/services/gmpai_document_readiness_service.py (build_readiness_matrix) sobre pipeline_pilot_llm.json del RC canonico gmpai_document_validation-rc-v1.4-20260715T031540",
   "exclusion_criteria_applied": [

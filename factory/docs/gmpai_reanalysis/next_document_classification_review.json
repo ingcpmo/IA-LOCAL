@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-07-16T18:00:00Z",
+  "purpose": "Revision manual de tipo documental (inspeccion real de portada/titulo/proposito/alcance/indice/revision) antes de autorizar el siguiente analisis. No se ejecuto Ollama ni se corrieron agentes -- solo extraccion de texto (pypdf) para lectura humana/asistida, sobre documentos NUEVOS aun no analizados.",
+  "documentos_revisados": [
+    {
+      "nombre": "215115305 MCCPDC SCADA-PCS Misc PLC SI Prop for MCCPDCa.pdf",
+      "sha256": "910e384d1af4c229f864f069cbb7f359cd58576349f76563a955060c312a121c",
+      "clasificacion_automatica_previa": "URS (confianza 0.55, gmpai_document_readiness_service.py)",
+      "evidencia_inspeccionada": {
+        "portada": "MARK CUBAN COST PLUS DRUG COMPANY, PBC / SCADA AND PCS MISC. PLC - CONTROL SYSTEM INTEGRATION / 215115305, REV 5 / MARCH 19, 2021 / PRESENTED TO: Alex Oshmyansky / PROPOSED BY: MAVERICK Technologies",
+        "titulo_interno": "Quote No.: 215115305, REV 5 (encabezado repetido en cada pagina)",
+        "proposito": "Propuesta comercial de integracion de sistemas de control (System Integration) respondiendo a un RFP del cliente",
+        "alcance": "Secciones: EXECUTIVE SUMMARY, STATEMENT ON COVID-19, PROCUREMENT, pricing (FIXED PRICE, Total price, Discounted Total price), Travel Expenses Summary, Acceptance Criteria, Deliverable Summary -- estructura de PROPUESTA/COTIZACION, no de especificacion de requisitos del cliente",
+        "indice": "Incluye 'Installation/Operation Qualification Execution' como LINEA DE SERVICIO cotizada (deliverable a facturar), no como protocolo IQ/OQ ejecutado ni como especificacion de requisitos",
+        "revision": "Historial de 6 revisiones de SUBMITTAL comercial (Rev 0 12/11/20 'Initial submittal' ... Rev 5 'REV 5')",
+        "tipo_declarado_en_el_documento": "Quote / Proposal (MAVERICK Technologies, System Integrator, Rockwell Automation Company)",
+        "relacion_con_urs_fs_ds": "Es la PROPUESTA COMERCIAL previa que origino el proyecto -- referenciada como documento fuente en el transmittal T-039 ('MAVERICK Proposal to MCCPDC for the SCADA-PCS Misc. PLC System'), distinta y anterior al URS v2.1.pdf real del corpus"
+      },
+      "clasificacion_final": "SYSTEM_INTEGRATOR_PROPOSAL",
+      "confianza_clasificacion_final": "alta (evidencia textual directa: numero de cotizacion, precios, historial de submittals comerciales, identificacion del proponente como System Integrator)",
+      "aplicabilidad_por_agente": {
+        "fda_part11_agent": {"aplica": false, "motivo": "Documento comercial/contractual -- no especifica ni implica controles tecnicos de sistema (audit trail, firma electronica, control de acceso). Ausencia de esos temas en una cotizacion NO equivale a no_cumple regulatorio; es un error de categoria evaluarlo contra Part 11."},
+        "eu_annex11_agent": {"aplica": false, "motivo": "Mismo razonamiento -- no es una especificacion de sistema computarizado."},
+        "alcoa_plus_agent": {"aplica": false, "motivo": "No es un registro GxP (no documenta ejecucion de datos/pruebas); ALCOA+ evalua atributos de un REGISTRO, no de una propuesta comercial."}
+      },
+      "decision": "EXCLUIDO de los 3 agentes -- NO_APPLICABLE_CORRECTION, mismo tratamiento que ARCHITECTURE/CONTROL_NARRATIVE/ALARM_IO_LISTING ya excluidos. Si se hubiera lanzado el analisis con la clasificacion automatica previa (URS), los 19 findings resultantes habrian sido en su mayoria falsos positivos por error de categoria, no incumplimientos reales."
+    },
+    {
+      "nombre": "215115305-T-039 Design Docs for ASantiago.pdf",
+      "sha256": "84e7b4dbdac47a03ba556dc963a2dd8d38a61e8fbb51127b81af7f397f6db352",
+      "clasificacion_automatica_previa": "DS (confianza 0.8, gmpai_document_readiness_service.py)",
+      "evidencia_inspeccionada": {
+        "portada": "Encabezado 'TRANSMITTAL' repetido en las 3 paginas; 'Transmittal # - MAVERICK/215115305 / 039'",
+        "titulo_interno": "TRANSMITTAL (declarado explicitamente, no es un titulo generico)",
+        "proposito": "Hoja de transmision/tapa: lista que documentos se envian (SI Prop, URS v2.1, Alarms IO Listing, Readme.txt) y solicita acuse de recibo/aprobacion",
+        "alcance": "3 paginas: pagina 1-2 tabla de documentos transmitidos + checkboxes (For Approval/For Information/etc.), pagina 3 encuesta de satisfaccion del cliente y firmas",
+        "indice": "No aplica (documento de 3 paginas sin indice)",
+        "revision": "'This is an uncontrolled document and shall be considered obsolete at the end of the day printed' -- declaracion explicita de NO ser un documento controlado",
+        "tipo_declarado_en_el_documento": "TRANSMITTAL (literal, en mayusculas, en cada pagina)",
+        "relacion_con_urs_fs_ds": "Es la hoja de transmision QUE ACOMPAÑA al envio de la propuesta SI Prop y del URS v2.1 -- no contiene contenido de diseno (DS) en si misma."
+      },
+      "clasificacion_final": "OTHER (subtipo TRANSMITTAL)",
+      "confianza_clasificacion_final": "alta (el documento se autodenomina TRANSMITTAL de forma explicita y repetida)",
+      "aplicabilidad_por_agente": {
+        "fda_part11_agent": {"aplica": false, "motivo": "Documento de transmision/tapa administrativa -- sin controles evaluables."},
+        "eu_annex11_agent": {"aplica": false, "motivo": "Idem."},
+        "alcoa_plus_agent": {"aplica": false, "motivo": "Idem -- no es un registro de ejecucion GxP."}
+      },
+      "decision": "EXCLUIDO -- la clasificacion automatica previa (DS, confianza 0.8) era incorrecta; correccion registrada aqui. Coincide con la categoria TRANSMITTAL ya definida en APPLICABILITY_BY_DOC_TYPE de gmpai_document_readiness_service.py (False, False, False)."
+    }
+  ],
+  "conclusion": "NINGUNO de los 2 candidatos identificados por la matriz de readiness automatica es un documento valido para el analisis de los 3 agentes tras inspeccion manual real. Ambos eran errores de clasificacion automatica (confianza 0.55 y 0.8 respectivamente, ninguna 'alta' real). NO HAY documento siguiente confirmado y listo para analisis en este momento -- se requiere una nueva ronda de seleccion/inspeccion sobre el resto del corpus Rockwell antes de autorizar cualquier ejecucion de agentes.",
+  "next_document_selection_json_status": "El archivo next_document_selection.json (generado en el turno anterior) queda SUPERSEDED por esta revision -- su 'seleccionado' ya no es valido."
+}
