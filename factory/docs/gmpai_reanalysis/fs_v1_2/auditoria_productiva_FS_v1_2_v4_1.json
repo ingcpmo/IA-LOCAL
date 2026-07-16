@@ -102,5 +102,6 @@
     "gmpai_chunked_analysis_gap_registered": 2,
     "tests_executed": 1,
     "layer9_decision_recorded": 1
-  }
+  },
+  "OBSOLETO_v4_1_corrected": "Este artefacto mezclaba auditoria de mision general (309 eventos, incluye RC v1.4 y otros ciclos del proyecto) presentandola implicitamente como si fuera auditoria de FS_v1.2 -- corregido en auditoria_documental_FS_v1_2_v4_1.json (filtro document_sha256/run_id/decision_id) y auditoria_mision_general_FS_v1_2_v4_1.json (alcance de proyecto explicitamente etiquetado). Conservado sin borrar por trazabilidad, NO USAR para afirmaciones sobre FS_v1.2 especificamente."
 }

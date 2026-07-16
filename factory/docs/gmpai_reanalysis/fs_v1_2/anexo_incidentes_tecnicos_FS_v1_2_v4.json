@@ -1,7 +1,7 @@
 {
   "documento": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
-  "version": "v4",
-  "generated_at": "2026-07-16T20:34:42.297739+00:00",
+  "version": "v4.1-corrected",
+  "generated_at": "2026-07-16T22:15:11.578573+00:00",
   "advertencia": "Este anexo documenta incidentes TECNICOS del analizador/pipeline (JSON invalido, retries, manifest, ZIP, Mission Control, model_digest, codigo). NO son desviaciones regulatorias del sistema evaluado (PLC/SCADA-PCS) ni hallazgos de cumplimiento GMP -- ver findings_completos_FS_v1_2_v4.json para esos.",
   "total_incidentes": 8,
   "incidentes": [
@@ -16,9 +16,9 @@
       "forma_de_deteccion": "Automatica -- CheckpointStore.find_resumable() detecto chunks con ok=False y permitio reintento dirigido.",
       "correccion_aplicada": "Reintento (retry-9a750a168a00) limitado a los 6 chunks fallidos, fusionado con los 21 exitosos previos via la misma regla de consolidacion (evaluate_chunked).",
       "prueba_de_correccion": "alcoa_plus_agent.json: 27/27 chunk_executions con ok=true tras el merge; fs_v1_2_status.json.agentes.alcoa_plus_agent.retry_merge documenta chunks_resolved_full=6, not_evaluated_pages_remaining=[].",
-      "estado_final": "RESUELTO para este documento (reintento exitoso).",
-      "riesgo_residual": "El motor sigue sin pedir format:'json' a Ollama -- el mismo tipo de fallo puede repetirse en documentos futuros; mitigado solo por el mecanismo de reintento, no por prevencion.",
-      "accion_preventiva": "Pendiente (fuera de alcance de este cierre, no se modifica el motor mas alla de lo ya hecho en el commit 0d69f84): agregar 'format':'json' al payload de ollama_client.generate() para reducir la tasa de fallos de parseo."
+      "estado_final": "RESUELTO EN EL CODIGO desde el commit 011f8a8368871d37d8d4628c06c4ec849d8b0203 (posterior al analisis historico de este documento, que corrio el 2026-07-16 ~13:14 UTC, antes del fix aplicado ese mismo dia ~17:39 UTC). Para ESTE documento, el fallo de 6/27 chunks ya fue resuelto vía el reintento dirigido (retry-9a750a168a00, ver mas abajo) -- ambas resoluciones son independientes: el reintento arreglo el resultado historico, el commit arregla la causa raiz para documentos futuros.",
+      "riesgo_residual": "NINGUNO para documentos futuros: ollama_client.generate() ahora envia 'format':'json' Y temperature=0.0; chunked_engine.py ahora valida el esquema del JSON recibido (_validate_checkpoint_schema) y aplica una reparacion acotada de una sola pasada (_repair_json) antes de descartar una respuesta; un fallo de parseo que sobreviva a ambos ya no se disuelve en evidencia_insuficiente -- se marca technical_execution_failure explicito y, si queda sin resolver, technical_execution_failure_pending=True con brecha 'PROVISIONAL' visible en el finding.",
+      "accion_preventiva": "YA APLICADA en el commit 011f8a8368871d37d8d4628c06c4ec849d8b0203 (agregar 'format':'json', schema validation, reparacion JSON, distincion explicita de technical_execution_failure). Cubierta por 6 tests nuevos en factory/tests/test_gmpai_chunked_engine.py (17/17 passed verificado en esta sesion, sin reprocesar FS_v1.2). NO se recomienda ninguna accion adicional sobre el motor en este cierre -- la unica accion pendiente es re-ejecutar el pipeline completo sobre documentos FUTUROS con el codigo ya corregido (fuera de alcance: no se ejecuta Ollama ni se reprocesa FS_v1.2 en v4.1)."
     },
     {
       "error_id": "TE-02",
@@ -31,9 +31,9 @@
       "forma_de_deteccion": "Manual -- inspeccion de chunk_executions durante la construccion de regulatory_metrics_FS_v1_2.json en este cierre.",
       "correccion_aplicada": "Ninguna sobre el motor (no se reprocesa ningun chunk ni se reejecuta Ollama, por instruccion explicita). Se documenta el estado explicitamente en vez de omitirlo u inventar un valor.",
       "prueba_de_correccion": "No aplica -- ver 'estado_final'.",
-      "estado_final": "model_digest_status = unavailable",
-      "riesgo_residual": "Bajo para este cierre puntual (el nombre de modelo es consistente en todos los chunks), pero persiste el riesgo de no poder auditar cambios de peso/quantizacion del modelo entre runs futuros.",
-      "accion_preventiva": "Registrar el digest una vez por sesion de Ollama activa (no por chunk) y persistirlo en el manifest de la sesion; agregar logging explicito de la excepcion real en vez de capturarla en silencio."
+      "estado_final": "DOS ESTADOS DISTINTOS QUE NO DEBEN CONFUNDIRSE: (a) HISTORICO -- model_digest permanece ausente en el 100% (81/81) de los chunk_executions YA EJECUTADOS de este documento el 2026-07-16 ~13:14-13:41 UTC; es un dato CONGELADO, no se puede completar retroactivamente sin reprocesar el documento (fuera de alcance). (b) CODIGO ACTUAL -- desde el commit 011f8a8368871d37d8d4628c06c4ec849d8b0203, show_digest() y el nuevo ollama_version() YA NO devuelven None en silencio: lanzan OllamaUnavailableError con el motivo real (ej. 'Connection refused') si Ollama no esta alcanzable. Para runs FUTUROS, un model_digest ausente ya no pasara desapercibido -- fallara explicitamente en vez de completarse silenciosamente con None.",
+      "riesgo_residual": "Para ESTE documento (dato historico): bajo -- el nombre de modelo (qwen2.5:7b-instruct-q4_K_M) es consistente en los 81 chunk_executions, aunque no se pueda verificar criptograficamente que fue exactamente el mismo binario/cuantizacion en cada uno. Para documentos FUTUROS: el riesgo de auditabilidad de model_digest se elimina -- la nueva excepcion explicita obliga a decidir (reintentar, o registrar el fallo) en vez de continuar silenciosamente sin ese dato.",
+      "accion_preventiva": "YA APLICADA en el commit 011f8a8368871d37d8d4628c06c4ec849d8b0203 (OllamaUnavailableError explicito en show_digest()/ollama_version()). NO se recomienda ninguna accion adicional sobre el codigo en este cierre. Pendiente unicamente para documentos futuros: capturar OllamaUnavailableError en el punto de llamada y decidir explicitamente si continuar sin digest (documentado) o abortar/reintentar -- ese manejo de la excepcion en el caller no se audito en este turno (fuera del alcance de FS_v1.2)."
     },
     {
       "error_id": "TE-03",
@@ -125,5 +125,6 @@
       "riesgo_residual": "Si se edita manualmente el DOCX generado sin regenerar el PDF desde el mismo script, ambos divergirian de nuevo -- el proceso depende de no editar los .docx a mano post-generacion.",
       "accion_preventiva": "Documentar en el manifest que ambos formatos provienen del mismo generador y misma version de datos; no editar manualmente los DOCX/PDF publicados."
     }
-  ]
+  ],
+  "nota_te01_te02_v4_1_corrected": "TE-01 y TE-02 estaban RESUELTOS EN EL CODIGO desde el commit 011f8a8368871d37d8d4628c06c4ec849d8b0203 ya en el momento en que se genero v4.1 -- el texto anterior de v4.1 decia incorrectamente 'permanecen sin corregir en el motor'. Verificado por lectura directa de ollama_client.py y chunked_engine.py (sin modificar codigo) mas 'git log'/'git merge-base --is-ancestor' en el turno de verificacion previo a esta correccion. Corregido aqui."
 }
