@@ -200,14 +200,19 @@ function _renderFsV12Closure(d){
       <b>${m.regulatory_readiness_index.rri_pct}%</b><br>
       <span style="font-size:9px">${_gmpEscHtml(m.regulatory_readiness_index.etiqueta_obligatoria)}</span>
     ` : '';
+  // fix HTTP 404: c.package (resuelto en vivo por get_package_info(), nunca
+  // un nombre asumido) -- el zip se excluye deliberadamente de manifest.json.
+  const pkg = c.package;
   html += _block('6. Métricas, gobernanza y artefactos (run vigente ' + c.run_id + ')', `
     <div class="mono" style="font-size:10.5px;line-height:1.9">${metricsRows}</div>
     <div class="meta" style="font-size:9.5px;color:var(--faint);margin:6px 0">
       El borrador v3 NUNCA se muestra como approved, compliant, effective ni released.
     </div>
-    <div>${_artifactButtons(c.run_id)}</div>
+    <div>${_artifactButtons(c.run_id, pkg)}</div>
     <div class="meta" style="font-size:9px;color:var(--faint);margin-top:6px">
-      zip (${_gmpEscHtml(c.zip_filename)}) SHA-256: <span class="mono">${_gmpEscHtml(c.zip_sha256)}</span><br>
+      ${pkg ? `${_gmpEscHtml(pkg.package_artifact_name)} (${_gmpEscHtml(pkg.package_mime)}, ${pkg.package_size} bytes)
+      SHA-256: <span class="mono">${_gmpEscHtml(pkg.package_sha256)}</span><br>` :
+        `<span style="color:var(--fail)">Sin paquete ZIP resuelto para este run (${_gmpEscHtml(c.package_error || '')})</span><br>`}
       ${receipt ? `package_receipt: artifact_count=${receipt.artifact_count_real}, manifest_hash=${_gmpEscHtml((receipt.manifest_hash||'').slice(0,16))}…` : ''}
     </div>`);
 
@@ -217,7 +222,8 @@ function _renderFsV12Closure(d){
       <div style="margin-bottom:8px">
         run_id <b>${_gmpEscHtml(sr.run_id)}</b> (${_gmpEscHtml(sr.version || 'v?')}) ${_statusBadge('SUPERSEDED_FOR_OPERATIONAL_USE', 'fail')}<br>
         <span class="meta" style="font-size:9.5px;color:var(--faint)">superseded_by ${_gmpEscHtml(sr.superseded_by_run_id)} — conservado integro para auditoria, no operativo.</span><br>
-        ${_btn(sr.zip_filename + ' (superseded)', sr.run_id, sr.zip_filename)}
+        ${sr.package ? _btn(sr.package.package_artifact_name + ' (superseded)', sr.run_id, sr.package.package_artifact_name)
+                     : '<span class="meta" style="color:var(--fail);font-size:9px">Sin paquete ZIP resuelto</span>'}
       </div>`).join('');
     html += _block('Versión intermedia superada (NO vigente)', rows);
   }
@@ -226,7 +232,8 @@ function _renderFsV12Closure(d){
       <div style="margin-bottom:8px">
         run_id <b>${_gmpEscHtml(lr.run_id)}</b> ${_statusBadge('LEGACY_RC_V1.4_PRE_FS_REANALYSIS', 'fail')} ${_statusBadge('SUPERSEDED_FOR_OPERATIONAL_USE', 'fail')}<br>
         <span class="meta" style="font-size:9.5px;color:var(--faint)">superseded_by ${_gmpEscHtml(lr.superseded_by_run_id)} — conservado íntegro solo para auditoría histórica, no operativo.</span><br>
-        ${_btn('paquete_final.zip (legado)', lr.run_id, 'paquete_final.zip')}
+        ${lr.package ? _btn(lr.package.package_artifact_name + ' (legado)', lr.run_id, lr.package.package_artifact_name)
+                     : '<span class="meta" style="color:var(--fail);font-size:9px">Sin paquete ZIP resuelto</span>'}
       </div>`).join('');
     html += _block('Histórico — RC v1.4 (NO vigente)', legacyRows);
   }
@@ -234,7 +241,7 @@ function _renderFsV12Closure(d){
   return html;
 }
 
-function _artifactButtons(runId){
+function _artifactButtons(runId, pkg){
   const artifactList = [
     ['Borrador correcciones v3 (DOCX)', 'FS_v1.2_borrador_correcciones_draft_v3.docx'],
     ['Borrador correcciones v3 (PDF)', 'FS_v1.2_borrador_correcciones_draft_v3.pdf'],
@@ -253,9 +260,11 @@ function _artifactButtons(runId){
     ['manifest.json', 'manifest.json'],
     ['SHA256SUMS.txt', 'SHA256SUMS.txt'],
     ['package_receipt.json', 'package_receipt.json'],
-    ['paquete_final_FS_v1_2_v3.zip', 'paquete_final_FS_v1_2_v3.zip'],
   ];
-  return artifactList.map(([label, path]) => _btn(label, runId, path)).join('');
+  let html = artifactList.map(([label, path]) => _btn(label, runId, path)).join('');
+  // El ZIP nunca se hardcodea: solo se ofrece si el backend lo resolvio.
+  if(pkg) html += _btn(pkg.package_artifact_name, pkg.run_id, pkg.package_artifact_name);
+  return html;
 }
 
 function _renderPanel(d){
@@ -272,20 +281,29 @@ function _renderPanel(d){
   }
 
   const m = d.latest;
+  const pkg = d.package; // fix HTTP 404: nunca asumir 'paquete_final.zip' -- el zip se
+  // excluye deliberadamente de manifest.json (ver package_receipt.json / get_package_info()),
+  // el nombre/hash/tamano/mime real llegan resueltos desde la API en d.package.
   html += `<div class="card" style="padding:10px 12px;margin-bottom:8px">
     <div class="meta mono" style="font-size:10.5px;line-height:1.8">
       run_id &nbsp; ${_gmpEscHtml(m.run_id)}<br>
       generado &nbsp; ${_gmpEscHtml((m.generated_at || '').slice(0, 19).replace('T', ' '))}<br>
-      RC canónico &nbsp; ${_gmpEscHtml(m.rc_canonical)}<br>
+      RC canónico &nbsp; ${_gmpEscHtml(m.rc_canonical || 'no aplica')}<br>
       artefactos &nbsp; ${m.artifacts.length}
     </div>
   </div>`;
 
-  html += `<div class="dp-sub">Informe final y tracker</div>
-    <div style="margin-bottom:8px">
-      ${_btn('Informe final PDF', m.run_id, 'final_report.pdf')}
-      ${_btn('Tracker remediaciones PDF', m.run_id, 'remediation_tracker.pdf')}
-    </div>`;
+  // Estos dos artefactos solo existen en paquetes generados por
+  // run_packaging() (esquema RC generico) -- se muestran SOLO si estan
+  // realmente en el manifest de este run, nunca asumidos.
+  const filenames = new Set(m.artifacts.map(a => a.filename));
+  const genericBtns = [];
+  if(filenames.has('final_report.pdf')) genericBtns.push(_btn('Informe final PDF', m.run_id, 'final_report.pdf'));
+  if(filenames.has('remediation_tracker.pdf')) genericBtns.push(_btn('Tracker remediaciones PDF', m.run_id, 'remediation_tracker.pdf'));
+  if(genericBtns.length){
+    html += `<div class="dp-sub">Informe final y tracker</div>
+      <div style="margin-bottom:8px">${genericBtns.join('')}</div>`;
+  }
 
   const corrected = m.artifacts.filter(a => a.filename.startsWith('corrected_documents/'));
   if(corrected.length){
@@ -305,11 +323,29 @@ function _renderPanel(d){
     html += `</div>`;
   }
 
-  html += `<div class="dp-sub">Paquete completo</div>
-    <div style="margin-bottom:4px">${_btn('paquete_final.zip', m.run_id, 'paquete_final.zip')}</div>
+  // Cualquier artefacto en la raiz del run (informe profesional v3, metricas,
+  // changelog, etc.) que no caiga en las categorias de arriba -- generico,
+  // no asume ningun esquema fijo de nombres.
+  const known = new Set(['final_report.pdf', 'remediation_tracker.pdf', ...corrected.map(a=>a.filename), ...matrices.map(a=>a.filename)]);
+  const otros = m.artifacts.filter(a => !known.has(a.filename) && !a.filename.startsWith('agent_reports/') && !a.filename.startsWith('audit_summary/'));
+  if(otros.length){
+    html += `<div class="dp-sub">Otros artefactos del run</div><div style="margin-bottom:8px">`;
+    for(const a of otros){
+      html += _btn(a.filename.split('/').pop(), m.run_id, a.filename);
+    }
+    html += `</div>`;
+  }
+
+  html += `<div class="dp-sub">Paquete completo</div>`;
+  if(pkg){
+    html += `<div style="margin-bottom:4px">${_btn(pkg.package_artifact_name, pkg.run_id, pkg.package_artifact_name)}</div>
     <div class="meta" style="font-size:9px;color:var(--faint)">
-      SHA-256 en manifest.json y SHA256SUMS.txt dentro del paquete.
+      ${_gmpEscHtml(pkg.package_artifact_name)} · ${_gmpEscHtml(pkg.package_mime)} · ${pkg.package_size} bytes<br>
+      SHA-256: <span class="mono">${_gmpEscHtml(pkg.package_sha256)}</span>
     </div>`;
+  } else {
+    html += `<div class="meta" style="color:var(--fail);font-size:10px">Sin paquete ZIP resuelto para este run.</div>`;
+  }
 
   return html;
 }

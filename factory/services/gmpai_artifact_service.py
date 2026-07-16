@@ -455,6 +455,46 @@ def get_manifest(run_id: str) -> dict:
     return json.loads(manifest_path.read_text(encoding="utf-8"))
 
 
+def get_package_info(run_id: str) -> dict:
+    """Resuelve el paquete ZIP REAL de un run sin asumir ningun nombre fijo
+    (fix HTTP 404 2026-07-16: la UI tenia 'paquete_final.zip' hardcodeado,
+    pero el zip del cierre v3 se llama 'paquete_final_FS_v1_2_v3.zip' -- el
+    zip se excluye deliberadamente de manifest.json para evitar
+    circularidad, ver package_receipt.json). Fuente de verdad, en orden:
+    1) package_receipt.json (zip_filename + zip_sha256_final, sellados tras
+       validacion — runs v3+); 2) unico archivo *.zip en el run_dir (runs
+       anteriores sin receipt, ej. legacy RC v1.4 y v2, que usan
+       'paquete_final.zip' por convencion pero no se asume el nombre)."""
+    run_dir = GMPAI_REPORTS_BASE / run_id
+    if not run_dir.exists():
+        raise ArtifactNotFound(f"run '{run_id}' no encontrado")
+
+    receipt_path = run_dir / "package_receipt.json"
+    if receipt_path.exists():
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        zip_name = receipt["zip_filename"]
+        zip_sha256 = receipt["zip_sha256_final"]
+    else:
+        zips = sorted(run_dir.glob("*.zip"))
+        if not zips:
+            raise ArtifactNotFound(f"Sin paquete ZIP en run '{run_id}'")
+        zip_name = zips[0].name
+        zip_sha256 = _sha256_file(zips[0])
+
+    zip_path = run_dir / zip_name
+    if not zip_path.exists():
+        raise ArtifactNotFound(f"Paquete '{zip_name}' referenciado pero no encontrado en run '{run_id}'")
+
+    return {
+        "run_id": run_id,
+        "package_artifact_name": zip_name,
+        "package_download_url": f"/api/v1/layer9/missions/{PROJECT_ID}/gmpai-artifacts/{run_id}/{zip_name}/download",
+        "package_sha256": zip_sha256,
+        "package_size": zip_path.stat().st_size,
+        "package_mime": _ARTIFACT_MIME.get(zip_path.suffix, "application/zip"),
+    }
+
+
 # ── FS_v1.2 — registro explícito de cierre para Mission Control ────────────
 # Distinto del RC canónico (que cubre los 32 documentos sin chunking): esto
 # registra, para el documento FS_v1.2 puntual, cuál run de gmpai-artifacts es
@@ -602,9 +642,26 @@ def record_fs_v1_2_closure(
 
 
 def get_fs_v1_2_closure_status() -> dict:
+    """Registro de cierre FS_v1.2 + informacion de paquete resuelta EN VIVO
+    (nunca un nombre asumido) para el run vigente y cada run superseded/
+    legacy, para que la UI nunca hardcodee 'paquete_final.zip'."""
     if not FS_V1_2_CLOSURE_REGISTRY.exists():
         raise ArtifactNotFound("Registro de cierre FS_v1.2 no generado todavía")
-    return json.loads(FS_V1_2_CLOSURE_REGISTRY.read_text(encoding="utf-8"))
+    registry = json.loads(FS_V1_2_CLOSURE_REGISTRY.read_text(encoding="utf-8"))
+
+    def _attach_package(entry: dict) -> dict:
+        try:
+            entry["package"] = get_package_info(entry["run_id"])
+        except ArtifactNotFound as e:
+            entry["package"] = None
+            entry["package_error"] = str(e)
+        return entry
+
+    if registry.get("current"):
+        registry["current"] = _attach_package(registry["current"])
+    registry["superseded_runs"] = [_attach_package(r) for r in registry.get("superseded_runs", [])]
+    registry["legacy_runs"] = [_attach_package(r) for r in registry.get("legacy_runs", [])]
+    return registry
 
 
 def resolve_artifact_path(run_id: str, rel_path: str) -> Path:

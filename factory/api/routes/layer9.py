@@ -1115,7 +1115,13 @@ def get_gmpai_artifacts(run_id: str | None = None):
         manifest = _gmpai.get_manifest(target)
     except _gmpai.ArtifactNotFound as e:
         raise HTTPException(404, str(e))
-    return {"runs": runs, "latest": manifest}
+    # El ZIP se excluye deliberadamente de manifest.json (evita circularidad
+    # de hash) -- se resuelve aparte, en vivo, nunca con un nombre asumido.
+    try:
+        package = _gmpai.get_package_info(target)
+    except _gmpai.ArtifactNotFound:
+        package = None
+    return {"runs": runs, "latest": manifest, "package": package}
 
 
 class GmpaiFsV12ClosureRequest(BaseModel):
