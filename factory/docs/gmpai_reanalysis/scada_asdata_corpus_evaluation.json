@@ -1,0 +1,149 @@
+{
+  "corpus": "SCADA/ASDATA (18 documentos, verificados 18/18 contra GMPAI/manifests/SHA256SUMS.txt)",
+  "generated_at": "2026-07-16T23:22:03.102968+00:00",
+  "metodo": "Inspeccion manual real (extraccion de texto + tablas con python-docx/openpyxl/python-pptx/pypdf, sin Ollama, sin agentes LLM) sobre los 18 documentos. Para .docx se extrajo tambien el contenido de tablas (bug corregido durante esta inspeccion: la primera pasada solo leia parrafos y subestimaba el contenido real de las 5 URS, que viven en tablas estructuradas).",
+  "documentos": [
+    {
+      "nombre": "ASDATA/Autoclave URS V2.docx",
+      "qms_doc": "GLB-URS-0005",
+      "tipo": "USER_REQUIREMENTS_SPECIFICATION",
+      "requisitos_identificados": 207,
+      "aplicabilidad": "APLICABLE",
+      "nota": "URS formal completo, sistema Autoclave (Washroom 009)."
+    },
+    {
+      "nombre": "ASDATA/Vial Labeler URS.docx",
+      "qms_doc": "GLB-URS-0007",
+      "tipo": "USER_REQUIREMENTS_SPECIFICATION",
+      "requisitos_identificados": 115,
+      "aplicabilidad": "APLICABLE",
+      "nota": "URS formal completo, sistema Vial Labeler (Staging 032)."
+    },
+    {
+      "nombre": "ASDATA/Downflow Booth URS 13oct2022 V2.docx",
+      "qms_doc": "GLB-URS-0006",
+      "tipo": "USER_REQUIREMENTS_SPECIFICATION",
+      "requisitos_identificados": 46,
+      "aplicabilidad": "APLICABLE",
+      "nota": "URS formal completo, sistema Downflow Booth (Weigh Dispensing 039)."
+    },
+    {
+      "nombre": "ASDATA/Unidirectional Ceiling Modules URS 13OCT2022 V2.docx",
+      "qms_doc": "GLB-URS-0009",
+      "tipo": "USER_REQUIREMENTS_SPECIFICATION",
+      "requisitos_identificados": 46,
+      "aplicabilidad": "APLICABLE",
+      "nota": "URS formal completo, sistema Unidirectional Ceiling Modules (Clean Prep 005 / Formulation 033)."
+    },
+    {
+      "nombre": "ASDATA/Formulation Tanks URS.docx",
+      "qms_doc": "GLB-URS-0008",
+      "tipo": "USER_REQUIREMENTS_SPECIFICATION",
+      "requisitos_identificados": 26,
+      "aplicabilidad": "APLICABLE",
+      "nota": "URS formal completo, sistema Formulation Tanks (Formulation 033)."
+    },
+    {
+      "nombre": "ASDATA/Cost Plus Drugs Network and Validation Readiness Assessment.doc",
+      "tipo": "GAP_READINESS_ASSESSMENT",
+      "aplicabilidad": "APLICABLE_PERO_BLOQUEADO",
+      "nota": "Contenido de alto valor (evaluacion explicita contra 21 CFR Part 11, Part 210, Part 211, Data Integrity, ISPE/ISO/USP) pero formato .doc binario legacy (Word 97-2003) sin parser confiable disponible (no hay LibreOffice/antiword en este entorno). Extraccion heuristica de bytes imprimibles realizada como prueba (36941 caracteres, confiabilidad BAJA -- puede omitir estructura, tablas, o introducir ruido). NO usar esta extraccion para un analisis formal sin antes resolver el gap de herramienta de extraccion."
+    },
+    {
+      "nombre": "ASDATA/CSV-Template.docx",
+      "tipo": "PROTOCOL_TEMPLATE_BLANK",
+      "aplicabilidad": "NO_APLICABLE",
+      "nota": "Plantilla de Protocolo de Calificacion de Instalacion (IQ) con placeholders literales ([System Name], [Revision], [DDMMMYYYY]) -- sin contenido de ningun sistema real."
+    },
+    {
+      "nombre": "ETG_ET_[System Name]_IQ w appendices.pdf",
+      "tipo": "PROTOCOL_TEMPLATE_BLANK",
+      "aplicabilidad": "NO_APLICABLE",
+      "nota": "Misma plantilla IQ en blanco (mismo ID de documento ETG_ET_System Name_IQ, Revision 3.0, Effective Date 16DEC2022) exportada a PDF con apendices -- 41 paginas de formato en blanco, sin datos de un sistema real."
+    },
+    {
+      "nombre": "ASDATA/10.docx",
+      "tipo": "NOTA_INFORMAL",
+      "aplicabilidad": "NO_APLICABLE",
+      "nota": "Nota breve (355 caracteres) sin encabezado ni control documental -- borrador informal sobre inicio de CSV de red, no es un documento gobernado."
+    },
+    {
+      "nombre": "ASDATA/MCCPDC CSV Documentation Needs AS_v1.docx",
+      "tipo": "CHECKLIST_PLANIFICACION",
+      "aplicabilidad": "NO_APLICABLE",
+      "nota": "Lista de verificacion de que documentos hay que reunir para CSV -- documento de planificacion interna, no un registro o especificacion evaluable en si mismo."
+    },
+    {
+      "nombre": "ASDATA/IP Addresses for SA25.pdf",
+      "tipo": "FUERA_DE_ALCANCE_POSIBLE_ERROR_DE_CORPUS",
+      "aplicabilidad": "EXCLUIDO",
+      "nota": "HALLAZGO IMPORTANTE: el titulo/contenido del dibujo (SYS45G, WUXI BIOLOGICS, HANGZHOU CHINA) corresponde a OTRO CLIENTE/PROYECTO, no a Mark Cuban Cost Plus Drug Company (MCCPDC). Posiblemente un archivo mal archivado en este corpus. NO se evalua como parte de este proyecto -- se recomienda verificar con el responsable del corpus si pertenece aqui."
+    },
+    {
+      "nombre": "ASDATA/CSV GAP Assessment Jul2023.xlsx",
+      "tipo": "TRACKER_GAP_MULTISISTEMA",
+      "aplicabilidad": "REFERENCIA_NO_PRIMARIA",
+      "nota": "Matriz de seguimiento de verificaciones (Software/HMI/User Access/Audit Trail/Backup/etc.) para varios sistemas (Serializacion, VanRx, WFI, Fedegari Autoclave). Util como evidencia de contexto/cruce, pero no tiene estructura de paginas/secciones evaluable por el motor de chunking -- no es un objetivo primario de analisis."
+    },
+    {
+      "nombre": "ASDATA/Copy of Mark Cuban Cost Plus Drug Company PBC 3 WEEKS Quote 002.xlsx",
+      "tipo": "COTIZACION_COMERCIAL",
+      "aplicabilidad": "NO_APLICABLE",
+      "nota": "Cotizacion comercial (CENTRUST Consultant) -- misma categoria que la SI Prop excluida en el corpus Rockwell."
+    },
+    {
+      "nombre": "ASDATA/Copy of Network Integration Status_.xlsx",
+      "tipo": "NOTAS_EVALUACION_INFORMAL",
+      "aplicabilidad": "NO_APLICABLE",
+      "nota": "Comentarios informales de un ingeniero (David Thiede, MAVERICK) sobre arquitectura de red -- sin control documental, no es un registro o especificacion formal."
+    },
+    {
+      "nombre": "ASDATA/Copy of scada inventory.xlsx",
+      "tipo": "INVENTARIO_TECNICO",
+      "aplicabilidad": "NO_APLICABLE",
+      "nota": "Inventario de dispositivos de red (IP/MAC/vendor/etc.) -- dato de infraestructura, no un registro evaluable contra Part11/Annex11/ALCOA+."
+    },
+    {
+      "nombre": "ASDATA/Operations Readiness.pptx",
+      "tipo": "PRESENTACION_ESTADO",
+      "aplicabilidad": "NO_APLICABLE",
+      "nota": "Presentacion de 3 diapositivas con supuestos de proyecto -- sin contenido evaluable como especificacion o registro."
+    },
+    {
+      "nombre": "ASDATA/Process Equipment_Open Items.xlsx",
+      "tipo": "LOG_DE_ISSUES",
+      "aplicabilidad": "NO_APLICABLE",
+      "nota": "Bitacora informal de incidencias de equipos de proceso -- formato de tracker, no estructurado como documento con paginas/secciones para el motor de chunking."
+    },
+    {
+      "nombre": "ASDATA/Task Items1.xlsx",
+      "tipo": "LISTA_DE_TAREAS",
+      "aplicabilidad": "NO_APLICABLE",
+      "nota": "Lista de tareas/costos informal (4 hojas) -- no es un documento regulado ni especificacion."
+    }
+  ],
+  "resumen": {
+    "total_documentos": 18,
+    "aplicables_urs_formales": 5,
+    "aplicable_pero_bloqueado_por_extraccion": 1,
+    "excluido_posible_error_de_corpus": 1,
+    "referencia_no_primaria": 1,
+    "no_aplicable": 10
+  },
+  "candidatos_para_siguiente_analisis": [
+    {
+      "nombre": "ASDATA/Autoclave URS V2.docx",
+      "qms_doc": "GLB-URS-0005",
+      "requisitos": 207,
+      "razon": "Mayor cobertura de requisitos (207) de los 5 URS formales -- ejercita el motor de chunking de forma comparable o superior a FS_v1.2 (19 checkpoints regulatorios). Documento controlado (QMS DOC #, autor y fecha declarados)."
+    },
+    {
+      "nombre": "ASDATA/Vial Labeler URS.docx",
+      "qms_doc": "GLB-URS-0007",
+      "requisitos": 115,
+      "razon": "Segunda mayor cobertura (115 requisitos). Alternativa si se prefiere un sistema de menor complejidad que Autoclave."
+    }
+  ],
+  "nota_gap_de_herramienta": "El corpus SCADA/ASDATA incluye al menos un documento .doc legacy de alto valor regulatorio (Cost Plus Drugs Network and Validation Readiness Assessment.doc) que NO puede extraerse de forma confiable con las herramientas disponibles en este entorno (no hay LibreOffice/antiword). Si se requiere analizar ese documento especificamente, es necesario resolver ese gap de herramienta primero (fuera del alcance de esta evaluacion).",
+  "conclusion": "El corpus SCADA/ASDATA SI tiene documentos aplicables y sustanciales para el pipeline de los 3 agentes -- a diferencia del corpus Rockwell restante (ya agotado), aqui hay 5 URS formales reales (GLB-URS-0005 a 0009) sin analizar. Se recomienda continuar el piloto sobre uno de estos 2 candidatos principales (Autoclave o Vial Labeler), previa autorizacion humana explicita antes de ejecutar Ollama/los agentes."
+}
