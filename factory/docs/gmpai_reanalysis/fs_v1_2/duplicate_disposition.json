@@ -1,0 +1,14 @@
+{
+  "family_key": "rockwell::215115305 scada pcs misc plc system fs v1 2",
+  "reference": "VDR-GMPAI-001 (factory/docs/gmpai_version_decision_record.json)",
+  "canonical_file": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "duplicate_file": "215115305 SCADA-PCS Misc PLC System FS_v1.2-2.pdf",
+  "sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "sha256_match": true,
+  "size_bytes": 578088,
+  "disposition": "DUPLICATE",
+  "rationale": "SHA-256 identico bit-a-bit entre ambos archivos; corroborado por el transmittal MAVERICK/215115305/039 que lista 'FS_v1.2.pdf' (sin sufijo) como documento oficialmente transmitido.",
+  "action_taken": "El duplicado NO se somete a analisis por chunks. No se genera ningun finding, run_id, task_id ni chunk_execution para 'FS_v1.2-2.pdf'. Solo la copia canonica 'FS_v1.2.pdf' se analiza (ver fda_part11_agent.json, eu_annex11_agent.json, alcoa_plus_agent.json en este mismo directorio).",
+  "duplicate_findings_count": 0,
+  "revision_humana_requerida": false
+}

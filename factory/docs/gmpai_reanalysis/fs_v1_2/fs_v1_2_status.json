@@ -1,0 +1,291 @@
+{
+  "documento": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "generated_at": "2026-07-16T13:41:40.956020+00:00",
+  "agentes": {
+    "fda_part11_agent": {
+      "run_id": "chunked-26e4369b44f1",
+      "chunks_total": 27,
+      "chunks_ok": 27,
+      "coverage_pct": 100.0,
+      "findings_count": 5,
+      "contradictions_count": 1,
+      "retry_merge": null
+    },
+    "eu_annex11_agent": {
+      "run_id": "chunked-a652a0ef1f18",
+      "chunks_total": 27,
+      "chunks_ok": 27,
+      "coverage_pct": 100.0,
+      "findings_count": 5,
+      "contradictions_count": 2,
+      "retry_merge": null
+    },
+    "alcoa_plus_agent": {
+      "run_id": "chunked-14079f37e579",
+      "chunks_total": 27,
+      "chunks_ok": 27,
+      "coverage_pct": 100.0,
+      "findings_count": 9,
+      "contradictions_count": 1,
+      "retry_merge": {
+        "retry_run_id": "retry-9a750a168a00",
+        "parent_run_id": "chunked-14079f37e579",
+        "merged_at": "2026-07-16T13:14:18.014498+00:00",
+        "chunks_retried": [
+          1,
+          6,
+          7,
+          18,
+          19,
+          20
+        ],
+        "chunks_resolved_full": 6,
+        "not_evaluated_pages_remaining": [],
+        "method": "prior consolidated Finding (21 chunks) tratado como 1 candidato consolidado + candidatos anclados nuevos de los 6 chunks recien resueltos, misma regla de consolidacion (acuerdo/desacuerdo) del motor evaluate_chunked"
+      }
+    }
+  },
+  "cobertura_global_pct": 100.0,
+  "not_evaluated_pages": [],
+  "findings_totales": 19,
+  "contradicciones_totales": 4,
+  "contradicciones_resueltas": 4,
+  "contradicciones_abiertas": 0,
+  "contradicciones": [
+    {
+      "req_id": "21_CFR_11.10(d)",
+      "label": "Limitar acceso a individuos autorizados",
+      "detalle": "pag 1-3:no_cumple, pag 4-4:no_cumple, pag 5-6:no_cumple, pag 7-9:no_cumple, pag 10-13:no_cumple, pag 18-19:no_cumple, pag 20-21:no_cumple, pag 35-36:no_cumple, pag 46-47:cumple_parcialmente, pag 51-52:no_cumple, pag 53-54:no_cumple, pag 56-56:no_cumple, pag 58-58:no_cumple",
+      "resolucion": {
+        "estado_resolucion": "resuelta_por_decision_humana",
+        "timestamp": "2026-07-16T13:40:36.539212+00:00",
+        "tipo": "falso_positivo",
+        "decision_humana": true,
+        "detalle": "Ver finding.changelog para el detalle completo."
+      },
+      "agente": "fda_part11_agent"
+    },
+    {
+      "req_id": "ANNEX11_7.1",
+      "label": "Almacenamiento y proteccion de datos",
+      "detalle": "pag 4-4:no_cumple, pag 7-9:no_cumple, pag 18-19:no_cumple, pag 20-21:cumple_parcialmente, pag 26-28:cumple_parcialmente, pag 35-36:cumple_parcialmente, pag 39-40:cumple_parcialmente, pag 41-42:cumple_parcialmente, pag 56-56:no_cumple, pag 58-58:no_cumple",
+      "resolucion": {
+        "estado_resolucion": "resuelta_por_decision_humana",
+        "timestamp": "2026-07-16T13:40:36.539212+00:00",
+        "tipo": "diferencia_de_alcance",
+        "decision_humana": true,
+        "detalle": "Ver finding.changelog para el detalle completo."
+      },
+      "agente": "eu_annex11_agent"
+    },
+    {
+      "req_id": "ANNEX11_12",
+      "label": "Seguridad fisica y logica",
+      "detalle": "pag 4-4:no_cumple, pag 7-9:no_cumple, pag 14-15:no_cumple, pag 18-19:no_cumple, pag 20-21:cumple_parcialmente, pag 56-56:no_cumple, pag 58-58:no_cumple",
+      "resolucion": {
+        "estado_resolucion": "resuelta_por_decision_humana",
+        "timestamp": "2026-07-16T13:40:36.539212+00:00",
+        "tipo": "falso_positivo",
+        "decision_humana": true,
+        "detalle": "Ver finding.changelog para el detalle completo."
+      },
+      "agente": "eu_annex11_agent"
+    },
+    {
+      "req_id": "ALCOA_AVAILABLE",
+      "label": "Available — disponibilidad para revision/auditoria",
+      "detalle": "pag 10-13:no_cumple, pag 22-23:cumple_parcialmente, pag 35-36:cumple_parcialmente, pag 41-42:no_cumple, pag 51-52:cumple_parcialmente, pag 53-54:no_cumple, pag 58-58:cumple_parcialmente",
+      "resolucion": {
+        "estado_resolucion": "resuelta_por_decision_humana",
+        "timestamp": "2026-07-16T13:40:36.539212+00:00",
+        "tipo": "diferencia_de_alcance",
+        "decision_humana": true,
+        "detalle": "Ver finding.changelog para el detalle completo."
+      },
+      "agente": "alcoa_plus_agent"
+    }
+  ],
+  "matriz_finding_correccion": [
+    {
+      "correccion_id": "COR-1",
+      "tema": "Control de acceso y autorizacion",
+      "correccion_propuesta": "Agregar al FS una seccion de control de acceso: matriz de roles/usuarios, mecanismo de autenticacion y autorizacion (authority checks), y trazabilidad de que usuario genera/modifica cada dato. Referenciar el SOP de control de acceso vigente en vez de asumirlo implicito.",
+      "findings_sustento": [
+        {
+          "req_id": "21_CFR_11.10(d)",
+          "agente": "fda_part11_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 1-3, 4-4, 5-6, 7-9, 10-13, 18-19, 20-21, 35-36, 51-52, 53-54, 56-56, 58-58 (no_cumple documentalmente; cita de pag 46-47 trasladada a COR-2, ver changelog)"
+        },
+        {
+          "req_id": "21_CFR_11.10(g)",
+          "agente": "fda_part11_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 1-3 (chunk 0)"
+        },
+        {
+          "req_id": "ANNEX11_12",
+          "agente": "eu_annex11_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 4-4, 7-9, 14-15, 18-19, 56-56, 58-58 (no_cumple documentalmente; cita UTC de pag 20-21 trasladada a ALCOA_CONSISTENT, ver changelog)"
+        },
+        {
+          "req_id": "ALCOA_ATTRIBUTABLE",
+          "agente": "alcoa_plus_agent",
+          "estado": "cumple_parcialmente",
+          "severidad": "menor",
+          "pagina_o_seccion": "pag 7-9 (chunk 3)"
+        }
+      ]
+    },
+    {
+      "correccion_id": "COR-2",
+      "tema": "Audit trail e integridad del dato (ALCOA+)",
+      "correccion_propuesta": "Agregar al FS una seccion de Audit Trail que describa: captura automatica con timestamp, preservacion del dato original, exactitud verificada (calibracion), completitud sin exclusiones, consistencia cronologica y perdurabilidad del registro. Esto cubre simultaneamente el requisito de audit trail de FDA/Annex11 y los 6 atributos ALCOA+ relacionados con el ciclo de vida del dato.",
+      "findings_sustento": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "agente": "fda_part11_agent",
+          "estado": "evidencia_insuficiente",
+          "severidad": "no_determinada",
+          "pagina_o_seccion": "paginas 1-58 (todo el documento, por chunks)"
+        },
+        {
+          "req_id": "ANNEX11_9",
+          "agente": "eu_annex11_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 4-4 (chunk 1)"
+        },
+        {
+          "req_id": "ALCOA_CONTEMPORANEOUS",
+          "agente": "alcoa_plus_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 41-42 (chunk 17)"
+        },
+        {
+          "req_id": "ALCOA_ORIGINAL",
+          "agente": "alcoa_plus_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 5-6 (chunk 2)"
+        },
+        {
+          "req_id": "ALCOA_ACCURATE",
+          "agente": "alcoa_plus_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 10-13 (chunk 4)"
+        },
+        {
+          "req_id": "ALCOA_COMPLETE",
+          "agente": "alcoa_plus_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 41-42 (chunk 17)"
+        },
+        {
+          "req_id": "ALCOA_CONSISTENT",
+          "agente": "alcoa_plus_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 10-13 (chunk 4)"
+        },
+        {
+          "req_id": "ALCOA_ENDURING",
+          "agente": "alcoa_plus_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 10-13 (chunk 4)"
+        }
+      ]
+    },
+    {
+      "correccion_id": "COR-3",
+      "tema": "Firma electronica",
+      "correccion_propuesta": "Agregar especificacion de firma electronica: manifestacion visible del firmante, vinculo logico/criptografico al registro firmado, y componentes de identificacion segun 21 CFR 11.200.",
+      "findings_sustento": [
+        {
+          "req_id": "21_CFR_11.50_11.70",
+          "agente": "fda_part11_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 1-3 (chunk 0)"
+        }
+      ]
+    },
+    {
+      "correccion_id": "COR-4",
+      "tema": "Validacion del sistema y gestion de riesgo",
+      "correccion_propuesta": "Referenciar en el FS el plan de validacion del sistema computarizado (protocolos IQ/OQ/PQ) y el analisis de riesgo GAMP 5 correspondiente.",
+      "findings_sustento": [
+        {
+          "req_id": "21_CFR_11.10(a)",
+          "agente": "fda_part11_agent",
+          "estado": "evidencia_insuficiente",
+          "severidad": "no_determinada",
+          "pagina_o_seccion": "paginas 1-58 (todo el documento, por chunks)"
+        },
+        {
+          "req_id": "ANNEX11_4",
+          "agente": "eu_annex11_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 4-4 (chunk 1)"
+        }
+      ]
+    },
+    {
+      "correccion_id": "COR-5",
+      "tema": "Almacenamiento, retencion y disponibilidad",
+      "correccion_propuesta": "Documentar politica de almacenamiento/backup, legibilidad a largo plazo, retencion de registros y disponibilidad para revision/auditoria.",
+      "findings_sustento": [
+        {
+          "req_id": "ANNEX11_7.1",
+          "agente": "eu_annex11_agent",
+          "estado": "cumple_parcialmente",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 4-4:no_cumple, pag 7-9:no_cumple, pag 18-19:no_cumple, pag 20-21:cumple_parcialmente, pag 26-28:cumple_parcialmente, pag 35-36:cumple_parcialmente, pag 39-40:cumple_parcialmente, pag 41-42:cumple_parcialmente, pag 56-56:no_cumple, pag 58-58:no_cumple"
+        },
+        {
+          "req_id": "ANNEX11_17",
+          "agente": "eu_annex11_agent",
+          "estado": "no_cumple",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 4-4 (chunk 1)"
+        },
+        {
+          "req_id": "ALCOA_LEGIBLE",
+          "agente": "alcoa_plus_agent",
+          "estado": "cumple_parcialmente",
+          "severidad": "menor",
+          "pagina_o_seccion": "pag 22-23 (chunk 9) (confirmado sin contradiccion por retry: pag 18-19)"
+        },
+        {
+          "req_id": "ALCOA_AVAILABLE",
+          "agente": "alcoa_plus_agent",
+          "estado": "cumple_parcialmente",
+          "severidad": "mayor",
+          "pagina_o_seccion": "pag 10-13:no_cumple, pag 22-23:cumple_parcialmente, pag 35-36:cumple_parcialmente, pag 41-42:no_cumple, pag 51-52:cumple_parcialmente, pag 53-54:no_cumple, pag 58-58:cumple_parcialmente"
+        }
+      ]
+    }
+  ],
+  "classification": "DRAFT_READY_AWAITING_HUMAN_REVIEW",
+  "classification_rationale": "Cobertura 100% en los 3 agentes (27/27 chunks cada uno). Las 4 contradicciones internas detectadas fueron analizadas y tienen resolucion tecnica propuesta con changelog trazable (clasificacion anterior/nueva, motivo, evidencia, fuente regulatoria) — 2 reclasificadas a no_cumple documentalmente (falsos positivos por evidencia mal asignada a checkpoint) y 2 mantenidas cumple_parcialmente con brecha reescrita (diferencia de alcance, no contradiccion real). Estas resoluciones son propuestas tecnicas pendientes de revision/aprobacion humana formal antes de considerarse cerradas — el borrador NO debe marcarse como approved, compliant, effective ni released.",
+  "revision_humana_requerida": true,
+  "capa9_decision": {
+    "decision_id": "ff640643-b767-426b-af5f-720f4edee78b",
+    "action": "fs_v1_2_contradiction_resolution",
+    "decision": "conditional_approve",
+    "decided_by": "Cesar",
+    "decision_origin": "human_confirmed",
+    "timestamp": "2026-07-16T14:03:21.767988+00:00",
+    "nota": "Aprobacion de la interpretacion tecnica de las 4 contradicciones, NO declaracion de cumplimiento GMP. COR-1 y COR-5 permanecen abiertos."
+  }
+}

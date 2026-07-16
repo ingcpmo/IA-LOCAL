@@ -102,6 +102,13 @@ VALID_EVENTS = {
     # W9 Bloque 2 — el dossier referencia (por ID+versión) un análisis de
     # caso aceptado; nunca copia su texto
     "dossier_case_reference_linked",
+    # gmpai_document_validation — reanálisis por chunks del motor git-trackeado
+    # (factory/engines/gmpai_integrity/), un evento por documento analizado
+    "gmpai_chunked_analysis_run",
+    # gmpai_document_validation — gap de cobertura por fallo tecnico (chunks
+    # que no produjeron JSON valido tras reintentos); nunca se declara
+    # evidencia_insuficiente regulatoria por un fallo de ejecucion
+    "gmpai_chunked_analysis_gap_registered",
 }
 
 
