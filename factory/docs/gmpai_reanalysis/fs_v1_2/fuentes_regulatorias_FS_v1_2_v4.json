@@ -1,0 +1,80 @@
+{
+  "documento": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "version": "v4",
+  "generated_at": "2026-07-16T20:34:42.298610+00:00",
+  "fuentes_oficiales_locales": {
+    "OFFICIAL_ECFR_21CFR_part11.txt": {
+      "sha256_recalculado_ahora": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+      "sha256_registrado_en_ingest_manifest": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+      "match": true,
+      "fuente_ingest_manifest": "factory/deployments/lab_qc_project/ingest_manifest.yaml"
+    },
+    "OFFICIAL_EU_GMP_ANNEX11.pdf": {
+      "sha256_recalculado_ahora": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+      "sha256_registrado_en_ingest_manifest": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+      "match": true,
+      "fuente_ingest_manifest": "factory/deployments/lab_qc_project/ingest_manifest.yaml"
+    },
+    "OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf": {
+      "sha256_recalculado_ahora": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+      "sha256_registrado_en_ingest_manifest": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+      "match": true,
+      "fuente_ingest_manifest": "factory/deployments/lab_qc_project/ingest_manifest.yaml"
+    }
+  },
+  "verificacion_annex11_revision_2025": {
+    "verificado_en_internet": true,
+    "motivo_de_consulta": "Incertidumbre real declarada por el usuario sobre si existe una revision posterior de Annex 11 que pudiera afectar vigencia.",
+    "hallazgo": "Draft de revision de Annex 11 (EMA GMP/GDP IWG + PIC/S) publicado 2025-07-07, consulta publica cerrada 2025-10-07. Version final esperada 'mid-2026' segun fuentes secundarias -- no confirmado como efectiva a la fecha de este cierre (2026-07-16).",
+    "estado": "draft",
+    "consultation_status": "closed_consultation",
+    "effective_status": "not_effective",
+    "usado_para_cambiar_findings_vigentes": false,
+    "fuentes": [
+      "https://health.ec.europa.eu/consultations/stakeholders-consultation-eudralex-volume-4-good-manufacturing-practice-guidelines-chapter-4-annex_en",
+      "https://www.gmp-compliance.org/guidelines/gmp-guideline/eu-gmp-annex-11-draft-2025-computerised-systems"
+    ],
+    "nota": "No se sustituye la version oficial vigente (Annex 11, revision efectiva desde 2013) sin aprobacion humana explicita. Los 19 findings de este cierre siguen evaluados contra la version oficial VIGENTE, no contra el draft."
+  },
+  "fuentes_locales_revisadas": [
+    {
+      "contradiccion": "C1-FDA-11.10d",
+      "archivo": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_ECFR_21CFR_part11.txt",
+      "source_type": "OFFICIAL_ECFR",
+      "official_source": "eCFR www.ecfr.gov - Title 21 Part 11 completo",
+      "version_registrada": "vigente 2026-07-01 (segun corpus_manifest.yaml v2.0, ingesta 2026-07-06)",
+      "sha256_manifest": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+      "sha256_verificado_ahora": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+      "sha256_match": true,
+      "seccion_usada": "Section 11.10 Controls for closed systems, parrafo (d) 'Limiting system access to authorized individuals.'",
+      "suficiente": true,
+      "motivo": "Texto identico al conocido y estable desde la regla final de 1997; sin enmiendas a 11.10(d)/(e)/(g) desde entonces. No hay ambiguedad de version ni discrepancia de fuente que requiera confirmacion externa."
+    },
+    {
+      "contradiccion": "C2-ANNEX11-7.1 / C3-ANNEX11-12",
+      "archivo": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_EU_GMP_ANNEX11.pdf",
+      "source_type": "OFFICIAL_PDF",
+      "official_source": "European Commission - EudraLex Volume 4, Annex 11 (health.ec.europa.eu)",
+      "version_registrada": "SANCO/C8/AM/sl/ares(2010)1064599, Bruselas -- revision vigente desde 2011, efectiva 2013",
+      "sha256_manifest": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+      "sha256_verificado_ahora": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+      "sha256_match": true,
+      "seccion_usada": "7. Data Storage (7.1, 7.2) y 12. Security (12.1, 12.2, 12.3)",
+      "suficiente": true,
+      "motivo": "Annex 11 no ha sido revisado formalmente desde 2011 (efectivo 2013); no hay version posterior publicada por la Comision Europea hasta la fecha de conocimiento de este agente. Texto de 7.1 y 12.1 es exactamente el esperado, sin discrepancia."
+    },
+    {
+      "contradiccion": "C4-ALCOA-AVAILABLE",
+      "archivo": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+      "source_type": "OFFICIAL_PDF",
+      "official_source": "MHRA GXP Data Integrity Guidance and Definitions, Revision 1, March 2018",
+      "version_registrada": "Revision 1, March 2018",
+      "sha256_manifest": null,
+      "sha256_verificado_ahora": "no recalculado en esta revision (archivo no modificado, ver ingest_manifest.yaml del proyecto lab_qc_project para el hash de ingesta original)",
+      "sha256_match": "not_reverified_here",
+      "seccion_usada": "3.10 - define ALCOA+ y el atributo 'Available' (datos completos, consistentes, perdurables y disponibles durante todo el ciclo de vida)",
+      "suficiente": true,
+      "motivo": "ALCOA+ es una definicion de industria estable (MHRA 2018, adoptada tambien por FDA/PIC-S); no existe una 'version' regulatoria formal que pueda estar desactualizada para efectos de esta clasificacion documental."
+    }
+  ]
+}

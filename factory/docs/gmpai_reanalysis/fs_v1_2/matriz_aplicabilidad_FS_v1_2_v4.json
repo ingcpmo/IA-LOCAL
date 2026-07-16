@@ -1,0 +1,378 @@
+{
+  "documento": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "version": "v4.1",
+  "generated_at": "2026-07-16T21:25:40.305486+00:00",
+  "nota": "Este cierre evalua UNICAMENTE el documento FS_v1.2. La aplicabilidad a otros tipos documentales del V-model (URS/DS/IQ/OQ/PQ/SAT) no fue evaluada -- no se infiere ni se marca 'no aplica' donde en realidad es 'no evaluado'. [v4.1] Se agrego evidencia esperada en FS, documento alternativo esperado y justificacion por requisito, mapeados a la correccion COR correspondiente.",
+  "tipos_documentales_considerados": [
+    "URS",
+    "FS",
+    "DS",
+    "IQ",
+    "OQ",
+    "PQ",
+    "SAT"
+  ],
+  "matriz": [
+    {
+      "req_id": "21_CFR_11.10(a)",
+      "requisito": "21_CFR_11.10(a) — Validacion del sistema (accuracy/reliability)",
+      "agente": "fda_part11_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "EVIDENCE_NOT_AVAILABLE",
+      "cambio_documental_propuesto": "COR-4",
+      "evidencia_esperada_en_fs": "Referencia cruzada a IQ/OQ/PQ y analisis de riesgo GAMP 5 del sistema.",
+      "documento_alternativo_esperado": "Protocolo IQ/OQ/PQ independiente (ver REM-GMPAI-001, gap ya identificado en piloto A/URS)",
+      "justificacion": "El protocolo IQ/OQ/PQ es tipicamente un documento separado del FS en el V-model GAMP 5 -- aceptable como evidencia alternativa, pero el FS deberia referenciarlo explicitamente y el protocolo mismo no fue localizado en el corpus (REM-GMPAI-001 abierto)."
+    },
+    {
+      "req_id": "21_CFR_11.10(d)",
+      "requisito": "21_CFR_11.10(d) — Limitar acceso a individuos autorizados",
+      "agente": "fda_part11_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-1",
+      "evidencia_esperada_en_fs": "Matriz de roles/usuarios, mecanismo de autenticacion/autorizacion (authority checks), trazabilidad de usuario por dato/accion, y controles de seguridad fisica/logica (gabinetes, red OT/IT).",
+      "documento_alternativo_esperado": "SOP de control de acceso logico y fisico de Rockwell/planta (si existe fuera del FS)",
+      "justificacion": "21 CFR 11.10(d) y Annex 11 S12 no exigen que el control este descrito EN el FS -- basta con una referencia formal y verificable a un SOP vigente que lo describa. El FS actual no incluye ni el control ni la referencia."
+    },
+    {
+      "req_id": "21_CFR_11.10(e)",
+      "requisito": "21_CFR_11.10(e) — Audit trail seguro con timestamp",
+      "agente": "fda_part11_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "EVIDENCE_NOT_AVAILABLE",
+      "cambio_documental_propuesto": "COR-2",
+      "evidencia_esperada_en_fs": "Descripcion de audit trail: captura automatica con timestamp, preservacion del dato original, exactitud, completitud sin exclusiones, consistencia cronologica y perdurabilidad del registro.",
+      "documento_alternativo_esperado": "Especificacion tecnica del modulo de audit trail (si es un componente de software separado documentado aparte)",
+      "justificacion": "El audit trail suele documentarse en una especificacion tecnica del modulo de historización/eventos; aceptable como evidencia alternativa si se referencia explicitamente desde el FS."
+    },
+    {
+      "req_id": "21_CFR_11.10(g)",
+      "requisito": "21_CFR_11.10(g) — Verificacion de autoridad (authority checks)",
+      "agente": "fda_part11_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-1",
+      "evidencia_esperada_en_fs": "Matriz de roles/usuarios, mecanismo de autenticacion/autorizacion (authority checks), trazabilidad de usuario por dato/accion, y controles de seguridad fisica/logica (gabinetes, red OT/IT).",
+      "documento_alternativo_esperado": "SOP de control de acceso logico y fisico de Rockwell/planta (si existe fuera del FS)",
+      "justificacion": "21 CFR 11.10(d) y Annex 11 S12 no exigen que el control este descrito EN el FS -- basta con una referencia formal y verificable a un SOP vigente que lo describa. El FS actual no incluye ni el control ni la referencia."
+    },
+    {
+      "req_id": "21_CFR_11.50_11.70",
+      "requisito": "21_CFR_11.50_11.70 — Firma electronica (manifestacion y vinculo al registro)",
+      "agente": "fda_part11_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-3",
+      "evidencia_esperada_en_fs": "Descripcion del mecanismo de firma electronica (si aplica al alcance del sistema PLC/SCADA-PCS).",
+      "documento_alternativo_esperado": "Politica corporativa de firma electronica del cliente (Mark Cuban Cost Plus Drug Company)",
+      "justificacion": "La firma electronica suele ser una politica a nivel de sistema QMS/ERP del cliente, no del PLC/SCADA -- aceptable como evidencia alternativa si el FS referencia explicitamente que el sistema PLC/SCADA no gestiona firmas electronicas y donde si se gestionan."
+    },
+    {
+      "req_id": "ANNEX11_4",
+      "requisito": "ANNEX11_4 — Gestion de riesgo del sistema computarizado",
+      "agente": "eu_annex11_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-4",
+      "evidencia_esperada_en_fs": "Referencia cruzada a IQ/OQ/PQ y analisis de riesgo GAMP 5 del sistema.",
+      "documento_alternativo_esperado": "Protocolo IQ/OQ/PQ independiente (ver REM-GMPAI-001, gap ya identificado en piloto A/URS)",
+      "justificacion": "El protocolo IQ/OQ/PQ es tipicamente un documento separado del FS en el V-model GAMP 5 -- aceptable como evidencia alternativa, pero el FS deberia referenciarlo explicitamente y el protocolo mismo no fue localizado en el corpus (REM-GMPAI-001 abierto)."
+    },
+    {
+      "req_id": "ANNEX11_7.1",
+      "requisito": "ANNEX11_7.1 — Almacenamiento y proteccion de datos",
+      "agente": "eu_annex11_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "NOT_DEMONSTRATED_IN_DOSSIER",
+      "cambio_documental_propuesto": "COR-5",
+      "evidencia_esperada_en_fs": "Politica de retencion/backup/restauracion de datos y procedimiento formal de disponibilidad de registros ante auditoria.",
+      "documento_alternativo_esperado": "Politica de retencion de datos y SOP de backup/restauracion de la planta",
+      "justificacion": "El almacenamiento/retencion de largo plazo suele gestionarse a nivel de politica de planta, no del FS de un sistema individual -- aceptable como evidencia alternativa si el FS referencia el SOP correspondiente."
+    },
+    {
+      "req_id": "ANNEX11_9",
+      "requisito": "ANNEX11_9 — Audit trail",
+      "agente": "eu_annex11_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-2",
+      "evidencia_esperada_en_fs": "Descripcion de audit trail: captura automatica con timestamp, preservacion del dato original, exactitud, completitud sin exclusiones, consistencia cronologica y perdurabilidad del registro.",
+      "documento_alternativo_esperado": "Especificacion tecnica del modulo de audit trail (si es un componente de software separado documentado aparte)",
+      "justificacion": "El audit trail suele documentarse en una especificacion tecnica del modulo de historización/eventos; aceptable como evidencia alternativa si se referencia explicitamente desde el FS."
+    },
+    {
+      "req_id": "ANNEX11_12",
+      "requisito": "ANNEX11_12 — Seguridad fisica y logica",
+      "agente": "eu_annex11_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-1",
+      "evidencia_esperada_en_fs": "Matriz de roles/usuarios, mecanismo de autenticacion/autorizacion (authority checks), trazabilidad de usuario por dato/accion, y controles de seguridad fisica/logica (gabinetes, red OT/IT).",
+      "documento_alternativo_esperado": "SOP de control de acceso logico y fisico de Rockwell/planta (si existe fuera del FS)",
+      "justificacion": "21 CFR 11.10(d) y Annex 11 S12 no exigen que el control este descrito EN el FS -- basta con una referencia formal y verificable a un SOP vigente que lo describa. El FS actual no incluye ni el control ni la referencia."
+    },
+    {
+      "req_id": "ANNEX11_17",
+      "requisito": "ANNEX11_17 — Archivo y retencion de registros",
+      "agente": "eu_annex11_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-5",
+      "evidencia_esperada_en_fs": "Politica de retencion/backup/restauracion de datos y procedimiento formal de disponibilidad de registros ante auditoria.",
+      "documento_alternativo_esperado": "Politica de retencion de datos y SOP de backup/restauracion de la planta",
+      "justificacion": "El almacenamiento/retencion de largo plazo suele gestionarse a nivel de politica de planta, no del FS de un sistema individual -- aceptable como evidencia alternativa si el FS referencia el SOP correspondiente."
+    },
+    {
+      "req_id": "ALCOA_ATTRIBUTABLE",
+      "requisito": "ALCOA_ATTRIBUTABLE — Attributable — quien genero el dato",
+      "agente": "alcoa_plus_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "NOT_DEMONSTRATED_IN_DOSSIER",
+      "cambio_documental_propuesto": "COR-1",
+      "evidencia_esperada_en_fs": "Matriz de roles/usuarios, mecanismo de autenticacion/autorizacion (authority checks), trazabilidad de usuario por dato/accion, y controles de seguridad fisica/logica (gabinetes, red OT/IT).",
+      "documento_alternativo_esperado": "SOP de control de acceso logico y fisico de Rockwell/planta (si existe fuera del FS)",
+      "justificacion": "21 CFR 11.10(d) y Annex 11 S12 no exigen que el control este descrito EN el FS -- basta con una referencia formal y verificable a un SOP vigente que lo describa. El FS actual no incluye ni el control ni la referencia."
+    },
+    {
+      "req_id": "ALCOA_LEGIBLE",
+      "requisito": "ALCOA_LEGIBLE — Legible — datos legibles y permanentes",
+      "agente": "alcoa_plus_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "NOT_DEMONSTRATED_IN_DOSSIER",
+      "cambio_documental_propuesto": "COR-5",
+      "evidencia_esperada_en_fs": "Politica de retencion/backup/restauracion de datos y procedimiento formal de disponibilidad de registros ante auditoria.",
+      "documento_alternativo_esperado": "Politica de retencion de datos y SOP de backup/restauracion de la planta",
+      "justificacion": "El almacenamiento/retencion de largo plazo suele gestionarse a nivel de politica de planta, no del FS de un sistema individual -- aceptable como evidencia alternativa si el FS referencia el SOP correspondiente."
+    },
+    {
+      "req_id": "ALCOA_CONTEMPORANEOUS",
+      "requisito": "ALCOA_CONTEMPORANEOUS — Contemporaneous — registrado en el momento",
+      "agente": "alcoa_plus_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-2",
+      "evidencia_esperada_en_fs": "Descripcion de audit trail: captura automatica con timestamp, preservacion del dato original, exactitud, completitud sin exclusiones, consistencia cronologica y perdurabilidad del registro.",
+      "documento_alternativo_esperado": "Especificacion tecnica del modulo de audit trail (si es un componente de software separado documentado aparte)",
+      "justificacion": "El audit trail suele documentarse en una especificacion tecnica del modulo de historización/eventos; aceptable como evidencia alternativa si se referencia explicitamente desde el FS."
+    },
+    {
+      "req_id": "ALCOA_ORIGINAL",
+      "requisito": "ALCOA_ORIGINAL — Original — dato fuente preservado",
+      "agente": "alcoa_plus_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-2",
+      "evidencia_esperada_en_fs": "Descripcion de audit trail: captura automatica con timestamp, preservacion del dato original, exactitud, completitud sin exclusiones, consistencia cronologica y perdurabilidad del registro.",
+      "documento_alternativo_esperado": "Especificacion tecnica del modulo de audit trail (si es un componente de software separado documentado aparte)",
+      "justificacion": "El audit trail suele documentarse en una especificacion tecnica del modulo de historización/eventos; aceptable como evidencia alternativa si se referencia explicitamente desde el FS."
+    },
+    {
+      "req_id": "ALCOA_ACCURATE",
+      "requisito": "ALCOA_ACCURATE — Accurate — exactitud/calibracion",
+      "agente": "alcoa_plus_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-2",
+      "evidencia_esperada_en_fs": "Descripcion de audit trail: captura automatica con timestamp, preservacion del dato original, exactitud, completitud sin exclusiones, consistencia cronologica y perdurabilidad del registro.",
+      "documento_alternativo_esperado": "Especificacion tecnica del modulo de audit trail (si es un componente de software separado documentado aparte)",
+      "justificacion": "El audit trail suele documentarse en una especificacion tecnica del modulo de historización/eventos; aceptable como evidencia alternativa si se referencia explicitamente desde el FS."
+    },
+    {
+      "req_id": "ALCOA_COMPLETE",
+      "requisito": "ALCOA_COMPLETE — Complete — dato completo, sin exclusiones",
+      "agente": "alcoa_plus_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-2",
+      "evidencia_esperada_en_fs": "Descripcion de audit trail: captura automatica con timestamp, preservacion del dato original, exactitud, completitud sin exclusiones, consistencia cronologica y perdurabilidad del registro.",
+      "documento_alternativo_esperado": "Especificacion tecnica del modulo de audit trail (si es un componente de software separado documentado aparte)",
+      "justificacion": "El audit trail suele documentarse en una especificacion tecnica del modulo de historización/eventos; aceptable como evidencia alternativa si se referencia explicitamente desde el FS."
+    },
+    {
+      "req_id": "ALCOA_CONSISTENT",
+      "requisito": "ALCOA_CONSISTENT — Consistent — secuencia/consistencia cronologica",
+      "agente": "alcoa_plus_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-2",
+      "evidencia_esperada_en_fs": "Descripcion de audit trail: captura automatica con timestamp, preservacion del dato original, exactitud, completitud sin exclusiones, consistencia cronologica y perdurabilidad del registro.",
+      "documento_alternativo_esperado": "Especificacion tecnica del modulo de audit trail (si es un componente de software separado documentado aparte)",
+      "justificacion": "El audit trail suele documentarse en una especificacion tecnica del modulo de historización/eventos; aceptable como evidencia alternativa si se referencia explicitamente desde el FS."
+    },
+    {
+      "req_id": "ALCOA_ENDURING",
+      "requisito": "ALCOA_ENDURING — Enduring — perdurabilidad del registro",
+      "agente": "alcoa_plus_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "DOCUMENTATION_GAP",
+      "cambio_documental_propuesto": "COR-2",
+      "evidencia_esperada_en_fs": "Descripcion de audit trail: captura automatica con timestamp, preservacion del dato original, exactitud, completitud sin exclusiones, consistencia cronologica y perdurabilidad del registro.",
+      "documento_alternativo_esperado": "Especificacion tecnica del modulo de audit trail (si es un componente de software separado documentado aparte)",
+      "justificacion": "El audit trail suele documentarse en una especificacion tecnica del modulo de historización/eventos; aceptable como evidencia alternativa si se referencia explicitamente desde el FS."
+    },
+    {
+      "req_id": "ALCOA_AVAILABLE",
+      "requisito": "ALCOA_AVAILABLE — Available — disponibilidad para revision/auditoria",
+      "agente": "alcoa_plus_agent",
+      "aplica_por_tipo_documental": {
+        "URS": "No evaluado en este cierre (fuera de alcance -- ver piloto A/URS)",
+        "FS": "APLICA -- documento evaluado en este cierre",
+        "DS": "No evaluado en este cierre (documento no incluido en el alcance)",
+        "IQ": "No evaluado en este cierre",
+        "OQ": "No evaluado en este cierre",
+        "PQ": "No evaluado en este cierre",
+        "SAT": "No evaluado en este cierre (ver REM-GMPAI-001, gap de protocolo IQ/OQ/PQ)"
+      },
+      "clasificacion_en_fs": "NOT_DEMONSTRATED_IN_DOSSIER",
+      "cambio_documental_propuesto": "COR-5",
+      "evidencia_esperada_en_fs": "Politica de retencion/backup/restauracion de datos y procedimiento formal de disponibilidad de registros ante auditoria.",
+      "documento_alternativo_esperado": "Politica de retencion de datos y SOP de backup/restauracion de la planta",
+      "justificacion": "El almacenamiento/retencion de largo plazo suele gestionarse a nivel de politica de planta, no del FS de un sistema individual -- aceptable como evidencia alternativa si el FS referencia el SOP correspondiente."
+    }
+  ]
+}

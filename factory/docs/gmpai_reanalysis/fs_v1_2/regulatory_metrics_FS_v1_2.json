@@ -31,7 +31,12 @@
     "cobertura_pct": 100.0
   },
   "pct_findings_con_cita_literal_validada": 21.05,
-  "pct_requisitos_documentados": 42.11,
+  "pct_requisitos_documentados": {
+    "valor_pct": 42.11,
+    "definicion": "Porcentaje de los 19 checkpoints regulatorios aplicables cuyo campo evidencia_exacta del agente contiene CUALQUIER texto no vacio (cita literal validada O evidencia parcial/indirecta no validada como literal) -- es decir, el agente encontro ALGO en el documento relacionado con el checkpoint, aunque no siempre sea una cita literal exacta anclada.",
+    "formula": "pct_requisitos_documentados = (numero de findings con evidencia_exacta no vacio) / 19 x 100",
+    "diferencia_con_pct_findings_con_cita_literal_validada": "pct_findings_con_cita_literal_validada (21.05%) es un subconjunto MAS ESTRICTO: solo cuenta evidencia que paso la validacion de anclaje literal + relevancia tematica (_is_topically_relevant). pct_requisitos_documentados es mas amplio: incluye tambien evidencia parcial no anclada formalmente. NO deben sumarse ni promediarse entre si -- miden cosas distintas sobre el mismo conjunto de 19 findings."
+  },
   "pct_con_evidencia_de_implementacion": 0.0,
   "pct_cumple": 0.0,
   "pct_cumple_parcialmente": 21.05,
@@ -73,7 +78,7 @@
       "model_digest": 0
     },
     "completitud_pct": 85.71,
-    "nota": "model_digest ausente en 0/81 chunks -- ollama_client.show_digest() no obtuvo digest (ver technical_error_log, error TE-02)."
+    "nota": "model_digest presente 0/81 -- model_digest ausente 81/81. ollama_client.show_digest() no obtuvo digest en NINGUN chunk (Connection refused al intentar /api/show -- Ollama no estaba alcanzable durante esta verificacion, por instruccion explicita de no ejecutar Ollama). Ver anexo_incidentes_tecnicos_FS_v1_2_v4.json, incidente TE-02."
   },
   "regulatory_readiness_index": {
     "formula": "RRI = [(cumple x 1.0) + (cumple_parcialmente x 0.5)] / total_aplicable x 100",
@@ -85,9 +90,10 @@
     "numerador": 2.0,
     "denominador_total_aplicable": 19,
     "rri_pct": 10.53,
-    "checkpoints_no_independientes_combinados": false,
+    "checkpoints_no_independientes_combinados": true,
     "fallo_tecnico_no_resuelto": false,
-    "etiqueta_obligatoria": "ESTIMACION DE PREPARACION DOCUMENTAL Y REGULATORIA. NO ES UNA DECLARACION FINAL DE CUMPLIMIENTO GMP."
+    "etiqueta_obligatoria": "ESTIMACION DE PREPARACION DOCUMENTAL Y REGULATORIA. NO ES UNA DECLARACION FINAL DE CUMPLIMIENTO GMP.",
+    "advertencia_solapamiento_y_doble_conteo": "ADVERTENCIA: los 19 checkpoints NO son completamente independientes entre si -- varios findings comparten evidencia de la misma pagina/seccion del FS (ej. las citas trasladadas documentadas en changelog_FS_v1_2_v3.json afectan simultaneamente a mas de un checkpoint). El RRI se calcula sobre los 19 checkpoints TAL COMO fueron definidos por los 3 agentes (5 Part11 + 5 Annex11 + 9 ALCOA+), sin ajuste por solapamiento de evidencia subyacente. Esto puede sub- o sobre-representar la preparacion real si un mismo gap del FS afecta a multiples checkpoints correlacionados (por ejemplo, la ausencia de control de acceso afecta tanto a 21_CFR_11.10(d) como a ANNEX11_12 y a ALCOA_ATTRIBUTABLE). El RRI NO corrige este posible doble conteo -- se declara explicitamente como limitacion, no se recalcula con una ponderacion no trazable."
   },
   "dimensiones_de_confianza": {
     "confianza_en_cobertura_del_analisis": "ALTA -- 100% de chunks (81/81) y 100% de checkpoints aplicables (19/19) evaluados con reintento exitoso de los 6 chunks con respuesta JSON invalida.",
@@ -103,5 +109,7 @@
     "preparacion_documental_indice_rri_pct": 10.53,
     "cumplimiento_real_fda_part11_annex11_alcoa": "NO_DETERMINADO",
     "declaracion_obligatoria": "El analisis y las correcciones propuestas mejoran la preparacion documental, pero no demuestran por si solos que el sistema cumpla FDA 21 CFR Part 11, EU GMP Annex 11 o ALCOA+. El cumplimiento final requiere evidencia de implementacion, pruebas de validacion y aprobacion de QA/Validacion."
-  }
+  },
+  "version": "v4.1",
+  "generated_at_v4_1_correction": "2026-07-16T21:25:40.305486+00:00"
 }

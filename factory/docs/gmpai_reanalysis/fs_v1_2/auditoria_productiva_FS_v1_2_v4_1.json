@@ -1,0 +1,106 @@
+{
+  "documento": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "version": "v4.1",
+  "generated_at": "2026-07-16T21:25:40.520836+00:00",
+  "proposito": "Auditoria EXCLUSIVA de produccion -- excluye/etiqueta eventos de test/fixture generados por la suite de pytest de factory (documento='doc.pdf', rutas /tmp/), que NO corresponden a analisis reales de documentos del corpus Rockwell.",
+  "resumen": {
+    "eventos_totales_proyecto": 498,
+    "eventos_test_fixture_excluidos": 189,
+    "eventos_produccion_incluidos": 309,
+    "chain_errors": 1,
+    "chain_errors_assessment": "WARN",
+    "chain_errors_nota": "chain_errors=1 (fork concurrente, sin errores de hash) es PREEXISTENTE desde 2026-07-15T13:54:43Z -- no introducido por ningun cierre de FS_v1.2 (v1 a v4.1). Se conserva como WARN en este resumen, NO se oculta ni se reclasifica a OK.",
+    "overall_audit_status": "NOT_FULLY_VERIFIED",
+    "overall_audit_status_nota": "NOT_FULLY_VERIFIED mientras chain_errors > 0, independientemente de que el error sea un WARN de bajo riesgo conocido (fork concurrente) y no un error de hash. No se declara 'compliant'/'verified' de forma absoluta -- el campo part11_compliant de verify_chain() (booleano global sobre TODO el log, no especifico de este reporte) se excluye deliberadamente de este resumen productivo."
+  },
+  "raw_verify_chain_snapshot_sin_part11_flag": {
+    "verified": false,
+    "is_fork": true,
+    "assessment": "WARN",
+    "detail": "Fork concurrente: 1 ruptura(s) de enlace sin errores de hash. Contenido auténtico, Part-11 cumplido.",
+    "log_count": 830,
+    "verified_count": 829,
+    "hash_errors": 0,
+    "chain_errors": 1,
+    "failed_count": 1,
+    "hash_algo": "sha256",
+    "audit_file": "/app/factory/audit/factory_audit.jsonl"
+  },
+  "eventos_test_fixture_excluidos_muestra": [
+    {
+      "entry_id": "e5c3a39c-78d2-4e07-80ff-592b4f77c712",
+      "timestamp": "2026-07-15T20:13:37.246561+00:00",
+      "event_type": "gmpai_chunked_analysis_run"
+    },
+    {
+      "entry_id": "524a9bd9-0373-43aa-8a73-b9c57c98e28e",
+      "timestamp": "2026-07-15T20:13:37.253858+00:00",
+      "event_type": "gmpai_chunked_analysis_run"
+    },
+    {
+      "entry_id": "7a0bbaef-a13a-4115-b8d9-3b1f2969ef7a",
+      "timestamp": "2026-07-15T20:13:37.260947+00:00",
+      "event_type": "gmpai_chunked_analysis_run"
+    },
+    {
+      "entry_id": "e75691ad-c1b1-49f5-a918-30b260f51db1",
+      "timestamp": "2026-07-15T20:13:37.269570+00:00",
+      "event_type": "gmpai_chunked_analysis_run"
+    },
+    {
+      "entry_id": "38f5c112-3b2c-41a0-953b-7e589292b3ef",
+      "timestamp": "2026-07-15T20:13:37.276462+00:00",
+      "event_type": "gmpai_chunked_analysis_run"
+    },
+    {
+      "entry_id": "4b1cf7a4-1cdd-4038-85ce-1c943806b2da",
+      "timestamp": "2026-07-15T20:13:37.288615+00:00",
+      "event_type": "gmpai_chunked_analysis_run"
+    },
+    {
+      "entry_id": "950a6b5a-121c-43c6-a81f-4786a57ed0c1",
+      "timestamp": "2026-07-15T20:13:37.296416+00:00",
+      "event_type": "gmpai_chunked_analysis_run"
+    },
+    {
+      "entry_id": "2c390857-de62-43bd-ae66-6b687d37ceba",
+      "timestamp": "2026-07-16T13:53:42.104186+00:00",
+      "event_type": "gmpai_chunked_analysis_run"
+    },
+    {
+      "entry_id": "f39cfe2d-5fba-4ead-8447-e8cb830b4b76",
+      "timestamp": "2026-07-16T13:53:42.112589+00:00",
+      "event_type": "gmpai_chunked_analysis_run"
+    },
+    {
+      "entry_id": "faa20203-f76c-44fd-953e-a6e1d91c38e8",
+      "timestamp": "2026-07-16T13:53:42.120129+00:00",
+      "event_type": "gmpai_chunked_analysis_run"
+    }
+  ],
+  "eventos_test_fixture_excluidos_nota": "Se listan solo los primeros 10 de 189 eventos de test/fixture excluidos, para no inflar este artefacto -- todos comparten el patron documento='doc.pdf' o ruta '/tmp/', verificable directamente contra factory_audit.jsonl por entry_id.",
+  "eventos_produccion_por_tipo": {
+    "project_created": 1,
+    "layer9_mission_created": 1,
+    "layer8_requirement_interpreted": 4,
+    "layer8_agent_design_generated": 4,
+    "layer9_mission_approved": 1,
+    "layer8_mission_started": 3,
+    "layer8_regulatory_matrix_generated": 3,
+    "layer8_workspace_created": 1,
+    "layer8_workspace_resumed": 2,
+    "gates_executed": 2,
+    "artifacts_collected": 7,
+    "release_candidate_created": 6,
+    "rc_enqueued": 6,
+    "release_candidate_rejected": 3,
+    "rc_reviewed": 6,
+    "release_candidate_approved": 3,
+    "rc_marked_canonical": 2,
+    "gmp_report_generated": 243,
+    "gmpai_chunked_analysis_run": 7,
+    "gmpai_chunked_analysis_gap_registered": 2,
+    "tests_executed": 1,
+    "layer9_decision_recorded": 1
+  }
+}
