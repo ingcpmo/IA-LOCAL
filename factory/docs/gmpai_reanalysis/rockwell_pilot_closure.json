@@ -1,0 +1,132 @@
+{
+  "pilot": "corpus Rockwell (subconjunto Rockwell/ de la mision gmpai_document_validation)",
+  "generated_at": "2026-07-16T23:17:32.405127+00:00",
+  "total_documentos_corpus": 14,
+  "verificado_contra_manifest": "/home/ing_cpmo/GMPAI/manifests/SHA256SUMS.txt (14/14 entradas Rockwell/ verificadas por nombre)",
+  "documentos_analizados": 2,
+  "documentos_excluidos": 12,
+  "corpus_accounting": [
+    {
+      "nombre": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+      "categoria": "FUNCTIONAL_SPECIFICATION",
+      "estado": "ANALIZADO_Y_CERRADO",
+      "detalle": "19 findings, RRI=10.53%, informe v4.1-corrected, commit effb54d, run 20260716T222027Z. NOT_DETERMINED cumplimiento real."
+    },
+    {
+      "nombre": "215115305 SCADA-PCS Misc PLC System FS_v1.2-2.pdf",
+      "categoria": "DUPLICADO",
+      "estado": "EXCLUIDO",
+      "detalle": "Duplicado exacto de FS_v1.2.pdf (mismo SHA256 56095a75...) -- ya cubierto por el analisis anterior."
+    },
+    {
+      "nombre": "215115305 SCADA-PCS Misc PLC System URS v2.1.pdf",
+      "categoria": "USER_REQUIREMENTS_SPECIFICATION",
+      "estado": "ANALIZADO",
+      "detalle": "Piloto A -- requirements_traceability_agent (LLM). Unico finding real: familia Rockwell::MCCPDC-215115305, cumple_parcialmente, falta etapa PROTOCOL_TEMPLATE del V-model GAMP 5 -> REM-GMPAI-001 (abierto)."
+    },
+    {
+      "nombre": "215115305 MCCPDC PLC Panel Rev 0 09-07-22.pdf",
+      "categoria": "ESCANEADO",
+      "estado": "EXCLUIDO",
+      "detalle": "es_escaneado=true, sin texto util extraible (calidad_extraccion=degradada_sin_texto_util)."
+    },
+    {
+      "nombre": "215115305 MCCPDC SCADA-PCS Misc PLC SI Prop for MCCPDCa.pdf",
+      "categoria": "SYSTEM_INTEGRATOR_PROPOSAL",
+      "estado": "EXCLUIDO",
+      "detalle": "Cotizacion comercial (MAVERICK Technologies) -- inspeccion manual real confirmo NO_APPLICABLE_CORRECTION para los 3 agentes (no es especificacion de sistema ni registro GxP)."
+    },
+    {
+      "nombre": "215115305 SCADA-PCS Misc PLC SAT3 Scanned-1.pdf",
+      "categoria": "ESCANEADO",
+      "estado": "EXCLUIDO",
+      "detalle": "Escaneado, sin OCR autorizado, sin texto util extraible."
+    },
+    {
+      "nombre": "215115305-T-039 Design Docs for ASantiago.docm",
+      "categoria": "ESCANEADO",
+      "estado": "EXCLUIDO",
+      "detalle": "Escaneado, sin texto util."
+    },
+    {
+      "nombre": "215115305-T-039 Design Docs for ASantiago.pdf",
+      "categoria": "TRANSMITTAL",
+      "estado": "EXCLUIDO",
+      "detalle": "Inspeccion manual real: hoja de transmision administrativa (3 paginas), documento NO controlado por declaracion propia ('uncontrolled document'). NO_APPLICABLE_CORRECTION."
+    },
+    {
+      "nombre": "215115305-T-041 SAT3 Completed.pdf",
+      "categoria": "TRANSMITTAL",
+      "estado": "EXCLUIDO",
+      "detalle": "Inspeccionado en este cierre (no habia sido revisado en rondas previas): TRANSMITTAL de 2 paginas que acompana el envio del SAT3 escaneado ya excluido -- mismo tratamiento que T-039, NO_APPLICABLE_CORRECTION."
+    },
+    {
+      "nombre": "215115305_SYS_ARCH_10-11-2022.pdf",
+      "categoria": "STATIC_DESIGN_DOCUMENT",
+      "estado": "EXCLUIDO",
+      "detalle": "NO_APPLICABLE_CORRECTION -- documento de diseno estatico, no es un registro GxP ejecutado."
+    },
+    {
+      "nombre": "MCCPDC EMS Control Block Narrative revB.pdf",
+      "categoria": "CONTROL_NARRATIVE",
+      "estado": "EXCLUIDO",
+      "detalle": "NO_APPLICABLE_CORRECTION -- ALCOA+ no aplica (no es registro de datos/ejecucion)."
+    },
+    {
+      "nombre": "MCCPDC PCS Signal Interface Control Block Narrative.pdf",
+      "categoria": "CONTROL_NARRATIVE",
+      "estado": "EXCLUIDO",
+      "detalle": "NO_APPLICABLE_CORRECTION -- mismo motivo."
+    },
+    {
+      "nombre": "MCCPDC PCS-CP01 Alarms Hard Soft IO Listing revH.xlsx",
+      "categoria": "IO_LISTING",
+      "estado": "EXCLUIDO",
+      "detalle": "NO_APPLICABLE_CORRECTION -- listado de I/O, no registro GxP ni sistema con firma electronica."
+    },
+    {
+      "nombre": "MCCPDC WFI Control Block Narrative revB.pdf",
+      "categoria": "CONTROL_NARRATIVE",
+      "estado": "EXCLUIDO",
+      "detalle": "NO_APPLICABLE_CORRECTION -- mismo motivo que las otras narrativas de control."
+    }
+  ],
+  "resumen_documentos_analizados": {
+    "FS_v1.2": {
+      "findings_totales": 19,
+      "rri_documental_pct": 10.53,
+      "cumplimiento_real": "NOT_DETERMINED",
+      "items_abiertos": [
+        "COR-1",
+        "COR-5"
+      ],
+      "items_pending_implementation": [
+        "COR-2",
+        "COR-3",
+        "COR-4"
+      ],
+      "ultimo_reporte": "informe_gap_assessment_FS_v1_2_v4_1_corrected.docx/pdf",
+      "ultimo_run_id": "20260716T222027Z",
+      "ultimo_commit": "effb54d86e5c511e194cf6361f54acd1d3c92d4b"
+    },
+    "URS_v2.1": {
+      "findings_reales": 1,
+      "finding": "Rockwell::MCCPDC-215115305 -- cumple_parcialmente, falta PROTOCOL_TEMPLATE del V-model GAMP 5",
+      "items_abiertos": [
+        "REM-GMPAI-001"
+      ]
+    }
+  },
+  "items_abiertos_sin_relacion_de_cierre_entre_si": [
+    "COR-1",
+    "COR-5",
+    "REM-GMPAI-001"
+  ],
+  "conclusion": "El corpus Rockwell (14 documentos verificados contra el manifiesto SHA256SUMS.txt) esta AGOTADO para el pipeline de analisis de los 3 agentes deterministas (fda_part11_agent, eu_annex11_agent, alcoa_plus_agent). Los unicos 2 documentos tecnicamente aplicables (FS_v1.2 y URS v2.1, especificaciones reales del sistema) ya fueron analizados. Los 12 restantes son propuestas comerciales, transmittals administrativos, documentos escaneados sin OCR, o documentos de diseno/narrativa estatica sin aplicabilidad GxP -- ninguno fue forzado a analisis para evitar falsos positivos por error de categoria.",
+  "declaracion_obligatoria": "Este cierre NO declara el sistema PLC/SCADA-PCS de Rockwell validado ni compliant. Los hallazgos de FS_v1.2 (RRI=10.53%, cumplimiento NOT_DETERMINED) y de URS v2.1 (REM-GMPAI-001 abierto) permanecen sin resolver -- este cierre marca el FIN DE LA COBERTURA DOCUMENTAL DISPONIBLE para este corpus, no el cierre de los hallazgos mismos.",
+  "alcance_no_cubierto": {
+    "corpus_SCADA_ASDATA": "La mision gmpai_document_validation.yaml declara objetivo original de 32 documentos 'Rockwell y SCADA' -- el subconjunto SCADA/ASDATA (URS de Autoclave, Downflow Booth, Formulation Tanks, Vial Labeler, CSV GAP Assessment, etc.) NO fue evaluado en este piloto y permanece fuera de alcance hasta decision humana explicita de iniciar un nuevo piloto sobre ese corpus.",
+    "documentos_escaneados_sin_OCR": "4 documentos quedan excluidos por falta de OCR autorizado (PLC Panel, SAT3 Scanned-1, T-039 .docm). Podrian reevaluarse si se autoriza OCR en una decision separada -- no incluido en este cierre."
+  },
+  "decision_humana_requerida": "Ninguna accion adicional automatica -- este cierre queda registrado para revision de Cesar."
+}
