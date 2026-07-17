@@ -165,18 +165,41 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
     return result
 
 
+def requirement_ids_from_catalog() -> list[str]:
+    """Fase 5.3, Bloque 5.3.3: deriva la lista de requirement_id desde el
+    catalogo real de Fase 5.2 (requirement_catalog_loader.load_requirements())
+    en vez de listarlos a mano en cada invocacion -- una sola fuente de
+    verdad. Usa validate_all() primero (fail-closed: si el catalogo no
+    valida, esto lanza CatalogValidationError antes de intentar nada)."""
+    from factory.regulatory.requirement_catalog.requirement_catalog_loader import (
+        load_requirements, validate_all,
+    )
+    validate_all()  # fail-closed: aborta si el catalogo es invalido
+    return list(load_requirements()["requirements"].keys())
+
+
 def _cli():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--document", required=True, type=Path)
     parser.add_argument("--document-type", required=True)
     parser.add_argument("--document-type-source", required=True,
                          choices=["human_assigned", "inferred"])
-    parser.add_argument("--requirement-id", action="append", required=True, dest="requirement_ids")
+    parser.add_argument("--requirement-id", action="append", dest="requirement_ids",
+                         help="Repetible. Si se omite, usa TODOS los requirement_id del catalogo (--all-catalog-requirements).")
+    parser.add_argument("--all-catalog-requirements", action="store_true",
+                         help="Usa requirement_ids_from_catalog() -- fuente unica de verdad (Fase 5.2), en vez de listarlos a mano.")
     parser.add_argument("--max-chunks", type=int, default=None)
     parser.add_argument("--run-by", required=True,
                          help="Identidad real de quien autoriza esta ejecucion (obligatorio, sin default)")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
+
+    if args.all_catalog_requirements:
+        requirement_ids = requirement_ids_from_catalog()
+    elif args.requirement_ids:
+        requirement_ids = args.requirement_ids
+    else:
+        parser.error("especificar --requirement-id (uno o mas) o --all-catalog-requirements")
 
     import pypdf
 
@@ -188,7 +211,7 @@ def _cli():
         document_path=args.document,
         document_type=args.document_type,
         document_type_source=args.document_type_source,
-        requirement_ids=args.requirement_ids,
+        requirement_ids=requirement_ids,
         max_chunks=args.max_chunks,
         run_by=args.run_by,
         extractor=_pdf_extractor,

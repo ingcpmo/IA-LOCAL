@@ -150,3 +150,13 @@ def test_runner_real_ollama_smoke():
     )
     result = run_validation_evidence(config)
     assert result.records_total >= 1
+
+
+def test_requirement_ids_from_catalog_returns_all_19():
+    """Fase 5.3, Bloque 5.3.3: el runner puede derivar requirement_ids
+    directamente del catalogo real de Fase 5.2, sin listarlos a mano."""
+    from factory.regulatory.tools.run_validation_evidence import requirement_ids_from_catalog
+    ids = requirement_ids_from_catalog()
+    assert len(ids) == 19
+    assert "21_CFR_11.10(d)" in ids
+    assert "ALCOA_AVAILABLE" in ids

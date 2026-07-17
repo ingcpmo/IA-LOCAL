@@ -539,7 +539,14 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         "ollama_version": ollama_version_str,
         "preflight_metadata": preflight_metadata,
         "technical_execution_failures": technical_execution_failures,
+        # El analisis (chunk_executions + findings) ya esta completo en este
+        # punto independientemente de lo que pase abajo con la persistencia
+        # de evidencia -- se declara ANALYSIS_COMPLETE explicitamente antes
+        # de intentar la escritura, para que un fallo de persistencia nunca
+        # se confunda con un fallo de analisis.
+        "analysis_status": "ANALYSIS_COMPLETE",
     }
+    result.update(_persist_validation_evidence(result, chunk_executions, run_context))
 
     if checkpoint_store is not None:
         checkpoint_store.save(run_id, {
@@ -550,6 +557,51 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
 
     _write_audit_event(result)
     return result
+
+
+def _persist_validation_evidence(result: dict, chunk_executions: list[dict], run_context: str) -> dict:
+    """Fase 5.3 (W5.3): persiste _by_req_candidates SOLO para
+    run_context='validation', usando el mecanismo aprobado y probado en
+    Fase 5.2 (validation_evidence_writer.py). run_context='production'
+    queda IDENTICO al comportamiento previo -- cero llamada, cero archivo.
+
+    Un fallo de escritura (ej. EvidenceTooLargeError) NUNCA tumba el
+    analisis (el resultado ya esta completo) ni se oculta en silencio --
+    queda declarado explicitamente en el resultado y en el evento de
+    auditoria, para que ninguna ejecucion de validacion con persistencia
+    fallida se confunda despues con una que si capturo evidencia:
+
+      validation + escritura exitosa -> VALIDATION_EVIDENCE_COMPLETE
+      validation + escritura fallida -> VALIDATION_EVIDENCE_INCOMPLETE
+                                         (golden_dataset_eligible=False)
+      production                     -> NOT_APPLICABLE_PRODUCTION_CONTEXT
+                                         (golden_dataset_eligible=False,
+                                         comportamiento identico a antes
+                                         de Fase 5.3)
+    """
+    if run_context != "validation":
+        return {
+            "validation_evidence_status": "NOT_APPLICABLE_PRODUCTION_CONTEXT",
+            "golden_dataset_eligible": False,
+        }
+    try:
+        from factory.regulatory.validation_evidence_writer import write_validation_evidence
+        write_validation_evidence(
+            run_id=result["run_id"],
+            document_sha256=result["document_sha256"],
+            run_context=run_context,
+            content={"chunk_executions_with_candidates": chunk_executions},
+        )
+        return {
+            "validation_evidence_status": "VALIDATION_EVIDENCE_COMPLETE",
+            "golden_dataset_eligible": True,
+        }
+    except Exception as e:
+        return {
+            "validation_evidence_status": "VALIDATION_EVIDENCE_INCOMPLETE",
+            "validation_evidence_error": f"{type(e).__name__}: {e}",
+            "golden_dataset_eligible": False,
+        }
 
 
 def _write_audit_event(result: dict) -> None:
@@ -573,6 +625,11 @@ def _write_audit_event(result: dict) -> None:
                 "findings_count": len(result["findings"]),
                 "model": result["model"],
                 "model_digest": result["model_digest"],
+                # Fase 5.3 -- nunca oculta un fallo de persistencia de
+                # evidencia como si fuera una ejecucion sin novedad.
+                "analysis_status": result.get("analysis_status"),
+                "validation_evidence_status": result.get("validation_evidence_status"),
+                "golden_dataset_eligible": result.get("golden_dataset_eligible"),
             },
         )
     except Exception:

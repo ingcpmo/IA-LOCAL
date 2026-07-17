@@ -163,9 +163,19 @@ def resolve_deployment(
     return target
 
 
-# ── W5.3 Fase 5.2 -- evidencia de validación (_by_req_candidates) ───────────
+# ── W5.3 Fase 5.2/5.3 -- evidencia de validación (_by_req_candidates) ───────
 
-_VALIDATION_EVIDENCE_RUN_ID_RE = re.compile(r"^w5v3-validation-[0-9a-f]{12}$")
+# Fase 5.3, opción (a): el run_id REAL que genera evaluate_chunked()
+# (chunked_engine.py) es 'chunked-<12 hex>', no 'w5v3-validation-<12 hex>'
+# -- ese segundo patrón solo lo emite el runner standalone de Fase 5.0
+# (run_validation_evidence.py). En vez de inventar un segundo identificador
+# correlacionado a mano para la evidencia de validación del motor real, se
+# amplía el patrón aceptado a los DOS formatos reales conocidos -- ambos
+# son identificadores opacos generados por código tracked, ninguno permite
+# traversal (uuid hex fijo).
+_VALIDATION_EVIDENCE_RUN_ID_RE = re.compile(
+    r"^(w5v3-validation|chunked)-[0-9a-f]{12}$"
+)
 VALIDATION_EVIDENCE_EXT = frozenset({".json"})
 VALIDATION_EVIDENCE_MAX_BYTES = 10_000_000  # 10 MB, control #7 aprobado
 
@@ -177,10 +187,12 @@ def resolve_validation_evidence(run_id: str, evidence_base: Path) -> Path:
     .json). Parámetros aprobados (Fase 5.0 control #7, confirmados por el
     usuario en Fase 5.2):
 
-    - Patrón de run_id: 'w5v3-validation-<12 hex>' (el mismo formato ya
-      emitido por factory/regulatory/tools/run_validation_evidence.py) --
-      cualquier otro formato es traversal potencial o un run_id ajeno al
-      pipeline de validación, se rechaza.
+    - Patrón de run_id: 'w5v3-validation-<12 hex>' (runner standalone de
+      Fase 5.0) O 'chunked-<12 hex>' (run_id real de evaluate_chunked(),
+      chunked_engine.py -- aceptado desde Fase 5.3 para no inventar un
+      segundo identificador correlacionado a mano) -- cualquier otro
+      formato es traversal potencial o un run_id ajeno al pipeline de
+      validación, se rechaza.
     - Extensión única permitida: .json.
     - Tamaño máximo: VALIDATION_EVIDENCE_MAX_BYTES (10 MB) -- verificado
       por el caller ANTES de escribir (ver
@@ -205,7 +217,7 @@ def resolve_validation_evidence(run_id: str, evidence_base: Path) -> Path:
     if not _VALIDATION_EVIDENCE_RUN_ID_RE.match(run_id):
         raise ValueError(
             f"run_id inválido para evidencia de validación: {run_id!r} "
-            f"(esperado 'w5v3-validation-<12 hex>')"
+            f"(esperado 'w5v3-validation-<12 hex>' o 'chunked-<12 hex>')"
         )
     base = evidence_base.resolve()
     target = (base / f"{run_id}.json").resolve()
