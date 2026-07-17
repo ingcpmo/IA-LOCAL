@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "finding_llm_v1",
+  "description": "Salida EXCLUSIVA del modelo a nivel de chunk (P2/P3 de W5v2_CICLO1_ENDURECIMIENTO). El modelo SOLO observa -- nunca declara ausencia documental (DOCUMENTATION_GAP/EVIDENCE_NOT_AVAILABLE/NOT_DEMONSTRATED_IN_DOSSIER, que son responsabilidad exclusiva del consolidador determinista) ni aplicabilidad del sistema (no_aplica, que pertenece al futuro registro de requisitos W5.3 con aprobacion humana). additionalProperties:false -- ningun campo de metadata de pipeline puede colarse aqui (esa metadata vive en finding_record_v1.execution_manifest).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["requirement_id", "chunk_observation", "evidence_quote", "evidence_page", "confidence", "rationale"],
+  "properties": {
+    "requirement_id": {
+      "type": "string",
+      "minLength": 3,
+      "description": "req_id del checkpoint tal como aparece en el YAML de prompts (ej. 21_CFR_11.10(d), ANNEX11_12)."
+    },
+    "chunk_observation": {
+      "enum": ["observed", "partially_observed", "not_observed_in_chunk"],
+      "description": "Observacion PURA del chunk. NUNCA un juicio de cumplimiento (cumple/no_cumple) ni de aplicabilidad (no_aplica) -- esos valores del catalogo actual del motor (_VALID_ESTADOS en chunked_engine.py) quedan prohibidos en esta capa (ver discrepancia #1, W5v2_FASE0_INVENTARIO.md)."
+    },
+    "evidence_quote": {
+      "type": "string",
+      "description": "Cita literal del chunk si chunk_observation != not_observed_in_chunk. Cadena vacia si not_observed_in_chunk (el verificador determinista exige esta correlacion, ver finding_record_v1.verification)."
+    },
+    "evidence_page": {
+      "type": ["integer", "null"],
+      "minimum": 1
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "rationale": {
+      "type": "string",
+      "maxLength": 1200
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "enum": ["LOW_CONFIDENCE", "CONTRADICTION_CANDIDATE", "HIGH_GXP_RISK", "HUMAN_REVIEW_REQUIRED"]
+      },
+      "default": []
+    }
+  }
+}

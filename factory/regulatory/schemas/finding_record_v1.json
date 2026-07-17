@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "finding_record_v1",
+  "description": "Sobre del pipeline alrededor de la salida validada del modelo (P2). El modelo jamas escribe execution_manifest/verification/status; el pipeline jamas altera llm_output una vez validado contra finding_llm_v1.",
+  "type": "object",
+  "required": ["record_id", "llm_output", "execution_manifest", "verification", "status"],
+  "properties": {
+    "record_id": { "type": "string" },
+    "llm_output": { "$ref": "finding_llm_v1.json" },
+    "execution_manifest": {
+      "type": "object",
+      "description": "Terminologia honesta (P4): temperatura 0 + seed es 'ejecucion controlada', no determinismo garantizado -- por eso cada llamada registra su propio manifiesto en vez de asumir reproducibilidad.",
+      "required": ["model", "model_digest", "prompt_sha256", "schema_name", "schema_sha256", "chunk_sha256", "options", "timestamp_utc"],
+      "properties": {
+        "model": { "type": "string" },
+        "model_digest": { "type": "string" },
+        "prompt_sha256": { "type": "string" },
+        "schema_name": { "type": "string" },
+        "schema_sha256": { "type": "string" },
+        "chunk_sha256": { "type": "string" },
+        "options": { "type": "object" },
+        "timestamp_utc": { "type": "string" },
+        "manifest_incomplete": {
+          "type": "boolean",
+          "default": false,
+          "description": "true si model_digest u otro campo obligatorio no se pudo obtener (ej. OllamaUnavailableError en show_digest()) -- el hallazgo sigue siendo valido, pero queda visible como flag, nunca oculto (Bloque 1.5)."
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "description": "Resultado del verificador determinista (anclaje literal + relevancia tematica). Definido operacionalmente en Fase 2, no en este schema."
+    },
+    "status": {
+      "enum": ["verified", "verified_with_deviation", "rejected_by_verifier", "review_required"]
+    },
+    "rejection_reason": { "type": "string" },
+    "review_flags": { "type": "array", "items": { "type": "string" } }
+  }
+}
