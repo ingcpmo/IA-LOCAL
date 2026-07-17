@@ -1,0 +1,87 @@
+{
+  "registry_version": "1.1",
+  "generated_at": "2026-07-17T19:32:45.689073+00:00",
+  "subfase": "5.2",
+  "sources": [
+    {
+      "source_id": "ecfr_21cfr_part11",
+      "original_path": "/app/factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_ECFR_21CFR_part11.txt",
+      "canonical_path": "factory/regulatory/sources/sha256/e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e/OFFICIAL_ECFR_21CFR_part11.txt",
+      "official_source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11",
+      "official_source_description": "eCFR Title 21 Part 11 -- Electronic Records; Electronic Signatures (texto completo)",
+      "sha256_original": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+      "sha256_copy": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+      "hashes_match": true,
+      "size_bytes": 16508,
+      "normative_type": "regulation",
+      "jurisdiction": "US",
+      "local_integrity_status": "PASS",
+      "official_origin_status": "VERIFIED_AGAINST_PRIOR_KNOWN_HASH_2026-07-06_INGESTION",
+      "regulatory_currency_status": "pending_reverification",
+      "copied_at": "2026-07-17T19:32:45.681367+00:00",
+      "derived_artifacts": []
+    },
+    {
+      "source_id": "eu_gmp_annex11",
+      "original_path": "/app/factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_EU_GMP_ANNEX11.pdf",
+      "canonical_path": "factory/regulatory/sources/sha256/8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb/OFFICIAL_EU_GMP_ANNEX11.pdf",
+      "official_source_url": "https://health.ec.europa.eu/document/download/annex-11-computerised-systems",
+      "official_source_description": "European Commission -- EudraLex Volume 4, Annex 11 (Computerised Systems)",
+      "sha256_original": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+      "sha256_copy": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+      "hashes_match": true,
+      "size_bytes": 22461,
+      "normative_type": "official_guidance",
+      "jurisdiction": "EU",
+      "local_integrity_status": "PASS",
+      "official_origin_status": "VERIFIED_AGAINST_PRIOR_KNOWN_HASH_2026-07-06_INGESTION",
+      "regulatory_currency_status": "pending_reverification",
+      "copied_at": "2026-07-17T19:32:45.681973+00:00",
+      "derived_artifacts": [
+        {
+          "extractor": "pdfplumber",
+          "extractor_version": "0.11.10",
+          "source_sha256": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+          "extraction_params": {
+            "layout": false,
+            "x_tolerance": 3,
+            "y_tolerance": 3
+          },
+          "artifact_path": "factory/regulatory/sources/derived/8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb/pdfplumber_extraction_v1.json",
+          "artifact_sha256": "27316752b6789c35d0d42d4bc4d9343e47b8b2007c29402696ebaa3d5c94eda4"
+        }
+      ]
+    },
+    {
+      "source_id": "mhra_gxp_di_guidance_2018",
+      "original_path": "/app/factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+      "canonical_path": "factory/regulatory/sources/sha256/e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+      "official_source_url": "https://assets.publishing.service.gov.uk/media/5c3b3c37e5274a15b9788e88/MHRA_GxP_data_integrity_guide_March_edited_Final.pdf",
+      "official_source_description": "MHRA GXP Data Integrity Guidance and Definitions, Revision 1, March 2018",
+      "sha256_original": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+      "sha256_copy": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+      "hashes_match": true,
+      "size_bytes": 456031,
+      "normative_type": "official_guidance",
+      "jurisdiction": "UK",
+      "local_integrity_status": "PASS",
+      "official_origin_status": "VERIFIED_AGAINST_PRIOR_KNOWN_HASH_2026-07-06_INGESTION",
+      "regulatory_currency_status": "pending_reverification",
+      "copied_at": "2026-07-17T19:32:45.689035+00:00",
+      "derived_artifacts": [
+        {
+          "extractor": "pdfplumber",
+          "extractor_version": "0.11.10",
+          "source_sha256": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+          "extraction_params": {
+            "layout": false,
+            "x_tolerance": 3,
+            "y_tolerance": 3
+          },
+          "artifact_path": "factory/regulatory/sources/derived/e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d/pdfplumber_extraction_v1.json",
+          "artifact_sha256": "0d5176931987b66473af31c87eff6063bab1140df46216f6985939e48360139a"
+        }
+      ]
+    }
+  ]
+}

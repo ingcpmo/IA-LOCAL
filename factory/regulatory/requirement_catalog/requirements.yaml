@@ -1,0 +1,283 @@
+catalog_version: '1.0'
+generated_at: '2026-07-17T19:50:22.377353+00:00'
+subfase: '5.2'
+run_context: validation
+regulatory_currency_disclaimer: TODAS las fuentes de este catalogo tienen regulatory_currency_status=pending_reverification
+  en source_registry.json. Este catalogo NO declara ninguna fuente como vigente-verificada -- solo que
+  el hash local es integro (local_integrity_status=PASS) y que la cita esta anclada en el documento (citation.match_type).
+  La vigencia regulatoria real (si hubo enmiendas posteriores a la fecha de descarga) no fue re-verificada
+  contra la URL oficial en este ciclo.
+production_status: PRODUCTION_ENABLEMENT=BLOCKED -- este catalogo NO esta cableado en chunked_engine.py
+  ni en los prompts YAML de produccion. Ver factory/docs/W5v2_CICLO1_CIERRE.md.
+requirements:
+  21_CFR_11.10(a):
+    label: Validacion del sistema (accuracy/reliability)
+    source_id: ecfr_21cfr_part11
+    citation:
+      citation_id: P11-11.10a
+      citation_text: Validation of systems to ensure accuracy, reliability, consistent intended performance,
+        and the ability to discern invalid or altered records.
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: § 11.10, paragraph (a)
+      citation_sha256: 8b547511ff11c530a7b036f4b4bf54b8fd6c36d9b03fe4f6b583a054826d5a47
+    normative_type: regulation
+    jurisdiction: US
+    binding_status: binding_regulation
+    review_status: covered
+  21_CFR_11.10(d):
+    label: Limitar acceso a individuos autorizados
+    source_id: ecfr_21cfr_part11
+    citation:
+      citation_id: P11-11.10d
+      citation_text: Limiting system access to authorized individuals.
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: § 11.10, paragraph (d)
+      citation_sha256: 02a267449b721cd5b3107b4ca976d8e45017231da8ea49bcf1bca68532eb1348
+    normative_type: regulation
+    jurisdiction: US
+    binding_status: binding_regulation
+    review_status: covered
+  21_CFR_11.10(e):
+    label: Audit trail seguro con timestamp
+    source_id: ecfr_21cfr_part11
+    citation:
+      citation_id: P11-11.10e
+      citation_text: Use of secure, computer-generated, time-stamped audit trails to independently record
+        the date and time of operator entries and actions that create, modify, or delete electronic records.
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: § 11.10, paragraph (e)
+      citation_sha256: f1cf10ac1c9229c816bbf7595290d3546ff5b0d21941a80ac8399f80baa489b7
+    normative_type: regulation
+    jurisdiction: US
+    binding_status: binding_regulation
+    review_status: covered
+  21_CFR_11.10(g):
+    label: Verificacion de autoridad (authority checks)
+    source_id: ecfr_21cfr_part11
+    citation:
+      citation_id: P11-11.10g
+      citation_text: Use of authority checks to ensure that only authorized individuals can use the system,
+        electronically sign a record, access the operation or computer system input or output device,
+        alter a record, or perform the operation at hand.
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: § 11.10, paragraph (g)
+      citation_sha256: 50a6a752ad63ede20f9d65fe451bef4e601ff489ee8e4e71e74f286b5d5dfed1
+    normative_type: regulation
+    jurisdiction: US
+    binding_status: binding_regulation
+    review_status: covered
+  21_CFR_11.50_11.70:
+    label: Firma electronica (manifestacion y vinculo al registro)
+    source_id: ecfr_21cfr_part11
+    citation:
+      citation_id: P11-11.50
+      citation_text: The printed name of the signer;
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: § 11.50, paragraph (a)(1)
+      citation_sha256: 799f2fbbf408d7bd2dfaa6f362eaeea6ff794631dad9bd542ec84e21e7decc08
+    normative_type: regulation
+    jurisdiction: US
+    binding_status: binding_regulation
+    review_status: covered
+  ANNEX11_4:
+    label: Gestion de riesgo del sistema computarizado
+    source_id: eu_gmp_annex11
+    citation:
+      citation_id: A11-4.1
+      citation_text: The validation documentation and reports should cover the relevant steps of the life
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: Section 4 (Validation), paragraph 4.1
+      citation_sha256: ac6e8a546c54682a01629813b6b9669c45ed128b08971d17526b0eb2590e74bd
+    normative_type: official_guidance
+    jurisdiction: EU
+    binding_status: binding_requirement
+    review_status: covered
+  ANNEX11_7.1:
+    label: Almacenamiento y proteccion de datos
+    source_id: eu_gmp_annex11
+    citation:
+      citation_id: A11-7.1
+      citation_text: Data should be secured by both physical and electronic means against damage.
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: Section 7 (Data Storage), paragraph 7.1
+      citation_sha256: 192121a465d72e3b078fb9687639b9ac30b0d133be7afc53d9a3da9f645bd9ee
+    normative_type: official_guidance
+    jurisdiction: EU
+    binding_status: binding_requirement
+    review_status: covered
+  ANNEX11_9:
+    label: Audit trail
+    source_id: eu_gmp_annex11
+    citation:
+      citation_id: A11-9
+      citation_text: Consideration should be given, based on a risk assessment, to building into the system
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: Section 9 (Audit Trails)
+      citation_sha256: 7eadba06304fb09c67a615ee0170f070430aa532e01f671e9c91f9df9ae9d182
+    normative_type: official_guidance
+    jurisdiction: EU
+    binding_status: binding_requirement
+    review_status: covered
+  ANNEX11_12:
+    label: Seguridad fisica y logica
+    source_id: eu_gmp_annex11
+    citation:
+      citation_id: A11-12.1
+      citation_text: Physical and/or logical controls should be in place to restrict access to computerised
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: Section 12 (Security), paragraph 12.1
+      citation_sha256: 597874fb781a126ab16f6606396d94da09bd13dbdd3f4fc0ff167a84fe7e7e7f
+    normative_type: official_guidance
+    jurisdiction: EU
+    binding_status: binding_requirement
+    review_status: covered
+  ANNEX11_17:
+    label: Archivo y retencion de registros
+    source_id: eu_gmp_annex11
+    citation:
+      citation_id: A11-17
+      citation_text: Data may be archived. This data should be checked for accessibility, readability
+        and integrity.
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: Section 17 (Archiving)
+      citation_sha256: af49a12f378f336bb772b3319eb50c244e90835f6a610a2053938c492dea7211
+    normative_type: official_guidance
+    jurisdiction: EU
+    binding_status: binding_requirement
+    review_status: covered
+  ALCOA_ATTRIBUTABLE:
+    label: Attributable
+    source_id: mhra_gxp_di_guidance_2018
+    citation:
+      citation_id: MHRA-ALCOA-A1
+      citation_text: attributable to the person generating the data
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: p.8, ALCOA definitions list
+      citation_sha256: 817a2a965b118a11d3683c8974ede2d6461a18359de10d25766de27f1a1b0f6f
+    normative_type: official_guidance
+    jurisdiction: UK
+    binding_status: non_binding_guidance
+    review_status: covered
+  ALCOA_LEGIBLE:
+    label: Legible
+    source_id: mhra_gxp_di_guidance_2018
+    citation:
+      citation_id: MHRA-ALCOA-L1
+      citation_text: legible and permanent
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: p.8, ALCOA definitions list
+      citation_sha256: 2878a7561e98b33d6a73967852a8661808219aa235f75e62fe1b34b13dcb9d6d
+    normative_type: official_guidance
+    jurisdiction: UK
+    binding_status: non_binding_guidance
+    review_status: covered
+  ALCOA_CONTEMPORANEOUS:
+    label: Contemporaneous
+    source_id: mhra_gxp_di_guidance_2018
+    citation:
+      citation_id: MHRA-ALCOA-C1
+      citation_text: contemporaneous
+      match_type: normalized
+      match_score: 1.0
+      section_page_paragraph: p.5, ALCOA acronym expansion
+      citation_sha256: 5a0d1b5082f8e55a288bece1a551ee9366b1ec75bffd464a52857ea561e7a926
+    normative_type: official_guidance
+    jurisdiction: UK
+    binding_status: non_binding_guidance
+    review_status: covered
+  ALCOA_ORIGINAL:
+    label: Original
+    source_id: mhra_gxp_di_guidance_2018
+    citation:
+      citation_id: MHRA-ALCOA-O1
+      citation_text: original record (or certified true copy)
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: p.8, ALCOA definitions list
+      citation_sha256: 4a409a22ba8098c97e2bfcbbfcf924f952882c788029a163d81106c7c1b24e21
+    normative_type: official_guidance
+    jurisdiction: UK
+    binding_status: non_binding_guidance
+    review_status: covered
+  ALCOA_ACCURATE:
+    label: Accurate
+    source_id: mhra_gxp_di_guidance_2018
+    citation:
+      citation_id: MHRA-ALCOA-A2
+      citation_text: accurate
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: p.4, ALCOA acronym expansion
+      citation_sha256: 10cdb6d6fe701fe6c1bfd2b204da011607458ca96dd7abcd06692c993969f1a1
+    normative_type: official_guidance
+    jurisdiction: UK
+    binding_status: non_binding_guidance
+    review_status: covered
+  ALCOA_COMPLETE:
+    label: Complete
+    source_id: mhra_gxp_di_guidance_2018
+    citation:
+      citation_id: MHRA-ALCOA-PLUS-C1
+      citation_text: Complete
+      match_type: normalized
+      match_score: 1.0
+      section_page_paragraph: p.4, ALCOA+ attributes intro
+      citation_sha256: 143b270a32602d412babf2724ec0640dda0d5a43485e5a7520b05b53fa94b303
+    normative_type: official_guidance
+    jurisdiction: UK
+    binding_status: non_binding_guidance
+    review_status: covered
+  ALCOA_CONSISTENT:
+    label: Consistent
+    source_id: mhra_gxp_di_guidance_2018
+    citation:
+      citation_id: MHRA-ALCOA-PLUS-C2
+      citation_text: Consistent - the data must be self-consistent
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: p.8, ALCOA+ definitions list
+      citation_sha256: fa434140cc874bef188fff7b5a554e529b213fce6b920853666faccac8276c08
+    normative_type: official_guidance
+    jurisdiction: UK
+    binding_status: non_binding_guidance
+    review_status: covered
+  ALCOA_ENDURING:
+    label: Enduring
+    source_id: mhra_gxp_di_guidance_2018
+    citation:
+      citation_id: MHRA-ALCOA-PLUS-E1
+      citation_text: Enduring
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: p.5, ALCOA+ attributes intro
+      citation_sha256: cc195d45d6481db90cc377d251b730aff75fd5394efd23062999676d9e973c8a
+    normative_type: official_guidance
+    jurisdiction: UK
+    binding_status: non_binding_guidance
+    review_status: covered
+  ALCOA_AVAILABLE:
+    label: Available
+    source_id: mhra_gxp_di_guidance_2018
+    citation:
+      citation_id: MHRA-ALCOA-PLUS-A1
+      citation_text: Available – readily available for review or inspection purposes
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: p.8, ALCOA+ definitions list
+      citation_sha256: 7228c0e66a02e1c7987872d2726b6468430740c761c35a6b2dc13205ea0af839
+    normative_type: official_guidance
+    jurisdiction: UK
+    binding_status: non_binding_guidance
+    review_status: covered

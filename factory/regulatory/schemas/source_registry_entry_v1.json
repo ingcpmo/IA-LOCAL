@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "source_registry_entry_v1",
+  "description": "W5.3 Fase 5.2 -- una fuente regulatoria oficial en el registro de fuentes de gmpai_document_validation. El PDF/texto original en canonical_path es la fuente canonica; extracciones (pdfplumber u otro extractor) son SIEMPRE artefactos derivados, listados en derived_artifacts, nunca sustituyen canonical_path.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_id", "canonical_path", "official_source_url",
+    "official_source_description", "sha256_original", "sha256_copy",
+    "hashes_match", "size_bytes", "normative_type", "jurisdiction",
+    "local_integrity_status", "official_origin_status",
+    "regulatory_currency_status"
+  ],
+  "properties": {
+    "source_id": { "type": "string", "minLength": 3 },
+    "original_path": { "type": "string" },
+    "canonical_path": {
+      "type": "string",
+      "description": "Ruta al archivo ORIGINAL (PDF/texto) dentro del almacen inmutable factory/regulatory/sources/sha256/<hash>/. Nunca apunta a un artefacto derivado."
+    },
+    "official_source_url": { "type": "string" },
+    "official_source_description": { "type": "string" },
+    "sha256_original": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "sha256_copy": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "hashes_match": { "type": "boolean", "const": true },
+    "size_bytes": { "type": "integer", "minimum": 1 },
+    "normative_type": {
+      "enum": ["regulation", "official_guidance", "internal_interpretation"]
+    },
+    "jurisdiction": { "type": "string", "minLength": 2 },
+    "local_integrity_status": { "enum": ["PASS", "FAIL"] },
+    "official_origin_status": { "type": "string", "minLength": 3 },
+    "regulatory_currency_status": {
+      "type": "string",
+      "description": "NUNCA 'verified_current'/'current' en este ciclo -- solo 'pending_reverification' hasta que exista una re-verificacion real contra la fuente oficial en linea.",
+      "enum": ["pending_reverification"]
+    },
+    "copied_at": { "type": "string" },
+    "derived_artifacts": {
+      "type": "array",
+      "description": "Artefactos de extraccion DERIVADOS (ej. pdfplumber). Nunca reemplazan canonical_path.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["extractor", "extractor_version", "source_sha256", "artifact_path", "artifact_sha256"],
+        "properties": {
+          "extractor": { "type": "string" },
+          "extractor_version": { "type": "string" },
+          "source_sha256": {
+            "type": "string", "pattern": "^[a-f0-9]{64}$",
+            "description": "Debe coincidir con sha256_copy del source padre -- validado por el loader, no solo por el schema."
+          },
+          "extraction_params": { "type": "object" },
+          "artifact_path": { "type": "string" },
+          "artifact_sha256": {
+            "type": "string", "pattern": "^[a-f0-9]{64}$",
+            "description": "Hash del propio archivo de artefacto derivado (no del texto extraido -- ver extracted_text_sha256 dentro del artefacto)."
+          }
+        }
+      },
+      "default": []
+    }
+  }
+}

@@ -1,0 +1,468 @@
+{
+  "generated_at": "2026-07-17T19:15:36.709566+00:00",
+  "total_requirement_ids": 19,
+  "requirements_with_verified_citation": 16,
+  "requirements_needing_revision": [
+    "ANNEX11_4",
+    "ANNEX11_7.1",
+    "ANNEX11_17"
+  ],
+  "requirements": [
+    {
+      "requirement_id": "21_CFR_11.10(a)",
+      "label": "Validacion del sistema (accuracy/reliability)",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_ECFR_21CFR_part11.txt",
+        "sha256_computed_now": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+        "sha256_cross_check_source": "REGULATORY_SOURCE_CHECK.json (fs_v1_2, 2026-07-16)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- eCFR 21 CFR Part 11 -- sin enmiendas a 11.10(a) desde la regla final de 1997"
+      },
+      "normative_type": "regulation",
+      "jurisdiction": "US",
+      "binding_status": "binding_regulation",
+      "citation": {
+        "citation_id": "P11-11.10a",
+        "citation_text_proposed": "Validation of systems to ensure accuracy, reliability, consistent intended performance, and the ability to discern invalid or altered records.",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 1,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "21_CFR_11.10(d)",
+      "label": "Limitar acceso a individuos autorizados",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_ECFR_21CFR_part11.txt",
+        "sha256_computed_now": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+        "sha256_cross_check_source": "REGULATORY_SOURCE_CHECK.json (fs_v1_2, 2026-07-16)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- eCFR 21 CFR Part 11 -- sin enmiendas a 11.10(d) desde 1997"
+      },
+      "normative_type": "regulation",
+      "jurisdiction": "US",
+      "binding_status": "binding_regulation",
+      "citation": {
+        "citation_id": "P11-11.10d",
+        "citation_text_proposed": "Limiting system access to authorized individuals.",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 1,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "21_CFR_11.10(e)",
+      "label": "Audit trail seguro con timestamp",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_ECFR_21CFR_part11.txt",
+        "sha256_computed_now": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+        "sha256_cross_check_source": "REGULATORY_SOURCE_CHECK.json (fs_v1_2, 2026-07-16)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- eCFR 21 CFR Part 11 -- sin enmiendas a 11.10(e) desde 1997"
+      },
+      "normative_type": "regulation",
+      "jurisdiction": "US",
+      "binding_status": "binding_regulation",
+      "citation": {
+        "citation_id": "P11-11.10e",
+        "citation_text_proposed": "Use of secure, computer-generated, time-stamped audit trails to independently record the date and time of operator entries and actions that create, modify, or delete electronic records.",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 1,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "21_CFR_11.10(g)",
+      "label": "Verificacion de autoridad (authority checks)",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_ECFR_21CFR_part11.txt",
+        "sha256_computed_now": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+        "sha256_cross_check_source": "REGULATORY_SOURCE_CHECK.json (fs_v1_2, 2026-07-16)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- eCFR 21 CFR Part 11 -- sin enmiendas a 11.10(g) desde 1997"
+      },
+      "normative_type": "regulation",
+      "jurisdiction": "US",
+      "binding_status": "binding_regulation",
+      "citation": {
+        "citation_id": "P11-11.10g",
+        "citation_text_proposed": "Use of authority checks to ensure that only authorized individuals can use the system, electronically sign a record, access the operation or computer system input or output device, alter a record, or perform the operation at hand.",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 1,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "21_CFR_11.50_11.70",
+      "label": "Firma electronica (manifestacion y vinculo al registro)",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_ECFR_21CFR_part11.txt",
+        "sha256_computed_now": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+        "sha256_cross_check_source": "REGULATORY_SOURCE_CHECK.json (fs_v1_2, 2026-07-16)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- eCFR 21 CFR Part 11 Section 11.50(a)(1) -- sin enmiendas desde 1997"
+      },
+      "normative_type": "regulation",
+      "jurisdiction": "US",
+      "binding_status": "binding_regulation",
+      "citation": {
+        "citation_id": "P11-11.50",
+        "citation_text_proposed": "The printed name of the signer;",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 1,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "ANNEX11_4",
+      "label": "Gestion de riesgo del sistema computarizado",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_EU_GMP_ANNEX11.pdf",
+        "sha256_computed_now": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+        "sha256_cross_check_source": "REGULATORY_SOURCE_CHECK.json (fs_v1_2, 2026-07-16)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- EudraLex Vol 4 Annex 11 -- vigente desde 2013, sin revision posterior"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "EU",
+      "binding_status": "binding_requirement",
+      "citation": {
+        "citation_id": "A11-4.1",
+        "citation_text_proposed": "The validation documentation and reports should cover the relevant steps of the life",
+        "match_type": "not_found",
+        "match_score": 0.869,
+        "page_found": null,
+        "verified_anchored": false
+      },
+      "coverage": "CITATION_NOT_VERIFIED_NEEDS_REVISION"
+    },
+    {
+      "requirement_id": "ANNEX11_7.1",
+      "label": "Almacenamiento y proteccion de datos",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_EU_GMP_ANNEX11.pdf",
+        "sha256_computed_now": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+        "sha256_cross_check_source": "REGULATORY_SOURCE_CHECK.json (fs_v1_2, 2026-07-16)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- EudraLex Vol 4 Annex 11 -- vigente desde 2013"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "EU",
+      "binding_status": "binding_requirement",
+      "citation": {
+        "citation_id": "A11-7.1",
+        "citation_text_proposed": "Data should be secured by both physical and electronic means against damage.",
+        "match_type": "fuzzy",
+        "match_score": 0.9737,
+        "page_found": 3,
+        "verified_anchored": false
+      },
+      "coverage": "CITATION_NOT_VERIFIED_NEEDS_REVISION"
+    },
+    {
+      "requirement_id": "ANNEX11_9",
+      "label": "Audit trail",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_EU_GMP_ANNEX11.pdf",
+        "sha256_computed_now": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+        "sha256_cross_check_source": "REGULATORY_SOURCE_CHECK.json (fs_v1_2, 2026-07-16)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- EudraLex Vol 4 Annex 11 -- vigente desde 2013"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "EU",
+      "binding_status": "binding_requirement",
+      "citation": {
+        "citation_id": "A11-9",
+        "citation_text_proposed": "Consideration should be given, based on a risk assessment, to building into the system",
+        "match_type": "normalized",
+        "match_score": 1.0,
+        "page_found": 4,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "ANNEX11_12",
+      "label": "Seguridad fisica y logica",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_EU_GMP_ANNEX11.pdf",
+        "sha256_computed_now": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+        "sha256_cross_check_source": "REGULATORY_SOURCE_CHECK.json (fs_v1_2, 2026-07-16)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- EudraLex Vol 4 Annex 11 -- vigente desde 2013"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "EU",
+      "binding_status": "binding_requirement",
+      "citation": {
+        "citation_id": "A11-12.1",
+        "citation_text_proposed": "Physical and/or logical controls should be in place to restrict access to computerised",
+        "match_type": "normalized",
+        "match_score": 1.0,
+        "page_found": 4,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "ANNEX11_17",
+      "label": "Archivo y retencion de registros",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_EU_GMP_ANNEX11.pdf",
+        "sha256_computed_now": "8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb",
+        "sha256_cross_check_source": "REGULATORY_SOURCE_CHECK.json (fs_v1_2, 2026-07-16)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- EudraLex Vol 4 Annex 11 -- vigente desde 2013"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "EU",
+      "binding_status": "binding_requirement",
+      "citation": {
+        "citation_id": "A11-17",
+        "citation_text_proposed": "Data may be archived. This data should be checked for accessibility, readability and integrity.",
+        "match_type": "fuzzy",
+        "match_score": 0.9368,
+        "page_found": 5,
+        "verified_anchored": false
+      },
+      "coverage": "CITATION_NOT_VERIFIED_NEEDS_REVISION"
+    },
+    {
+      "requirement_id": "ALCOA_ATTRIBUTABLE",
+      "label": "Attributable",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+        "sha256_computed_now": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+        "sha256_cross_check_source": "factory/deployments/lab_qc_project/ingest_manifest.yaml (tracked, step 6)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- MHRA GXP DI Guidance Rev.1 March 2018 -- vigente, sin revision posterior conocida"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "UK",
+      "binding_status": "non_binding_guidance",
+      "citation": {
+        "citation_id": "MHRA-ALCOA-A1",
+        "citation_text_proposed": "attributable to the person generating the data",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 8,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "ALCOA_LEGIBLE",
+      "label": "Legible",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+        "sha256_computed_now": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+        "sha256_cross_check_source": "factory/deployments/lab_qc_project/ingest_manifest.yaml (tracked, step 6)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- MHRA GXP DI Guidance Rev.1 March 2018"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "UK",
+      "binding_status": "non_binding_guidance",
+      "citation": {
+        "citation_id": "MHRA-ALCOA-L1",
+        "citation_text_proposed": "legible and permanent",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 8,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "ALCOA_CONTEMPORANEOUS",
+      "label": "Contemporaneous",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+        "sha256_computed_now": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+        "sha256_cross_check_source": "factory/deployments/lab_qc_project/ingest_manifest.yaml (tracked, step 6)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- MHRA GXP DI Guidance Rev.1 March 2018"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "UK",
+      "binding_status": "non_binding_guidance",
+      "citation": {
+        "citation_id": "MHRA-ALCOA-C1",
+        "citation_text_proposed": "contemporaneous",
+        "match_type": "normalized",
+        "match_score": 1.0,
+        "page_found": 5,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "ALCOA_ORIGINAL",
+      "label": "Original",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+        "sha256_computed_now": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+        "sha256_cross_check_source": "factory/deployments/lab_qc_project/ingest_manifest.yaml (tracked, step 6)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- MHRA GXP DI Guidance Rev.1 March 2018"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "UK",
+      "binding_status": "non_binding_guidance",
+      "citation": {
+        "citation_id": "MHRA-ALCOA-O1",
+        "citation_text_proposed": "original record (or certified true copy)",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 8,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "ALCOA_ACCURATE",
+      "label": "Accurate",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+        "sha256_computed_now": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+        "sha256_cross_check_source": "factory/deployments/lab_qc_project/ingest_manifest.yaml (tracked, step 6)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- MHRA GXP DI Guidance Rev.1 March 2018 -- cita muy corta, riesgo real de fuzzy/ambiguo, ver resultado"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "UK",
+      "binding_status": "non_binding_guidance",
+      "citation": {
+        "citation_id": "MHRA-ALCOA-A2",
+        "citation_text_proposed": "accurate",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 4,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "ALCOA_COMPLETE",
+      "label": "Complete",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+        "sha256_computed_now": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+        "sha256_cross_check_source": "factory/deployments/lab_qc_project/ingest_manifest.yaml (tracked, step 6)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- MHRA GXP DI Guidance Rev.1 March 2018"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "UK",
+      "binding_status": "non_binding_guidance",
+      "citation": {
+        "citation_id": "MHRA-ALCOA-PLUS-C1",
+        "citation_text_proposed": "Complete",
+        "match_type": "normalized",
+        "match_score": 1.0,
+        "page_found": 4,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "ALCOA_CONSISTENT",
+      "label": "Consistent",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+        "sha256_computed_now": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+        "sha256_cross_check_source": "factory/deployments/lab_qc_project/ingest_manifest.yaml (tracked, step 6)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- MHRA GXP DI Guidance Rev.1 March 2018"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "UK",
+      "binding_status": "non_binding_guidance",
+      "citation": {
+        "citation_id": "MHRA-ALCOA-PLUS-C2",
+        "citation_text_proposed": "Consistent - the data must be self-consistent",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 8,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "ALCOA_ENDURING",
+      "label": "Enduring",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+        "sha256_computed_now": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+        "sha256_cross_check_source": "factory/deployments/lab_qc_project/ingest_manifest.yaml (tracked, step 6)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- MHRA GXP DI Guidance Rev.1 March 2018 -- cita corta, ver resultado"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "UK",
+      "binding_status": "non_binding_guidance",
+      "citation": {
+        "citation_id": "MHRA-ALCOA-PLUS-E1",
+        "citation_text_proposed": "Enduring",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 5,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    },
+    {
+      "requirement_id": "ALCOA_AVAILABLE",
+      "label": "Available",
+      "canonical_source": {
+        "path": "factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
+        "sha256_computed_now": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
+        "sha256_cross_check_source": "factory/deployments/lab_qc_project/ingest_manifest.yaml (tracked, step 6)",
+        "local_integrity_status": "PASS",
+        "official_origin_status": "INHERITED_FROM_2026-07-06_INGESTION (corpus_manifest.yaml v2.0, no re-verificado contra la URL oficial en este ciclo)",
+        "regulatory_currency_status": "INHERITED_LAST_VERIFIED_2026-07-16 (REGULATORY_SOURCE_CHECK.json / corpus_manifest.yaml) -- MHRA GXP DI Guidance Rev.1 March 2018"
+      },
+      "normative_type": "official_guidance",
+      "jurisdiction": "UK",
+      "binding_status": "non_binding_guidance",
+      "citation": {
+        "citation_id": "MHRA-ALCOA-PLUS-A1",
+        "citation_text_proposed": "Available – readily available for review or inspection purposes",
+        "match_type": "exact",
+        "match_score": 1.0,
+        "page_found": 8,
+        "verified_anchored": true
+      },
+      "coverage": "COVERED_PENDING_CHECKPOINT_D1"
+    }
+  ]
+}

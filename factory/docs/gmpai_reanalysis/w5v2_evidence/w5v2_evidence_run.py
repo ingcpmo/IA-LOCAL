@@ -1,6 +1,17 @@
 """W5 Ciclo 1 (v2), Fase 4, Bloque 4.3 -- ejecucion de evidencia end-to-end
 REAL (Ollama real, documento real FS_v1.2, run_context='validation').
 
+CONGELADO (Fase 5.0, W5.3, 2026-07-17): este script es un REGISTRO
+HISTORICO de la ejecucion real que produjo w5v2_evidence_run_result.json
+-- no se actualiza para reflejar la firma actual de generate_controlled()
+(que en Fase 5.0 paso a exigir run_context como keyword-only obligatorio,
+sin default). Editar la llamada de la linea ~129 para "arreglarla" haria
+que el codigo del script dejara de coincidir con lo que REALMENTE se
+ejecuto para generar la evidencia -- lo cual es peor que dejarlo
+desactualizado. Para una nueva ejecucion de evidencia, usar el runner
+versionado (factory/regulatory/tools/run_validation_evidence.py, Fase 5.0)
+en vez de este script.
+
 Alcance declarado (coverage=partial, honesto por diseno -- no se corre la
 mision completa de 19 requisitos x 27 chunks en esta evidencia, sino un
 subconjunto representativo real, suficiente para demostrar que el

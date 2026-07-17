@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "requirement_catalog_entry_v1",
+  "description": "W5.3 Fase 5.2 -- un requisito atomico del catalogo de gmpai_document_validation. additionalProperties:false: ningun campo fuera de este contrato. review_status=review_required es el UNICO valor aceptable cuando la cita no esta anclada exact/normalized o la fuente no resuelve -- nunca se omite el requisito, nunca pasa en silencio.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requirement_id", "label", "source_id", "citation",
+    "normative_type", "jurisdiction", "binding_status", "review_status"
+  ],
+  "properties": {
+    "requirement_id": { "type": "string", "minLength": 3 },
+    "label": { "type": "string", "minLength": 3 },
+    "source_id": {
+      "type": "string",
+      "description": "Debe resolver a un source_id existente en source_registry.json -- validado por el loader (fail-closed), el schema por si solo no puede verificar referencias cruzadas entre archivos."
+    },
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["citation_id", "citation_text", "match_type", "match_score",
+                   "section_page_paragraph", "citation_sha256"],
+      "properties": {
+        "citation_id": { "type": "string" },
+        "citation_text": { "type": "string", "minLength": 1 },
+        "match_type": {
+          "enum": ["exact", "normalized", "fuzzy", "not_found"],
+          "description": "Solo exact/normalized permiten review_status=covered -- fuzzy/not_found FUERZAN review_status=review_required, validado por el loader."
+        },
+        "match_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "section_page_paragraph": { "type": "string", "minLength": 1 },
+        "citation_sha256": {
+          "type": "string", "pattern": "^[a-f0-9]{64}$",
+          "description": "sha256(citation_text, utf-8) -- recalculado y verificado por el loader, no solo declarado."
+        }
+      }
+    },
+    "normative_type": {
+      "enum": ["regulation", "official_guidance", "internal_interpretation"]
+    },
+    "jurisdiction": { "type": "string", "minLength": 2 },
+    "binding_status": {
+      "enum": ["binding_regulation", "binding_requirement", "non_binding_guidance", "internal_interpretation_only"]
+    },
+    "review_status": {
+      "enum": ["covered", "review_required"],
+      "description": "covered SOLO si: source_id resuelve en el registry Y citation.match_type in (exact, normalized) Y citation_sha256 verificado. Cualquier otra condicion -> review_required, nunca se descarta el requisito."
+    }
+  }
+}

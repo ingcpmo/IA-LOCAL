@@ -250,9 +250,9 @@ class CheckpointStore:
 def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                       per_unit_text: list[str], sistema: str, documento: str,
                       version: str, archivo: str, document_sha256: str,
+                      *, run_context: str,
                       checkpoint_store: "CheckpointStore | None" = None,
-                      run_id: str | None = None,
-                      run_context: str = "production") -> dict:
+                      run_id: str | None = None) -> dict:
     """Procesa TODO el documento (todas las páginas reales) en chunks
     acotados, con metadata de runtime completa por chunk, checkpoints de
     reanudación opcionales, y consolida un Finding final por checkpoint.
@@ -262,12 +262,15 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     guarda progreso tras cada chunk (nunca se pierden llamadas ya hechas a
     Ollama si el proceso se interrumpe).
 
-    run_context (W5 Ciclo 1 v2, Fase 4, Bloque 4.1): 'production' (default)
-    | 'validation'. Se registra en el evento de auditoría de este run --
-    UNA sola cadena de auditoría (Part 11), nunca fragmentada; los reportes
-    filtran en lectura vía GET /missions/{project_id}/audit?context=.
-    Ejecuciones de evidencia/prueba SIEMPRE usan 'validation', nunca el
-    default."""
+    run_context (W5 Ciclo 1 v2, Fase 4 Bloque 4.1 / Fase 5.0 W5.3):
+    OBLIGATORIO, sin default -- 'production' | 'validation'. Corrección de
+    Fase 5.0: el default anterior ('production') permitía que un caller
+    descuidado etiquetara silenciosamente un run como productivo. Ahora
+    omitirlo es un TypeError de Python (parámetro keyword-only sin default),
+    no un ValueError en runtime -- falla en la firma de la función, antes
+    de ejecutar una sola línea. Se registra en el evento de auditoría de
+    este run -- UNA sola cadena de auditoría (Part 11), nunca fragmentada;
+    los reportes filtran en lectura vía GET /missions/{project_id}/audit?context=."""
     if run_context not in ("production", "validation"):
         raise ValueError(f"run_context invalido: {run_context!r} (debe ser 'production' o 'validation')")
     meta = load_prompt_meta(prompt_path)

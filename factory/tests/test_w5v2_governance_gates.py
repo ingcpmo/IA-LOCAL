@@ -30,12 +30,10 @@ from factory.services import mission_evidence_service as mes
 
 # ── 1. run_context ausente nunca habilita production ───────────────────────
 
-def test_run_context_absent_defaults_to_production_label_only(monkeypatch, tmp_path):
-    """El default 'production' es solo la ETIQUETA de auditoría del motor
-    v1 (comportamiento preexistente, ver evaluate_chunked) -- confirma que
-    NO pasar run_context no crea silenciosamente un contexto distinto ni
-    inconsistente; sigue siendo exactamente 'production', nunca
-    'validation' ni un valor vacío/None."""
+def test_run_context_absent_raises_type_error_never_assumes_production(monkeypatch, tmp_path):
+    """Fase 5.0 (W5.3), corrección: run_context ya NO tiene default. Omitirlo
+    debe fallar en la firma (TypeError), no asumir 'production' en
+    silencio -- ni siquiera para etiquetar auditoría."""
     from factory.core import audit_writer
     audit_file = tmp_path / "factory_audit.jsonl"
     monkeypatch.setattr(audit_writer, "AUDIT_FILE", audit_file)
@@ -49,10 +47,9 @@ def test_run_context_absent_defaults_to_production_label_only(monkeypatch, tmp_p
 
     from pathlib import Path
     prompt_path = Path(ce.__file__).parent / "prompts" / "part11_prompts.yaml"
-    result = ce.evaluate_chunked(prompt_path, "fda_part11_agent", "1.0.0", ["texto " * 500],
-                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-default-ctx")
-    assert result["run_context"] == "production"
-    assert result["run_context"] is not None
+    with pytest.raises(TypeError):
+        ce.evaluate_chunked(prompt_path, "fda_part11_agent", "1.0.0", ["texto " * 500],
+                             "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-default-ctx")
 
 
 # ── 2. Matriz sin regulatory_approval bloquea production ────────────────────
@@ -89,12 +86,21 @@ def test_real_matrix_is_currently_approved_but_that_is_matrix_governance_only():
 
 # ── 3. generate_controlled() habilitado solo para validation ───────────────
 
-def test_generate_controlled_default_is_validation_never_implicit_production():
-    """No pasar run_context NUNCA debe comportarse como 'production' --
-    debe seguir funcionando (via el default seguro 'validation')."""
+def test_generate_controlled_run_context_has_no_default_at_all():
+    """Fase 5.0 (W5.3), corrección: ya no basta con que el default sea
+    seguro ('validation') -- run_context debe ser keyword-only SIN default,
+    para forzar que cada caller lo piense explícitamente en cada llamada."""
     import inspect
     sig = inspect.signature(ollama_client.generate_controlled)
-    assert sig.parameters["run_context"].default == "validation"
+    param = sig.parameters["run_context"]
+    assert param.default is inspect.Parameter.empty
+    assert param.kind == inspect.Parameter.KEYWORD_ONLY
+
+
+def test_generate_controlled_omitting_run_context_raises_type_error(monkeypatch):
+    monkeypatch.setattr("httpx.post", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no debia llamarse")))
+    with pytest.raises(TypeError):
+        ollama_client.generate_controlled("prompt", {"text": "chunk"})
 
 
 def test_generate_controlled_blocks_production_before_any_ollama_call(monkeypatch):

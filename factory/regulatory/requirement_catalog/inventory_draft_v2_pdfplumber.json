@@ -1,0 +1,199 @@
+{
+  "generated_at": "2026-07-17T19:33:50.316156+00:00",
+  "subfase": "5.1.1",
+  "extractor_used_for_pdf_sources": "pdfplumber 0.11.10",
+  "verified_count": 19,
+  "total": 19,
+  "results": [
+    {
+      "citation_id": "P11-11.10a",
+      "source": "ecfr_21cfr_part11 (plain text)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 1,
+      "verified": true,
+      "requirement_id": "21_CFR_11.10(a)",
+      "citation_text": "Validation of systems to ensure accuracy, reliability, consistent intended performance, and the ability to discern invalid or altered records."
+    },
+    {
+      "citation_id": "P11-11.10d",
+      "source": "ecfr_21cfr_part11 (plain text)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 1,
+      "verified": true,
+      "requirement_id": "21_CFR_11.10(d)",
+      "citation_text": "Limiting system access to authorized individuals."
+    },
+    {
+      "citation_id": "P11-11.10e",
+      "source": "ecfr_21cfr_part11 (plain text)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 1,
+      "verified": true,
+      "requirement_id": "21_CFR_11.10(e)",
+      "citation_text": "Use of secure, computer-generated, time-stamped audit trails to independently record the date and time of operator entries and actions that create, modify, or delete electronic records."
+    },
+    {
+      "citation_id": "P11-11.10g",
+      "source": "ecfr_21cfr_part11 (plain text)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 1,
+      "verified": true,
+      "requirement_id": "21_CFR_11.10(g)",
+      "citation_text": "Use of authority checks to ensure that only authorized individuals can use the system, electronically sign a record, access the operation or computer system input or output device, alter a record, or perform the operation at hand."
+    },
+    {
+      "citation_id": "P11-11.50",
+      "source": "ecfr_21cfr_part11 (plain text)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 1,
+      "verified": true,
+      "requirement_id": "21_CFR_11.50_11.70",
+      "citation_text": "The printed name of the signer;"
+    },
+    {
+      "citation_id": "A11-4.1",
+      "source": "eu_gmp_annex11 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 2,
+      "verified": true,
+      "requirement_id": "ANNEX11_4",
+      "citation_text": "The validation documentation and reports should cover the relevant steps of the life"
+    },
+    {
+      "citation_id": "A11-7.1",
+      "source": "eu_gmp_annex11 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 3,
+      "verified": true,
+      "requirement_id": "ANNEX11_7.1",
+      "citation_text": "Data should be secured by both physical and electronic means against damage."
+    },
+    {
+      "citation_id": "A11-9",
+      "source": "eu_gmp_annex11 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 4,
+      "verified": true,
+      "requirement_id": "ANNEX11_9",
+      "citation_text": "Consideration should be given, based on a risk assessment, to building into the system"
+    },
+    {
+      "citation_id": "A11-12.1",
+      "source": "eu_gmp_annex11 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 4,
+      "verified": true,
+      "requirement_id": "ANNEX11_12",
+      "citation_text": "Physical and/or logical controls should be in place to restrict access to computerised"
+    },
+    {
+      "citation_id": "A11-17",
+      "source": "eu_gmp_annex11 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 5,
+      "verified": true,
+      "requirement_id": "ANNEX11_17",
+      "citation_text": "Data may be archived. This data should be checked for accessibility, readability and integrity."
+    },
+    {
+      "citation_id": "MHRA-ALCOA-A1",
+      "source": "mhra_gxp_di_guidance_2018 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 8,
+      "verified": true,
+      "requirement_id": "ALCOA_ATTRIBUTABLE",
+      "citation_text": "attributable to the person generating the data"
+    },
+    {
+      "citation_id": "MHRA-ALCOA-L1",
+      "source": "mhra_gxp_di_guidance_2018 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 8,
+      "verified": true,
+      "requirement_id": "ALCOA_LEGIBLE",
+      "citation_text": "legible and permanent"
+    },
+    {
+      "citation_id": "MHRA-ALCOA-C1",
+      "source": "mhra_gxp_di_guidance_2018 (pdfplumber_extraction_v1)",
+      "match_type": "normalized",
+      "match_score": 1.0,
+      "page_found": 5,
+      "verified": true,
+      "requirement_id": "ALCOA_CONTEMPORANEOUS",
+      "citation_text": "contemporaneous"
+    },
+    {
+      "citation_id": "MHRA-ALCOA-O1",
+      "source": "mhra_gxp_di_guidance_2018 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 8,
+      "verified": true,
+      "requirement_id": "ALCOA_ORIGINAL",
+      "citation_text": "original record (or certified true copy)"
+    },
+    {
+      "citation_id": "MHRA-ALCOA-A2",
+      "source": "mhra_gxp_di_guidance_2018 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 4,
+      "verified": true,
+      "requirement_id": "ALCOA_ACCURATE",
+      "citation_text": "accurate"
+    },
+    {
+      "citation_id": "MHRA-ALCOA-PLUS-C1",
+      "source": "mhra_gxp_di_guidance_2018 (pdfplumber_extraction_v1)",
+      "match_type": "normalized",
+      "match_score": 1.0,
+      "page_found": 4,
+      "verified": true,
+      "requirement_id": "ALCOA_COMPLETE",
+      "citation_text": "Complete"
+    },
+    {
+      "citation_id": "MHRA-ALCOA-PLUS-C2",
+      "source": "mhra_gxp_di_guidance_2018 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 8,
+      "verified": true,
+      "requirement_id": "ALCOA_CONSISTENT",
+      "citation_text": "Consistent - the data must be self-consistent"
+    },
+    {
+      "citation_id": "MHRA-ALCOA-PLUS-E1",
+      "source": "mhra_gxp_di_guidance_2018 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 5,
+      "verified": true,
+      "requirement_id": "ALCOA_ENDURING",
+      "citation_text": "Enduring"
+    },
+    {
+      "citation_id": "MHRA-ALCOA-PLUS-A1",
+      "source": "mhra_gxp_di_guidance_2018 (pdfplumber_extraction_v1)",
+      "match_type": "exact",
+      "match_score": 1.0,
+      "page_found": 8,
+      "verified": true,
+      "requirement_id": "ALCOA_AVAILABLE",
+      "citation_text": "Available – readily available for review or inspection purposes"
+    }
+  ]
+}

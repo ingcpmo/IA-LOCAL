@@ -100,13 +100,12 @@ class ProductionNotEnabledError(Exception):
     Ciclo 1 v2: PRODUCTION_ENABLEMENT=BLOCKED -- los prompts YAML de
     produccion no fueron reescritos para pedir chunk_observation (ver
     W5v2_CICLO1_CIERRE.md, recomendacion #1) y no existe aprobacion QA
-    para habilitar este pipeline en produccion. Fail-closed explicito:
-    ausencia de run_context (default) NUNCA habilita produccion -- el
-    default es 'validation', el unico contexto autorizado hoy."""
+    para habilitar este pipeline en produccion."""
 
 
-def generate_controlled(prompt: str, chunk: dict, temperature: float = TEMPERATURE,
-                         num_ctx: int | None = None, run_context: str = "validation") -> dict:
+def generate_controlled(prompt: str, chunk: dict, *, run_context: str,
+                         temperature: float = TEMPERATURE,
+                         num_ctx: int | None = None) -> dict:
     """Ejecucion controlada (P4: temperatura 0 + seed es 'ejecucion
     controlada', NO determinismo garantizado -- de ahi el manifiesto por
     llamada) que valida la respuesta contra finding_llm_v1 (P2: el modelo
@@ -114,10 +113,12 @@ def generate_controlled(prompt: str, chunk: dict, temperature: float = TEMPERATU
     partially_observed/not_observed_in_chunk, nunca una conclusion de
     ausencia documental ni no_aplica, ver W5v2_FASE0_INVENTARIO.md #9.1).
 
-    run_context: SOLO 'validation' esta habilitado (default). Cualquier
-    otro valor -- incluido 'production' -- lanza ProductionNotEnabledError
-    de inmediato, antes de gastar ninguna llamada a Ollama. La ausencia de
-    este parametro NUNCA habilita produccion (default seguro).
+    run_context: OBLIGATORIO, sin default (Fase 5.0, W5.3 -- corrige el
+    default anterior 'validation', que aunque era el valor seguro, seguia
+    permitiendo que un caller no pensara conscientemente el contexto en
+    cada llamada). SOLO 'validation' esta habilitado -- cualquier otro
+    valor, incluido 'production', lanza ProductionNotEnabledError de
+    inmediato, antes de gastar ninguna llamada a Ollama.
 
     NO esta todavia cableada en evaluate_chunked() (chunked_engine.py): el
     consolidador actual espera el campo 'estado' (cumple/no_cumple/...) que

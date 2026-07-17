@@ -107,7 +107,7 @@ def test_finding_record_v1_ref_catches_invalid_llm_output():
 def test_generate_controlled_accepts_valid_first_try():
     with mock.patch("httpx.post", return_value=_FakeResp(VALID_LLM_OUTPUT)), \
          mock.patch.object(ollama_client, "_get_digest_cached", return_value="digest-1"):
-        out = ollama_client.generate_controlled("prompt", {"text": "chunk"})
+        out = ollama_client.generate_controlled("prompt", {"text": "chunk"}, run_context="validation")
     assert out["ok"] is True
     assert out["status"] == "verified"
     assert out["execution_manifest"]["manifest_incomplete"] is False
@@ -118,7 +118,7 @@ def test_generate_controlled_rejects_after_single_retry():
     bad = {"requirement_id": "X", "estado": "cumple"}
     with mock.patch("httpx.post", return_value=_FakeResp(bad)), \
          mock.patch.object(ollama_client, "_get_digest_cached", return_value=None):
-        out = ollama_client.generate_controlled("prompt", {"text": "chunk"})
+        out = ollama_client.generate_controlled("prompt", {"text": "chunk"}, run_context="validation")
     assert out["ok"] is False
     assert out["status"] == "rejected_by_verifier"
     assert out["rejection_reason"] == "schema_validation_failed"
@@ -131,7 +131,7 @@ def test_generate_controlled_recovers_on_retry():
     responses = [_FakeResp(bad), _FakeResp(VALID_LLM_OUTPUT)]
     with mock.patch("httpx.post", side_effect=responses), \
          mock.patch.object(ollama_client, "_get_digest_cached", return_value="digest-1"):
-        out = ollama_client.generate_controlled("prompt", {"text": "chunk"})
+        out = ollama_client.generate_controlled("prompt", {"text": "chunk"}, run_context="validation")
     assert out["ok"] is True
 
 
@@ -139,7 +139,7 @@ def test_generate_controlled_does_not_loop_beyond_single_retry():
     bad = {"requirement_id": "X", "estado": "cumple"}
     with mock.patch("httpx.post", return_value=_FakeResp(bad)) as post, \
          mock.patch.object(ollama_client, "_get_digest_cached", return_value="digest-1"):
-        ollama_client.generate_controlled("prompt", {"text": "chunk"})
+        ollama_client.generate_controlled("prompt", {"text": "chunk"}, run_context="validation")
     assert post.call_count == 2  # 1 intento + 1 reintento, nunca mas (P6)
 
 

@@ -47,8 +47,16 @@ def _run(monkeypatch, tmp_path, run_context=None):
     return result, audit_file
 
 
-def test_default_run_context_is_production(monkeypatch, tmp_path):
-    result, audit_file = _run(monkeypatch, tmp_path)
+def test_omitting_run_context_raises_type_error(monkeypatch, tmp_path):
+    """Fase 5.0 (W5.3): run_context ya NO tiene default -- omitirlo es un
+    TypeError de Python (parametro keyword-only sin valor), no un
+    ValueError en runtime. Nunca se asume 'production' silenciosamente."""
+    with pytest.raises(TypeError):
+        _run(monkeypatch, tmp_path)  # run_context=None -> kwargs vacio -> falta el requerido
+
+
+def test_explicit_production_run_context_is_recorded(monkeypatch, tmp_path):
+    result, audit_file = _run(monkeypatch, tmp_path, run_context="production")
     assert result["run_context"] == "production"
     entry = json.loads(audit_file.read_text(encoding="utf-8").strip())
     assert entry["data"]["run_context"] == "production"

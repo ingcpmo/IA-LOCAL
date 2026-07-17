@@ -5,6 +5,7 @@ Funciones puras (sin fastapi) que validan project_id y rutas relativas antes de 
 operación de sistema de archivos, previniendo path traversal y exposición de secretos.
 """
 
+import re
 from pathlib import Path
 
 # ── Patrones bloqueados globalmente ──────────────────────────────────────────
@@ -159,4 +160,55 @@ def resolve_deployment(
         raise ValueError(f"relative_path escapa del deployment dir: {relative_path!r}")
     if target.suffix.lower() not in _DEPLOY_EXTS:
         raise PermissionError(f"Extensión no permitida en deployments: {target.suffix!r}")
+    return target
+
+
+# ── W5.3 Fase 5.2 -- evidencia de validación (_by_req_candidates) ───────────
+
+_VALIDATION_EVIDENCE_RUN_ID_RE = re.compile(r"^w5v3-validation-[0-9a-f]{12}$")
+VALIDATION_EVIDENCE_EXT = frozenset({".json"})
+VALIDATION_EVIDENCE_MAX_BYTES = 10_000_000  # 10 MB, control #7 aprobado
+
+
+def resolve_validation_evidence(run_id: str, evidence_base: Path) -> Path:
+    """
+    Valida run_id y retorna evidence_base/{run_id}.json -- mismo patrón que
+    resolve_workspace/resolve_rc_artifact (confinamiento + regex + solo
+    .json). Parámetros aprobados (Fase 5.0 control #7, confirmados por el
+    usuario en Fase 5.2):
+
+    - Patrón de run_id: 'w5v3-validation-<12 hex>' (el mismo formato ya
+      emitido por factory/regulatory/tools/run_validation_evidence.py) --
+      cualquier otro formato es traversal potencial o un run_id ajeno al
+      pipeline de validación, se rechaza.
+    - Extensión única permitida: .json.
+    - Tamaño máximo: VALIDATION_EVIDENCE_MAX_BYTES (10 MB) -- verificado
+      por el caller ANTES de escribir (ver
+      factory/regulatory/validation_evidence_writer.py), nunca truncado en
+      silencio.
+    - Retención: sin expiración automática -- ninguna función de borrado
+      se expone en este módulo ni en validation_evidence_writer.py; el
+      borrado, si alguna vez se necesita, es una decisión humana explícita
+      registrada como evento de auditoría, nunca un cron/TTL.
+    - Permisos: 0o640 al escribir (ver validation_evidence_writer.py).
+    - Exclusión de paquetes productivos: evidence_base vive bajo
+      factory/regulatory/validation_evidence/, un árbol completamente
+      distinto de GMPAI/reports/<run_id>/ (la raíz real que empaqueta
+      gmpai_document_validation, ver package_v5.py/package_v_*.py de
+      W5v2) -- por construcción, ningún paquete final de esa fábrica
+      puede incluir evidencia de validación sin un cambio explícito de
+      alcance.
+
+    Raises:
+        ValueError: run_id no matchea el patrón esperado.
+    """
+    if not _VALIDATION_EVIDENCE_RUN_ID_RE.match(run_id):
+        raise ValueError(
+            f"run_id inválido para evidencia de validación: {run_id!r} "
+            f"(esperado 'w5v3-validation-<12 hex>')"
+        )
+    base = evidence_base.resolve()
+    target = (base / f"{run_id}.json").resolve()
+    if not target.is_relative_to(base):
+        raise ValueError(f"run_id produce una ruta fuera de evidence_base: {run_id!r}")
     return target
