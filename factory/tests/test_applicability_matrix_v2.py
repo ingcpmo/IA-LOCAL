@@ -19,6 +19,17 @@ def test_load_matrix_is_valid():
     assert len(data["requirements"]) == 19  # los 19 requirement_id reales de Fase 0
 
 
+def test_matrix_is_approved_via_checkpoint_b():
+    """Checkpoint B confirmado por Cesar (2026-07-17): decision_id MC-0001,
+    approved_by Cesar, approver_role project_lead -- ver
+    factory/layer9/decisions/decisions.jsonl."""
+    approval = load_matrix()["approval"]
+    assert approval["status"] == "human_confirmed"
+    assert approval["decision_id"] == "MC-0001"
+    assert approval["approved_by"] == "Cesar"
+    assert approval["approver_role"] == "project_lead"
+
+
 def test_load_matrix_rejects_default_other_than_review_required(tmp_path, monkeypatch):
     bad = tmp_path / "bad_matrix.yaml"
     bad.write_text(yaml.dump({
@@ -69,29 +80,34 @@ def test_expected_and_optional_return_none_from_pre_inference_filter():
     assert applicability("21_CFR_11.10(d)", "FS")["value"] == "expected"
 
 
-def test_matrix_not_approved_blocks_production_run_context():
-    with pytest.raises(MatrixNotApprovedError):
-        require_matrix_approved_for_production(run_context="production")
-
-
-def test_matrix_not_approved_allows_validation_run_context():
-    require_matrix_approved_for_production(run_context="validation")  # no debe lanzar
-
-
-def test_matrix_approved_allows_production_run_context(monkeypatch):
+def test_matrix_not_approved_blocks_production_run_context(monkeypatch):
+    """La matriz REAL ya esta aprobada (Checkpoint B, decision_id MC-0001)
+    -- este test simula el estado 'pending_human_confirmation' via mock
+    para probar la guardia sin depender de editar el archivo real."""
     import factory.regulatory.applicability as mod
-    original = mod.load_matrix
-    load_matrix.cache_clear()
 
-    def _approved():
-        data = original()
-        data = dict(data)
-        data["approval"] = dict(data["approval"], status="human_confirmed")
-        return data
+    def _unapproved():
+        return {"requirements": {}, "approval": {"status": "pending_human_confirmation"}}
 
-    monkeypatch.setattr(mod, "load_matrix", _approved)
-    mod.require_matrix_approved_for_production(run_context="production")  # no debe lanzar
-    load_matrix.cache_clear()
+    monkeypatch.setattr(mod, "load_matrix", _unapproved)
+    with pytest.raises(MatrixNotApprovedError):
+        mod.require_matrix_approved_for_production(run_context="production")
+
+
+def test_matrix_not_approved_allows_validation_run_context(monkeypatch):
+    import factory.regulatory.applicability as mod
+
+    def _unapproved():
+        return {"requirements": {}, "approval": {"status": "pending_human_confirmation"}}
+
+    monkeypatch.setattr(mod, "load_matrix", _unapproved)
+    mod.require_matrix_approved_for_production(run_context="validation")  # no debe lanzar
+
+
+def test_matrix_approved_allows_production_run_context():
+    """La matriz REAL esta aprobada desde el Checkpoint B (MC-0001) --
+    verifica el estado real, sin mock."""
+    require_matrix_approved_for_production(run_context="production")  # no debe lanzar
 
 
 def test_document_type_guard_human_assigned_is_confirmed():

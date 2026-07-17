@@ -22,17 +22,22 @@
 # TODAS las filas de este archivo estan marcadas # PROPUESTO -- son una
 # primera pasada de Claude Code razonada sobre el V-model GAMP 5 y el
 # corpus real ya evaluado (FS_v1.2 SCADA-PCS, ver
-# matriz_aplicabilidad_FS_v1_2_v5.json), NO una decision regulatoria
-# validada. Requieren confirmacion explicita de Cesar en el Checkpoint B
-# (Bloque 3.3) antes de que approval.status pase a human_confirmed.
+# matriz_aplicabilidad_FS_v1_2_v5.json). La marca # PROPUESTO se conserva
+# como registro de PROVENIENCIA (quien/como se originó cada valor), no
+# como estado de aprobación -- Cesar confirmó la matriz completa en el
+# Checkpoint B (decision_id MC-0001, ver
+# factory/layer9/decisions/decisions.jsonl, approval.status abajo =
+# human_confirmed). Cualquier fila que se agregue o edite DESPUÉS de esta
+# aprobación debe marcarse # PROPUESTO de nuevo hasta la siguiente
+# confirmación explícita.
 
 matrix_version: "2.0"
-approval:            # se completa tras Checkpoint B — ver Bloque 3.3
-  status: "pending_human_confirmation"
-  decision_id: null
-  approved_by: null
-  approver_role: null
-  approved_at_utc: null
+approval:            # Checkpoint B confirmado — ver factory/layer9/decisions/decisions.jsonl (MC-0001)
+  status: "human_confirmed"
+  decision_id: "MC-0001"
+  approved_by: "Cesar"
+  approver_role: "project_lead"
+  approved_at_utc: "2026-07-17T16:26:33Z"
 
 document_types: [URS, FS, DS, CS, RA, IQ, OQ, PQ, SOP]
 
