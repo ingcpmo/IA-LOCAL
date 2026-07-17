@@ -1,0 +1,26 @@
+{
+  "documento_advertencia": "Este artefacto es de MISION/PROYECTO GENERAL (gmpai_document_validation) -- NO es especifico de FS_v1.2. Incluye tambien eventos del RC v1.4 (32 documentos, sin chunking) y otros ciclos del mismo proyecto. Para auditoria especifica de FS_v1.2 ver auditoria_documental_FS_v1_2_v5.json.",
+  "version": "v5",
+  "generated_at": "2026-07-16T22:15:11.578573+00:00",
+  "resumen": {
+    "eventos_totales_proyecto_produccion": 313,
+    "eventos_especificos_fs_v1_2_dentro_de_este_total": 70,
+    "eventos_test_fixture_excluidos": 201,
+    "hash_integrity": "PASS",
+    "chain_continuity": "WARN",
+    "overall_audit_status": "NOT_FULLY_VERIFIED"
+  },
+  "raw_verify_chain_snapshot_neutralizado": {
+    "verified": false,
+    "is_fork": true,
+    "assessment": "WARN",
+    "detail": "Fork concurrente: 1 ruptura(s) de enlace sin errores de hash. Contenido autentico verificado a nivel de hash (hash_integrity=PASS); NO se declara conformidad Part 11 a partir de este campo -- ver overall_audit_status.",
+    "log_count": 846,
+    "verified_count": 845,
+    "hash_errors": 0,
+    "chain_errors": 1,
+    "failed_count": 1,
+    "hash_algo": "sha256",
+    "audit_file": "/app/factory/audit/factory_audit.jsonl"
+  }
+}

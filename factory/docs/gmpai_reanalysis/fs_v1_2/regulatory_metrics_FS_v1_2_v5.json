@@ -1,0 +1,116 @@
+{
+  "generated_at": "2026-07-16T16:28:54.794264+00:00",
+  "documento": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "commit_reference": "0d69f8409d9bd8b936e1eed8b4551e3423e9d713",
+  "capa9_decision_id": "ff640643-b767-426b-af5f-720f4edee78b",
+  "cobertura_tecnica_total_pct": 100.0,
+  "cobertura_paginas_y_chunks": {
+    "total_paginas_documento": 58,
+    "paginas_cubiertas": 58,
+    "cobertura_pct": 100.0,
+    "chunks_por_agente": {
+      "fda_part11_agent": "27/27",
+      "eu_annex11_agent": "27/27",
+      "alcoa_plus_agent": "27/27"
+    }
+  },
+  "cobertura_por_agente_pct": {
+    "fda_part11_agent": 100.0,
+    "eu_annex11_agent": 100.0,
+    "alcoa_plus_agent": 100.0
+  },
+  "cobertura_requisitos_aplicables": {
+    "checkpoints_definidos_por_agente": {
+      "fda_part11_agent": 5,
+      "eu_annex11_agent": 5,
+      "alcoa_plus_agent": 9
+    },
+    "checkpoints_totales_aplicables": 19,
+    "checkpoints_con_finding_consolidado": 19,
+    "cobertura_pct": 100.0
+  },
+  "pct_findings_con_cita_literal_validada": 21.05,
+  "pct_requisitos_documentados": {
+    "valor_pct": 42.11,
+    "definicion": "Porcentaje de los 19 checkpoints regulatorios aplicables cuyo campo evidencia_exacta del agente contiene CUALQUIER texto no vacio (cita literal validada O evidencia parcial/indirecta no validada como literal) -- es decir, el agente encontro ALGO en el documento relacionado con el checkpoint, aunque no siempre sea una cita literal exacta anclada.",
+    "formula": "pct_requisitos_documentados = (numero de findings con evidencia_exacta no vacio) / 19 x 100",
+    "diferencia_con_pct_findings_con_cita_literal_validada": "pct_findings_con_cita_literal_validada (21.05%) es un subconjunto MAS ESTRICTO: solo cuenta evidencia que paso la validacion de anclaje literal + relevancia tematica (_is_topically_relevant). pct_requisitos_documentados es mas amplio: incluye tambien evidencia parcial no anclada formalmente. NO deben sumarse ni promediarse entre si -- miden cosas distintas sobre el mismo conjunto de 19 findings."
+  },
+  "pct_con_evidencia_de_implementacion": 0.0,
+  "pct_cumple": 0.0,
+  "pct_cumple_parcialmente": 21.05,
+  "pct_no_cumple_documentalmente": 68.42,
+  "pct_evidencia_insuficiente": 10.53,
+  "pct_no_aplica": 0.0,
+  "pct_pendiente_decision_humana": 100.0,
+  "remediaciones": {
+    "abiertas": [
+      "COR-1",
+      "COR-5",
+      "REM-GMPAI-001"
+    ],
+    "pendientes_no_evaluadas_como_cerradas": [
+      "COR-2",
+      "COR-3",
+      "COR-4"
+    ],
+    "cerradas": []
+  },
+  "completitud_metadata_reproducibilidad": {
+    "campos_evaluados": [
+      "run_id",
+      "task_id",
+      "chunk_index",
+      "page_start_end",
+      "started_at_finished_at",
+      "model",
+      "model_digest"
+    ],
+    "chunks_evaluados": 81,
+    "presentes_por_campo": {
+      "run_id": 81,
+      "task_id": 81,
+      "chunk_index": 81,
+      "page_start_end": 81,
+      "started_at_finished_at": 81,
+      "model": 81,
+      "model_digest": 0
+    },
+    "completitud_pct": 85.71,
+    "nota": "model_digest presente 0/81 -- model_digest ausente 81/81. ollama_client.show_digest() no obtuvo digest en NINGUN chunk (Connection refused al intentar /api/show -- Ollama no estaba alcanzable durante esta verificacion, por instruccion explicita de no ejecutar Ollama). Ver anexo_incidentes_tecnicos_FS_v1_2_v5.json, incidente TE-02."
+  },
+  "regulatory_readiness_index": {
+    "formula": "RRI = [(cumple x 1.0) + (cumple_parcialmente x 0.5)] / total_aplicable x 100",
+    "cumple": 0,
+    "cumple_parcialmente": 4,
+    "no_cumple_documentalmente_valor_0": 13,
+    "evidencia_insuficiente_valor_0": 2,
+    "no_aplica_excluidos": 0,
+    "numerador": 2.0,
+    "denominador_total_aplicable": 19,
+    "rri_pct": 10.53,
+    "checkpoints_no_independientes_combinados": true,
+    "fallo_tecnico_no_resuelto": false,
+    "etiqueta_obligatoria": "ESTIMACION DE PREPARACION DOCUMENTAL Y REGULATORIA. NO ES UNA DECLARACION FINAL DE CUMPLIMIENTO GMP.",
+    "advertencia_solapamiento_y_doble_conteo": "ADVERTENCIA: los 19 checkpoints NO son completamente independientes entre si -- varios findings comparten evidencia de la misma pagina/seccion del FS (ej. las citas trasladadas documentadas en changelog_FS_v1_2_v3.json afectan simultaneamente a mas de un checkpoint). El RRI se calcula sobre los 19 checkpoints TAL COMO fueron definidos por los 3 agentes (5 Part11 + 5 Annex11 + 9 ALCOA+), sin ajuste por solapamiento de evidencia subyacente. Esto puede sub- o sobre-representar la preparacion real si un mismo gap del FS afecta a multiples checkpoints correlacionados (por ejemplo, la ausencia de control de acceso afecta tanto a 21_CFR_11.10(d) como a ANNEX11_12 y a ALCOA_ATTRIBUTABLE). El RRI NO corrige este posible doble conteo -- se declara explicitamente como limitacion, no se recalcula con una ponderacion no trazable."
+  },
+  "dimensiones_de_confianza": {
+    "confianza_en_cobertura_del_analisis": "ALTA -- 100% de chunks (81/81) y 100% de checkpoints aplicables (19/19) evaluados con reintento exitoso de los 6 chunks con respuesta JSON invalida.",
+    "confianza_en_evidencia_anclada": "MEDIA -- solo 4/19 (21.05%) findings tienen cita literal validada; el resto son findings de AUSENCIA (no_cumple sin cita porque no hay evidencia que citar) o evidencia_insuficiente.",
+    "confianza_en_findings": "MEDIA -- 15/19 findings con confianza declarada 'media', 2 'alta', 2 'baja' (ver campo confianza de cada finding).",
+    "confianza_en_recomendaciones": "MEDIA -- las recomendaciones documentales (COR-1 a COR-5) tienen fundamento regulatorio directo; las de proceso/QA son buenas practicas generales, no derivadas de un finding especifico.",
+    "preparacion_documental": "PARCIAL -- ver RRI (10.53%) y matriz de correcciones COR-1..COR-5, ninguna implementada todavia.",
+    "evidencia_de_implementacion": "NO DETERMINABLE -- 0% de findings tienen evidencia de implementacion (no se ha ejecutado ninguna correccion sobre el FS real).",
+    "cumplimiento_real_del_sistema": "NO DETERMINADO -- requiere implementacion, IQ/OQ/PQ, pruebas de validacion y aprobacion QA/Validacion (ver seccion de gobernanza)."
+  },
+  "conclusion": {
+    "cobertura_del_analisis_pct": 100.0,
+    "preparacion_documental_indice_rri_pct": 10.53,
+    "cumplimiento_real_fda_part11_annex11_alcoa": "NO_DETERMINADO",
+    "declaracion_obligatoria": "El analisis y las correcciones propuestas mejoran la preparacion documental, pero no demuestran por si solos que el sistema cumpla FDA 21 CFR Part 11, EU GMP Annex 11 o ALCOA+. El cumplimiento final requiere evidencia de implementacion, pruebas de validacion y aprobacion de QA/Validacion."
+  },
+  "version": "v5",
+  "generated_at_v5_correction": "2026-07-16T21:25:40.305486+00:00",
+  "note_commit_reference_scope": "commit_reference de este archivo es el commit del MOTOR (chunked_engine.py, fix de _is_topically_relevant), NO el commit del paquete de reporte v5 -- ver manifest.json/linkage_chain para ese commit distinto."
+}

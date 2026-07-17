@@ -1,0 +1,142 @@
+{
+  "documento": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "version": "v5",
+  "generated_at": "2026-07-16T21:25:40.305486+00:00",
+  "nota": "Ninguna accion CAPA de esta matriz se cierra automaticamente. El cierre requiere evidencia de implementacion Y aprobacion QA/Validacion, registradas fuera de este reporte. [v4.1] Se diferencia explicitamente propietario_propuesto (sugerido por este reporte) de propietario_aceptado (PENDIENTE hasta aceptacion formal), y fecha_propuesta de fecha_aprobada (PENDIENTE hasta aprobacion formal). Ninguna CAPA se cierra ni se da por aceptada en este reporte.",
+  "capas": [
+    {
+      "capa_id": "COR-1",
+      "tema": "Control de acceso y autorizacion",
+      "causa_raiz": "El FS_v1.2 no documenta o documenta parcialmente: control de acceso y autorizacion (ver findings de sustento).",
+      "accion_correctiva": "Agregar al FS una seccion de control de acceso: matriz de roles/usuarios, mecanismo de autenticacion y autorizacion (authority checks), y trazabilidad de que usuario genera/modifica cada dato. Referenciar el SOP de control de acceso vigente en vez de asumirlo implicito.",
+      "accion_preventiva": "Incluir checklist de control de acceso y autorizacion en la plantilla estandar de FS de Rockwell para futuros documentos del corpus, evitando que la brecha se repita en el proximo documento revisado.",
+      "prioridad": "ALTA",
+      "evidencia_esperada": "Nueva version del FS con la seccion agregada + diff explicito frente a FS_v1.2 + confirmacion de que el contenido responde directamente a cada finding de sustento.",
+      "criterio_de_cierre": "Version corregida del FS aprobada por QA/Validacion, con evidencia de implementacion (no solo texto) para los findings de severidad mayor.",
+      "verificacion_de_efectividad": "Reevaluacion de los checkpoints afectados (no reproceso completo del corpus) por el mismo motor de analisis, confirmando reclasificacion a cumple con evidencia.",
+      "findings_sustento": [
+        "21_CFR_11.10(d)",
+        "21_CFR_11.10(g)",
+        "ANNEX11_12",
+        "ALCOA_ATTRIBUTABLE"
+      ],
+      "estado": "open",
+      "cerrado": false,
+      "propietario_propuesto": "Ingenieria de Control (Rockwell) -- accion correctiva; QA/Validacion -- verificacion de cierre",
+      "propietario_aceptado": "PENDIENTE -- no aceptado formalmente por ningun responsable todavia",
+      "fecha_propuesta": "A definir por Rockwell/QA -- ver fecha_propuesta vs fecha_aprobada",
+      "fecha_aprobada": "PENDIENTE -- ninguna fecha ha sido aprobada formalmente"
+    },
+    {
+      "capa_id": "COR-2",
+      "tema": "Audit trail e integridad del dato (ALCOA+)",
+      "causa_raiz": "El FS_v1.2 no documenta o documenta parcialmente: audit trail e integridad del dato (alcoa+) (ver findings de sustento).",
+      "accion_correctiva": "Agregar al FS una seccion de Audit Trail que describa: captura automatica con timestamp, preservacion del dato original, exactitud verificada (calibracion), completitud sin exclusiones, consistencia cronologica y perdurabilidad del registro. Esto cubre simultaneamente el requisito de audit trail de FDA/Annex11 y los 6 atributos ALCOA+ relacionados con el ciclo de vida del dato.",
+      "accion_preventiva": "Incluir checklist de audit trail e integridad del dato (alcoa+) en la plantilla estandar de FS de Rockwell para futuros documentos del corpus, evitando que la brecha se repita en el proximo documento revisado.",
+      "prioridad": "ALTA",
+      "evidencia_esperada": "Nueva version del FS con la seccion agregada + diff explicito frente a FS_v1.2 + confirmacion de que el contenido responde directamente a cada finding de sustento.",
+      "criterio_de_cierre": "Version corregida del FS aprobada por QA/Validacion, con evidencia de implementacion (no solo texto) para los findings de severidad mayor.",
+      "verificacion_de_efectividad": "Reevaluacion de los checkpoints afectados (no reproceso completo del corpus) por el mismo motor de analisis, confirmando reclasificacion a cumple con evidencia.",
+      "findings_sustento": [
+        "21_CFR_11.10(e)",
+        "ANNEX11_9",
+        "ALCOA_CONTEMPORANEOUS",
+        "ALCOA_ORIGINAL",
+        "ALCOA_ACCURATE",
+        "ALCOA_COMPLETE",
+        "ALCOA_CONSISTENT",
+        "ALCOA_ENDURING"
+      ],
+      "estado": "pending_implementation_not_evaluated_as_closed",
+      "cerrado": false,
+      "propietario_propuesto": "Ingenieria de Control (Rockwell) -- accion correctiva; QA/Validacion -- verificacion de cierre",
+      "propietario_aceptado": "PENDIENTE -- no aceptado formalmente por ningun responsable todavia",
+      "fecha_propuesta": "A definir por Rockwell/QA -- ver fecha_propuesta vs fecha_aprobada",
+      "fecha_aprobada": "PENDIENTE -- ninguna fecha ha sido aprobada formalmente"
+    },
+    {
+      "capa_id": "COR-3",
+      "tema": "Firma electronica",
+      "causa_raiz": "El FS_v1.2 no documenta o documenta parcialmente: firma electronica (ver findings de sustento).",
+      "accion_correctiva": "Agregar especificacion de firma electronica: manifestacion visible del firmante, vinculo logico/criptografico al registro firmado, y componentes de identificacion segun 21 CFR 11.200.",
+      "accion_preventiva": "Incluir checklist de firma electronica en la plantilla estandar de FS de Rockwell para futuros documentos del corpus, evitando que la brecha se repita en el proximo documento revisado.",
+      "prioridad": "MEDIA",
+      "evidencia_esperada": "Nueva version del FS con la seccion agregada + diff explicito frente a FS_v1.2 + confirmacion de que el contenido responde directamente a cada finding de sustento.",
+      "criterio_de_cierre": "Version corregida del FS aprobada por QA/Validacion, con evidencia de implementacion (no solo texto) para los findings de severidad mayor.",
+      "verificacion_de_efectividad": "Reevaluacion de los checkpoints afectados (no reproceso completo del corpus) por el mismo motor de analisis, confirmando reclasificacion a cumple con evidencia.",
+      "findings_sustento": [
+        "21_CFR_11.50_11.70"
+      ],
+      "estado": "pending_implementation_not_evaluated_as_closed",
+      "cerrado": false,
+      "propietario_propuesto": "Ingenieria de Control (Rockwell) -- accion correctiva; QA/Validacion -- verificacion de cierre",
+      "propietario_aceptado": "PENDIENTE -- no aceptado formalmente por ningun responsable todavia",
+      "fecha_propuesta": "A definir por Rockwell/QA -- ver fecha_propuesta vs fecha_aprobada",
+      "fecha_aprobada": "PENDIENTE -- ninguna fecha ha sido aprobada formalmente"
+    },
+    {
+      "capa_id": "COR-4",
+      "tema": "Validacion del sistema y gestion de riesgo",
+      "causa_raiz": "El FS_v1.2 no documenta o documenta parcialmente: validacion del sistema y gestion de riesgo (ver findings de sustento).",
+      "accion_correctiva": "Referenciar en el FS el plan de validacion del sistema computarizado (protocolos IQ/OQ/PQ) y el analisis de riesgo GAMP 5 correspondiente.",
+      "accion_preventiva": "Incluir checklist de validacion del sistema y gestion de riesgo en la plantilla estandar de FS de Rockwell para futuros documentos del corpus, evitando que la brecha se repita en el proximo documento revisado.",
+      "prioridad": "MEDIA",
+      "evidencia_esperada": "Nueva version del FS con la seccion agregada + diff explicito frente a FS_v1.2 + confirmacion de que el contenido responde directamente a cada finding de sustento.",
+      "criterio_de_cierre": "Version corregida del FS aprobada por QA/Validacion, con evidencia de implementacion (no solo texto) para los findings de severidad mayor.",
+      "verificacion_de_efectividad": "Reevaluacion de los checkpoints afectados (no reproceso completo del corpus) por el mismo motor de analisis, confirmando reclasificacion a cumple con evidencia.",
+      "findings_sustento": [
+        "21_CFR_11.10(a)",
+        "ANNEX11_4"
+      ],
+      "estado": "pending_implementation_not_evaluated_as_closed",
+      "cerrado": false,
+      "propietario_propuesto": "Ingenieria de Control (Rockwell) -- accion correctiva; QA/Validacion -- verificacion de cierre",
+      "propietario_aceptado": "PENDIENTE -- no aceptado formalmente por ningun responsable todavia",
+      "fecha_propuesta": "A definir por Rockwell/QA -- ver fecha_propuesta vs fecha_aprobada",
+      "fecha_aprobada": "PENDIENTE -- ninguna fecha ha sido aprobada formalmente"
+    },
+    {
+      "capa_id": "COR-5",
+      "tema": "Almacenamiento, retencion y disponibilidad",
+      "causa_raiz": "El FS_v1.2 no documenta o documenta parcialmente: almacenamiento, retencion y disponibilidad (ver findings de sustento).",
+      "accion_correctiva": "Documentar politica de almacenamiento/backup, legibilidad a largo plazo, retencion de registros y disponibilidad para revision/auditoria.",
+      "accion_preventiva": "Incluir checklist de almacenamiento, retencion y disponibilidad en la plantilla estandar de FS de Rockwell para futuros documentos del corpus, evitando que la brecha se repita en el proximo documento revisado.",
+      "prioridad": "ALTA",
+      "evidencia_esperada": "Nueva version del FS con la seccion agregada + diff explicito frente a FS_v1.2 + confirmacion de que el contenido responde directamente a cada finding de sustento.",
+      "criterio_de_cierre": "Version corregida del FS aprobada por QA/Validacion, con evidencia de implementacion (no solo texto) para los findings de severidad mayor.",
+      "verificacion_de_efectividad": "Reevaluacion de los checkpoints afectados (no reproceso completo del corpus) por el mismo motor de analisis, confirmando reclasificacion a cumple con evidencia.",
+      "findings_sustento": [
+        "ANNEX11_7.1",
+        "ANNEX11_17",
+        "ALCOA_LEGIBLE",
+        "ALCOA_AVAILABLE"
+      ],
+      "estado": "open",
+      "cerrado": false,
+      "propietario_propuesto": "Ingenieria de Control (Rockwell) -- accion correctiva; QA/Validacion -- verificacion de cierre",
+      "propietario_aceptado": "PENDIENTE -- no aceptado formalmente por ningun responsable todavia",
+      "fecha_propuesta": "A definir por Rockwell/QA -- ver fecha_propuesta vs fecha_aprobada",
+      "fecha_aprobada": "PENDIENTE -- ninguna fecha ha sido aprobada formalmente"
+    },
+    {
+      "capa_id": "REM-GMPAI-001",
+      "tema": "Gap de protocolo IQ/OQ/PQ del SAT (piloto A / URS v2.1)",
+      "causa_raiz": "Protocolo IQ/OQ/PQ (o protocolo previo bajo el cual se ejecuto y aprobo el SAT) no disponible en el material entregado",
+      "accion_correctiva": "Localizar o generar el protocolo IQ/OQ/PQ faltante para la automatizacion PLC/SCADA-PCS y vincularlo formalmente a la matriz de trazabilidad URS->FS->DS->IQ/OQ/PQ.",
+      "accion_preventiva": "Exigir la referencia cruzada URS<->protocolo de prueba como campo obligatorio antes de cerrar cualquier FS futuro del corpus Rockwell.",
+      "prioridad": "ALTA",
+      "evidencia_esperada": "Protocolo IQ/OQ/PQ identificado o generado, con enlace explicito en la matriz de trazabilidad.",
+      "criterio_de_cierre": "Protocolo disponible y enlazado; revision_humana_requerida=false en el finding de trazabilidad correspondiente.",
+      "verificacion_de_efectividad": "Re-ejecucion del requirements_traceability_agent (LLM) sobre la familia MCCPDC-215115305 una vez localizado el protocolo.",
+      "findings_sustento": [
+        "MCCPDC-215115305 (trazabilidad, piloto A)"
+      ],
+      "estado": "open",
+      "cerrado": false,
+      "propietario_propuesto": "Validacion (Rockwell) -- localizacion/generacion del protocolo; QA -- verificacion",
+      "propietario_aceptado": "PENDIENTE -- no aceptado formalmente por ningun responsable todavia",
+      "fecha_propuesta": "A definir por Rockwell/QA -- ver fecha_propuesta vs fecha_aprobada",
+      "fecha_aprobada": "PENDIENTE -- ninguna fecha ha sido aprobada formalmente"
+    }
+  ]
+}

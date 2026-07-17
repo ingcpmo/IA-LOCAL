@@ -1,0 +1,56 @@
+{
+  "documento": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "de_version": "v4.1-corrected",
+  "a_version": "v5",
+  "generated_at": "2026-07-17T14:45:41.208895+00:00",
+  "correcciones": [
+    {
+      "item": "D1",
+      "defecto": "Encabezado DOCX acumulado (~10x repetido por seccion, header de seccion 0 heredado por las 10 secciones siguientes linked_to_previous).",
+      "causa_raiz": "El codigo de v4.1-corrected agregaba un run nuevo al parrafo de header en cada iteracion sin limpiarlo primero (add_run acumulativo).",
+      "correccion": "_set_header_once() en render_common_v5.py: limpia runs previos y asigna el texto una unica vez por seccion."
+    },
+    {
+      "item": "D2",
+      "defecto": "Truncamiento con '...' en la tabla resumen de incidentes tecnicos (pag 21 del PDF v4.1-corrected), TE-01/TE-02 cortados a mitad de palabra -- el fix de v4.1-corrected solo cubrio la matriz de aplicabilidad, no el anexo tecnico.",
+      "causa_raiz": "Slicing manual remanente sobre el campo 'estado_final' del anexo tecnico, no cubierto por el fix anterior.",
+      "correccion": "Anexo tecnico convertido a bloques narrativos (igual patron que aplicabilidad/findings) -- ningun campo se recorta."
+    },
+    {
+      "item": "D3",
+      "defecto": "Pagina casi vacia (pag 24 del PDF v4.1-corrected, 389 caracteres): tabla de 2 filas 'Decisiones registradas' forzada a pagina propia; ademas una pagina en blanco real (post CAPA landscape) en la nueva version durante el desarrollo de v5, detectada y corregida antes de empaquetar.",
+      "causa_raiz": "add_page() forzado antes de cada subtabla, y un add_page('P') redundante tras cada tabla landscape ademas del add_page propio del siguiente heading.",
+      "correccion": "Solo se fuerza salto de pagina en headings de seccion y al entrar en landscape; eliminado el add_page('P') de retorno redundante."
+    },
+    {
+      "item": "D4",
+      "defecto": "Referencias internas a archivos '_v4.json'/'_v4_1.json' (superseded, no incluidos en v4.1-corrected) en vez de los archivos realmente empaquetados: findings_completos, matriz_CAPA, anexo_incidentes_tecnicos, auditoria_mision_general.",
+      "causa_raiz": "El texto narrativo se copio de una version anterior del generador sin actualizar los nombres de archivo referenciados.",
+      "correccion": "fix_refs() en build_informe_v5.py aplica un mapeo explicito old->new sobre todo el contenido JSON antes de renderizar."
+    },
+    {
+      "item": "D5",
+      "defecto": "'PENDIENTE -- QA/Validacion (borrador v4 sin aprobar)' -- referencia de version obsoleta en la matriz de trazabilidad.",
+      "causa_raiz": "Mismo mapeo de texto no actualizado que D4.",
+      "correccion": "Sustituido por 'borrador v5, pendiente de aprobacion QA/Validacion' via fix_refs()."
+    },
+    {
+      "item": "D6",
+      "defecto": "regulatory_metrics_FS_v1_2.json (archivo no versionado, reusado sin cambio desde v4): campo 'generated_at_v4_1_correction' desactualizado y puntero a anexo_incidentes_tecnicos_FS_v1_2_v4.json (obsoleto).",
+      "causa_raiz": "El archivo nunca fue versionado ni actualizado en las correcciones anteriores (v4.1, v4.1-corrected) pese a referenciarse desde el reporte.",
+      "correccion": "Version v5 versionada explicitamente (regulatory_metrics_FS_v1_2_v5.json), campo renombrado a generated_at_v5_correction, puntero corregido, y note_commit_reference_scope agregado para no confundir el commit del motor con el del reporte."
+    },
+    {
+      "item": "D7",
+      "defecto": "aprobaciones_y_decisiones: campo top-level \"version\": \"v4\" obsoleto.",
+      "causa_raiz": "Campo no actualizado en v4.1/v4.1-corrected.",
+      "correccion": "version=v5; ademas se agrego decision_scope=TECHNICAL_CONTRADICTION_RESOLUTION explicito a cada decision (limita el alcance de la decision, no la convierte en aprobacion de cumplimiento)."
+    },
+    {
+      "item": "D8",
+      "defecto": "linkage_chain y package_receipt_reference NO estaban incluidos DENTRO del ZIP en v4.1-corrected (solo package_receipt.json externo).",
+      "causa_raiz": "El patron de no-circularidad (receipt con hash del zip debe generarse DESPUES de construir el zip) se aplico correctamente al receipt completo, pero nunca se genero una version SIN el hash circular para incluir dentro del zip.",
+      "correccion": "linkage_chain_FS_v1_2_v5.json (sin el hash final del zip, que aun no existe al momento de armar el contenido) y package_receipt_reference.json (puntero sin ese hash) van DENTRO del zip; package_receipt.json completo (CON el hash) sigue fuera, generado despues de calcular el hash del zip."
+    }
+  ]
+}

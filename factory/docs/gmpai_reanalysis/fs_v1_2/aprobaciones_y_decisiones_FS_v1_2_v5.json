@@ -1,0 +1,71 @@
+{
+  "documento": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "version": "v5",
+  "generated_at": "2026-07-16T20:34:42.299025+00:00",
+  "decisiones_registradas": [
+    {
+      "decision_id": "ff640643-b767-426b-af5f-720f4edee78b",
+      "accion": "fs_v1_2_contradiction_resolution",
+      "decision": "conditional_approve",
+      "decidido_por": "Cesar",
+      "origen": "human_confirmed",
+      "alcance": "Aprueba la interpretacion TECNICA de las 4 contradicciones internas detectadas por el motor. NO es una declaracion de cumplimiento GMP ni una aprobacion del documento FS corregido.",
+      "timestamp": "2026-07-16T14:03:21.767988+00:00",
+      "decision_scope": "TECHNICAL_CONTRADICTION_RESOLUTION"
+    }
+  ],
+  "aprobaciones_pendientes": [
+    {
+      "rol": "QA",
+      "estado": "PENDIENTE",
+      "requerido_para": "Aceptar/rechazar/solicitar cambios sobre el reporte de evaluacion documental v5 completo."
+    },
+    {
+      "rol": "Validacion",
+      "estado": "PENDIENTE",
+      "requerido_para": "Revisar la matriz de trazabilidad y CAPA antes de iniciar implementacion."
+    },
+    {
+      "rol": "Ingenieria",
+      "estado": "PENDIENTE",
+      "requerido_para": "Revisar factibilidad tecnica de COR-1 a COR-5 y REM-GMPAI-001."
+    },
+    {
+      "rol": "Auditoria",
+      "estado": "PENDIENTE",
+      "requerido_para": "Revisar gobernanza del paquete (manifest, hashes, cadena de auditoria) antes de archivar como evidencia de proceso."
+    }
+  ],
+  "pagina_de_firmas_pendientes": [
+    {
+      "rol": "Preparado por",
+      "nombre": "Claude Code (agente, sesion Fase FS_v1.2 v4)",
+      "fecha": "2026-07-16",
+      "firma": "N/A -- artefacto generado por agente, no reemplaza firma humana"
+    },
+    {
+      "rol": "Revisado por (QA)",
+      "nombre": "____________________",
+      "fecha": "____________________",
+      "firma": "____________________"
+    },
+    {
+      "rol": "Revisado por (Validacion)",
+      "nombre": "____________________",
+      "fecha": "____________________",
+      "firma": "____________________"
+    },
+    {
+      "rol": "Revisado por (Ingenieria)",
+      "nombre": "____________________",
+      "fecha": "____________________",
+      "firma": "____________________"
+    },
+    {
+      "rol": "Aprobado por (Auditoria)",
+      "nombre": "____________________",
+      "fecha": "____________________",
+      "firma": "____________________"
+    }
+  ]
+}
