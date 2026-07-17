@@ -1,0 +1,170 @@
+# W5 Ciclo 1 (v2), Fase 2, Bloque 2.1 — términos de dominio de control por
+# requisito, para la heurística de relevancia temática de evidence_verifier.py
+# (relevance_score). TODAS las filas están marcadas # PROPUESTO: son una
+# primera pasada de Claude Code sobre el catálogo real de
+# factory/engines/gmpai_integrity/prompts/*.yaml (19 requirement_id reales,
+# ver factory/docs/W5v2_FASE0_INVENTARIO.md §6) y requieren confirmación
+# humana explícita en el Checkpoint B antes de usarse para auto-rechazar
+# nada (recordar: relevancia baja SOLO produce flag de revisión, nunca
+# auto-rechazo — P6, Bloque 2.1). Un requisito sin fila aquí produce
+# relevance=NOT_VERIFIABLE (fail-closed hacia revisión, P1).
+
+# --- FDA 21 CFR Part 11 (part11_prompts.yaml) ---
+"21_CFR_11.10(a)":  # PROPUESTO — Validacion del sistema (accuracy/reliability)
+  - validation
+  - accuracy
+  - reliability
+  - verification
+  - test
+  - qualification
+  - iq
+  - oq
+  - pq
+
+"21_CFR_11.10(d)":  # PROPUESTO — Limitar acceso a individuos autorizados
+  - access
+  - authorized
+  - authentication
+  - password
+  - login
+  - permission
+  - role
+  - user
+
+"21_CFR_11.10(e)":  # PROPUESTO — Audit trail seguro con timestamp
+  - audit
+  - trail
+  - log
+  - timestamp
+  - event
+  - record
+  - history
+  - change
+
+"21_CFR_11.10(g)":  # PROPUESTO — Verificacion de autoridad (authority checks)
+  - authority
+  - approval
+  - authorization
+  - privilege
+  - permission
+  - role
+
+"21_CFR_11.50_11.70":  # PROPUESTO — Firma electronica
+  - signature
+  - sign
+  - signed
+  - electronic
+  - manifestation
+  - linked
+  - biometric
+
+# --- EU GMP Annex 11 (annex11_prompts.yaml) ---
+"ANNEX11_4":  # PROPUESTO — Gestion de riesgo del sistema computarizado
+  - risk
+  - assessment
+  - criticality
+  - impact
+  - fmea
+  - hazard
+
+"ANNEX11_7.1":  # PROPUESTO — Almacenamiento y proteccion de datos
+  - storage
+  - backup
+  - protection
+  - archive
+  - integrity
+  - retention
+
+"ANNEX11_9":  # PROPUESTO — Audit trail
+  - audit
+  - trail
+  - log
+  - event
+  - timestamp
+  - record
+  - alarm
+  - history
+
+"ANNEX11_12":  # PROPUESTO — Seguridad fisica y logica
+  - security
+  - physical
+  - logical
+  - access
+  - firewall
+  - network
+  - password
+  - lock
+
+"ANNEX11_17":  # PROPUESTO — Archivo y retencion de registros
+  - archive
+  - retention
+  - storage
+  - record
+  - backup
+  - restore
+
+# --- ALCOA+ (alcoa_prompts.yaml) ---
+"ALCOA_ATTRIBUTABLE":  # PROPUESTO
+  - attributable
+  - user
+  - operator
+  - identity
+  - who
+  - author
+
+"ALCOA_LEGIBLE":  # PROPUESTO
+  - legible
+  - readable
+  - clear
+  - format
+  - display
+
+"ALCOA_CONTEMPORANEOUS":  # PROPUESTO
+  - contemporaneous
+  - real-time
+  - timestamp
+  - immediate
+  - recorded
+
+"ALCOA_ORIGINAL":  # PROPUESTO
+  - original
+  - source
+  - raw
+  - preserved
+  - unaltered
+
+"ALCOA_ACCURATE":  # PROPUESTO
+  - accurate
+  - accuracy
+  - calibration
+  - precision
+  - verified
+
+"ALCOA_COMPLETE":  # PROPUESTO
+  - complete
+  - completeness
+  - full
+  - exclusion
+  - missing
+
+"ALCOA_CONSISTENT":  # PROPUESTO
+  - consistent
+  - consistency
+  - sequence
+  - chronological
+  - order
+
+"ALCOA_ENDURING":  # PROPUESTO
+  - enduring
+  - durable
+  - retention
+  - lifetime
+  - preserved
+
+"ALCOA_AVAILABLE":  # PROPUESTO
+  - available
+  - availability
+  - accessible
+  - retrieval
+  - review
+  - audit
