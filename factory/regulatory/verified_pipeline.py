@@ -15,9 +15,8 @@ matriz de aplicabilidad -- Fase 3):
      conclusion / flags pendientes
 
 IMPORTANTE -- estado de integracion real (ver
-factory/docs/W5v2_FASE0_INVENTARIO.md discrepancia #1 y
-factory/docs/W5v2_FASE1_CIERRE.md): esta orquestacion NO esta todavia
-cableada dentro del POST HTTP de produccion
+factory/docs/W5v2_FASE0_INVENTARIO.md discrepancia #1): esta orquestacion
+NO esta todavia cableada dentro del POST HTTP de produccion
 (chunked_engine.evaluate_chunked()). Motivo, verificado, no supuesto:
 
   (a) Los prompts YAML vigentes (factory/engines/gmpai_integrity/prompts/
@@ -47,6 +46,7 @@ from dataclasses import dataclass, field
 
 from . import evidence_verifier
 from .absence_consolidator import DocumentConclusion, consolidate
+from .applicability import applicability, document_type_guard, known_requirement_ids, pre_inference_filter
 from .evidence_verifier import VerificationResult, verify_llm_output
 
 
@@ -142,3 +142,76 @@ def evaluate_requirement_over_chunks(
             summary.rejected_count += 1
 
     return summary
+
+
+# ---------------------------------------------------------------------------
+# Fase 3, Bloque 3.2/3.4 — filtro pre-inferencia + guardia de tipo
+# documental, a nivel de documento completo.
+# ---------------------------------------------------------------------------
+
+@dataclass
+class DocumentEvaluationResult:
+    document_type: str
+    document_type_confirmed: bool
+    terminal_results: list = field(default_factory=list)   # OUT_OF_DOCUMENT_SCOPE / APPLICABILITY_REVIEW_REQUIRED
+    requirement_summaries: list = field(default_factory=list)  # RequirementEvaluationSummary
+    review_queue: list = field(default_factory=list)        # requirement_id que quedaron pendientes
+    document_level_flags: list = field(default_factory=list)
+
+
+def evaluate_document(
+    document_type: str,
+    document_type_source: str,
+    document_type_confidence: float | None,
+    relevant_chunks_by_requirement: dict,
+    generate_fn,
+    prompt_by_requirement: dict,
+    requirement_ids: set | None = None,
+) -> DocumentEvaluationResult:
+    """Orquesta un documento completo: matriz de aplicabilidad (Fase 3)
+    ANTES de gastar ninguna llamada a Ollama, guardia de tipo documental
+    (Bloque 3.4), y solo entonces evaluate_requirement_over_chunks (Fase 2)
+    para los requisitos que sí requieren inferencia.
+
+    relevant_chunks_by_requirement / prompt_by_requirement: dict
+    requirement_id -> (chunks / prompt) ya resueltos por el llamador (esta
+    función no conoce el motor de chunking, solo orquesta lo que Fase 1/2
+    ya construyeron)."""
+    guard = document_type_guard(document_type_source, document_type_confidence)
+    doc_flags = list(guard["flags"])
+
+    ids = requirement_ids if requirement_ids is not None else known_requirement_ids()
+    result = DocumentEvaluationResult(
+        document_type=document_type,
+        document_type_confirmed=guard["confirmed"],
+        document_level_flags=doc_flags,
+    )
+
+    for requirement_id in sorted(ids):
+        terminal = pre_inference_filter(requirement_id, document_type)
+        if terminal is not None:
+            terminal["document_level_flags"] = doc_flags
+            result.terminal_results.append(terminal)
+            if terminal["conclusion"] == "APPLICABILITY_REVIEW_REQUIRED":
+                # P1: nunca se omite en silencio -- visible en review_queue.
+                result.review_queue.append(requirement_id)
+            continue
+
+        app = applicability(requirement_id, document_type)
+
+        summary = evaluate_requirement_over_chunks(
+            requirement_id=requirement_id,
+            document_type=document_type,
+            applicability_value=app["value"],
+            relevant_chunks=relevant_chunks_by_requirement.get(requirement_id, []),
+            known_requirement_ids=ids,
+            generate_fn=generate_fn,
+            prompt=prompt_by_requirement.get(requirement_id, ""),
+        )
+        if not guard["confirmed"]:
+            # Bloque 3.4: clasificacion documental dudosa -> TODAS las
+            # conclusiones del documento heredan el flag, nunca limpias.
+            summary.conclusion.review_flags.append("DOCUMENT_TYPE_UNCONFIRMED")
+        result.requirement_summaries.append(summary)
+
+    return result

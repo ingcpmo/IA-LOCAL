@@ -1,0 +1,184 @@
+# Matriz de aplicabilidad documental v2 (W5 Ciclo 1, Fase 3, Bloque 3.1)
+#
+# Valores por celda:
+#   expected                  -> ausencia consolidada = DOCUMENTATION_GAP
+#   optional                  -> ausencia = NOT_OBSERVED_OPTIONAL (no gap)
+#   cross_reference_expected  -> evidencia primaria vive en otro documento,
+#                                pero ESTE debe referenciarla; ausencia =
+#                                CROSS_REFERENCE_MISSING
+#   out_of_document_scope     -> no se ejecuta inferencia; resultado
+#                                OUT_OF_DOCUMENT_SCOPE con puntero
+#                                evidence_expected_in
+#   review_required           -> no se ejecuta inferencia; cola de revision
+#
+# default OBLIGATORIO por requisito: review_required
+# (P1: un tipo documental no contemplado JAMAS se omite en silencio)
+#
+# NO FABRICACION: solo los 19 requirement_id que existen HOY en
+# factory/engines/gmpai_integrity/prompts/*.yaml (ver
+# factory/docs/W5v2_FASE0_INVENTARIO.md §6). Regulaciones no ingeridas:
+# comentario PENDING_DOCUMENT, sin filas inventadas.
+#
+# TODAS las filas de este archivo estan marcadas # PROPUESTO -- son una
+# primera pasada de Claude Code razonada sobre el V-model GAMP 5 y el
+# corpus real ya evaluado (FS_v1.2 SCADA-PCS, ver
+# matriz_aplicabilidad_FS_v1_2_v5.json), NO una decision regulatoria
+# validada. Requieren confirmacion explicita de Cesar en el Checkpoint B
+# (Bloque 3.3) antes de que approval.status pase a human_confirmed.
+
+matrix_version: "2.0"
+approval:            # se completa tras Checkpoint B — ver Bloque 3.3
+  status: "pending_human_confirmation"
+  decision_id: null
+  approved_by: null
+  approver_role: null
+  approved_at_utc: null
+
+document_types: [URS, FS, DS, CS, RA, IQ, OQ, PQ, SOP]
+
+requirements:
+  # --- FDA 21 CFR Part 11 ---
+  "21_CFR_11.10(a)":  # PROPUESTO — Validacion del sistema (accuracy/reliability)
+    URS: cross_reference_expected
+    FS: cross_reference_expected
+    RA: expected
+    IQ: expected
+    OQ: expected
+    PQ: expected
+    evidence_expected_in: [RA, IQ, OQ, PQ]
+    default: review_required
+
+  "21_CFR_11.10(d)":  # PROPUESTO — Limitar acceso a individuos autorizados
+    URS: expected
+    FS: expected
+    SOP: expected
+    OQ: expected
+    IQ: out_of_document_scope
+    evidence_expected_in: [FS, SOP, OQ]
+    default: review_required
+
+  "21_CFR_11.10(e)":  # PROPUESTO — Audit trail seguro con timestamp
+    URS: expected
+    FS: expected
+    OQ: expected
+    DS: cross_reference_expected
+    evidence_expected_in: [FS, OQ]
+    default: review_required
+
+  "21_CFR_11.10(g)":  # PROPUESTO — Verificacion de autoridad (authority checks)
+    URS: expected
+    FS: expected
+    SOP: expected
+    OQ: optional
+    evidence_expected_in: [FS, SOP]
+    default: review_required
+
+  "21_CFR_11.50_11.70":  # PROPUESTO — Firma electronica
+    URS: optional
+    FS: optional
+    SOP: expected
+    OQ: optional
+    evidence_expected_in: [SOP]
+    default: review_required
+
+  # --- EU GMP Annex 11 ---
+  "ANNEX11_4":  # PROPUESTO — Gestion de riesgo del sistema computarizado
+    RA: expected
+    URS: cross_reference_expected
+    FS: cross_reference_expected
+    evidence_expected_in: [RA]
+    default: review_required
+
+  "ANNEX11_7.1":  # PROPUESTO — Almacenamiento y proteccion de datos
+    FS: expected
+    DS: expected
+    SOP: expected
+    evidence_expected_in: [FS, DS, SOP]
+    default: review_required
+
+  "ANNEX11_9":  # PROPUESTO — Audit trail
+    URS: expected
+    FS: expected
+    OQ: expected
+    evidence_expected_in: [FS, OQ]
+    default: review_required
+
+  "ANNEX11_12":  # PROPUESTO — Seguridad fisica y logica
+    URS: expected
+    FS: expected
+    SOP: expected
+    IQ: cross_reference_expected
+    evidence_expected_in: [FS, SOP]
+    default: review_required
+
+  "ANNEX11_17":  # PROPUESTO — Archivo y retencion de registros
+    FS: expected
+    SOP: expected
+    DS: cross_reference_expected
+    evidence_expected_in: [FS, SOP]
+    default: review_required
+
+  # --- ALCOA+ ---
+  "ALCOA_ATTRIBUTABLE":  # PROPUESTO
+    URS: expected
+    FS: expected
+    OQ: optional
+    evidence_expected_in: [FS]
+    default: review_required
+
+  "ALCOA_LEGIBLE":  # PROPUESTO
+    FS: expected
+    DS: optional
+    evidence_expected_in: [FS]
+    default: review_required
+
+  "ALCOA_CONTEMPORANEOUS":  # PROPUESTO
+    URS: expected
+    FS: expected
+    OQ: optional
+    evidence_expected_in: [FS]
+    default: review_required
+
+  "ALCOA_ORIGINAL":  # PROPUESTO
+    FS: expected
+    DS: cross_reference_expected
+    evidence_expected_in: [FS, DS]
+    default: review_required
+
+  "ALCOA_ACCURATE":  # PROPUESTO
+    URS: cross_reference_expected
+    FS: cross_reference_expected
+    IQ: expected
+    OQ: expected
+    evidence_expected_in: [IQ, OQ]
+    default: review_required
+
+  "ALCOA_COMPLETE":  # PROPUESTO
+    FS: expected
+    OQ: optional
+    evidence_expected_in: [FS]
+    default: review_required
+
+  "ALCOA_CONSISTENT":  # PROPUESTO
+    FS: expected
+    DS: optional
+    evidence_expected_in: [FS]
+    default: review_required
+
+  "ALCOA_ENDURING":  # PROPUESTO
+    FS: expected
+    SOP: expected
+    evidence_expected_in: [FS, SOP]
+    default: review_required
+
+  "ALCOA_AVAILABLE":  # PROPUESTO
+    FS: expected
+    SOP: expected
+    OQ: optional
+    evidence_expected_in: [FS, SOP]
+    default: review_required
+
+# PENDING_DOCUMENT: FDA OOS 2022, FDA DI 2018, USP <621>, USP <1058>,
+# ICH Q2/Q10, GAMP5 -> W5.3 tras ingesta real. Ningun requirement_id de
+# estas fuentes existe todavia en el motor (verificado en Fase 0) -- no se
+# agregan filas para ellas en este archivo.
