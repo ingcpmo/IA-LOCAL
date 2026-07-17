@@ -1,0 +1,37 @@
+{
+  "case_id": "C4",
+  "origin": "real_system_record",
+  "source_refs": [
+    "factory/docs/gmpai_reanalysis/fs_v1_2/fs_v1_2_status.json#contradicciones[3]",
+    "factory/docs/gmpai_reanalysis/fs_v1_2/changelog_FS_v1_2_v3.json#contradicciones_c1_c4[3]",
+    "factory/docs/gmpai_reanalysis/fs_v1_2/technical_error_log_FS_v1_2.json#TE-04",
+    "factory/layer9/decisions/decisions.jsonl#ff640643-b767-426b-af5f-720f4edee78b"
+  ],
+  "complete": false,
+  "document_type": "FS",
+  "requirement_id": "ALCOA_AVAILABLE",
+  "requirement_label": "Available — disponibilidad para revision/auditoria",
+  "chunk": {
+    "source_text": "PENDING: aportar por revision humana -- mismo motivo que C2 (chunked_engine.py no persiste '_by_req_candidates'; solo el veredicto agregado por pagina esta disponible).",
+    "page_start": "PENDING: uno de [10, 41, 53] segun fs_v1_2_status.json.contradicciones[3].detalle (paginas marcadas no_cumple)",
+    "page_end": "PENDING: ver page_start"
+  },
+  "llm_output_original": {
+    "estado": "no_cumple",
+    "evidencia_exacta": "PENDING: aportar por revision humana -- no recuperable de los registros persistidos (misma limitacion que C2).",
+    "pagina_o_seccion": "no_cumple en pag 10-13, 41-42, 53-54 (real, fs_v1_2_status.json.contradicciones[3].detalle); cumple_parcialmente en pag 22-23, 35-36, 51-52, 58-58 (real, mismo campo)",
+    "_nota_esquema": "estado='no_cumple' generico es real (agregado del campo detalle); NO se puede atribuir a un chunk_execution especifico -- ver 'complete': false."
+  },
+  "expected_behavior_v2": {
+    "verifier_status": "N/A -- caso incompleto, no ejecutable en test_golden_regression.py",
+    "expected_flags": [],
+    "verifier_reasoning": "Mismo defecto estructural que C2 (TE-04, consolidacion documento-nivel). absence_consolidator.py v2 ya no puede producir DOCUMENTATION_GAP si existe al menos un chunk observed/partially_observed real (22-23, 35-36, 51-52, 58-58) -- pero no verificable campo-a-campo sin el llm_output_original real, no recuperable.",
+    "document_conclusion": "PARTIALLY_DOCUMENTED o DOCUMENTED_AND_SUPPORTED bajo v2, consistente con la resolucion humana real ('diferencia_de_alcance')."
+  },
+  "human_review": {
+    "decision": "diferencia_de_alcance",
+    "reviewed_by": "Cesar",
+    "decision_id": "ff640643-b767-426b-af5f-720f4edee78b",
+    "notes": "Diferencia de alcance confundida con contradiccion (chunks not_observed_in_chunk tratados como evidencia en contra) -- ver changelog_FS_v1_2_v3.json.contradicciones_c1_c4[3].error_identificado. Brecha reescrita como diferencia de alcance; cumple_parcialmente mantenido."
+  }
+}

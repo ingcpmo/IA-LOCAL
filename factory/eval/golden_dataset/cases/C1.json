@@ -1,0 +1,38 @@
+{
+  "case_id": "C1",
+  "origin": "real_system_record",
+  "source_refs": [
+    "factory/docs/gmpai_reanalysis/fs_v1_2/fs_v1_2_status.json#contradicciones[0]",
+    "factory/docs/gmpai_reanalysis/fs_v1_2/changelog_FS_v1_2_v3.json#contradicciones_c1_c4[0]",
+    "factory/docs/gmpai_reanalysis/fs_v1_2/changelog_FS_v1_2_v3.json#citas_trasladadas[0]",
+    "factory/layer9/decisions/decisions.jsonl#ff640643-b767-426b-af5f-720f4edee78b",
+    "GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf (pag 46-47, texto extraido con pypdf en este cierre)"
+  ],
+  "complete": true,
+  "document_type": "FS",
+  "requirement_id": "21_CFR_11.10(d)",
+  "requirement_label": "Limitar acceso a individuos autorizados",
+  "chunk": {
+    "source_text": "UR5.2.3 [URS-PCS-SR-009] Logins, logouts, and login attempts must be recorded in the Audit Trail.  \nUR5.4.2 [URS-PCS-SR-036] All manual interactions (parameter changes, device mode changes, etc.) \nshall be sent to a database for event logging, including user name, action and timestamp.",
+    "page_start": 46,
+    "page_end": 47
+  },
+  "llm_output_original": {
+    "estado": "cumple_parcialmente",
+    "evidencia_exacta": "UR5.2.3 [URS-PCS-SR-009] Logins, logouts, and login attempts must be recorded in the Audit Trail.",
+    "pagina_o_seccion": "pag 46-47",
+    "_nota_esquema": "Formato del motor v1 vigente en el momento del analisis (estado directo a nivel de chunk, ver chunked_engine._VALID_ESTADOS) -- ANTERIOR al schema finding_llm_v1 de Fase 1. estado y pagina_o_seccion son reales (fs_v1_2_status.json.contradicciones[0].detalle: 'pag 46-47:cumple_parcialmente'); evidencia_exacta es real (changelog_FS_v1_2_v3.json.citas_trasladadas[0].cita, cita literal)."
+  },
+  "expected_behavior_v2": {
+    "verifier_status": "review_required",
+    "expected_flags": ["RELEVANCE_REVIEW_REQUIRED"],
+    "verifier_reasoning": "La cita ESTA anclada literalmente en el chunk (checks.citation=PASS, match_type=exact) -- el defecto real no fue una cita inventada, fue una cita real sobre OTRO tema (audit trail / logins, terminos de ANNEX11_9, no de control de acceso 21_CFR_11.10(d)) aceptada como evidencia del checkpoint equivocado. relevance_score contra los terminos de 21_CFR_11.10(d) (access/authorized/authentication/password/login/permission/role/user) debe ser bajo o nulo salvo por 'login', insuficiente para pasar el umbral de forma robusta -- flag de revision, NUNCA auto-rechazo ni verified limpio.",
+    "document_conclusion": "no_cumple_documentalmente (terminologia real del changelog: 'Reclasificado a no_cumple_documentalmente (falso positivo)') -- la cita trasladada NO cuenta como evidencia valida de 21_CFR_11.10(d); debe re-evaluarse el checkpoint sin ella."
+  },
+  "human_review": {
+    "decision": "falso_positivo",
+    "reviewed_by": "Cesar",
+    "decision_id": "ff640643-b767-426b-af5f-720f4edee78b",
+    "notes": "Cita anclada fuera de tema (evidencia mal asignada al checkpoint) -- ver changelog_FS_v1_2_v3.json.contradicciones_c1_c4[0].error_identificado. La cita trasladada UR5.2.3/UR5.4.2 (audit trail) se reasigna a COR-2, no sustenta COR-1 (control de acceso)."
+  }
+}

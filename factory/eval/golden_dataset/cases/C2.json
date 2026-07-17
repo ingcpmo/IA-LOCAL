@@ -1,0 +1,37 @@
+{
+  "case_id": "C2",
+  "origin": "real_system_record",
+  "source_refs": [
+    "factory/docs/gmpai_reanalysis/fs_v1_2/fs_v1_2_status.json#contradicciones[1]",
+    "factory/docs/gmpai_reanalysis/fs_v1_2/changelog_FS_v1_2_v3.json#contradicciones_c1_c4[1]",
+    "factory/docs/gmpai_reanalysis/fs_v1_2/technical_error_log_FS_v1_2.json#TE-04",
+    "factory/layer9/decisions/decisions.jsonl#ff640643-b767-426b-af5f-720f4edee78b"
+  ],
+  "complete": false,
+  "document_type": "FS",
+  "requirement_id": "ANNEX11_7.1",
+  "requirement_label": "Almacenamiento y proteccion de datos",
+  "chunk": {
+    "source_text": "PENDING: aportar por revision humana -- el texto literal del/de los chunk(s) reales que el motor marco no_cumple para este requisito antes del fix TE-04 no esta persistido (chunked_engine.py excluye deliberadamente '_by_req_candidates' del JSON de salida, ver linea de exclusion explicita en evaluate_chunked()). Solo se conserva el veredicto agregado por pagina.",
+    "page_start": "PENDING: uno de [4, 7, 18, 56, 58] segun fs_v1_2_status.json.contradicciones[1].detalle (paginas marcadas no_cumple) -- no se puede determinar CUAL de ellas fue la efectivamente afectada por el bug TE-04 sin re-ejecutar el motor pre-fix (fuera de alcance, no se reprocesa el documento)",
+    "page_end": "PENDING: ver page_start"
+  },
+  "llm_output_original": {
+    "estado": "no_cumple",
+    "evidencia_exacta": "PENDING: aportar por revision humana -- no recuperable de los registros persistidos (ver nota en 'chunk' arriba); TE-04 (technical_error_log_FS_v1_2.json) documenta que el bug consistia precisamente en que estas paginas NO trataban el checkpoint (not_observed_in_chunk real) pero el motor pre-fix las consolidaba como no_cumple activo sin evidencia citada -- es plausible que evidencia_exacta historica haya sido vacia, pero no esta confirmado por un registro persistido, por lo que se marca PENDING en vez de asumirlo.",
+    "pagina_o_seccion": "no_cumple en pag 4-4, 7-9, 18-19, 56-56, 58-58 (real, fs_v1_2_status.json.contradicciones[1].detalle); cumple_parcialmente en pag 20-21, 26-28, 35-36, 39-40, 41-42 (real, mismo campo)",
+    "_nota_esquema": "estado='no_cumple' generico es real (agregado del campo detalle); NO se puede atribuir a un chunk_execution especifico -- ver 'complete': false."
+  },
+  "expected_behavior_v2": {
+    "verifier_status": "N/A -- caso incompleto, no ejecutable en test_golden_regression.py",
+    "expected_flags": [],
+    "verifier_reasoning": "El defecto real (TE-04) esta a nivel de CONSOLIDACION documento-nivel, no de un chunk individual: paginas not_observed_in_chunk se contaban como evidencia en contra de paginas con cumple_parcialmente en otras secciones. absence_consolidator.py v2 (Fase 2) ya implementa la regla correcta estructuralmente (un chunk 'observed'/'partially_observed' en cualquier parte produce DOCUMENTED_AND_SUPPORTED/PARTIALLY_DOCUMENTED, nunca DOCUMENTATION_GAP) -- pero verificar ESTE caso especifico requeriria el llm_output_original real de los chunks 'no_cumple', que no es recuperable.",
+    "document_conclusion": "PARTIALLY_DOCUMENTED o DOCUMENTED_AND_SUPPORTED bajo v2 (existen paginas cumple_parcialmente/observed reales: 20-21, 26-28, 35-36, 39-40, 41-42) -- consistente con la resolucion humana real ('diferencia_de_alcance', NO contradiccion), pero no verificable campo-a-campo sin el dato PENDING."
+  },
+  "human_review": {
+    "decision": "diferencia_de_alcance",
+    "reviewed_by": "Cesar",
+    "decision_id": "ff640643-b767-426b-af5f-720f4edee78b",
+    "notes": "Diferencia de alcance confundida con contradiccion (chunks not_observed_in_chunk tratados como evidencia en contra) -- ver changelog_FS_v1_2_v3.json.contradicciones_c1_c4[1].error_identificado. Brecha reescrita como diferencia de alcance, no contradiccion real; cumple_parcialmente mantenido."
+  }
+}

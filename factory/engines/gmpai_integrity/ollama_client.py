@@ -95,14 +95,29 @@ def _get_digest_cached(_cache: dict = {}) -> str | None:  # noqa: B006 - cache i
     return _cache["digest"]
 
 
+class ProductionNotEnabledError(Exception):
+    """generate_controlled() invocado con run_context='production'. W5
+    Ciclo 1 v2: PRODUCTION_ENABLEMENT=BLOCKED -- los prompts YAML de
+    produccion no fueron reescritos para pedir chunk_observation (ver
+    W5v2_CICLO1_CIERRE.md, recomendacion #1) y no existe aprobacion QA
+    para habilitar este pipeline en produccion. Fail-closed explicito:
+    ausencia de run_context (default) NUNCA habilita produccion -- el
+    default es 'validation', el unico contexto autorizado hoy."""
+
+
 def generate_controlled(prompt: str, chunk: dict, temperature: float = TEMPERATURE,
-                         num_ctx: int | None = None) -> dict:
+                         num_ctx: int | None = None, run_context: str = "validation") -> dict:
     """Ejecucion controlada (P4: temperatura 0 + seed es 'ejecucion
     controlada', NO determinismo garantizado -- de ahi el manifiesto por
     llamada) que valida la respuesta contra finding_llm_v1 (P2: el modelo
     SOLO puede emitir lo que ese schema permite -- observed/
     partially_observed/not_observed_in_chunk, nunca una conclusion de
     ausencia documental ni no_aplica, ver W5v2_FASE0_INVENTARIO.md #9.1).
+
+    run_context: SOLO 'validation' esta habilitado (default). Cualquier
+    otro valor -- incluido 'production' -- lanza ProductionNotEnabledError
+    de inmediato, antes de gastar ninguna llamada a Ollama. La ausencia de
+    este parametro NUNCA habilita produccion (default seguro).
 
     NO esta todavia cableada en evaluate_chunked() (chunked_engine.py): el
     consolidador actual espera el campo 'estado' (cumple/no_cumple/...) que
@@ -114,6 +129,11 @@ def generate_controlled(prompt: str, chunk: dict, temperature: float = TEMPERATU
 
     Devuelve dict con: llm_output (si valido) o None, execution_manifest,
     ok (bool), errors (list[str])."""
+    if run_context != "validation":
+        raise ProductionNotEnabledError(
+            f"generate_controlled() bloqueado para run_context={run_context!r} -- "
+            f"solo 'validation' esta habilitado (PRODUCTION_ENABLEMENT=BLOCKED)."
+        )
     options = {"temperature": temperature, "seed": 42,
                "num_predict": NUM_PREDICT,
                "num_ctx": num_ctx if num_ctx is not None else NUM_CTX}

@@ -442,21 +442,33 @@ def read_deployment(project_id: str) -> dict:
     return {"project_id": project_id, **deployment_health(project_id)}
 
 
-def read_audit(project_id: str, limit: int = 50) -> dict:
-    """Eventos de auditoría filtrados por project_id (últimos N). Read-only."""
+def read_audit(project_id: str, limit: int = 50, context: str | None = None) -> dict:
+    """Eventos de auditoría filtrados por project_id (últimos N). Read-only
+    (W5 Ciclo 1 v2, Fase 4, Bloque 4.1: no escribe, no fragmenta la cadena
+    Part 11 -- filtra en lectura sobre la MISMA cadena unica).
+
+    context: si se pasa ('production' | 'validation'), conserva solo
+    eventos cuyo data.run_context coincide -- eventos SIN run_context
+    (todo lo escrito antes de Fase 4, y cualquier event_type que no sea de
+    ejecucion de analisis) se tratan como 'production' por default, nunca
+    se ocultan silenciosamente de un filtro context='production'."""
     if not paths.AUDIT_FILE.exists():
         return {"project_id": project_id, "events": [], "count": 0}
     events = []
     for raw in paths.AUDIT_FILE.read_text(encoding="utf-8").splitlines():
         try:
             e = json.loads(raw)
-            if e.get("project_id") == project_id:
-                events.append({
-                    "timestamp": e.get("timestamp"),
-                    "event_type": e.get("event_type"),
-                    "entry_hash": e.get("entry_hash"),
-                    "data": e.get("data", {}),
-                })
+            if e.get("project_id") != project_id:
+                continue
+            data = e.get("data", {})
+            if context is not None and data.get("run_context", "production") != context:
+                continue
+            events.append({
+                "timestamp": e.get("timestamp"),
+                "event_type": e.get("event_type"),
+                "entry_hash": e.get("entry_hash"),
+                "data": data,
+            })
         except Exception:
             continue
     events_trimmed = events[-limit:]
@@ -465,6 +477,7 @@ def read_audit(project_id: str, limit: int = 50) -> dict:
         "events": list(reversed(events_trimmed)),
         "count": len(events_trimmed),
         "total": len(events),
+        "context_filter": context,
     }
 
 

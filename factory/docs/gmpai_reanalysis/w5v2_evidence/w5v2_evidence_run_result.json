@@ -1,0 +1,279 @@
+{
+  "run_id": "w5v2-validation-e7c251ef7fc0",
+  "run_context": "validation",
+  "run_by": "Cesar (autorizado via instruccion explicita de ejecutar Fase 4, sesion 2026-07-17)",
+  "timestamp_utc": "2026-07-17T16:56:45.265192+00:00",
+  "documento": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "document_type": "FS",
+  "document_type_source": "human_assigned",
+  "total_pages_real": 58,
+  "total_chunks_real": 29,
+  "chunks_used_this_run": 2,
+  "coverage": "partial",
+  "coverage_note": "2/29 chunks reales evaluados (subconjunto representativo de evidencia, no la mision completa)",
+  "requirements_evaluated": [
+    "21_CFR_11.10(d)",
+    "ANNEX11_9",
+    "ALCOA_ATTRIBUTABLE"
+  ],
+  "records_by_status": {
+    "verified": 3,
+    "verified_with_deviation": 0,
+    "review_required": 0,
+    "rejected_by_verifier": 3
+  },
+  "records_total": 6,
+  "manifest_incomplete_count": 0,
+  "manifest_incomplete_pct": 0.0,
+  "model": "qwen2.5:7b-instruct-q4_K_M",
+  "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "ollama_version": "0.21.2",
+  "ollama_calls_avoided_by_applicability_filter": 1,
+  "out_of_document_scope_demo": {
+    "requirement_id": "21_CFR_11.10(d)",
+    "document_type": "IQ",
+    "result": {
+      "requirement_id": "21_CFR_11.10(d)",
+      "conclusion": "OUT_OF_DOCUMENT_SCOPE",
+      "evidence_expected_in": [
+        "FS",
+        "SOP",
+        "OQ"
+      ],
+      "source": "applicability_matrix_v2"
+    }
+  },
+  "review_queue": [],
+  "per_requirement_conclusions": {
+    "21_CFR_11.10(d)": {
+      "requirement_id": "21_CFR_11.10(d)",
+      "conclusion": "DOCUMENTATION_GAP",
+      "chunks_evaluated": 2,
+      "chunks_observed": 0,
+      "chunks_review_pending": 0,
+      "supporting_records": [],
+      "review_flags": []
+    },
+    "ANNEX11_9": {
+      "requirement_id": "ANNEX11_9",
+      "conclusion": "EVALUATION_INCOMPLETE",
+      "chunks_evaluated": 0,
+      "chunks_observed": 0,
+      "chunks_review_pending": 0,
+      "supporting_records": [],
+      "review_flags": [
+        "NO_VALID_RECORDS"
+      ]
+    },
+    "ALCOA_ATTRIBUTABLE": {
+      "requirement_id": "ALCOA_ATTRIBUTABLE",
+      "conclusion": "DOCUMENTATION_GAP",
+      "chunks_evaluated": 1,
+      "chunks_observed": 0,
+      "chunks_review_pending": 0,
+      "supporting_records": [],
+      "review_flags": []
+    }
+  },
+  "per_requirement_full_records": {
+    "21_CFR_11.10(d)": [
+      {
+        "record_id": "rec-e8270820dffe",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(d)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 3,
+          "confidence": 1,
+          "rationale": "El fragmento no contiene información específica sobre cómo se limita el acceso a individuos autorizados, lo que es requerido por el requisito 21_CFR_11.10(d)."
+        },
+        "execution_manifest": {
+          "model": "qwen2.5:7b-instruct-q4_K_M",
+          "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "prompt_sha256": "a7db92000824d5a562b3cb6741289e48503035577b855ae5d09e4719648fc62e",
+          "schema_name": "finding_llm_v1",
+          "schema_sha256": "bd7798fc2a62d7d82d286e95b9ebac1e4f14bf75e21710fa95f1bbf8a8bce8b0",
+          "chunk_sha256": "6f602ae0a23dd60ec18260538ce38ef181517b01074b2757af036fe9d944fd2e",
+          "options": {
+            "temperature": 0.0,
+            "seed": 42,
+            "num_predict": 1024,
+            "num_ctx": 8192
+          },
+          "timestamp_utc": "2026-07-17T16:42:04.193956+00:00",
+          "manifest_incomplete": false
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": [],
+        "verification_checks": {
+          "requirement_known": "PASS",
+          "citation": "PASS",
+          "citation_match_type": "n/a",
+          "page": "n/a"
+        }
+      },
+      {
+        "record_id": "rec-3268bd3b5c10",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(d)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 4,
+          "confidence": 1,
+          "rationale": "El fragmento no menciona limitaciones de acceso a individuos autorizados, por lo que no se observa evidencia directa del requisito."
+        },
+        "execution_manifest": {
+          "model": "qwen2.5:7b-instruct-q4_K_M",
+          "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "prompt_sha256": "e475142e7e08b69a9020653f7b5970b140b88cbd6fd281eb777c3a9ebfa07b54",
+          "schema_name": "finding_llm_v1",
+          "schema_sha256": "bd7798fc2a62d7d82d286e95b9ebac1e4f14bf75e21710fa95f1bbf8a8bce8b0",
+          "chunk_sha256": "1b0718deca6f95996db2cc7ccbffdfc014159d4af9c247f7f99c14f8dbaaebc9",
+          "options": {
+            "temperature": 0.0,
+            "seed": 42,
+            "num_predict": 1024,
+            "num_ctx": 8192
+          },
+          "timestamp_utc": "2026-07-17T16:45:10.777531+00:00",
+          "manifest_incomplete": false
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": [],
+        "verification_checks": {
+          "requirement_known": "PASS",
+          "citation": "PASS",
+          "citation_match_type": "n/a",
+          "page": "n/a"
+        }
+      }
+    ],
+    "ANNEX11_9": [
+      {
+        "record_id": "rec-c4024785a74d",
+        "llm_output": null,
+        "execution_manifest": {
+          "model": "qwen2.5:7b-instruct-q4_K_M",
+          "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "prompt_sha256": "3647d43187acb0b5ae37b66022723bbd19b4867b86187274df37bc8d6a8ea048",
+          "schema_name": "finding_llm_v1",
+          "schema_sha256": "bd7798fc2a62d7d82d286e95b9ebac1e4f14bf75e21710fa95f1bbf8a8bce8b0",
+          "chunk_sha256": "6f602ae0a23dd60ec18260538ce38ef181517b01074b2757af036fe9d944fd2e",
+          "options": {
+            "temperature": 0.0,
+            "seed": 42,
+            "num_predict": 1024,
+            "num_ctx": 8192
+          },
+          "timestamp_utc": "2026-07-17T16:47:00.891842+00:00",
+          "manifest_incomplete": false
+        },
+        "status": "rejected_by_verifier",
+        "rejection_reason": "schema_validation_failed",
+        "review_flags": []
+      },
+      {
+        "record_id": "rec-2e7593bcf1be",
+        "llm_output": {
+          "requirement_id": "ANNEX11_9",
+          "chunk_observation": "observed",
+          "evidence_quote": "F12.00: Audit Trail",
+          "evidence_page": 45,
+          "confidence": 1,
+          "rationale": "The fragment explicitly mentions 'Audit Trail' under the section F12.00, which directly corresponds to the requirement."
+        },
+        "execution_manifest": {
+          "model": "qwen2.5:7b-instruct-q4_K_M",
+          "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "prompt_sha256": "f88dd71ab36667cc4a593fd51f2747644315b405854b0caec49a7d24be067e81",
+          "schema_name": "finding_llm_v1",
+          "schema_sha256": "bd7798fc2a62d7d82d286e95b9ebac1e4f14bf75e21710fa95f1bbf8a8bce8b0",
+          "chunk_sha256": "1b0718deca6f95996db2cc7ccbffdfc014159d4af9c247f7f99c14f8dbaaebc9",
+          "options": {
+            "temperature": 0.0,
+            "seed": 42,
+            "num_predict": 1024,
+            "num_ctx": 8192
+          },
+          "timestamp_utc": "2026-07-17T16:50:18.816722+00:00",
+          "manifest_incomplete": false
+        },
+        "status": "rejected_by_verifier",
+        "rejection_reason": "page_out_of_range",
+        "review_flags": [],
+        "verification_checks": {
+          "requirement_known": "PASS",
+          "citation_match_type": "exact",
+          "citation_score": 1.0,
+          "citation": "PASS",
+          "page": "FAIL",
+          "relevance_score": 0.25,
+          "relevance": "PASS"
+        }
+      }
+    ],
+    "ALCOA_ATTRIBUTABLE": [
+      {
+        "record_id": "rec-e33c8fa7dd18",
+        "llm_output": null,
+        "execution_manifest": {
+          "model": "qwen2.5:7b-instruct-q4_K_M",
+          "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "prompt_sha256": "d2f65d1427884b20e6d1c171e01bf3bed3934c652824a586cbf60f417213bfca",
+          "schema_name": "finding_llm_v1",
+          "schema_sha256": "bd7798fc2a62d7d82d286e95b9ebac1e4f14bf75e21710fa95f1bbf8a8bce8b0",
+          "chunk_sha256": "6f602ae0a23dd60ec18260538ce38ef181517b01074b2757af036fe9d944fd2e",
+          "options": {
+            "temperature": 0.0,
+            "seed": 42,
+            "num_predict": 1024,
+            "num_ctx": 8192
+          },
+          "timestamp_utc": "2026-07-17T16:52:03.659598+00:00",
+          "manifest_incomplete": false
+        },
+        "status": "rejected_by_verifier",
+        "rejection_reason": "schema_validation_failed",
+        "review_flags": []
+      },
+      {
+        "record_id": "rec-21037246ca09",
+        "llm_output": {
+          "requirement_id": "ALCOA_ATTRIBUTABLE",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 3,
+          "confidence": 1.0,
+          "rationale": "El fragmento no menciona quién generó el dato, por lo que no contiene evidencia directa o indirecta del requisito."
+        },
+        "execution_manifest": {
+          "model": "qwen2.5:7b-instruct-q4_K_M",
+          "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+          "prompt_sha256": "66e0bcb1cd1ac93732f0801d4e937c13798e8e0f1dba453dcdf43cfdf120bc7c",
+          "schema_name": "finding_llm_v1",
+          "schema_sha256": "bd7798fc2a62d7d82d286e95b9ebac1e4f14bf75e21710fa95f1bbf8a8bce8b0",
+          "chunk_sha256": "1b0718deca6f95996db2cc7ccbffdfc014159d4af9c247f7f99c14f8dbaaebc9",
+          "options": {
+            "temperature": 0.0,
+            "seed": 42,
+            "num_predict": 1024,
+            "num_ctx": 8192
+          },
+          "timestamp_utc": "2026-07-17T16:54:59.510528+00:00",
+          "manifest_incomplete": false
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": [],
+        "verification_checks": {
+          "requirement_known": "PASS",
+          "citation": "PASS",
+          "citation_match_type": "n/a",
+          "page": "n/a"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "cycle": "W5_Ciclo1_v2",
+  "generated_at": "2026-07-17T17:15:00Z",
+  "W5_VALIDATION": "PARTIAL",
+  "W5_VALIDATION_note": "Bloque 4.3: 2/29 chunks reales, 3/19 requisitos, un solo documento (FS_v1.2 SCADA-PCS) -- ver w5v2_evidence_run_result.json",
+  "PRODUCTION_ENABLEMENT": "BLOCKED",
+  "PRODUCTION_ENABLEMENT_note": "generate_controlled() rechaza cualquier run_context != 'validation' (ProductionNotEnabledError) -- ver factory/engines/gmpai_integrity/ollama_client.py y factory/tests/test_w5v2_governance_gates.py",
+  "regulatory_approval": "pending",
+  "regulatory_approval_note": "Gate SEPARADO de la aprobacion de gobernanza de la matriz (MC-0001, human_confirmed). Pendiente: autorizacion QA/regulatoria para habilitar el pipeline v2 en produccion -- requiere, como minimo, reescribir los prompts YAML de produccion.",
+  "matrix_governance_approval": {
+    "status": "human_confirmed",
+    "decision_id": "MC-0001",
+    "approved_by": "Cesar",
+    "approver_role": "project_lead",
+    "note": "Aprobacion de LA MATRIZ (applicability_matrix.yaml), no de habilitacion de produccion del pipeline completo."
+  },
+  "chain_continuity": "WARN",
+  "chain_continuity_note": "Fork de auditoria preexistente desde 2026-06-15T13:54:43Z, sin cambios introducidos por este ciclo. hash_errors=0.",
+  "golden_dataset": {
+    "C1": {"complete": true, "regression_result": "PASS", "verifier_status": "review_required", "flags": ["RELEVANCE_REVIEW_REQUIRED"]},
+    "C2": {"complete": false, "reason": "llm_output_original por-chunk no recuperable del motor v1 (chunked_engine.py no persiste _by_req_candidates)"},
+    "C3": {"complete": true, "regression_result": "PASS", "verifier_status": "review_required", "flags": ["RELEVANCE_REVIEW_REQUIRED"]},
+    "C4": {"complete": false, "reason": "llm_output_original por-chunk no recuperable del motor v1 (chunked_engine.py no persiste _by_req_candidates)"}
+  },
+  "test_suite": {
+    "in_container_full_suite_passed": 574,
+    "in_container_full_suite_failed": 60,
+    "baseline_commit_compared": "262917eea9359a019d727c32070c7226f47c454f",
+    "failures_identical_to_baseline_by_name_and_cause": true,
+    "gate0_selfcheck": "PASS=4 FAIL=0"
+  }
+}

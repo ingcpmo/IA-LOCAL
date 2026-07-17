@@ -682,12 +682,20 @@ def get_mission_deployment(project_id: str):
 
 
 @router.get("/missions/{project_id}/audit")
-def get_mission_audit(project_id: str, limit: int = Query(default=50, le=200)):
+def get_mission_audit(
+    project_id: str,
+    limit: int = Query(default=50, le=200),
+    context: str | None = Query(default=None, pattern="^(production|validation)$"),
+):
     """
     Eventos de auditoría filtrados por project_id (últimos N).
     Read-only — no escribe en cadena.
+
+    context: 'production' | 'validation' (W5 Ciclo 1 v2, Bloque 4.1) --
+    excluye eventos del otro contexto de la MISMA cadena unica (nunca se
+    fragmenta la cadena de auditoría Part 11, solo se filtra en lectura).
     """
-    return _evidence.read_audit(project_id, limit=limit)
+    return _evidence.read_audit(project_id, limit=limit, context=context)
 
 
 @router.get("/missions/{project_id}/design/file")

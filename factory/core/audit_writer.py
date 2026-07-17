@@ -109,6 +109,13 @@ VALID_EVENTS = {
     # que no produjeron JSON valido tras reintentos); nunca se declara
     # evidencia_insuficiente regulatoria por un fallo de ejecucion
     "gmpai_chunked_analysis_gap_registered",
+    # W5 Ciclo 1 v2, Fase 4 (Bloque 4.3) — ejecucion de evidencia end-to-end
+    # del pipeline verificado v2 (schema-gate + verificador + consolidador
+    # de ausencias), SIEMPRE con run_context='validation' en su payload
+    # ('data'). Distinto de gmpai_chunked_analysis_run (motor v1 en
+    # produccion, run_context='production' por defecto) -- misma cadena de
+    # auditoria unica, nunca fragmentada.
+    "w5v2_validation_evidence_run",
 }
 
 
