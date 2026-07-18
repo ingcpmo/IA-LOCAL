@@ -106,7 +106,11 @@ def evaluate_requirement_over_chunks(
             # conservan").
             verification = VerificationResult(
                 status="rejected_by_verifier",
-                rejection_reason=gen.get("rejection_reason") or "schema_validation_failed",
+                # Fase 5.4.4: gen["rejection_reason"] ya viene clasificado
+                # por generate_controlled() (json_parse_failed/
+                # schema_validation_failed/ollama_transport_failed) -- el
+                # fallback anterior enmascaraba las otras 2 causas.
+                rejection_reason=gen.get("rejection_reason"),
             )
             records.append(_build_finding_record(
                 f"rec-{uuid.uuid4().hex[:12]}", None,

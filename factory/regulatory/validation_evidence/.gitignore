@@ -1,0 +1,12 @@
+# W5.3 Fase 5.4.4 (gobernanza): ningún dato crudo de evidencia de
+# validación entra a Git. Ver README.md de este directorio para la
+# clasificación de confidencialidad y el motivo.
+*.json
+*.tmp
+*.partial
+
+# Excepción explícita: los manifiestos sanitizados (sin raw_response, sin
+# source_text, sin _by_req_candidates, sin texto del documento -- ver
+# factory/regulatory/validation_evidence_manifest.py) SI son versionables.
+!manifests/
+!manifests/*.manifest.json

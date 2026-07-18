@@ -20,8 +20,11 @@
       "description": "Cita literal del chunk si chunk_observation != not_observed_in_chunk. Cadena vacia si not_observed_in_chunk (el verificador determinista exige esta correlacion, ver finding_record_v1.verification)."
     },
     "evidence_page": {
-      "type": ["integer", "null"],
-      "minimum": 1
+      "anyOf": [
+        {"type": "integer", "minimum": 1},
+        {"type": "null"}
+      ],
+      "description": "Fase 5.4 (fix ETAPA 1): expresado como anyOf[integer,null] en vez de type:[integer,null]. Semanticamente identico para jsonschema (misma validacion, mismos required/additionalProperties, sin relajar nada) -- el cambio es de forma, no de contrato. Motivo: type como array (union) es un punto de incompatibilidad documentado en el conversor JSON-Schema-a-gramatica de Ollama/llama.cpp para generacion con salida estructurada (format=<schema>), mientras que anyOf tiene soporte mas consistente. Hipotesis estructural, pendiente de confirmar con la llamada canario real (Etapa 2) -- las 21 respuestas crudas historicas que motivaron este cambio no quedaron persistidas (ver run_validation_evidence.py, fix del mismo commit) y no son recuperables sin llamar a Ollama de nuevo."
     },
     "confidence": {
       "type": "number",

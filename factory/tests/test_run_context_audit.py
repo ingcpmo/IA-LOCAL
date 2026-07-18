@@ -25,9 +25,15 @@ def _all_insufficient():
 
 def _run(monkeypatch, tmp_path, run_context=None):
     from factory.core import audit_writer
+    from factory.regulatory import validation_evidence_writer as writer
     audit_file = tmp_path / "factory_audit.jsonl"
     monkeypatch.setattr(audit_writer, "AUDIT_FILE", audit_file)
     monkeypatch.setattr(audit_writer, "_last_entry_hash", None)
+    # Fase 5.3: evaluate_chunked() con run_context='validation' persiste
+    # evidencia real -- SIEMPRE aislar la ruta de escritura en los tests,
+    # nunca dejar que caiga en el directorio real por defecto
+    # (factory/regulatory/validation_evidence/).
+    monkeypatch.setattr(writer, "VALIDATION_EVIDENCE_BASE", tmp_path / "validation_evidence")
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
     monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
     monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")

@@ -129,7 +129,22 @@ def generate_controlled(prompt: str, chunk: dict, *, run_context: str,
     pidiendole al modelo una cosa y a la consolidacion esperando otra.
 
     Devuelve dict con: llm_output (si valido) o None, execution_manifest,
-    ok (bool), errors (list[str])."""
+    ok (bool), errors (list[str]), rejection_reason (None si ok, si no una
+    de exactamente 4 causas -- Fase 5.4.4, fix ETAPA 1 continuado: antes
+    rejection_reason quedaba SIEMPRE hardcodeado a 'schema_validation_failed'
+    incluso cuando la causa real era JSON no parseable o (sin este fix) un
+    fallo de transporte no capturado que tumbaba la corrida entera:
+      - 'ollama_transport_failed': la llamada HTTP a Ollama fallo (conexion,
+        timeout, status de error) -- antes de este fix, esta excepcion NO
+        se capturaba aqui y se propagaba sin control, abortando toda la
+        corrida (perdiendo el analisis ya completado de otros requisitos/
+        chunks, pese al contrato de persistencia de Fase 5.4).
+      - 'json_parse_failed': la respuesta llego pero no es JSON valido.
+      - 'schema_validation_failed': JSON valido que no cumple finding_llm_v1.
+      - manifest_incomplete (model_digest no disponible) NO es una causa de
+        rejection_reason -- P1 (linea ~88 de este archivo) es doctrina ya
+        decidida: un manifiesto incompleto no invalida el hallazgo. Sigue
+        expuesto solo como execution_manifest['manifest_incomplete']."""
     if run_context != "validation":
         raise ProductionNotEnabledError(
             f"generate_controlled() bloqueado para run_context={run_context!r} -- "
@@ -141,19 +156,31 @@ def generate_controlled(prompt: str, chunk: dict, *, run_context: str,
     schema = load_schema(FINDING_LLM_SCHEMA_NAME)
     chunk_text = chunk.get("text", "")
 
-    def _call() -> tuple[dict | None, str]:
-        r = httpx.post(
-            f"{OLLAMA_BASE_URL}/api/generate",
-            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
-                  "format": schema, "options": options},
-            timeout=httpx.Timeout(connect=5.0, read=TIMEOUT_READ_S, write=10.0, pool=5.0),
-        )
-        r.raise_for_status()
+    def _call() -> tuple[dict | None, str | None, str | None]:
+        """Devuelve (llm_output_o_None, raw_response_o_None, transport_error_o_None)."""
+        try:
+            r = httpx.post(
+                f"{OLLAMA_BASE_URL}/api/generate",
+                json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
+                      "format": schema, "options": options},
+                timeout=httpx.Timeout(connect=5.0, read=TIMEOUT_READ_S, write=10.0, pool=5.0),
+            )
+            r.raise_for_status()
+        except httpx.HTTPError as e:
+            return None, None, f"{type(e).__name__}: {e}"
         raw_response = r.json().get("response", "")
         try:
-            return json.loads(raw_response), raw_response
+            return json.loads(raw_response), raw_response, None
         except json.JSONDecodeError:
-            return None, raw_response
+            return None, raw_response, None
+
+    def _classify(llm_output: dict | None, transport_error: str | None) -> tuple[bool, list[str], str | None]:
+        if transport_error is not None:
+            return False, [f"ollama_transport_failed: {transport_error}"], "ollama_transport_failed"
+        if llm_output is None:
+            return False, ["respuesta del modelo no es JSON valido"], "json_parse_failed"
+        ok, errors = validate_against(llm_output, FINDING_LLM_SCHEMA_NAME)
+        return (True, errors, None) if ok else (False, errors, "schema_validation_failed")
 
     digest = _get_digest_cached()
     manifest = {
@@ -168,15 +195,13 @@ def generate_controlled(prompt: str, chunk: dict, *, run_context: str,
         "manifest_incomplete": digest is None,
     }
 
-    llm_output, raw = _call()
-    ok, errors = (False, ["respuesta del modelo no es JSON valido"]) if llm_output is None \
-        else validate_against(llm_output, FINDING_LLM_SCHEMA_NAME)
+    llm_output, raw, transport_error = _call()
+    ok, errors, rejection_reason = _classify(llm_output, transport_error)
 
     if not ok:
         # Un solo reintento (Bloque 1.5) -- sin bucle de reparacion.
-        llm_output, raw = _call()
-        ok, errors = (False, ["respuesta del modelo no es JSON valido"]) if llm_output is None \
-            else validate_against(llm_output, FINDING_LLM_SCHEMA_NAME)
+        llm_output, raw, transport_error = _call()
+        ok, errors, rejection_reason = _classify(llm_output, transport_error)
 
     return {
         "llm_output": llm_output if ok else None,
@@ -184,7 +209,7 @@ def generate_controlled(prompt: str, chunk: dict, *, run_context: str,
         "ok": ok,
         "errors": errors,
         "status": "verified" if ok else "rejected_by_verifier",
-        "rejection_reason": None if ok else "schema_validation_failed",
+        "rejection_reason": rejection_reason,
         "raw_response": raw,
     }
 

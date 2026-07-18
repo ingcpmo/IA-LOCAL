@@ -1,0 +1,49 @@
+{
+  "run_id": "w5v3-validation-4455c94588e0",
+  "run_context": "validation",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "records_by_status": {
+    "review_required": 1
+  },
+  "validation_evidence_status": "VALIDATION_EVIDENCE_COMPLETE",
+  "golden_dataset_eligible": true,
+  "per_requirement_conclusions": {
+    "ALCOA_ACCURATE": {
+      "conclusion": "DOCUMENTED_AND_SUPPORTED",
+      "chunks_evaluated": 1,
+      "chunks_observed": 1,
+      "review_flags": [
+        "SUPPORTING_EVIDENCE_UNDER_REVIEW"
+      ]
+    }
+  },
+  "records": [
+    {
+      "record_id": "rec-67e6f25bbe3c",
+      "status": "review_required",
+      "rejection_reason": "",
+      "review_flags": [
+        "RELEVANCE_REVIEW_REQUIRED"
+      ],
+      "execution_manifest": {
+        "model": "qwen2.5:7b-instruct-q4_K_M",
+        "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "prompt_sha256": "7a19e04dc4e981f05ca70247c9e02ceb6639d6e66c1a2bbdc5ed3bc657140b09",
+        "schema_name": "finding_llm_v1",
+        "schema_sha256": "aef8f84a57474ea983e9326b1d07ab83a36ecf0c3388db4c4821723d9186ae1e",
+        "chunk_sha256": "6f602ae0a23dd60ec18260538ce38ef181517b01074b2757af036fe9d944fd2e",
+        "options": {
+          "temperature": 0.0,
+          "seed": 42,
+          "num_predict": 1024,
+          "num_ctx": 8192
+        },
+        "timestamp_utc": "2026-07-18T02:48:52.804496+00:00",
+        "manifest_incomplete": false
+      },
+      "errors_count": 0
+    }
+  ],
+  "records_total": 1,
+  "manifest_sha256": "e4a4c563748e2c7835fbf3f27d2b4fa376db2ed7a6289e156150a537c93d6505"
+}

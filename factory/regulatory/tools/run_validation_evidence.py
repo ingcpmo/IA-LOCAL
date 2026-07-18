@@ -30,6 +30,7 @@ from factory.engines.gmpai_integrity.chunked_engine import build_page_chunks, sa
 from factory.regulatory.absence_consolidator import consolidate
 from factory.regulatory.applicability import applicability, pre_inference_filter
 from factory.regulatory.evidence_verifier import load_requirement_terms, verify_llm_output
+from factory.regulatory.requirement_catalog.citation_locator import sha256_file
 
 
 @dataclass
@@ -53,6 +54,16 @@ class EvidenceRunResult:
     manifest_incomplete_count: int = 0
     records_total: int = 0
     raw: dict = field(default_factory=dict)
+    # Fase 5.4 -- mismo contrato de 3 estados que evaluate_chunked() (Fase
+    # 5.3): un fallo de persistencia de all_records NUNCA queda oculto
+    # como una corrida sin novedad.
+    validation_evidence_status: str = "NOT_ATTEMPTED"
+    validation_evidence_error: str | None = None
+    golden_dataset_eligible: bool = False
+    # Fase 5.4.4 -- manifiesto sanitizado versionable (independiente del
+    # resultado de la escritura cruda, ver comentario mas abajo).
+    manifest_sanitized_status: str = "NOT_ATTEMPTED"
+    manifest_sanitized_error: str | None = None
 
 
 def _default_prompt(requirement_id: str, chunk_text: str) -> str:
@@ -70,6 +81,9 @@ def _default_prompt(requirement_id: str, chunk_text: str) -> str:
         "Si observed/partially_observed: evidence_quote debe ser cita "
         "LITERAL del fragmento. Si not_observed_in_chunk: evidence_quote "
         "vacio.\n\n"
+        "confidence: numero decimal ENTRE 0.0 y 1.0 (NUNCA una escala de "
+        "0 a 100). Ejemplos validos: 0.0, 0.5, 0.85, 1.0. '100' o '85' NO "
+        "son valores validos para este campo.\n\n"
         f"[FRAGMENTO]\n{chunk_text}\n[FIN FRAGMENTO]\n"
     )
 
@@ -83,6 +97,7 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
     if config.extractor is None:
         raise ValueError("config.extractor es obligatorio (funcion Path -> list[str] por pagina)")
 
+    document_sha256 = sha256_file(Path(config.document_path))
     per_unit_text = config.extractor(config.document_path)
     all_chunks = build_page_chunks(per_unit_text)
     chunks_used = all_chunks[: config.max_chunks] if config.max_chunks else all_chunks
@@ -115,8 +130,20 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
                     "record_id": record_id, "llm_output": None,
                     "execution_manifest": gen["execution_manifest"],
                     "status": "rejected_by_verifier",
-                    "rejection_reason": gen.get("rejection_reason") or "schema_validation_failed",
+                    # Fase 5.4.4: gen["rejection_reason"] ya viene clasificado
+                    # (json_parse_failed/schema_validation_failed/
+                    # ollama_transport_failed) por generate_controlled() --
+                    # el fallback anterior a "schema_validation_failed"
+                    # enmascaraba las otras 2 causas cuando ocurrian.
+                    "rejection_reason": gen.get("rejection_reason"),
                     "review_flags": [],
+                    # Fase 5.4 (fix ETAPA 1): generate_controlled() ya calculaba
+                    # raw_response/errors pero se descartaban aqui -- sin esto,
+                    # un rechazo por schema queda sin causa reconstruible despues
+                    # (incidente detectado al intentar analizar los 21 rechazos
+                    # reales de Fase 5.4: el dato crudo nunca se habia persistido).
+                    "raw_response": gen.get("raw_response"),
+                    "errors": gen.get("errors") or [],
                 }
             else:
                 verification = verify_llm_output(gen["llm_output"], chunk, set(config.requirement_ids), terms)
@@ -126,6 +153,8 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
                     "status": verification.status,
                     "rejection_reason": verification.rejection_reason,
                     "review_flags": verification.review_flags,
+                    "raw_response": gen.get("raw_response"),
+                    "errors": gen.get("errors") or [],
                 }
             records.append(record)
             all_records.append(record)
@@ -151,6 +180,7 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
         "run_by": config.run_by,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "document": str(config.document_path),
+        "document_sha256": document_sha256,
         "document_type": config.document_type,
         "document_type_source": config.document_type_source,
         "total_chunks_real": len(all_chunks),
@@ -162,6 +192,46 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
         "records_by_status": status_counts,
         "per_requirement_conclusions": result.per_requirement_conclusions,
     }
+
+    # Fase 5.4, Bloque 5.4.1 -- persistir all_records COMPLETOS (llm_output,
+    # execution_manifest, verification), no solo los agregados de arriba.
+    # Mismo contrato de 3 estados que evaluate_chunked() (Fase 5.3): un
+    # fallo de escritura nunca tumba la corrida ni queda oculto.
+    try:
+        from factory.regulatory.validation_evidence_writer import write_validation_evidence
+        write_validation_evidence(
+            run_id=run_id,
+            document_sha256=document_sha256,
+            run_context="validation",
+            content={
+                "all_records": all_records,
+                "per_requirement_conclusions": result.per_requirement_conclusions,
+            },
+        )
+        result.validation_evidence_status = "VALIDATION_EVIDENCE_COMPLETE"
+        result.golden_dataset_eligible = True
+    except Exception as e:
+        result.validation_evidence_status = "VALIDATION_EVIDENCE_INCOMPLETE"
+        result.validation_evidence_error = f"{type(e).__name__}: {e}"
+        result.golden_dataset_eligible = False
+
+    result.raw["validation_evidence_status"] = result.validation_evidence_status
+    result.raw["golden_dataset_eligible"] = result.golden_dataset_eligible
+
+    # Fase 5.4.4 (gobernanza): manifiesto sanitizado versionable, generado
+    # SIEMPRE que haya habido intento de persistencia (aunque haya
+    # fallado -- el manifiesto en si no contiene texto del documento, asi
+    # que un fallo de la escritura cruda no impide dejar constancia
+    # sanitizada de que la corrida ocurrio).
+    try:
+        from factory.regulatory.validation_evidence_manifest import write_sanitized_manifest
+        write_sanitized_manifest(run_id=run_id, raw=result.raw, all_records=all_records)
+        result.manifest_sanitized_status = "MANIFEST_WRITTEN"
+    except Exception as e:
+        result.manifest_sanitized_status = "MANIFEST_WRITE_FAILED"
+        result.manifest_sanitized_error = f"{type(e).__name__}: {e}"
+
+    result.raw["manifest_sanitized_status"] = result.manifest_sanitized_status
     return result
 
 

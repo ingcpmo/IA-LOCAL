@@ -62,6 +62,11 @@ def write_validation_evidence(
 
     base = evidence_base or VALIDATION_EVIDENCE_BASE
     base.mkdir(parents=True, exist_ok=True)
+    # Fase 5.4.4 (gobernanza): directorio 0o750 -- el contenedor corre como
+    # root y create el directorio con umask de root si no existia; se fuerza
+    # el modo explicito en cada llamada (idempotente, barato) en vez de
+    # confiar en que quedo bien la primera vez.
+    os.chmod(base, DIR_PERMISSIONS)
     target = resolve_validation_evidence(run_id, base)
 
     payload = {
@@ -83,6 +88,31 @@ def write_validation_evidence(
             f"de {VALIDATION_EVIDENCE_MAX_BYTES} bytes -- no se trunca, no se escribe."
         )
 
-    target.write_bytes(final_bytes)
-    os.chmod(target, FILE_PERMISSIONS)
+    _atomic_write(target, final_bytes, base)
     return target
+
+
+DIR_PERMISSIONS = 0o750
+
+
+def _atomic_write(target: Path, data: bytes, base: Path) -> None:
+    """Fase 5.4.4 (gobernanza, corrige de raiz el incidente de Fase 5.4.3/
+    5.4.4 de archivos root:root que ing_cpmo no podia leer):
+      1. Escritura atomica: se escribe primero a un '.tmp<pid>' en el MISMO
+         directorio (mismo filesystem, os.replace() es atomico en POSIX) --
+         nunca un archivo parcial visible con el nombre final.
+      2. Propietario/grupo heredados del directorio ya autorizado (NUNCA un
+         UID/GID hardcodeado en el codigo -- el chown manual aplicado en
+         sesiones anteriores era un parche por corrida, no una correccion;
+         esto es la correccion real). Si el proceso no tiene privilegio
+         para chown (no es root y el archivo ya nacio con el UID correcto),
+         se seguir sin fallar -- el modo 0640 sigue aplicado de todas formas."""
+    tmp = target.with_name(f"{target.name}.{os.getpid()}.tmp")
+    tmp.write_bytes(data)
+    os.chmod(tmp, FILE_PERMISSIONS)
+    try:
+        dir_stat = base.stat()
+        os.chown(tmp, dir_stat.st_uid, dir_stat.st_gid)
+    except PermissionError:
+        pass
+    os.replace(tmp, target)

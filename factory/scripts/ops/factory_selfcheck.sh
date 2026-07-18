@@ -23,7 +23,7 @@ warn_()   { printf "  ${Y}WARN${NC}  %s\n" "$1"; }
 section() { printf "\n${BOLD}${B}━━━ %s ━━━${NC}\n" "$1"; }
 
 # ── 1. py_compile — todos los módulos Python de la fábrica ───────────────────
-section "1/4  py_compile"
+section "1/5  py_compile"
 
 PY_ERRORS=0
 while IFS= read -r -d '' f; do
@@ -46,7 +46,7 @@ if [[ $PY_ERRORS -eq 0 ]]; then
 fi
 
 # ── 2. pytest — suite factory/tests/ ─────────────────────────────────────────
-section "2/4  pytest"
+section "2/5  pytest"
 
 cd "$FACTORY_DIR/.."  # /home/ing_cpmo
 PYTEST_OUT=$("$PYBIN" -m pytest factory/tests/ -q --tb=short 2>&1 || true)
@@ -69,7 +69,7 @@ else
 fi
 
 # ── 3. verify_chain — audit de fábrica ───────────────────────────────────────
-section "3/4  audit chain"
+section "3/5  audit chain"
 
 CHAIN_RESULT=$(python3 - <<'PYEOF' 2>/dev/null
 import sys
@@ -94,7 +94,7 @@ else
 fi
 
 # ── 4. factory_status.sh ──────────────────────────────────────────────────────
-section "4/4  factory_status.sh"
+section "4/5  factory_status.sh"
 
 STATUS_EXIT=0
 STATUS_OUT=$(bash "$FACTORY_DIR/scripts/ops/factory_status.sh" 2>&1) || STATUS_EXIT=$?
@@ -107,6 +107,23 @@ case $STATUS_EXIT in
     1) ok "factory_status.sh: WARNs presentes pero sin FAILs (aceptable en self-check)" ;;
     *) ko "factory_status.sh: $STATUS_EXIT FAILs detectados" ;;
 esac
+
+# ── 5. validation_evidence git-safety scan (Fase 5.4.4, gobernanza) ──────────
+# Corre en modo --ci (escanea el árbol TRACKEADO vía git ls-files, no el
+# índice staged -- distinto del hook de pre-commit, que .git/hooks/ no
+# versiona; este paso es el que SI viaja con el repo y corre en Gate 0/CI
+# sin depender de que alguien haya instalado el hook local).
+section "5/5  validation_evidence git-safety scan"
+
+SCAN_EXIT=0
+SCAN_OUT=$(python3 "$FACTORY_DIR/scripts/ops/scan_validation_evidence_staged.py" --ci 2>&1) || SCAN_EXIT=$?
+echo "$SCAN_OUT"
+
+if [[ $SCAN_EXIT -eq 0 ]]; then
+    ok "validation_evidence: solo allowlist tracked, sin contenido prohibido"
+else
+    ko "validation_evidence: escaneo detectó violaciones (ver arriba)"
+fi
 
 # ── RESUMEN ───────────────────────────────────────────────────────────────────
 printf "\n${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"

@@ -78,6 +78,59 @@ def test_write_validation_evidence_sets_permissions_0640(tmp_path):
     assert mode == 0o640
 
 
+def test_write_validation_evidence_sets_directory_permissions_0750(tmp_path):
+    base = tmp_path / "nested" / "evidence"
+    writer.write_validation_evidence(
+        VALID_RUN_ID, "sha-doc-1", "validation", {"k": "v"}, evidence_base=base,
+    )
+    assert stat.S_IMODE(base.stat().st_mode) == 0o750
+
+
+def test_write_validation_evidence_owner_matches_directory_not_hardcoded(tmp_path):
+    """Fase 5.4.4 (gobernanza): el propietario/grupo del archivo escrito
+    debe coincidir con el del directorio ya autorizado -- nunca un
+    UID/GID hardcodeado en el codigo. En un proceso sin privilegio de
+    chown (caso normal fuera de un contenedor root) esto ya se cumple
+    trivialmente porque el archivo nace con el UID/GID del proceso, que es
+    el mismo que creo el directorio."""
+    path = writer.write_validation_evidence(
+        VALID_RUN_ID, "sha-doc-1", "validation", {"k": "v"}, evidence_base=tmp_path,
+    )
+    file_stat = path.stat()
+    dir_stat = tmp_path.stat()
+    assert file_stat.st_uid == dir_stat.st_uid
+    assert file_stat.st_gid == dir_stat.st_gid
+
+
+def test_write_validation_evidence_is_atomic_no_partial_file_left_on_success(tmp_path):
+    writer.write_validation_evidence(
+        VALID_RUN_ID, "sha-doc-1", "validation", {"k": "v"}, evidence_base=tmp_path,
+    )
+    leftovers = [p for p in tmp_path.iterdir() if p.suffix == ".tmp" or ".tmp" in p.name]
+    assert leftovers == []
+
+
+def test_write_validation_evidence_atomic_write_uses_rename(tmp_path, monkeypatch):
+    """Confirma que la escritura pasa por os.replace() (atomica), no un
+    write directo al nombre final -- una corrida interrumpida a mitad de
+    escritura nunca deja el archivo final truncado/corrupto."""
+    import os as os_mod
+    calls = []
+    real_replace = os_mod.replace
+
+    def spy_replace(src, dst):
+        calls.append((str(src), str(dst)))
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(os_mod, "replace", spy_replace)
+    path = writer.write_validation_evidence(
+        VALID_RUN_ID, "sha-doc-1", "validation", {"k": "v"}, evidence_base=tmp_path,
+    )
+    assert len(calls) == 1
+    assert calls[0][1] == str(path)
+    assert ".tmp" in calls[0][0]
+
+
 # ── retención (sin borrado automático) ──────────────────────────────────
 
 def test_writer_module_exposes_no_delete_or_expiry_function():

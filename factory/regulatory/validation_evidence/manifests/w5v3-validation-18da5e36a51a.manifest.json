@@ -1,0 +1,47 @@
+{
+  "run_id": "w5v3-validation-18da5e36a51a",
+  "run_context": "validation",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "records_by_status": {
+    "rejected_by_verifier": 1
+  },
+  "validation_evidence_status": "VALIDATION_EVIDENCE_COMPLETE",
+  "golden_dataset_eligible": true,
+  "per_requirement_conclusions": {
+    "ALCOA_ACCURATE": {
+      "conclusion": "EVALUATION_INCOMPLETE",
+      "chunks_evaluated": 0,
+      "chunks_observed": 0,
+      "review_flags": [
+        "NO_VALID_RECORDS"
+      ]
+    }
+  },
+  "records": [
+    {
+      "record_id": "rec-87674d05885a",
+      "status": "rejected_by_verifier",
+      "rejection_reason": "schema_validation_failed",
+      "review_flags": [],
+      "execution_manifest": {
+        "model": "qwen2.5:7b-instruct-q4_K_M",
+        "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "prompt_sha256": "37b19eca5dfadef65398de8788816f26c94fb8b9b17a6cab69bbca9091dd7f56",
+        "schema_name": "finding_llm_v1",
+        "schema_sha256": "aef8f84a57474ea983e9326b1d07ab83a36ecf0c3388db4c4821723d9186ae1e",
+        "chunk_sha256": "6f602ae0a23dd60ec18260538ce38ef181517b01074b2757af036fe9d944fd2e",
+        "options": {
+          "temperature": 0.0,
+          "seed": 42,
+          "num_predict": 1024,
+          "num_ctx": 8192
+        },
+        "timestamp_utc": "2026-07-18T02:44:34.181338+00:00",
+        "manifest_incomplete": false
+      },
+      "errors_count": 1
+    }
+  ],
+  "records_total": 1,
+  "manifest_sha256": "da1a24cef3cdf36d77cb1273778e828ee25fd27f22f7008835d731338a8d930a"
+}
