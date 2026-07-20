@@ -1,8 +1,11 @@
-# W5.3 — Fase 5.4.4: diagnóstico real de los 21 rechazos de schema + canario ETAPA 2
+# W5.3 — Fase 5.4.4: diagnóstico real de los 21 rechazos de schema + canario ETAPA 2 + ETAPA 3 (cierre final)
 
-Fecha: 2026-07-18. Estado: **sin commit** (pendiente tu revisión). Continúa
-directamente sobre el trabajo sin cerrar de [[project_w5_checkpoint|Fase
-5.4]] (`factory/docs/W5_3_FASE5_4_CIERRE.md`, también sin commit).
+Fecha: 2026-07-18 (ETAPA 1/2) / 2026-07-20 (cierre de ETAPA 3, este addendum).
+Gobernanza y diagnóstico (ETAPA 1/2) ya commiteados en `f85bb37`. Este
+documento se actualiza in-place para registrar el cierre de **ETAPA 3**
+(la regresión completa de 57 llamadas que quedó pendiente de autorización
+al final de la sección "Pendiente real" original) — no es una fase nueva,
+es el cierre pendiente de esta misma Fase 5.4.4.
 
 ## Punto de partida
 
@@ -135,6 +138,108 @@ se detuvo la ejecución tras el PASS de la repetición. **ETAPA 3 (regresión
 completa de 57 llamadas) NO se ejecutó** — queda pendiente de autorización
 explícita.
 
+## ETAPA 3 — regresión completa (57 llamadas, ejecutada 2026-07-18, cerrada 2026-07-20)
+
+Autorizada explícitamente tras el PASS del canario y la gobernanza
+commiteada (`f85bb37`). **No se repiten llamadas para este cierre** — se
+documenta la corrida real ya ejecutada.
+
+- `run_id`: `w5v3-validation-49de4fd0d1d1`
+- `run_by`: "Cesar (autorizado via instruccion explicita ETAPA 3, sesion
+  2026-07-18, tras canario PASS y gobernanza commiteada f85bb37)"
+- Mismo documento real (`document_sha256=56095a75...b82eb`, FS_v1.2),
+  mismo catálogo completo (19/19 requisitos × 3 chunks = 57), mismo
+  modelo/digest (`qwen2.5:7b-instruct-q4_K_M`,
+  `845dbda0...31a0b697e`), mismo `schema_sha256` que el schema
+  actualmente commiteado (`aef8f84a...186ae1e`) — sin desviación de
+  contrato entre lo ejecutado y lo versionado.
+- Ventana real: `2026-07-18T04:13:45Z` → `2026-07-18T06:27:50Z` (~2h14m).
+  Manifiesto sanitizado escrito a las `06:30:08Z`.
+
+| Métrica | Fase 5.4.3 (pre-fix) | ETAPA 3 (post-fix) |
+|---|---|---|
+| `verified` | 31 | **40** |
+| `review_required` (`RELEVANCE_REVIEW_REQUIRED`) | 5 | **16** |
+| `rejected_by_verifier` | 21 (100% `schema_validation_failed`) | **1** (`citation_not_found` — causa distinta) |
+| `errors_count` agregado | — | 0/57 |
+| `manifest_incomplete` | 0/57 | 0/57 |
+| `golden_dataset_eligible` | true | true |
+
+**Lectura de resultado**: el fix de prompt de escala de `confidence`
+(ETAPA 2) elimina el 100% de los rechazos por `schema_validation_failed`
+en la regresión completa (21→0), confirmando a escala de las 57 llamadas
+lo que el canario n=1 solo insinuaba. El único rechazo real de ETAPA 3
+(`citation_not_found`) es una causa **no relacionada** con el patrón
+original — no reabre la hipótesis de escala, es un caso nuevo y aislado
+(n=1, sin patrón visible en el resto de la corrida).
+
+El aumento de `review_required` (5→16) es el mecanismo de relevancia (V5,
+Fase 2) disparándose más veces, no una regresión: al dejar de perderse
+registros por rechazo de schema, más registros llegan hasta el verificador
+de relevancia, que sigue activo y sin bypasear (protección del patrón
+C1/C3 — cita anclada pero fuera de tema — confirmada funcionando sobre
+datos reales, no solo sobre el Golden Dataset reconstruido).
+
+**Conclusiones documento-nivel (19/19, `coverage=partial`, 3/29 chunks
+reales por requisito) — comparación con Fase 5.4.3:**
+
+| Conclusión | Fase 5.4.3 | ETAPA 3 |
+|---|---|---|
+| `DOCUMENTED_AND_SUPPORTED` | 5 | **18** |
+| `DOCUMENTATION_GAP` | 11 | **1** (`ALCOA_CONTEMPORANEOUS`, 0/2 chunks observados) |
+| `CROSS_REFERENCE_MISSING` | 2 | 0 |
+| `PARTIALLY_DOCUMENTED` | 1 | 0 |
+
+El salto de 5→18 documentos "documentados y soportados" es consecuencia
+directa de que la evidencia ya no se pierde por rechazo de schema — **no
+es evidencia nueva del documento**, es evidencia que antes existía pero
+se descartaba antes de llegar a una conclusión. 15 de los 18
+`DOCUMENTED_AND_SUPPORTED` llevan la bandera `SUPPORTING_EVIDENCE_UNDER_
+REVIEW` (heredada de sus registros `review_required`) — la conclusión es
+técnica, no es un veredicto de cumplimiento sin revisión humana pendiente.
+
+**Limitación que sigue igual que en Fase 5.4.3**: un solo documento, 3 de
+29 chunks reales por requisito (`coverage=partial`). ETAPA 3 confirma el
+fix de prompt a escala de 57 llamadas sobre este documento — no confirma
+que la tasa de rechazo/relevancia se generalice a otros documentos o al
+100% de los chunks.
+
+### Gate 0 de este cierre (solo verificación, sin tocar `validation_evidence/`)
+
+- Suite completa: **712 passed, 1 skipped, 0 failed** (venv del proyecto,
+  `.venv/bin/python3 -m pytest factory/tests -q`).
+- `factory_selfcheck.sh`: **PASS=5 FAIL=0** (pytest embebido PASS=712,
+  cadena de auditoría íntegra — 2285 entradas, 1 fork concurrente aceptado
+  sin `hash_errors`, `factory_status.sh` sin FAILs, escáner de
+  `validation_evidence` en git PASS — solo allowlist tracked).
+- Ningún archivo de `validation_evidence/` fue escrito, movido ni
+  commiteado como parte de este cierre; el manifiesto sanitizado de
+  ETAPA 3 (`w5v3-validation-49de4fd0d1d1.manifest.json`) ya existía en
+  disco de la corrida real y queda listado en el diff para commit.
+
+### Actualización de estado de producción (reemplaza el bloque de la sección "Estado de producción" más abajo)
+
+```
+OLLAMA_SCHEMA_COMPATIBILITY = PASS_FOR_CONTROLLED_PILOT  (antes: CANARY_PASS_N1_PENDING_SCALE_VALIDATION)
+REGULATORY_EVALUATION_COMPLETE = false   (sin cambio — un solo documento, coverage partial)
+DOCUMENT_COVERAGE = PARTIAL              (sin cambio — 3/29 chunks reales por requisito, un solo documento)
+PRODUCTION_ENABLEMENT = BLOCKED          (sin cambio — toda la corrida fue run_context="validation")
+FASE_5_4_4_STATUS = CLOSED_WITH_FOLLOW_UP
+```
+
+`OLLAMA_SCHEMA_COMPATIBILITY` pasa a `PASS_FOR_CONTROLLED_PILOT` (no a
+`PASS` sin calificar) porque la regresión completa (n=57, no n=1) confirma
+0 rechazos por `schema_validation_failed` **sobre un solo documento y
+piloto controlado** — no es una validación pendiente de escala dentro de
+ese piloto, pero tampoco es una confirmación general del comportamiento de
+Ollama frente al schema en otros documentos. No se toca
+`REGULATORY_EVALUATION_COMPLETE` ni `PRODUCTION_ENABLEMENT`: ninguna
+llamada de ETAPA 3 usó `run_context` distinto de `validation`, y la
+cobertura sigue siendo parcial sobre un solo documento
+(`DOCUMENT_COVERAGE = PARTIAL`). `FASE_5_4_4_STATUS = CLOSED_WITH_FOLLOW_UP`
+porque la fase queda cerrada (ETAPA 1/2/3 completas) pero con pendientes
+explícitos abiertos hacia W5.5 (ver "Pendiente real / recomendación").
+
 ## Conclusión de causa raíz
 
 La causa raíz real y confirmada (n=1, ver limitación abajo) de al menos
@@ -255,6 +360,19 @@ siendo `verified`, `rejection_reason=None`).
 ?? factory/regulatory/validation_evidence/w5v3-validation-4455c94588e0.json   (canario PASS)
 ```
 
+**Diff adicional de este cierre (ETAPA 3, 2026-07-20 — no repite llamadas,
+solo documenta la corrida ya ejecutada el 2026-07-18):**
+
+```
+ M factory/docs/W5_3_FASE5_4_4_CIERRE.md                                        (este addendum)
+?? factory/regulatory/validation_evidence/manifests/w5v3-validation-49de4fd0d1d1.manifest.json  (manifiesto sanitizado, 57 registros)
+```
+
+El JSON crudo de ETAPA 3 (`w5v3-validation-49de4fd0d1d1.json`, ~110 KB)
+permanece fuera del índice de Git por diseño (`.gitignore` de Fase 5.4.4,
+punto 1 más abajo) — mismo tratamiento que los 3 archivos reales
+anteriores.
+
 ## Estado de producción
 
 ```
@@ -262,16 +380,21 @@ PERSISTENCE_OF_EVIDENCE = PASS
 VALIDATION_PRODUCTION_ISOLATION = PASS
 GOLDEN_DATASET_TECHNICAL_ELIGIBILITY = true
 DOCUMENT_COVERAGE = PARTIAL
-OLLAMA_SCHEMA_COMPATIBILITY = CANARY_PASS_N1_PENDING_SCALE_VALIDATION
+OLLAMA_SCHEMA_COMPATIBILITY = PASS_FOR_CONTROLLED_PILOT  (actualizado por ETAPA 3, ver sección de arriba — histórico: CANARY_PASS_N1_PENDING_SCALE_VALIDATION al cierre del canario, antes CRITICAL_FAIL)
 REGULATORY_EVALUATION_COMPLETE = false
 PRODUCTION_ENABLEMENT = BLOCKED
+FASE_5_4_4_STATUS = CLOSED_WITH_FOLLOW_UP
 ```
 
-`OLLAMA_SCHEMA_COMPATIBILITY` deja de ser `CRITICAL_FAIL` (ya no hay un
-fallo sin diagnosticar ni sin corrección propuesta) pero **no pasa a
-`PASS`** — solo un par de 57 fue re-verificado. Sin cambios en
-`PRODUCTION_ENABLEMENT` ni en el resto del estado: ninguna llamada de esta
-fase usó `run_context` distinto de `validation`.
+Estado histórico al cierre del canario (ETAPA 2, previo a este addendum):
+`OLLAMA_SCHEMA_COMPATIBILITY` dejaba de ser `CRITICAL_FAIL` pero no pasaba
+a `PASS` porque solo un par de 57 había sido re-verificado. **Ese estado
+quedó superado por ETAPA 3** (regresión completa, n=57, 0 rechazos por
+`schema_validation_failed`) — ver sección "ETAPA 3" arriba para el detalle
+y la fecha de cierre. Sin cambios en `PRODUCTION_ENABLEMENT` ni en
+`REGULATORY_EVALUATION_COMPLETE`: ninguna llamada de ETAPA 2 ni ETAPA 3
+usó `run_context` distinto de `validation`, y la cobertura sigue siendo
+parcial (un documento, 3/29 chunks por requisito).
 
 ## Gobernanza de `validation_evidence/` en Git (post-revisión, misma fase)
 
@@ -357,13 +480,35 @@ Definida e implementada completa, sin dejar la decisión pendiente:
 
 ## Pendiente real / recomendación
 
-- **ETAPA 3** (57 llamadas, comparación completa contra Fase 5.4.3) sigue
-  sin autorizar — es la única forma de confirmar si el fix de prompt
-  resuelve el patrón completo (concentrado en ALCOA+/Annex11) o si hay una
-  segunda causa distinta todavía sin reproducir.
-- El bug de `rejection_reason` hardcodeado a `"schema_validation_failed"`
-  (no distingue "JSON inválido" de "schema inválido" en ese campo, aunque
-  `errors` sí lo hace) queda documentado pero sin corregir — no es
-  bloqueante, es una mejora de legibilidad para W5.5.
-- Sigue sin decidirse la gobernanza de `validation_evidence/` en git
-  (heredado de Fase 5.4, ahora con 3 archivos reales en vez de 1).
+- ~~**ETAPA 3** (57 llamadas, comparación completa contra Fase 5.4.3) sigue
+  sin autorizar~~ — **CERRADA** (ver sección "ETAPA 3" arriba,
+  `run_id w5v3-validation-49de4fd0d1d1`, cierre 2026-07-20). El fix de
+  prompt resuelve el patrón completo a escala (21→0 rechazos por
+  `schema_validation_failed`); el único rechazo real de ETAPA 3 es una
+  causa distinta y aislada (`citation_not_found`, n=1).
+- Nota de gobernanza (Fase 5.4, todavía sin corregir en el código, ya no
+  bloqueante para este cierre): el bug de `rejection_reason` hardcodeado a
+  `"schema_validation_failed"` (no distingue "JSON inválido" de "schema
+  inválido" en ese campo, aunque `errors` sí lo hace) queda documentado
+  pero sin corregir — mejora de legibilidad para W5.5.
+- Sigue sin decidirse la gobernanza de `validation_evidence/` en git a
+  largo plazo (mecanismo de manifiesto sanitizado ya implementado y
+  probado con 4 corridas reales, incluida ETAPA 3; la pregunta abierta es
+  solo de volumen/retención a futuro, no de diseño).
+- **Nuevo pendiente real, abierto por este cierre**: el manifiesto
+  sanitizado de ETAPA 3
+  (`factory/regulatory/validation_evidence/manifests/w5v3-validation-49de4fd0d1d1.manifest.json`)
+  y este mismo documento están sin commitear — ver diff actualizado.
+- **Fuera de alcance de este cierre, señalado para decisión humana**: el
+  salto de 5→18 conclusiones `DOCUMENTED_AND_SUPPORTED` (con 15/18 bajo
+  `SUPPORTING_EVIDENCE_UNDER_REVIEW`) es un efecto correcto de dejar de
+  perder evidencia por rechazo de schema, pero no ha pasado por juicio QA
+  humano — no usar estas conclusiones como aceptación de cumplimiento sin
+  esa revisión.
+- **Pendiente explícito para W5.5** — `DOCUMENTATION_GAP` (1 caso:
+  `ALCOA_CONTEMPORANEOUS`, 0/2 chunks observados sobre `coverage=partial`):
+  queda registrado como pendiente, **no se corrige en este cierre**. No se
+  sabe todavía si es un gap real del documento FS_v1.2 o un artefacto de
+  la cobertura parcial (3/29 chunks reales por requisito) — solo se podrá
+  distinguir ampliando cobertura o evaluando el 100% de los chunks, lo cual
+  queda fuera de alcance de Fase 5.4.4.
