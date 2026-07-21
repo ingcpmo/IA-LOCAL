@@ -48,6 +48,21 @@ CASE_ANALYSES_BASE = FACTORY_ROOT / "regulatory" / "case_analyses"
 # liberacion puede referirse a cualquier version aprobada.
 REMEDIATION_PACKAGES_BASE = FACTORY_ROOT / "remediation_packages"
 
+# Fase 1 (document_remediation_evolution) — verificación real de acceso y
+# comparación de hash de las fuentes regulatorias gobernadas
+# (factory/regulatory/sources/registry.json). Log append-only, separado a
+# propósito de registry.json: ese archivo fija regulatory_currency_status a
+# un único valor posible ('pending_reverification', ver
+# schemas/source_registry_entry_v1.json) — este log nunca lo reescribe.
+SOURCE_CURRENCY_LOG_FILE = FACTORY_ROOT / "regulatory" / "source_currency_log.jsonl"
+
+# Fase 1 (document_remediation_evolution) — evaluación de fallos de acceso
+# consecutivos sobre SOURCE_CURRENCY_LOG_FILE. Append-only, separado del log
+# de verificación: nunca reemplaza una official_source_url, solo la marca
+# REGULATORY_SOURCE_UNVERIFIED para revisión humana (ver
+# TARGET_REGULATORY_ARCHITECTURE.md §2-3).
+BROKEN_LINK_REPORT_FILE = FACTORY_ROOT / "regulatory" / "broken_link_report.jsonl"
+
 MAX_FILE_BYTES = 256 * 1024  # límite de lectura de archivos del visor W3
 
 FILTER_PARTS = frozenset({
