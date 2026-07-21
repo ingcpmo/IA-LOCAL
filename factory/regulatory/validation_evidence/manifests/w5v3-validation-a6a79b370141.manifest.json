@@ -1,0 +1,31 @@
+{
+  "run_id": "w5v3-validation-a6a79b370141",
+  "run_context": "validation",
+  "run_by": "Cesar (autorizado via instruccion explicita W5.6, sesion 2026-07-21, reproceso offline sin Ollama)",
+  "timestamp_utc": "2026-07-21T01:48:12.355824+00:00",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "document_type": "FS",
+  "document_type_source": "human_assigned",
+  "total_chunks_real": 29,
+  "chunks_used": 21,
+  "coverage": "partial",
+  "model": "qwen2.5:7b-instruct-q4_K_M",
+  "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "ollama_version": "0.21.2",
+  "records_by_status": {
+    "review_required": 5,
+    "verified": 15,
+    "rejected_by_verifier": 1
+  },
+  "per_requirement_conclusions": {
+    "ALCOA_CONTEMPORANEOUS": {
+      "conclusion": "SUPPORTING_EVIDENCE_UNDER_REVIEW",
+      "chunks_evaluated": 20,
+      "chunks_observed": 5,
+      "review_flags": [
+        "OBSERVED_ONLY_UNVERIFIED"
+      ]
+    }
+  },
+  "manifest_sha256": "978cea7bc53bee826a07a72611942232d96ee936255615cb8e09dea4522669f3"
+}

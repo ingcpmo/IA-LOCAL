@@ -4,10 +4,39 @@ Checks ternarios: PASS | FAIL | NOT_VERIFIABLE.
   - FAIL en cualquier check demostrable -> rejected_by_verifier.
   - NOT_VERIFIABLE nunca equivale a PASS: agrega flag de revision (P1/P6).
 Taxonomia de coincidencia de cita:
-  exact | normalized | fuzzy | not_found
-  - exact/normalized -> cita verificada.
+  exact | normalized | despaced | fuzzy | not_found
+  - exact/normalized/despaced -> cita verificada (misma anchura de criterio:
+    coincidencia de caracteres literal, solo se ignora diseño de espacios en
+    blanco -- nunca se acepta contenido distinto).
   - fuzzy >= 0.93   -> verified_with_deviation + flag CITATION_DEVIATION.
   - < 0.93          -> not_found -> FAIL.
+
+W5.6 (hallazgo real, chunk 20 de "215115305 SCADA-PCS Misc PLC System
+FS_v1.2.pdf", ETAPA 4): una cita literal y correcta quedaba
+`rejected_by_verifier/citation_not_found` por dos artefactos DEMOSTRABLES de
+extraccion de PDF, ninguno de los dos alteracion del modelo:
+  1. Espacio espureo insertado a mitad de palabra por el kerning del PDF
+     ("whenever" -> "wheneve r") -- _normalize() ya colapsaba corridas de
+     espacios a uno solo, pero no fusionaba un espacio real insertado DENTRO
+     de una palabra. Fix: tier adicional "despaced" en match_citation() que
+     compara ignorando TODO whitespace (no solo colapsando corridas) --
+     sigue siendo comparacion de caracteres literal, no fuzzy/semantica.
+  2. Membrete de pagina (furniture) de la plantilla Rockwell -- "Project:
+     ... Functional Specification for the ... System ... ID code: ...
+     Page N of N ... (c) YYYY Rockwell Automation, Inc. All Rights
+     Reserved [/ Author: X] ... This function implements the following
+     user requirement(s)" -- insertado literalmente por pypdf entre el
+     contenido real de dos paginas consecutivas del mismo chunk (build_page_
+     chunks concatena texto de pagina completo, membrete incluido). Fix:
+     _strip_page_furniture() elimina este patron generico y acotado (limites
+     de longitud en la regex, nunca DOTALL sin cota) ANTES de normalizar --
+     no depende del nombre del proyecto/cliente, solo de marcadores
+     estructurales genericos de plantilla Rockwell ("ID code:", "Page N of
+     N", "Rockwell Automation... All Rights Reserved").
+Ninguno de los dos fixes acepta citas semanticamente similares ni relaja el
+umbral fuzzy (FUZZY_THRESHOLD sigue en 0.93) -- ambos son, igual que la
+normalizacion previa de comillas/guiones, remocion deterministica de ruido
+de formato, no de contenido.
 Relevancia tematica (heuristica lexica):
   - score bajo -> flag RELEVANCE_REVIEW_REQUIRED (nunca auto-rechazo, P6).
 
@@ -33,9 +62,30 @@ PASS, FAIL, NOT_VERIFIABLE = "PASS", "FAIL", "NOT_VERIFIABLE"
 
 REQUIREMENT_TERMS_PATH = Path(__file__).parent / "requirement_terms.yaml"
 
+# W5.6: membrete de pagina de plantilla Rockwell, acotado (sin DOTALL sin
+# cota -- cada segmento tiene un limite de longitud explicito para que la
+# regex nunca pueda "comerse" contenido real arbitrariamente largo).
+# Generico a marcadores estructurales de plantilla (ID code / Page N of N /
+# Rockwell Automation... All Rights Reserved), no al nombre de un proyecto o
+# cliente especifico.
+_PAGE_FURNITURE_RE = re.compile(
+    r"project:\s*.{0,120}?"
+    r"functional specification for the .{0,120}?"
+    r"id code:\s*\S+.{0,60}?page\s+\d+\s+of\s+\d+\s*"
+    r"©\s*\d{4}\s*rockwell automation,?\s*inc\.?\s*all rights reserved\S*"
+    r"(?:\s*/\s*author:\s*[^\n]*)?\s*"
+    r"(?:this function implements the following user requirement\(s\)\s*)?",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _strip_page_furniture(text: str) -> str:
+    return _PAGE_FURNITURE_RE.sub(" ", text or "")
+
 
 def _normalize(text: str) -> str:
     text = unicodedata.normalize("NFKC", text or "").lower()
+    text = _strip_page_furniture(text)
     text = re.sub(r"[\s ]+", " ", text)
     text = re.sub(r"[‐-―]", "-", text)
     text = re.sub(r"[‘’“”]", "'", text)
@@ -43,7 +93,8 @@ def _normalize(text: str) -> str:
 
 
 def match_citation(quote: str, source_text: str):
-    """-> (match_type, score)  con match_type en exact|normalized|fuzzy|not_found"""
+    """-> (match_type, score)  con match_type en
+    exact|normalized|despaced|fuzzy|not_found"""
     if not (quote or "").strip():
         return ("not_found", 0.0)
     if quote in (source_text or ""):
@@ -51,6 +102,13 @@ def match_citation(quote: str, source_text: str):
     nq, ns = _normalize(quote), _normalize(source_text)
     if nq and nq in ns:
         return ("normalized", 1.0)
+    # W5.6: ignora TODO whitespace (no solo corridas) -- cubre espacios
+    # espureos insertados a mitad de palabra por kerning del PDF. Sigue
+    # siendo comparacion de caracteres literal (misma exigencia de anclaje
+    # que "normalized"), solo indiferente a layout de espacios.
+    nq_d, ns_d = nq.replace(" ", ""), ns.replace(" ", "")
+    if nq_d and nq_d in ns_d:
+        return ("despaced", 1.0)
     wlen = len(nq)
     if wlen == 0 or len(ns) < 10:
         return ("not_found", 0.0)
@@ -130,7 +188,7 @@ def verify_llm_output(llm_output: dict, chunk: dict,
         mtype, score = match_citation(quote, src)
         checks["citation_match_type"] = mtype
         checks["citation_score"] = round(score, 4)
-        if mtype in ("exact", "normalized"):
+        if mtype in ("exact", "normalized", "despaced"):
             checks["citation"] = PASS
         elif mtype == "fuzzy":
             checks["citation"] = PASS
