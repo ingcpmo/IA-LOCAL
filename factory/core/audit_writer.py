@@ -95,6 +95,7 @@ VALID_EVENTS = {
     # y hash de las fuentes regulatorias gobernadas
     "regulatory_source_currency_checked",
     "regulatory_broken_link_report_generated",
+    "regulatory_source_url_updated",
     # W6.5 — propuestas de agente sobre el dossier: el agente propone, el humano decide
     "dossier_agent_proposal_generated",
     "dossier_agent_proposal_failed",
