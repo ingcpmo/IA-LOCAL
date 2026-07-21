@@ -252,7 +252,9 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                       version: str, archivo: str, document_sha256: str,
                       *, run_context: str,
                       checkpoint_store: "CheckpointStore | None" = None,
-                      run_id: str | None = None) -> dict:
+                      run_id: str | None = None,
+                      use_verified_pipeline: bool = False,
+                      document_type: str | None = None) -> dict:
     """Procesa TODO el documento (todas las páginas reales) en chunks
     acotados, con metadata de runtime completa por chunk, checkpoints de
     reanudación opcionales, y consolida un Finding final por checkpoint.
@@ -270,9 +272,29 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     no un ValueError en runtime -- falla en la firma de la función, antes
     de ejecutar una sola línea. Se registra en el evento de auditoría de
     este run -- UNA sola cadena de auditoría (Part 11), nunca fragmentada;
-    los reportes filtran en lectura vía GET /missions/{project_id}/audit?context=."""
+    los reportes filtran en lectura vía GET /missions/{project_id}/audit?context=.
+
+    use_verified_pipeline (Fase 3, document_remediation_evolution, default
+    False -- cero cambio de comportamiento para todo llamador existente):
+    si True, ADEMÁS de los Finding de siempre, corre el pipeline verificado
+    real (evidence_verifier.verify_llm_output + absence_consolidator.
+    consolidate, vía verified_pipeline_adapter) sobre los mismos chunks ya
+    ejecutados -- nunca reemplaza los Finding existentes, solo agrega
+    result['verified_conclusions'] (dict req_id -> conclusion real). Exige
+    document_type (ValueError si falta) y checkpoint_store=None (reanudar
+    un run con este flag no esta soportado todavia -- los chunk_executions
+    de un checkpoint viejo no traen los registros verificados, ver
+    verified_records_by_req más abajo)."""
     if run_context not in ("production", "validation"):
         raise ValueError(f"run_context invalido: {run_context!r} (debe ser 'production' o 'validation')")
+    if use_verified_pipeline:
+        if not document_type:
+            raise ValueError("use_verified_pipeline=True exige document_type (obligatorio, sin default)")
+        if checkpoint_store is not None:
+            raise ValueError(
+                "use_verified_pipeline=True no soporta checkpoint_store/reanudacion todavia -- "
+                "los chunk_executions de un checkpoint previo no persisten los registros verificados"
+            )
     meta = load_prompt_meta(prompt_path)
     # Captura de metadata de reproducibilidad ANTES de la primera inferencia
     # (fix TE-02 / requisito de preflight): modelo, model_digest, version de
@@ -307,6 +329,13 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
 
     by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
     cp_label_by_req = {cp["req_id"]: cp["label"] for cp in meta["checkpoints"]}
+
+    verified_records_by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
+    known_verified_requirement_ids: set = set(by_req.keys())
+    requirement_terms_by_req: dict[str, list] = {}
+    if use_verified_pipeline:
+        from factory.regulatory.evidence_verifier import load_requirement_terms
+        requirement_terms_by_req = {req_id: load_requirement_terms(req_id) for req_id in by_req}
     # Re-derivar by_req de chunk_executions ya completados (reanudación real,
     # no solo saltar llamadas — la consolidación final también debe verlos).
     # has_evidence puede faltar en checkpoints generados antes del fix
@@ -353,13 +382,14 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         finished_at = datetime.now(timezone.utc).isoformat()
 
         by_req_candidates = []
+        responded_req_ids: set = set()
         if chunk_result and isinstance(chunk_result.get("checkpoints"), list):
             for entry in chunk_result["checkpoints"]:
                 if not isinstance(entry, dict) or not entry.get("req_id"):
                     continue
+                req_id = entry["req_id"]
+                responded_req_ids.add(req_id)
                 estado = entry.get("estado") if entry.get("estado") in _VALID_ESTADOS else "evidencia_insuficiente"
-                if estado == "evidencia_insuficiente":
-                    continue
                 evidencia = str(entry.get("evidencia_exacta") or "")
                 anchored = _is_anchored(evidencia, chunk["text"]) if evidencia else False
                 requires_anchor = estado in ("cumple", "cumple_parcialmente")
@@ -368,10 +398,32 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 # cumple_parcialmente — la cita debe ademas ser tematicamente
                 # relevante al checkpoint (ver _is_topically_relevant).
                 topically_relevant = (
-                    _is_topically_relevant(evidencia, cp_label_by_req.get(entry["req_id"], ""))
+                    _is_topically_relevant(evidencia, cp_label_by_req.get(req_id, ""))
                     if (requires_anchor and evidencia) else True
                 )
                 valid_candidate = valid_candidate and topically_relevant
+
+                # Fase 3 (document_remediation_evolution): a diferencia del
+                # camino legacy de abajo, el pipeline verificado necesita UN
+                # registro por cada (chunk, requisito) evaluado -- incluidos
+                # los 'evidencia_insuficiente', que el camino legacy descarta
+                # (nunca aportaron un Finding propio) pero que SÍ cuentan para
+                # que coverage_complete de absence_consolidator sea real, no
+                # inventado.
+                if use_verified_pipeline and req_id in verified_records_by_req:
+                    from factory.regulatory.verified_pipeline_adapter import build_finding_record
+                    v_candidate = {
+                        "page_start": chunk["page_start"], "page_end": chunk["page_end"],
+                        "estado": estado if valid_candidate else "evidencia_insuficiente",
+                        "evidencia_exacta": evidencia if valid_candidate else "",
+                    }
+                    verified_records_by_req[req_id].append(build_finding_record(
+                        f"vrec-{task_id}-{req_id}", v_candidate, req_id, chunk,
+                        known_verified_requirement_ids, requirement_terms_by_req.get(req_id, []),
+                    ))
+
+                if estado == "evidencia_insuficiente":
+                    continue
                 has_evidence = bool(evidencia.strip())
                 candidate = {
                     "chunk_index": chunk["chunk_index"], "page_start": chunk["page_start"],
@@ -382,8 +434,20 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     "anchored": valid_candidate,
                     "has_evidence": has_evidence,
                 }
-                by_req.setdefault(entry["req_id"], []).append(candidate)
-                by_req_candidates.append({"req_id": entry["req_id"], "candidate": candidate})
+                by_req.setdefault(req_id, []).append(candidate)
+                by_req_candidates.append({"req_id": req_id, "candidate": candidate})
+
+        # Fase 3: un chunk sin respuesta valida para un requisito (fallo
+        # tecnico de ejecucion, o el modelo simplemente no devolvio ese
+        # checkpoint) NUNCA se omite en silencio del pipeline verificado --
+        # cuenta como rejected_by_verifier (ver verified_pipeline_adapter.
+        # rejected_record y P3 reforzado de absence_consolidator.py).
+        if use_verified_pipeline:
+            from factory.regulatory.verified_pipeline_adapter import rejected_record
+            reason = "technical_execution_failure" if technical_execution_failure else "checkpoint_missing_from_response"
+            for req_id in verified_records_by_req:
+                if req_id not in responded_req_ids:
+                    verified_records_by_req[req_id].append(rejected_record(f"vrec-{task_id}-{req_id}", reason))
 
         chunk_executions.append({
             "run_id": run_id, "task_id": task_id, "chunk_index": chunk["chunk_index"],
@@ -521,6 +585,31 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         for ce in chunk_executions if ce.get("technical_execution_failure")
     ]
 
+    verified_conclusions = None
+    if use_verified_pipeline:
+        from factory.regulatory.absence_consolidator import consolidate as _consolidate
+        from factory.regulatory.applicability import applicability as _applicability
+        # coverage_complete=True es real, no asumido: evaluate_chunked() sin
+        # checkpoint_store (bloqueado arriba para este flag) siempre procesa
+        # TODOS los chunks del documento -- cada uno aporto un registro
+        # (observado, no-observado o rejected_by_verifier) para cada
+        # requisito, nunca un subconjunto parcial.
+        verified_conclusions = {}
+        for cp in meta["checkpoints"]:
+            req_id = cp["req_id"]
+            app = _applicability(req_id, document_type)
+            conclusion = _consolidate(
+                req_id, document_type, app["value"], verified_records_by_req.get(req_id, []),
+                coverage_complete=True,
+            )
+            verified_conclusions[req_id] = {
+                "conclusion": conclusion.conclusion,
+                "chunks_evaluated": conclusion.chunks_evaluated,
+                "chunks_observed": conclusion.chunks_observed,
+                "chunks_review_pending": conclusion.chunks_review_pending,
+                "review_flags": conclusion.review_flags,
+            }
+
     result = {
         "run_id": run_id,
         "run_context": run_context,
@@ -546,6 +635,8 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         # se confunda con un fallo de analisis.
         "analysis_status": "ANALYSIS_COMPLETE",
     }
+    if verified_conclusions is not None:
+        result["verified_conclusions"] = verified_conclusions
     result.update(_persist_validation_evidence(result, chunk_executions, run_context))
 
     if checkpoint_store is not None:

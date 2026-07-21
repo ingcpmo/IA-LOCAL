@@ -387,3 +387,124 @@ def test_ollama_unavailable_fails_fast_before_any_chunk_call(monkeypatch):
         ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", ["texto " * 500],
                             "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-unavail", run_context="production")
     assert calls["n"] == 0
+
+
+# ── Fase 3 (document_remediation_evolution): use_verified_pipeline ─────────
+# Wiring puro, sin Ollama real (mismo patron que
+# tools/run_validation_evidence.py: "wiring siempre corre en Gate 0").
+# La comparacion real contra los 19 findings de FS_v1.2 con Ollama real
+# queda pendiente como paso manual posterior (IMPLEMENTATION_ROADMAP.md
+# Fase 3, gate de salida).
+
+import pytest
+
+
+def test_verified_pipeline_off_by_default_no_extra_key(monkeypatch):
+    """Cero cambio de comportamiento para todo llamador existente: sin el
+    flag, result no trae 'verified_conclusions' en absoluto."""
+    pages = ["Texto neutro sin evidencia particular. " * 100]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test", run_context="production")
+    assert "verified_conclusions" not in result
+
+
+def test_verified_pipeline_requires_document_type():
+    with pytest.raises(ValueError, match="document_type"):
+        ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", ["x"],
+                             "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                             run_context="production", use_verified_pipeline=True)
+
+
+def test_verified_pipeline_rejects_checkpoint_store(tmp_path):
+    store = ce.CheckpointStore(tmp_path)
+    with pytest.raises(ValueError, match="checkpoint_store"):
+        ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", ["x"],
+                             "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                             run_context="production", use_verified_pipeline=True,
+                             document_type="FS", checkpoint_store=store)
+
+
+def test_verified_pipeline_all_insufficient_across_all_chunks_is_documentation_gap(monkeypatch):
+    """El fix central de Fase 3: 'evidencia_insuficiente' ya NO se descarta
+    en silencio del pipeline verificado -- cada chunk aporta un registro
+    not_observed_in_chunk real, coverage_complete=True, sin rejected ->
+    DOCUMENTATION_GAP (nunca EVALUATION_INCOMPLETE por falta de registros)."""
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+    n_chunks = len(result["chunk_executions"])
+    assert n_chunks >= 2
+    conclusions = result["verified_conclusions"]
+    # Solo los requisitos con applicability_value='expected' para document_type
+    # 'FS' (ver applicability_matrix.yaml) llegan a DOCUMENTATION_GAP por esta
+    # via -- 21_CFR_11.10(a) es cross_reference_expected y 11.50_11.70 es
+    # optional, cada uno con su propia regla, fuera de alcance de este gate.
+    for req_id in ("21_CFR_11.10(d)", "21_CFR_11.10(e)", "21_CFR_11.10(g)"):
+        c = conclusions[req_id]
+        assert c["conclusion"] == "DOCUMENTATION_GAP", (req_id, c)
+        assert c["chunks_evaluated"] == n_chunks
+
+
+def test_verified_pipeline_real_anchored_citation_is_documented_and_supported(monkeypatch):
+    """Evidencia real, anclada y tematicamente relevante -> 'observed' ->
+    DOCUMENTED_AND_SUPPORTED (nunca DOCUMENTATION_GAP con evidencia positiva real)."""
+    # Debe superar DOS heuristicas distintas y reales: _is_topically_relevant
+    # de chunked_engine.py (contra el label en espanol del checkpoint) y
+    # relevance_score de evidence_verifier.py (contra requirement_terms.yaml
+    # en ingles) -- de ahi la mezcla deliberada de ambos idiomas.
+    quote = ("El acceso de los individuos esta controlado: access is restricted to "
+              "authorized users only, enforced via role-based permission and login authentication.")
+    pages = [f"Introduccion general. {quote} Resto del documento sin relacion. " * 40]
+    payload = _all_insufficient({
+        "21_CFR_11.10(d)": {"req_id": "21_CFR_11.10(d)", "estado": "cumple",
+                             "evidencia_exacta": quote,
+                             "brecha": "n/a", "recomendacion": "n/a"},
+    })
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+    c = result["verified_conclusions"]["21_CFR_11.10(d)"]
+    assert c["conclusion"] == "DOCUMENTED_AND_SUPPORTED"
+    assert c["chunks_observed"] >= 1
+
+
+def test_verified_pipeline_technical_failure_chunk_blocks_documentation_gap(monkeypatch):
+    """Gate central del roadmap: un chunk con fallo tecnico de ejecucion
+    cuenta como rejected_by_verifier para el pipeline verificado -> la
+    conclusion es EVALUATION_INCOMPLETE, NUNCA DOCUMENTATION_GAP, aunque
+    todos los demas chunks respondieran 'evidencia_insuficiente'."""
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    call_n = {"i": 0}
+
+    def flaky_generate(*a, **k):
+        call_n["i"] += 1
+        if call_n["i"] == 1:
+            return {"response": "esto no es JSON valido"}
+        return _ollama_response(_all_insufficient())
+
+    monkeypatch.setattr(ollama_client, "generate", flaky_generate)
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+    assert result["technical_execution_failures"]  # confirma que el fallo tecnico si ocurrio
+    # Solo los requisitos con applicability_value='expected' en document_type
+    # 'FS' pasan por la rama que bloquea DOCUMENTATION_GAP ante chunks
+    # rejected_by_verifier (absence_consolidator.py P3 reforzado); los demas
+    # (cross_reference_expected/optional) tienen su propia regla, fuera de
+    # alcance de este gate.
+    for req_id in ("21_CFR_11.10(d)", "21_CFR_11.10(e)", "21_CFR_11.10(g)"):
+        c = result["verified_conclusions"][req_id]
+        assert c["conclusion"] == "EVALUATION_INCOMPLETE", (req_id, c)
+        assert "ABSENCE_BLOCKED_BY_REJECTED_CHUNKS" in c["review_flags"]
