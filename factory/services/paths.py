@@ -41,6 +41,13 @@ MISSIONS_DIR = FACTORY_ROOT / "layer9" / "missions"
 CASE_ANALYSIS_PROMPTS_FILE = FACTORY_ROOT / "agent_prompts" / "case_analysis_prompts.yaml"
 CASE_ANALYSES_BASE = FACTORY_ROOT / "regulatory" / "case_analyses"
 
+# BATCH_AND_EXCEPTION — CandidatePackage/RemediationChange por (project_id ×
+# package_id × package_version). releases.jsonl/release_supersessions.jsonl
+# viven a nivel de package_id (abarcan todas sus versiones), nunca dentro de
+# una carpeta de version, porque un ReleaseRecord es append-only y una
+# liberacion puede referirse a cualquier version aprobada.
+REMEDIATION_PACKAGES_BASE = FACTORY_ROOT / "remediation_packages"
+
 MAX_FILE_BYTES = 256 * 1024  # límite de lectura de archivos del visor W3
 
 FILTER_PARTS = frozenset({

@@ -116,6 +116,19 @@ VALID_EVENTS = {
     # produccion, run_context='production' por defecto) -- misma cadena de
     # auditoria unica, nunca fragmentada.
     "w5v2_validation_evidence_run",
+    # BATCH_AND_EXCEPTION — flujo de revision humana por paquete (no por
+    # chunk) sobre RemediationChange/CandidatePackage, ver
+    # factory/services/remediation_package_service.py. candidate_document_created
+    # y remediation_report_created son SIEMPRE automaticos (nunca requieren
+    # revision humana); exception_reviewed es SIEMPRE individual y solo para
+    # HIGH_RISK; document_released es el UNICO evento que puede asertar
+    # liberacion (ReleaseRecord es append-only, nunca se reescribe).
+    "candidate_document_created",
+    "remediation_report_created",
+    "remediation_package_generated",
+    "exception_reviewed",
+    "package_decision_recorded",
+    "document_released",
 }
 
 
