@@ -14,8 +14,8 @@ datos: cada funcion aqui delega directamente en requirement_catalog_loader,
 asi que una unica fuente de verdad, un unico punto de fail-closed.
 
 19 entradas vigentes (ver requirements.yaml, catalog_version 1.0,
-subfase 5.2): 5 FDA 21 CFR Part 11 + 8 ALCOA+ + 5 EU Annex 11 (incluye
-ALCOA_CONTEMPORANEOUS). El propio catalogo declara
+subfase 5.2): 5 FDA 21 CFR Part 11 + 9 ALCOA+ (incluye
+ALCOA_CONTEMPORANEOUS) + 5 EU Annex 11. El propio catalogo declara
 `production_status: PRODUCTION_ENABLEMENT=BLOCKED -- este catalogo NO esta
 cableado en chunked_engine.py ni en los prompts YAML de produccion` (ver
 factory/docs/W5v2_CICLO1_CIERRE.md) -- BATCH_AND_EXCEPTION lo referencia
