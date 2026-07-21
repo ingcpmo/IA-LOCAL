@@ -5,11 +5,15 @@ Objetivo (aprobado en diseno, no re-litigar aqui): el sistema genera
 automaticamente el documento candidato + informe sin que ningun chunk
 individual requiera aprobacion humana; el juicio humano se concentra en las
 excepciones HIGH_RISK y en la decision de paquete; la liberacion final es el
-unico punto bloqueado. Este modulo implementa exclusivamente las invariantes
-de servicio (lo que JSON Schema no puede expresar: cobertura cruzada,
-resolucion de referencias, no-circularidad de hashes, unicidad de release).
+unico punto bloqueado. Este modulo implementa las invariantes de servicio (lo
+que JSON Schema no puede expresar: cobertura cruzada, resolucion de
+referencias, no-circularidad de hashes, unicidad de release) MAS la
+formalizacion completa de RegulatoryCitationReference/RemediationChange/
+ArtifactReference (ver remediation_package_schemas.py) y escritura segura
+(locking por package_id + escritura atomica temp+fsync+rename).
 
 Persistencia (ver factory/services/paths.py):
+  remediation_packages/<project_id>/<package_id>/.package.lock            (fcntl.flock, todas las mutaciones)
   remediation_packages/<project_id>/<package_id>/v<version>/state.json
     { package, changes, exceptions, medium_risk_batch_decisions, package_decision }
   remediation_packages/<project_id>/<package_id>/releases.jsonl            (append-only)
@@ -21,14 +25,22 @@ ya construidos por el motor de chunks/finding-correction existente.
 
 from __future__ import annotations
 
+import contextlib
+import fcntl
 import hashlib
 import json
+import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 from factory.core.audit_writer import write_event
 from factory.services import paths
+from factory.services.remediation_package_schemas import (
+    SchemaValidationError,
+    validate_artifact_reference,
+    validate_remediation_change,
+)
 
 # ── Errores ──────────────────────────────────────────────────────────────
 
@@ -138,7 +150,10 @@ def compute_evaluation_confidence(factors: dict) -> tuple[str, list[str]]:
 def validate_change_application_status(change: dict) -> None:
     """Invariante: schema FAILED o citation NOT_VERIFIED nunca puede quedar
     APPLIED_TO_DRAFT -- debe quedar NOT_APPLIED/APPLICATION_FAILED (propuesta
-    no soportada o excepcion, nunca aplicada silenciosamente al candidato)."""
+    no soportada o excepcion, nunca aplicada silenciosamente al candidato).
+    La exigencia de al menos una cita valida para APPLIED_TO_DRAFT vive en
+    remediation_package_schemas.validate_remediation_change (ahi se valida
+    tambien el CONTENIDO de cada cita, no solo su presencia)."""
     if change.get("candidate_application_status") == "APPLIED_TO_DRAFT":
         if change.get("schema_validation_status") == "FAILED":
             raise InvalidApplicationStatusError(
@@ -181,7 +196,55 @@ def _state_path(project_id: str, package_id: str, package_version: int) -> Path:
     return _version_dir(project_id, package_id, package_version) / "state.json"
 
 
+def _releases_path(project_id: str, package_id: str) -> Path:
+    return _package_dir(project_id, package_id) / "releases.jsonl"
+
+
+def _supersessions_path(project_id: str, package_id: str) -> Path:
+    return _package_dir(project_id, package_id) / "release_supersessions.jsonl"
+
+
+# ── Locking: un unico lock por package_id serializa TODAS las mutaciones
+# (creacion de version, excepciones, decisiones de lote, decision de
+# paquete, release y supersesion). Simplifica la correccion (una version N+1
+# nunca puede crearse mientras se decide sobre la version N del mismo
+# package_id) a costa de concurrencia -- aceptable: esto es un flujo de
+# revision humana, no un endpoint de alto throughput. fcntl.flock funciona
+# entre procesos (multiples workers) y entre hilos del mismo proceso.
+
+def _lock_file_path(project_id: str, package_id: str) -> Path:
+    d = _package_dir(project_id, package_id)
+    d.mkdir(parents=True, exist_ok=True)
+    return d / ".package.lock"
+
+
+@contextlib.contextmanager
+def _package_lock(project_id: str, package_id: str):
+    lock_path = _lock_file_path(project_id, package_id)
+    with open(lock_path, "a") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(fh, fcntl.LOCK_UN)
+
+
+def _existing_versions(project_id: str, package_id: str) -> list[int]:
+    d = _package_dir(project_id, package_id)
+    if not d.exists():
+        return []
+    out = []
+    for p in d.iterdir():
+        if p.is_dir() and p.name.startswith("v") and p.name[1:].isdigit():
+            out.append(int(p.name[1:]))
+    return sorted(out)
+
+
 def _read_state(project_id: str, package_id: str, package_version: int) -> dict:
+    """Lee SIEMPRE state.json (nunca un *.tmp.*) -- un archivo temporal
+    huerfano de una escritura interrumpida jamas se confunde con el estado
+    real, porque solo os.replace() lo convierte en state.json y esa llamada
+    es atomica a nivel de sistema de archivos."""
     p = _state_path(project_id, package_id, package_version)
     if not p.exists():
         raise RemediationPackageNotFound(
@@ -190,17 +253,27 @@ def _read_state(project_id: str, package_id: str, package_version: int) -> dict:
 
 
 def _write_state(project_id: str, package_id: str, package_version: int, state: dict) -> None:
-    p = _state_path(project_id, package_id, package_version)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
-
-
-def _releases_path(project_id: str, package_id: str) -> Path:
-    return _package_dir(project_id, package_id) / "releases.jsonl"
-
-
-def _supersessions_path(project_id: str, package_id: str) -> Path:
-    return _package_dir(project_id, package_id) / "release_supersessions.jsonl"
+    """Escritura atomica: archivo temporal unico -> flush -> fsync ->
+    os.replace (atomico en el mismo filesystem) -> fsync del directorio para
+    durabilidad del rename. Recuperacion ante fallo: si el proceso muere
+    entre la escritura del temporal y el os.replace, state.json final NUNca
+    se toca (sigue siendo la ultima version consistente escrita) y solo
+    queda un *.tmp.<uuid> huerfano, que ninguna funcion de lectura considera
+    -- se sobreescribe/ignora en el siguiente intento sin intervencion."""
+    final_path = _state_path(project_id, package_id, package_version)
+    final_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = final_path.parent / f"state.json.tmp.{uuid.uuid4().hex}"
+    payload = json.dumps(state, indent=2, ensure_ascii=False)
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        f.write(payload)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, final_path)
+    dir_fd = os.open(str(final_path.parent), os.O_RDONLY)
+    try:
+        os.fsync(dir_fd)
+    finally:
+        os.close(dir_fd)
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -210,9 +283,16 @@ def _read_jsonl(path: Path) -> list[dict]:
 
 
 def _append_jsonl(path: Path, record: dict) -> None:
+    """Escritura completa de una sola linea + fsync. Se invoca SIEMPRE bajo
+    _package_lock, asi que no hay interleaving posible entre escritores
+    concurrentes (el lock serializa; esta funcion solo garantiza que la
+    linea llega a disco antes de soltar el lock)."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps(record, ensure_ascii=False) + "\n"
     with open(path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        f.write(line)
+        f.flush()
+        os.fsync(f.fileno())
 
 
 def _artifacts_integrity_ok(artifacts: dict) -> bool:
@@ -249,70 +329,84 @@ def create_package(
 ) -> dict:
     """Crea GENERATED -> AWAITING_HUMAN_EXCEPTION_REVIEW/AWAITING_PACKAGE_DECISION.
     Enteramente automatico: ningun chunk/change individual requiere
-    aprobacion aqui. Rechaza reusar un package_version existente (append-only,
-    invariante de versionamiento)."""
-    version_dir = _version_dir(project_id, package_id, package_version)
-    if version_dir.exists():
-        raise DuplicateVersionError(
-            f"package '{package_id}' v{package_version} ya existe -- el servicio nunca reescribe una version")
-
+    aprobacion aqui. Valida formalmente cada RemediationChange (con sus
+    RegulatoryCitationReference) y cada ArtifactReference antes de persistir
+    -- fail-closed, nada con forma invalida llega a disco. Bajo
+    _package_lock: rechaza reusar un package_version existente Y exige
+    versiones estrictamente monotonicas (nunca v2 antes de que exista v1)."""
     for change in changes:
+        validate_remediation_change(change)
         validate_change_application_status(change)
+    for artifact in artifacts.values():
+        validate_artifact_reference(artifact)
 
-    changes_by_id = {c["change_id"]: c for c in changes}
-    high_risk = sorted(c["change_id"] for c in changes if c["change_risk"] == "HIGH_RISK")
-    medium_risk = sorted(c["change_id"] for c in changes if c["change_risk"] == "MEDIUM_RISK")
-    low_risk = sorted(c["change_id"] for c in changes if c["change_risk"] == "LOW_RISK")
+    with _package_lock(project_id, package_id):
+        existing_versions = _existing_versions(project_id, package_id)
+        if package_version in existing_versions:
+            raise DuplicateVersionError(
+                f"package '{package_id}' v{package_version} ya existe -- el servicio nunca reescribe una version")
+        if existing_versions and package_version <= max(existing_versions):
+            raise DuplicateVersionError(
+                f"package '{package_id}': v{package_version} no es mayor que la version maxima "
+                f"existente (v{max(existing_versions)}) -- las versiones son estrictamente monotonicas")
+        if not existing_versions and package_version != 1:
+            raise DuplicateVersionError(
+                f"package '{package_id}': la primera version debe ser v1, se solicito v{package_version}")
 
-    confidence_summary = {"high": 0, "medium": 0, "low": 0}
-    _conf_key = {"HIGH_CONFIDENCE": "high", "MEDIUM_CONFIDENCE": "medium", "LOW_CONFIDENCE": "low"}
-    for c in changes:
-        confidence_summary[_conf_key[c["evaluation_confidence"]]] += 1
+        changes_by_id = {c["change_id"]: c for c in changes}
+        high_risk = sorted(c["change_id"] for c in changes if c["change_risk"] == "HIGH_RISK")
+        medium_risk = sorted(c["change_id"] for c in changes if c["change_risk"] == "MEDIUM_RISK")
+        low_risk = sorted(c["change_id"] for c in changes if c["change_risk"] == "LOW_RISK")
 
-    automatic_evaluation_complete = compute_automatic_evaluation_complete(automatic_evaluation_basis)
+        confidence_summary = {"high": 0, "medium": 0, "low": 0}
+        _conf_key = {"HIGH_CONFIDENCE": "high", "MEDIUM_CONFIDENCE": "medium", "LOW_CONFIDENCE": "low"}
+        for c in changes:
+            confidence_summary[_conf_key[c["evaluation_confidence"]]] += 1
 
-    package = {
-        "package_id": package_id,
-        "package_version": package_version,
-        "superseded_from": superseded_from,
-        "status": "AWAITING_HUMAN_EXCEPTION_REVIEW" if high_risk else "AWAITING_PACKAGE_DECISION",
-        "project_id": project_id,
-        "artifacts": artifacts,
-        "generation_commit_sha": generation_commit_sha,
-        "changes": {"low_risk": low_risk, "medium_risk": medium_risk, "high_risk": high_risk},
-        "automatic_evaluation_complete": automatic_evaluation_complete,
-        "automatic_evaluation_basis": automatic_evaluation_basis,
-        "package_evaluation_confidence_summary": confidence_summary,
-        # human_exception_review_complete es trivialmente true si no hay
-        # high_risk -- no significa que hubo revision humana, significa que
-        # no habia nada que revisar individualmente.
-        "human_exception_review_complete": not high_risk,
-    }
+        automatic_evaluation_complete = compute_automatic_evaluation_complete(automatic_evaluation_basis)
 
-    state = {
-        "package": package,
-        "changes": changes_by_id,
-        "exceptions": {},
-        "medium_risk_batch_decisions": {},
-        "package_decision": None,
-    }
-    _write_state(project_id, package_id, package_version, state)
+        package = {
+            "package_id": package_id,
+            "package_version": package_version,
+            "superseded_from": superseded_from,
+            "status": "AWAITING_HUMAN_EXCEPTION_REVIEW" if high_risk else "AWAITING_PACKAGE_DECISION",
+            "project_id": project_id,
+            "artifacts": artifacts,
+            "generation_commit_sha": generation_commit_sha,
+            "changes": {"low_risk": low_risk, "medium_risk": medium_risk, "high_risk": high_risk},
+            "automatic_evaluation_complete": automatic_evaluation_complete,
+            "automatic_evaluation_basis": automatic_evaluation_basis,
+            "package_evaluation_confidence_summary": confidence_summary,
+            # human_exception_review_complete es trivialmente true si no hay
+            # high_risk -- no significa que hubo revision humana, significa
+            # que no habia nada que revisar individualmente.
+            "human_exception_review_complete": not high_risk,
+        }
 
-    write_event("candidate_document_created", project_id, {
-        "package_id": package_id, "package_version": package_version,
-        "sha256": artifacts.get("candidate_document", {}).get("sha256"),
-    })
-    write_event("remediation_report_created", project_id, {
-        "package_id": package_id, "package_version": package_version,
-        "sha256": artifacts.get("remediation_report", {}).get("sha256"),
-    })
-    write_event("remediation_package_generated", project_id, {
-        "package_id": package_id, "package_version": package_version,
-        "low_risk_count": len(low_risk), "medium_risk_count": len(medium_risk),
-        "high_risk_count": len(high_risk),
-        "automatic_evaluation_complete": automatic_evaluation_complete,
-    })
-    return package
+        state = {
+            "package": package,
+            "changes": changes_by_id,
+            "exceptions": {},
+            "medium_risk_batch_decisions": {},
+            "package_decision": None,
+        }
+        _write_state(project_id, package_id, package_version, state)
+
+        write_event("candidate_document_created", project_id, {
+            "package_id": package_id, "package_version": package_version,
+            "sha256": artifacts.get("candidate_document", {}).get("sha256"),
+        })
+        write_event("remediation_report_created", project_id, {
+            "package_id": package_id, "package_version": package_version,
+            "sha256": artifacts.get("remediation_report", {}).get("sha256"),
+        })
+        write_event("remediation_package_generated", project_id, {
+            "package_id": package_id, "package_version": package_version,
+            "low_risk_count": len(low_risk), "medium_risk_count": len(medium_risk),
+            "high_risk_count": len(high_risk),
+            "automatic_evaluation_complete": automatic_evaluation_complete,
+        })
+        return package
 
 
 # ── Revisión humana al final: excepciones HIGH_RISK + lote MEDIUM_RISK ──────
@@ -325,37 +419,38 @@ def record_exception_review(
     if not justification or not justification.strip():
         raise MissingJustificationError("justification es obligatoria en toda decision humana")
 
-    state = _read_state(project_id, package_id, package_version)
-    _require_open_for_review(state["package"], package_id, package_version)
-    change = state["changes"].get(change_id)
-    if change is None:
-        raise UnknownChangeError(f"change_id '{change_id}' no existe en v{package_version}")
-    if change["change_risk"] != "HIGH_RISK":
-        raise InvalidExceptionError(
-            f"change '{change_id}' es {change['change_risk']}, solo HIGH_RISK requiere excepcion individual")
+    with _package_lock(project_id, package_id):
+        state = _read_state(project_id, package_id, package_version)
+        _require_open_for_review(state["package"], package_id, package_version)
+        change = state["changes"].get(change_id)
+        if change is None:
+            raise UnknownChangeError(f"change_id '{change_id}' no existe en v{package_version}")
+        if change["change_risk"] != "HIGH_RISK":
+            raise InvalidExceptionError(
+                f"change '{change_id}' es {change['change_risk']}, solo HIGH_RISK requiere excepcion individual")
 
-    exception_id = f"EXC-{change_id}"
-    record = {
-        "exception_id": exception_id, "package_id": package_id, "package_version": package_version,
-        "change_id": change_id, "change_risk": "HIGH_RISK",
-        "human_review_decision": human_review_decision, "responsible": responsible,
-        "justification": justification, "status": "REVIEWED", "decided_at": _now_iso(),
-    }
-    state["exceptions"][exception_id] = record
+        exception_id = f"EXC-{change_id}"
+        record = {
+            "exception_id": exception_id, "package_id": package_id, "package_version": package_version,
+            "change_id": change_id, "change_risk": "HIGH_RISK",
+            "human_review_decision": human_review_decision, "responsible": responsible,
+            "justification": justification, "status": "REVIEWED", "decided_at": _now_iso(),
+        }
+        state["exceptions"][exception_id] = record
 
-    high_risk_ids = state["package"]["changes"]["high_risk"]
-    reviewed_change_ids = {e["change_id"] for e in state["exceptions"].values() if e["status"] == "REVIEWED"}
-    state["package"]["human_exception_review_complete"] = all(cid in reviewed_change_ids for cid in high_risk_ids)
-    if state["package"]["human_exception_review_complete"] and state["package"]["status"] == "AWAITING_HUMAN_EXCEPTION_REVIEW":
-        state["package"]["status"] = "AWAITING_PACKAGE_DECISION"
+        high_risk_ids = state["package"]["changes"]["high_risk"]
+        reviewed_change_ids = {e["change_id"] for e in state["exceptions"].values() if e["status"] == "REVIEWED"}
+        state["package"]["human_exception_review_complete"] = all(cid in reviewed_change_ids for cid in high_risk_ids)
+        if state["package"]["human_exception_review_complete"] and state["package"]["status"] == "AWAITING_HUMAN_EXCEPTION_REVIEW":
+            state["package"]["status"] = "AWAITING_PACKAGE_DECISION"
 
-    _write_state(project_id, package_id, package_version, state)
-    write_event("exception_reviewed", project_id, {
-        "package_id": package_id, "package_version": package_version,
-        "exception_id": exception_id, "change_id": change_id,
-        "human_review_decision": human_review_decision, "responsible": responsible,
-    })
-    return record
+        _write_state(project_id, package_id, package_version, state)
+        write_event("exception_reviewed", project_id, {
+            "package_id": package_id, "package_version": package_version,
+            "exception_id": exception_id, "change_id": change_id,
+            "human_review_decision": human_review_decision, "responsible": responsible,
+        })
+        return record
 
 
 def record_medium_risk_batch_decision(
@@ -367,25 +462,26 @@ def record_medium_risk_batch_decision(
     if not justification or not justification.strip():
         raise MissingJustificationError("justification es obligatoria en toda decision humana")
 
-    state = _read_state(project_id, package_id, package_version)
-    _require_open_for_review(state["package"], package_id, package_version)
-    medium_set = set(state["package"]["changes"]["medium_risk"])
-    invalid = set(covered_change_ids) - medium_set
-    if invalid:
-        raise InvalidBatchError(f"change_id fuera de medium_risk de esta version: {sorted(invalid)}")
+    with _package_lock(project_id, package_id):
+        state = _read_state(project_id, package_id, package_version)
+        _require_open_for_review(state["package"], package_id, package_version)
+        medium_set = set(state["package"]["changes"]["medium_risk"])
+        invalid = set(covered_change_ids) - medium_set
+        if invalid:
+            raise InvalidBatchError(f"change_id fuera de medium_risk de esta version: {sorted(invalid)}")
 
-    covered_sha256 = hashlib.sha256(
-        json.dumps(sorted(covered_change_ids), ensure_ascii=False).encode("utf-8")
-    ).hexdigest()
-    batch_decision_id = f"BATCH-{covered_sha256[:16]}"
-    record = {
-        "batch_decision_id": batch_decision_id, "package_id": package_id, "package_version": package_version,
-        "covered_change_ids": sorted(covered_change_ids), "covered_set_sha256": covered_sha256,
-        "responsible": responsible, "justification": justification, "decided_at": _now_iso(),
-    }
-    state["medium_risk_batch_decisions"][batch_decision_id] = record
-    _write_state(project_id, package_id, package_version, state)
-    return record
+        covered_sha256 = hashlib.sha256(
+            json.dumps(sorted(covered_change_ids), ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+        batch_decision_id = f"BATCH-{covered_sha256[:16]}"
+        record = {
+            "batch_decision_id": batch_decision_id, "package_id": package_id, "package_version": package_version,
+            "covered_change_ids": sorted(covered_change_ids), "covered_set_sha256": covered_sha256,
+            "responsible": responsible, "justification": justification, "decided_at": _now_iso(),
+        }
+        state["medium_risk_batch_decisions"][batch_decision_id] = record
+        _write_state(project_id, package_id, package_version, state)
+        return record
 
 
 def _resolve_high_risk_exception_change_ids(state: dict, exception_ids: list[str]) -> set[str]:
@@ -406,59 +502,63 @@ def record_package_decision(
     justification: str, medium_risk_batch_decision_id: str | None = None,
     high_risk_exception_ids: list[str] | None = None,
 ) -> dict:
-    """decision in {APPROVE_CLEAN, APPROVE_WITH_EXCEPTIONS, RETURN_TO_ADJUSTMENTS, REJECT}."""
+    """decision in {APPROVE_CLEAN, APPROVE_WITH_EXCEPTIONS, RETURN_TO_ADJUSTMENTS, REJECT}.
+    Bajo _package_lock: dos llamadas concurrentes sobre el mismo (package_id,
+    package_version) nunca producen dos decisiones -- la segunda encuentra
+    status != AWAITING_PACKAGE_DECISION y falla."""
     if not justification or not justification.strip():
         raise MissingJustificationError("justification es obligatoria en toda decision humana")
 
-    state = _read_state(project_id, package_id, package_version)
-    pkg = state["package"]
-    if pkg["status"] != "AWAITING_PACKAGE_DECISION":
-        raise InvalidTransitionError(f"paquete en estado '{pkg['status']}' no admite decision de paquete")
+    with _package_lock(project_id, package_id):
+        state = _read_state(project_id, package_id, package_version)
+        pkg = state["package"]
+        if pkg["status"] != "AWAITING_PACKAGE_DECISION":
+            raise InvalidTransitionError(f"paquete en estado '{pkg['status']}' no admite decision de paquete")
 
-    high_risk_ids = set(pkg["changes"]["high_risk"])
-    if decision == "APPROVE_WITH_EXCEPTIONS":
-        resolved = _resolve_high_risk_exception_change_ids(state, high_risk_exception_ids or [])
-        if resolved != high_risk_ids:
-            missing = high_risk_ids - resolved
-            extra = resolved - high_risk_ids
-            raise IncompleteExceptionCoverageError(
-                f"high_risk_exception_ids no cubre exactamente changes.high_risk "
-                f"(faltantes={sorted(missing)}, sobrantes={sorted(extra)})")
+        high_risk_ids = set(pkg["changes"]["high_risk"])
+        if decision == "APPROVE_WITH_EXCEPTIONS":
+            resolved = _resolve_high_risk_exception_change_ids(state, high_risk_exception_ids or [])
+            if resolved != high_risk_ids:
+                missing = high_risk_ids - resolved
+                extra = resolved - high_risk_ids
+                raise IncompleteExceptionCoverageError(
+                    f"high_risk_exception_ids no cubre exactamente changes.high_risk "
+                    f"(faltantes={sorted(missing)}, sobrantes={sorted(extra)})")
 
-    decision_id = f"DEC-{package_id}-v{package_version}-{uuid.uuid4().hex[:8]}"
-    record = {
-        "decision_id": decision_id, "package_id": package_id, "package_version": package_version,
-        "decision": decision, "decided_by": decided_by, "decided_at": _now_iso(),
-        "justification": justification,
-        "medium_risk_batch_decision_id": medium_risk_batch_decision_id,
-        "high_risk_exception_ids": high_risk_exception_ids or [],
-    }
-    state["package_decision"] = record
+        decision_id = f"DEC-{package_id}-v{package_version}-{uuid.uuid4().hex[:8]}"
+        record = {
+            "decision_id": decision_id, "package_id": package_id, "package_version": package_version,
+            "decision": decision, "decided_by": decided_by, "decided_at": _now_iso(),
+            "justification": justification,
+            "medium_risk_batch_decision_id": medium_risk_batch_decision_id,
+            "high_risk_exception_ids": high_risk_exception_ids or [],
+        }
+        state["package_decision"] = record
 
-    if decision == "REJECT":
-        pkg["status"] = "CLOSED_REJECTED"
-    elif decision == "RETURN_TO_ADJUSTMENTS":
-        pkg["status"] = "RETURNED_SUPERSEDED"
-    elif decision in ("APPROVE_CLEAN", "APPROVE_WITH_EXCEPTIONS"):
-        ready = (
-            pkg["automatic_evaluation_complete"]
-            and pkg["human_exception_review_complete"]
-            and _artifacts_integrity_ok(pkg["artifacts"])
-        )
-        if not ready:
-            raise InvalidTransitionError(
-                "condiciones de package_ready_for_release no se cumplen "
-                "(evaluacion automatica/revision de excepciones/integridad de artefactos)")
-        pkg["status"] = "PACKAGE_READY_FOR_RELEASE"
-    else:
-        raise InvalidTransitionError(f"decision desconocida: '{decision}'")
+        if decision == "REJECT":
+            pkg["status"] = "CLOSED_REJECTED"
+        elif decision == "RETURN_TO_ADJUSTMENTS":
+            pkg["status"] = "RETURNED_SUPERSEDED"
+        elif decision in ("APPROVE_CLEAN", "APPROVE_WITH_EXCEPTIONS"):
+            ready = (
+                pkg["automatic_evaluation_complete"]
+                and pkg["human_exception_review_complete"]
+                and _artifacts_integrity_ok(pkg["artifacts"])
+            )
+            if not ready:
+                raise InvalidTransitionError(
+                    "condiciones de package_ready_for_release no se cumplen "
+                    "(evaluacion automatica/revision de excepciones/integridad de artefactos)")
+            pkg["status"] = "PACKAGE_READY_FOR_RELEASE"
+        else:
+            raise InvalidTransitionError(f"decision desconocida: '{decision}'")
 
-    _write_state(project_id, package_id, package_version, state)
-    write_event("package_decision_recorded", project_id, {
-        "package_id": package_id, "package_version": package_version,
-        "decision_id": decision_id, "decision": decision, "decided_by": decided_by,
-    })
-    return record
+        _write_state(project_id, package_id, package_version, state)
+        write_event("package_decision_recorded", project_id, {
+            "package_id": package_id, "package_version": package_version,
+            "decision_id": decision_id, "decision": decision, "decided_by": decided_by,
+        })
+        return record
 
 
 # ── Liberación (único punto bloqueado; ReleaseRecord append-only) ──────────
@@ -473,9 +573,10 @@ def _effective_release(releases: list[dict], supersessions: list[dict]) -> dict 
 
 
 def get_effective_release(project_id: str, package_id: str) -> dict | None:
-    releases = _read_jsonl(_releases_path(project_id, package_id))
-    supersessions = _read_jsonl(_supersessions_path(project_id, package_id))
-    return _effective_release(releases, supersessions)
+    with _package_lock(project_id, package_id):
+        releases = _read_jsonl(_releases_path(project_id, package_id))
+        supersessions = _read_jsonl(_supersessions_path(project_id, package_id))
+        return _effective_release(releases, supersessions)
 
 
 def create_release_record(
@@ -484,43 +585,47 @@ def create_release_record(
     """Unica fuente de RELEASED. Append-only: nunca modifica un ReleaseRecord
     existente. Como mucho uno por (package_id, package_version); como mucho
     un vigente por package_id (el anterior, si existe, se supersede via
-    ReleaseSupersessionRecord, nunca se reescribe)."""
-    state = _read_state(project_id, package_id, package_version)
-    pkg = state["package"]
-    if pkg["status"] != "PACKAGE_READY_FOR_RELEASE":
-        raise InvalidTransitionError(
-            f"paquete v{package_version} en estado '{pkg['status']}', no esta PACKAGE_READY_FOR_RELEASE")
+    ReleaseSupersessionRecord, nunca se reescribe). Bajo _package_lock: la
+    comprobacion de duplicado y el append ocurren en la misma seccion
+    critica, asi que dos llamadas concurrentes nunca producen dos releases
+    para la misma version."""
+    with _package_lock(project_id, package_id):
+        state = _read_state(project_id, package_id, package_version)
+        pkg = state["package"]
+        if pkg["status"] != "PACKAGE_READY_FOR_RELEASE":
+            raise InvalidTransitionError(
+                f"paquete v{package_version} en estado '{pkg['status']}', no esta PACKAGE_READY_FOR_RELEASE")
 
-    releases_path = _releases_path(project_id, package_id)
-    supersessions_path = _supersessions_path(project_id, package_id)
-    releases = _read_jsonl(releases_path)
-    supersessions = _read_jsonl(supersessions_path)
+        releases_path = _releases_path(project_id, package_id)
+        supersessions_path = _supersessions_path(project_id, package_id)
+        releases = _read_jsonl(releases_path)
+        supersessions = _read_jsonl(supersessions_path)
 
-    if any(r["package_version"] == package_version for r in releases):
-        raise DuplicateReleaseError(f"ya existe un ReleaseRecord para '{package_id}' v{package_version}")
+        if any(r["package_version"] == package_version for r in releases):
+            raise DuplicateReleaseError(f"ya existe un ReleaseRecord para '{package_id}' v{package_version}")
 
-    prior_effective = _effective_release(releases, supersessions)
+        prior_effective = _effective_release(releases, supersessions)
 
-    release_id = f"REL-{package_id}-v{package_version}-{uuid.uuid4().hex[:8]}"
-    record = {
-        "release_id": release_id, "package_id": package_id, "package_version": package_version,
-        "decision_id": state["package_decision"]["decision_id"],
-        "released_by": released_by, "released_at": _now_iso(),
-        "release_manifest_sha256": pkg["artifacts"]["package_manifest"]["sha256"],
-    }
-    _append_jsonl(releases_path, record)
-
-    if prior_effective is not None:
-        supersession = {
-            "supersession_id": f"SUP-{uuid.uuid4().hex[:8]}", "package_id": package_id,
-            "previous_release_id": prior_effective["release_id"], "new_release_id": release_id,
-            "recorded_at": _now_iso(), "reason": "change_control_cycle_post_release",
+        release_id = f"REL-{package_id}-v{package_version}-{uuid.uuid4().hex[:8]}"
+        record = {
+            "release_id": release_id, "package_id": package_id, "package_version": package_version,
+            "decision_id": state["package_decision"]["decision_id"],
+            "released_by": released_by, "released_at": _now_iso(),
+            "release_manifest_sha256": pkg["artifacts"]["package_manifest"]["sha256"],
         }
-        _append_jsonl(supersessions_path, supersession)
+        _append_jsonl(releases_path, record)
 
-    write_event("document_released", project_id, {
-        "package_id": package_id, "package_version": package_version,
-        "release_id": release_id, "released_by": released_by,
-        "supersedes_release_id": prior_effective["release_id"] if prior_effective else None,
-    })
-    return record
+        if prior_effective is not None:
+            supersession = {
+                "supersession_id": f"SUP-{uuid.uuid4().hex[:8]}", "package_id": package_id,
+                "previous_release_id": prior_effective["release_id"], "new_release_id": release_id,
+                "recorded_at": _now_iso(), "reason": "change_control_cycle_post_release",
+            }
+            _append_jsonl(supersessions_path, supersession)
+
+        write_event("document_released", project_id, {
+            "package_id": package_id, "package_version": package_version,
+            "release_id": release_id, "released_by": released_by,
+            "supersedes_release_id": prior_effective["release_id"] if prior_effective else None,
+        })
+        return record

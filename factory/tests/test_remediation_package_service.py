@@ -7,13 +7,16 @@ exception_id->change_id), rechazo de aplicacion automatica no soportada,
 versionamiento append-only, y unicidad/supersedencia de ReleaseRecord.
 """
 
+import hashlib
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
 
+from factory.core import audit_writer
 from factory.services import paths
 from factory.services import remediation_package_service as svc
 
@@ -24,11 +27,41 @@ PROJECT_ID = "gmpai_document_validation_test"
 @pytest.fixture(autouse=True)
 def _isolated_remediation_packages_base(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, "REMEDIATION_PACKAGES_BASE", tmp_path / "remediation_packages")
+    # Aislamiento de auditoria: write_event() escribe SIEMPRE en el modulo
+    # global audit_writer.AUDIT_FILE -- sin este monkeypatch, cada test
+    # escribiria eventos reales en factory/audit/factory_audit.jsonl.
+    # _last_entry_hash tambien se resetea: es un cache de proceso que, sin
+    # resetear, arrastraria el ultimo hash del archivo REAL como prev_hash
+    # del archivo temporal de este test.
+    monkeypatch.setattr(audit_writer, "AUDIT_FILE", tmp_path / "audit" / "test_factory_audit.jsonl")
+    monkeypatch.setattr(audit_writer, "_last_entry_hash", None)
     yield
 
 
+def _sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _citation(change_id, *, catalog_entry_id="ALCOA_CONTEMPORANEOUS", anchor="VERIFIED", relevance="CONFIRMED"):
+    """RegulatoryCitationReference valido contra el catalogo REAL (ver
+    factory/regulatory/regulatory_catalog.py) -- citation_text_sha256 se
+    recalcula desde literal_text, igual que el servicio exige."""
+    literal_text = f"texto literal sintetico para {change_id}"
+    return {
+        "citation_id": f"CIT-{change_id}", "regulatory_catalog_entry_id": catalog_entry_id,
+        "regulatory_source": "ALCOA+", "regulatory_source_sha256": _sha256(f"source-{catalog_entry_id}"),
+        "requirement_catalog_sha256": _sha256(f"catalog-{catalog_entry_id}"),
+        "run_id": "RUN-TEST-0001", "record_id": f"REC-{change_id}",
+        "document_role": "CANDIDATE_DOCUMENT", "document_sha256": _sha256(f"doc-{change_id}"),
+        "chunk_sha256": _sha256(f"chunk-{change_id}"), "citation_locator": f"chunk_20#p12-14-{change_id}",
+        "page_start": 12, "page_end": 14, "literal_text": literal_text,
+        "citation_text_sha256": _sha256(literal_text), "evidence_type": "LITERAL_QUOTE",
+        "evidence_location": f"seccion 4.2, {change_id}",
+    }
+
+
 def _change(change_id, *, risk_factors=None, confidence_factors=None, application_status="APPLIED_TO_DRAFT",
-            schema="PASSED", anchor="VERIFIED", relevance="CONFIRMED"):
+            schema="PASSED", anchor="VERIFIED", relevance="CONFIRMED", citations=None):
     risk_factors = risk_factors or {
         "change_type": "CONTENT_ADDITION", "requirement_criticality": "MAJOR",
         "gxp_impact": "INDIRECT", "evidence_status": "PARTIAL_EVIDENCE",
@@ -40,23 +73,35 @@ def _change(change_id, *, risk_factors=None, confidence_factors=None, applicatio
     }
     risk, risk_basis = svc.compute_change_risk(risk_factors)
     confidence, confidence_basis = svc.compute_evaluation_confidence(confidence_factors)
+    if citations is None:
+        citations = [_citation(change_id, anchor=anchor, relevance=relevance)]
     return {
         "change_id": change_id, "finding_id": f"F-{change_id}", "requirement_id": f"REQ-{change_id}",
         "document_location": "chunk_1", "original_content": None, "proposed_content": "texto propuesto",
         "change_reason": "gap detectado", "change_type": risk_factors["change_type"],
-        "citations": [], "change_risk": risk, "change_risk_basis": risk_basis,
+        "citations": citations, "change_risk": risk, "change_risk_basis": risk_basis,
         "evaluation_confidence": confidence, "evaluation_confidence_basis": confidence_basis,
         "schema_validation_status": schema, "citation_anchor_status": anchor, "relevance_status": relevance,
         "candidate_application_status": application_status, "limitations": "",
     }
 
 
-def _artifacts():
+def _artifact(kind: str) -> dict:
+    sha = _sha256(f"synthetic-{kind}")
     return {
-        "source_document": {"sha256": "a" * 64}, "candidate_document": {"sha256": "b" * 64},
-        "remediation_report": {"sha256": "c" * 64}, "redline_document": {"sha256": "d" * 64},
-        "package_manifest": {"sha256": "e" * 64},
+        "artifact_id": f"ART-{kind}", "storage_location": f"/synthetic/{kind}.bin",
+        "mime_type": "application/octet-stream", "sha256": sha, "size_bytes": 1024,
+        "classification": {
+            "source_document": "SOURCE_IMMUTABLE", "candidate_document": "CANDIDATE_DRAFT",
+            "remediation_report": "REPORT", "redline_document": "REDLINE", "package_manifest": "MANIFEST",
+        }[kind],
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def _artifacts():
+    return {kind: _artifact(kind) for kind in
+            ("source_document", "candidate_document", "remediation_report", "redline_document", "package_manifest")}
 
 
 def _basis(applicable=1, requirement_ids=("REQ-1",), execution_errors=0, rejected_records=0):

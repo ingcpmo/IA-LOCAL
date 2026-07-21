@@ -18,7 +18,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from factory.api.routes import projects, workspaces, agents, releases, deployments, approvals, layer9, layer8, status
+from factory.api.routes import (
+    projects, workspaces, agents, releases, deployments, approvals, layer9, layer8, status,
+    remediation_packages,
+)
 from factory.core.audit_writer import verify_chain
 from factory.core.rate_limit import RateLimitCounter
 
@@ -200,5 +203,6 @@ for router in [
     layer9.router,
     layer8.router,
     status.router,
+    remediation_packages.router,
 ]:
     app.include_router(router, dependencies=[Depends(verify_api_key)])
