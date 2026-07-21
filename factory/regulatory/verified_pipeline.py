@@ -126,7 +126,11 @@ def evaluate_requirement_over_chunks(
             gen["execution_manifest"], verification,
         ))
 
-    conclusion = consolidate(requirement_id, document_type, applicability_value, records)
+    # W5.5: relevant_chunks es, por contrato de este modulo (ver docstring
+    # arriba), el conjunto COMPLETO de chunks relevantes ya filtrados por
+    # la matriz de aplicabilidad -- no un subconjunto parcial.
+    conclusion = consolidate(requirement_id, document_type, applicability_value, records,
+                              coverage_complete=True)
 
     summary = RequirementEvaluationSummary(
         requirement_id=requirement_id,

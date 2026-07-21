@@ -103,6 +103,10 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
     chunks_used = all_chunks[: config.max_chunks] if config.max_chunks else all_chunks
     for c in chunks_used:
         c["text"] = sanitize_document(c["text"])
+    # W5.5: misma condicion que "coverage" mas abajo -- coverage_complete se
+    # pasa a consolidate() para que DOCUMENTATION_GAP nunca se declare con
+    # cobertura parcial (P3 reforzado, absence_consolidator.py).
+    coverage_complete = not config.max_chunks or config.max_chunks >= len(all_chunks)
 
     model_digest = ollama_client.show_digest()
     ollama_version_str = ollama_client.ollama_version()
@@ -161,7 +165,8 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
             if gen["execution_manifest"].get("manifest_incomplete"):
                 result.manifest_incomplete_count += 1
 
-        conclusion = consolidate(req_id, config.document_type, app["value"], records)
+        conclusion = consolidate(req_id, config.document_type, app["value"], records,
+                                  coverage_complete=coverage_complete)
         result.per_requirement_conclusions[req_id] = {
             "conclusion": conclusion.conclusion,
             "chunks_evaluated": conclusion.chunks_evaluated,
