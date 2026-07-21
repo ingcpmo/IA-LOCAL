@@ -77,6 +77,7 @@ import re
 from dataclasses import dataclass
 
 from factory.regulatory import regulatory_catalog
+from factory.regulatory.absence_consolidator import DocumentConclusion
 from factory.services.remediation_package_service import (
     compute_change_risk,
     compute_evaluation_confidence,
@@ -225,10 +226,56 @@ def _derive_schema_validation_status(finding: dict) -> tuple[str, str]:
     return "PASSED", "todos los campos narrativos obligatorios poblados, sin error de ejecucion declarado -> PASSED"
 
 
-def _derive_coverage_status(finding: dict, evidence_status: str, *, is_single_range_anchor: bool) -> tuple[str, str]:
+_COVERAGE_STATUS_BY_VERIFIED_CONCLUSION = {
+    "DOCUMENTATION_GAP": "FULL_COVERAGE",
+    "DOCUMENTED_AND_SUPPORTED": "FULL_COVERAGE",
+    "PARTIALLY_DOCUMENTED": "FULL_COVERAGE",
+}
+
+
+def _derive_coverage_status_from_verified_conclusion(conclusion: DocumentConclusion) -> tuple[str, str]:
+    """Fase 2 (document_remediation_evolution, TARGET_REGULATORY_ARCHITECTURE.md
+    §6): cuando el llamador ya corrio absence_consolidator.consolidate() real
+    sobre los chunk records de este requisito (typicamente via
+    verified_pipeline.py), esa conclusion manda -- nunca la heuristica de
+    texto de _derive_coverage_status(). En particular, EVALUATION_INCOMPLETE
+    (coverage_complete=False, o algun chunk rejected_by_verifier, ver
+    absence_consolidator.py) SIEMPRE rechaza el finding aqui -- nunca llega a
+    FULL_COVERAGE por mucho que 'evidencia' lo sugiera en texto."""
+    if conclusion.conclusion == "EVALUATION_INCOMPLETE":
+        raise NotMappableToCurrentSchema(
+            "coverage_status: absence_consolidator.consolidate() real concluyo EVALUATION_INCOMPLETE "
+            f"(flags={conclusion.review_flags}) -- coverage_complete=False o chunks rejected_by_verifier; "
+            "nunca se mapea a FULL_COVERAGE aunque el texto de 'evidencia' lo sugiera")
+    if conclusion.conclusion in _COVERAGE_STATUS_BY_VERIFIED_CONCLUSION:
+        return (_COVERAGE_STATUS_BY_VERIFIED_CONCLUSION[conclusion.conclusion],
+                f"absence_consolidator.consolidate() real concluyo '{conclusion.conclusion}' "
+                "(coverage_complete=True, sin chunks rejected_by_verifier) -> FULL_COVERAGE verificado")
+    raise NotMappableToCurrentSchema(
+        f"coverage_status: absence_consolidator.consolidate() real concluyo '{conclusion.conclusion}' -- "
+        "sin regla de mapeo a RemediationChange todavia")
+
+
+def _derive_coverage_status(
+    finding: dict, evidence_status: str, *, is_single_range_anchor: bool,
+    verified_conclusion: DocumentConclusion | None = None,
+) -> tuple[str, str]:
+    if verified_conclusion is not None:
+        return _derive_coverage_status_from_verified_conclusion(verified_conclusion)
+
+    # Heuristica de texto -- unico camino disponible hoy porque chunked_engine.py
+    # (motor de produccion real) no adjunta chunk-level records/coverage_complete
+    # real a los findings (ver CURRENT_STATE_AUDIT.md §2: verified_pipeline.py
+    # sin llamador de produccion). EVALUATION_INCOMPLETE-prone (Fase 2,
+    # TARGET_REGULATORY_ARCHITECTURE.md §6): no hay garantia real de cobertura
+    # completa como la que exige absence_consolidator -- deuda declarada, no
+    # corregida aqui, solo etiquetada explicitamente en la regla devuelta.
     if evidence_status == "ABSENCE_CONFIRMED":
         if "todas las secciones evaluadas" in finding["evidencia"].lower():
-            return "FULL_COVERAGE", "'evidencia' declara ausencia en TODAS las secciones evaluadas -> FULL_COVERAGE"
+            return ("FULL_COVERAGE",
+                    "'evidencia' declara ausencia en TODAS las secciones evaluadas -> FULL_COVERAGE "
+                    "(EVALUATION_INCOMPLETE-prone: heuristica de texto, no absence_consolidator.consolidate() "
+                    "real -- ver Fase 2/3 de IMPLEMENTATION_ROADMAP.md)")
         raise NotMappableToCurrentSchema(
             "coverage_status: evidence_status=ABSENCE_CONFIRMED pero 'evidencia' no declara cobertura "
             "sobre todas las secciones evaluadas")
@@ -236,12 +283,16 @@ def _derive_coverage_status(finding: dict, evidence_status: str, *, is_single_ra
         if is_single_range_anchor:
             return ("FULL_COVERAGE",
                     "'paginas' es un unico rango, coincide exactamente con el anclaje citado -> cobertura "
-                    "completa trivialmente (nada mas que evaluar para esta cita)")
+                    "completa trivialmente (nada mas que evaluar para esta cita) (EVALUATION_INCOMPLETE-prone: "
+                    "heuristica de texto, no absence_consolidator.consolidate() real -- ver Fase 2/3 de "
+                    "IMPLEMENTATION_ROADMAP.md)")
         resolucion = finding.get("resolucion_humana_incorporada") or {}
         if resolucion.get("tipo_resolucion") == "diferencia_de_alcance":
             return ("FULL_COVERAGE",
                     "rango multiple + resolucion_humana_incorporada.tipo_resolucion='diferencia_de_alcance' "
-                    "-> FULL_COVERAGE (regla mas interpretativa del modulo, ver limitaciones en el docstring)")
+                    "-> FULL_COVERAGE (regla mas interpretativa del modulo, ver limitaciones en el docstring) "
+                    "(EVALUATION_INCOMPLETE-prone: heuristica de texto, no absence_consolidator.consolidate() "
+                    "real -- ver Fase 2/3 de IMPLEMENTATION_ROADMAP.md)")
         raise NotMappableToCurrentSchema(
             "coverage_status: evidence_status=PARTIAL_EVIDENCE con rango multiple y sin "
             "resolucion_humana_incorporada de tipo 'diferencia_de_alcance' -- no hay regla objetiva para "
@@ -260,11 +311,20 @@ class MappedChange:
 
 def map_finding_to_remediation_change(
     finding: dict, *, document_name: str, document_sha256: str, run_id: str,
+    verified_conclusion: DocumentConclusion | None = None,
 ) -> MappedChange:
     """Lanza NotMappableToCurrentSchema si algun campo no es derivable
     objetivamente -- el caller decide que hacer con el rechazo (excluir
     el finding, registrar el motivo), este modulo nunca produce un
-    RemediationChange a medias."""
+    RemediationChange a medias.
+
+    verified_conclusion (Fase 2, opcional, default None): DocumentConclusion
+    real ya producido por absence_consolidator.consolidate() para este
+    requisito x documento (typicamente via verified_pipeline.py). Cuando se
+    provee, manda sobre la heuristica de texto para coverage_status -- ver
+    _derive_coverage_status_from_verified_conclusion(). Ningun llamador de
+    produccion existe todavia (chunked_engine.py no genera chunk-level
+    records), asi que el default None preserva el comportamiento actual."""
     rules: dict[str, str] = {}
 
     entry_id = finding["requisito"].split(" — ")[0].strip()
@@ -307,7 +367,10 @@ def map_finding_to_remediation_change(
     schema_validation_status, rule = _derive_schema_validation_status(finding)
     rules["schema_validation_status"] = rule
 
-    coverage_status, rule = _derive_coverage_status(finding, evidence_status, is_single_range_anchor=is_single_range_anchor)
+    coverage_status, rule = _derive_coverage_status(
+        finding, evidence_status, is_single_range_anchor=is_single_range_anchor,
+        verified_conclusion=verified_conclusion,
+    )
     rules["coverage_status"] = rule
 
     citation_anchor_status = "VERIFIED"
@@ -390,17 +453,27 @@ class MappingRejection:
 
 def map_findings(
     findings: list[dict], *, document_name: str, document_sha256: str, run_id: str,
+    verified_conclusions: dict[str, DocumentConclusion] | None = None,
 ) -> tuple[list[MappedChange], list[MappingRejection]]:
     """Aplica map_finding_to_remediation_change() a cada finding; separa
     incluidos de rechazados (NOT_MAPPABLE_TO_CURRENT_SCHEMA) en vez de
     lanzar en el primer fallo -- un finding no mapeable nunca bloquea a
-    los demas."""
+    los demas.
+
+    verified_conclusions (Fase 2, opcional): dict finding_id ->
+    DocumentConclusion real, para los findings cuyo requisito x documento ya
+    fue evaluado por absence_consolidator.consolidate() (ver
+    map_finding_to_remediation_change). Un finding sin entrada aqui usa la
+    heuristica de texto de siempre -- default None preserva el
+    comportamiento actual para todo llamador existente."""
     included: list[MappedChange] = []
     rejected: list[MappingRejection] = []
+    conclusions = verified_conclusions or {}
     for finding in findings:
         try:
             included.append(map_finding_to_remediation_change(
                 finding, document_name=document_name, document_sha256=document_sha256, run_id=run_id,
+                verified_conclusion=conclusions.get(finding["finding_id"]),
             ))
         except NotMappableToCurrentSchema as e:
             rejected.append(MappingRejection(finding_id=finding["finding_id"], reason=str(e)))

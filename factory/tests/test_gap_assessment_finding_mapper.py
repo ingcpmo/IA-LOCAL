@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
 
+from factory.regulatory.absence_consolidator import consolidate
 from factory.services import gap_assessment_finding_mapper as mapper
 from factory.services.remediation_package_schemas import validate_remediation_change
 
@@ -212,3 +213,91 @@ def test_gxp_impact_unknown_binding_status_is_not_mappable():
     fake_entry = {"binding_status": "algo_nuevo_no_contemplado"}
     with pytest.raises(mapper.NotMappableToCurrentSchema, match="gxp_impact"):
         mapper._derive_gxp_impact(fake_entry)
+
+
+# ── Fase 2 (document_remediation_evolution): coverage_status consume ──────
+# absence_consolidator.consolidate() REAL (no mockeado) cuando el llamador lo
+# provee -- nunca la heuristica de texto. Gate del roadmap: un finding con
+# coverage_complete=False real jamas llega a FULL_COVERAGE via el mapper.
+
+_NOT_OBSERVED_RECORD = {"record_id": "r1", "status": "verified", "llm_output": {"chunk_observation": "not_observed"}}
+
+
+def test_verified_conclusion_evaluation_incomplete_never_reaches_full_coverage(findings_by_id):
+    incomplete = consolidate(
+        "ALCOA_CONTEMPORANEOUS", "FS", "expected", [_NOT_OBSERVED_RECORD], coverage_complete=False,
+    )
+    assert incomplete.conclusion == "EVALUATION_INCOMPLETE"
+    with pytest.raises(mapper.NotMappableToCurrentSchema, match="EVALUATION_INCOMPLETE"):
+        mapper.map_finding_to_remediation_change(
+            findings_by_id["FSV12-13"], document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256,
+            run_id=RUN_ID, verified_conclusion=incomplete,
+        )
+
+
+def test_verified_conclusion_rejected_chunk_never_reaches_full_coverage(findings_by_id):
+    """Mismo gate, pero via la otra condicion de EVALUATION_INCOMPLETE:
+    coverage_complete=True pero algun chunk quedo rejected_by_verifier."""
+    incomplete = consolidate(
+        "ALCOA_CONTEMPORANEOUS", "FS", "expected",
+        [_NOT_OBSERVED_RECORD, {"record_id": "r2", "status": "rejected_by_verifier", "llm_output": None}],
+        coverage_complete=True,
+    )
+    assert incomplete.conclusion == "EVALUATION_INCOMPLETE"
+    with pytest.raises(mapper.NotMappableToCurrentSchema, match="EVALUATION_INCOMPLETE"):
+        mapper.map_finding_to_remediation_change(
+            findings_by_id["FSV12-13"], document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256,
+            run_id=RUN_ID, verified_conclusion=incomplete,
+        )
+
+
+def test_verified_conclusion_documentation_gap_maps_to_full_coverage(findings_by_id):
+    gap = consolidate(
+        "ALCOA_CONTEMPORANEOUS", "FS", "expected", [_NOT_OBSERVED_RECORD], coverage_complete=True,
+    )
+    assert gap.conclusion == "DOCUMENTATION_GAP"
+    result = mapper.map_finding_to_remediation_change(
+        findings_by_id["FSV12-13"], document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256,
+        run_id=RUN_ID, verified_conclusion=gap,
+    )
+    assert result.confidence_factors["coverage_status"] == "FULL_COVERAGE"
+    assert "absence_consolidator.consolidate()" in result.rules["coverage_status"]
+
+
+def test_verified_conclusion_without_mapping_rule_is_not_mappable(findings_by_id):
+    """CROSS_REFERENCE_MISSING no tiene regla de mapeo a RemediationChange
+    todavia -- fail-closed, nunca se adivina un coverage_status."""
+    cross_ref = consolidate(
+        "ALCOA_CONTEMPORANEOUS", "FS", "cross_reference_expected", [_NOT_OBSERVED_RECORD], coverage_complete=True,
+    )
+    assert cross_ref.conclusion == "CROSS_REFERENCE_MISSING"
+    with pytest.raises(mapper.NotMappableToCurrentSchema, match="CROSS_REFERENCE_MISSING"):
+        mapper.map_finding_to_remediation_change(
+            findings_by_id["FSV12-13"], document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256,
+            run_id=RUN_ID, verified_conclusion=cross_ref,
+        )
+
+
+def test_heuristic_path_still_used_by_default_and_labeled_incomplete_prone(findings_by_id):
+    """Sin verified_conclusion (el caso real de hoy -- chunked_engine.py no
+    genera chunk-level records), el mapper sigue usando la heuristica de
+    texto de siempre, pero la regla ahora se etiqueta explicitamente como
+    EVALUATION_INCOMPLETE-prone (Fase 2, TARGET_REGULATORY_ARCHITECTURE.md §6)."""
+    result = _map(findings_by_id, "FSV12-13")
+    assert result.confidence_factors["coverage_status"] == "FULL_COVERAGE"
+    assert "EVALUATION_INCOMPLETE-prone" in result.rules["coverage_status"]
+
+
+def test_map_findings_propagates_verified_conclusions_by_finding_id(findings_by_id):
+    incomplete = consolidate(
+        "ALCOA_CONTEMPORANEOUS", "FS", "expected", [_NOT_OBSERVED_RECORD], coverage_complete=False,
+    )
+    findings = [findings_by_id[fid] for fid in ("FSV12-07", "FSV12-13", "FSV12-11")]
+    included, rejected = mapper.map_findings(
+        findings, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
+        verified_conclusions={"FSV12-13": incomplete},
+    )
+    # FSV12-13 ahora rechazado por el verified_conclusion real; FSV12-07/11
+    # sin entrada en el dict -> siguen su camino heuristico de siempre.
+    assert {m.change["change_id"] for m in included} == {"COR-5", "COR-1"}
+    assert {r.finding_id for r in rejected} == {"FSV12-13"}
