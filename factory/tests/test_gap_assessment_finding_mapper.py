@@ -98,8 +98,13 @@ def test_fsv12_13_maps_to_cor2(findings_by_id):
 def test_fsv12_13_risk_and_confidence(findings_by_id):
     result = _map(findings_by_id, "FSV12-13")
     assert result.risk_factors["evidence_status"] == "ABSENCE_CONFIRMED"
+    # ALCOA_CONTEMPORANEOUS es guia MHRA no vinculante (binding_status=
+    # non_binding_guidance) -> gxp_impact=INDIRECT, no DIRECT_GXP_IMPACT.
+    # Sigue en HIGH_RISK, pero ahora solo por evidence_status (ausencia
+    # confirmada), no por los dos factores empatados como antes.
+    assert result.risk_factors["gxp_impact"] == "INDIRECT"
     assert result.change["change_risk"] == "HIGH_RISK"
-    assert set(result.change["change_risk_basis"]) == {"evidence_status", "gxp_impact"}
+    assert result.change["change_risk_basis"] == ["evidence_status"]
     assert result.change["evaluation_confidence"] == "HIGH_CONFIDENCE"
 
 
@@ -111,6 +116,46 @@ def test_fsv12_13_citation_anchor_from_explicit_chunk(findings_by_id):
     assert citation["citation_locator"] == "chunk_17#p41-42"
 
 
+# ── FSV12-11 -> COR-1: gxp_impact=INDIRECT (ALCOA+, guia no vinculante) +  ──
+# severidad=menor -> primer MEDIUM_RISK real del catalogo, anclaje por
+# rango unico con chunk (mismo patron que antes solo se aceptaba para
+# evidence_status=ABSENCE_CONFIRMED, ahora generalizado)
+
+def test_fsv12_11_maps_to_cor1_medium_risk(findings_by_id):
+    result = _map(findings_by_id, "FSV12-11")
+    change = result.change
+    assert change["change_id"] == "COR-1"
+    assert change["requirement_id"] == "ALCOA_ATTRIBUTABLE"
+    assert result.risk_factors["gxp_impact"] == "INDIRECT"
+    assert result.risk_factors["requirement_criticality"] == "MINOR"
+    assert change["change_risk"] == "MEDIUM_RISK"
+    assert change["evaluation_confidence"] == "HIGH_CONFIDENCE"
+    citation = change["citations"][0]
+    assert citation["citation_locator"] == "chunk_3#p7-9"
+    assert citation["evidence_type"] == "LITERAL_QUOTE"
+
+
+def test_fsv12_11_coverage_status_from_single_range_not_human_resolution(findings_by_id):
+    """A diferencia de FSV12-07 (rango multiple, necesita
+    resolucion_humana_incorporada), FSV12-11 tiene un unico rango --
+    coverage_status debe salir FULL_COVERAGE sin depender de ninguna
+    resolucion humana registrada (este finding no tiene ese campo)."""
+    finding = findings_by_id["FSV12-11"]
+    assert "resolucion_humana_incorporada" not in finding
+    result = _map(findings_by_id, "FSV12-11")
+    assert result.confidence_factors["coverage_status"] == "FULL_COVERAGE"
+
+
+# ── FSV12-12: rechazado -- verbo de 'recomendacion' ('Detallar') sin ───────
+# mapeo conocido a change_type (independiente del problema de anclaje que
+# tambien tiene: 'pag 22-23 (chunk 9) (confirmado ... pag 18-19)' no es un
+# rango unico limpio)
+
+def test_fsv12_12_is_not_mappable(findings_by_id):
+    with pytest.raises(mapper.NotMappableToCurrentSchema, match="change_type"):
+        _map(findings_by_id, "FSV12-12")
+
+
 # ── FSV12-19: rechazado -- 7 rangos de pagina sin correlacion univoca ──────
 
 def test_fsv12_19_is_not_mappable(findings_by_id):
@@ -120,7 +165,7 @@ def test_fsv12_19_is_not_mappable(findings_by_id):
 
 # ── Los 2 changes mapeados deben ser un RemediationChange valido de verdad ──
 
-@pytest.mark.parametrize("finding_id", ["FSV12-07", "FSV12-13"])
+@pytest.mark.parametrize("finding_id", ["FSV12-07", "FSV12-13", "FSV12-11"])
 def test_mapped_change_passes_real_schema_validation(findings_by_id, finding_id):
     """No basta con que el modulo produzca un dict con las claves
     correctas -- debe pasar el validador real (fail-closed) que usa
@@ -132,27 +177,38 @@ def test_mapped_change_passes_real_schema_validation(findings_by_id, finding_id)
 # ── map_findings(): separa incluidos/rechazados sin que uno bloquee al otro ─
 
 def test_map_findings_splits_included_and_rejected(findings_by_id):
-    findings = [findings_by_id[fid] for fid in ("FSV12-07", "FSV12-13", "FSV12-19")]
+    findings = [findings_by_id[fid] for fid in ("FSV12-07", "FSV12-13", "FSV12-11", "FSV12-12", "FSV12-19")]
     included, rejected = mapper.map_findings(
         findings, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
     )
-    assert {m.change["change_id"] for m in included} == {"COR-5", "COR-2"}
-    assert len(rejected) == 1
-    assert rejected[0].finding_id == "FSV12-19"
-    assert "citation_locator/page_start/page_end" in rejected[0].reason
+    assert {m.change["change_id"] for m in included} == {"COR-5", "COR-2", "COR-1"}
+    assert {r.finding_id for r in rejected} == {"FSV12-12", "FSV12-19"}
 
 
-# ── Limitacion conocida, fijada como test para que un cambio futuro de ─────
-# reglas se note explicitamente (ver docstring del modulo)
+# ── gxp_impact diferenciado por binding_status del catalogo (segunda ───────
+# iteracion, ver docstring del modulo): fijado como codigo para que
+# cualquier regresion futura de esta regla se note de inmediato.
 
-def test_known_limitation_gxp_impact_constant_forces_high_risk(findings_by_id):
-    """Documenta la limitacion declarada: gxp_impact=DIRECT_GXP_IMPACT es
-    constante para todo el catalogo, así que ningun finding mapeado con
-    las reglas actuales puede dar MEDIUM_RISK o LOW_RISK. Si esto deja de
-    ser cierto (p.ej. se diferencia gxp_impact por finding), este test
-    DEBE actualizarse -- no es un bug a silenciar, es la señal de que la
-    limitacion fue corregida."""
-    for finding_id in ("FSV12-07", "FSV12-13"):
-        result = _map(findings_by_id, finding_id)
-        assert result.risk_factors["gxp_impact"] == "DIRECT_GXP_IMPACT"
-        assert result.change["change_risk"] == "HIGH_RISK"
+def test_gxp_impact_differentiates_binding_vs_guidance(findings_by_id):
+    """21 CFR Part 11 / EU Annex 11 (binding_regulation/binding_requirement)
+    -> DIRECT_GXP_IMPACT. ALCOA+ / MHRA GxP DI guidance (non_binding_guidance)
+    -> INDIRECT. Antes de esta iteracion, gxp_impact era constante
+    DIRECT_GXP_IMPACT para las 19 entradas del catalogo -- este test fija
+    que eso ya no es cierto."""
+    annex11 = _map(findings_by_id, "FSV12-07")  # ANNEX11_7.1
+    assert annex11.risk_factors["gxp_impact"] == "DIRECT_GXP_IMPACT"
+
+    alcoa_absence = _map(findings_by_id, "FSV12-13")  # ALCOA_CONTEMPORANEOUS
+    assert alcoa_absence.risk_factors["gxp_impact"] == "INDIRECT"
+
+    alcoa_partial = _map(findings_by_id, "FSV12-11")  # ALCOA_ATTRIBUTABLE
+    assert alcoa_partial.risk_factors["gxp_impact"] == "INDIRECT"
+
+
+def test_gxp_impact_unknown_binding_status_is_not_mappable():
+    """Fail-closed: si el catalogo alguna vez declara un binding_status
+    fuera de los 3 valores conocidos, el modulo rechaza en vez de
+    adivinar un gxp_impact por defecto."""
+    fake_entry = {"binding_status": "algo_nuevo_no_contemplado"}
+    with pytest.raises(mapper.NotMappableToCurrentSchema, match="gxp_impact"):
+        mapper._derive_gxp_impact(fake_entry)

@@ -8,29 +8,50 @@ Origen: reglas extraidas verbatim (incluidas sus limitaciones conocidas)
 de la primera prueba manual de BATCH_AND_EXCEPTION con datos reales,
 corrida contra
 factory/docs/gmpai_reanalysis/fs_v1_2/findings_completos_FS_v1_2_v4.json
-(2 de 19 findings mapeados: FSV12-07->COR-5, FSV12-13->COR-2; FSV12-19
-excluido por ambiguedad de anclaje de pagina). Versionado aqui para que
-las mismas reglas sean testeables/repetibles en vez de re-derivarse a
-mano en cada sesion.
+(FSV12-07->COR-5, FSV12-13->COR-2 mapeados en la primera iteracion;
+FSV12-11->COR-1 sumado en la segunda al diferenciar gxp_impact --
+primer MEDIUM_RISK real del catalogo; FSV12-12/FSV12-19 excluidos, ver
+tests). Versionado aqui para que las mismas reglas sean
+testeables/repetibles en vez de re-derivarse a mano en cada sesion.
 
 Reutiliza compute_change_risk()/compute_evaluation_confidence() de
 remediation_package_service.py -- la tabla "peor factor gana" vive en un
 unico lugar, este modulo nunca la reimplementa.
 
+CORREGIDO (2026-07-21, segunda iteracion): gxp_impact ya NO es constante.
+Se deriva de catalog_entry["binding_status"] -- campo real del catalogo
+canonico (requirements.yaml), no inventado para esta regla:
+  - "binding_regulation"   (21 CFR Part 11, US)         -> DIRECT_GXP_IMPACT
+  - "binding_requirement"  (EU Annex 11)                -> DIRECT_GXP_IMPACT
+  - "non_binding_guidance" (ALCOA+ / MHRA GxP DI 2018)  -> INDIRECT
+Motivo: Part 11 y Annex 11 son regulacion/requisito vinculante; ALCOA+ es
+guia oficial (official_guidance, non_binding_guidance) que interpreta
+como demostrar cumplimiento de esos vinculantes, no una obligacion legal
+en si misma -- un gap contra un checkpoint ALCOA+ es un riesgo indirecto
+de integridad de datos, no una violacion directa de una norma vinculante.
+Efecto verificado sobre los 19 findings reales de FS_v1.2 v4.1:
+FSV12-11 (ALCOA_ATTRIBUTABLE, severidad=menor) ahora mapea a MEDIUM_RISK
+real -- el camino MEDIUM_RISK del servicio ya se ejercita con datos
+reales, ver test_known_limitation... reemplazado por
+test_gxp_impact_differentiates_binding_vs_guidance.
+
+Esto requirio ademas ampliar dos reglas companeras (sin las cuales el
+fix de gxp_impact no habria destapado ningun MEDIUM_RISK real):
+- Anclaje de pagina: antes solo se aceptaba "rango unico con chunk
+  explicito" para evidence_status=ABSENCE_CONFIRMED. Ahora se acepta
+  para CUALQUIER evidence_status -- es la misma condicion objetiva
+  (paginas describe un unico rango con chunk, sin ambiguedad) y no hay
+  motivo real para restringirla a un tipo de evidencia.
+- coverage_status para evidence_status=PARTIAL_EVIDENCE: si el anclaje
+  vino de un rango UNICO (no una barrida multi-rango), la cobertura de
+  ESA cita es trivialmente completa -- no hay nada mas que evaluar mas
+  alla del propio anclaje, sin necesidad de invocar una resolucion
+  humana. La regla de resolucion_humana_incorporada.tipo_resolucion ==
+  "diferencia_de_alcance" se conserva SOLO para el caso multi-rango
+  (p.ej. FSV12-07, 10 rangos) donde si hace falta ese respaldo.
+
 LIMITACIONES CONOCIDAS (no corregidas aqui, deuda declarada para la
 siguiente iteracion):
-- gxp_impact queda fijo en DIRECT_GXP_IMPACT para cualquier entrada del
-  catalogo canonico (21 CFR Part 11 / EU Annex 11 / ALCOA+ son, por
-  construccion, regulacion de integridad GxP). Como change_risk es
-  "el peor factor gana", este factor solo puede empujar hacia HIGH_RISK
-  y nunca hacia MEDIUM/LOW -- con el conjunto de reglas actual, todo
-  finding mapeado desde este catalogo terminara siendo al menos
-  HIGH_RISK-elegible por este unico factor. Sobre los 19 findings reales
-  de FS_v1.2 v4.1, los 2 unicos mapeables dieron HIGH_RISK; el camino
-  MEDIUM_RISK/LOW_RISK del servicio nunca se ejercito con datos reales.
-  Corregir requiere diferenciar impacto GxP directo/indirecto/nulo
-  dentro del propio catalogo o del finding, no solo "pertenece al
-  catalogo".
 - chunk_sha256 es un proxy determinista (sha256(documento|chunk_id o
   rango de pagina)), NO el hash real del motor de chunking W7 -- ese
   adaptador (W7 -> RemediationPackage) no existe todavia.
@@ -40,13 +61,13 @@ siguiente iteracion):
   diferencia de citation_text_sha256, que si se recalcula y rechaza en
   caso de discrepancia. Un valor con forma de sha256 pero contenido
   arbitrario pasaria igual la validacion.
-- La regla de coverage_status=FULL_COVERAGE para evidence_status=
-  PARTIAL_EVIDENCE se apoya en que el finding tenga
-  resolucion_humana_incorporada.tipo_resolucion == "diferencia_de_alcance"
-  -- esa resolucion humana respondia a "es una contradiccion real entre
-  secciones", no literalmente a "la cobertura de evaluacion fue
-  completa". Es la regla mas interpretativa de este modulo; el resto son
-  mapeos 1:1 sobre campos explicitos del finding.
+- La regla de coverage_status=FULL_COVERAGE multi-rango sigue apoyandose
+  en que el finding tenga resolucion_humana_incorporada.tipo_resolucion
+  == "diferencia_de_alcance" -- esa resolucion humana respondia a "es
+  una contradiccion real entre secciones", no literalmente a "la
+  cobertura de evaluacion fue completa". Sigue siendo la regla mas
+  interpretativa de este modulo (aunque ahora acotada solo al caso
+  multi-rango); el resto son mapeos 1:1 sobre campos explicitos.
 """
 from __future__ import annotations
 
@@ -108,28 +129,41 @@ class PageAnchor:
     rule: str
 
 
-def _derive_page_anchor(*, paginas: str, evidencia: str, evidence_status: str) -> PageAnchor:
+def _match_single_page_range_with_chunk(paginas: str):
+    """Devuelve el match si 'paginas' describe EXACTAMENTE un unico rango
+    con chunk explicito (ej. 'pag 41-42 (chunk 17)'), sin texto adicional
+    ni comas -- None en cualquier otro caso (multi-rango, texto de
+    retry/confirmacion pegado, etc.). Condicion objetiva sobre la forma
+    del campo, independiente del evidence_status del finding."""
+    stripped = paginas.strip()
+    if "," in stripped:
+        return None
+    return _SINGLE_PAGE_RANGE_WITH_CHUNK_RE.match(stripped)
+
+
+def _derive_page_anchor(*, paginas: str, evidencia: str) -> PageAnchor:
     """Solo acepta un anclaje cuando es univoco: un unico rango con chunk
-    explicito en 'paginas' (findings de ausencia), o un auto-marcador
-    'Page N of M' dentro del propio texto citado (findings de cita
-    literal). Cualquier otro caso -- varios rangos sin correlacion
-    pagina<->fragmento -- se rechaza en vez de adivinar cual fragmento
-    vino de que pagina."""
-    if evidence_status == "ABSENCE_CONFIRMED":
-        m = _SINGLE_PAGE_RANGE_WITH_CHUNK_RE.match(paginas.strip())
-        if m and "," not in paginas:
-            return PageAnchor(
-                page_start=int(m.group(1)), page_end=int(m.group(2)), chunk_id=m.group(3),
-                rule=f"'paginas'='{paginas}' es un unico rango con chunk explicito -> anclaje directo",
-            )
-    else:
-        m = _PAGE_SELF_REFERENCE_RE.search(evidencia)
-        if m:
-            page = int(m.group(1))
-            return PageAnchor(
-                page_start=page, page_end=page, chunk_id=None,
-                rule=f"'evidencia' contiene 'Page {page} of {m.group(2)}' auto-referenciado -> anclaje directo desde la propia cita",
-            )
+    explicito en 'paginas' (valido para cualquier evidence_status -- es
+    una condicion objetiva sobre la forma del campo, no depende de si la
+    evidencia es una cita literal o una ausencia confirmada), o un
+    auto-marcador 'Page N of M' dentro del propio texto citado.
+    Cualquier otro caso -- varios rangos sin correlacion
+    pagina<->fragmento, o un rango unico con texto adicional ambiguo
+    (ej. una nota de retry/confirmacion pegada) -- se rechaza en vez de
+    adivinar cual fragmento vino de que pagina."""
+    m = _match_single_page_range_with_chunk(paginas)
+    if m:
+        return PageAnchor(
+            page_start=int(m.group(1)), page_end=int(m.group(2)), chunk_id=m.group(3),
+            rule=f"'paginas'='{paginas}' es un unico rango con chunk explicito -> anclaje directo",
+        )
+    m = _PAGE_SELF_REFERENCE_RE.search(evidencia)
+    if m:
+        page = int(m.group(1))
+        return PageAnchor(
+            page_start=page, page_end=page, chunk_id=None,
+            rule=f"'evidencia' contiene 'Page {page} of {m.group(2)}' auto-referenciado -> anclaje directo desde la propia cita",
+        )
     raise NotMappableToCurrentSchema(
         "citation_locator/page_start/page_end: ningun rango de pagina/chunk unico y no ambiguo "
         f"derivable de 'paginas'='{paginas}' ni de un auto-marcador en 'evidencia'")
@@ -159,6 +193,23 @@ def _derive_evidence_status(clasificacion_brecha: str) -> tuple[str, str]:
             f"clasificacion_brecha='{clasificacion_brecha}' -> mapeo directo 1:1")
 
 
+_GXP_IMPACT_BY_BINDING_STATUS = {
+    "binding_regulation": "DIRECT_GXP_IMPACT",
+    "binding_requirement": "DIRECT_GXP_IMPACT",
+    "non_binding_guidance": "INDIRECT",
+}
+
+
+def _derive_gxp_impact(catalog_entry: dict) -> tuple[str, str]:
+    binding_status = catalog_entry.get("binding_status")
+    if binding_status not in _GXP_IMPACT_BY_BINDING_STATUS:
+        raise NotMappableToCurrentSchema(
+            f"gxp_impact: binding_status '{binding_status}' del catalogo no mapea a ningun gxp_impact conocido")
+    return (_GXP_IMPACT_BY_BINDING_STATUS[binding_status],
+            f"catalog_entry.binding_status='{binding_status}' -> mapeo directo (regulacion/requisito vinculante "
+            "= DIRECT_GXP_IMPACT, guia no vinculante = INDIRECT)")
+
+
 def _derive_relevance_status(aplicabilidad: str) -> tuple[str, str]:
     if not aplicabilidad.strip().lower().startswith("aplicable"):
         raise NotMappableToCurrentSchema(
@@ -174,7 +225,7 @@ def _derive_schema_validation_status(finding: dict) -> tuple[str, str]:
     return "PASSED", "todos los campos narrativos obligatorios poblados, sin error de ejecucion declarado -> PASSED"
 
 
-def _derive_coverage_status(finding: dict, evidence_status: str) -> tuple[str, str]:
+def _derive_coverage_status(finding: dict, evidence_status: str, *, is_single_range_anchor: bool) -> tuple[str, str]:
     if evidence_status == "ABSENCE_CONFIRMED":
         if "todas las secciones evaluadas" in finding["evidencia"].lower():
             return "FULL_COVERAGE", "'evidencia' declara ausencia en TODAS las secciones evaluadas -> FULL_COVERAGE"
@@ -182,14 +233,19 @@ def _derive_coverage_status(finding: dict, evidence_status: str) -> tuple[str, s
             "coverage_status: evidence_status=ABSENCE_CONFIRMED pero 'evidencia' no declara cobertura "
             "sobre todas las secciones evaluadas")
     if evidence_status == "PARTIAL_EVIDENCE":
+        if is_single_range_anchor:
+            return ("FULL_COVERAGE",
+                    "'paginas' es un unico rango, coincide exactamente con el anclaje citado -> cobertura "
+                    "completa trivialmente (nada mas que evaluar para esta cita)")
         resolucion = finding.get("resolucion_humana_incorporada") or {}
         if resolucion.get("tipo_resolucion") == "diferencia_de_alcance":
             return ("FULL_COVERAGE",
-                    "resolucion_humana_incorporada.tipo_resolucion='diferencia_de_alcance' -> FULL_COVERAGE "
-                    "(regla mas interpretativa del modulo, ver limitaciones en el docstring)")
+                    "rango multiple + resolucion_humana_incorporada.tipo_resolucion='diferencia_de_alcance' "
+                    "-> FULL_COVERAGE (regla mas interpretativa del modulo, ver limitaciones en el docstring)")
         raise NotMappableToCurrentSchema(
-            "coverage_status: evidence_status=PARTIAL_EVIDENCE sin resolucion_humana_incorporada de tipo "
-            "'diferencia_de_alcance' -- no hay regla objetiva para este caso todavia")
+            "coverage_status: evidence_status=PARTIAL_EVIDENCE con rango multiple y sin "
+            "resolucion_humana_incorporada de tipo 'diferencia_de_alcance' -- no hay regla objetiva para "
+            "este caso todavia")
     raise NotMappableToCurrentSchema(
         f"coverage_status: sin regla para evidence_status='{evidence_status}'")
 
@@ -225,10 +281,8 @@ def map_finding_to_remediation_change(
     requirement_criticality, rule = _derive_requirement_criticality(finding.get("severidad", ""))
     rules["requirement_criticality"] = rule
 
-    gxp_impact = "DIRECT_GXP_IMPACT"
-    rules["gxp_impact"] = ("entry_id pertenece al catalogo canonico de 21 CFR Part 11 / EU Annex 11 / "
-                            "ALCOA+ (regulacion de integridad de registros GxP) -> DIRECT_GXP_IMPACT "
-                            "(constante -- ver limitacion en el docstring del modulo)")
+    gxp_impact, rule = _derive_gxp_impact(catalog_entry)
+    rules["gxp_impact"] = rule
 
     evidence_status, rule = _derive_evidence_status(finding["clasificacion_brecha"])
     rules["evidence_status"] = rule
@@ -243,8 +297,9 @@ def map_finding_to_remediation_change(
     }
     change_risk, risk_basis = compute_change_risk(risk_factors)
 
-    anchor = _derive_page_anchor(paginas=finding["paginas"], evidencia=finding["evidencia"], evidence_status=evidence_status)
+    anchor = _derive_page_anchor(paginas=finding["paginas"], evidencia=finding["evidencia"])
     rules["page_anchor"] = anchor.rule
+    is_single_range_anchor = _match_single_page_range_with_chunk(finding["paginas"]) is not None
 
     relevance_status, rule = _derive_relevance_status(finding["aplicabilidad"])
     rules["relevance_status"] = rule
@@ -252,7 +307,7 @@ def map_finding_to_remediation_change(
     schema_validation_status, rule = _derive_schema_validation_status(finding)
     rules["schema_validation_status"] = rule
 
-    coverage_status, rule = _derive_coverage_status(finding, evidence_status)
+    coverage_status, rule = _derive_coverage_status(finding, evidence_status, is_single_range_anchor=is_single_range_anchor)
     rules["coverage_status"] = rule
 
     citation_anchor_status = "VERIFIED"
