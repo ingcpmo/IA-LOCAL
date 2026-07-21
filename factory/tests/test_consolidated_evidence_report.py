@@ -30,16 +30,20 @@ def test_phase_status_has_all_8_phases_declared():
     }
 
 
-def test_only_fases_2_y_4_estan_completamente_cerradas():
+def test_only_fases_0_2_y_4_estan_completamente_cerradas():
     """Hallazgo real de esta consolidacion: de las 8 fases con codigo,
-    solo 2 y 4 no dejaron ningun pendiente declarado."""
+    solo 0, 2 y 4 no dejaron ningun pendiente declarado."""
     fully_closed = [name for name, info in report.PHASE_STATUS.items() if info["status"] == "CERRADA"]
-    assert set(fully_closed) == {"fase_2_unificar_cobertura", "fase_4_extraccion_estructurada"}
+    assert set(fully_closed) == {
+        "fase_0_higiene", "fase_2_unificar_cobertura", "fase_4_extraccion_estructurada",
+    }
 
 
-def test_fase_0_flagged_as_uncommitted_despite_closed_status():
-    assert report.PHASE_STATUS["fase_0_higiene"]["status"] == "CERRADA_SIN_COMMITEAR"
-    assert report.PHASE_STATUS["fase_0_higiene"]["commit"] is None
+def test_fase_0_flagged_as_committed():
+    """Fase 0 se commiteo en 49f0bad -- ya no queda como hallazgo de
+    'cerrada sin commitear' (evolucion real, no un estado fijo)."""
+    assert report.PHASE_STATUS["fase_0_higiene"]["status"] == "CERRADA"
+    assert report.PHASE_STATUS["fase_0_higiene"]["commit"] == "49f0bad"
 
 
 REAL_PDF = Path(
@@ -61,7 +65,7 @@ def test_fase8_consolidated_report_runs_against_real_evidence():
 
     assert result["release_decision"] == report.RELEASE_DECISION
     assert result["any_gate_failed"] is False
-    assert len(result["phases_not_fully_closed"]) == 6
+    assert len(result["phases_not_fully_closed"]) == 5
     assert set(result["golden_dataset_results"].keys()) == {
         "PKG-FS-V1-2-MEDIUM-RISK-REAL", "PKG-FS-V1-2-REAL-CONTROLLED",
     }
@@ -70,9 +74,10 @@ def test_fase8_consolidated_report_runs_against_real_evidence():
         assert gate_result["gate_12_of_12"] is False
 
     # evidencia real de git status -- Fase 0 y los 8 documentos de diseño
-    # siguen sin commitear en este repo, hallazgo real no asumido
-    assert any("regulatory_catalog.py" in p for p in result["uncommitted_evidence"])
-    assert any("document_remediation_evolution" in p for p in result["uncommitted_evidence"])
+    # ya estan commiteados en este repo (49f0bad / f6a3956), hallazgo real
+    # no asumido
+    assert not any("regulatory_catalog.py" in p for p in result["uncommitted_evidence"])
+    assert not any("document_remediation_evolution" in p for p in result["uncommitted_evidence"])
 
 
 def test_release_decision_never_flips_even_when_all_gates_pass(monkeypatch):

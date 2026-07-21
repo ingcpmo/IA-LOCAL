@@ -39,16 +39,9 @@ RELEASE_DECISION = {
 
 PHASE_STATUS = {
     "fase_0_higiene": {
-        "status": "CERRADA_SIN_COMMITEAR",
-        "commit": None,
-        "nota": (
-            "Cambios reales aplicados (regulatory_catalog.py, "
-            "sources/registry.json: URLs oficiales corregidas y "
-            "verificadas por hash) pero NUNCA commiteados -- siguen como "
-            "'M' en git status desde que se hicieron. Hallazgo real de "
-            "esta consolidación, no asumido."
-        ),
-        "pendientes": ["decidir si se commitea junto con los 8 documentos de diseño"],
+        "status": "CERRADA",
+        "commit": "49f0bad",
+        "pendientes": [],
     },
     "fase_1_vigencia_fuentes": {
         "status": "CERRADA_PARCIAL", "commit": "1dd96ba",
