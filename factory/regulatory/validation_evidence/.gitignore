@@ -2,8 +2,17 @@
 # validación entra a Git. Ver README.md de este directorio para la
 # clasificación de confidencialidad y el motivo.
 *.json
+*.jsonl
 *.tmp
 *.partial
+*.log
+
+# Informes/auditorías de esta corrida citan texto literal del documento
+# fuente (evidence_quote/rationale) -- mismo régimen de confidencialidad
+# que el resto del directorio. Todo .md queda ignorado salvo README.md
+# (gobernanza de este directorio, sin texto de documentos regulados).
+*.md
+!README.md
 
 # Excepción explícita: los manifiestos sanitizados (sin raw_response, sin
 # source_text, sin _by_req_candidates, sin texto del documento -- ver

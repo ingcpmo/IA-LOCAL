@@ -43,6 +43,21 @@ class EvidenceRunConfig:
     document_type_confidence: float | None = None
     run_by: str = ""
     extractor: "callable" = None  # type: ignore[assignment]
+    # Checkpoint/resume (Fase 3, gate real 551-llamadas): si se provee,
+    # cada llamada real a Ollama se persiste ahi de inmediato (append-only,
+    # JSONL) y se reusa en invocaciones futuras -- nunca se repite una
+    # llamada ya completada para el mismo document_sha256. Sin esto, el
+    # comportamiento es identico al de siempre (todo en memoria, un solo
+    # proceso, sin reanudacion).
+    checkpoint_path: Path | None = None
+    # max_calls acota cuantas llamadas NUEVAS a Ollama hace esta invocacion
+    # (no cuenta las reusadas del checkpoint) -- permite correr "por
+    # lotes" un universo grande (19 requisitos x N chunks) sin mantener un
+    # solo proceso corriendo horas: cada lote hace como mucho max_calls
+    # llamadas nuevas y termina limpio, dejando el resto para la proxima
+    # invocacion (mismo checkpoint_path).
+    max_calls: int | None = None
+    progress_callback: "callable | None" = None  # type: ignore[assignment]
 
 
 @dataclass
@@ -64,6 +79,45 @@ class EvidenceRunResult:
     # resultado de la escritura cruda, ver comentario mas abajo).
     manifest_sanitized_status: str = "NOT_ATTEMPTED"
     manifest_sanitized_error: str | None = None
+    # Checkpoint/resume: cuantas llamadas NUEVAS hizo esta invocacion
+    # (distinto de records_total, que incluye las reusadas del checkpoint);
+    # batch_complete=False significa que quedaron requisitos sin resolver
+    # por agotar max_calls -- en ese caso NUNCA se llama a consolidate()
+    # para esos requisitos (evitaria un DOCUMENTATION_GAP/FULL_COVERAGE
+    # ficticio con cobertura parcial, mismo principio que coverage_complete
+    # en absence_consolidator) ni se persiste validation_evidence (Fase
+    # 5.4) -- eso solo ocurre en la invocacion que de verdad completa todo.
+    calls_made_this_invocation: int = 0
+    batch_complete: bool = True
+    pending_requirement_ids: list = field(default_factory=list)
+
+
+def _checkpoint_key(document_sha256: str, requirement_id: str, chunk_index: int) -> str:
+    return f"{document_sha256}::{requirement_id}::{chunk_index}"
+
+
+def _load_checkpoint(checkpoint_path: Path, document_sha256: str) -> dict[str, dict]:
+    """Solo reusa entradas del MISMO document_sha256 -- un checkpoint de un
+    documento distinto (o una version distinta del mismo archivo) nunca se
+    confunde con evidencia real de este run."""
+    entries: dict[str, dict] = {}
+    if not checkpoint_path.exists():
+        return entries
+    for line in checkpoint_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        entry = json.loads(line)
+        if entry.get("document_sha256") != document_sha256:
+            continue
+        key = _checkpoint_key(document_sha256, entry["requirement_id"], entry["chunk_index"])
+        entries[key] = entry
+    return entries
+
+
+def _append_checkpoint(checkpoint_path: Path, entry: dict) -> None:
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    with checkpoint_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
 def _default_prompt(requirement_id: str, chunk_text: str) -> str:
@@ -115,6 +169,14 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
     result = EvidenceRunResult(run_id=run_id)
     all_records = []
 
+    checkpoint_entries: dict[str, dict] = {}
+    if config.checkpoint_path is not None:
+        checkpoint_entries = _load_checkpoint(config.checkpoint_path, document_sha256)
+
+    total_calls_possible = len(config.requirement_ids) * len(chunks_used)
+    calls_made = 0
+    budget_exhausted = False
+
     for req_id in config.requirement_ids:
         terminal = pre_inference_filter(req_id, config.document_type)
         if terminal is not None:
@@ -125,45 +187,86 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
         app = applicability(req_id, config.document_type)
         terms = load_requirement_terms(req_id)
         records = []
+        requirement_incomplete = False
+
         for chunk in chunks_used:
-            prompt = _default_prompt(req_id, chunk["text"])
-            gen = ollama_client.generate_controlled(prompt, chunk, run_context="validation")
-            record_id = f"rec-{uuid.uuid4().hex[:12]}"
-            if not gen["ok"] or gen["llm_output"] is None:
-                record = {
-                    "record_id": record_id, "llm_output": None,
-                    "execution_manifest": gen["execution_manifest"],
-                    "status": "rejected_by_verifier",
-                    # Fase 5.4.4: gen["rejection_reason"] ya viene clasificado
-                    # (json_parse_failed/schema_validation_failed/
-                    # ollama_transport_failed) por generate_controlled() --
-                    # el fallback anterior a "schema_validation_failed"
-                    # enmascaraba las otras 2 causas cuando ocurrian.
-                    "rejection_reason": gen.get("rejection_reason"),
-                    "review_flags": [],
-                    # Fase 5.4 (fix ETAPA 1): generate_controlled() ya calculaba
-                    # raw_response/errors pero se descartaban aqui -- sin esto,
-                    # un rechazo por schema queda sin causa reconstruible despues
-                    # (incidente detectado al intentar analizar los 21 rechazos
-                    # reales de Fase 5.4: el dato crudo nunca se habia persistido).
-                    "raw_response": gen.get("raw_response"),
-                    "errors": gen.get("errors") or [],
-                }
+            ckpt_key = (
+                _checkpoint_key(document_sha256, req_id, chunk["chunk_index"])
+                if config.checkpoint_path is not None else None
+            )
+            cached = checkpoint_entries.get(ckpt_key) if ckpt_key else None
+
+            if cached is not None:
+                record = cached["record"]
+            elif budget_exhausted or (config.max_calls is not None and calls_made >= config.max_calls):
+                # Presupuesto de este lote agotado -- este requisito (y
+                # cualquier otro que quede) NO se consolida en esta
+                # invocacion, para no fingir cobertura completa.
+                requirement_incomplete = True
+                budget_exhausted = True
+                continue
             else:
-                verification = verify_llm_output(gen["llm_output"], chunk, set(config.requirement_ids), terms)
-                record = {
-                    "record_id": record_id, "llm_output": gen["llm_output"],
-                    "execution_manifest": gen["execution_manifest"],
-                    "status": verification.status,
-                    "rejection_reason": verification.rejection_reason,
-                    "review_flags": verification.review_flags,
-                    "raw_response": gen.get("raw_response"),
-                    "errors": gen.get("errors") or [],
-                }
+                prompt = _default_prompt(req_id, chunk["text"])
+                gen = ollama_client.generate_controlled(prompt, chunk, run_context="validation")
+                record_id = f"rec-{uuid.uuid4().hex[:12]}"
+                if not gen["ok"] or gen["llm_output"] is None:
+                    record = {
+                        "record_id": record_id, "llm_output": None,
+                        "execution_manifest": gen["execution_manifest"],
+                        "status": "rejected_by_verifier",
+                        # Fase 5.4.4: gen["rejection_reason"] ya viene clasificado
+                        # (json_parse_failed/schema_validation_failed/
+                        # ollama_transport_failed) por generate_controlled() --
+                        # el fallback anterior a "schema_validation_failed"
+                        # enmascaraba las otras 2 causas cuando ocurrian.
+                        "rejection_reason": gen.get("rejection_reason"),
+                        "review_flags": [],
+                        # Fase 5.4 (fix ETAPA 1): generate_controlled() ya calculaba
+                        # raw_response/errors pero se descartaban aqui -- sin esto,
+                        # un rechazo por schema queda sin causa reconstruible despues
+                        # (incidente detectado al intentar analizar los 21 rechazos
+                        # reales de Fase 5.4: el dato crudo nunca se habia persistido).
+                        "raw_response": gen.get("raw_response"),
+                        "errors": gen.get("errors") or [],
+                    }
+                else:
+                    verification = verify_llm_output(gen["llm_output"], chunk, set(config.requirement_ids), terms)
+                    record = {
+                        "record_id": record_id, "llm_output": gen["llm_output"],
+                        "execution_manifest": gen["execution_manifest"],
+                        "status": verification.status,
+                        "rejection_reason": verification.rejection_reason,
+                        "review_flags": verification.review_flags,
+                        "raw_response": gen.get("raw_response"),
+                        "errors": gen.get("errors") or [],
+                    }
+                if gen["execution_manifest"].get("manifest_incomplete"):
+                    result.manifest_incomplete_count += 1
+                calls_made += 1
+
+                if config.checkpoint_path is not None:
+                    entry = {
+                        "document_sha256": document_sha256, "requirement_id": req_id,
+                        "chunk_index": chunk["chunk_index"], "record": record,
+                        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                    }
+                    _append_checkpoint(config.checkpoint_path, entry)
+
+                if config.progress_callback is not None:
+                    config.progress_callback({
+                        "requirement_id": req_id, "chunk_index": chunk["chunk_index"],
+                        "calls_made_this_invocation": calls_made,
+                        "total_calls_possible": total_calls_possible,
+                        "status": record["status"],
+                    })
+
             records.append(record)
             all_records.append(record)
-            if gen["execution_manifest"].get("manifest_incomplete"):
-                result.manifest_incomplete_count += 1
+
+        if requirement_incomplete:
+            result.pending_requirement_ids.append(req_id)
+            result.per_requirement_conclusions[req_id] = {"status": "PENDING_BATCH_INCOMPLETE"}
+            continue
 
         conclusion = consolidate(req_id, config.document_type, app["value"], records,
                                   coverage_complete=coverage_complete)
@@ -173,6 +276,9 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
             "chunks_observed": conclusion.chunks_observed,
             "review_flags": conclusion.review_flags,
         }
+
+    result.calls_made_this_invocation = calls_made
+    result.batch_complete = not result.pending_requirement_ids
 
     status_counts: dict[str, int] = {}
     for r in all_records:
@@ -198,6 +304,21 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
         "per_requirement_conclusions": result.per_requirement_conclusions,
     }
 
+    if not result.batch_complete:
+        # Fase 3 (551-llamadas por lotes): este lote agoto max_calls antes
+        # de resolver todos los requisitos -- NUNCA se persiste
+        # validation_evidence/manifiesto de un universo incompleto (se
+        # confundiria con un run real terminado). El checkpoint en disco
+        # ya tiene cada llamada real hecha hasta ahora; la proxima
+        # invocacion con el mismo checkpoint_path continua desde ahi.
+        result.validation_evidence_status = "BATCH_INCOMPLETE_NOT_PERSISTED"
+        result.golden_dataset_eligible = False
+        result.raw["validation_evidence_status"] = result.validation_evidence_status
+        result.raw["golden_dataset_eligible"] = result.golden_dataset_eligible
+        result.raw["pending_requirement_ids"] = result.pending_requirement_ids
+        result.raw["calls_made_this_invocation"] = result.calls_made_this_invocation
+        return result
+
     # Fase 5.4, Bloque 5.4.1 -- persistir all_records COMPLETOS (llm_output,
     # execution_manifest, verification), no solo los agregados de arriba.
     # Mismo contrato de 3 estados que evaluate_chunked() (Fase 5.3): un
@@ -222,6 +343,7 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
 
     result.raw["validation_evidence_status"] = result.validation_evidence_status
     result.raw["golden_dataset_eligible"] = result.golden_dataset_eligible
+    result.raw["calls_made_this_invocation"] = result.calls_made_this_invocation
 
     # Fase 5.4.4 (gobernanza): manifiesto sanitizado versionable, generado
     # SIEMPRE que haya habido intento de persistencia (aunque haya
@@ -267,6 +389,15 @@ def _cli():
     parser.add_argument("--run-by", required=True,
                          help="Identidad real de quien autoriza esta ejecucion (obligatorio, sin default)")
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("--checkpoint", type=Path, default=None,
+                         help="Ruta JSONL append-only. Si se provee, las llamadas ya hechas para el "
+                              "mismo document_sha256 se reusan (resume) y las nuevas se persisten de "
+                              "inmediato, una por una -- nunca se pierde progreso si el proceso muere.")
+    parser.add_argument("--max-calls", type=int, default=None,
+                         help="Tope de llamadas NUEVAS a Ollama en esta invocacion (no cuenta las "
+                              "reusadas del checkpoint). Permite correr un universo grande 'por lotes': "
+                              "cada invocacion hace como mucho --max-calls llamadas y termina limpio; "
+                              "volver a invocar con el mismo --checkpoint continua donde quedo.")
     args = parser.parse_args()
 
     if args.all_catalog_requirements:
@@ -282,6 +413,14 @@ def _cli():
         reader = pypdf.PdfReader(str(path))
         return [(p.extract_text() or "") for p in reader.pages]
 
+    def _progress(event: dict) -> None:
+        print(
+            f"[{event['calls_made_this_invocation']}] req={event['requirement_id']} "
+            f"chunk={event['chunk_index']} status={event['status']} "
+            f"({datetime.now(timezone.utc).isoformat()})",
+            file=sys.stderr, flush=True,
+        )
+
     config = EvidenceRunConfig(
         document_path=args.document,
         document_type=args.document_type,
@@ -290,12 +429,21 @@ def _cli():
         max_chunks=args.max_chunks,
         run_by=args.run_by,
         extractor=_pdf_extractor,
+        checkpoint_path=args.checkpoint,
+        max_calls=args.max_calls,
+        progress_callback=_progress,
     )
     result = run_validation_evidence(config)
     output = json.dumps(result.raw, indent=2, ensure_ascii=False)
     if args.out:
         args.out.write_text(output, encoding="utf-8")
     print(output)
+    print(
+        f"batch_complete={result.batch_complete} "
+        f"calls_made_this_invocation={result.calls_made_this_invocation} "
+        f"pending_requirement_ids={result.pending_requirement_ids}",
+        file=sys.stderr,
+    )
 
 
 if __name__ == "__main__":

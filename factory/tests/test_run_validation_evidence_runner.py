@@ -271,6 +271,206 @@ def test_runner_write_failure_never_hidden_analysis_still_completes(monkeypatch,
     assert result.raw["golden_dataset_eligible"] is False
 
 
+# ── Fase 3 (gate 551-llamadas) -- checkpoint/resume + corrida por lotes ──
+
+# Cada "pagina" supera CHUNK_MAX_CHARS (6000) por si sola, para forzar que
+# build_page_chunks() nunca las fusione -- 1 chunk real por pagina, igual
+# que el gate real necesita para ejercitar --max-calls/checkpoint.
+FAKE_PAGES_MULTI = [f"Pagina {i}: sin mencion de autenticacion. " + ("x" * 6500) for i in range(4)]
+
+
+def _fake_extractor_multi(path):
+    return FAKE_PAGES_MULTI
+
+
+def _counting_generate_controlled(calls_log):
+    def _gen(prompt, chunk, *, run_context, **kwargs):
+        calls_log.append((chunk["chunk_index"],))
+        return {
+            "llm_output": {
+                "requirement_id": "21_CFR_11.10(d)", "chunk_observation": "not_observed_in_chunk",
+                "evidence_quote": "", "evidence_page": None, "confidence": 0.5,
+                "rationale": "n/a", "flags": [],
+            },
+            "execution_manifest": _fake_manifest(), "ok": True, "errors": [],
+            "status": "verified", "rejection_reason": None,
+        }
+    return _gen
+
+
+def test_max_calls_stops_early_and_marks_batch_incomplete(monkeypatch, dummy_document, tmp_path):
+    calls_log = []
+    monkeypatch.setattr(ollama_client, "generate_controlled", _counting_generate_controlled(calls_log))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: "digest-1")
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+
+    config = EvidenceRunConfig(
+        document_path=dummy_document, document_type="FS", document_type_source="human_assigned",
+        requirement_ids=["21_CFR_11.10(d)"], max_chunks=4, run_by="test-suite",
+        extractor=_fake_extractor_multi,
+        checkpoint_path=tmp_path / "checkpoint.jsonl", max_calls=2,
+    )
+    result = run_validation_evidence(config)
+
+    assert len(calls_log) == 2  # nunca excede max_calls
+    assert result.calls_made_this_invocation == 2
+    assert result.batch_complete is False
+    assert result.pending_requirement_ids == ["21_CFR_11.10(d)"]
+    assert result.validation_evidence_status == "BATCH_INCOMPLETE_NOT_PERSISTED"
+    assert result.golden_dataset_eligible is False
+    # Un universo incompleto NUNCA se persiste como si fuera evidencia real.
+    assert not (tmp_path / "evidence").exists()
+
+
+def test_second_invocation_resumes_from_checkpoint_without_repeating_calls(monkeypatch, dummy_document, tmp_path):
+    calls_log = []
+    monkeypatch.setattr(ollama_client, "generate_controlled", _counting_generate_controlled(calls_log))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: "digest-1")
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    monkeypatch.setattr(writer, "VALIDATION_EVIDENCE_BASE", tmp_path / "evidence")
+
+    checkpoint_path = tmp_path / "checkpoint.jsonl"
+    base_config = dict(
+        document_path=dummy_document, document_type="FS", document_type_source="human_assigned",
+        requirement_ids=["21_CFR_11.10(d)"], max_chunks=4, run_by="test-suite",
+        extractor=_fake_extractor_multi, checkpoint_path=checkpoint_path,
+    )
+
+    # Lote 1: agota el presupuesto a las 2 de 4 llamadas posibles.
+    result1 = run_validation_evidence(EvidenceRunConfig(**base_config, max_calls=2))
+    assert len(calls_log) == 2
+    assert result1.batch_complete is False
+
+    # Lote 2: mismo checkpoint_path, sin limite -- NUNCA repite las 2 ya
+    # hechas, solo hace las 2 restantes, y esta vez SI completa/persiste.
+    result2 = run_validation_evidence(EvidenceRunConfig(**base_config, max_calls=None))
+    assert len(calls_log) == 4  # 2 del lote 1 + 2 nuevas del lote 2, nunca 6
+    assert result2.calls_made_this_invocation == 2
+    assert result2.batch_complete is True
+    assert result2.pending_requirement_ids == []
+    assert result2.validation_evidence_status == "VALIDATION_EVIDENCE_COMPLETE"
+    assert result2.records_total == 4  # las 4 quedan consolidadas, reusadas + nuevas
+
+    written = list((tmp_path / "evidence").glob("*.json"))
+    assert len(written) == 1
+
+
+def test_checkpoint_entries_scoped_to_document_sha256(monkeypatch, tmp_path):
+    """Un checkpoint de OTRO documento (distinto sha256) nunca se reusa --
+    evita mezclar evidencia de documentos distintos por compartir ruta de
+    checkpoint."""
+    calls_log = []
+    monkeypatch.setattr(ollama_client, "generate_controlled", _counting_generate_controlled(calls_log))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: "digest-1")
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    monkeypatch.setattr(writer, "VALIDATION_EVIDENCE_BASE", tmp_path / "evidence")
+
+    checkpoint_path = tmp_path / "checkpoint.jsonl"
+    doc_a = tmp_path / "a.pdf"
+    doc_a.write_bytes(b"%PDF-1.4 documento A")
+    doc_b = tmp_path / "b.pdf"
+    doc_b.write_bytes(b"%PDF-1.4 documento B, contenido distinto")
+
+    run_validation_evidence(EvidenceRunConfig(
+        document_path=doc_a, document_type="FS", document_type_source="human_assigned",
+        requirement_ids=["21_CFR_11.10(d)"], max_chunks=1, run_by="test-suite",
+        extractor=_fake_extractor_multi, checkpoint_path=checkpoint_path,
+    ))
+    assert len(calls_log) == 1
+
+    run_validation_evidence(EvidenceRunConfig(
+        document_path=doc_b, document_type="FS", document_type_source="human_assigned",
+        requirement_ids=["21_CFR_11.10(d)"], max_chunks=1, run_by="test-suite",
+        extractor=_fake_extractor_multi, checkpoint_path=checkpoint_path,
+    ))
+    assert len(calls_log) == 2  # documento B SI llamo, no reuso el checkpoint de A
+
+
+def test_cached_rejected_record_is_reused_not_retried_and_still_blocks_gap(monkeypatch, tmp_path):
+    """Un chunk que quedo rejected_by_verifier en el lote 1 NUNCA se
+    reintenta en el lote 2 (el checkpoint lo devuelve tal cual) -- y sigue
+    contando como 'rechazado' para el consolidador (ABSENCE_BLOCKED_BY_
+    REJECTED_CHUNKS), nunca como si nunca hubiera existido."""
+    # Solo 2 paginas/chunks reales -- con max_chunks=2 la cobertura queda
+    # completa (2>=2), asi que la unica razon de EVALUATION_INCOMPLETE es
+    # el chunk rechazado, no cobertura parcial (evita confundir las 2
+    # causas distintas que absence_consolidator.py distingue).
+    fake_pages_two = [f"Pagina {i}: sin mencion de autenticacion. " + ("x" * 6500) for i in range(2)]
+
+    def _fake_extractor_two(path):
+        return fake_pages_two
+
+    calls_log = []
+
+    def _gen_first_rejected(prompt, chunk, *, run_context, **kwargs):
+        calls_log.append(chunk["chunk_index"])
+        if chunk["chunk_index"] == 0:
+            return {
+                "llm_output": None, "execution_manifest": _fake_manifest(),
+                "ok": False, "errors": ["bad json"],
+                "rejection_reason": "json_parse_failed", "raw_response": "not json",
+            }
+        return {
+            "llm_output": {
+                "requirement_id": "21_CFR_11.10(d)", "chunk_observation": "not_observed_in_chunk",
+                "evidence_quote": "", "evidence_page": None, "confidence": 0.5,
+                "rationale": "n/a", "flags": [],
+            },
+            "execution_manifest": _fake_manifest(), "ok": True, "errors": [],
+            "status": "verified", "rejection_reason": None,
+        }
+
+    monkeypatch.setattr(ollama_client, "generate_controlled", _gen_first_rejected)
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: "digest-1")
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    monkeypatch.setattr(writer, "VALIDATION_EVIDENCE_BASE", tmp_path / "evidence")
+
+    checkpoint_path = tmp_path / "checkpoint.jsonl"
+    base_config = dict(
+        document_path=tmp_path / "doc.pdf", document_type="FS", document_type_source="human_assigned",
+        requirement_ids=["21_CFR_11.10(d)"], max_chunks=2, run_by="test-suite",
+        extractor=_fake_extractor_two, checkpoint_path=checkpoint_path,
+    )
+    (tmp_path / "doc.pdf").write_bytes(b"%PDF-1.4 doc")
+
+    # Lote 1: agota el presupuesto a 1 llamada -- chunk 0 queda rejected.
+    result1 = run_validation_evidence(EvidenceRunConfig(**base_config, max_calls=1))
+    assert len(calls_log) == 1
+    assert result1.batch_complete is False
+
+    # Lote 2: mismo checkpoint -- el chunk 0 rechazado se REUSA (no se
+    # reintenta), solo se hace 1 llamada nueva para el chunk 1.
+    result2 = run_validation_evidence(EvidenceRunConfig(**base_config, max_calls=None))
+    assert calls_log == [0, 1]  # nunca [0, 0, 1] -- el chunk 0 no se repite
+    assert result2.calls_made_this_invocation == 1
+    assert result2.batch_complete is True
+
+    conclusion = result2.per_requirement_conclusions["21_CFR_11.10(d)"]
+    # applicability("21_CFR_11.10(d)", "FS") == "expected" -- con un chunk
+    # rechazado, la ausencia NUNCA se confirma (P3 reforzado, W5.5).
+    assert conclusion["conclusion"] == "EVALUATION_INCOMPLETE"
+    assert "ABSENCE_BLOCKED_BY_REJECTED_CHUNKS" in conclusion["review_flags"]
+
+
+def test_progress_callback_invoked_per_real_call_only(monkeypatch, dummy_document, tmp_path):
+    monkeypatch.setattr(ollama_client, "generate_controlled", _counting_generate_controlled([]))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: "digest-1")
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+
+    events = []
+    config = EvidenceRunConfig(
+        document_path=dummy_document, document_type="FS", document_type_source="human_assigned",
+        requirement_ids=["21_CFR_11.10(d)"], max_chunks=2, run_by="test-suite",
+        extractor=_fake_extractor_multi, checkpoint_path=tmp_path / "checkpoint.jsonl",
+        progress_callback=events.append,
+    )
+    result = run_validation_evidence(config)
+
+    assert len(events) == 2 == result.calls_made_this_invocation
+    assert events[0]["calls_made_this_invocation"] == 1
+    assert events[1]["calls_made_this_invocation"] == 2
+
+
 def test_runner_persists_raw_response_and_errors_for_rejected_records(monkeypatch, dummy_document, tmp_path):
     """Fase 5.4 (fix ETAPA 1): antes de este fix, un registro
     rejected_by_verifier solo guardaba 'rejection_reason' (una constante
