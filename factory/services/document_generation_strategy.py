@@ -29,7 +29,12 @@ _NOT_YET_ELIGIBLE_STATES = {
     "PROCESSING_BLOCKED", "DERIVED_DOCUMENT_EXCLUDED",
 }
 
-_IMPLEMENTED_STRATEGIES = {"PDF_RECONSTRUCTED_DOCX_AND_PDF"}
+_IMPLEMENTED_STRATEGIES = {
+    "PDF_RECONSTRUCTED_DOCX_AND_PDF",
+    "DOCX_CANDIDATE_AND_PDF",  # mismo candidate_document_generator.py que la anterior (fix: faltaba, hallazgo real de esta sesion)
+    "XLSX_CANDIDATE_CELL_LEVEL",  # xlsx_candidate_generator.py, generador real construido y probado
+    "DOCM_CANDIDATE_SAFE_EXTRACTION",  # docm_candidate_generator.py, generador real construido y probado
+}
 
 
 @dataclass(frozen=True)
@@ -70,10 +75,11 @@ def decide_generation_strategy(entry: dict) -> GenerationStrategyDecision:
         return GenerationStrategyDecision(
             file_id, "XLSX_CANDIDATE_CELL_LEVEL", generation_ready=False,
             reason=(
-                "estrategia XLSX (redline celda a celda) definida en el plan, pero SIN caso "
-                "real/finding que la ejercite todavia -- no se fabrica un generador sin "
-                "validacion contra un cambio real (mismo criterio que CONTENT_REPLACEMENT "
-                "en candidate_document_generator.py)"
+                "generador real implementado y probado (xlsx_candidate_generator.py: "
+                "candidato + redline celda a celda + DOCUMENT_CONFORMANCE, hojas/formulas "
+                "preservadas), pero SIN caso real/finding del corpus Rockwell que lo haya "
+                "ejercitado todavia -- generation_ready sigue False hasta esa validacion real, "
+                "mismo criterio que el resto del pipeline (nunca declarar listo sin un caso real)"
             ),
         )
 
@@ -81,9 +87,11 @@ def decide_generation_strategy(entry: dict) -> GenerationStrategyDecision:
         return GenerationStrategyDecision(
             file_id, "DOCM_CANDIDATE_SAFE_EXTRACTION", generation_ready=False,
             reason=(
-                "estrategia DOCM (extraccion segura sin macros, ver extraction_capability_for "
-                "de Fase A) definida en el plan, pero SIN caso real/finding que la ejercite "
-                "todavia -- no se fabrica un generador sin validacion contra un cambio real"
+                "generador real implementado y probado (docm_candidate_generator.py: "
+                "candidato + redline + verify_vba_project_untouched, copia byte a byte de "
+                "vbaProject.bin, nunca lo abre ni ejecuta), pero SIN caso real/finding del "
+                "corpus Rockwell que lo haya ejercitado todavia -- generation_ready sigue "
+                "False hasta esa validacion real"
             ),
         )
 

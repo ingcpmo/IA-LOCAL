@@ -87,11 +87,27 @@ class TestIsStrategyImplemented:
     def test_pdf_reconstructed_is_implemented(self):
         assert is_strategy_implemented("PDF_RECONSTRUCTED_DOCX_AND_PDF") is True
 
-    def test_xlsx_strategy_is_not_implemented(self):
-        assert is_strategy_implemented("XLSX_CANDIDATE_CELL_LEVEL") is False
+    def test_docx_is_implemented(self):
+        """Hallazgo real de esta sesion: DOCX_CANDIDATE_AND_PDF tenia
+        generation_ready=True pero faltaba de _IMPLEMENTED_STRATEGIES --
+        inconsistencia latente (ningun archivo real .docx en el corpus
+        Rockwell la ejercitaba). Corregido junto con los generadores
+        XLSX/DOCM."""
+        assert is_strategy_implemented("DOCX_CANDIDATE_AND_PDF") is True
 
-    def test_docm_strategy_is_not_implemented(self):
-        assert is_strategy_implemented("DOCM_CANDIDATE_SAFE_EXTRACTION") is False
+    def test_xlsx_strategy_is_now_implemented(self):
+        """xlsx_candidate_generator.py ya existe (candidato + redline
+        celda a celda + DOCUMENT_CONFORMANCE), probado con 11 tests
+        reales -- generation_ready sigue False (sin caso real del corpus
+        Rockwell), pero el generador en si ya esta construido."""
+        assert is_strategy_implemented("XLSX_CANDIDATE_CELL_LEVEL") is True
+
+    def test_docm_strategy_is_now_implemented(self):
+        """docm_candidate_generator.py ya existe (candidato + redline +
+        verify_vba_project_untouched), probado con 12 tests reales,
+        incluida deteccion de vbaProject.bin alterado -- generation_ready
+        sigue False (sin caso real del corpus Rockwell)."""
+        assert is_strategy_implemented("DOCM_CANDIDATE_SAFE_EXTRACTION") is True
 
     def test_generation_ready_implies_implemented_for_all_real_rockwell_entries(self):
         """Invariante dura: si una decision real dice generation_ready=True,
