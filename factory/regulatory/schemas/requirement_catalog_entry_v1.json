@@ -6,7 +6,8 @@
   "additionalProperties": false,
   "required": [
     "requirement_id", "label", "source_id", "citation",
-    "normative_type", "jurisdiction", "binding_status", "review_status"
+    "normative_type", "jurisdiction", "binding_status", "review_status",
+    "pack_version", "context_before", "context_after", "evidence_pack_status"
   ],
   "properties": {
     "requirement_id": { "type": "string", "minLength": 3 },
@@ -45,6 +46,53 @@
     "review_status": {
       "enum": ["covered", "review_required"],
       "description": "covered SOLO si: source_id resuelve en el registry Y citation.match_type in (exact, normalized) Y citation_sha256 verificado. Cualquier otra condicion -> review_required, nunca se descarta el requisito."
+    },
+    "pack_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "W5 V2 Fase C -- version del Requirement Evidence Pack para este requisito (semver simple, p.ej. '1.0'). Distinta de catalog_version (que versiona el archivo completo)."
+    },
+    "context_before": {
+      "type": "string",
+      "description": "Texto REAL inmediatamente anterior a citation.citation_text dentro del documento canonico ya gobernado, extraido mecanicamente (busqueda normalizada de espacios, sin inventar contenido). Cadena vacia si la cita empieza al inicio del texto extraido."
+    },
+    "context_after": {
+      "type": "string",
+      "description": "Texto REAL inmediatamente posterior a citation.citation_text, misma extraccion mecanica que context_before."
+    },
+    "evidence_pack_status": {
+      "enum": ["structure_only_pending_human_interpretation"],
+      "description": "W5 V2 Fase C: unico valor valido en este ciclo. Los campos interpretativos (evidence_min_criteria, exclusion_criteria, weak_keywords, typical_insufficient_evidence, governed_interpretation, expected_doc_types) requieren juicio regulatorio humano (Capa 9) y NO se generan automaticamente -- ausentes hasta que exista una decision humana explicita que los agregue y cambie este campo a un valor futuro tipo 'human_approved' (no definido todavia en este schema a proposito, mismo patron fail-closed que regulatory_currency_status en source_registry_entry_v1)."
+    },
+    "expected_doc_types": {
+      "type": "array",
+      "items": { "enum": ["URS", "FS", "DS", "SOP", "PROTOCOL", "REPORT", "DRAWING", "OTHER"] },
+      "description": "PENDIENTE de interpretacion humana (Fase C no lo genera). Si se agrega, cada valor debe venir del enum de doc_type ya usado en ROCKWELL_SOURCE_INVENTORY_AND_SCOPE_SPEC.md."
+    },
+    "evidence_min_criteria": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "PENDIENTE de interpretacion humana (Fase C no lo genera)."
+    },
+    "exclusion_criteria": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "PENDIENTE de interpretacion humana (Fase C no lo genera). Aqui vive, cuando se apruebe, la regla anti-ANNEX11_4 (mencion en lista de referencias no cuenta como evidencia)."
+    },
+    "typical_insufficient_evidence": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "PENDIENTE de interpretacion humana (Fase C no lo genera)."
+    },
+    "weak_keywords": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "PENDIENTE de interpretacion humana (Fase C no lo genera)."
+    },
+    "governed_interpretation": {
+      "type": "string",
+      "minLength": 1,
+      "description": "PENDIENTE de interpretacion humana (Fase C no lo genera) -- interpretacion aprobada por Capa 9 de como este requisito debe leerse en el contexto de la fabrica."
     }
   }
 }

@@ -25,6 +25,21 @@ requirements:
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
+    context_before: 'll employ procedures and controls designed to ensure the authenticity, integrity,
+      and, when appropriate, the confidentiality of electronic records, and to ensure that the signer
+      cannot readily repudiate the signed record as not genuine. Such procedures and controls shall include
+      the following:
+
+
+      (a) '
+    context_after: '
+
+
+      (b) The ability to generate accurate and complete copies of records in both human readable and electronic
+      form suitable for inspection, review, and copying by the agency. Persons should contact the agency
+      if there are any questions regarding the ability of the agency to perform such review and cop'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   21_CFR_11.10(d):
     label: Limitar acceso a individuos autorizados
     source_id: ecfr_21cfr_part11
@@ -39,6 +54,24 @@ requirements:
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
+    context_before: 'copying by the agency. Persons should contact the agency if there are any questions
+      regarding the ability of the agency to perform such review and copying of the electronic records.
+
+
+      (c) Protection of records to enable their accurate and ready retrieval throughout the records retention
+      period.
+
+
+      (d) '
+    context_after: '
+
+
+      (e) Use of secure, computer-generated, time-stamped audit trails to independently record the date
+      and time of operator entries and actions that create, modify, or delete electronic records. Record
+      changes shall not obscure previously recorded information. Such audit trail documentation shall
+      be re'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   21_CFR_11.10(e):
     label: Audit trail seguro con timestamp
     source_id: ecfr_21cfr_part11
@@ -54,6 +87,26 @@ requirements:
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
+    context_before: 'y if there are any questions regarding the ability of the agency to perform such
+      review and copying of the electronic records.
+
+
+      (c) Protection of records to enable their accurate and ready retrieval throughout the records retention
+      period.
+
+
+      (d) Limiting system access to authorized individuals.
+
+
+      (e) '
+    context_after: ' Record changes shall not obscure previously recorded information. Such audit trail
+      documentation shall be retained for a period at least as long as that required for the subject electronic
+      records and shall be available for agency review and copying.
+
+
+      (f) Use of operational system checks to enforce'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   21_CFR_11.10(g):
     label: Verificacion de autoridad (authority checks)
     source_id: ecfr_21cfr_part11
@@ -70,6 +123,26 @@ requirements:
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
+    context_before: 'n. Such audit trail documentation shall be retained for a period at least as long
+      as that required for the subject electronic records and shall be available for agency review and
+      copying.
+
+
+      (f) Use of operational system checks to enforce permitted sequencing of steps and events, as appropriate.
+
+
+      (g) '
+    context_after: '
+
+
+      (h) Use of device (e.g., terminal) checks to determine, as appropriate, the validity of the source
+      of data input or operational instruction.
+
+
+      (i) Determination that persons who develop, maintain, or use electronic record/electronic signature
+      systems have the education, training, and experience to '
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   21_CFR_11.50_11.70:
     label: Firma electronica (manifestacion y vinculo al registro)
     source_id: ecfr_21cfr_part11
@@ -84,6 +157,32 @@ requirements:
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
+    context_before: 'igital signature standards to ensure, as necessary under the circumstances, record
+      authenticity, integrity, and confidentiality.
+
+
+
+      § 11.50 Signature manifestations.
+
+
+      (a) Signed electronic records shall contain information associated with the signing that clearly
+      indicates all of the following:
+
+
+      (1) '
+    context_after: '
+
+
+      (2) The date and time when the signature was executed; and
+
+
+      (3) The meaning (such as review, approval, responsibility, or authorship) associated with the signature.
+
+
+      (b) The items identified in paragraphs (a)(1), (a)(2), and (a)(3) of this section shall be subject
+      to the same controls as for elect'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ANNEX11_4:
     label: Gestion de riesgo del sistema computarizado
     source_id: eu_gmp_annex11
@@ -98,6 +197,30 @@ requirements:
     jurisdiction: EU
     binding_status: binding_requirement
     review_status: covered
+    context_before: 'the-shelf products should be reviewed
+
+      by regulated users to check that user requirements are fulfilled.
+
+      3.4 Quality system and audit information relating to suppliers or developers of software
+
+      and implemented systems should be made available to inspectors on request.
+
+      Project Phase
+
+      4. Validation
+
+      4.1 '
+    context_after: '
+
+      cycle. Manufacturers should be able to justify their standards, protocols, acceptance criteria,
+
+      procedures and records based on their risk assessment.
+
+      4.2 Validation documentation should include change control records (if applicable) and
+
+      reports on any deviations observed during the validation proc'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ANNEX11_7.1:
     label: Almacenamiento y proteccion de datos
     source_id: eu_gmp_annex11
@@ -112,6 +235,28 @@ requirements:
     jurisdiction: EU
     binding_status: binding_requirement
     review_status: covered
+    context_before: 'here should be an additional check on the accuracy of the
+
+      data. This check may be done by a second operator or by validated electronic means. The
+
+      criticality and the potential consequences of erroneous or incorrectly entered data to a system
+
+      should be covered by risk management.
+
+      7. Data Storage
+
+      7.1 '
+    context_after: ' Stored
+
+      data should be checked for accessibility, readability and accuracy. Access to data should be
+
+      ensured throughout the retention period.
+
+      7.2 Regular back-ups of all relevant data should be done. Integrity and accuracy of back-
+
+      up data and the ability to restore the data should be checked during'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ANNEX11_9:
     label: Audit trail
     source_id: eu_gmp_annex11
@@ -126,6 +271,34 @@ requirements:
     jurisdiction: EU
     binding_status: binding_requirement
     review_status: covered
+    context_before: ' monitored
+
+      periodically.
+
+      8. Printouts
+
+      8.1 It should be possible to obtain clear printed copies of electronically stored data.
+
+      8.2 For records supporting batch release it should be possible to generate printouts
+
+      indicating if any of the data has been changed since the original entry.
+
+      9. Audit Trails
+
+      '
+    context_after: '
+
+      the creation of a record of all GMP-relevant changes and deletions (a system generated "audit
+
+      trail"). For change or deletion of GMP-relevant data the reason should be documented. Audit
+
+      trails need to be available and convertible to a generally intelligible form and regularly
+
+      reviewed.
+
+      10. Change a'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ANNEX11_12:
     label: Seguridad fisica y logica
     source_id: eu_gmp_annex11
@@ -140,6 +313,28 @@ requirements:
     jurisdiction: EU
     binding_status: binding_requirement
     review_status: covered
+    context_before: ' confirm that they remain in a valid
+
+      state and are compliant with GMP. Such evaluations should include, where appropriate, the
+
+      current range of functionality, deviation records, incidents, problems, upgrade history,
+
+      performance, reliability, security and validation status reports.
+
+      12. Security
+
+      12.1 '
+    context_after: '
+
+      system to authorised persons. Suitable methods of preventing unauthorised entry to the
+
+      system may include the use of keys, pass cards, personal codes with passwords, biometrics,
+
+      restricted access to computer equipment and data storage areas.
+
+      12.2 The extent of security controls depends on the criti'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ANNEX11_17:
     label: Archivo y retencion de registros
     source_id: eu_gmp_annex11
@@ -155,6 +350,32 @@ requirements:
     jurisdiction: EU
     binding_status: binding_requirement
     review_status: covered
+    context_before: 'system
+
+      breakdown (e.g. a manual or alternative system). The time required to bring the alternative
+
+      arrangements into use should be based on risk and appropriate for a particular system and the
+
+      business process it supports. These arrangements should be adequately documented and tested.
+
+      17. Archiving
+
+      '
+    context_after: '
+
+      If relevant changes are to be made to the system (e.g. computer equipment or programs), then
+
+      the ability to retrieve the data should be ensured and tested.
+
+      Glossary
+
+      Application: Software installed on a defined platform/hardware providing specific
+
+      functionality
+
+      Bespoke/Customized computerised system'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ALCOA_ATTRIBUTABLE:
     label: Attributable
     source_id: mhra_gxp_di_guidance_2018
@@ -169,6 +390,36 @@ requirements:
     jurisdiction: UK
     binding_status: non_binding_guidance
     review_status: covered
+    context_before: 'rds
+
+      and true copies of original records, including source data and metadata and all subsequent
+
+      transformations and reports of these data, that are generated or recorded at the time of the
+
+      GXP activity and allow full and complete reconstruction and evaluation of the GXP activity.
+
+      Data should be:
+
+      A - '
+    context_after: '
+
+      L – legible and permanent
+
+      C – contemporaneous
+
+      O – original record (or certified true copy)
+
+      A - accurate
+
+      Data governance measures should also ensure that data is complete, consistent, enduring
+
+      and available throughout the lifecycle, where;
+
+      Complete – the data must be whole; a complete set
+
+      Consistent'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ALCOA_LEGIBLE:
     label: Legible
     source_id: mhra_gxp_di_guidance_2018
@@ -183,6 +434,34 @@ requirements:
     jurisdiction: UK
     binding_status: non_binding_guidance
     review_status: covered
+    context_before: 'source data and metadata and all subsequent
+
+      transformations and reports of these data, that are generated or recorded at the time of the
+
+      GXP activity and allow full and complete reconstruction and evaluation of the GXP activity.
+
+      Data should be:
+
+      A - attributable to the person generating the data
+
+      L – '
+    context_after: '
+
+      C – contemporaneous
+
+      O – original record (or certified true copy)
+
+      A - accurate
+
+      Data governance measures should also ensure that data is complete, consistent, enduring
+
+      and available throughout the lifecycle, where;
+
+      Complete – the data must be whole; a complete set
+
+      Consistent - the data must be self-c'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ALCOA_CONTEMPORANEOUS:
     label: Contemporaneous
     source_id: mhra_gxp_di_guidance_2018
@@ -197,6 +476,32 @@ requirements:
     jurisdiction: UK
     binding_status: non_binding_guidance
     review_status: covered
+    context_before: 'uding senior management).
+
+      • Inclusion of subject matter experts in the risk assessment process.
+
+      • Management oversight of quality metrics relevant to data governance.
+
+      5.2 The use of scribes to record activity on behalf of another operator can be considered
+
+      where justified, for example:
+
+      • The act of '
+    context_after: ' recording compromises the product or activity e.g.
+
+      documenting line interventions by sterile operators.
+
+      • Necropsy (GLP)
+
+      • To accommodate cultural or literacy/language limitations, for instance where an
+
+      activity is performed by an operator but witnessed and recorded by a second
+
+      person.
+
+      Consideratio'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ALCOA_ORIGINAL:
     label: Original
     source_id: mhra_gxp_di_guidance_2018
@@ -211,6 +516,35 @@ requirements:
     jurisdiction: UK
     binding_status: non_binding_guidance
     review_status: covered
+    context_before: 'ansformations and reports of these data, that are generated or recorded at the time
+      of the
+
+      GXP activity and allow full and complete reconstruction and evaluation of the GXP activity.
+
+      Data should be:
+
+      A - attributable to the person generating the data
+
+      L – legible and permanent
+
+      C – contemporaneous
+
+      O – '
+    context_after: '
+
+      A - accurate
+
+      Data governance measures should also ensure that data is complete, consistent, enduring
+
+      and available throughout the lifecycle, where;
+
+      Complete – the data must be whole; a complete set
+
+      Consistent - the data must be self-consistent
+
+      Enduring – durable; lasting throughout the data lifecyc'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ALCOA_ACCURATE:
     label: Accurate
     source_id: mhra_gxp_di_guidance_2018
@@ -225,6 +559,28 @@ requirements:
     jurisdiction: UK
     binding_status: non_binding_guidance
     review_status: covered
+    context_before: 'other definitions may exist and
+
+      these have been harmonised where possible and appropriate.
+
+      3. The principles of data integrity
+
+      3.1 The organisation needs to take responsibility for the systems used and the data they
+
+      generate. The organisational culture should ensure data is complete, consistent and
+
+      '
+    context_after: ' in all its forms, i.e. paper and electronic.
+
+      3.2 Arrangements within an organisation with respect to people, systems and facilities
+
+      should be designed, operated and, where appropriate, adapted to support a suitable
+
+      working environment, i.e. creating the right environment to enable data integrity
+
+      co'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ALCOA_COMPLETE:
     label: Complete
     source_id: mhra_gxp_di_guidance_2018
@@ -239,6 +595,25 @@ requirements:
     jurisdiction: UK
     binding_status: non_binding_guidance
     review_status: covered
+    context_before: 'Appropriate notification to regulatory authorities should be made where significant
+      data
+
+      integrity incidents have been identified.
+
+      3.10 The guidance refers to the acronym ALCOA rather than ‘ALCOA +’. ALCOA being
+
+      Attributable, Legible, Contemporaneous, Original, and Accurate and the ‘+’ referring to
+
+      '
+    context_after: ', Consistent, Enduring, and Available. ALCOA was historically regarded as
+
+      defining the attributes of data quality that are suitable for regulatory purposes. The ‘+’
+
+      has been subsequently added to emphasise the requirements. There is no difference
+
+      in expectations regardless of which acronym is used s'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ALCOA_CONSISTENT:
     label: Consistent
     source_id: mhra_gxp_di_guidance_2018
@@ -253,6 +628,36 @@ requirements:
     jurisdiction: UK
     binding_status: non_binding_guidance
     review_status: covered
+    context_before: 'g the data
+
+      L – legible and permanent
+
+      C – contemporaneous
+
+      O – original record (or certified true copy)
+
+      A - accurate
+
+      Data governance measures should also ensure that data is complete, consistent, enduring
+
+      and available throughout the lifecycle, where;
+
+      Complete – the data must be whole; a complete set
+
+      '
+    context_after: '
+
+      Enduring – durable; lasting throughout the data lifecycle
+
+      Available – readily available for review or inspection purposes
+
+      6.2. Raw data (synonymous with ‘source data’ which is defined in ICH GCP)
+
+      Raw data is defined as the original record (data) which can be described as the first-capture of
+
+      inform'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ALCOA_ENDURING:
     label: Enduring
     source_id: mhra_gxp_di_guidance_2018
@@ -267,6 +672,24 @@ requirements:
     jurisdiction: UK
     binding_status: non_binding_guidance
     review_status: covered
+    context_before: 'on to regulatory authorities should be made where significant data
+
+      integrity incidents have been identified.
+
+      3.10 The guidance refers to the acronym ALCOA rather than ‘ALCOA +’. ALCOA being
+
+      Attributable, Legible, Contemporaneous, Original, and Accurate and the ‘+’ referring to
+
+      Complete, Consistent, '
+    context_after: ', and Available. ALCOA was historically regarded as
+
+      defining the attributes of data quality that are suitable for regulatory purposes. The ‘+’
+
+      has been subsequently added to emphasise the requirements. There is no difference
+
+      in expectations regardless of which acronym is used since data governance m'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation
   ALCOA_AVAILABLE:
     label: Available
     source_id: mhra_gxp_di_guidance_2018
@@ -281,3 +704,27 @@ requirements:
     jurisdiction: UK
     binding_status: non_binding_guidance
     review_status: covered
+    context_before: '- accurate
+
+      Data governance measures should also ensure that data is complete, consistent, enduring
+
+      and available throughout the lifecycle, where;
+
+      Complete – the data must be whole; a complete set
+
+      Consistent - the data must be self-consistent
+
+      Enduring – durable; lasting throughout the data lifecycle
+
+      '
+    context_after: '
+
+      6.2. Raw data (synonymous with ‘source data’ which is defined in ICH GCP)
+
+      Raw data is defined as the original record (data) which can be described as the first-capture of
+
+      information, whether recorded on paper or electronically. Information that is originally captured
+
+      in a dynamic state should rema'
+    pack_version: '1.0'
+    evidence_pack_status: structure_only_pending_human_interpretation

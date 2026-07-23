@@ -114,6 +114,8 @@ def test_covered_without_valid_citation_and_source_is_rejected(tmp_path, monkeyp
                 },
                 "normative_type": "regulation", "jurisdiction": "US",
                 "binding_status": "binding_regulation", "review_status": "covered",
+                "pack_version": "1.0", "context_before": "", "context_after": "",
+                "evidence_pack_status": "structure_only_pending_human_interpretation",
             }
         },
     }
@@ -146,6 +148,8 @@ def test_tampered_citation_sha256_is_rejected(tmp_path, monkeypatch):
                 },
                 "normative_type": "regulation", "jurisdiction": "US",
                 "binding_status": "binding_regulation", "review_status": "covered",
+                "pack_version": "1.0", "context_before": "", "context_after": "",
+                "evidence_pack_status": "structure_only_pending_human_interpretation",
             }
         },
     }
