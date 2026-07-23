@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "source_baseline_allowlist_entry_v1",
+  "description": "W5 V2, Fase A (AGT-INV) -- una entrada del allowlist de inventario de solo lectura sobre un arbol de documentos originales (p.ej. GMPAI/source/Rockwell/). Cada archivo real del arbol debe aparecer EXACTAMENTE una vez con un processing_state terminal -- ver factory/docs/design/regulatory_redesign_v2/ROCKWELL_SOURCE_INVENTORY_AND_SCOPE_SPEC.md seccion 9 del plan de instrucciones.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "file_id", "path", "name", "extension", "version", "size_bytes",
+    "sha256", "provenance", "doc_type", "origin_class", "duplicate_of",
+    "extraction_capability", "processing_state", "applicability",
+    "related_requirements", "justification"
+  ],
+  "properties": {
+    "file_id": {
+      "type": "string",
+      "pattern": "^RW-[0-9]{4}$",
+      "description": "Identificador estable de la entrada, asignado por orden alfabetico de path en la corrida de AGT-INV que genero el allowlist."
+    },
+    "path": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "extension": { "type": "string" },
+    "version": {
+      "type": "string",
+      "description": "Token de version/revision detectado en el nombre del archivo, o 'NO_DISPONIBLE' si ninguna senal determinista lo confirma. Nunca inventado."
+    },
+    "size_bytes": { "type": "integer", "minimum": 0 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "provenance": {
+      "type": "string",
+      "description": "Como se confirmo el origen: coincidencia contra un manifiesto gobernado (ruta+razon), o 'NO_DISPONIBLE' si no hay manifiesto que lo respalde."
+    },
+    "doc_type": {
+      "enum": ["URS", "FS", "DS", "SOP", "PROTOCOL", "REPORT", "DRAWING", "OTHER"]
+    },
+    "origin_class": { "enum": ["ORIGINAL", "DERIVED"] },
+    "duplicate_of": {
+      "type": ["string", "null"],
+      "description": "file_id del duplicado exacto canonico (mismo SHA-256), o null."
+    },
+    "extraction_capability": {
+      "enum": ["TEXT_NATIVE", "OCR_REQUIRED", "NOT_EXTRACTABLE"]
+    },
+    "processing_state": {
+      "enum": [
+        "ORIGINAL_SOURCE_CONFIRMED", "ORIGINAL_SOURCE_UNCONFIRMED",
+        "APPLICABLE", "NOT_APPLICABLE_WITH_JUSTIFICATION", "DUPLICATE",
+        "OCR_REQUIRED", "PROCESSING_BLOCKED", "HUMAN_REVIEW_REQUIRED",
+        "DERIVED_DOCUMENT_EXCLUDED"
+      ]
+    },
+    "applicability": {
+      "type": "string",
+      "description": "Decision de aplicabilidad regulatoria; en Fase A (AGT-INV) siempre 'PENDING_AGT_APP_ASSIGNMENT' -- AGT-INV nunca decide aplicabilidad, eso es responsabilidad de AGT-APP (Fase B) sobre la matriz de aplicabilidad. Campo deliberadamente fuera del enum cerrado de processing_state para no fingir una decision que esta fase no toma."
+    },
+    "related_requirements": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Vacio en Fase A -- se completa en Fase B/C (AGT-APP/AGT-REP)."
+    },
+    "justification": {
+      "type": ["string", "null"],
+      "description": "Obligatorio (no null) cuando processing_state sea distinto de ORIGINAL_SOURCE_CONFIRMED."
+    }
+  }
+}

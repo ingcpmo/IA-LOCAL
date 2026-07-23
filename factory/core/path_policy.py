@@ -180,6 +180,38 @@ VALIDATION_EVIDENCE_EXT = frozenset({".json"})
 VALIDATION_EVIDENCE_MAX_BYTES = 10_000_000  # 10 MB, control #7 aprobado
 
 
+_SCOPE_ALLOWLIST_EXT = frozenset({".yaml"})
+_SCOPE_ALLOWLIST_STEM_RE = re.compile(r"^[a-z0-9_]+$")
+
+
+def resolve_regulatory_scope(relative_path: str, scope_base: Path) -> Path:
+    """
+    W5 V2, Fase A (AGT-INV) -- confina escritura/lectura de artefactos de
+    alcance regulatorio (p.ej. source_baseline_allowlist.yaml) a
+    scope_base (factory/regulatory/scope/). Sin subdirectorios: nombre de
+    archivo plano en minusculas/guion bajo, extension .yaml unica.
+
+    Mismo patrón que resolve_validation_evidence: confinamiento + regex +
+    extensión única, sin excepciones por caller.
+
+    Raises:
+        ValueError: relative_path con traversal o nombre fuera del patrón.
+        PermissionError: extensión no permitida.
+    """
+    if ".." in relative_path or relative_path.startswith("/") or "\\" in relative_path or "/" in relative_path:
+        raise ValueError(f"relative_path inválido para scope regulatorio: {relative_path!r}")
+    rel = Path(relative_path.lower())
+    if rel.suffix not in _SCOPE_ALLOWLIST_EXT:
+        raise PermissionError(f"Extensión no permitida en scope regulatorio: {rel.suffix!r}")
+    if not _SCOPE_ALLOWLIST_STEM_RE.match(rel.stem):
+        raise ValueError(f"nombre de archivo no cumple el patrón esperado: {relative_path!r}")
+    base = scope_base.resolve()
+    target = (base / relative_path).resolve()
+    if not target.is_relative_to(base):
+        raise ValueError(f"relative_path escapa de scope_base: {relative_path!r}")
+    return target
+
+
 def resolve_validation_evidence(run_id: str, evidence_base: Path) -> Path:
     """
     Valida run_id y retorna evidence_base/{run_id}.json -- mismo patrón que

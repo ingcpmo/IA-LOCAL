@@ -1,0 +1,246 @@
+# W5 V2, Fase A -- generado por build_source_baseline_allowlist.py
+# Solo lectura sobre el árbol fuente; NUNCA modifica originales.
+- file_id: RW-0001
+  path: source/Rockwell/215115305 MCCPDC PLC Panel Rev 0 09-07-22.pdf
+  name: 215115305 MCCPDC PLC Panel Rev 0 09-07-22.pdf
+  extension: .pdf
+  version: Rev0
+  size_bytes: 2980690
+  sha256: dc733c64c747d84d21111fa7f68df41c79f5de5a5add338d4f3a984cafb65cea
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: DRAWING
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: OCR_REQUIRED
+  processing_state: OCR_REQUIRED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: nombre coincide con /\bpanel\b/; extraction_capability:
+    muestreo de 5 páginas: 0.0 chars/página promedio (<20)'
+- file_id: RW-0002
+  path: source/Rockwell/215115305 MCCPDC SCADA-PCS Misc PLC SI Prop for MCCPDCa.pdf
+  name: 215115305 MCCPDC SCADA-PCS Misc PLC SI Prop for MCCPDCa.pdf
+  extension: .pdf
+  version: NO_DISPONIBLE
+  size_bytes: 1428303
+  sha256: 910e384d1af4c229f864f069cbb7f359cd58576349f76563a955060c312a121c
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: OTHER
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: TEXT_NATIVE
+  processing_state: ORIGINAL_SOURCE_CONFIRMED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: sin coincidencia de nombre -- requiere revisión; extraction_capability:
+    muestreo de 5 páginas: 3187.0 chars/página promedio'
+- file_id: RW-0003
+  path: source/Rockwell/215115305 SCADA-PCS Misc PLC SAT3 Scanned-1.pdf
+  name: 215115305 SCADA-PCS Misc PLC SAT3 Scanned-1.pdf
+  extension: .pdf
+  version: NO_DISPONIBLE
+  size_bytes: 136863151
+  sha256: e96f67f7eadc3062530e7f5f4ec85fdab1c2e8ee6086489091546371e299271a
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: REPORT
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: OCR_REQUIRED
+  processing_state: OCR_REQUIRED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: nombre coincide con /\bsat\d?\b/; extraction_capability:
+    muestreo de 5 páginas: 0.0 chars/página promedio (<20)'
+- file_id: RW-0004
+  path: source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2-2.pdf
+  name: 215115305 SCADA-PCS Misc PLC System FS_v1.2-2.pdf
+  extension: .pdf
+  version: v1.2
+  size_bytes: 578088
+  sha256: 56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: FS
+  origin_class: ORIGINAL
+  duplicate_of: RW-0005
+  extraction_capability: TEXT_NATIVE
+  processing_state: DUPLICATE
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: nombre coincide con /\bfs[_\s]?v?\d/; extraction_capability:
+    muestreo de 5 páginas: 1902.4 chars/página promedio; SHA-256 idéntico a RW-0005 (215115305 SCADA-PCS
+    Misc PLC System FS_v1.2.pdf) -- copia redundante, no una versión distinta.'
+- file_id: RW-0005
+  path: source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf
+  name: 215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf
+  extension: .pdf
+  version: v1.2
+  size_bytes: 578088
+  sha256: 56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: FS
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: TEXT_NATIVE
+  processing_state: ORIGINAL_SOURCE_CONFIRMED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: nombre coincide con /\bfs[_\s]?v?\d/; extraction_capability:
+    muestreo de 5 páginas: 1902.4 chars/página promedio'
+- file_id: RW-0006
+  path: source/Rockwell/215115305 SCADA-PCS Misc PLC System URS v2.1.pdf
+  name: 215115305 SCADA-PCS Misc PLC System URS v2.1.pdf
+  extension: .pdf
+  version: v2.1
+  size_bytes: 307047
+  sha256: d9e24467a66d52fb1a641b6de901ceff1dcdaf66af1ae80cb94a433c40c939c8
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: URS
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: TEXT_NATIVE
+  processing_state: ORIGINAL_SOURCE_CONFIRMED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: nombre coincide con /\burs\b/; extraction_capability:
+    muestreo de 5 páginas: 1924.0 chars/página promedio'
+- file_id: RW-0007
+  path: source/Rockwell/215115305-T-039 Design Docs for ASantiago.docm
+  name: 215115305-T-039 Design Docs for ASantiago.docm
+  extension: .docm
+  version: NO_DISPONIBLE
+  size_bytes: 155571
+  sha256: 12f6d2bb3d085886cefffbba15890cb0bbffaab7fd2e773480e1baa8767bf45e
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: OTHER
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: TEXT_NATIVE
+  processing_state: ORIGINAL_SOURCE_CONFIRMED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'Contenido real es una hoja de TRANSMITTAL (Transmittal Number MAVERICK/215115305 / 039,
+    2023-03-27) que acompaña el envío del XLSX de alarmas/IO -- NO es una especificación de diseño pese
+    al nombre ''Design Docs''. Verificado por extracción real del documento en esta corrida (Fase A).;
+    extraction_capability: extracción OOXML directa sin ejecutar macro, 3656 chars'
+- file_id: RW-0008
+  path: source/Rockwell/215115305-T-039 Design Docs for ASantiago.pdf
+  name: 215115305-T-039 Design Docs for ASantiago.pdf
+  extension: .pdf
+  version: NO_DISPONIBLE
+  size_bytes: 291392
+  sha256: 84e7b4dbdac47a03ba556dc963a2dd8d38a61e8fbb51127b81af7f397f6db352
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: OTHER
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: TEXT_NATIVE
+  processing_state: HUMAN_REVIEW_REQUIRED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'Mismo transmittal (mismo Transmittal Number y fecha) que la contraparte .docm, pero
+    con SHA-256 distinto -- no es duplicado exacto. Contenido con el mismo transmittal number sugiere
+    que es una renderización/impresión del .docm, pero el hash distinto no lo confirma por sí solo; ver
+    HUMAN_REVIEW_REQUIRED en origin_class.; extraction_capability: muestreo de 3 páginas: 2000.0 chars/página
+    promedio'
+- file_id: RW-0009
+  path: source/Rockwell/215115305-T-041 SAT3 Completed.pdf
+  name: 215115305-T-041 SAT3 Completed.pdf
+  extension: .pdf
+  version: NO_DISPONIBLE
+  size_bytes: 310387
+  sha256: 2edb00a3eae471926f41f6d6b707874e52c78c29ebc583ad6da6c4cf961009eb
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: REPORT
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: TEXT_NATIVE
+  processing_state: ORIGINAL_SOURCE_CONFIRMED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: nombre coincide con /\bsat\d?\b.*completed|\bcompleted\b.*\bsat\d?\b/;
+    extraction_capability: muestreo de 2 páginas: 2094.5 chars/página promedio'
+- file_id: RW-0010
+  path: source/Rockwell/215115305_SYS_ARCH_10-11-2022.pdf
+  name: 215115305_SYS_ARCH_10-11-2022.pdf
+  extension: .pdf
+  version: NO_DISPONIBLE
+  size_bytes: 444781
+  sha256: 3926e35278b287b01c280740ea6674c0b119788c5c5d48ffddb446c64ff7c573
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: DRAWING
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: TEXT_NATIVE
+  processing_state: ORIGINAL_SOURCE_CONFIRMED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: nombre coincide con /sys[_\s]?arch|\barchitecture\b/;
+    extraction_capability: muestreo de 1 páginas: 2110.0 chars/página promedio'
+- file_id: RW-0011
+  path: source/Rockwell/MCCPDC EMS Control Block Narrative revB.pdf
+  name: MCCPDC EMS Control Block Narrative revB.pdf
+  extension: .pdf
+  version: RevB
+  size_bytes: 344955
+  sha256: 13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: DS
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: TEXT_NATIVE
+  processing_state: ORIGINAL_SOURCE_CONFIRMED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: nombre coincide con /\bnarrative\b/; extraction_capability:
+    muestreo de 5 páginas: 1720.0 chars/página promedio'
+- file_id: RW-0012
+  path: source/Rockwell/MCCPDC PCS Signal Interface Control Block Narrative.pdf
+  name: MCCPDC PCS Signal Interface Control Block Narrative.pdf
+  extension: .pdf
+  version: NO_DISPONIBLE
+  size_bytes: 356020
+  sha256: de7b70c297f0fbf1269d47e334a7575d4de3429bff6ed797fc663b85fea15c71
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: DS
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: TEXT_NATIVE
+  processing_state: ORIGINAL_SOURCE_CONFIRMED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: nombre coincide con /\bnarrative\b/; extraction_capability:
+    muestreo de 5 páginas: 1885.4 chars/página promedio'
+- file_id: RW-0013
+  path: source/Rockwell/MCCPDC PCS-CP01 Alarms Hard Soft IO Listing revH.xlsx
+  name: MCCPDC PCS-CP01 Alarms Hard Soft IO Listing revH.xlsx
+  extension: .xlsx
+  version: RevH
+  size_bytes: 164757
+  sha256: 20d751309e6c492b5cba53b1e61bc941689666637317346c0aecac12eff11328
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: OTHER
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: TEXT_NATIVE
+  processing_state: ORIGINAL_SOURCE_CONFIRMED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: sin coincidencia de nombre -- requiere revisión; extraction_capability:
+    formato estructurado (hojas/celdas), siempre extraíble'
+- file_id: RW-0014
+  path: source/Rockwell/MCCPDC WFI Control Block Narrative revB.pdf
+  name: MCCPDC WFI Control Block Narrative revB.pdf
+  extension: .pdf
+  version: RevB
+  size_bytes: 316734
+  sha256: 8a67414d90ba28c8ee3cf9939d3be0d670ed7c8794a61f049b07ebe07ebf4ccb
+  provenance: confirmado contra manifiesto SHA256SUMS.txt (hash coincide)
+  doc_type: DS
+  origin_class: ORIGINAL
+  duplicate_of: null
+  extraction_capability: TEXT_NATIVE
+  processing_state: ORIGINAL_SOURCE_CONFIRMED
+  applicability: PENDING_AGT_APP_ASSIGNMENT
+  related_requirements: []
+  justification: 'doc_type por regla de nombre: nombre coincide con /\bnarrative\b/; extraction_capability:
+    muestreo de 5 páginas: 2116.4 chars/página promedio'
