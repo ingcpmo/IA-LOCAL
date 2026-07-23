@@ -2,10 +2,12 @@
 Tests -- W5 V2 Fase N: factory.services.corrected_document_generation_gate.
 
 Cubre los 15 criterios del plan (seccion 16). Regla dura verificada
-explicitamente: revalidacion_ejecutada y reporte_de_calidad_existe SIEMPRE
-fallan hoy (Fase O/AGT-QLT no existen) -- ningun documento real puede
-alcanzar CORRECTED_DOCUMENT_GENERATED todavia, y este test lo confirma en
-vez de asumirlo.
+explicitamente: sin quality_report provisto, "reporte_de_calidad_existe"
+falla honestamente (nunca se asume calidad sin el reporte real); con
+AGT-QLT ya conectado (document_quality_gate.evaluate_document_quality),
+el criterio refleja el resultado real de ese reporte.
+"revalidacion_ejecutada" sigue fallando siempre -- Fase O/AGT-RVL no esta
+conectada a este gate todavia.
 """
 import io
 import sys
@@ -19,6 +21,7 @@ from factory.services.candidate_document_generator import (
 from factory.services.corrected_document_generation_gate import (
     evaluate_corrected_document_generation_gate,
 )
+from factory.services.document_quality_gate import evaluate_document_quality
 from factory.services.remediation_traceability_and_manifest import (
     build_full_change_review, build_package_manifest, build_traceability_matrix,
 )
@@ -95,11 +98,11 @@ class TestGateAlwaysFailsOnRevalidationAndQuality:
         assert revalidation.passed is False
         assert "Fase O" in revalidation.detail
 
-    def test_quality_report_check_always_fails_today(self):
+    def test_quality_report_fails_when_not_provided(self):
         result = evaluate_corrected_document_generation_gate(**_build_real_gate_inputs())
         quality = next(c for c in result.checks if c.criterion == "reporte_de_calidad_existe")
         assert quality.passed is False
-        assert "AGT-QLT" in quality.detail
+        assert "quality_report" in quality.detail
 
     def test_gate_never_reaches_corrected_document_generated_today(self):
         """Consecuencia esperada, no un bug: ningun documento real puede
@@ -178,3 +181,79 @@ class TestBrokenScenariosAreDetected:
         inputs["traceability_matrix_change_ids"] = []
         result = evaluate_corrected_document_generation_gate(**inputs)
         assert result.final_state == "DOCUMENT_PACKAGE_INCOMPLETE"
+
+
+class TestAGTQLTConnected:
+    """AGT-QLT ya conectado: el criterio 'reporte_de_calidad_existe' debe
+    reflejar el resultado real de document_quality_gate.evaluate_document_quality,
+    no un FAIL hardcodeado."""
+
+    def _full_change(self, change_id="C1"):
+        import hashlib
+        literal_text = "texto literal real"
+        citation = {
+            "citation_id": "CIT-1", "regulatory_catalog_entry_id": "21_CFR_11.10(a)",
+            "regulatory_source": "ecfr_21cfr_part11", "regulatory_source_sha256": "a" * 64,
+            "requirement_catalog_sha256": "b" * 64, "run_id": "RUN-1", "record_id": "REC-1",
+            "document_role": "CANDIDATE_DOCUMENT", "document_sha256": "c" * 64,
+            "chunk_sha256": "d" * 64, "citation_locator": "chunk_1#p10-11",
+            "page_start": 10, "page_end": 11, "literal_text": literal_text,
+            "citation_text_sha256": hashlib.sha256(literal_text.encode()).hexdigest(),
+            "evidence_type": "LITERAL_QUOTE", "evidence_location": "seccion 2, pagina 10",
+        }
+        return {
+            "change_id": change_id, "finding_id": f"F-{change_id}", "requirement_id": "21_CFR_11.10(a)",
+            "change_risk": "LOW_RISK", "document_location": "seccion 2", "original_content": None,
+            "proposed_content": "Agregar control de acceso adicional segun el nuevo requisito.",
+            "change_reason": "gap detectado", "change_type": "CONTENT_ADDITION", "citations": [citation],
+            "change_risk_basis": ["change_type"], "evaluation_confidence": "HIGH_CONFIDENCE",
+            "evaluation_confidence_basis": ["coverage_status"], "schema_validation_status": "PASSED",
+            "citation_anchor_status": "VERIFIED", "relevance_status": "CONFIRMED",
+            "candidate_application_status": "APPLIED_TO_DRAFT", "limitations": "",
+        }
+
+    def test_quality_report_passing_makes_the_criterion_pass(self):
+        change = self._full_change()
+        candidate = generate_candidate_document(STRUCTURE, [change])
+        full_text = "\n".join(p.text for p in candidate.paragraphs)
+        quality_report = evaluate_document_quality(
+            structure=STRUCTURE, candidate_full_text=full_text, changes=[change],
+        )
+        assert quality_report["applied"] is True
+
+        inputs = _build_real_gate_inputs()
+        inputs["quality_report"] = quality_report
+        result = evaluate_corrected_document_generation_gate(**inputs)
+        quality_check = next(c for c in result.checks if c.criterion == "reporte_de_calidad_existe")
+        assert quality_check.passed is True
+
+    def test_quality_report_failing_makes_the_criterion_fail_with_real_reason(self):
+        bad_change = self._full_change()
+        bad_change["proposed_content"] = "x"  # verbo no controlado, demasiado corto
+        quality_report = evaluate_document_quality(
+            structure=STRUCTURE, candidate_full_text="documento sin relacion", changes=[bad_change],
+        )
+        assert quality_report["applied"] is False
+
+        inputs = _build_real_gate_inputs()
+        inputs["quality_report"] = quality_report
+        result = evaluate_corrected_document_generation_gate(**inputs)
+        quality_check = next(c for c in result.checks if c.criterion == "reporte_de_calidad_existe")
+        assert quality_check.passed is False
+        assert "C1" in quality_check.detail
+
+    def test_revalidation_still_fails_gate_never_reaches_full_pass(self):
+        """AGT-QLT conectado no basta para CORRECTED_DOCUMENT_GENERATED --
+        revalidacion_ejecutada sigue sin conectar (fuera de este cambio)."""
+        change = self._full_change()
+        candidate = generate_candidate_document(STRUCTURE, [change])
+        full_text = "\n".join(p.text for p in candidate.paragraphs)
+        quality_report = evaluate_document_quality(
+            structure=STRUCTURE, candidate_full_text=full_text, changes=[change],
+        )
+        inputs = _build_real_gate_inputs()
+        inputs["quality_report"] = quality_report
+        result = evaluate_corrected_document_generation_gate(**inputs)
+        assert result.gate_passed is False
+        assert result.failed_criteria == ["revalidacion_ejecutada"]
+        assert result.final_state == "DOCUMENT_GENERATION_PARTIAL"

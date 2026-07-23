@@ -1,18 +1,23 @@
 """W5 V2, Fase N -- CORRECTED_DOCUMENT_GENERATION_GATE
 (CORRECTED_DOCUMENT_GENERATION_AND_FORMAT_SPEC.md sección 16 del plan).
 
-Diagnóstico previo a esta fase: 2 de los 15 criterios del gate dependen de
-componentes que NO EXISTEN todavía (`revalidación fue ejecutada` -> Fase O
-/ AGT-RVL; `reporte de calidad existe` -> AGT-QLT). Este gate no simula ni
-omite esos 2 criterios -- los evalúa a `FAIL` explícito con motivo real,
-porque evaluarlos honestamente hoy da ese resultado. Consecuencia
-esperada y correcta (no un bug de esta fase): NINGÚN documento real puede
-alcanzar `CORRECTED_DOCUMENT_GENERATED` todavía -- el máximo alcanzable
-hoy es reportar exactamente qué falta, nunca fingir que pasa.
+Diagnóstico previo a esta fase: 2 de los 15 criterios del gate dependían de
+componentes que NO EXISTÍAN (`revalidación fue ejecutada` -> Fase O /
+AGT-RVL; `reporte de calidad existe` -> AGT-QLT). AGT-QLT ya se construyó
+(`document_quality_gate.evaluate_document_quality`, ver ese módulo) y este
+gate ahora lo consume vía el parámetro opcional `quality_report`: si no se
+provee, preserva el comportamiento honesto anterior (`FAIL`, el caller no
+generó un reporte para este documento); si se provee, el criterio pasa
+únicamente si `quality_report["applied"]` es `True` -- nunca se asume
+calidad sin el reporte real. `revalidación fue ejecutada` (Fase O/AGT-RVL)
+sigue sin conectar (fuera del alcance de este cambio) -- se evalúa a
+`FAIL` explícito con motivo real. Consecuencia esperada mientras eso siga
+así: ningún documento real puede alcanzar `CORRECTED_DOCUMENT_GENERATED`
+todavía por esa única razón, nunca se finge que pasa.
 
 Reutiliza sin reimplementar: `GovernedCandidateResult` (Fase L),
 `build_traceability_matrix`/`build_full_change_review`/`build_package_manifest`
-(Fase M)."""
+(Fase M), `document_quality_gate.evaluate_document_quality` (AGT-QLT)."""
 from __future__ import annotations
 
 import hashlib
@@ -21,7 +26,10 @@ from dataclasses import dataclass, field
 from docx import Document
 
 REVALIDATION_NOT_EXECUTED_REASON = "AGT-RVL (revalidacion independiente) no existe todavia -- Fase O del roadmap."
-QUALITY_REPORT_NOT_EXISTS_REASON = "AGT-QLT (validacion de calidad del documento completo) no existe todavia."
+QUALITY_REPORT_NOT_PROVIDED_REASON = (
+    "no se proveyo un quality_report para este documento -- invocar "
+    "document_quality_gate.evaluate_document_quality() y pasarlo aqui."
+)
 
 
 @dataclass(frozen=True)
@@ -66,6 +74,7 @@ def evaluate_corrected_document_generation_gate(
     manifest: dict,
     required_manifest_artifacts: list[str],
     change_review: list[dict],
+    quality_report: dict | None = None,
 ) -> CorrectedDocumentGenerationGateResult:
     """Evalúa TODOS los criterios del plan (sección 16), sin detenerse en
     el primer fallo -- el caller necesita ver la lista completa de lo que
@@ -144,9 +153,21 @@ def evaluate_corrected_document_generation_gate(
     checks.append(GateCheckResult(
         "revalidacion_ejecutada", False, REVALIDATION_NOT_EXECUTED_REASON,
     ))
-    checks.append(GateCheckResult(
-        "reporte_de_calidad_existe", False, QUALITY_REPORT_NOT_EXISTS_REASON,
-    ))
+
+    if quality_report is None:
+        checks.append(GateCheckResult(
+            "reporte_de_calidad_existe", False, QUALITY_REPORT_NOT_PROVIDED_REASON,
+        ))
+    else:
+        quality_passed = bool(quality_report.get("applied"))
+        if quality_passed:
+            detail = "AGT-QLT (document_quality_gate.evaluate_document_quality) -- todos los controles evaluables en PASS"
+        else:
+            detail = (
+                f"AGT-QLT FAIL -- controles de documento fallidos: {quality_report.get('failed_document_wide_controls', [])}, "
+                f"cambios fallidos: {quality_report.get('failed_change_ids', [])}"
+            )
+        checks.append(GateCheckResult("reporte_de_calidad_existe", quality_passed, detail))
 
     all_pass = all(c.passed for c in checks)
     non_revalidation_quality_checks = [
