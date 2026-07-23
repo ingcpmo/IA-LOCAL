@@ -61,13 +61,118 @@
       "description": "Texto REAL inmediatamente posterior a citation.citation_text, misma extraccion mecanica que context_before."
     },
     "evidence_pack_status": {
-      "enum": ["structure_only_pending_human_interpretation"],
-      "description": "W5 V2 Fase C: unico valor valido en este ciclo. Los campos interpretativos (evidence_min_criteria, exclusion_criteria, weak_keywords, typical_insufficient_evidence, governed_interpretation, expected_doc_types) requieren juicio regulatorio humano (Capa 9) y NO se generan automaticamente -- ausentes hasta que exista una decision humana explicita que los agregue y cambie este campo a un valor futuro tipo 'human_approved' (no definido todavia en este schema a proposito, mismo patron fail-closed que regulatory_currency_status en source_registry_entry_v1)."
+      "enum": ["structure_only_pending_human_interpretation", "human_drafted_provisional"],
+      "description": "W5 V2 Fase C: 'structure_only_pending_human_interpretation' es el valor inicial (sin campos interpretativos). 'human_drafted_provisional' -- agregado en la correccion del modelo de evidencia provisional (2026-07-23) -- indica que los campos interpretativos SI existen y fueron redactados con juicio humano real, pero la fuente subyacente sigue PENDING_REVERIFICATION (ver source_verification_status) por lo que el pack no puede usarse como evidencia definitiva ni pasar el FORMAL_RELEASE_GATE. Ningun valor de este enum equivale a aprobacion formal -- eso vive en content_review_status."
+    },
+    "additional_citations": {
+      "type": "array",
+      "description": "Citas reales adicionales del mismo source_id cuando un requisito compuesto (p.ej. 21_CFR_11.50_11.70) exige anclar mas de un fragmento de texto ademas de 'citation' (el ancla primaria). Mismo contrato de verificacion que 'citation' -- citation_sha256 se recalcula igual por el loader.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["citation_id", "citation_text", "match_type", "match_score",
+                     "section_page_paragraph", "citation_sha256"],
+        "properties": {
+          "citation_id": { "type": "string" },
+          "citation_text": { "type": "string", "minLength": 1 },
+          "match_type": { "enum": ["exact", "normalized", "fuzzy", "not_found"] },
+          "match_score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "section_page_paragraph": { "type": "string", "minLength": 1 },
+          "citation_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        }
+      }
+    },
+    "documentary_evidence_expected": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Evidencia esperada en documentos de diseno/intencion (URS=requisitos, FS=comportamiento previsto, DS=diseno, SOP=procedimiento) -- describe QUE debe decir el documento, no que se haya ejecutado. La ausencia de implementation_evidence_expected en un URS/FS/DS NUNCA genera un gap por si sola (ver nota de gate en cada pack)."
+    },
+    "implementation_evidence_expected": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Evidencia esperada en documentos de ejecucion (PROTOCOL=pruebas planificadas, REPORT=resultados observados) -- solo aplica gap por ausencia cuando el expected_doc_types del documento evaluado es PROTOCOL/REPORT."
+    },
+    "applicability_profile_ref": {
+      "type": "string",
+      "description": "Referencia a un perfil de aplicabilidad declarado en otro lugar (p.ej. PART11_APPLICABILITY_V1). El perfil NO se aplica automaticamente a requisitos que no lo referencian explicitamente."
+    },
+    "predicate_rule_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifica la predicate rule de FDA que exige el registro/firma evaluado. 'NOT_DETERMINED' es el unico valor de placeholder aceptado antes de una evaluacion real -- nunca se infiere."
+    },
+    "part11_scope_status": {
+      "enum": ["IN_SCOPE", "OUT_OF_SCOPE", "NOT_DETERMINED"]
+    },
+    "system_environment": {
+      "enum": ["CLOSED_SYSTEM", "OPEN_SYSTEM", "NOT_DETERMINED"],
+      "description": "SS11.10 (cerrado) vs SS11.30 (abierto). SS11.30 exige controles adicionales 'as necessary under the circumstances' -- cifrado/firma digital son ejemplos condicionados, nunca obligacion universal declarada por este campo."
+    },
+    "applicability_status": {
+      "enum": ["APPLICABLE", "NOT_APPLICABLE", "NOT_DETERMINED"],
+      "description": "Derivado deterministicamente por resolve_part11_applicability() (provisional_evidence_model.py) a partir de part11_scope_status + predicate_rule_id. No existe CONDITIONAL: sin una regla determinista completa el resultado es NOT_DETERMINED, nunca un estado intermedio inventado."
+    },
+    "pack_lifecycle_status": {
+      "enum": ["DRAFT", "RELEASED"],
+      "description": "RELEASED requiere promocion humana explicita tras pasar FORMAL_RELEASE_GATE -- nunca automatico (ver provisional_evidence_model.build_reverification_diff_report)."
+    },
+    "content_review_status": {
+      "enum": ["PENDING_HUMAN_INTERPRETATION", "ACCEPTED_FOR_DRAFTING", "APPROVED"],
+      "description": "Estado de revision del CONTENIDO interpretativo por Capa 9, independiente del estado de la FUENTE (source_verification_status). ACCEPTED_FOR_DRAFTING autoriza uso operativo provisional, no liberacion. APPROVED es el unico valor que, combinado con source_verification_status=LOCAL_CANONICAL_COPY_VERIFIED, habilita FORMAL_RELEASE_GATE."
+    },
+    "source_verification_status": {
+      "enum": ["PENDING_REVERIFICATION", "LOCAL_CANONICAL_COPY_VERIFIED"],
+      "description": "Espejo explicito, a nivel de pack, del regulatory_currency_status real de la fuente en source_registry.json -- redundante por diseno (permite auditar el pack sin resolver el registry) pero debe coincidir; una discrepancia es un error de carga."
+    },
+    "runtime_eligibility": {
+      "enum": ["ENABLED_REVIEW_ONLY", "ENABLED_FULL"]
+    },
+    "baseline_eligibility": {
+      "enum": ["PROVISIONAL_ONLY", "FORMAL", "BLOCKED"]
+    },
+    "positive_conclusion_eligibility": {
+      "enum": ["PROVISIONAL_ONLY", "FORMAL", "BLOCKED"]
+    },
+    "draft_remediation_eligibility": {
+      "enum": ["ENABLED_WITH_TRACEABILITY", "BLOCKED"]
+    },
+    "clean_candidate_eligibility": {
+      "enum": ["BLOCKED", "ENABLED"]
+    },
+    "release_eligibility": {
+      "enum": ["BLOCKED", "ENABLED"]
+    },
+    "production_eligibility": {
+      "enum": ["BLOCKED", "ENABLED"]
+    },
+    "ready_for_regulatory_use": {
+      "type": "boolean"
+    },
+    "subrequirement_results": {
+      "type": "object",
+      "description": "Solo para requisitos compuestos (hoy: 21_CFR_11.50_11.70). Resultados independientes por subrequisito -- el resultado combinado nunca es positivo salvo que TODOS los subrequisitos pasen (combined_result_rule).",
+      "additionalProperties": false,
+      "required": ["combined_result_rule"],
+      "properties": {
+        "combined_result_rule": { "enum": ["ALL_SUBREQUIREMENTS_MUST_PASS"] }
+      },
+      "patternProperties": {
+        "^[0-9][0-9_]*$": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "matched_criteria", "unmet_criteria"],
+          "properties": {
+            "status": { "enum": ["PASS", "FAIL", "UNDER_REVIEW", "NOT_ASSESSABLE"] },
+            "matched_criteria": { "type": "array", "items": { "type": "string" } },
+            "unmet_criteria": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
     },
     "expected_doc_types": {
       "type": "array",
-      "items": { "enum": ["URS", "FS", "DS", "SOP", "PROTOCOL", "REPORT", "DRAWING", "OTHER"] },
-      "description": "PENDIENTE de interpretacion humana (Fase C no lo genera). Si se agrega, cada valor debe venir del enum de doc_type ya usado en ROCKWELL_SOURCE_INVENTORY_AND_SCOPE_SPEC.md."
+      "items": { "enum": ["URS", "FS", "DS", "SOP", "PROTOCOL", "REPORT", "DRAWING", "RISK_ASSESSMENT", "VALIDATION_PLAN", "OTHER"] },
+      "description": "PENDIENTE de interpretacion humana (Fase C no lo genera). Los primeros 8 valores vienen del enum de doc_type ya usado en ROCKWELL_SOURCE_INVENTORY_AND_SCOPE_SPEC.md (corpus real). RISK_ASSESSMENT y VALIDATION_PLAN se agregaron en la correccion del modelo de evidencia provisional (2026-07-23, ANNEX11_4) -- tipos de documento legitimos que no aparecen en el corpus Rockwell actual pero son evidencia esperada real para requisitos basados en evaluacion de riesgo."
     },
     "evidence_min_criteria": {
       "type": "array",

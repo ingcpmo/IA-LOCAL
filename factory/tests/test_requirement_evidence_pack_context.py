@@ -4,12 +4,13 @@ Tests -- W5 V2 Fase C: campos mecánicos del Requirement Evidence Pack
 agregados a requirement_catalog_entry_v1.json y respaldados por
 factory/regulatory/tools/build_requirement_evidence_pack_context.py.
 
-Alcance de esta fase (decisión explícita de Capa 9, 2026-07-23): SOLO los
-campos mecánicos se generan aquí. Los campos interpretativos
-(evidence_min_criteria, exclusion_criteria, weak_keywords,
-typical_insufficient_evidence, governed_interpretation,
-expected_doc_types) requieren juicio regulatorio humano y deben quedar
-ausentes -- estas pruebas verifican precisamente que NO se inventen.
+Los campos interpretativos (evidence_min_criteria, exclusion_criteria,
+weak_keywords, typical_insufficient_evidence, governed_interpretation,
+expected_doc_types) requieren juicio regulatorio humano. A partir de
+2026-07-23 (aprobación de Cesar) los 19 requisitos del catálogo -- CFR11
+(5), ANNEX11 (5) y ALCOA (9) -- ya tienen ese contenido redactado; estas
+pruebas verifican que está presente, no vacío, y que ningún requisito
+quedó sin pasar por ese juicio humano.
 """
 import json
 import sys
@@ -114,6 +115,28 @@ class TestBackfillRaisesOnUnlocatableCitation:
             ctx_mod.backfill(requirements_path, registry_path)
 
 
+CFR11_HUMAN_DRAFTED_REQ_IDS = {
+    "21_CFR_11.10(a)", "21_CFR_11.10(d)", "21_CFR_11.10(e)", "21_CFR_11.10(g)",
+    "21_CFR_11.50_11.70",
+}
+ANNEX11_HUMAN_DRAFTED_REQ_IDS = {
+    "ANNEX11_4", "ANNEX11_7.1", "ANNEX11_9", "ANNEX11_12", "ANNEX11_17",
+}
+ALCOA_HUMAN_DRAFTED_REQ_IDS = {
+    "ALCOA_ATTRIBUTABLE", "ALCOA_LEGIBLE", "ALCOA_CONTEMPORANEOUS",
+    "ALCOA_ORIGINAL", "ALCOA_ACCURATE", "ALCOA_COMPLETE", "ALCOA_CONSISTENT",
+    "ALCOA_ENDURING", "ALCOA_AVAILABLE",
+}
+HUMAN_DRAFTED_REQ_IDS = (
+    CFR11_HUMAN_DRAFTED_REQ_IDS | ANNEX11_HUMAN_DRAFTED_REQ_IDS | ALCOA_HUMAN_DRAFTED_REQ_IDS
+)
+INTERPRETIVE_FIELDS = {
+    "evidence_min_criteria", "exclusion_criteria", "weak_keywords",
+    "typical_insufficient_evidence", "governed_interpretation",
+    "expected_doc_types",
+}
+
+
 class TestRealCatalogHasMechanicalFieldsOnly:
 
     def test_all_19_requirements_validate_against_extended_schema(self):
@@ -121,9 +144,35 @@ class TestRealCatalogHasMechanicalFieldsOnly:
             full = {"requirement_id": rid, **entry}
             jsonschema.validate(full, _SCHEMA)
 
-    def test_all_have_evidence_pack_status_pending_human_interpretation(self):
-        for entry in _REAL_CATALOG["requirements"].values():
-            assert entry["evidence_pack_status"] == "structure_only_pending_human_interpretation"
+    def test_all_19_requirements_are_human_drafted(self):
+        """Fase C completa (2026-07-23, aprobado por Cesar): los 19
+        requisitos (CFR11 5 + ANNEX11 5 + ALCOA 9) tienen interpretacion
+        humana real. Ninguno debe quedar en el estado inicial
+        structure_only_pending_human_interpretation."""
+        assert set(_REAL_CATALOG["requirements"].keys()) == HUMAN_DRAFTED_REQ_IDS
+        for rid, entry in _REAL_CATALOG["requirements"].items():
+            assert entry["evidence_pack_status"] == "human_drafted_provisional", rid
+
+    def test_human_drafted_batches_have_human_drafted_provisional_status(self):
+        for rid in HUMAN_DRAFTED_REQ_IDS:
+            entry = _REAL_CATALOG["requirements"][rid]
+            assert entry["evidence_pack_status"] == "human_drafted_provisional", rid
+            assert entry["content_review_status"] == "ACCEPTED_FOR_DRAFTING", rid
+            assert entry["source_verification_status"] == "PENDING_REVERIFICATION", rid
+            # Regla dura: fuente pendiente de reverificacion nunca habilita
+            # liberacion/candidato limpio/produccion, sin importar el
+            # contenido interpretativo redactado.
+            assert entry["clean_candidate_eligibility"] == "BLOCKED", rid
+            assert entry["release_eligibility"] == "BLOCKED", rid
+            assert entry["production_eligibility"] == "BLOCKED", rid
+            assert entry["ready_for_regulatory_use"] is False, rid
+
+    def test_annex11_batch_does_not_use_part11_applicability_profile(self):
+        """PART11_APPLICABILITY_V1 es exclusivo de CFR 11 -- ANNEX11 no debe
+        referenciarlo, por instruccion explicita de Cesar."""
+        for rid in ANNEX11_HUMAN_DRAFTED_REQ_IDS:
+            entry = _REAL_CATALOG["requirements"][rid]
+            assert "applicability_profile_ref" not in entry, rid
 
     def test_all_have_non_trivial_context(self):
         """Ninguno de los 19 debe haber quedado con contexto vacio -- si
@@ -133,19 +182,23 @@ class TestRealCatalogHasMechanicalFieldsOnly:
                 f"{rid}: contexto vacio -- la cita no se localizo en el documento"
             )
 
-    def test_interpretive_fields_are_absent_not_fabricated(self):
-        """Regla dura de esta fase: evidence_min_criteria, exclusion_criteria,
-        weak_keywords, typical_insufficient_evidence, governed_interpretation
-        y expected_doc_types NUNCA deben aparecer todavia -- si aparecen,
-        alguien los genero sin la interpretacion humana requerida."""
-        interpretive_fields = {
-            "evidence_min_criteria", "exclusion_criteria", "weak_keywords",
-            "typical_insufficient_evidence", "governed_interpretation",
-            "expected_doc_types",
-        }
-        for rid, entry in _REAL_CATALOG["requirements"].items():
-            present = interpretive_fields & set(entry.keys())
-            assert not present, f"{rid}: campos interpretativos presentes sin aprobacion humana: {present}"
+    def test_human_drafted_batches_interpretive_fields_are_present_and_non_empty(self):
+        """Reverso deliberado de la regla anterior para los lotes CFR 11 y
+        ANNEX11: la interpretacion humana real de esta sesion (2026-07-23)
+        SI debe estar presente y no vacia -- lo contrario seria perder
+        silenciosamente el trabajo de redaccion aprobado."""
+        for rid in HUMAN_DRAFTED_REQ_IDS:
+            entry = _REAL_CATALOG["requirements"][rid]
+            for field in INTERPRETIVE_FIELDS - {"expected_doc_types"}:
+                assert entry.get(field), f"{rid}: {field} ausente o vacio"
+            assert entry.get("expected_doc_types"), rid
+
+    def test_human_drafted_batches_separate_documentary_and_implementation_evidence(self):
+        for rid in HUMAN_DRAFTED_REQ_IDS:
+            entry = _REAL_CATALOG["requirements"][rid]
+            assert entry.get("documentary_evidence_expected"), rid
+            assert entry.get("implementation_evidence_expected"), rid
+            assert entry["documentary_evidence_expected"] != entry["implementation_evidence_expected"], rid
 
     def test_context_is_real_text_not_placeholder(self):
         """Verificacion puntual del caso ANNEX11_4 (el falso positivo
@@ -154,3 +207,132 @@ class TestRealCatalogHasMechanicalFieldsOnly:
         de Validacion, evidencia legible para juicio humano futuro."""
         entry = _REAL_CATALOG["requirements"]["ANNEX11_4"]
         assert "Validation" in entry["context_before"]
+
+
+class TestAlcoaContentCorrections2026_07_23:
+    """Las 5 correcciones regulatorias reales aplicadas tras la auditoria de
+    2026-07-23 sobre el lote ALCOA. Cada test verifica el texto corregido
+    Y falla explicitamente si el contenido regresara a la formulacion
+    anterior (defectuosa) -- no solo verifica presencia superficial."""
+
+    def test_attributable_distinguishes_human_from_automated_data(self):
+        entry = _REAL_CATALOG["requirements"]["ALCOA_ATTRIBUTABLE"]
+        text = entry["governed_interpretation"]
+        assert "instrumento" in text or "sistema" in text, (
+            "ALCOA_ATTRIBUTABLE debe permitir atribucion a instrumento/sistema "
+            "para datos autogenerados, no solo identidad humana"
+        )
+        assert "automaticamente" in text or "autogenerado" in " ".join(
+            entry["evidence_min_criteria"] + entry["exclusion_criteria"]
+        ), "debe distinguir explicitamente el caso de dato autogenerado"
+        criteria_text = " ".join(entry["exclusion_criteria"])
+        assert "compartida" in criteria_text, (
+            "la exclusion de cuentas humanas compartidas debe seguir vigente -- "
+            "la correccion agrega el caso automatizado, no reemplaza el caso humano"
+        )
+
+    def test_contemporaneous_scribe_records_in_real_time(self):
+        entry = _REAL_CATALOG["requirements"]["ALCOA_CONTEMPORANEOUS"]
+        text = entry["governed_interpretation"]
+        assert "escribiente" in text and "contrafirma" in text, (
+            "debe distinguir explicitamente escribiente (contemporaneo) de "
+            "contrafirma del ejecutor (unica pieza que puede ser retrospectiva)"
+        )
+        assert "no retrospectivo" in text or "no retrospectiva" in text, (
+            "el registro del escribiente debe declararse explicitamente NO retrospectivo"
+        )
+
+    def test_contemporaneous_rejects_delay_documented_alone_as_sufficient(self):
+        """Regresion directa contra la formulacion anterior: 'motivo y demora
+        documentados, registro lo antes posible' aceptaba cualquier
+        transcripcion tardia solo por estar documentada la demora."""
+        entry = _REAL_CATALOG["requirements"]["ALCOA_CONTEMPORANEOUS"]
+        exclusion_text = " ".join(entry["exclusion_criteria"])
+        assert "unicamente porque la demora" in exclusion_text or (
+            "solo porque la demora" in exclusion_text
+        ), (
+            "debe excluir explicitamente aceptar una transcripcion tardia "
+            "solo porque la demora esta documentada"
+        )
+        # La formulacion anterior (defectuosa) aparecia en evidence_min_criteria
+        # como una condicion suficiente aislada -- no debe volver a existir así.
+        old_defective_min_criteria = [
+            "Para excepciones reales, motivo y demora documentados, registro lo antes posible."
+        ]
+        assert entry["evidence_min_criteria"] != old_defective_min_criteria, (
+            "evidence_min_criteria no debe reducirse otra vez a la formulacion "
+            "que aceptaba demora documentada como condicion suficiente aislada"
+        )
+
+    def test_accurate_scopes_all_forms_to_evaluated_process(self):
+        """Regresion directa: 'cubre todas las formas en que el dato existe'
+        (sin acotar) generaba gaps falsos para soportes fuera de alcance."""
+        entry = _REAL_CATALOG["requirements"]["ALCOA_ACCURATE"]
+        criteria_text = " ".join(entry["evidence_min_criteria"])
+        assert "todas las formas en que el dato existe" not in criteria_text, (
+            "la formulacion sin acotar a proceso/alcance evaluado no debe reaparecer"
+        )
+        assert "proceso y alcance evaluados" in criteria_text, (
+            "debe acotar explicitamente 'todas las formas' al proceso y alcance evaluados"
+        )
+
+    def test_complete_conditions_oos_on_applicability(self):
+        """Regresion directa: exigir OOS sin condicion de aplicabilidad genera
+        falso gap en procesos donde OOS no es un concepto aplicable."""
+        entry = _REAL_CATALOG["requirements"]["ALCOA_COMPLETE"]
+        full_text = entry["governed_interpretation"] + " ".join(
+            entry["evidence_min_criteria"] + entry["exclusion_criteria"]
+        )
+        assert "OOS" in full_text, "debe mencionar explicitamente el tratamiento condicional de OOS"
+        assert "aplicable" in full_text or "aplique" in full_text, (
+            "el tratamiento de OOS debe estar condicionado a su aplicabilidad al proceso evaluado"
+        )
+        assert any("falso gap" in c for c in entry["exclusion_criteria"]), (
+            "debe excluir explicitamente exigir OOS en un proceso donde no aplica"
+        )
+
+    def test_available_replaces_ambiguous_reasonable_timeframe(self):
+        """Regresion directa: 'en plazo razonable' es la frase ambigua que
+        la correccion reemplaza por el estandar 'sin demora indebida,
+        directamente accesible ... y en forma legible'."""
+        entry = _REAL_CATALOG["requirements"]["ALCOA_AVAILABLE"]
+        full_text = " ".join(
+            [entry["governed_interpretation"]]
+            + entry["evidence_min_criteria"]
+            + entry["exclusion_criteria"]
+            + entry["implementation_evidence_expected"]
+        )
+        assert "plazo razonable" not in full_text, (
+            "la frase ambigua 'plazo razonable' no debe reaparecer en ningun campo"
+        )
+        assert "sin demora indebida" in full_text, "debe usar el estandar acordado"
+        assert "directamente accesible" in full_text, "debe usar el estandar acordado"
+        assert "forma legible" in full_text, "debe usar el estandar acordado"
+
+    def test_consistent_accepts_human_or_technical_equivalent_controls(self):
+        """Aclaracion explicita: la deteccion de inconsistencias no debe
+        exigir exclusivamente un control automatizado."""
+        entry = _REAL_CATALOG["requirements"]["ALCOA_CONSISTENT"]
+        full_text = entry["governed_interpretation"] + " ".join(entry["evidence_min_criteria"])
+        assert "humano" in full_text or "humanos" in full_text, (
+            "debe aclarar explicitamente que un control humano es aceptable"
+        )
+        assert "gobernado" in full_text or "gobernados" in full_text, (
+            "el control humano/tecnico/equivalente debe estar sujeto a gobierno explicito"
+        )
+
+    def test_no_duplicated_structural_fields_added(self):
+        """Regla dura de esta correccion (instruccion explicita de Cesar):
+        no agregar canonical_text/supporting_citations/source_scope/
+        source_applicability_caveats -- esos campos no existen en el schema
+        y no deben aparecer en ningun requisito."""
+        forbidden_fields = {
+            "canonical_text", "supporting_citations",
+            "source_scope", "source_applicability_caveats",
+        }
+        for rid, entry in _REAL_CATALOG["requirements"].items():
+            present = forbidden_fields & set(entry.keys())
+            assert not present, f"{rid}: campos estructurales no autorizados presentes: {present}"
+        assert not (forbidden_fields & set(_SCHEMA["properties"].keys())), (
+            "el schema no debe declarar estos campos sin una decision arquitectonica separada"
+        )

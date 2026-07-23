@@ -38,8 +38,60 @@ requirements:
       (b) The ability to generate accurate and complete copies of records in both human readable and electronic
       form suitable for inspection, review, and copying by the agency. Persons should contact the agency
       if there are any questions regarding the ability of the agency to perform such review and cop'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    source_verification_status: PENDING_REVERIFICATION
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    applicability_profile_ref: PART11_APPLICABILITY_V1
+    predicate_rule_id: NOT_DETERMINED
+    part11_scope_status: NOT_DETERMINED
+    system_environment: NOT_DETERMINED
+    applicability_status: NOT_DETERMINED
+    governed_interpretation: Exige validacion documentada basada en riesgo y en el uso previsto del sistema,
+      con criterios de aceptacion definidos antes de ejecutar, evidencia real de ejecucion, trazabilidad
+      requisito-prueba-resultado, y capacidad demostrada de discernir registros invalidos o alterados.
+      IQ/OQ/PQ y checksums son ejemplos de metodo, no el unico medio aceptable.
+    evidence_min_criteria:
+    - Enfoque de validacion basado en riesgo y uso previsto, documentado.
+    - Criterios de aceptacion definidos antes de la ejecucion.
+    - Evidencia real de ejecucion (protocolo ejecutado, resultados, desviaciones si las hay).
+    - Trazabilidad requisito<->prueba<->resultado.
+    - Mecanismo demostrado (cualquier metodo tecnico) capaz de discernir registros invalidos/alterados.
+    exclusion_criteria:
+    - '"Sistema validado" sin protocolo ni criterios de aceptacion.'
+    - '"Cumple 21 CFR Part 11" sin describir mecanismo.'
+    - Mencion solo en lista de referencias/estandares.
+    - Enfoque de validacion no justificado por riesgo/uso previsto (checklist generico sin alcance definido).
+    typical_insufficient_evidence:
+    - '"Sistema validado" en portada o control de cambios sin protocolo asociado.'
+    - Cita del numero de norma sin describir como se cumple.
+    weak_keywords:
+    - validado
+    - validated
+    - compliant
+    - cumple
+    expected_doc_types:
+    - URS
+    - FS
+    - PROTOCOL
+    - REPORT
+    documentary_evidence_expected:
+    - Enfoque de validacion descrito (riesgo + uso previsto).
+    - Criterios de aceptacion definidos a nivel de diseno.
+    - Mecanismo de deteccion de invalidez/alteracion especificado a nivel de diseno.
+    implementation_evidence_expected:
+    - Protocolo ejecutado con resultados registrados.
+    - Evidencia funcional del mecanismo de deteccion de alteracion.
+    - Desviaciones documentadas, si las hay.
   21_CFR_11.10(d):
     label: Limitar acceso a individuos autorizados
     source_id: ecfr_21cfr_part11
@@ -70,8 +122,64 @@ requirements:
       and time of operator entries and actions that create, modify, or delete electronic records. Record
       changes shall not obscure previously recorded information. Such audit trail documentation shall
       be re'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    source_verification_status: PENDING_REVERIFICATION
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    applicability_profile_ref: PART11_APPLICABILITY_V1
+    predicate_rule_id: NOT_DETERMINED
+    part11_scope_status: NOT_DETERMINED
+    system_environment: NOT_DETERMINED
+    applicability_status: NOT_DETERMINED
+    governed_interpretation: 'Exige control efectivo y probado sobre el sistema regulado -- local o integrado
+      con un proveedor de identidad (SSO/LDAP/AD) -- mas gestion de acceso a lo largo del ciclo de vida
+      de la cuenta (alta, cambio, revision, revocacion). Las cuentas humanas compartidas se rechazan.
+      Las cuentas tecnicas no interactivas (servicio, integracion) son aceptables unicamente si estan
+      gobernadas: propietario, proposito, privilegio minimo, y prohibicion explicita de ejecutar una firma
+      electronica.'
+    evidence_min_criteria:
+    - Mecanismo de control de acceso (propio o federado) sobre el sistema, descrito.
+    - Alta, cambio, revision periodica y revocacion de cuentas.
+    - Cuentas humanas individuales (no compartidas).
+    - Cuentas tecnicas no interactivas, si existen, gobernadas con propietario, proposito, privilegio
+      minimo y prohibicion de firma electronica.
+    - Evidencia de prueba de acceso permitido y denegado.
+    exclusion_criteria:
+    - '"Acceso restringido" sin mecanismo descrito.'
+    - Login de red/dominio sin vinculo explicito declarado al sistema evaluado (incluso si es federado).
+    - Sin evidencia de revocacion o revision periodica.
+    - Cuentas humanas compartidas o genericas ("operador", "admin").
+    - Cuenta tecnica sin propietario/proposito/privilegio minimo documentados.
+    - Cuenta tecnica usada para ejecutar una firma electronica.
+    typical_insufficient_evidence:
+    - '"Usuario y contrasena" sin niveles de acceso ni gestion de autorizacion.'
+    - Cuenta de servicio sin alcance ni propietario declarados.
+    weak_keywords:
+    - seguro
+    - secure
+    - restricted
+    - protegido
+    expected_doc_types:
+    - URS
+    - FS
+    - DS
+    - SOP
+    documentary_evidence_expected:
+    - Mecanismo de control de acceso descrito a nivel de diseno.
+    - Politica de gestion de cuentas (alta/cambio/revision/revocacion) descrita.
+    - Gobierno de cuentas tecnicas (propietario, proposito, privilegio minimo) descrito, si aplica.
+    implementation_evidence_expected:
+    - Evidencia real de alta/baja/revision de cuentas ejecutada.
+    - Prueba de acceso permitido y denegado registrada.
   21_CFR_11.10(e):
     label: Audit trail seguro con timestamp
     source_id: ecfr_21cfr_part11
@@ -105,8 +213,66 @@ requirements:
 
 
       (f) Use of operational system checks to enforce'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    source_verification_status: PENDING_REVERIFICATION
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    applicability_profile_ref: PART11_APPLICABILITY_V1
+    predicate_rule_id: NOT_DETERMINED
+    part11_scope_status: NOT_DETERMINED
+    system_environment: NOT_DETERMINED
+    applicability_status: NOT_DETERMINED
+    governed_interpretation: Exige generacion automatica e independiente del operador, con timestamp,
+      registrando entradas y acciones (crear/modificar/eliminar), preservando la informacion previa (no
+      sobrescribir), con controles de acceso privilegiado, trazabilidad y deteccion de manipulacion sobre
+      el propio audit trail, prohibicion y deteccion de modificacion silenciosa, retencion igual o mayor
+      a la del registro asociado, y disponibilidad para revision y copia.
+    evidence_min_criteria:
+    - Generacion automatica, independiente del operador.
+    - Timestamp de fecha/hora.
+    - Registro de entradas y acciones (crear/modificar/eliminar).
+    - Preservacion del valor/informacion previa (no solo el nuevo valor).
+    - Controles de acceso privilegiado sobre el propio audit trail.
+    - Trazabilidad y capacidad de deteccion de manipulacion.
+    - Prohibicion y deteccion de modificacion silenciosa.
+    - Retencion igual o mayor al periodo de retencion del registro asociado.
+    - Capacidad de exportar/copiar para inspeccion.
+    exclusion_criteria:
+    - '"Se registran cambios" sin confirmar automatismo/timestamp.'
+    - Bitacora manual/papel como unico mecanismo.
+    - Audit trail sin controles de acceso privilegiado documentados.
+    - Audit trail que sobrescribe el valor anterior sin preservarlo.
+    - Ausencia de mecanismo de deteccion de manipulacion.
+    - Sin evidencia de retencion equivalente al registro.
+    typical_insufficient_evidence:
+    - '"Historial de cambios" sin confirmar generacion automatica ni inmutabilidad.'
+    - Audit trail visible sin control documentado de quien puede administrarlo.
+    weak_keywords:
+    - trazable
+    - traceable
+    - historial
+    - log
+    expected_doc_types:
+    - FS
+    - DS
+    - PROTOCOL
+    - REPORT
+    documentary_evidence_expected:
+    - Especificacion del audit trail (campos, automatismo, preservacion de valor previo) a nivel de diseno.
+    - Controles de acceso privilegiado y politica de retencion descritos.
+    implementation_evidence_expected:
+    - Prueba de inmutabilidad ejecutada.
+    - Prueba de intento de desactivacion bloqueado.
+    - Prueba de exportacion para inspeccion.
   21_CFR_11.10(g):
     label: Verificacion de autoridad (authority checks)
     source_id: ecfr_21cfr_part11
@@ -141,58 +307,198 @@ requirements:
 
       (i) Determination that persons who develop, maintain, or use electronic record/electronic signature
       systems have the education, training, and experience to '
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    source_verification_status: PENDING_REVERIFICATION
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    applicability_profile_ref: PART11_APPLICABILITY_V1
+    predicate_rule_id: NOT_DETERMINED
+    part11_scope_status: NOT_DETERMINED
+    system_environment: NOT_DETERMINED
+    applicability_status: NOT_DETERMINED
+    governed_interpretation: 'Distinto de 11.10(d): exige verificacion de autoridad para cada operacion
+      aplicable que ofrezca el sistema -- consultar, crear, modificar, aprobar, firmar, eliminar, administrar,
+      operar (segun corresponda) -- no limitado a "firmar vs. ver". Chequeo tecnico de autoridad ejecutado
+      en el momento de cada operacion aplicable.'
+    evidence_min_criteria:
+    - Matriz de operaciones del sistema con el nivel de autorizacion requerido por cada una (segun aplique).
+    - Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.
+    - 'Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.'
+    exclusion_criteria:
+    - Solo login general sin diferenciar por operacion.
+    - Asumir que 11.10(d) ya cubre esto.
+    - Matriz de autorizacion documentada pero sin prueba real de bloqueo.
+    typical_insufficient_evidence:
+    - '"Solo usuarios autorizados pueden operar el sistema" sin matriz ni prueba de denegacion.'
+    weak_keywords:
+    - autorizado
+    - authorized
+    - permiso
+    expected_doc_types:
+    - FS
+    - DS
+    - PROTOCOL
+    documentary_evidence_expected:
+    - Matriz de operaciones x niveles de autorizacion descrita a nivel de diseno.
+    implementation_evidence_expected:
+    - Prueba negativa ejecutada y registrada (intento denegado real o simulado).
+    - Log de intentos denegados.
   21_CFR_11.50_11.70:
     label: Firma electronica (manifestacion y vinculo al registro)
     source_id: ecfr_21cfr_part11
     citation:
-      citation_id: P11-11.50
-      citation_text: The printed name of the signer;
+      citation_id: P11-11.50a
+      citation_text: 'Signed electronic records shall contain information associated with the signing
+        that clearly indicates all of the following:
+
+
+        (1) The printed name of the signer;
+
+
+        (2) The date and time when the signature was executed; and
+
+
+        (3) The meaning (such as review, approval, responsibility, or authorship) associated with the
+        signature.'
       match_type: exact
       match_score: 1.0
-      section_page_paragraph: § 11.50, paragraph (a)(1)
-      citation_sha256: 799f2fbbf408d7bd2dfaa6f362eaeea6ff794631dad9bd542ec84e21e7decc08
+      section_page_paragraph: § 11.50, paragraph (a)(1)-(3)
+      citation_sha256: 6c7ff8adfc618dcbd39e12f70892192bb0ad4680a16bc4dfbe6aa9d7b561cbf6
     normative_type: regulation
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
-    context_before: 'igital signature standards to ensure, as necessary under the circumstances, record
-      authenticity, integrity, and confidentiality.
+    context_before: ' include those identified in § 11.10, as appropriate, and additional measures such
+      as document encryption and use of appropriate digital signature standards to ensure, as necessary
+      under the circumstances, record authenticity, integrity, and confidentiality.
 
 
 
       § 11.50 Signature manifestations.
 
 
-      (a) Signed electronic records shall contain information associated with the signing that clearly
-      indicates all of the following:
-
-
-      (1) '
+      (a) '
     context_after: '
 
 
-      (2) The date and time when the signature was executed; and
-
-
-      (3) The meaning (such as review, approval, responsibility, or authorship) associated with the signature.
-
-
       (b) The items identified in paragraphs (a)(1), (a)(2), and (a)(3) of this section shall be subject
-      to the same controls as for elect'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+      to the same controls as for electronic records and shall be included as part of any human readable
+      form of the electronic record (such as electronic display or printout).
+
+
+
+      § 11.70 Signature/record l'
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    source_verification_status: PENDING_REVERIFICATION
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    applicability_profile_ref: PART11_APPLICABILITY_V1
+    predicate_rule_id: NOT_DETERMINED
+    part11_scope_status: NOT_DETERMINED
+    system_environment: NOT_DETERMINED
+    applicability_status: NOT_DETERMINED
+    additional_citations:
+    - citation_id: P11-11.50b
+      citation_text: The items identified in paragraphs (a)(1), (a)(2), and (a)(3) of this section shall
+        be subject to the same controls as for electronic records and shall be included as part of any
+        human readable form of the electronic record (such as electronic display or printout).
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: § 11.50, paragraph (b)
+      citation_sha256: 8cd4bf5f52e7176b0eb459002305c542c7bc65ca46b8f937785209800cdc17f1
+    - citation_id: P11-11.70
+      citation_text: Electronic signatures and handwritten signatures executed to electronic records shall
+        be linked to their respective electronic records to ensure that the signatures cannot be excised,
+        copied, or otherwise transferred to falsify an electronic record by ordinary means.
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: § 11.70
+      citation_sha256: 0479a822a3481f0de1f28c0ec059d37b5509c4a336243067ce61b73c8721398d
+    governed_interpretation: 'Requisito compuesto con resultados independientes por subrequisito (subrequirement_results).
+      11.50: exige nombre, fecha/hora y significado de la firma, en forma legible, sujetos a los mismos
+      controles aplicables al registro electronico que acompanan (no solo controles de acceso -- incluye
+      integridad, retencion y disponibilidad equivalentes, § 11.50(b)). 11.70: exige un mecanismo tecnico
+      protegido y validado que impida extraer, copiar o transferir la firma por medios ordinarios; hash,
+      firma digital o asociacion inmutable son ejemplos posibles, no obligacion unica. El resultado final
+      compuesto solo es positivo si ambos subrequisitos pasan (combined_result_rule=ALL_SUBREQUIREMENTS_MUST_PASS)
+      y la fuente esta formalmente reverificada.'
+    evidence_min_criteria:
+    - '11.50: nombre + fecha/hora + significado, en forma legible y asociados al registro.'
+    - '11.50: los mismos controles aplicables al registro electronico (acceso, integridad, retencion,
+      disponibilidad) extendidos a los 3 elementos de la firma.'
+    - '11.70: mecanismo tecnico protegido que ata la firma al registro especifico.'
+    - '11.70: prueba/validacion de que ese mecanismo impide extraccion, copia o transferencia por medios
+      ordinarios.'
+    exclusion_criteria:
+    - '11.50: checkbox de aprobacion sin los 3 componentes.'
+    - '11.50: firma escaneada/imagen sin los 3 componentes.'
+    - '11.50: firma con controles menores a los del registro que acompana.'
+    - '11.70: vinculo solo logico (FK editable sin proteccion ni validacion) sin prueba de resistencia
+      a medios ordinarios.'
+    typical_insufficient_evidence:
+    - Checkbox "[x] Aprobado" sin nombre, fecha ni significado visibles.
+    - Firma como campo booleano aprobado=true sin relacion tecnica con el registro.
+    weak_keywords:
+    - firmado
+    - signed
+    - aprobado
+    - vinculo
+    - link
+    - transferible
+    expected_doc_types:
+    - FS
+    - DS
+    - SOP
+    - PROTOCOL
+    documentary_evidence_expected:
+    - '11.50: diseno del registro de firma mostrando los 3 campos, en forma legible.'
+    - '11.70: mecanismo de vinculo firma-registro descrito a nivel de diseno.'
+    implementation_evidence_expected:
+    - '11.50: evidencia real de controles equivalentes al registro aplicados a la firma.'
+    - '11.70: prueba de invalidacion al modificar el registro y de intento de copia/reasignacion bloqueado.'
+    subrequirement_results:
+      '11_50':
+        status: NOT_ASSESSABLE
+        matched_criteria: []
+        unmet_criteria: []
+      '11_70':
+        status: NOT_ASSESSABLE
+        matched_criteria: []
+        unmet_criteria: []
+      combined_result_rule: ALL_SUBREQUIREMENTS_MUST_PASS
   ANNEX11_4:
     label: Gestion de riesgo del sistema computarizado
     source_id: eu_gmp_annex11
     citation:
       citation_id: A11-4.1
-      citation_text: The validation documentation and reports should cover the relevant steps of the life
+      citation_text: 'The validation documentation and reports should cover the relevant steps of the
+        life
+
+        cycle. Manufacturers should be able to justify their standards, protocols, acceptance criteria,
+
+        procedures and records based on their risk assessment.'
       match_type: exact
       match_score: 1.0
       section_page_paragraph: Section 4 (Validation), paragraph 4.1
-      citation_sha256: ac6e8a546c54682a01629813b6b9669c45ed128b08971d17526b0eb2590e74bd
+      citation_sha256: 1cbb4a35ec826bd8f00c345bbf452cc63eb7ae8d11bfa1038afd30509096276d
     normative_type: official_guidance
     jurisdiction: EU
     binding_status: binding_requirement
@@ -212,25 +518,86 @@ requirements:
       4.1 '
     context_after: '
 
-      cycle. Manufacturers should be able to justify their standards, protocols, acceptance criteria,
-
-      procedures and records based on their risk assessment.
-
       4.2 Validation documentation should include change control records (if applicable) and
 
-      reports on any deviations observed during the validation proc'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+      reports on any deviations observed during the validation process.
+
+      4.3 An up to date listing of all relevant systems and their GMP functionality (inventory)
+
+      should be available.
+
+      For critical systems an up to date '
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: 'Lectura gobernada (no texto literal del numeral): la trazabilidad explicita
+      entre una evaluacion de riesgo real y cada decision de validacion (alcance, protocolos, criterios
+      de aceptacion, procedimientos, registros elegidos) es lo que este requisito exige -- una evaluacion
+      de riesgo que exista como documento aislado, sin conexion demostrable con esas decisiones, no lo
+      satisface. Regla dura confirmada por adjudicacion humana real (Fase H, 2026-07-23): una mencion
+      de "GAMP5"/"risk-based approach" dentro de una lista de referencias bibliograficas nunca cuenta
+      como evidencia de gestion de riesgo real.'
+    evidence_min_criteria:
+    - Documentacion de validacion que cubre las etapas relevantes del ciclo de vida.
+    - Evaluacion de riesgo real y documentada.
+    - Conexion explicita y trazable entre esa evaluacion de riesgo y las decisiones de validacion tomadas
+      (alcance, protocolos, criterios de aceptacion, procedimientos, registros).
+    exclusion_criteria:
+    - '"GAMP5"/"risk-based approach" mencionado solo en lista de referencias bibliograficas -- caso real
+      confirmado (corrida URS v2.1, adjudicado 2026-07-23).'
+    - Cualquier mencion de "riesgo" sin evaluacion, matriz o criterio de evaluacion real descrito.
+    - Estandares/protocolos/criterios declarados sin conexion demostrable con una evaluacion de riesgo.
+    typical_insufficient_evidence:
+    - Se cita "GAMP5 A Risk-Based Approach" como referencia bibliografica sin describir como se aplico
+      al sistema evaluado.
+    - Evaluacion de riesgo existe como documento pero sin vinculo explicito a las decisiones de validacion
+      reales.
+    weak_keywords:
+    - risk
+    - riesgo
+    - GAMP5
+    - risk-based
+    - life cycle
+    - justify
+    expected_doc_types:
+    - RISK_ASSESSMENT
+    - VALIDATION_PLAN
+    - URS
+    - FS
+    - DS
+    - SOP
+    - PROTOCOL
+    - REPORT
+    documentary_evidence_expected:
+    - Enfoque de evaluacion de riesgo descrito a nivel de plan/diseno.
+    - Criterios de aceptacion propuestos, con su justificacion por riesgo, a nivel de diseno.
+    implementation_evidence_expected:
+    - Evaluacion de riesgo ejecutada y documentada.
+    - Evidencia de que el alcance/profundidad real de las pruebas se derivo de esa evaluacion.
   ANNEX11_7.1:
     label: Almacenamiento y proteccion de datos
     source_id: eu_gmp_annex11
     citation:
       citation_id: A11-7.1
-      citation_text: Data should be secured by both physical and electronic means against damage.
+      citation_text: 'Data should be secured by both physical and electronic means against damage. Stored
+
+        data should be checked for accessibility, readability and accuracy. Access to data should be
+
+        ensured throughout the retention period.'
       match_type: exact
       match_score: 1.0
       section_page_paragraph: Section 7 (Data Storage), paragraph 7.1
-      citation_sha256: 192121a465d72e3b078fb9687639b9ac30b0d133be7afc53d9a3da9f645bd9ee
+      citation_sha256: 73c1b7b941811da48f3c3dd8bd2b1c0470844feb5dc95e3d237f2afb99e34ba9
     normative_type: official_guidance
     jurisdiction: EU
     binding_status: binding_requirement
@@ -246,27 +613,101 @@ requirements:
       7. Data Storage
 
       7.1 '
-    context_after: ' Stored
-
-      data should be checked for accessibility, readability and accuracy. Access to data should be
-
-      ensured throughout the retention period.
+    context_after: '
 
       7.2 Regular back-ups of all relevant data should be done. Integrity and accuracy of back-
 
-      up data and the ability to restore the data should be checked during'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+      up data and the ability to restore the data should be checked during validation and monitored
+
+      periodically.
+
+      8. Printouts
+
+      8.1 It should be possible to obtain clear printed copies of electronically stored data.
+
+      '
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: 'Exige ambos medios ("by both") -- fisico y electronico -- contra dano, y
+      una verificacion DOCUMENTADA de accesibilidad/legibilidad/exactitud de los datos almacenados. El
+      texto no impone una periodicidad literal universal ("should be checked" no equivale a "debe reverificarse
+      cada N meses"): la verificacion debe estar documentada, y cuando el riesgo del sistema y el procedimiento
+      interno lo justifiquen, debe existir ademas una frecuencia de reverificacion definida -- ausencia
+      total de verificacion documentada es incumplimiento; ausencia de frecuencia definida en un sistema
+      donde el riesgo la justifica es un gap; una verificacion unica bien fundamentada, en un sistema
+      de bajo riesgo, no se rechaza automaticamente solo por no repetirse. El acceso a los datos debe
+      estar garantizado durante todo el periodo de retencion declarado. La prueba de restauracion de backup
+      es evidencia COMPLEMENTARIA cuando existe mecanismo de backup -- pertenece propiamente al requisito
+      de backups (Seccion 7.2, fuera de los 19 requisitos de este catalogo), no es criterio minimo exclusivo
+      de 7.1.'
+    evidence_min_criteria:
+    - Medios fisicos de proteccion descritos (acceso restringido a sala de servidores/racks).
+    - Medios electronicos de proteccion descritos (redundancia, checksums, control de integridad).
+    - Verificacion documentada (al menos una vez, con evidencia real) de accesibilidad, legibilidad y
+      exactitud.
+    - Frecuencia de reverificacion definida segun riesgo y procedimiento, cuando el riesgo del sistema
+      lo justifique.
+    - Periodo de retencion declarado, con evidencia de que el acceso a los datos se mantiene durante ese
+      periodo.
+    exclusion_criteria:
+    - Solo uno de los dos medios (fisico o electronico) presentado como si cubriera el requisito completo.
+    - '"Los datos estan seguros" sin mecanismo concreto.'
+    - Ausencia total de verificacion documentada de accesibilidad/legibilidad/exactitud.
+    - Sistema de riesgo relevante sin frecuencia de reverificacion definida, cuando el riesgo la justifica.
+    - Sin periodo de retencion declarado ni evidencia de acceso sostenido durante ese periodo.
+    typical_insufficient_evidence:
+    - '"Los datos se almacenan de forma segura" sin mecanismo fisico o electronico concreto.'
+    - Verificacion mencionada sin evidencia real (fecha, resultado) ni criterio de frecuencia.
+    weak_keywords:
+    - seguro
+    - protegido
+    - secured
+    - verificacion
+    - backup
+    expected_doc_types:
+    - DS
+    - SOP
+    - RISK_ASSESSMENT
+    - REPORT
+    documentary_evidence_expected:
+    - Diseno de ambos medios de proteccion (fisico y electronico).
+    - Politica de retencion descrita.
+    - Criterio de riesgo usado para definir la frecuencia de reverificacion, cuando aplique.
+    implementation_evidence_expected:
+    - Verificacion real ejecutada al menos una vez, con evidencia (fecha, resultado).
+    - Evidencia de reverificacion periodica SI el riesgo del sistema la exige.
+    - (Complementaria, no exclusiva de 7.1) prueba de restauracion de backup, si existe mecanismo de backup
+      -- ver requisito de backups.
   ANNEX11_9:
     label: Audit trail
     source_id: eu_gmp_annex11
     citation:
       citation_id: A11-9
-      citation_text: Consideration should be given, based on a risk assessment, to building into the system
+      citation_text: 'Consideration should be given, based on a risk assessment, to building into the
+        system
+
+        the creation of a record of all GMP-relevant changes and deletions (a system generated "audit
+
+        trail"). For change or deletion of GMP-relevant data the reason should be documented. Audit
+
+        trails need to be available and convertible to a generally intelligible form and regularly
+
+        reviewed.'
       match_type: exact
       match_score: 1.0
       section_page_paragraph: Section 9 (Audit Trails)
-      citation_sha256: 7eadba06304fb09c67a615ee0170f070430aa532e01f671e9c91f9df9ae9d182
+      citation_sha256: 04aea1db88048d1f2776a051daab3eaa39c7f80b8a11949e345825f6855533f5
     normative_type: official_guidance
     jurisdiction: EU
     binding_status: binding_requirement
@@ -288,27 +729,83 @@ requirements:
       '
     context_after: '
 
-      the creation of a record of all GMP-relevant changes and deletions (a system generated "audit
+      10. Change and Configuration Management
 
-      trail"). For change or deletion of GMP-relevant data the reason should be documented. Audit
+      Any changes to a computerised system including system configurations should only be made
 
-      trails need to be available and convertible to a generally intelligible form and regularly
+      in a controlled manner in accordance with a defined procedure.
 
-      reviewed.
+      11. Periodic evaluation
 
-      10. Change a'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+      Computerised systems should be periodically evaluated to confirm that they remain i'
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: Condiciona el audit trail a una evaluacion de riesgo previa ("based on a
+      risk assessment", no logging incondicional); exige documentar el MOTIVO de cada cambio/eliminacion
+      GMP-relevante (no solo el hecho del cambio); el audit trail debe estar disponible y ser convertible
+      a una forma generalmente inteligible (exportable, legible por humano); y exige revision periodica
+      REAL del audit trail, no solo su existencia o generacion automatica.
+    evidence_min_criteria:
+    - Evaluacion de riesgo documentada sobre la necesidad/alcance del audit trail.
+    - Audit trail generado por el sistema que registra cambios y eliminaciones GMP-relevantes.
+    - Motivo documentado para cada cambio/eliminacion GMP-relevante (no solo el hecho del cambio).
+    - Formato disponible y convertible a forma generalmente inteligible (exportable/legible por humano).
+    - Evidencia de revision periodica real del audit trail (no solo su existencia).
+    exclusion_criteria:
+    - Audit trail presente sin evidencia de la evaluacion de riesgo que lo sustente.
+    - Registro de cambios sin motivo documentado.
+    - Audit trail que existe pero nunca se revisa (sin evidencia de revision periodica real).
+    - Formato no exportable o no inteligible para revision humana.
+    typical_insufficient_evidence:
+    - Se menciona la existencia de audit trail sin conectarlo con una evaluacion de riesgo previa.
+    - Cambios registrados sin campo de motivo.
+    - Sin registro de revisiones periodicas realmente ejecutadas.
+    weak_keywords:
+    - audit trail
+    - trazabilidad
+    - revisado
+    - reviewed
+    expected_doc_types:
+    - RISK_ASSESSMENT
+    - FS
+    - DS
+    - SOP
+    - PROTOCOL
+    - REPORT
+    documentary_evidence_expected:
+    - Alcance del audit trail definido segun evaluacion de riesgo, a nivel de diseno.
+    - Formato de exportacion/consulta descrito a nivel de diseno.
+    implementation_evidence_expected:
+    - Evaluacion de riesgo ejecutada y documentada.
+    - Evidencia de motivo documentado en cambios reales.
+    - Evidencia de revisiones periodicas reales ejecutadas (fecha, revisor, hallazgos).
   ANNEX11_12:
     label: Seguridad fisica y logica
     source_id: eu_gmp_annex11
     citation:
       citation_id: A11-12.1
-      citation_text: Physical and/or logical controls should be in place to restrict access to computerised
+      citation_text: 'Physical and/or logical controls should be in place to restrict access to computerised
+
+        system to authorised persons. Suitable methods of preventing unauthorised entry to the
+
+        system may include the use of keys, pass cards, personal codes with passwords, biometrics,
+
+        restricted access to computer equipment and data storage areas.'
       match_type: exact
       match_score: 1.0
       section_page_paragraph: Section 12 (Security), paragraph 12.1
-      citation_sha256: 597874fb781a126ab16f6606396d94da09bd13dbdd3f4fc0ff167a84fe7e7e7f
+      citation_sha256: e9cabc7cffb21e1afcbacc6431377d9e7c3116ad7e8595223d0a73b61eac1100
     normative_type: official_guidance
     jurisdiction: EU
     binding_status: binding_requirement
@@ -326,26 +823,80 @@ requirements:
       12.1 '
     context_after: '
 
-      system to authorised persons. Suitable methods of preventing unauthorised entry to the
+      12.2 The extent of security controls depends on the criticality of the computerised system.
 
-      system may include the use of keys, pass cards, personal codes with passwords, biometrics,
+      12.3 Creation, change, and cancellation of access authorisations should be recorded.
 
-      restricted access to computer equipment and data storage areas.
+      12.4 Management systems for data and for documents should be designed to record the
 
-      12.2 The extent of security controls depends on the criti'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+      identity of operators entering, changi'
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: 'El texto usa "and/or": no exige obligatoriamente ambos tipos de control
+      (fisico y logico) de forma simultanea. Pero un control unico -- fisico o logico -- NO basta solo
+      por estar descrito: la combinacion elegida (fisico, logico, o ambos) debe estar JUSTIFICADA segun
+      el riesgo del sistema, su arquitectura y el entorno donde opera (compartido vs. dedicado, remoto
+      vs. local, criticidad de los datos), y debe demostrarse RESTRICCION EFECTIVA a personas autorizadas
+      -- no basta que el control exista y este descrito, tiene que evidenciarse que efectivamente restringe
+      el acceso en la practica.'
+    evidence_min_criteria:
+    - Controles fisicos y/o logicos descritos con metodo concreto (llaves, tarjetas, codigos+contrasenas,
+      biometria, acceso restringido a equipos/areas).
+    - Justificacion de la combinacion elegida (fisico, logico, o ambos) segun riesgo, arquitectura y entorno
+      del sistema.
+    - Evidencia de restriccion efectiva a personas autorizadas -- lista de autorizados verificada contra
+      el control real, o prueba de acceso denegado a no autorizados.
+    exclusion_criteria:
+    - '"Acceso restringido" generico sin especificar tipo (fisico/logico) ni metodo real.'
+    - Control unico declarado como suficiente sin justificacion de por que esa combinacion es adecuada
+      al riesgo/arquitectura/entorno.
+    - Control descrito sin evidencia de que efectivamente restringe el acceso en la practica.
+    typical_insufficient_evidence:
+    - '"El acceso esta controlado" sin mecanismo especifico.'
+    - Control logico descrito sin justificar por que no se requiere tambien control fisico dado el entorno
+      (o viceversa).
+    - Sin prueba de restriccion efectiva (lista de autorizados o intento de acceso denegado).
+    weak_keywords:
+    - restringido
+    - restricted
+    - controlado
+    - acceso
+    expected_doc_types:
+    - DS
+    - SOP
+    - RISK_ASSESSMENT
+    documentary_evidence_expected:
+    - Mecanismo(s) de control descritos con metodo concreto, a nivel de diseno.
+    - Justificacion de la combinacion elegida segun riesgo, arquitectura y entorno, a nivel de diseno.
+    implementation_evidence_expected:
+    - Evidencia real de restriccion efectiva (lista de autorizados real, configuracion real del control).
+    - Prueba de acceso denegado a un usuario no autorizado, ejecutada.
   ANNEX11_17:
     label: Archivo y retencion de registros
     source_id: eu_gmp_annex11
     citation:
       citation_id: A11-17
-      citation_text: Data may be archived. This data should be checked for accessibility, readability
+      citation_text: 'Data may be archived. This data should be checked for accessibility, readability
         and integrity.
+
+        If relevant changes are to be made to the system (e.g. computer equipment or programs), then
+
+        the ability to retrieve the data should be ensured and tested.'
       match_type: exact
       match_score: 1.0
       section_page_paragraph: Section 17 (Archiving)
-      citation_sha256: af49a12f378f336bb772b3319eb50c244e90835f6a610a2053938c492dea7211
+      citation_sha256: c2271f44338e843120be16b668fc4d5a089ac23d0cf6117f59b51b037925f6e8
     normative_type: official_guidance
     jurisdiction: EU
     binding_status: binding_requirement
@@ -363,19 +914,68 @@ requirements:
       '
     context_after: '
 
-      If relevant changes are to be made to the system (e.g. computer equipment or programs), then
-
-      the ability to retrieve the data should be ensured and tested.
-
       Glossary
 
       Application: Software installed on a defined platform/hardware providing specific
 
       functionality
 
-      Bespoke/Customized computerised system'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+      Bespoke/Customized computerised system: A computerised system individually designed
+
+      to suit a specific business process
+
+      Commercial of the shelf software: Software commercially available, whose f'
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: El archivo por si solo no basta -- exige verificacion documentada de accesibilidad/legibilidad/integridad,
+      con una frecuencia definida segun riesgo y procedimiento interno (el texto no impone una periodicidad
+      literal universal). Ante cualquier cambio relevante al sistema (equipo o software), exige que la
+      capacidad de recuperar los datos archivados este ASEGURADA Y PROBADA -- un plan de migracion es
+      una forma posible de cumplir esto, no la unica obligatoria; lo exigido es la capacidad de recuperacion
+      real demostrada, por el medio que sea.
+    evidence_min_criteria:
+    - Proceso de archivo descrito.
+    - Verificacion documentada de accesibilidad, legibilidad e integridad de los datos archivados.
+    - Frecuencia de verificacion definida segun riesgo y procedimiento, cuando el riesgo del sistema archivado
+      lo justifique.
+    - 'Ante cambios relevantes al sistema: evidencia de que la capacidad de recuperacion de los datos
+      archivados fue asegurada Y PROBADA (por cualquier medio real, no exclusivamente un plan de migracion).'
+    exclusion_criteria:
+    - '"Los datos se archivan" sin verificacion documentada.'
+    - Sistema de riesgo relevante sin frecuencia de verificacion definida.
+    - Cambio de sistema realizado sin prueba real de recuperacion de los datos archivados (aunque exista
+      un plan de migracion escrito nunca ejecutado/probado).
+    typical_insufficient_evidence:
+    - '"Se archivan los datos" sin verificacion documentada.'
+    - Plan de migracion escrito pero sin evidencia de prueba real de recuperacion tras el cambio.
+    weak_keywords:
+    - archivado
+    - archived
+    - backup
+    - recuperacion
+    - retrieval
+    expected_doc_types:
+    - SOP
+    - DS
+    - RISK_ASSESSMENT
+    - REPORT
+    documentary_evidence_expected:
+    - Proceso de archivo y criterio de frecuencia de verificacion segun riesgo, descrito a nivel de diseno/procedimiento.
+    implementation_evidence_expected:
+    - Verificacion real ejecutada (fecha, resultado).
+    - Prueba real de recuperacion de datos ejecutada tras un cambio de sistema (cualquier medio, no exclusivamente
+      migracion).
   ALCOA_ATTRIBUTABLE:
     label: Attributable
     source_id: mhra_gxp_di_guidance_2018
@@ -418,8 +1018,64 @@ requirements:
       Complete – the data must be whole; a complete set
 
       Consistent'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: 'Distingue dos casos segun el origen del dato. (1) Accion humana (crear/modificar/eliminar
+      manualmente): exige identificacion individual y verificable de la persona -- una cuenta compartida
+      o de rol generico no satisface esto, ni siquiera si el sistema registra "que alguien" lo hizo. (2)
+      Dato generado automaticamente por un instrumento/sistema, sin intervencion manual en el momento de
+      la generacion: la atribucion se satisface identificando de forma trazable el instrumento, sistema
+      o fuente tecnica especifica que lo genero (identificador de equipo, numero de serie, ID de sistema)
+      -- no se exige una persona individual para ese dato en si, aunque la operacion del instrumento (calibracion,
+      configuracion, inicio de corrida) siga sujeta al caso (1).'
+    evidence_min_criteria:
+    - Para accion humana - Identificacion unica e individual por dato.
+    - Para accion humana - Mecanismo tecnico que sostiene esa atribucion de forma confiable (no solo un
+      campo de texto libre).
+    - Para accion humana - Atribucion sostenida para crear/modificar/eliminar, no solo creacion.
+    - Para dato autogenerado - Identificador de instrumento/sistema/fuente tecnica especifico y trazable
+      (no una categoria generica de equipo).
+    - Para dato autogenerado - Trazabilidad de que ese instrumento/sistema fue el que efectivamente genero
+      el dato (no solo que existe en el area).
+    exclusion_criteria:
+    - Cuentas compartidas/genericas para accion humana.
+    - Campo "usuario" editable sin autenticacion real.
+    - Atribucion solo en la creacion inicial.
+    - Dato autogenerado atribuido a una categoria generica de equipo ("un sensor", "el sistema") sin identificador
+      especifico y trazable.
+    typical_insufficient_evidence:
+    - Se menciona "usuario" sin confirmar credenciales individuales, para accion humana.
+    - Se menciona "generado por el sistema" sin identificador especifico de instrumento/sistema, para dato
+      autogenerado.
+    weak_keywords:
+    - usuario
+    - user
+    - atribuible
+    - attributable
+    - instrumento
+    - sistema
+    - equipo
+    expected_doc_types:
+    - URS
+    - FS
+    - DS
+    - SOP
+    documentary_evidence_expected:
+    - Mecanismo de identificacion individual descrito a nivel de diseno.
+    implementation_evidence_expected:
+    - Evidencia real de cuentas individuales en uso.
+    - Una accion real atribuida a una persona identificable.
   ALCOA_LEGIBLE:
     label: Legible
     source_id: mhra_gxp_di_guidance_2018
@@ -460,8 +1116,45 @@ requirements:
       Complete – the data must be whole; a complete set
 
       Consistent - the data must be self-c'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: 'Dos atributos distintos -- legibilidad durante todo el ciclo de vida y permanencia
+      (no se borra/sobrescribe sin rastro). Si el formato es propietario con riesgo real de obsolescencia,
+      exige un criterio de continuidad (no un plan de migracion universal obligatorio si el riesgo es bajo).'
+    evidence_min_criteria:
+    - Legibilidad garantizada durante todo el ciclo de vida.
+    - Permanencia (sin sobrescritura silenciosa).
+    - Criterio de continuidad de legibilidad cuando el riesgo de obsolescencia del formato es real.
+    exclusion_criteria:
+    - Formato propietario sin criterio de continuidad pese a riesgo real.
+    - Datos sobrescritos sin rastro.
+    - Legibilidad garantizada solo al crear.
+    typical_insufficient_evidence:
+    - Se asume legibilidad sin considerar el ciclo de vida completo del dato ni el riesgo de obsolescencia
+      del formato.
+    weak_keywords:
+    - legible
+    - readable
+    - permanente
+    expected_doc_types:
+    - DS
+    - SOP
+    documentary_evidence_expected:
+    - Formato descrito, con criterio de riesgo de obsolescencia.
+    implementation_evidence_expected:
+    - Evidencia de legibilidad sostenida tras migraciones reales.
+    - Prueba de que una modificacion real no borro la version previa.
   ALCOA_CONTEMPORANEOUS:
     label: Contemporaneous
     source_id: mhra_gxp_di_guidance_2018
@@ -500,8 +1193,66 @@ requirements:
       person.
 
       Consideratio'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: 'El registro debe realizarse contemporaneamente con la actividad -- esto no
+      se relaja en el caso del escribiente. La guia reconoce una excepcion legitima y acotada (Section
+      5.2: cuando el ejecutor mismo registrar en el momento compromete el producto/actividad): un escribiente
+      (segunda persona) registra la actividad EN EL MOMENTO en que ocurre e identifica al ejecutor real
+      -- el registro del escribiente sigue siendo contemporaneo, no retrospectivo. Lo unico que puede ser
+      posterior es la contrafirma/confirmacion del propio ejecutor sobre lo que el escribiente registro,
+      y solo si esa contrafirma tardia esta justificada (motivo real) y gobernada (procedimiento que la
+      define, plazo maximo, revision). Una transcripcion tardia del dato mismo (no una contrafirma) nunca
+      se acepta solo porque la demora quedo documentada -- documentar la demora es condicion necesaria
+      pero no suficiente; ademas debe estar dentro de los casos y procedimiento que la guia gobierna (escribiente
+      justificado, o contrafirma tardia justificada y gobernada). Fuera de esos dos casos, cualquier demora
+      es un incumplimiento, este o no documentada.'
+    evidence_min_criteria:
+    - Registro en el momento de la actividad como regla general.
+    - 'Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente)
+      e identifica al ejecutor real.'
+    - 'Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardia del ejecutor
+      es aceptable, con motivo real, plazo maximo y revision.'
+    exclusion_criteria:
+    - Transcripcion tardia del dato mismo (no una contrafirma) aceptada unicamente porque la demora quedo
+      documentada, fuera del caso de escribiente/contrafirma gobernada.
+    - Escribiente que registra retrospectivamente (no en el momento de la actividad) o que no identifica
+      al ejecutor real.
+    - Contrafirma tardia sin procedimiento gobernado que la autorice (sin motivo real, sin plazo maximo,
+      sin revision).
+    - Demora sistematica sin justificacion real.
+    typical_insufficient_evidence:
+    - Se menciona timestamp sin confirmar que corresponde al momento real de la actividad.
+    - Se documenta la demora de una transcripcion tardia como si eso por si solo la hiciera aceptable,
+      sin encuadrarla en el caso de escribiente o contrafirma gobernada.
+    weak_keywords:
+    - timestamp
+    - fecha
+    - diferido
+    - escribiente
+    - scribe
+    - contrafirma
+    expected_doc_types:
+    - FS
+    - SOP
+    - PROTOCOL
+    documentary_evidence_expected:
+    - Procedimiento de registro en tiempo real.
+    - Criterio de excepciones legitimas si existen.
+    implementation_evidence_expected:
+    - Timestamps reales consistentes con la actividad.
+    - Evidencia de motivo/demora documentados en casos de excepcion real.
   ALCOA_ORIGINAL:
     label: Original
     source_id: mhra_gxp_di_guidance_2018
@@ -543,8 +1294,41 @@ requirements:
       Consistent - the data must be self-consistent
 
       Enduring – durable; lasting throughout the data lifecyc'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: Una copia solo satisface esto con un proceso de certificacion de fidelidad
+      real y verificable, no asumido.
+    evidence_min_criteria:
+    - Original de primera captura identificado y preservado, o copia certificada con proceso real descrito.
+    - Evidencia de que la certificacion se ejecuto realmente.
+    exclusion_criteria:
+    - Copias no certificadas presentadas como equivalentes.
+    - '"Se certifico" sin evidencia del proceso.'
+    typical_insufficient_evidence:
+    - Se menciona "copia" sin describir el proceso de certificacion.
+    weak_keywords:
+    - original
+    - copia
+    - certified
+    - raw data
+    expected_doc_types:
+    - SOP
+    - REPORT
+    documentary_evidence_expected:
+    - Proceso de certificacion de copias descrito, si aplica.
+    implementation_evidence_expected:
+    - Evidencia real de certificacion ejecutada sobre una copia real.
   ALCOA_ACCURATE:
     label: Accurate
     source_id: mhra_gxp_di_guidance_2018
@@ -579,18 +1363,57 @@ requirements:
       working environment, i.e. creating the right environment to enable data integrity
 
       co'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: 'Exige un mecanismo VERIFICABLE de exactitud, no solo la afirmacion. La guia
+      (Section 3.1) conecta esto con la responsabilidad organizacional de sostener exactitud "en todas sus
+      formas" (papel y electronico) -- un control que cubra solo el sistema electronico, dejando papel del
+      mismo proceso sin control equivalente, no satisface el requisito integramente. El alcance de "todas
+      sus formas" esta limitado al proceso y alcance evaluados: soportes, procesos o sistemas fuera del
+      alcance evaluado no generan un gap por si solos.'
+    evidence_min_criteria:
+    - Mecanismo de verificacion de exactitud descrito.
+    - Ese mecanismo cubre todas las formas del dato que pertenezcan al proceso y alcance evaluados.
+    exclusion_criteria:
+    - '"Los datos son precisos" sin mecanismo.'
+    - Control de exactitud que cubre solo una forma del dato dentro del proceso y alcance evaluados, dejando
+      otra sin control equivalente.
+    typical_insufficient_evidence:
+    - Ausencia de cualquier control de calidad de dato (rango, formato, doble entrada); control de exactitud
+      que cubre el sistema electronico pero no el papel del mismo proceso evaluado.
+    weak_keywords:
+    - preciso
+    - accurate
+    - exactitud
+    expected_doc_types:
+    - FS
+    - DS
+    - SOP
+    documentary_evidence_expected:
+    - Mecanismo de verificacion descrito, cubriendo todas las formas del dato.
+    implementation_evidence_expected:
+    - Evidencia real de verificacion ejecutada (segundo chequeo, validacion automatica).
   ALCOA_COMPLETE:
     label: Complete
     source_id: mhra_gxp_di_guidance_2018
     citation:
       citation_id: MHRA-ALCOA-PLUS-C1
-      citation_text: Complete
-      match_type: normalized
+      citation_text: Complete – the data must be whole; a complete set
+      match_type: exact
       match_score: 1.0
-      section_page_paragraph: p.4, ALCOA+ attributes intro
-      citation_sha256: 143b270a32602d412babf2724ec0640dda0d5a43485e5a7520b05b53fa94b303
+      section_page_paragraph: p.8, ALCOA+ definitions list
+      citation_sha256: 3396a29d8be61e8c2f70161d34e3131067c168a97c4708de3522880802dd1aab
     normative_type: official_guidance
     jurisdiction: UK
     binding_status: non_binding_guidance
@@ -612,8 +1435,52 @@ requirements:
       has been subsequently added to emphasise the requirements. There is no difference
 
       in expectations regardless of which acronym is used s'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: 'Conjunto INTEGRO de datos del proceso evaluado -- incluye reintentos, reprocesamientos,
+      exclusiones y datos no favorables cuando formen parte de ese proceso, no solo el resultado final
+      aceptado. El tratamiento de resultados OOS (fuera de especificacion) solo se exige cuando OOS sea
+      aplicable al proceso o actividad evaluados (p.ej. un proceso analitico/de laboratorio) -- no se exige
+      una clausula de OOS para procesos donde ese concepto no aplica (p.ej. un registro puramente administrativo
+      sin especificacion tecnica asociada).'
+    evidence_min_criteria:
+    - Captura de todos los datos relevantes del proceso evaluado, incluidos reintentos/reprocesamientos/exclusiones/desviaciones
+      cuando formen parte de ese proceso.
+    - Sin eliminacion selectiva de datos desfavorables que formen parte del proceso evaluado.
+    - Reconstruccion completa de la actividad posible.
+    - 'Cuando OOS aplique al proceso evaluado: tratamiento y registro de los resultados OOS descrito.'
+    exclusion_criteria:
+    - Proceso que permite descartar resultados "de prueba"/reintentos/reprocesamientos antes del registro
+      final, cuando esos datos forman parte del proceso evaluado.
+    - Solo se documenta el resultado final, omitiendo reintentos/reprocesamientos/exclusiones reales del
+      proceso evaluado.
+    - Exigir tratamiento de OOS en un proceso donde ese concepto no es aplicable (falso gap).
+    typical_insufficient_evidence:
+    - Se documenta solo el resultado final sin registro de intentos previos, reprocesamientos o desviaciones
+      del proceso evaluado.
+    weak_keywords:
+    - completo
+    - complete
+    - whole
+    expected_doc_types:
+    - SOP
+    - PROTOCOL
+    - REPORT
+    documentary_evidence_expected:
+    - Diseno que garantiza captura de reintentos/desviaciones.
+    implementation_evidence_expected:
+    - Evidencia real de un reintento/desviacion que quedo registrado.
   ALCOA_CONSISTENT:
     label: Consistent
     source_id: mhra_gxp_di_guidance_2018
@@ -656,18 +1523,57 @@ requirements:
       Raw data is defined as the original record (data) which can be described as the first-capture of
 
       inform'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: 'Auto-consistencia interna real -- secuencia logica/cronologica sin contradicciones
+      entre metadatos y datos del mismo proceso. La deteccion de inconsistencias puede realizarse mediante
+      controles humanos (revision cruzada, verificacion documental), tecnicos (automatizados) o equivalentes
+      gobernados -- no se exige exclusivamente un control automatizado; lo que se exige es que el control,
+      cualquiera sea su naturaleza, este gobernado (definido, aplicado de forma consistente, con registro
+      de su ejecucion).'
+    evidence_min_criteria:
+    - Secuencia cronologica consistente (timestamps, numeracion de lotes).
+    - 'Mecanismo que detecte inconsistencias reales -- humano, tecnico/automatizado o equivalente, siempre
+      que este gobernado (definido y con registro de ejecucion).'
+    exclusion_criteria:
+    - Discrepancias entre metadatos y datos del mismo proceso sin deteccion.
+    - Ausencia de criterio de consistencia cronologica.
+    - Exigir exclusivamente un control automatizado cuando un control humano o equivalente gobernado ya
+      detecta la inconsistencia real (falso gap).
+    typical_insufficient_evidence:
+    - No se verifica consistencia cronologica/logica entre registros del mismo proceso.
+    weak_keywords:
+    - consistente
+    - consistent
+    - self-consistent
+    expected_doc_types:
+    - SOP
+    - REPORT
+    documentary_evidence_expected:
+    - Criterio de consistencia interna descrito.
+    implementation_evidence_expected:
+    - Verificacion real ejecutada, o inconsistencia real detectada y corregida.
   ALCOA_ENDURING:
     label: Enduring
     source_id: mhra_gxp_di_guidance_2018
     citation:
       citation_id: MHRA-ALCOA-PLUS-E1
-      citation_text: Enduring
+      citation_text: Enduring – durable; lasting throughout the data lifecycle
       match_type: exact
       match_score: 1.0
-      section_page_paragraph: p.5, ALCOA+ attributes intro
-      citation_sha256: cc195d45d6481db90cc377d251b730aff75fd5394efd23062999676d9e973c8a
+      section_page_paragraph: p.8, ALCOA+ definitions list
+      citation_sha256: d36814173d4ac580630929902bce58c67bd1bc8ce170fc05877f73b9f514eddd
     normative_type: official_guidance
     jurisdiction: UK
     binding_status: non_binding_guidance
@@ -688,8 +1594,41 @@ requirements:
       has been subsequently added to emphasise the requirements. There is no difference
 
       in expectations regardless of which acronym is used since data governance m'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: 'Cubre el periodo de retencion regulatorio COMPLETO, con reevaluacion de durabilidad
+      definida segun riesgo (no periodicidad literal universal).'
+    evidence_min_criteria:
+    - Medio/formato garantizan durabilidad durante todo el periodo de retencion.
+    - Criterio de reevaluacion segun riesgo de obsolescencia/degradacion.
+    exclusion_criteria:
+    - Medios con riesgo conocido de obsolescencia sin plan de mitigacion.
+    - Sin periodo de retencion especificado.
+    typical_insufficient_evidence:
+    - No se especifica el periodo de retencion ni el plan para garantizar accesibilidad durante ese periodo.
+    weak_keywords:
+    - duradero
+    - enduring
+    - durable
+    expected_doc_types:
+    - SOP
+    - DS
+    - RISK_ASSESSMENT
+    documentary_evidence_expected:
+    - Periodo de retencion y criterio de durabilidad/reevaluacion descritos.
+    implementation_evidence_expected:
+    - Evidencia real de accesibilidad/integridad tras el tiempo transcurrido, o reevaluacion real ejecutada.
   ALCOA_AVAILABLE:
     label: Available
     source_id: mhra_gxp_di_guidance_2018
@@ -726,5 +1665,43 @@ requirements:
       information, whether recorded on paper or electronically. Information that is originally captured
 
       in a dynamic state should rema'
-    pack_version: '1.0'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_version: 2.0-draft
+    evidence_pack_status: human_drafted_provisional
+    pack_lifecycle_status: DRAFT
+    content_review_status: ACCEPTED_FOR_DRAFTING
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false
+    governed_interpretation: Recuperacion sin demora indebida, directamente accesible cuando sea solicitado
+      y en forma legible para revision o inspeccion -- no solo existencia del dato en algun medio; no depende
+      de un unico experto o sistema descontinuado sin plan de contingencia.
+    evidence_min_criteria:
+    - Recuperacion sin demora indebida, directamente accesible cuando sea solicitado y en forma legible
+      para revision o inspeccion.
+    - Independencia de personal especifico/sistemas legados sin contingencia.
+    exclusion_criteria:
+    - Recuperacion con demora indebida, no directamente accesible cuando se solicita, o dependiente de
+      un unico experto/sistema legado.
+    - '"Estan disponibles" sin proceso real demostrado.'
+    typical_insufficient_evidence:
+    - No se demuestra un proceso real de recuperacion de datos para inspeccion (solo se afirma que "estan
+      disponibles").
+    weak_keywords:
+    - disponible
+    - available
+    - sin demora
+    - directamente accesible
+    expected_doc_types:
+    - SOP
+    - REPORT
+    documentary_evidence_expected:
+    - Proceso de recuperacion descrito, con plan de contingencia si aplica.
+    implementation_evidence_expected:
+    - Evidencia real de una recuperacion ejecutada sin demora indebida, directamente accesible y en forma
+      legible.
