@@ -301,3 +301,68 @@ def test_map_findings_propagates_verified_conclusions_by_finding_id(findings_by_
     # sin entrada en el dict -> siguen su camino heuristico de siempre.
     assert {m.change["change_id"] for m in included} == {"COR-5", "COR-1"}
     assert {r.finding_id for r in rejected} == {"FSV12-13"}
+
+
+# ── W5 V2 Fase I: citation_anchor_status conectado a la validacion A real ──
+# (semantic_evidence_verification.verify_anchor) -- antes de esta fase era
+# una constante hardcodeada 'VERIFIED', nunca re-verificada.
+
+def test_citation_anchor_status_defaults_to_verified_without_source_text(findings_by_id):
+    """Sin source_text (comportamiento historico, todo llamador existente
+    hoy), citation_anchor_status sigue siendo VERIFIED incondicional --
+    cero cambio de comportamiento para el resto de la suite."""
+    result = _map(findings_by_id, "FSV12-07")
+    assert result.change["citation_anchor_status"] == "VERIFIED"
+    assert "source_text no provisto" in result.rules["citation_anchor_status"]
+
+
+def test_citation_anchor_status_verified_when_source_text_contains_real_quote(findings_by_id):
+    """FSV12-07 cita literalmente 'Page 40 of 58' (ver
+    test_fsv12_07_citation_anchor_from_self_reference) -- si el source_text
+    provisto contiene esa cita, debe re-verificarse como VERIFIED via
+    verify_anchor real, no solo por la regla anterior."""
+    finding = findings_by_id["FSV12-07"]
+    citation_text = finding["evidencia"]
+    source_text = f"contenido de relleno ... {citation_text} ... mas contenido"
+    result = mapper.map_finding_to_remediation_change(
+        finding, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
+        source_text=source_text,
+    )
+    assert result.change["citation_anchor_status"] == "VERIFIED"
+    assert "verify_anchor real" in result.rules["citation_anchor_status"]
+
+
+def test_citation_anchor_status_not_verified_when_quote_absent_from_source_text(findings_by_id):
+    """Si se provee source_text pero NO contiene la cita real, el anclaje
+    debe fallar (NOT_VERIFIED) -- nunca declarar VERIFIED por defecto."""
+    finding = findings_by_id["FSV12-07"]
+    source_text = "Este documento no contiene ninguna cita relacionada, es contenido completamente distinto."
+    result = mapper.map_finding_to_remediation_change(
+        finding, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
+        source_text=source_text,
+    )
+    assert result.change["citation_anchor_status"] == "NOT_VERIFIED"
+
+
+def test_citation_anchor_not_verified_forces_medium_or_high_confidence_not_high(findings_by_id):
+    """citation_anchor_status=NOT_VERIFIED es el nivel maximo (2) en
+    _EVALUATION_CONFIDENCE_FACTOR_LEVELS -- debe forzar LOW_CONFIDENCE,
+    nunca quedar enmascarado por los demas factores."""
+    finding = findings_by_id["FSV12-07"]
+    source_text = "contenido irrelevante sin ninguna cita real presente aqui."
+    result = mapper.map_finding_to_remediation_change(
+        finding, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
+        source_text=source_text,
+    )
+    assert result.change["evaluation_confidence"] == "LOW_CONFIDENCE"
+    assert "citation_anchor_status" in result.change["evaluation_confidence_basis"]
+
+
+def test_map_findings_propagates_source_text_to_every_finding(findings_by_id):
+    source_text = "contenido sin ninguna de las citas reales de estos findings."
+    findings = [findings_by_id[fid] for fid in ("FSV12-07", "FSV12-13")]
+    included, _rejected = mapper.map_findings(
+        findings, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
+        source_text=source_text,
+    )
+    assert all(m.change["citation_anchor_status"] == "NOT_VERIFIED" for m in included)

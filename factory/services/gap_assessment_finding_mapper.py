@@ -309,9 +309,36 @@ class MappedChange:
     rules: dict[str, str]
 
 
+def _derive_citation_anchor_status(evidencia: str, anchor_rule: str, source_text: str | None) -> tuple[str, str]:
+    """W5 V2, Fase I -- conecta la validacion A real (Fase F,
+    semantic_evidence_verification.verify_anchor) en vez de declarar
+    'VERIFIED' incondicional. Hallazgo real de esta fase: citation_anchor_status
+    era una CONSTANTE hardcodeada (nunca se re-verificaba el anclaje contra
+    el texto fuente real), sin documentar la limitacion.
+
+    source_text (opcional, default None): texto completo del documento
+    fuente. Cuando NO se provee, preserva el comportamiento historico
+    (VERIFIED incondicional) -- aditivo, cero cambio de comportamiento para
+    los llamadores existentes (ninguno pasa hoy el documento completo).
+    Cuando SI se provee, re-verifica citation.evidencia contra ese texto:
+    match exact/normalized/despaced -> VERIFIED; fuzzy (CITATION_DEVIATION)
+    -> UNDER_REVIEW; not_found -> NOT_VERIFIED (nunca VERIFIED con una cita
+    que no ancla realmente)."""
+    if source_text is None:
+        return ("VERIFIED", anchor_rule + " -> VERIFIED (source_text no provisto, comportamiento historico preservado)")
+    from factory.regulatory.semantic_evidence_verification import verify_anchor
+    status, match_type = verify_anchor(evidencia, source_text)
+    if status == "PASS" and match_type != "fuzzy":
+        return ("VERIFIED", f"{anchor_rule} -> verify_anchor real: match_type={match_type}")
+    if status == "PASS":
+        return ("UNDER_REVIEW", f"{anchor_rule} -> verify_anchor real: match_type=fuzzy (CITATION_DEVIATION)")
+    return ("NOT_VERIFIED", f"{anchor_rule} -> verify_anchor real: match_type={match_type} (cita no anclada en source_text)")
+
+
 def map_finding_to_remediation_change(
     finding: dict, *, document_name: str, document_sha256: str, run_id: str,
     verified_conclusion: DocumentConclusion | None = None,
+    source_text: str | None = None,
 ) -> MappedChange:
     """Lanza NotMappableToCurrentSchema si algun campo no es derivable
     objetivamente -- el caller decide que hacer con el rechazo (excluir
@@ -324,7 +351,12 @@ def map_finding_to_remediation_change(
     provee, manda sobre la heuristica de texto para coverage_status -- ver
     _derive_coverage_status_from_verified_conclusion(). Ningun llamador de
     produccion existe todavia (chunked_engine.py no genera chunk-level
-    records), asi que el default None preserva el comportamiento actual."""
+    records), asi que el default None preserva el comportamiento actual.
+
+    source_text (W5 V2 Fase I, opcional, default None): texto completo del
+    documento fuente, para re-verificar citation_anchor_status con la
+    validacion A real (ver _derive_citation_anchor_status). Default None
+    preserva el comportamiento historico (VERIFIED incondicional)."""
     rules: dict[str, str] = {}
 
     entry_id = finding["requisito"].split(" — ")[0].strip()
@@ -373,8 +405,10 @@ def map_finding_to_remediation_change(
     )
     rules["coverage_status"] = rule
 
-    citation_anchor_status = "VERIFIED"
-    rules["citation_anchor_status"] = anchor.rule + " -> VERIFIED"
+    citation_anchor_status, rule = _derive_citation_anchor_status(
+        finding["evidencia"], anchor.rule, source_text,
+    )
+    rules["citation_anchor_status"] = rule
 
     confidence_factors = {
         "coverage_status": coverage_status, "citation_anchor_status": citation_anchor_status,
@@ -454,6 +488,7 @@ class MappingRejection:
 def map_findings(
     findings: list[dict], *, document_name: str, document_sha256: str, run_id: str,
     verified_conclusions: dict[str, DocumentConclusion] | None = None,
+    source_text: str | None = None,
 ) -> tuple[list[MappedChange], list[MappingRejection]]:
     """Aplica map_finding_to_remediation_change() a cada finding; separa
     incluidos de rechazados (NOT_MAPPABLE_TO_CURRENT_SCHEMA) en vez de
@@ -465,7 +500,13 @@ def map_findings(
     fue evaluado por absence_consolidator.consolidate() (ver
     map_finding_to_remediation_change). Un finding sin entrada aqui usa la
     heuristica de texto de siempre -- default None preserva el
-    comportamiento actual para todo llamador existente."""
+    comportamiento actual para todo llamador existente.
+
+    source_text (W5 V2 Fase I, opcional): texto completo del documento
+    fuente, propagado a cada map_finding_to_remediation_change() para
+    re-verificar citation_anchor_status con la validacion A real (ver
+    _derive_citation_anchor_status). Default None preserva VERIFIED
+    incondicional (comportamiento historico)."""
     included: list[MappedChange] = []
     rejected: list[MappingRejection] = []
     conclusions = verified_conclusions or {}
@@ -474,6 +515,7 @@ def map_findings(
             included.append(map_finding_to_remediation_change(
                 finding, document_name=document_name, document_sha256=document_sha256, run_id=run_id,
                 verified_conclusion=conclusions.get(finding["finding_id"]),
+                source_text=source_text,
             ))
         except NotMappableToCurrentSchema as e:
             rejected.append(MappingRejection(finding_id=finding["finding_id"], reason=str(e)))
