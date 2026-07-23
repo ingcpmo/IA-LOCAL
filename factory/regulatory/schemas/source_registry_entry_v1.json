@@ -9,7 +9,8 @@
     "official_source_description", "sha256_original", "sha256_copy",
     "hashes_match", "size_bytes", "normative_type", "jurisdiction",
     "local_integrity_status", "official_origin_status",
-    "regulatory_currency_status"
+    "regulatory_currency_status",
+    "version", "effective_date", "supersedes", "reverification_due"
   ],
   "properties": {
     "source_id": { "type": "string", "minLength": 3 },
@@ -36,6 +37,24 @@
       "enum": ["pending_reverification"]
     },
     "copied_at": { "type": "string" },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "W5 V2 Fase B -- edicion/revision declarada DENTRO del propio texto gobernado (cita literal, nunca inventada). Si el documento no declara una edicion discreta (p.ej. eCFR, texto consolidado continuo), usar una nota explicita del tipo 'NO_DISPONIBLE (motivo)' -- nunca dejar vacio ni asumir un valor."
+    },
+    "effective_date": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Fecha de entrada en vigor declarada DENTRO del propio texto gobernado (cita literal, formato ISO YYYY-MM-DD o YYYY-MM si el texto solo declara mes/anio). 'NO_DISPONIBLE (motivo)' si el documento no declara una fecha de vigencia unica aplicable a todo el texto."
+    },
+    "supersedes": {
+      "type": ["string", "null"],
+      "description": "source_id de la version anterior que esta fuente reemplaza, o null si es la primera version gobernada de esa fuente. Nunca se infiere automaticamente -- requiere aprobacion humana via human_source_update.py, igual que cualquier otro cambio de este registro."
+    },
+    "reverification_due": {
+      "type": ["string", "null"],
+      "description": "Fecha ISO en la que corresponde re-verificar esta fuente (accesibilidad+hash via source_currency_checker.py), o null si aun no existe una politica de cadencia aprobada por Capa 9. NUNCA se calcula con una cadencia inventada sin decision humana explicita -- null es el valor honesto mientras esa politica no exista."
+    },
     "derived_artifacts": {
       "type": "array",
       "description": "Artefactos de extraccion DERIVADOS (ej. pdfplumber). Nunca reemplazan canonical_path.",

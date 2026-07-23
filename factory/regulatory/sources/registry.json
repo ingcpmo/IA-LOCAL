@@ -19,7 +19,11 @@
       "official_origin_status": "VERIFIED_AGAINST_PRIOR_KNOWN_HASH_2026-07-06_INGESTION",
       "regulatory_currency_status": "pending_reverification",
       "copied_at": "2026-07-17T19:32:45.681367+00:00",
-      "derived_artifacts": []
+      "derived_artifacts": [],
+      "version": "NO_DISPONIBLE (eCFR es texto consolidado, sin edición discreta declarada)",
+      "effective_date": "NO_DISPONIBLE (eCFR es texto vivo continuamente actualizado; el header de gobernanza declara 'vigente al 2026-07-01' como fecha de copia, no de vigencia normativa; el cuerpo del texto cita 'effective on or after August 20, 1997' solo en el contexto puntual de la excepcion de firmas en 11.1(c), no como fecha general de todo el Part 11)",
+      "supersedes": null,
+      "reverification_due": null
     },
     {
       "source_id": "eu_gmp_annex11",
@@ -50,7 +54,11 @@
           "artifact_path": "factory/regulatory/sources/derived/8ec11211ba33bf88ad4e71acc6bf60fd0e7823cfa495b116872e2c287e4aebbb/pdfplumber_extraction_v1.json",
           "artifact_sha256": "27316752b6789c35d0d42d4bc4d9343e47b8b2007c29402696ebaa3d5c94eda4"
         }
-      ]
+      ],
+      "version": "revision 1",
+      "effective_date": "2011-06-30",
+      "supersedes": null,
+      "reverification_due": null
     },
     {
       "source_id": "mhra_gxp_di_guidance_2018",
@@ -81,7 +89,11 @@
           "artifact_path": "factory/regulatory/sources/derived/e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d/pdfplumber_extraction_v1.json",
           "artifact_sha256": "0d5176931987b66473af31c87eff6063bab1140df46216f6985939e48360139a"
         }
-      ]
+      ],
+      "version": "Revision 1",
+      "effective_date": "2018-03",
+      "supersedes": null,
+      "reverification_due": null
     }
   ]
 }

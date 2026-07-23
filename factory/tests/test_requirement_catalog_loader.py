@@ -177,6 +177,10 @@ def test_derived_artifact_source_sha256_mismatch_is_rejected(tmp_path, monkeypat
             "local_integrity_status": "PASS",
             "official_origin_status": "some real status text",
             "regulatory_currency_status": "pending_reverification",
+            "version": "1.0",
+            "effective_date": "2020-01-01",
+            "supersedes": None,
+            "reverification_due": None,
             "derived_artifacts": [{
                 "extractor": "pdfplumber", "extractor_version": "0.11.10",
                 "source_sha256": "b" * 64,  # NO coincide con sha256_copy
