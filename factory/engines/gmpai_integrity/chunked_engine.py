@@ -47,7 +47,7 @@ from pathlib import Path
 
 import yaml as _yaml
 
-from . import ollama_client
+from .model_provider import DEFAULT_PROVIDER, ModelProvider
 from .models import Finding
 
 CHUNK_MAX_CHARS = 6000
@@ -254,7 +254,8 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                       checkpoint_store: "CheckpointStore | None" = None,
                       run_id: str | None = None,
                       use_verified_pipeline: bool = False,
-                      document_type: str | None = None) -> dict:
+                      document_type: str | None = None,
+                      provider: ModelProvider | None = None) -> dict:
     """Procesa TODO el documento (todas las páginas reales) en chunks
     acotados, con metadata de runtime completa por chunk, checkpoints de
     reanudación opcionales, y consolida un Finding final por checkpoint.
@@ -284,7 +285,13 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     document_type (ValueError si falta) y checkpoint_store=None (reanudar
     un run con este flag no esta soportado todavia -- los chunk_executions
     de un checkpoint viejo no traen los registros verificados, ver
-    verified_records_by_req más abajo)."""
+    verified_records_by_req más abajo).
+
+    provider (W5 V2 Fase D, default None -- cero cambio de comportamiento
+    para todo llamador existente): implementación de ModelProvider a usar;
+    None usa DEFAULT_PROVIDER (OllamaProvider, mismo cliente Ollama de
+    siempre). Este motor NUNCA importa ollama_client directamente -- toda
+    llamada al modelo pasa por esta interfaz (ver model_provider.py)."""
     if run_context not in ("production", "validation"):
         raise ValueError(f"run_context invalido: {run_context!r} (debe ser 'production' o 'validation')")
     if use_verified_pipeline:
@@ -295,15 +302,17 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 "use_verified_pipeline=True no soporta checkpoint_store/reanudacion todavia -- "
                 "los chunk_executions de un checkpoint previo no persisten los registros verificados"
             )
+    provider = provider or DEFAULT_PROVIDER
     meta = load_prompt_meta(prompt_path)
     # Captura de metadata de reproducibilidad ANTES de la primera inferencia
     # (fix TE-02 / requisito de preflight): modelo, model_digest, version de
     # Ollama, agent_version, prompt_version, verifier_version, documento,
-    # SHA-256 y run_id. Si Ollama no esta disponible, falla aqui —
+    # SHA-256 y run_id. Si el runtime no esta disponible, falla aqui —
     # explicito y antes de gastar ninguna llamada de chunk — en vez de
     # capturar la excepcion en silencio y seguir con metadata incompleta.
-    model_digest = ollama_client.show_digest()
-    ollama_version_str = ollama_client.ollama_version()
+    model_name = provider.model_name
+    model_digest = provider.show_digest()
+    ollama_version_str = provider.runtime_version()
 
     chunks = build_page_chunks(per_unit_text)
     chunk_executions: list[dict] = []
@@ -321,7 +330,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         run_id = run_id or f"chunked-{uuid.uuid4().hex[:12]}"
 
     preflight_metadata = {
-        "model": ollama_client.OLLAMA_MODEL, "model_digest": model_digest,
+        "model": model_name, "model_digest": model_digest,
         "ollama_version": ollama_version_str, "agent_version": agent_version,
         "prompt_version": meta["prompt_version"], "verifier_version": meta["verifier_version"],
         "documento": documento, "document_sha256": document_sha256, "run_id": run_id,
@@ -365,7 +374,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         else:
             prompt = build_prompt(meta, text)
             try:
-                raw = ollama_client.generate(prompt)
+                raw = provider.generate(prompt)
                 response_text = raw.get("response", "") if isinstance(raw, dict) else ""
                 chunk_result = _extract_json(response_text)
                 if chunk_result:
@@ -454,7 +463,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             "page_start": chunk["page_start"], "page_end": chunk["page_end"],
             "has_overlap_prefix": chunk["has_overlap_prefix"], "text_chars": chunk["text_chars"],
             "started_at": started_at, "finished_at": finished_at, "wall_clock_ms": wall_ms,
-            "model": ollama_client.OLLAMA_MODEL, "model_digest": model_digest,
+            "model": model_name, "model_digest": model_digest,
             "ollama_version": ollama_version_str,
             "ok": chunk_result is not None, "error": error,
             "technical_execution_failure": technical_execution_failure,
@@ -506,7 +515,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     recomendacion="Revisar expediente completo (SOPs/IQ/OQ) antes de concluir incumplimiento real.",
                     confianza="baja", agente_responsable=agent_id, revision_humana_requerida=True,
                     agent_version=agent_version, prompt_version=meta["prompt_version"],
-                    model=ollama_client.OLLAMA_MODEL, verifier_version=meta["verifier_version"],
+                    model=model_name, verifier_version=meta["verifier_version"],
                 ))
             else:
                 # Fix TE-01: si existe algun fallo tecnico de ejecucion SIN
@@ -540,7 +549,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     ),
                     confianza="baja", agente_responsable=agent_id, revision_humana_requerida=True,
                     agent_version=agent_version, prompt_version=meta["prompt_version"],
-                    model=ollama_client.OLLAMA_MODEL, verifier_version=meta["verifier_version"],
+                    model=model_name, verifier_version=meta["verifier_version"],
                     technical_execution_failure_pending=any_unresolved_technical_failure,
                 ))
             continue
@@ -559,7 +568,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 recomendacion="Revision humana obligatoria: confirmar cual seccion es la vigente.",
                 confianza="media", agente_responsable=agent_id, revision_humana_requerida=True,
                 agent_version=agent_version, prompt_version=meta["prompt_version"],
-                model=ollama_client.OLLAMA_MODEL, verifier_version=meta["verifier_version"],
+                model=model_name, verifier_version=meta["verifier_version"],
             ))
             continue
 
@@ -577,7 +586,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             riesgo="Ver brecha.", recomendacion=best["recomendacion"] or f"Confirmar '{label}' con SOP.",
             confianza="media", agente_responsable=agent_id, revision_humana_requerida=True,
             agent_version=agent_version, prompt_version=meta["prompt_version"],
-            model=ollama_client.OLLAMA_MODEL, verifier_version=meta["verifier_version"],
+            model=model_name, verifier_version=meta["verifier_version"],
         ))
 
     technical_execution_failures = [
@@ -623,7 +632,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         "chunk_executions": [{k: v for k, v in ce.items() if k != "_by_req_candidates"} for ce in chunk_executions],
         "contradictions": contradictions,
         "findings": [f.to_dict() for f in findings],
-        "model": ollama_client.OLLAMA_MODEL,
+        "model": model_name,
         "model_digest": model_digest,
         "ollama_version": ollama_version_str,
         "preflight_metadata": preflight_metadata,
