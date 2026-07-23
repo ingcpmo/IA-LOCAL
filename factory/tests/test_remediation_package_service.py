@@ -392,3 +392,62 @@ def test_return_to_adjustments_never_reuses_version_and_keeps_prior_immutable():
 
     state_v1_after = svc._read_state(PROJECT_ID, "PKG13", 1)
     assert state_v1_after == state_v1_before  # version anterior nunca se toca tras crear la siguiente
+
+
+# ── W5 V2 Fase P: identidad real, idempotencia (409) y decision_origin ──────
+
+def test_package_decision_rejects_empty_decided_by():
+    from fastapi import HTTPException
+    changes = [_change("C1")]
+    svc.create_package(project_id=PROJECT_ID, package_id="PKG16", package_version=1, changes=changes,
+                        artifacts=_artifacts(), automatic_evaluation_basis=_basis(requirement_ids=("REQ-C1",)),
+                        generation_commit_sha="deadbeef")
+    with pytest.raises(HTTPException) as exc_info:
+        svc.record_package_decision(project_id=PROJECT_ID, package_id="PKG16", package_version=1,
+                                     decision="APPROVE_CLEAN", decided_by="", justification="ok")
+    assert exc_info.value.status_code == 422
+
+
+def test_package_decision_rejects_generic_reserved_identity():
+    from fastapi import HTTPException
+    changes = [_change("C1")]
+    svc.create_package(project_id=PROJECT_ID, package_id="PKG17", package_version=1, changes=changes,
+                        artifacts=_artifacts(), automatic_evaluation_basis=_basis(requirement_ids=("REQ-C1",)),
+                        generation_commit_sha="deadbeef")
+    with pytest.raises(HTTPException) as exc_info:
+        svc.record_package_decision(project_id=PROJECT_ID, package_id="PKG17", package_version=1,
+                                     decision="APPROVE_CLEAN", decided_by="system", justification="ok")
+    assert exc_info.value.status_code == 422
+
+
+def test_package_decision_records_decision_origin_human_confirmed():
+    changes = [_change("C1")]
+    svc.create_package(project_id=PROJECT_ID, package_id="PKG18", package_version=1, changes=changes,
+                        artifacts=_artifacts(), automatic_evaluation_basis=_basis(requirement_ids=("REQ-C1",)),
+                        generation_commit_sha="deadbeef")
+    record = svc.record_package_decision(project_id=PROJECT_ID, package_id="PKG18", package_version=1,
+                                          decision="APPROVE_CLEAN", decided_by="cesar", justification="ok")
+    assert record["decision_origin"] == "human_confirmed"
+
+
+def test_double_package_decision_raises_specific_already_recorded_error():
+    """Regla dura del plan (409 en el router): una segunda decision sobre
+    el mismo (package_id, package_version) debe distinguirse de un
+    InvalidTransitionError generico -- PackageDecisionAlreadyRecordedError
+    es la causa real de idempotencia, no un estado prematuro cualquiera."""
+    changes = [_change("C1")]
+    svc.create_package(project_id=PROJECT_ID, package_id="PKG19", package_version=1, changes=changes,
+                        artifacts=_artifacts(), automatic_evaluation_basis=_basis(requirement_ids=("REQ-C1",)),
+                        generation_commit_sha="deadbeef")
+    svc.record_package_decision(project_id=PROJECT_ID, package_id="PKG19", package_version=1,
+                                 decision="APPROVE_CLEAN", decided_by="cesar", justification="primera decision")
+    with pytest.raises(svc.PackageDecisionAlreadyRecordedError):
+        svc.record_package_decision(project_id=PROJECT_ID, package_id="PKG19", package_version=1,
+                                     decision="APPROVE_CLEAN", decided_by="cesar", justification="segunda decision")
+
+
+def test_already_recorded_error_is_still_an_invalid_transition_error_subclass():
+    """Compatibilidad con el manejo generico ya existente (400) para
+    callers que todavia no distinguen el caso especifico -- la subclase no
+    debe romper ningun catch existente de InvalidTransitionError."""
+    assert issubclass(svc.PackageDecisionAlreadyRecordedError, svc.InvalidTransitionError)

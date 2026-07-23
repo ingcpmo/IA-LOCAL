@@ -145,5 +145,11 @@ def create_package_decision(project_id: str, package_id: str, version: int, body
         )
     except svc.RemediationPackageNotFound as e:
         raise HTTPException(404, str(e))
+    # W5 V2 Fase P: doble-aprobacion real (409, idempotencia) se distingue
+    # de un InvalidTransitionError generico (400, estado prematuro) --
+    # PackageDecisionAlreadyRecordedError es subclase de InvalidTransitionError,
+    # por eso debe capturarse ANTES que _CLIENT_ERROR_TYPES.
+    except svc.PackageDecisionAlreadyRecordedError as e:
+        raise HTTPException(409, str(e))
     except _CLIENT_ERROR_TYPES as e:
         raise HTTPException(400, str(e))

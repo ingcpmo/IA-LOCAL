@@ -64,6 +64,13 @@ class InvalidTransitionError(RemediationPackageError):
     pass
 
 
+class PackageDecisionAlreadyRecordedError(InvalidTransitionError):
+    """W5 V2, Fase P -- distinto de un InvalidTransitionError generico
+    (paquete todavia no listo para decision): esta subclase se reserva
+    para la doble-aprobacion real (ya existe un package_decision para esta
+    version) -- se mapea a HTTP 409 en el router, nunca al 400 generico."""
+
+
 class MissingJustificationError(RemediationPackageError):
     pass
 
@@ -502,16 +509,33 @@ def record_package_decision(
     justification: str, medium_risk_batch_decision_id: str | None = None,
     high_risk_exception_ids: list[str] | None = None,
 ) -> dict:
-    """decision in {APPROVE_CLEAN, APPROVE_WITH_EXCEPTIONS, RETURN_TO_ADJUSTMENTS, REJECT}.
-    Bajo _package_lock: dos llamadas concurrentes sobre el mismo (package_id,
-    package_version) nunca producen dos decisiones -- la segunda encuentra
-    status != AWAITING_PACKAGE_DECISION y falla."""
+    """decision in {APPROVE_CLEAN, APPROVE_WITH_EXCEPTIONS, RETURN_TO_ADJUSTMENTS, REJECT}
+    -- RETURN_TO_ADJUSTMENTS cumple la semantica de REQUEST_CHANGES del plan
+    W5 V2 (QA_FINAL_PACKAGE_AND_DECISION_SPEC.md), nombre historico
+    preservado para no romper datos/tests ya reales.
+
+    W5 V2 Fase P: decided_by se valida con la misma identidad real
+    exigida en el resto de la fabrica (test_console_service.validate_run_by
+    -- 422 si esta vacio o es un nombre generico reservado). Bajo
+    _package_lock: dos llamadas concurrentes sobre el mismo (package_id,
+    package_version) nunca producen dos decisiones -- la segunda que
+    encuentra un package_decision ya registrado lanza
+    PackageDecisionAlreadyRecordedError (409 en el router), distinto de
+    un InvalidTransitionError generico por estado prematuro (400)."""
+    from factory.services.test_console_service import validate_run_by
+    decided_by = validate_run_by(decided_by)
+
     if not justification or not justification.strip():
         raise MissingJustificationError("justification es obligatoria en toda decision humana")
 
     with _package_lock(project_id, package_id):
         state = _read_state(project_id, package_id, package_version)
         pkg = state["package"]
+        if state.get("package_decision") is not None:
+            raise PackageDecisionAlreadyRecordedError(
+                f"paquete '{package_id}' v{package_version} ya tiene una decision registrada "
+                f"({state['package_decision']['decision_id']}) -- no se admite una segunda decision"
+            )
         if pkg["status"] != "AWAITING_PACKAGE_DECISION":
             raise InvalidTransitionError(f"paquete en estado '{pkg['status']}' no admite decision de paquete")
 
@@ -532,6 +556,7 @@ def record_package_decision(
             "justification": justification,
             "medium_risk_batch_decision_id": medium_risk_batch_decision_id,
             "high_risk_exception_ids": high_risk_exception_ids or [],
+            "decision_origin": "human_confirmed",
         }
         state["package_decision"] = record
 
