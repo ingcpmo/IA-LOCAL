@@ -3,21 +3,21 @@
 
 Diagnóstico previo a esta fase: 2 de los 15 criterios del gate dependían de
 componentes que NO EXISTÍAN (`revalidación fue ejecutada` -> Fase O /
-AGT-RVL; `reporte de calidad existe` -> AGT-QLT). AGT-QLT ya se construyó
-(`document_quality_gate.evaluate_document_quality`, ver ese módulo) y este
-gate ahora lo consume vía el parámetro opcional `quality_report`: si no se
-provee, preserva el comportamiento honesto anterior (`FAIL`, el caller no
-generó un reporte para este documento); si se provee, el criterio pasa
-únicamente si `quality_report["applied"]` es `True` -- nunca se asume
-calidad sin el reporte real. `revalidación fue ejecutada` (Fase O/AGT-RVL)
-sigue sin conectar (fuera del alcance de este cambio) -- se evalúa a
-`FAIL` explícito con motivo real. Consecuencia esperada mientras eso siga
-así: ningún documento real puede alcanzar `CORRECTED_DOCUMENT_GENERATED`
-todavía por esa única razón, nunca se finge que pasa.
+AGT-RVL; `reporte de calidad existe` -> AGT-QLT). Ambos ya se construyeron
+(`independent_candidate_revalidation.revalidate_document`,
+`document_quality_gate.evaluate_document_quality`) y este gate los
+consume vía sendos parámetros opcionales `revalidation_result`/
+`quality_report`: si no se proveen, preserva el comportamiento honesto
+anterior (`FAIL`, el caller no ejecutó/generó el artefacto para este
+documento); si se proveen, el criterio pasa únicamente si el resultado
+real lo confirma -- nunca se asume revalidación/calidad sin el artefacto
+real.
 
 Reutiliza sin reimplementar: `GovernedCandidateResult` (Fase L),
 `build_traceability_matrix`/`build_full_change_review`/`build_package_manifest`
-(Fase M), `document_quality_gate.evaluate_document_quality` (AGT-QLT)."""
+(Fase M), `document_quality_gate.evaluate_document_quality` (AGT-QLT),
+`independent_candidate_revalidation.revalidate_document` (AGT-RVL,
+Fase O)."""
 from __future__ import annotations
 
 import hashlib
@@ -25,7 +25,12 @@ from dataclasses import dataclass, field
 
 from docx import Document
 
-REVALIDATION_NOT_EXECUTED_REASON = "AGT-RVL (revalidacion independiente) no existe todavia -- Fase O del roadmap."
+from factory.services.independent_candidate_revalidation import DocumentRevalidationResult
+
+REVALIDATION_NOT_PROVIDED_REASON = (
+    "no se proveyo un revalidation_result para este documento -- invocar "
+    "independent_candidate_revalidation.revalidate_document() y pasarlo aqui."
+)
 QUALITY_REPORT_NOT_PROVIDED_REASON = (
     "no se proveyo un quality_report para este documento -- invocar "
     "document_quality_gate.evaluate_document_quality() y pasarlo aqui."
@@ -75,6 +80,7 @@ def evaluate_corrected_document_generation_gate(
     required_manifest_artifacts: list[str],
     change_review: list[dict],
     quality_report: dict | None = None,
+    revalidation_result: DocumentRevalidationResult | None = None,
 ) -> CorrectedDocumentGenerationGateResult:
     """Evalúa TODOS los criterios del plan (sección 16), sin detenerse en
     el primer fallo -- el caller necesita ver la lista completa de lo que
@@ -150,9 +156,36 @@ def evaluate_corrected_document_generation_gate(
         f"resena cubre {sorted(review_change_ids)}",
     ))
 
-    checks.append(GateCheckResult(
-        "revalidacion_ejecutada", False, REVALIDATION_NOT_EXECUTED_REASON,
-    ))
+    if revalidation_result is None:
+        checks.append(GateCheckResult(
+            "revalidacion_ejecutada", False, REVALIDATION_NOT_PROVIDED_REASON,
+        ))
+    else:
+        revalidation_passed = bool(revalidation_result.revalidation_passed)
+        if revalidation_passed:
+            detail = (
+                "AGT-RVL (independent_candidate_revalidation.revalidate_document) -- "
+                f"{len(revalidation_result.gap_results)} gap(s) revisados, todos CLOSED, "
+                "sin gaps nuevos, artefactos consistentes, hashes validos, documento abre"
+            )
+        else:
+            open_or_partial = [
+                f"{r.change_id}:{r.gap_status}" for r in revalidation_result.gap_results
+                if r.gap_status != "CLOSED"
+            ]
+            reasons = []
+            if open_or_partial:
+                reasons.append(f"gaps no CLOSED: {open_or_partial}")
+            if revalidation_result.new_gaps_introduced:
+                reasons.append(f"gaps nuevos introducidos: {revalidation_result.new_gaps_introduced}")
+            if not revalidation_result.artifacts_consistent:
+                reasons.append("artefactos (redline/matriz/manifest) inconsistentes")
+            if not revalidation_result.all_hashes_valid:
+                reasons.append("algun hash del manifest no tiene formato sha256 valido")
+            if not revalidation_result.document_opens_correctly:
+                reasons.append("el documento candidato no abre correctamente")
+            detail = "AGT-RVL FAIL -- " + "; ".join(reasons)
+        checks.append(GateCheckResult("revalidacion_ejecutada", revalidation_passed, detail))
 
     if quality_report is None:
         checks.append(GateCheckResult(

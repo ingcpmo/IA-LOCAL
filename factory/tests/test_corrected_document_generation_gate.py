@@ -22,6 +22,7 @@ from factory.services.corrected_document_generation_gate import (
     evaluate_corrected_document_generation_gate,
 )
 from factory.services.document_quality_gate import evaluate_document_quality
+from factory.services.independent_candidate_revalidation import revalidate_document
 from factory.services.remediation_traceability_and_manifest import (
     build_full_change_review, build_package_manifest, build_traceability_matrix,
 )
@@ -92,11 +93,11 @@ def _build_real_gate_inputs():
 
 class TestGateAlwaysFailsOnRevalidationAndQuality:
 
-    def test_revalidation_check_always_fails_today(self):
+    def test_revalidation_fails_when_not_provided(self):
         result = evaluate_corrected_document_generation_gate(**_build_real_gate_inputs())
         revalidation = next(c for c in result.checks if c.criterion == "revalidacion_ejecutada")
         assert revalidation.passed is False
-        assert "Fase O" in revalidation.detail
+        assert "revalidation_result" in revalidation.detail
 
     def test_quality_report_fails_when_not_provided(self):
         result = evaluate_corrected_document_generation_gate(**_build_real_gate_inputs())
@@ -242,9 +243,10 @@ class TestAGTQLTConnected:
         assert quality_check.passed is False
         assert "C1" in quality_check.detail
 
-    def test_revalidation_still_fails_gate_never_reaches_full_pass(self):
-        """AGT-QLT conectado no basta para CORRECTED_DOCUMENT_GENERATED --
-        revalidacion_ejecutada sigue sin conectar (fuera de este cambio)."""
+    def test_revalidation_still_fails_gate_without_revalidation_result(self):
+        """AGT-QLT conectado por si solo no basta para
+        CORRECTED_DOCUMENT_GENERATED -- sin revalidation_result, ese
+        criterio sigue fallando honestamente."""
         change = self._full_change()
         candidate = generate_candidate_document(STRUCTURE, [change])
         full_text = "\n".join(p.text for p in candidate.paragraphs)
@@ -257,3 +259,101 @@ class TestAGTQLTConnected:
         assert result.gate_passed is False
         assert result.failed_criteria == ["revalidacion_ejecutada"]
         assert result.final_state == "DOCUMENT_GENERATION_PARTIAL"
+
+
+class TestAGTRVLConnected:
+    """AGT-RVL ya conectado: el criterio 'revalidacion_ejecutada' debe
+    reflejar el resultado real de
+    independent_candidate_revalidation.revalidate_document, no un FAIL
+    hardcodeado."""
+
+    def test_passing_revalidation_makes_the_criterion_pass(self):
+        change = _change("C1")
+        candidate = generate_candidate_document(STRUCTURE, [change])
+        redline, insertion_manifest = generate_redline_document(STRUCTURE, [change])
+        candidate_bytes = io.BytesIO()
+        candidate.save(candidate_bytes)
+
+        revalidation_result = revalidate_document(
+            structure=STRUCTURE, changes=[change], included_change_ids=["C1"],
+            candidate_document_bytes=candidate_bytes.getvalue(),
+            redline_change_ids=[m["change_id"] for m in insertion_manifest],
+            matrix_change_ids=["C1"], manifest_artifact_hashes={"candidate": "a" * 64},
+            required_manifest_artifacts=["candidate"],
+        )
+        assert revalidation_result.revalidation_passed is True
+
+        inputs = _build_real_gate_inputs()
+        inputs["revalidation_result"] = revalidation_result
+        result = evaluate_corrected_document_generation_gate(**inputs)
+        revalidation_check = next(c for c in result.checks if c.criterion == "revalidacion_ejecutada")
+        assert revalidation_check.passed is True
+
+    def test_open_gap_makes_the_criterion_fail_with_real_reason(self):
+        change = _change("C1")
+        candidate = generate_candidate_document(STRUCTURE, [])  # el cambio nunca se incluyo de verdad
+        candidate_bytes = io.BytesIO()
+        candidate.save(candidate_bytes)
+
+        revalidation_result = revalidate_document(
+            structure=STRUCTURE, changes=[change], included_change_ids=["C1"],  # declarado incluido, mintiendo
+            candidate_document_bytes=candidate_bytes.getvalue(),
+            redline_change_ids=["C1"], matrix_change_ids=["C1"],
+            manifest_artifact_hashes={"candidate": "a" * 64}, required_manifest_artifacts=["candidate"],
+        )
+        assert revalidation_result.revalidation_passed is False
+
+        inputs = _build_real_gate_inputs()
+        inputs["revalidation_result"] = revalidation_result
+        result = evaluate_corrected_document_generation_gate(**inputs)
+        revalidation_check = next(c for c in result.checks if c.criterion == "revalidacion_ejecutada")
+        assert revalidation_check.passed is False
+        assert "C1:OPEN" in revalidation_check.detail
+
+    def test_both_agt_qlt_and_agt_rvl_passing_reaches_corrected_document_generated(self):
+        """El caso completo, construido de forma autocontenida (mismo
+        `change` usado consistentemente en candidato/redline/matriz/
+        manifest/calidad/revalidacion -- _build_real_gate_inputs() usa un
+        change distinto, no se reutiliza aqui para evitar inconsistencia):
+        con AGT-QLT y AGT-RVL conectados y ambos en verde, el gate alcanza
+        CORRECTED_DOCUMENT_GENERATED por primera vez."""
+        change = TestAGTQLTConnected()._full_change("C1")
+        candidate = generate_candidate_document(STRUCTURE, [change])
+        redline, insertion_manifest = generate_redline_document(STRUCTURE, [change])
+        full_text = "\n".join(p.text for p in candidate.paragraphs)
+        candidate_bytes_io = io.BytesIO()
+        candidate.save(candidate_bytes_io)
+        candidate_bytes = candidate_bytes_io.getvalue()
+
+        package_state = {"changes": {"C1": change}, "exceptions": {}, "medium_risk_batch_decisions": {}}
+        matrix = build_traceability_matrix(package_state, insertion_manifest)
+        review = build_full_change_review(package_state)
+        manifest = build_package_manifest(
+            run_id="RUN-1", package_id="PKG-1", package_version=1,
+            artifacts={"candidate": candidate_bytes},
+        )
+
+        quality_report = evaluate_document_quality(
+            structure=STRUCTURE, candidate_full_text=full_text, changes=[change],
+        )
+        revalidation_result = revalidate_document(
+            structure=STRUCTURE, changes=[change], included_change_ids=["C1"],
+            candidate_document_bytes=candidate_bytes,
+            redline_change_ids=[m["change_id"] for m in insertion_manifest],
+            matrix_change_ids=[r.change_id for r in matrix],
+            manifest_artifact_hashes=manifest["artifact_hashes"],
+            required_manifest_artifacts=["candidate"],
+        )
+        assert quality_report["applied"] is True
+        assert revalidation_result.revalidation_passed is True
+
+        result = evaluate_corrected_document_generation_gate(
+            candidate_document=candidate, redline_document=redline, structure=STRUCTURE,
+            original_document_sha256="f" * 64, candidate_document_bytes=candidate_bytes,
+            included_change_ids=["C1"], traceability_matrix_change_ids=[r.change_id for r in matrix],
+            insertion_manifest=insertion_manifest, manifest=manifest,
+            required_manifest_artifacts=["candidate"], change_review=review,
+            quality_report=quality_report, revalidation_result=revalidation_result,
+        )
+        assert result.gate_passed is True
+        assert result.final_state == "CORRECTED_DOCUMENT_GENERATED"
