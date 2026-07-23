@@ -68,12 +68,53 @@ def sanitize_document(text: str) -> str:
     return text
 
 
+def _lookup_regulatory_text(req_id: str) -> str | None:
+    """W5 V2, Fase E -- intenta obtener texto normativo canónico real del
+    Requirement Evidence Pack (Fase C, requirements.yaml) para este req_id.
+
+    Regla dura que esto corrige (REQUIREMENT_EVIDENCE_PACK_SPEC.md, W5 V2):
+    'una LLM NUNCA recibe únicamente requirement_id + descripción breve'.
+    Antes de esta fase, build_prompt() solo inyectaba req_id + label (el
+    antipatrón confirmado del baseline de 121 llamadas -- causa raíz del
+    falso positivo ANNEX11_4).
+
+    Retorna None si el req_id no está en el catálogo (p.ej. checkpoints de
+    agentes/prompts todavía no cubiertos, como traceability) -- fallback
+    silencioso a solo label, NUNCA rompe la construcción del prompt por
+    esto. Solo se captura CatalogValidationError/ImportError (fallos de
+    catálogo ya cubiertos por sus propios tests dedicados,
+    test_requirement_catalog_loader.py) -- cualquier otro error se
+    propaga, no se enmascara."""
+    try:
+        from factory.regulatory.requirement_catalog.requirement_catalog_loader import (
+            CatalogValidationError, get_requirement, get_source,
+        )
+    except ImportError:
+        return None
+    try:
+        entry = get_requirement(req_id)
+        source = get_source(entry["source_id"])
+    except CatalogValidationError:
+        return None
+    citation = entry["citation"]
+    return (
+        f'Texto normativo canonico (fuente: {source["official_source_description"]}, '
+        f'{citation["section_page_paragraph"]}): "{citation["citation_text"]}"'
+    )
+
+
 def build_prompt(meta: dict, doc_text: str, max_chars: int = CHUNK_MAX_CHARS) -> str:
     doc = sanitize_document(doc_text)
     truncated = len(doc) > max_chars
     if truncated:
         doc = doc[:max_chars]
-    checkpoints_desc = "\n".join(f"  - {c['req_id']}: {c['label']}" for c in meta["checkpoints"])
+    lines = []
+    for c in meta["checkpoints"]:
+        lines.append(f"  - {c['req_id']}: {c['label']}")
+        reg_text = _lookup_regulatory_text(c["req_id"])
+        if reg_text:
+            lines.append(f"    {reg_text}")
+    checkpoints_desc = "\n".join(lines)
     note = f"\n\n[NOTA: fragmento truncado a los primeros {max_chars} caracteres]" if truncated else ""
     return (
         meta["common_contract"]
