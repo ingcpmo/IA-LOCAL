@@ -101,20 +101,39 @@ sec "Firewall"
 sudo ufw status numbered | sed 's/^/  /' || warn "No se pudo consultar UFW"
 
 sec "Pendientes funcionales"
+# gmp-api valida su propia auth vía header X-API-Key (ver app/main.py,
+# verify_api_key) -- NO es el basicauth de Mission Control (ese es un
+# servicio distinto, puerto 9000, ver /etc/caddy/Caddyfile). La key se lee
+# en runtime del propio contenedor, nunca se hardcodea ni se imprime.
+API_KEY="$(docker inspect gmp-api --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null \
+    | grep '^GMP_API_KEY=' | cut -d= -f2-)"
+
+if [ -z "$API_KEY" ]; then
+    warn "GMP_API_KEY no resuelto desde el contenedor gmp-api -- endpoints protegidos se probaran sin auth"
+fi
+
+# /api/v1/query hace inferencia LLM real via Ollama (CPU, sin CUDA por
+# restriccion del proyecto) -- puede tardar varios minutos. Timeout amplio
+# deliberado; un 000 aqui es timeout real, no fallo de auth.
 QUERY_CODE="$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$API/api/v1/query" \
     -H "Content-Type: application/json" \
-    -H "X-User-Id: ing_cpmo" \
-    -d '{"question":"health check","agent":"fda"}' 2>/dev/null || echo 000)"
+    -H "X-API-Key: $API_KEY" \
+    -d '{"question":"health check","agent":"auto"}' \
+    --max-time 240 2>/dev/null || echo 000)"
 
-[ "$QUERY_CODE" = "200" ] && pass "POST /api/v1/query disponible" || warn "Pendiente: POST /api/v1/query HTTP $QUERY_CODE"
+[ "$QUERY_CODE" = "200" ] && pass "POST /api/v1/query disponible" \
+    || warn "Pendiente: POST /api/v1/query HTTP $QUERY_CODE"
 
-K_CODE="$(curl -sS -o /dev/null -w "%{http_code}" "$API/api/v1/knowledge/stats" 2>/dev/null || echo 000)"
+K_CODE="$(curl -sS -o /dev/null -w "%{http_code}" -H "X-API-Key: $API_KEY" \
+    "$API/api/v1/knowledge/stats" --max-time 15 2>/dev/null || echo 000)"
 [ "$K_CODE" = "200" ] && pass "GET /api/v1/knowledge/stats disponible" || warn "Pendiente: GET /api/v1/knowledge/stats HTTP $K_CODE"
 
-A_CODE="$(curl -sS -o /dev/null -w "%{http_code}" "$API/api/v1/audit/verify" 2>/dev/null || echo 000)"
+A_CODE="$(curl -sS -o /dev/null -w "%{http_code}" -H "X-API-Key: $API_KEY" \
+    "$API/api/v1/audit/verify" --max-time 15 2>/dev/null || echo 000)"
 [ "$A_CODE" = "200" ] && pass "GET /api/v1/audit/verify disponible" || warn "Pendiente: GET /api/v1/audit/verify HTTP $A_CODE"
 
-P_CODE="$(curl -sS -o /dev/null -w "%{http_code}" "$API/api/v1/protocol-template/IQ" 2>/dev/null || echo 000)"
+P_CODE="$(curl -sS -o /dev/null -w "%{http_code}" -H "X-API-Key: $API_KEY" \
+    "$API/api/v1/protocol-template/IQ" --max-time 15 2>/dev/null || echo 000)"
 [ "$P_CODE" = "200" ] && pass "GET /api/v1/protocol-template/IQ disponible" || warn "Pendiente: GET /api/v1/protocol-template/IQ HTTP $P_CODE"
 
 [ -f "$PROJECT_DIR/knowledge/retriever.py" ] && pass "knowledge/retriever.py existe" || warn "Pendiente: knowledge/retriever.py"
