@@ -7,7 +7,8 @@ versión completa con citas literales vive en
 `factory/regulatory/validation_evidence/URS_V2_1_BASELINE_AUDIT.md`
 (gitignored, `INTERNAL_VALIDATION_EVIDENCE`, nunca commitear).
 
-**Estado de la corrida:**
+**Estado de la corrida (histórico, al cierre de esta auditoría exploratoria,
+2026-07-22):**
 
 ```
 EXPLORATORY_VALIDATION_RUN
@@ -15,15 +16,34 @@ FORMAL_BASELINE_READY = false
 REGULATORY_COMPLIANCE = NOT_DETERMINED
 ```
 
-Resultados conservados intactos (no modificados, no reejecutados), pero
-**no usados todavía como referencia formal** — pendientes de: (1) código
-versionado y commiteado (ya cerrado, commit `1c16686`), (2) adjudicación de
-`ANNEX11_4`, (3) resolución humana de los 25 `review_required` + 3
-`rejected_by_verifier`. `REGULATORY_COMPLIANCE = NOT_DETERMINED` es una
+Resultados conservados intactos (no modificados, no reejecutados), y en ese
+momento **no usados todavía como referencia formal** — pendientes de: (1)
+código versionado y commiteado (ya cerrado, commit `1c16686`), (2)
+adjudicación de `ANNEX11_4`, (3) resolución humana de los 25
+`review_required` + 3 `rejected_by_verifier`.
+
+> **ACTUALIZACIÓN (Fase H, 2026-07-23):** los tres pendientes anteriores
+> quedaron resueltos por decisión humana explícita de Cesar. Ver
+> `ADJUDICACION_HUMANA_FASE_H_2026-07-23.md` (mismo directorio) para el
+> detalle de cada adjudicación — ese documento es ahora la fuente vigente
+> de `FORMAL_BASELINE_READY` y `SAFE_TO_USE_AS_BASELINE` para esta corrida:
+>
+> ```
+> FORMAL_BASELINE_READY = true   (Fase H, ver ADJUDICACION_HUMANA_FASE_H_2026-07-23.md)
+> SAFE_TO_USE_AS_BASELINE = true (Fase H, ver ADJUDICACION_HUMANA_FASE_H_2026-07-23.md)
+> ```
+>
+> Esta actualización no modifica los artefactos crudos de la corrida ni el
+> análisis técnico original de este documento (secciones siguientes) — es
+> una capa de decisión humana superpuesta, igual que declara el propio
+> documento de adjudicación.
+
+`REGULATORY_COMPLIANCE = NOT_DETERMINED` sigue vigente sin cambios y es una
 constante de gobernanza (nunca calculada desde los resultados del
 pipeline, ver `consolidated_evidence_report.py`) — ninguna corrida, sin
 importar cuántos requisitos verifique, puede por sí sola declarar
-cumplimiento regulatorio. Esa decisión es siempre humana.
+cumplimiento regulatorio. Esa decisión es siempre humana, y la Fase H no
+la modifica.
 
 ## Identidad de la corrida (resumen no confidencial)
 
@@ -47,21 +67,24 @@ cumplimiento regulatorio. Esa decisión es siempre humana.
 - 93 `verified` / 25 `review_required` / 3 `rejected_by_verifier` (121 total).
 - 0 requisitos alcanzaron `DOCUMENTATION_GAP` en esta corrida.
 
-## Adjudicación pendiente — ANNEX11_4
+## ANNEX11_4 — adjudicado (ver actualización Fase H arriba)
 
 La conclusión `DOCUMENTED_AND_SUPPORTED` para `ANNEX11_4` (gestión de
-riesgo del sistema computarizado) está **suspendida, no confirmada**. La
-única cita que pasó verificación coincide literalmente con el texto fuente
-(anclaje real, no fabricado) pero su relevancia temática pasó el umbral por
-una única coincidencia léxica de baja especificidad, dentro de una lista de
-estándares referenciados por el documento, no dentro de una descripción de
-un proceso de gestión de riesgo del sistema en sí. **Regla aplicada en esta
-auditoría: una coincidencia léxica marginal, aislada, dentro de un título
-de estándar referenciado NO constituye evidencia suficiente de que el
-proceso regulatorio exigido (gestión de riesgo) esté documentado.**
-`DOCUMENTED_AND_SUPPORTED` para este requisito queda **revertido a
-adjudicación pendiente** hasta que Cesar confirme o rechace explícitamente
-si esa cita basta como evidencia.
+riesgo del sistema computarizado) estuvo **suspendida, no confirmada**,
+hasta la adjudicación de Fase H. La única cita que pasó verificación
+coincide literalmente con el texto fuente (anclaje real, no fabricado)
+pero su relevancia temática pasó el umbral por una única coincidencia
+léxica de baja especificidad, dentro de una lista de estándares
+referenciados por el documento, no dentro de una descripción de un proceso
+de gestión de riesgo del sistema en sí. **Regla aplicada en esta auditoría:
+una coincidencia léxica marginal, aislada, dentro de un título de estándar
+referenciado NO constituye evidencia suficiente de que el proceso
+regulatorio exigido (gestión de riesgo) esté documentado.**
+
+**Resuelto en Fase H** (`ADJUDICACION_HUMANA_FASE_H_2026-07-23.md`, §1):
+Cesar confirmó explícitamente que la cita NO basta como evidencia —
+`DOCUMENTED_AND_SUPPORTED` queda `RECHAZADO` para este requisito en esta
+corrida.
 
 ## Registros pendientes/rechazados (25 + 3)
 
@@ -78,8 +101,16 @@ rama de consolidación.
 
 ## Próximos pasos (gates, ver informe de reproducibilidad para el detalle)
 
-No se repetirán las 121 llamadas hasta que: el runner esté commiteado y el
-repositorio limpio, el driver no dependa del scratchpad, `ANNEX11_4` tenga
-regla o adjudicación explícita, y el fingerprint de la corrida (documento +
-commit + modelo + digest + prompt + schema + catálogo + matriz +
-parámetros) se declare completo desde el inicio.
+**Histórico (2026-07-22):** no se repetirían las 121 llamadas hasta que: el
+runner estuviera commiteado y el repositorio limpio, el driver no
+dependiera del scratchpad, `ANNEX11_4` tuviera regla o adjudicación
+explícita, y el fingerprint de la corrida (documento + commit + modelo +
+digest + prompt + schema + catálogo + matriz + parámetros) se declarara
+completo desde el inicio.
+
+Con la adjudicación de Fase H (`ADJUDICACION_HUMANA_FASE_H_2026-07-23.md`)
+los pendientes de gobernanza sobre **esta corrida ya ejecutada** quedaron
+resueltos. Esto no equivale a `REGULATORY_COMPLIANCE` ni habilita una
+nueva corrida automática: cualquier reejecución futura de las 121 llamadas
+sigue requiriendo fingerprint completo declarado desde el inicio, como ya
+exigía este documento.
