@@ -103,6 +103,30 @@ def _lookup_regulatory_text(req_id: str) -> str | None:
     )
 
 
+def _lookup_evidence_min_criteria(req_id: str) -> list[str] | None:
+    """W5 V2, Fase F (ampliación D) -- criterios mínimos de evidencia
+    reales del catálogo (Fase C, human_drafted_provisional) para este
+    req_id, en el ORDEN real del catálogo (el índice 1-based de esta lista
+    es el mismo `criterion_index` que criterion_assessments debe usar --
+    ver build_prompt() y semantic_evidence_verification.verify_sufficiency()).
+    Mismo contrato de fallback silencioso que _lookup_regulatory_text():
+    None si el req_id no está en el catálogo o no tiene
+    evidence_min_criteria todavía -- nunca rompe la construcción del
+    prompt por esto."""
+    try:
+        from factory.regulatory.requirement_catalog.requirement_catalog_loader import (
+            CatalogValidationError, get_requirement,
+        )
+    except ImportError:
+        return None
+    try:
+        entry = get_requirement(req_id)
+    except CatalogValidationError:
+        return None
+    criteria = entry.get("evidence_min_criteria")
+    return list(criteria) if criteria else None
+
+
 def build_prompt(meta: dict, doc_text: str, max_chars: int = CHUNK_MAX_CHARS) -> str:
     doc = sanitize_document(doc_text)
     truncated = len(doc) > max_chars
@@ -114,6 +138,14 @@ def build_prompt(meta: dict, doc_text: str, max_chars: int = CHUNK_MAX_CHARS) ->
         reg_text = _lookup_regulatory_text(c["req_id"])
         if reg_text:
             lines.append(f"    {reg_text}")
+        criteria = _lookup_evidence_min_criteria(c["req_id"])
+        if criteria:
+            lines.append(
+                "    Criterios minimos de evidencia (usar el indice EXACTO en criterion_index, "
+                "el texto EXACTO en criterion_text):"
+            )
+            for i, crit in enumerate(criteria, start=1):
+                lines.append(f"      {i}. {crit}")
     checkpoints_desc = "\n".join(lines)
     note = f"\n\n[NOTA: fragmento truncado a los primeros {max_chars} caracteres]" if truncated else ""
     return (
@@ -161,16 +193,33 @@ def _extract_json(raw: str) -> dict | None:
 def _validate_checkpoint_schema(parsed) -> bool:
     """Valida que el JSON parseado tenga la forma minima esperada por el
     contrato del prompt (fix TE-01: una respuesta puede ser JSON valido y
-    aun asi no tener la estructura que el verificador necesita)."""
+    aun asi no tener la estructura que el verificador necesita).
+
+    W5 V2 Fase F (ampliacion D, 2026-07-25): ADEMAS del chequeo estructural
+    original (checkpoints no vacio, req_id presente), valida CADA
+    checkpoint completo contra el schema formal checkpoint_llm_response_v1
+    (estado/evidencia_exacta/brecha/recomendacion/criterion_assessments) --
+    una violacion de schema en CUALQUIER checkpoint invalida TODO el
+    chunk_result (mismo criterio fail-closed que ya aplicaba antes: no se
+    rescatan checkpoints parcialmente validos de una respuesta mal
+    formada)."""
     if not isinstance(parsed, dict):
         return False
     checkpoints = parsed.get("checkpoints")
     if not isinstance(checkpoints, list) or not checkpoints:
         return False
-    return all(
+    if not all(
         isinstance(entry, dict) and isinstance(entry.get("req_id"), str) and entry.get("req_id")
         for entry in checkpoints
-    )
+    ):
+        return False
+
+    from factory.regulatory.schema_loader import validate_against
+    for entry in checkpoints:
+        ok, _errors = validate_against(entry, "checkpoint_llm_response_v1")
+        if not ok:
+            return False
+    return True
 
 
 def _normalize(s: str) -> str:
@@ -248,6 +297,27 @@ def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS
     return chunks
 
 
+def build_run_fingerprint(meta: dict, *, model_digest: str, document_sha256: str, agent_version: str) -> dict:
+    """W5 V2 Fase F (invalidacion de checkpoint, 2026-07-25). Combina todo
+    lo que, si cambia, vuelve un checkpoint viejo no confiable para
+    reanudar: contrato del prompt (prompt_version/schema_version), modelo,
+    documento, agente y catalogo de requisitos (version + sha256 del
+    archivo completo). Un mismatch en CUALQUIER componente impide el
+    resume (ver CheckpointStore.find_resumable) -- fuerza una corrida
+    nueva en vez de mezclar chunk_executions de contratos distintos."""
+    from factory.regulatory.requirement_catalog.requirement_catalog_loader import catalog_fingerprint
+    cat = catalog_fingerprint()
+    return {
+        "prompt_version": meta["prompt_version"],
+        "schema_version": meta.get("schema_version"),
+        "model_digest": model_digest,
+        "document_sha256": document_sha256,
+        "agent_version": agent_version,
+        "catalog_version": cat["catalog_version"],
+        "catalog_sha256": cat["catalog_sha256"],
+    }
+
+
 class CheckpointStore:
     """Persistencia de reanudación: guarda chunk_executions ya completados
     (por run_id) en disco tras cada chunk, para poder reanudar un análisis
@@ -273,9 +343,20 @@ class CheckpointStore:
         tmp.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
         tmp.replace(p)
 
-    def find_resumable(self, document_sha256: str, agent_id: str) -> dict | None:
+    def find_resumable(self, document_sha256: str, agent_id: str, expected_fingerprint: dict) -> tuple[dict | None, dict | None]:
         """Busca un checkpoint incompleto previo para el mismo documento
-        (por SHA-256) y agente, para reanudar en vez de reiniciar."""
+        (por SHA-256) y agente, para reanudar en vez de reiniciar.
+
+        W5 V2 Fase F: SOLO se considera resumable si su fingerprint
+        (prompt_version/schema_version/model_digest/document_sha256/
+        agent_version/catalog_version/catalog_sha256) coincide EXACTO con
+        expected_fingerprint. Un checkpoint sin fingerprint (formato
+        anterior a esta fase) o con cualquier componente distinto NUNCA se
+        resume -- se descarta explicitamente (nunca en silencio: retorna
+        el detalle del mismatch para que el llamador lo registre en
+        preflight_metadata) y la corrida siguiente empieza de cero.
+
+        Retorna (resumable_state_or_None, mismatch_detail_or_None)."""
         for f in self.checkpoint_dir.glob("*.checkpoint.json"):
             try:
                 state = json.loads(f.read_text(encoding="utf-8"))
@@ -284,8 +365,15 @@ class CheckpointStore:
             if (state.get("document_sha256") == document_sha256
                     and state.get("agent_id") == agent_id
                     and not state.get("completed", False)):
-                return state
-        return None
+                if state.get("fingerprint") == expected_fingerprint:
+                    return state, None
+                return None, {
+                    "discarded_run_id": state.get("run_id"),
+                    "old_fingerprint": state.get("fingerprint"),
+                    "expected_fingerprint": expected_fingerprint,
+                    "reason": "checkpoint_fingerprint_mismatch",
+                }
+        return None, None
 
 
 def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
@@ -355,13 +443,20 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     model_digest = provider.show_digest()
     ollama_version_str = provider.runtime_version()
 
+    run_fingerprint = build_run_fingerprint(
+        meta, model_digest=model_digest, document_sha256=document_sha256, agent_version=agent_version,
+    )
+
     chunks = build_page_chunks(per_unit_text)
     chunk_executions: list[dict] = []
     start_index = 0
 
     resumed = None
+    fingerprint_mismatch = None
     if checkpoint_store is not None:
-        resumed = checkpoint_store.find_resumable(document_sha256, agent_id)
+        resumed, fingerprint_mismatch = checkpoint_store.find_resumable(
+            document_sha256, agent_id, run_fingerprint,
+        )
 
     if resumed is not None:
         run_id = resumed["run_id"]
@@ -375,6 +470,12 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         "ollama_version": ollama_version_str, "agent_version": agent_version,
         "prompt_version": meta["prompt_version"], "verifier_version": meta["verifier_version"],
         "documento": documento, "document_sha256": document_sha256, "run_id": run_id,
+        "run_fingerprint": run_fingerprint,
+        # W5 V2 Fase F: nunca en silencio -- si un checkpoint previo existia
+        # pero su fingerprint no coincidia, queda explicito aqui que se
+        # descarto y la corrida empezo de cero (no se resumio nada).
+        "checkpoint_fingerprint_mismatch_discarded": fingerprint_mismatch is not None,
+        "checkpoint_fingerprint_mismatch_detail": fingerprint_mismatch,
     }
 
     by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
@@ -382,10 +483,12 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
 
     verified_records_by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
     known_verified_requirement_ids: set = set(by_req.keys())
-    requirement_terms_by_req: dict[str, list] = {}
-    if use_verified_pipeline:
-        from factory.regulatory.evidence_verifier import load_requirement_terms
-        requirement_terms_by_req = {req_id: load_requirement_terms(req_id) for req_id in by_req}
+    # W5 V2 Fase F: se computa siempre (no solo bajo use_verified_pipeline)
+    # -- ahora tambien lo consume la validacion C real (verify_evidence_abcd)
+    # para D, ver el bucle de consolidacion mas abajo.
+    from factory.regulatory.evidence_verifier import load_requirement_terms
+    requirement_terms_by_req: dict[str, list] = {req_id: load_requirement_terms(req_id) for req_id in by_req}
+    from factory.regulatory import semantic_evidence_verification as sev
     # Re-derivar by_req de chunk_executions ya completados (reanudación real,
     # no solo saltar llamadas — la consolidación final también debe verlos).
     # has_evidence puede faltar en checkpoints generados antes del fix
@@ -484,6 +587,25 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     "anchored": valid_candidate,
                     "has_evidence": has_evidence,
                 }
+
+                # W5 V2 Fase F (ampliacion D, 2026-07-25): criterion_assessments
+                # de la respuesta del modelo NUNCA se ignora en silencio --
+                # se extrae y se pasa a verify_evidence_abcd() (A/B/C/D
+                # completo, no solo D), y el resultado se persiste en el
+                # candidate. Ausente (None) -> D queda NOT_ASSESSABLE
+                # explicito (ver semantic_evidence_verification.py), nunca
+                # un campo vacio sin explicacion.
+                criterion_assessments = entry.get("criterion_assessments")
+                abcd = sev.verify_evidence_abcd(
+                    evidencia, chunk["text"], req_id, requirement_terms_by_req.get(req_id, []),
+                    criterion_assessments=criterion_assessments,
+                )
+                candidate["d_sufficiency"] = abcd.d_sufficiency
+                candidate["d_reason"] = abcd.d_reason
+                candidate["d_detail"] = abcd.d_detail
+                candidate["substantive_evidence_accepted"] = abcd.substantive_evidence_accepted
+                candidate["operational_result"] = abcd.operational_result
+
                 by_req.setdefault(req_id, []).append(candidate)
                 by_req_candidates.append({"req_id": req_id, "candidate": candidate})
 
@@ -516,6 +638,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 "run_id": run_id, "document_sha256": document_sha256, "agent_id": agent_id,
                 "documento": documento, "archivo": archivo, "total_chunks": len(chunks),
                 "chunk_executions": chunk_executions, "completed": False,
+                "fingerprint": run_fingerprint,
             })
 
     any_unresolved_technical_failure = any(
@@ -628,6 +751,13 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             confianza="media", agente_responsable=agent_id, revision_humana_requerida=True,
             agent_version=agent_version, prompt_version=meta["prompt_version"],
             model=model_name, verifier_version=meta["verifier_version"],
+            # W5 V2 Fase F (ampliacion D): propagados desde el candidate
+            # ganador -- ausentes (None) si el candidate viene de un
+            # checkpoint reanudado de un run anterior a esta fase (formato
+            # viejo, sin estos campos) -- nunca inventados.
+            d_sufficiency=best.get("d_sufficiency"),
+            substantive_evidence_accepted=best.get("substantive_evidence_accepted"),
+            operational_result=best.get("operational_result"),
         ))
 
     technical_execution_failures = [
@@ -694,6 +824,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             "run_id": run_id, "document_sha256": document_sha256, "agent_id": agent_id,
             "documento": documento, "archivo": archivo, "total_chunks": len(chunks),
             "chunk_executions": chunk_executions, "completed": True,
+            "fingerprint": run_fingerprint,
         })
 
     _write_audit_event(result)

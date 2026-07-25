@@ -11,9 +11,7 @@ ejecutables reales, cada uno reutilizando código YA existente y probado
   3. Evidencia de otro archivo (hash/documento distinto) -> Fase F,
      verify_anchor contra el texto de un documento distinto al reclamado.
   4. Numeral inexistente -> Fase F, verify_regulatory_source.
-  5. Evidencia parcial -> FAIL en D: NOT_APPLICABLE_YET (evidence_min_criteria
-     sigue PENDING_HUMAN_INTERPRETATION desde Fase C -- D nunca se evalúa
-     con juicio real todavía, ver ABCDResult.d_sufficiency).
+  5. Evidencia parcial -> D real (PARTIALLY_MET, ver ampliación abajo).
   6. Contradicción entre secciones -> chunked_engine.evaluate_chunked
      (detección ya real y probada, test_gmpai_chunked_engine.py).
   7. Ausencia con cobertura incompleta -> absence_consolidator.consolidate
@@ -22,10 +20,27 @@ ejecutables reales, cada uno reutilizando código YA existente y probado
   8. Evidencia fuera de contexto (tópicamente irrelevante) -> Fase F,
      verify_semantic_relevance (RELEVANCE_REVIEW_REQUIRED).
 
+Ampliación 2026-07-25 (D real, SUFFICIENCY_VERIFICATION, corrección
+completa post-auditoría): el contrato pasó de dos listas separadas
+(matched_criteria/unmet_criteria) a un array unificado
+`criterion_assessments` (criterion_index/criterion_text/status/
+evidence_quote/evidence_location/justification/limitations), con rechazo
+ATÓMICO de todo el array ante violaciones de contrato (duplicados, índice
+fuera de rango, texto desincronizado, estado inválido, MET sin evidencia/
+ubicación) -- ver semantic_evidence_verification.verify_sufficiency().
+`substantive_evidence_accepted` (antes `accepted`) es ahora A∧B∧C∧D
+INCONDICIONAL, sin excepción para D=NOT_ASSESSABLE.
+
+Casos 9-14 nuevos (sin renumerar los 8 originales; el caso 5 se reescribió
+para usar el contrato unificado, misma cobertura conceptual):
+MET, NOT_MET, cobertura incompleta -> NOT_ASSESSABLE explícito, criterio
+inventado -> rechazo atómico, índice duplicado -> rechazo atómico, MET sin
+evidencia/ubicación -> rechazo atómico.
+
 Este módulo es el punto de entrada reutilizable para el futuro Model
 Qualification Gate (MODEL_PROVIDER_AND_LOCAL_AI_RUNTIME_SPEC.md §6):
 cualquier cambio de modelo/prompt/schema debe correr run_all() y comparar
-contra el baseline de PASS=8/8 ya establecido aquí."""
+contra el baseline de PASS=14/14 ya establecido aquí."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -85,12 +100,12 @@ def _case_annex11_4_reference_list() -> GoldenCaseResult:
     )
     quote = "Good Automated Manufacturing Practice, Guide for Validation"
     result = sev.verify_evidence_abcd(quote, doc, "ANNEX11_4", requirement_terms=["risk", "validation"])
-    passed = result.a_anchor == "PASS" and result.c_semantic == "NOT_VERIFIABLE" and not result.accepted
+    passed = result.a_anchor == "PASS" and result.c_semantic == "NOT_VERIFIABLE" and not result.substantive_evidence_accepted
     return GoldenCaseResult(
         "ANNEX11_4_reference_list", "C",
         "Cita anclada dentro de una lista de referencias numeradas nunca debe aceptarse como evidencia sustantiva.",
         expected="C=NOT_VERIFIABLE, accepted=False",
-        actual=f"C={result.c_semantic}, accepted={result.accepted}",
+        actual=f"C={result.c_semantic}, substantive_evidence_accepted={result.substantive_evidence_accepted}",
         passed=passed, detail={"flags": result.c_flags},
     )
 
@@ -132,21 +147,153 @@ def _case_nonexistent_clause() -> GoldenCaseResult:
     )
 
 
+_ACCESS_CRITERIA = [
+    "Mecanismo de control de acceso (propio o federado) sobre el sistema, descrito.",
+    "Alta, cambio, revision periodica y revocacion de cuentas.",
+    "Cuentas humanas individuales (no compartidas).",
+    "Cuentas tecnicas no interactivas, si existen, gobernadas con propietario, proposito, privilegio "
+    "minimo y prohibicion de firma electronica.",
+    "Evidencia de prueba de acceso permitido y denegado.",
+]
+
+
+def _assessment(index: int, text: str, status: str, quote: str = "", location: str = "") -> dict:
+    return {
+        "criterion_index": index, "criterion_text": text, "status": status,
+        "evidence_quote": quote, "evidence_location": location,
+        "justification": "golden dataset", "limitations": "",
+    }
+
+
+def _all_met(criteria=_ACCESS_CRITERIA) -> list:
+    return [_assessment(i + 1, c, "MET", quote=c, location="pag 1") for i, c in enumerate(criteria)]
+
+
+def _all_not_met(criteria=_ACCESS_CRITERIA) -> list:
+    return [_assessment(i + 1, c, "NOT_MET") for i, c in enumerate(criteria)]
+
+
 def _case_partial_evidence_sufficiency() -> GoldenCaseResult:
+    """Escenario real 'evidencia parcial' del plan §12.2: 1 de 5 criterios
+    minimos confirmado y anclado, los otros 4 declarados explicitamente
+    NOT_MET -> PARTIALLY_MET, nunca MET ni substantive_evidence_accepted."""
+    quote = _ACCESS_CRITERIA[0]
+    doc = f"El sistema implementa lo siguiente: {quote}"
+    assessments = [_assessment(1, quote, "MET", quote=quote, location="pag 1")]
+    assessments += [_assessment(i + 2, c, "NOT_MET") for i, c in enumerate(_ACCESS_CRITERIA[1:])]
     result = sev.verify_evidence_abcd(
-        "control de acceso mediante autenticacion", "el sistema implementa control de acceso mediante autenticacion",
-        "21_CFR_11.10(d)", requirement_terms=["control de acceso"],
+        quote, doc, "21_CFR_11.10(d)", requirement_terms=["control de acceso"],
+        criterion_assessments=assessments,
     )
-    passed = result.d_sufficiency == "NOT_ASSESSABLE"
+    passed = result.d_sufficiency == "PARTIALLY_MET" and not result.substantive_evidence_accepted
     return GoldenCaseResult(
         "partial_evidence_sufficiency", "D",
-        "Evaluacion de suficiencia por criterio (D) -- NOT_APPLICABLE_YET: "
-        "evidence_min_criteria sigue pendiente de interpretacion humana (decision de Fase C). "
-        "Este caso NO valida 'FAIL en D -> PARTIALLY_DOCUMENTED' del plan original; "
-        "confirma que D nunca se inventa mientras siga pendiente.",
-        expected="D=NOT_ASSESSABLE (declarado, no evaluado)",
-        actual=f"D={result.d_sufficiency}",
-        passed=passed, detail={"status": "NOT_APPLICABLE_YET", "reason": result.d_reason},
+        "Evidencia parcial: solo 1 de 5 criterios minimos de evidencia confirmado y anclado -- "
+        "D debe quedar PARTIALLY_MET, nunca MET ni substantive_evidence_accepted.",
+        expected="D=PARTIALLY_MET, substantive_evidence_accepted=False",
+        actual=f"D={result.d_sufficiency}, substantive_evidence_accepted={result.substantive_evidence_accepted}",
+        passed=passed, detail=result.d_detail,
+    )
+
+
+def _case_sufficiency_met_all_criteria_anchored() -> GoldenCaseResult:
+    doc = " ".join(_ACCESS_CRITERIA)
+    status, reason, detail = sev.verify_sufficiency("21_CFR_11.10(d)", _all_met(), doc)
+    passed = status == "MET"
+    return GoldenCaseResult(
+        "sufficiency_met_all_criteria_anchored", "D",
+        "Los 5 criterios minimos reales, cada uno MET con cita anclada real -> D=MET.",
+        expected="D=MET", actual=f"D={status}", passed=passed, detail=detail,
+    )
+
+
+def _case_sufficiency_not_met_all_criteria_unmet() -> GoldenCaseResult:
+    status, reason, detail = sev.verify_sufficiency(
+        "21_CFR_11.10(d)", _all_not_met(), "documento sin ninguna evidencia real de control de acceso",
+    )
+    passed = status == "NOT_MET"
+    return GoldenCaseResult(
+        "sufficiency_not_met_all_criteria_unmet", "D",
+        "Los 5 criterios minimos reales, todos NOT_MET -> D=NOT_MET.",
+        expected="D=NOT_MET", actual=f"D={status}", passed=passed, detail=detail,
+    )
+
+
+def _case_sufficiency_incomplete_coverage_stays_not_assessable() -> GoldenCaseResult:
+    """Solo 2 de 5 criterios clasificados -- nunca se adivina sobre los 3
+    restantes, ni con 1 ya confirmado en MET real."""
+    assessments = [
+        _assessment(1, _ACCESS_CRITERIA[0], "MET", quote=_ACCESS_CRITERIA[0], location="pag 1"),
+        _assessment(2, _ACCESS_CRITERIA[1], "NOT_MET"),
+    ]
+    status, reason, detail = sev.verify_sufficiency("21_CFR_11.10(d)", assessments, _ACCESS_CRITERIA[0])
+    passed = status == "NOT_ASSESSABLE" and len(detail.get("missing", [])) == 3
+    return GoldenCaseResult(
+        "sufficiency_incomplete_coverage_never_guessed", "D",
+        "Cobertura incompleta (2 de 5 criterios clasificados) nunca produce un veredicto de D -- "
+        "queda NOT_ASSESSABLE explicito, igual que EVALUATION_INCOMPLETE en absence_consolidator.",
+        expected="D=NOT_ASSESSABLE, 3 criterios missing",
+        actual=f"D={status}, missing={detail.get('missing')}",
+        passed=passed, detail=detail,
+    )
+
+
+def _case_sufficiency_invented_criterion_rejected_atomically() -> GoldenCaseResult:
+    """El modelo 'inventa' un criterio fuera de la whitelist real del
+    catalogo -- rechazo ATOMICO de todo el array de criterion_assessments
+    (nivel de contrato), ni siquiera los 5 reales bien formados se
+    rescatan."""
+    doc = " ".join(_ACCESS_CRITERIA)
+    assessments = _all_met()
+    assessments.append(_assessment(6, "Criterio inventado que no existe en el catalogo real", "MET",
+                                    quote=doc, location="pag 1"))
+    status, reason, detail = sev.verify_sufficiency("21_CFR_11.10(d)", assessments, doc)
+    passed = status == "NOT_ASSESSABLE" and bool(detail.get("contract_violations"))
+    return GoldenCaseResult(
+        "sufficiency_invented_criterion_rejected_atomically", "D",
+        "Un criterio fuera de la whitelist real del catalogo (indice fuera de rango) rechaza TODO el "
+        "array atomicamente -- nunca se rescatan los criterios reales bien formados.",
+        expected="D=NOT_ASSESSABLE, contract_violations no vacio",
+        actual=f"D={status}, contract_violations={detail.get('contract_violations')}",
+        passed=passed, detail=detail,
+    )
+
+
+def _case_sufficiency_duplicate_criterion_index_rejected_atomically() -> GoldenCaseResult:
+    doc = " ".join(_ACCESS_CRITERIA)
+    assessments = _all_met()
+    assessments.append(_assessment(1, _ACCESS_CRITERIA[0], "MET", quote=_ACCESS_CRITERIA[0], location="pag 1"))
+    status, reason, detail = sev.verify_sufficiency("21_CFR_11.10(d)", assessments, doc)
+    passed = status == "NOT_ASSESSABLE" and any(
+        "duplicado" in v.lower() for v in detail.get("contract_violations", [])
+    )
+    return GoldenCaseResult(
+        "sufficiency_duplicate_criterion_rejected_atomically", "D",
+        "criterion_index duplicado en la respuesta del modelo rechaza TODO el array atomicamente.",
+        expected="D=NOT_ASSESSABLE, violacion de duplicado registrada",
+        actual=f"D={status}, contract_violations={detail.get('contract_violations')}",
+        passed=passed, detail=detail,
+    )
+
+
+def _case_sufficiency_met_without_evidence_rejected_atomically() -> GoldenCaseResult:
+    """MET sin evidence_quote/evidence_location -- el modelo afirma
+    cumplimiento sin aportar la evidencia que la propia respuesta exige
+    para ese status -- rechazo atomico, nunca se confia en la sola
+    afirmacion."""
+    doc = " ".join(_ACCESS_CRITERIA)
+    assessments = _all_met()
+    assessments[0] = _assessment(1, _ACCESS_CRITERIA[0], "MET")  # sin quote ni location
+    status, reason, detail = sev.verify_sufficiency("21_CFR_11.10(d)", assessments, doc)
+    passed = status == "NOT_ASSESSABLE" and any(
+        "evidence_quote" in v or "evidence_location" in v for v in detail.get("contract_violations", [])
+    )
+    return GoldenCaseResult(
+        "sufficiency_met_without_evidence_rejected_atomically", "D",
+        "status=MET sin evidence_quote/evidence_location rechaza TODO el array atomicamente.",
+        expected="D=NOT_ASSESSABLE, violacion de MET-sin-evidencia registrada",
+        actual=f"D={status}, contract_violations={detail.get('contract_violations')}",
+        passed=passed, detail=detail,
     )
 
 
@@ -238,6 +385,12 @@ _ALL_CASES = [
     _case_contradiction_between_sections,
     _case_incomplete_coverage_never_documentation_gap,
     _case_evidence_out_of_context,
+    _case_sufficiency_met_all_criteria_anchored,
+    _case_sufficiency_not_met_all_criteria_unmet,
+    _case_sufficiency_incomplete_coverage_stays_not_assessable,
+    _case_sufficiency_invented_criterion_rejected_atomically,
+    _case_sufficiency_duplicate_criterion_index_rejected_atomically,
+    _case_sufficiency_met_without_evidence_rejected_atomically,
 ]
 
 

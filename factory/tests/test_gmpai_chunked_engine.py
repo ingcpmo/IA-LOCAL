@@ -255,7 +255,9 @@ def test_checkpoint_resume_skips_already_completed_chunks(tmp_path, monkeypatch)
     # NO se re-ejecutan los chunks ya guardados.
     partial_state = {**checkpoint, "chunk_executions": checkpoint["chunk_executions"][:1], "completed": False}
     store.save(result_1["run_id"], partial_state)
-    resumable = store.find_resumable("sha-resume", "fda_part11_agent")
+    fingerprint = result_1["preflight_metadata"]["run_fingerprint"]
+    resumable, mismatch = store.find_resumable("sha-resume", "fda_part11_agent", fingerprint)
+    assert mismatch is None
     assert resumable is not None
     assert len(resumable["chunk_executions"]) == 1
 
@@ -295,7 +297,8 @@ def test_audit_event_written(monkeypatch, tmp_path):
 def test_extract_json_repairs_trailing_comma():
     """Fix TE-01: reparacion acotada de comas colgantes antes de reintentar
     json.loads (no inventa contenido, solo corrige sintaxis comun)."""
-    raw = '{"checkpoints": [{"req_id": "21_CFR_11.10(a)", "estado": "no_cumple",},]}'
+    raw = ('{"checkpoints": [{"req_id": "21_CFR_11.10(a)", "estado": "no_cumple", '
+           '"evidencia_exacta": "", "brecha": "", "recomendacion": "",},]}')
     parsed = ce._extract_json(raw)
     assert parsed is not None
     assert parsed["checkpoints"][0]["req_id"] == "21_CFR_11.10(a)"
@@ -304,7 +307,8 @@ def test_extract_json_repairs_trailing_comma():
 def test_extract_json_strips_markdown_fences():
     """Fix TE-01: el modelo a veces envuelve el JSON en cercas ```json pese
     a 'format':'json' -- deben quitarse antes de parsear."""
-    raw = '```json\n{"checkpoints": [{"req_id": "21_CFR_11.10(a)", "estado": "no_cumple"}]}\n```'
+    raw = ('```json\n{"checkpoints": [{"req_id": "21_CFR_11.10(a)", "estado": "no_cumple", '
+           '"evidencia_exacta": "", "brecha": "", "recomendacion": ""}]}\n```')
     parsed = ce._extract_json(raw)
     assert parsed is not None
 

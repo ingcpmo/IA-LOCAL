@@ -24,7 +24,7 @@ def _one_real_finding():
     return {"checkpoints": [
         {"req_id": "21_CFR_11.10(d)", "estado": "cumple_parcialmente",
          "evidencia_exacta": "El acceso al sistema requiere usuario y contrasena.",
-         "pagina": 1},
+         "brecha": "", "recomendacion": ""},
     ]}
 
 

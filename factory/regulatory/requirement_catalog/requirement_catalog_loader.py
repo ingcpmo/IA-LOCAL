@@ -45,6 +45,19 @@ def _sha256_text(t: str) -> str:
     return hashlib.sha256(t.encode("utf-8")).hexdigest()
 
 
+def catalog_fingerprint() -> dict:
+    """W5 V2, Fase F (invalidacion de checkpoint por fingerprint,
+    2026-07-25). {"catalog_version", "catalog_sha256"} -- mismo patron de
+    hash-de-archivo que schema_loader.schema_sha256(), pero sobre
+    requirements.yaml completo (no un campo individual). Usado por
+    chunked_engine.build_run_fingerprint() para que un checkpoint no se
+    reanude si el catalogo cambio desde que se guardo."""
+    return {
+        "catalog_version": load_requirements().get("catalog_version"),
+        "catalog_sha256": hashlib.sha256(REQUIREMENTS_PATH.read_bytes()).hexdigest(),
+    }
+
+
 @lru_cache(maxsize=1)
 def load_source_registry() -> dict:
     if not REGISTRY_PATH.exists():

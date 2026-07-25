@@ -5,7 +5,8 @@
 # suite verde + aprobacion humana.
 
 agent_id: eu_annex11_agent
-prompt_version: "1.0.0"
+prompt_version: "1.1.0"
+schema_version: "checkpoint_llm_response_v1"
 base_agent: integrity
 profile_name: integrity_annex11_ot_profile
 verifier_version: "1.0.0"
@@ -15,8 +16,12 @@ changelog:
     date: "2026-07-14"
     author: "Fase B del diseño GMPAI_DOCUMENT_EXPERT_AGENTS_DESIGN.md, aprobada por Cesar (tras aprobar RC v1.2 de Fase A)"
     change: "Version inicial: reemplaza compliance_agents.evaluate_annex11 (keyword-scan) por razonamiento real via Ollama para el piloto Rockwell, mismo motor compartido que fda_part11_agent (llm_integrity_engine.py), mismas 5 clausulas de ANNEX11_CHECKPOINTS."
+  - version: "1.1.0"
+    date: "2026-07-25"
+    author: "W5 V2 Fase F (ampliacion D, SUFFICIENCY_VERIFICATION, correccion completa post-auditoria), aprobada por Cesar"
+    change: "Agrega criterion_assessments por checkpoint (array unificado: criterion_index/criterion_text/status/evidence_quote/evidence_location/justification/limitations, clasificacion verbatim de evidence_min_criteria del catalogo, Fase C) para habilitar D real -- antes hardcodeado NOT_ASSESSABLE. Contrato validado formalmente contra el schema checkpoint_llm_response_v1 (schema_version nuevo). checkpoints (req_id/label) sin cambios."
 
-common_contract_sha256: "2785476b87f9ff416d08e5361375b1b30bdc15aa0cc116e8cfc4b1ec8fd72fbc"
+common_contract_sha256: "fa02e8df01b7dd0ddb91103b38e2935a010b3fe51066e0a67a88caa27aa99993"
 common_contract: |
   Eres un agente experto en EU GMP Annex 11 (sistemas computarizados)
   revisando UN documento de ingenieria (URS, FS, DS, narrativa de control,
@@ -44,7 +49,28 @@ common_contract: |
      requisito. Refleja esa distincion en "riesgo".
   5. NO evalues tu propia confianza: ese campo lo calcula el sistema, no tu.
      No incluyas ningun campo "confianza" en tu respuesta.
-  6. Responde EXCLUSIVAMENTE con un objeto JSON valido (sin texto antes ni
+  6. Para cada checkpoint que tenga una lista NUMERADA de "Criterios
+     minimos de evidencia" (ver mas abajo, bajo el req_id correspondiente):
+     clasifica CADA criterio de esa lista, uno por uno, en
+     "criterion_assessments" con esta forma exacta por entrada:
+       {"criterion_index": <el indice EXACTO de la lista numerada>,
+        "criterion_text": "<el texto EXACTO del criterio, verbatim, sin
+         parafrasear>",
+        "status": "MET | NOT_MET | NOT_ASSESSABLE",
+        "evidence_quote": "<cita literal si status=MET, cadena vacia si no>",
+        "evidence_location": "<pagina o seccion si status=MET, cadena vacia si no>",
+        "justification": "<1-2 frases>",
+        "limitations": "<limitaciones de esta evaluacion, o cadena vacia>"}
+     NUNCA inventes un criterio, un indice o un texto que no este en la
+     lista provista -- criterion_index y criterion_text DEBEN corresponder
+     EXACTOS a la misma posicion de esa lista. status=MET EXIGE
+     evidence_quote Y evidence_location no vacios; si no puedes aportar
+     ambos, usa NOT_ASSESSABLE (nunca MET sin evidencia completa). Si no
+     estas seguro de si un criterio se cumple, usa NOT_ASSESSABLE — nunca
+     omitas un criterio de la lista: el array debe cubrir TODOS los
+     criterios provistos, uno por cada uno. Si el checkpoint no tiene
+     lista de criterios, deja "criterion_assessments" como lista vacia.
+  7. Responde EXCLUSIVAMENTE con un objeto JSON valido (sin texto antes ni
      despues, sin markdown, sin bloque de codigo) con esta forma exacta:
 
      {"checkpoints": [
@@ -52,7 +78,15 @@ common_contract: |
         "estado": "cumple | cumple_parcialmente | no_cumple | evidencia_insuficiente | no_aplica",
         "evidencia_exacta": "<cita literal o cadena vacia si no hay>",
         "brecha": "<que falta o por que no aplica, 1-2 frases>",
-        "recomendacion": "<1 frase accionable>"}
+        "recomendacion": "<1 frase accionable>",
+        "criterion_assessments": [
+          {"criterion_index": <indice>, "criterion_text": "<texto EXACTO>",
+           "status": "MET | NOT_MET | NOT_ASSESSABLE",
+           "evidence_quote": "<cita literal o cadena vacia>",
+           "evidence_location": "<pagina/seccion o cadena vacia>",
+           "justification": "<1-2 frases>", "limitations": "<o cadena vacia>"}
+          , ... (uno por cada criterio de la lista provista para este req_id)
+        ]}
        , ... (uno por cada req_id)
      ]}
 

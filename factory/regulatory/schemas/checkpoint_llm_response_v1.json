@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "checkpoint_llm_response_v1",
+  "description": "W5 V2, Fase F (ampliacion D, 2026-07-25). Forma completa de UN checkpoint dentro de la respuesta del modelo en chunked_engine.py (evaluate_chunked/build_prompt, prompt_version 1.1.0 de part11/annex11/alcoa_prompts.yaml). additionalProperties:false -- una respuesta que agrega campos fuera de este contrato se rechaza como technical_execution_failure (mismo criterio fail-closed que el resto de factory/regulatory/schemas/). criterion_assessments es opcional (ausente/vacio para checkpoints sin evidence_min_criteria en el catalogo, ej. checkpoints de traceability fuera de este catalogo) pero, cuando existe, cada entrada es obligatoria en su totalidad -- ver semantic_evidence_verification.verify_sufficiency() para la validacion semantica adicional (whitelist contra el catalogo real, anclaje de evidence_quote) que este schema NO puede expresar (depende de datos externos al payload).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["req_id", "estado", "evidencia_exacta", "brecha", "recomendacion"],
+  "properties": {
+    "req_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "req_id del checkpoint tal como aparece en el YAML de prompts."
+    },
+    "estado": {
+      "enum": ["cumple", "cumple_parcialmente", "no_cumple", "evidencia_insuficiente", "no_aplica"]
+    },
+    "evidencia_exacta": {
+      "type": "string"
+    },
+    "brecha": {
+      "type": "string"
+    },
+    "recomendacion": {
+      "type": "string"
+    },
+    "criterion_assessments": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion_index", "criterion_text", "status", "evidence_quote", "evidence_location", "justification", "limitations"],
+        "properties": {
+          "criterion_index": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Posicion 1-indexada del criterio dentro de la lista numerada 'Criterios minimos de evidencia' inyectada en el prompt para este req_id -- debe corresponder EXACTO a criterion_text (validado en semantic_evidence_verification.py, no expresable en JSON Schema puro)."
+          },
+          "criterion_text": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Copia LITERAL (verbatim) de un criterio real de evidence_min_criteria -- nunca parafraseado ni inventado."
+          },
+          "status": {
+            "enum": ["MET", "NOT_MET", "NOT_ASSESSABLE"]
+          },
+          "evidence_quote": {
+            "type": "string",
+            "description": "Obligatorio (no vacio) cuando status=MET -- cita literal que debe anclar en el documento (verify_anchor). Cadena vacia permitida para NOT_MET/NOT_ASSESSABLE."
+          },
+          "evidence_location": {
+            "type": "string",
+            "description": "Obligatorio (no vacio) cuando status=MET -- ubicacion de evidence_quote (pagina/seccion). Cadena vacia permitida para NOT_MET/NOT_ASSESSABLE."
+          },
+          "justification": {
+            "type": "string",
+            "maxLength": 800
+          },
+          "limitations": {
+            "type": "string",
+            "maxLength": 800
+          }
+        }
+      }
+    }
+  }
+}

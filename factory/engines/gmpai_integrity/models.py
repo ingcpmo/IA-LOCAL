@@ -38,6 +38,14 @@ class Finding:
     # agotado". True == esta clasificacion es PROVISIONAL, requiere
     # reintentar los chunks fallidos antes de tratarla como definitiva.
     technical_execution_failure_pending: bool = False
+    # W5 V2 Fase F (ampliacion D, SUFFICIENCY_VERIFICATION, 2026-07-25).
+    # None == D nunca se evaluo para este Finding (checkpoint sin
+    # criterion_assessments, resultado historico, o Finding de un branch
+    # sin candidate ganador -- ej. contradiccion/ausencia). Ver
+    # factory/regulatory/semantic_evidence_verification.py.
+    d_sufficiency: str | None = None
+    substantive_evidence_accepted: bool | None = None
+    operational_result: str | None = None
 
     def to_dict(self) -> dict:
         return self.__dict__.copy()

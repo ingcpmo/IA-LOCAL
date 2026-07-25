@@ -1,6 +1,8 @@
 """
 Tests -- W5 V2 Fase E: inyección de texto regulatorio real en
-chunked_engine.build_prompt() (_lookup_regulatory_text).
+chunked_engine.build_prompt() (_lookup_regulatory_text). También cubre la
+ampliación de Fase F (D real, 2026-07-25): inyección de
+evidence_min_criteria (_lookup_evidence_min_criteria).
 
 Regla dura que esto corrige (confirmada en el baseline real de la corrida
 URS v2.1): 'una LLM NUNCA recibe únicamente requirement_id + descripción
@@ -94,3 +96,70 @@ class TestBuildPromptInjectsRegulatoryText:
         )
         missing = [rid for rid in catalog["requirements"] if ce._lookup_regulatory_text(rid) is None]
         assert missing == [], f"req_id del catalogo sin texto normativo resuelto: {missing}"
+
+
+class TestLookupEvidenceMinCriteria:
+    """W5 V2 Fase F, ampliación D (2026-07-25)."""
+
+    def test_returns_real_criteria_for_known_requirement(self):
+        criteria = ce._lookup_evidence_min_criteria("21_CFR_11.10(d)")
+        assert criteria is not None
+        assert "Cuentas humanas individuales (no compartidas)." in criteria
+
+    def test_returns_none_for_unknown_requirement_id(self):
+        assert ce._lookup_evidence_min_criteria("REQ_QUE_NO_EXISTE_EN_EL_CATALOGO") is None
+
+    def test_19_catalog_requirement_ids_all_resolve_to_real_criteria(self):
+        catalog = yaml.safe_load(
+            Path("factory/regulatory/requirement_catalog/requirements.yaml").read_text()
+        )
+        missing = [rid for rid in catalog["requirements"] if not ce._lookup_evidence_min_criteria(rid)]
+        assert missing == [], f"req_id del catalogo sin evidence_min_criteria resuelto: {missing}"
+
+
+class TestBuildPromptInjectsEvidenceMinCriteria:
+
+    def test_part11_prompt_includes_criteria_for_every_checkpoint(self):
+        meta = ce.load_prompt_meta(PROMPTS_DIR / "part11_prompts.yaml")
+        prompt = ce.build_prompt(meta, "documento de prueba")
+        assert "Criterios minimos de evidencia" in prompt
+        # criterio real y verificable del catalogo, no una descripcion breve
+        assert "Cuentas humanas individuales (no compartidas)." in prompt
+
+    def test_annex11_prompt_includes_criteria(self):
+        meta = ce.load_prompt_meta(PROMPTS_DIR / "annex11_prompts.yaml")
+        prompt = ce.build_prompt(meta, "documento de prueba")
+        assert prompt.count("Criterios minimos de evidencia") == len(meta["checkpoints"])
+
+    def test_alcoa_prompt_includes_criteria(self):
+        meta = ce.load_prompt_meta(PROMPTS_DIR / "alcoa_prompts.yaml")
+        prompt = ce.build_prompt(meta, "documento de prueba")
+        assert prompt.count("Criterios minimos de evidencia") == len(meta["checkpoints"])
+
+    def test_falls_back_gracefully_for_checkpoint_outside_catalog(self):
+        meta = {
+            "common_contract": "contrato de prueba",
+            "checkpoints": [{"req_id": "REQ_INVENTADO_XYZ", "label": "checkpoint de prueba"}],
+        }
+        prompt = ce.build_prompt(meta, "doc")
+        assert "REQ_INVENTADO_XYZ: checkpoint de prueba" in prompt
+        assert "Criterios minimos de evidencia" not in prompt
+
+    def test_common_contract_asks_for_criterion_assessments(self):
+        """El contrato de los 3 prompts gobernados debe instruir al modelo
+        a clasificar los criterios via criterion_assessments (Fase F,
+        contrato unificado) -- guardia contra remocion accidental futura
+        del bloque."""
+        for filename in ("part11_prompts.yaml", "annex11_prompts.yaml", "alcoa_prompts.yaml"):
+            meta = yaml.safe_load((PROMPTS_DIR / filename).read_text(encoding="utf-8"))
+            assert "criterion_assessments" in meta["common_contract"], filename
+            assert "criterion_index" in meta["common_contract"], filename
+            assert meta["schema_version"] == "checkpoint_llm_response_v1", filename
+
+    def test_criteria_are_numbered_in_prompt(self):
+        """El indice numerado en el prompt debe coincidir con
+        criterion_index que el modelo debe usar (Fase F)."""
+        meta = ce.load_prompt_meta(PROMPTS_DIR / "part11_prompts.yaml")
+        prompt = ce.build_prompt(meta, "documento de prueba")
+        assert "1. " in prompt
+        assert "5. " in prompt  # 21_CFR_11.10(d) tiene 5 criterios minimos

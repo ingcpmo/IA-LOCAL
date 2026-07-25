@@ -146,3 +146,80 @@ def test_generate_controlled_does_not_loop_beyond_single_retry():
 def test_schema_loader_is_fail_closed_on_missing_schema():
     with pytest.raises(FileNotFoundError):
         load_schema("schema_que_no_existe_v99")
+
+
+# ---------------------------------------------------------------------------
+# checkpoint_llm_response_v1 -- W5 V2 Fase F (ampliacion D, 2026-07-25).
+# Contrato real de chunked_engine.py (part11/annex11/alcoa prompts,
+# schema_version="checkpoint_llm_response_v1"), distinto de finding_llm_v1
+# (ese es el contrato mas estricto de generate_controlled(), no wireado a
+# produccion todavia).
+# ---------------------------------------------------------------------------
+
+VALID_CHECKPOINT_MINIMAL = {
+    "req_id": "21_CFR_11.10(a)", "estado": "cumple", "evidencia_exacta": "x",
+    "brecha": "", "recomendacion": "",
+}
+
+VALID_CRITERION_ASSESSMENT = {
+    "criterion_index": 1, "criterion_text": "criterio real", "status": "MET",
+    "evidence_quote": "cita", "evidence_location": "pag 1",
+    "justification": "j", "limitations": "",
+}
+
+
+def test_load_schema_checkpoint_llm_response_v1():
+    schema = load_schema("checkpoint_llm_response_v1")
+    assert schema["title"] == "checkpoint_llm_response_v1"
+    assert schema["additionalProperties"] is False
+
+
+def test_checkpoint_llm_response_v1_accepts_minimal_valid_payload():
+    ok, errors = validate_against(VALID_CHECKPOINT_MINIMAL, "checkpoint_llm_response_v1")
+    assert ok, errors
+
+
+def test_checkpoint_llm_response_v1_accepts_with_criterion_assessments():
+    payload = {**VALID_CHECKPOINT_MINIMAL, "criterion_assessments": [VALID_CRITERION_ASSESSMENT]}
+    ok, errors = validate_against(payload, "checkpoint_llm_response_v1")
+    assert ok, errors
+
+
+def test_checkpoint_llm_response_v1_rejects_invalid_estado():
+    payload = {**VALID_CHECKPOINT_MINIMAL, "estado": "algo_inventado"}
+    ok, errors = validate_against(payload, "checkpoint_llm_response_v1")
+    assert not ok
+
+
+def test_checkpoint_llm_response_v1_rejects_missing_required_field():
+    payload = dict(VALID_CHECKPOINT_MINIMAL)
+    del payload["brecha"]
+    ok, errors = validate_against(payload, "checkpoint_llm_response_v1")
+    assert not ok
+
+
+def test_checkpoint_llm_response_v1_rejects_additional_properties():
+    payload = {**VALID_CHECKPOINT_MINIMAL, "confianza": 0.9}
+    ok, errors = validate_against(payload, "checkpoint_llm_response_v1")
+    assert not ok
+
+
+def test_checkpoint_llm_response_v1_rejects_invalid_criterion_status():
+    bad_assessment = {**VALID_CRITERION_ASSESSMENT, "status": "SOMETHING_ELSE"}
+    payload = {**VALID_CHECKPOINT_MINIMAL, "criterion_assessments": [bad_assessment]}
+    ok, errors = validate_against(payload, "checkpoint_llm_response_v1")
+    assert not ok
+
+
+def test_checkpoint_llm_response_v1_rejects_criterion_assessment_missing_field():
+    incomplete = dict(VALID_CRITERION_ASSESSMENT)
+    del incomplete["evidence_location"]
+    payload = {**VALID_CHECKPOINT_MINIMAL, "criterion_assessments": [incomplete]}
+    ok, errors = validate_against(payload, "checkpoint_llm_response_v1")
+    assert not ok
+
+
+def test_checkpoint_llm_response_v1_accepts_empty_criterion_assessments_list():
+    payload = {**VALID_CHECKPOINT_MINIMAL, "criterion_assessments": []}
+    ok, errors = validate_against(payload, "checkpoint_llm_response_v1")
+    assert ok, errors
