@@ -87,7 +87,30 @@ corrida de diseño.
 - **Código reutilizable**: `app/risk_agent.py`.
 - **Dependencias**: H.
 
-### Deuda abierta I-1 — adaptador `Finding` → narrative JSON → remediación
+### Deuda I-1 — adaptador `Finding` → narrative JSON → remediación — CERRADA (2026-07-27)
+
+**Cierre**: `factory/services/finding_substantive_adapter.py` transporta los
+4 campos ABCD del `Finding` al narrative (copia verbatim, nunca re-deriva), y
+`_derive_coverage_status()` exige ese veredicto antes de aplicar cualquier
+regla de texto: `SUPPORTED`/`NOT_APPLICABLE` habilitan la evaluación de
+cobertura; `NOT_SUPPORTED`, ausente, incompleto, inválido o contradictorio
+la rechazan (`NOT_MAPPABLE_TO_CURRENT_SCHEMA`). Un narrative anterior a Fase F
+que no trae el bloque pero sí `estado_agente_original` recibe el veredicto de
+la **misma** autoridad del motor (`chunked_engine.compute_substantive_support`,
+importada, no copiada) con `substantive_evidence_accepted=None` → fail-closed.
+
+**Defecto real que destapó, sobre datos reales del paquete desplegado**:
+FSV12-07 (→COR-5, HIGH_RISK) y FSV12-11 (→COR-1, MEDIUM_RISK) de
+`findings_completos_FS_v1_2_v4.json` tienen
+`estado_agente_original='cumple_parcialmente'` y mapeaban a
+`coverage_status=FULL_COVERAGE` con D nunca evaluada. Hoy quedan rechazados
+salvo que se les adjunte un veredicto real. FSV12-13 (`no_cumple` →
+`NOT_APPLICABLE`) sigue mapeando: un gap no es sujeto de sustento sustantivo,
+y rechazarlo habría tumbado justo lo que la remediación existe para tratar.
+
+Descripción original de la deuda, conservada como registro:
+
+
 
 Registrada en Fase F (cableado de D a la decisión, 2026-07-25) y **no
 resuelta ahí a propósito**: el veredicto sustantivo (`substantive_support`,
@@ -99,13 +122,16 @@ JSON y una `DocumentConclusion` de `absence_consolidator`, y esa segunda ruta
 **no conoce D**.
 
 - **Ya cerrado en Fase F (no forma parte de esta deuda)**: la ruta
-  `verified_conclusions`. `absence_consolidator` sigue sin conocer D, pero
-  `evaluate_chunked` degrada su conclusión fail-closed contra el veredicto
-  del `Finding` (`_degrade_conclusion_by_substantive_support`): un positivo
+  `verified_conclusions`. `absence_consolidator.consolidate()` sigue sin
+  conocer D — decide sólo sobre los chunk records —, pero
+  `apply_conclusion_preconditions()` (mismo módulo, §13.3, única autoridad
+  de conclusión) recibe `d_sufficiency`, `substantive_evidence_accepted` y
+  `operational_result` desde el `Finding` y degrada fail-closed: un positivo
   `NOT_SUPPORTED` nunca sale como `DOCUMENTED_AND_SUPPORTED` /
   `PARTIALLY_DOCUMENTED` — pasa a `EVALUATION_INCOMPLETE` (D
-  `NOT_ASSESSABLE`) o `SUPPORTING_EVIDENCE_UNDER_REVIEW` (D evaluada y no
-  satisfecha), ambos rechazados por el mapper.
+  `NOT_ASSESSABLE` o sin datos ABCD), `PARTIALLY_DOCUMENTED` (D
+  `PARTIALLY_MET`, techo §12.2) o `SUPPORTING_EVIDENCE_UNDER_REVIEW` (D
+  `NOT_MET`); los estados no positivos son rechazados por el mapper.
 - **Lo que queda**: la ruta del narrative JSON. `Finding` sigue sin llegar al
   pipeline de remediación, así que un consumidor que arme el narrative por su
   cuenta (sin `verified_conclusion`) cae en la heurística de texto de

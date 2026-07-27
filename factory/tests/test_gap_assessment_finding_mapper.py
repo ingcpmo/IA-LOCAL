@@ -40,9 +40,31 @@ def findings_by_id():
     return {f["finding_id"]: f for f in doc["findings"]}
 
 
+# Deuda I-1 (W5 V2, 2026-07-27): la heuristica de texto ya no mapea un
+# finding de estado POSITIVO sin veredicto sustantivo A^B^C^D. El fixture
+# real es anterior a Fase F y no lo trae, asi que los tests que fijan la
+# MECANICA del mapeo le adjuntan el veredicto explicito que una corrida
+# real con D==MET habria producido. La regla nueva se prueba aparte, abajo
+# (test_legacy_positive_finding_*), sobre el fixture crudo sin tocar.
+_SUPPORTED_VERDICT = {
+    "d_sufficiency": "MET",
+    "substantive_evidence_accepted": True,
+    "substantive_support": "SUPPORTED",
+}
+_POSITIVE_ESTADOS_FIXTURE = ("cumple", "cumple_parcialmente")
+
+
+def _with_declared_verdict(finding):
+    """Adjunta el veredicto solo a los estados positivos -- un no_cumple
+    da NOT_APPLICABLE por si solo y no necesita declaracion."""
+    if finding.get("estado_agente_original") in _POSITIVE_ESTADOS_FIXTURE:
+        return {**finding, **_SUPPORTED_VERDICT}
+    return finding
+
+
 def _map(findings_by_id, finding_id):
     return mapper.map_finding_to_remediation_change(
-        findings_by_id[finding_id],
+        _with_declared_verdict(findings_by_id[finding_id]),
         document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
     )
 
@@ -178,7 +200,8 @@ def test_mapped_change_passes_real_schema_validation(findings_by_id, finding_id)
 # ── map_findings(): separa incluidos/rechazados sin que uno bloquee al otro ─
 
 def test_map_findings_splits_included_and_rejected(findings_by_id):
-    findings = [findings_by_id[fid] for fid in ("FSV12-07", "FSV12-13", "FSV12-11", "FSV12-12", "FSV12-19")]
+    findings = [_with_declared_verdict(findings_by_id[fid])
+                for fid in ("FSV12-07", "FSV12-13", "FSV12-11", "FSV12-12", "FSV12-19")]
     included, rejected = mapper.map_findings(
         findings, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
     )
@@ -292,7 +315,8 @@ def test_map_findings_propagates_verified_conclusions_by_finding_id(findings_by_
     incomplete = consolidate(
         "ALCOA_CONTEMPORANEOUS", "FS", "expected", [_NOT_OBSERVED_RECORD], coverage_complete=False,
     )
-    findings = [findings_by_id[fid] for fid in ("FSV12-07", "FSV12-13", "FSV12-11")]
+    findings = [_with_declared_verdict(findings_by_id[fid])
+                for fid in ("FSV12-07", "FSV12-13", "FSV12-11")]
     included, rejected = mapper.map_findings(
         findings, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
         verified_conclusions={"FSV12-13": incomplete},
@@ -321,7 +345,7 @@ def test_citation_anchor_status_verified_when_source_text_contains_real_quote(fi
     test_fsv12_07_citation_anchor_from_self_reference) -- si el source_text
     provisto contiene esa cita, debe re-verificarse como VERIFIED via
     verify_anchor real, no solo por la regla anterior."""
-    finding = findings_by_id["FSV12-07"]
+    finding = _with_declared_verdict(findings_by_id["FSV12-07"])
     citation_text = finding["evidencia"]
     source_text = f"contenido de relleno ... {citation_text} ... mas contenido"
     result = mapper.map_finding_to_remediation_change(
@@ -335,7 +359,7 @@ def test_citation_anchor_status_verified_when_source_text_contains_real_quote(fi
 def test_citation_anchor_status_not_verified_when_quote_absent_from_source_text(findings_by_id):
     """Si se provee source_text pero NO contiene la cita real, el anclaje
     debe fallar (NOT_VERIFIED) -- nunca declarar VERIFIED por defecto."""
-    finding = findings_by_id["FSV12-07"]
+    finding = _with_declared_verdict(findings_by_id["FSV12-07"])
     source_text = "Este documento no contiene ninguna cita relacionada, es contenido completamente distinto."
     result = mapper.map_finding_to_remediation_change(
         finding, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
@@ -348,7 +372,7 @@ def test_citation_anchor_not_verified_forces_medium_or_high_confidence_not_high(
     """citation_anchor_status=NOT_VERIFIED es el nivel maximo (2) en
     _EVALUATION_CONFIDENCE_FACTOR_LEVELS -- debe forzar LOW_CONFIDENCE,
     nunca quedar enmascarado por los demas factores."""
-    finding = findings_by_id["FSV12-07"]
+    finding = _with_declared_verdict(findings_by_id["FSV12-07"])
     source_text = "contenido irrelevante sin ninguna cita real presente aqui."
     result = mapper.map_finding_to_remediation_change(
         finding, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
@@ -360,9 +384,89 @@ def test_citation_anchor_not_verified_forces_medium_or_high_confidence_not_high(
 
 def test_map_findings_propagates_source_text_to_every_finding(findings_by_id):
     source_text = "contenido sin ninguna de las citas reales de estos findings."
-    findings = [findings_by_id[fid] for fid in ("FSV12-07", "FSV12-13")]
+    findings = [_with_declared_verdict(findings_by_id[fid]) for fid in ("FSV12-07", "FSV12-13")]
     included, _rejected = mapper.map_findings(
         findings, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
         source_text=source_text,
     )
     assert all(m.change["citation_anchor_status"] == "NOT_VERIFIED" for m in included)
+
+
+# ── Deuda I-1 (W5 V2, 2026-07-27): la heuristica de texto no puede emitir ──
+# FULL_COVERAGE sin veredicto sustantivo A^B^C^D. Se prueba sobre el fixture
+# REAL crudo (sin _with_declared_verdict), que es anterior a Fase F.
+
+def test_legacy_positive_finding_without_substantive_verdict_is_rejected(findings_by_id):
+    """FSV12-07 (estado_agente_original='cumple_parcialmente') mapeaba a
+    COR-5 con coverage_status=FULL_COVERAGE pese a que D nunca se evaluo
+    para el. Ese era exactamente el agujero descrito en la deuda I-1, y
+    ocurria sobre datos reales del paquete desplegado."""
+    raw = findings_by_id["FSV12-07"]
+    assert raw["estado_agente_original"] == "cumple_parcialmente"
+    assert "substantive_support" not in raw
+    with pytest.raises(mapper.NotMappableToCurrentSchema, match="veredicto sustantivo"):
+        mapper.map_finding_to_remediation_change(
+            raw, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
+        )
+
+
+def test_legacy_gap_finding_without_verdict_still_maps(findings_by_id):
+    """Contrapeso obligatorio: un gap real (no_cumple -> NOT_APPLICABLE) no
+    es sujeto de sustento sustantivo. Si la regla nueva lo rechazara,
+    tumbaria justamente los findings que el pipeline de remediacion existe
+    para tratar."""
+    raw = findings_by_id["FSV12-13"]
+    assert raw["estado_agente_original"] == "no_cumple"
+    result = mapper.map_finding_to_remediation_change(
+        raw, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
+    )
+    assert result.change["change_id"] == "COR-2"
+    assert result.confidence_factors["coverage_status"] == "FULL_COVERAGE"
+
+
+def test_not_supported_verdict_blocks_full_coverage(findings_by_id):
+    """Veredicto transportado explicito y negativo: rechazo, sin importar
+    lo que diga el texto de 'evidencia'."""
+    finding = {**findings_by_id["FSV12-11"],
+               "d_sufficiency": "NOT_MET", "substantive_evidence_accepted": False,
+               "substantive_support": "NOT_SUPPORTED"}
+    with pytest.raises(mapper.NotMappableToCurrentSchema, match="NOT_SUPPORTED"):
+        mapper.map_finding_to_remediation_change(
+            finding, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
+        )
+
+
+def test_inconsistent_verdict_is_rejected_not_resolved(findings_by_id):
+    """SUPPORTED declarado sobre evidencia no aceptada: contradiccion ->
+    rechazo. Nunca se elige el lado optimista."""
+    finding = {**findings_by_id["FSV12-11"],
+               "d_sufficiency": "NOT_ASSESSABLE", "substantive_evidence_accepted": None,
+               "substantive_support": "SUPPORTED"}
+    with pytest.raises(mapper.NotMappableToCurrentSchema, match="INCONSISTENT"):
+        mapper.map_finding_to_remediation_change(
+            finding, document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
+        )
+
+
+def test_substantive_verdict_is_recorded_in_the_mapping_rules(findings_by_id):
+    """Trazabilidad: un auditor debe ver de donde salio el veredicto sin
+    deducir que ruta se uso."""
+    result = _map(findings_by_id, "FSV12-11")
+    assert "substantive_verdict" in result.rules
+    assert "SUPPORTED" in result.rules["substantive_verdict"]
+
+
+def test_verified_conclusion_path_also_records_the_verdict(findings_by_id):
+    """La ruta verified_conclusion (donde Fase F ya aplico D) tambien deja
+    la traza -- el veredicto no desaparece por tomar el otro camino."""
+    observed = {"record_id": "r9", "status": "verified",
+                "llm_output": {"chunk_observation": "observed"}}
+    conclusion = consolidate(
+        "ALCOA_ATTRIBUTABLE", "FS", "expected", [observed], coverage_complete=True,
+    )
+    result = mapper.map_finding_to_remediation_change(
+        _with_declared_verdict(findings_by_id["FSV12-11"]),
+        document_name=DOCUMENT_NAME, document_sha256=DOCUMENT_SHA256, run_id=RUN_ID,
+        verified_conclusion=conclusion,
+    )
+    assert "substantive_verdict" in result.rules

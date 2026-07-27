@@ -230,7 +230,7 @@ _POSITIVE_ESTADOS = {"cumple", "cumple_parcialmente"}
 SUBSTANTIVE_SUPPORT_VALUES = ("SUPPORTED", "NOT_SUPPORTED", "NOT_APPLICABLE", "UNKNOWN")
 
 
-def _compute_substantive_support(estado, substantive_evidence_accepted) -> str:
+def compute_substantive_support(estado, substantive_evidence_accepted) -> str:
     """W5 V2 Fase F (cableado de D a decision, 2026-07-25). Veredicto
     determinista: un estado positivo (cumple/cumple_parcialmente) solo se
     presenta como sustentado si la evidencia sustantiva fue aceptada
@@ -242,6 +242,12 @@ def _compute_substantive_support(estado, substantive_evidence_accepted) -> str:
     if estado not in _POSITIVE_ESTADOS:
         return "NOT_APPLICABLE"
     return "SUPPORTED" if substantive_evidence_accepted is True else "NOT_SUPPORTED"
+
+
+# Nombre publico desde la deuda I-1 (2026-07-27): finding_substantive_adapter
+# necesita ESTA funcion -- no una copia -- para que siga habiendo una sola
+# autoridad del veredicto sustantivo. Alias historico conservado.
+_compute_substantive_support = compute_substantive_support
 
 
 def _positive_conclusion_eligibility(req_id: str) -> str:

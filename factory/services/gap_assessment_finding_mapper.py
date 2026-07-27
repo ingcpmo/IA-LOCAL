@@ -61,6 +61,16 @@ siguiente iteracion):
   diferencia de citation_text_sha256, que si se recalcula y rechaza en
   caso de discrepancia. Un valor con forma de sha256 pero contenido
   arbitrario pasaria igual la validacion.
+- (CERRADA 2026-07-27, deuda I-1) La heuristica de texto de
+  coverage_status ya no puede emitir FULL_COVERAGE sin el veredicto
+  sustantivo A^B^C^D transportado desde chunked_engine.Finding: ver
+  finding_substantive_adapter.py. Consecuencia real y buscada: un
+  narrative historico que NO transporta ese veredicto (p.ej.
+  findings_completos_FS_v1_2_v4.json, anterior a Fase F) queda
+  NOT_MAPPABLE_TO_CURRENT_SCHEMA en vez de mapear con cobertura
+  afirmada sobre evidencia nunca verificada sustantivamente. Para
+  mapearlo hay que adjuntarle el veredicto real con
+  attach_substantive_verdict(), no relajar la regla.
 - La regla de coverage_status=FULL_COVERAGE multi-rango sigue apoyandose
   en que el finding tenga resolucion_humana_incorporada.tipo_resolucion
   == "diferencia_de_alcance" -- esa resolucion humana respondia a "es
@@ -78,6 +88,10 @@ from dataclasses import dataclass
 
 from factory.regulatory import regulatory_catalog
 from factory.regulatory.absence_consolidator import DocumentConclusion
+from factory.services.finding_substantive_adapter import (
+    PERMITS_COVERAGE_EVALUATION,
+    read_substantive_verdict,
+)
 from factory.services.remediation_package_service import (
     compute_change_risk,
     compute_evaluation_confidence,
@@ -284,6 +298,20 @@ def _derive_coverage_status(
     if verified_conclusion is not None:
         return _derive_coverage_status_from_verified_conclusion(verified_conclusion)
 
+    # Deuda I-1 (W5 V2, cerrada 2026-07-27): antes de aplicar cualquier regla
+    # de texto, la heuristica exige el veredicto sustantivo A^B^C^D ya
+    # transportado desde el Finding (finding_substantive_adapter.py). Regla
+    # del roadmap: "la heuristica de texto no puede emitir FULL_COVERAGE sin
+    # veredicto sustantivo". Fail-closed en los 4 casos degenerados (ausente,
+    # incompleto, invalido, contradictorio) -- mismo principio que
+    # apply_conclusion_preconditions() en Fase F: sin datos ABCD para una
+    # afirmacion positiva, no se afirma. El veredicto NO se re-deriva aqui.
+    verdict = read_substantive_verdict(finding)
+    if verdict.status not in PERMITS_COVERAGE_EVALUATION:
+        raise NotMappableToCurrentSchema(
+            f"coverage_status: veredicto sustantivo no habilita evaluacion de cobertura "
+            f"[{verdict.status}] -- {verdict.reason}")
+
     # Heuristica de texto -- unico camino disponible hoy porque chunked_engine.py
     # (motor de produccion real) no adjunta chunk-level records/coverage_complete
     # real a los findings (ver CURRENT_STATE_AUDIT.md §2: verified_pipeline.py
@@ -425,6 +453,10 @@ def map_finding_to_remediation_change(
         verified_conclusion=verified_conclusion,
     )
     rules["coverage_status"] = rule
+    # Deuda I-1: el veredicto sustantivo queda en la traza del mapeo aunque
+    # la ruta haya sido verified_conclusion (donde Fase F ya lo aplico) --
+    # un auditor no deberia tener que deducir cual ruta se uso.
+    rules["substantive_verdict"] = read_substantive_verdict(finding).reason
 
     citation_anchor_status, rule = _derive_citation_anchor_status(
         finding["evidencia"], anchor.rule, source_text,
