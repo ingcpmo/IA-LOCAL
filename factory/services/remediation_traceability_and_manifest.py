@@ -14,9 +14,21 @@ los campos ya presentes en cada `RemediationChange`/`RegulatoryCitationReference
 
 La reseña de cambios (`build_change_narrative`) es ENSAMBLADO
 DETERMINISTA de campos ya existentes -- nunca texto generado por LLM. Si
-un campo no está disponible (p.ej. revalidación, que es Fase O, todavía no
-construida), se declara explícitamente `PENDING_PHASE_O`, nunca se omite
-en silencio ni se inventa un valor."""
+un campo no está disponible se declara explícitamente, nunca se omite en
+silencio ni se inventa un valor.
+
+CORREGIDO (2026-07-27, auditoría de Fases J-P): el estado de revalidación
+era la constante `PENDING_PHASE_O` con el motivo "AGT-RVL no existe
+todavía". Eso fue cierto sólo hasta `87d351f` (Fase O construyó AGT-RVL) y
+dejó de serlo del todo en `da3349f` (AGT-RVL cableado al gate de Fase N).
+La matriz y la reseña -- artefactos que ve QA -- afirmaban una razón falsa
+y no tenían forma de reportar una revalidación realmente ejecutada.
+Ahora ambas aceptan el `DocumentRevalidationResult` real de Fase O y
+transportan el `gap_status` por cambio; sin él declaran
+`REVALIDATION_NOT_EXECUTED` (no ejecutada para ESTE paquete), que es lo
+único cierto. Tercer caso del mismo patrón ya corregido en Fase I
+(`citation_anchor_status`) y Fase K (`candidate_application_status`): un
+campo de gobernanza fijado como constante."""
 from __future__ import annotations
 
 import hashlib
@@ -25,8 +37,37 @@ from dataclasses import dataclass, field
 
 from factory.services.remediation_change_application_resolver import resolve_package_changes
 
-REVALIDATION_STATUS = "PENDING_PHASE_O"
-REVALIDATION_REASON = "AGT-RVL (revalidacion independiente) no existe todavia -- Fase O del roadmap."
+REVALIDATION_NOT_EXECUTED = "REVALIDATION_NOT_EXECUTED"
+REVALIDATION_NOT_EXECUTED_REASON = (
+    "AGT-RVL (independent_candidate_revalidation.revalidate_document, Fase O) existe, "
+    "pero no se ejecuto para este paquete -- el llamador no proveyo su resultado. "
+    "No ejecutada != sin resultado posible: nunca se afirma un veredicto de revalidacion "
+    "que nadie produjo."
+)
+# Un cambio presente en el paquete pero ausente del resultado de revalidacion
+# provisto: la revalidacion SI corrio, pero no cubrio este cambio. Fail-closed
+# -- no se hereda el veredicto de los demas ni se asume CLOSED.
+REVALIDATION_NOT_COVERED = "REVALIDATION_NOT_COVERED"
+REVALIDATION_NOT_COVERED_REASON = (
+    "AGT-RVL se ejecuto para este paquete pero su resultado no incluye este change_id."
+)
+
+
+def _revalidation_index(revalidation) -> dict:
+    """DocumentRevalidationResult (Fase O) -> {change_id: (gap_status, detail)}.
+    Duck-typed a proposito: este modulo no necesita importar Fase O para
+    consumir su resultado, y Fase O no debe depender de Fase M."""
+    if revalidation is None:
+        return {}
+    return {r.change_id: (r.gap_status, r.detail) for r in revalidation.gap_results}
+
+
+def _revalidation_for(index: dict, change_id: str, executed: bool) -> tuple[str, str]:
+    if not executed:
+        return (REVALIDATION_NOT_EXECUTED, REVALIDATION_NOT_EXECUTED_REASON)
+    if change_id not in index:
+        return (REVALIDATION_NOT_COVERED, REVALIDATION_NOT_COVERED_REASON)
+    return index[change_id]
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -55,11 +96,13 @@ class TraceabilityRow:
     included_in_clean_candidate: bool
     section_numero: str | None
     citation_ids: list[str]
-    revalidation_status: str = REVALIDATION_STATUS
+    revalidation_status: str = REVALIDATION_NOT_EXECUTED
+    revalidation_detail: str = REVALIDATION_NOT_EXECUTED_REASON
 
 
 def build_traceability_matrix(
-    package_state: dict, insertion_manifest: list[dict] | None = None
+    package_state: dict, insertion_manifest: list[dict] | None = None,
+    revalidation=None,
 ) -> list[TraceabilityRow]:
     """requirement_id -> evidencia (citation_ids) -> ... -> change_id ->
     seccion -> revalidacion (PROFESSIONAL_DOCUMENT_PACKAGE_SPEC.md
@@ -70,10 +113,13 @@ def build_traceability_matrix(
     section_by_change_id = {
         m["change_id"]: m["section_numero"] for m in (insertion_manifest or [])
     }
+    reval_index = _revalidation_index(revalidation)
     resolutions = resolve_package_changes(package_state)
     rows = []
     for resolution in resolutions:
         change = package_state["changes"][resolution.change_id]
+        reval_status, reval_detail = _revalidation_for(
+            reval_index, resolution.change_id, revalidation is not None)
         rows.append(TraceabilityRow(
             requirement_id=change["requirement_id"],
             change_id=resolution.change_id,
@@ -81,11 +127,17 @@ def build_traceability_matrix(
             included_in_clean_candidate=resolution.included_in_clean_candidate,
             section_numero=section_by_change_id.get(resolution.change_id),
             citation_ids=[c["citation_id"] for c in change["citations"]],
+            revalidation_status=reval_status,
+            revalidation_detail=reval_detail,
         ))
     return rows
 
 
-def build_change_narrative(change: dict, resolution_reason: str) -> dict:
+def build_change_narrative(
+    change: dict, resolution_reason: str,
+    revalidation_status: str = REVALIDATION_NOT_EXECUTED,
+    revalidation_detail: str = REVALIDATION_NOT_EXECUTED_REASON,
+) -> dict:
     """Reseña de un cambio real (PROFESSIONAL_DOCUMENT_PACKAGE_SPEC.md
     seccion 3): ensamblado determinista de campos ya presentes en el
     RemediationChange, sin generar texto nuevo. Narrativa obligatoria:
@@ -107,7 +159,8 @@ def build_change_narrative(change: dict, resolution_reason: str) -> dict:
         "url_oficial": official_url,
         "evidencia": primary_citation.get("evidence_location") if primary_citation else None,
         "estado_aplicacion": resolution_reason,
-        "resultado_revalidacion": REVALIDATION_STATUS,
+        "resultado_revalidacion": revalidation_status,
+        "resultado_revalidacion_detalle": revalidation_detail,
         "implementacion_pendiente": (
             "Este cambio corrige documentacion, no implica que la capacidad descrita ya "
             "este verificada como implementada en el sistema fisico -- esa verificacion "
@@ -120,17 +173,26 @@ def build_change_narrative(change: dict, resolution_reason: str) -> dict:
             f"Fundamento regulatorio: {primary_citation['regulatory_source'] if primary_citation else 'N/A'} "
             f"({primary_citation.get('citation_locator', 'N/A') if primary_citation else 'N/A'}). "
             f"Fuente oficial: {official_url}. "
-            f"Pendiente: revalidacion independiente ({REVALIDATION_STATUS})."
+            f"Revalidacion independiente (AGT-RVL, Fase O): {revalidation_status}."
         ),
     }
 
 
-def build_full_change_review(package_state: dict) -> list[dict]:
+def build_full_change_review(package_state: dict, revalidation=None) -> list[dict]:
+    """revalidation (opcional): DocumentRevalidationResult real de Fase O.
+    Sin el, cada reseña declara REVALIDATION_NOT_EXECUTED -- nunca un
+    veredicto que AGT-RVL no produjo."""
     resolutions = {r.change_id: r for r in resolve_package_changes(package_state)}
-    return [
-        build_change_narrative(change, f"{resolutions[change_id].final_status}: {resolutions[change_id].reason}")
-        for change_id, change in package_state["changes"].items()
-    ]
+    reval_index = _revalidation_index(revalidation)
+    executed = revalidation is not None
+    narratives = []
+    for change_id, change in package_state["changes"].items():
+        reval_status, reval_detail = _revalidation_for(reval_index, change_id, executed)
+        narratives.append(build_change_narrative(
+            change, f"{resolutions[change_id].final_status}: {resolutions[change_id].reason}",
+            revalidation_status=reval_status, revalidation_detail=reval_detail,
+        ))
+    return narratives
 
 
 def build_package_manifest(

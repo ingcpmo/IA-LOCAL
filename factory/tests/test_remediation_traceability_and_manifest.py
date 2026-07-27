@@ -17,6 +17,24 @@ from factory.services.remediation_traceability_and_manifest import (
 )
 
 
+class _FakeGapResult:
+    def __init__(self, change_id, gap_status, detail):
+        self.change_id, self.gap_status, self.detail = change_id, gap_status, detail
+
+
+class _FakeRevalidation:
+    """Doble minimo del DocumentRevalidationResult de Fase O -- solo
+    gap_results, que es lo unico que la matriz consume. El contrato real
+    se verifica aparte con el objeto verdadero."""
+    def __init__(self, gap_results):
+        self.gap_results = gap_results
+
+
+def _fake_revalidation(by_change_id: dict):
+    return _FakeRevalidation([_FakeGapResult(cid, status, detail)
+                               for cid, (status, detail) in by_change_id.items()])
+
+
 def _citation(citation_id="CIT-1", regulatory_source="ecfr_21cfr_part11"):
     return {
         "citation_id": citation_id, "regulatory_catalog_entry_id": "21_CFR_11.10(a)",
@@ -77,9 +95,47 @@ class TestBuildTraceabilityMatrix:
         assert rows[0].final_status == "EXCEPTION_REQUIRED"
         assert rows[0].included_in_clean_candidate is False
 
-    def test_revalidation_status_is_honestly_pending(self):
+    def test_revalidation_status_without_agt_rvl_result_is_not_executed(self):
+        """Corregido en la auditoria de Fases J-P (2026-07-27): antes era la
+        constante PENDING_PHASE_O con el motivo 'AGT-RVL no existe todavia',
+        falso desde que Fase O (87d351f) lo construyo. Sin resultado real
+        lo unico cierto es que no se ejecuto para ESTE paquete."""
         rows = build_traceability_matrix(_package_state([_change("C1")]))
-        assert rows[0].revalidation_status == "PENDING_PHASE_O"
+        assert rows[0].revalidation_status == "REVALIDATION_NOT_EXECUTED"
+        assert "no se ejecuto para este paquete" in rows[0].revalidation_detail
+
+    def test_matrix_transports_the_real_agt_rvl_verdict_per_change(self):
+        """Cableado real a Fase O: el gap_status de AGT-RVL viaja por
+        change_id, no se re-deriva ni se resume."""
+        state = _package_state([_change("C1"), _change("C2")])
+        revalidation = _fake_revalidation({"C1": ("CLOSED", "anclado literalmente"),
+                                            "C2": ("OPEN", "ausente del candidato real")})
+        rows = {r.change_id: r for r in build_traceability_matrix(state, revalidation=revalidation)}
+        assert rows["C1"].revalidation_status == "CLOSED"
+        assert rows["C2"].revalidation_status == "OPEN"
+        assert rows["C2"].revalidation_detail == "ausente del candidato real"
+
+    def test_change_absent_from_the_revalidation_result_is_not_covered(self):
+        """Fail-closed: AGT-RVL corrio pero no cubrio este cambio -- no
+        hereda el veredicto de los demas ni se asume CLOSED."""
+        state = _package_state([_change("C1"), _change("C2")])
+        revalidation = _fake_revalidation({"C1": ("CLOSED", "ok")})
+        rows = {r.change_id: r for r in build_traceability_matrix(state, revalidation=revalidation)}
+        assert rows["C2"].revalidation_status == "REVALIDATION_NOT_COVERED"
+
+    def test_real_agt_rvl_result_object_is_accepted(self):
+        """Contra el objeto REAL de Fase O, no solo contra el doble: si el
+        contrato de DocumentRevalidationResult cambia, esto se entera."""
+        from factory.services.independent_candidate_revalidation import (
+            DocumentRevalidationResult, GapRevalidationResult,
+        )
+        real = DocumentRevalidationResult(
+            gap_results=[GapRevalidationResult("C1", "REQ-C1", "CLOSED", "anclado")],
+            new_gaps_introduced=[], all_hashes_valid=True,
+            document_opens_correctly=True, artifacts_consistent=True,
+        )
+        rows = build_traceability_matrix(_package_state([_change("C1")]), revalidation=real)
+        assert rows[0].revalidation_status == "CLOSED"
 
 
 class TestBuildChangeNarrative:
@@ -127,6 +183,32 @@ class TestBuildFullChangeReview:
         high = _change("C1", risk="HIGH_RISK")
         review = build_full_change_review(_package_state([high]))
         assert "EXCEPTION_REQUIRED" in review[0]["estado_aplicacion"]
+
+    def test_review_without_agt_rvl_declares_not_executed(self):
+        """La reseña es un artefacto que ve QA: no puede afirmar un
+        resultado de revalidacion que nadie produjo."""
+        review = build_full_change_review(_package_state([_change("C1")]))
+        assert review[0]["resultado_revalidacion"] == "REVALIDATION_NOT_EXECUTED"
+        assert "no se ejecuto para este paquete" in review[0]["resultado_revalidacion_detalle"]
+        assert "REVALIDATION_NOT_EXECUTED" in review[0]["narrativa"]
+
+    def test_review_transports_the_real_agt_rvl_verdict(self):
+        state = _package_state([_change("C1"), _change("C2")])
+        revalidation = _fake_revalidation({"C1": ("CLOSED", "anclado"),
+                                            "C2": ("PARTIALLY_CLOSED", "desviacion fuzzy")})
+        review = {r["change_id"]: r for r in build_full_change_review(state, revalidation=revalidation)}
+        assert review["C1"]["resultado_revalidacion"] == "CLOSED"
+        assert review["C2"]["resultado_revalidacion"] == "PARTIALLY_CLOSED"
+        assert "PARTIALLY_CLOSED" in review["C2"]["narrativa"]
+
+    def test_review_never_reports_the_obsolete_pending_phase_o_constant(self):
+        """Guardia contra la regresion exacta que motivo este fix: el
+        estado de revalidacion no puede volver a ser una constante que
+        afirme que AGT-RVL no existe."""
+        review = build_full_change_review(_package_state([_change("C1")]))
+        serialized = str(review[0])
+        assert "PENDING_PHASE_O" not in serialized
+        assert "no existe todavia" not in serialized
 
 
 class TestBuildPackageManifest:
