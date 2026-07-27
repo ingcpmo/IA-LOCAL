@@ -168,6 +168,7 @@ class TestCheckpointInvalidatedByFingerprintMismatch:
         meta = ce.load_prompt_meta(PROMPT_PATH)
         real_fingerprint = ce.build_run_fingerprint(
             meta, model_digest="sha256:fake-digest", document_sha256="e" * 64, agent_version="v-test",
+            use_verified_pipeline=False,
         )
         assert real_fingerprint != old_fingerprint  # confirma que la simulacion es realista
 
@@ -206,6 +207,7 @@ class TestCheckpointInvalidatedByFingerprintMismatch:
         meta = ce.load_prompt_meta(PROMPT_PATH)
         fingerprint = ce.build_run_fingerprint(
             meta, model_digest="sha256:fake-digest", document_sha256="g" * 64, agent_version="v-test",
+            use_verified_pipeline=False,
         )
         store.save("run-matching", {
             "run_id": "run-matching", "document_sha256": "g" * 64, "agent_id": "fda_part11_agent",

@@ -423,13 +423,137 @@ def test_verified_pipeline_requires_document_type():
                              run_context="production", use_verified_pipeline=True)
 
 
-def test_verified_pipeline_rejects_checkpoint_store(tmp_path):
-    store = ce.CheckpointStore(tmp_path)
-    with pytest.raises(ValueError, match="checkpoint_store"):
-        ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", ["x"],
-                             "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
-                             run_context="production", use_verified_pipeline=True,
-                             document_type="FS", checkpoint_store=store)
+class TestVerifiedPipelineResume:
+    """Reanudacion con use_verified_pipeline=True (2026-07-27). Hasta esta
+    fecha la combinacion era un ValueError: los checkpoints no persistian
+    los registros verificados, asi que reanudar habria consolidado sobre una
+    fraccion del documento afirmando coverage_complete=True. Ahora los
+    persiste y el resume esta condicionado a que esten completos."""
+
+    PAGES = ["Pagina uno sin relacion. " * 150,
+             "Pagina dos sin relacion. " * 150,
+             "Pagina tres sin relacion. " * 150]
+
+    def _patch(self, monkeypatch, counter=None):
+        def gen(*a, **k):
+            if counter is not None:
+                counter["n"] += 1
+            return _ollama_response(_all_insufficient())
+        monkeypatch.setattr(ollama_client, "generate", gen)
+        monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+        monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+
+    def _run(self, sha, store=None, counter=None, monkeypatch=None):
+        self._patch(monkeypatch, counter)
+        return ce.evaluate_chunked(
+            PROMPT_PATH, "fda_part11_agent", "1.0.0", self.PAGES,
+            "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", sha,
+            run_context="production", use_verified_pipeline=True,
+            document_type="FS", checkpoint_store=store)
+
+    def test_resumed_run_matches_uninterrupted_run_exactly(self, tmp_path, monkeypatch):
+        """La prueba que importa: reanudar a mitad debe producir las MISMAS
+        verified_conclusions que una corrida seguida -- incluido
+        chunks_evaluated. Si los registros verificados de los chunks ya
+        hechos no se restauraran, la reanudacion consolidaria solo sobre los
+        chunks restantes y este assert lo detectaria."""
+        baseline = self._run("sha-baseline", monkeypatch=monkeypatch)
+
+        store = ce.CheckpointStore(tmp_path)
+        first = self._run("sha-resume", store=store, monkeypatch=monkeypatch)
+        assert len(first["chunk_executions"]) == 3
+
+        # Interrupcion real simulada: el checkpoint queda con 1 solo chunk
+        # ejecutado y sus registros verificados correspondientes.
+        state = store.load(first["run_id"])
+        store.save(first["run_id"], {
+            **state, "completed": False,
+            "chunk_executions": state["chunk_executions"][:1],
+            "verified_records_by_req": {r: v[:1] for r, v in state["verified_records_by_req"].items()},
+        })
+
+        calls = {"n": 0}
+        resumed = self._run("sha-resume", store=store, counter=calls, monkeypatch=monkeypatch)
+
+        assert calls["n"] == 2, "solo deben re-llamarse los 2 chunks pendientes"
+        assert resumed["run_id"] == first["run_id"]
+        assert resumed["preflight_metadata"]["resumed_from_checkpoint"] is True
+        assert resumed["preflight_metadata"]["resumed_chunk_count"] == 1
+        assert resumed["verified_conclusions"] == baseline["verified_conclusions"]
+
+    def test_checkpoint_without_verified_records_is_never_resumed(self, tmp_path, monkeypatch):
+        """Fail-closed: un checkpoint de formato anterior (sin registros
+        verificados) NUNCA se reanuda bajo este flag, ni siquiera con el
+        fingerprint correcto. Empieza de cero y lo dice en preflight."""
+        self._patch(monkeypatch)
+        store = ce.CheckpointStore(tmp_path)
+        meta = ce.load_prompt_meta(PROMPT_PATH)
+        fingerprint = ce.build_run_fingerprint(
+            meta, model_digest=None, document_sha256="sha-legacy", agent_version="1.0.0",
+            use_verified_pipeline=True)
+        store.save("run-legacy", {
+            "run_id": "run-legacy", "document_sha256": "sha-legacy",
+            "agent_id": "fda_part11_agent", "documento": "doc.pdf", "archivo": "path/doc.pdf",
+            "total_chunks": 3, "chunk_executions": [{"dummy": True}], "completed": False,
+            "fingerprint": fingerprint,
+        })
+        calls = {"n": 0}
+        result = self._run("sha-legacy", store=store, counter=calls, monkeypatch=monkeypatch)
+
+        assert result["run_id"] != "run-legacy"
+        assert calls["n"] == 3, "los 3 chunks se procesan de cero"
+        pf = result["preflight_metadata"]
+        assert pf["checkpoint_verified_coverage_discarded"] is True
+        assert pf["checkpoint_verified_coverage_detail"]["reason"] == "checkpoint_without_verified_records"
+        assert pf["resumed_from_checkpoint"] is False
+
+    def test_checkpoint_with_incomplete_verified_records_is_never_resumed(self, tmp_path, monkeypatch):
+        """Fail-closed sobre el hecho, no sobre la intencion: el checkpoint
+        dice traer registros verificados, pero no cubren todos los chunks ya
+        ejecutados. No se reanuda."""
+        self._patch(monkeypatch)
+        store = ce.CheckpointStore(tmp_path)
+        first = self._run("sha-partial", store=store, monkeypatch=monkeypatch)
+        state = store.load(first["run_id"])
+        req_ids = list(state["verified_records_by_req"])
+        # 3 chunks ejecutados pero un requisito con un solo registro.
+        store.save(first["run_id"], {
+            **state, "completed": False,
+            "verified_records_by_req": {
+                **state["verified_records_by_req"],
+                req_ids[0]: state["verified_records_by_req"][req_ids[0]][:1],
+            },
+        })
+        calls = {"n": 0}
+        result = self._run("sha-partial", store=store, counter=calls, monkeypatch=monkeypatch)
+
+        assert result["run_id"] != first["run_id"]
+        assert calls["n"] == 3
+        detail = result["preflight_metadata"]["checkpoint_verified_coverage_detail"]
+        assert detail["reason"] == "checkpoint_verified_records_incomplete"
+        assert detail["detail"]["records_below_coverage"] == {req_ids[0]: 1}
+
+    def test_checkpoint_written_without_the_flag_is_rejected_by_fingerprint(self, tmp_path, monkeypatch):
+        """Primera barrera: un checkpoint de un run SIN pipeline verificado
+        no es reanudable por uno CON el flag -- el fingerprint los separa."""
+        self._patch(monkeypatch)
+        store = ce.CheckpointStore(tmp_path)
+        plain = ce.evaluate_chunked(
+            PROMPT_PATH, "fda_part11_agent", "1.0.0", self.PAGES,
+            "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-flagdiff",
+            run_context="production", checkpoint_store=store)
+        state = store.load(plain["run_id"])
+        store.save(plain["run_id"], {**state, "completed": False,
+                                     "chunk_executions": state["chunk_executions"][:1]})
+
+        calls = {"n": 0}
+        result = self._run("sha-flagdiff", store=store, counter=calls, monkeypatch=monkeypatch)
+
+        assert result["run_id"] != plain["run_id"]
+        assert calls["n"] == 3
+        pf = result["preflight_metadata"]
+        assert pf["checkpoint_fingerprint_mismatch_discarded"] is True
+        assert pf["checkpoint_fingerprint_mismatch_detail"]["old_fingerprint"]["use_verified_pipeline"] is False
 
 
 def test_verified_pipeline_all_insufficient_across_all_chunks_is_provisional_gap(monkeypatch):

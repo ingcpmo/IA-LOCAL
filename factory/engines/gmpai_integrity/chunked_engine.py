@@ -342,14 +342,22 @@ def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS
     return chunks
 
 
-def build_run_fingerprint(meta: dict, *, model_digest: str, document_sha256: str, agent_version: str) -> dict:
+def build_run_fingerprint(meta: dict, *, model_digest: str, document_sha256: str, agent_version: str,
+                          use_verified_pipeline: bool) -> dict:
     """W5 V2 Fase F (invalidacion de checkpoint, 2026-07-25). Combina todo
     lo que, si cambia, vuelve un checkpoint viejo no confiable para
     reanudar: contrato del prompt (prompt_version/schema_version), modelo,
     documento, agente y catalogo de requisitos (version + sha256 del
     archivo completo). Un mismatch en CUALQUIER componente impide el
     resume (ver CheckpointStore.find_resumable) -- fuerza una corrida
-    nueva en vez de mezclar chunk_executions de contratos distintos."""
+    nueva en vez de mezclar chunk_executions de contratos distintos.
+
+    use_verified_pipeline (2026-07-27, reanudacion verificada): forma parte
+    del fingerprint porque un checkpoint escrito SIN el pipeline verificado
+    no trae los registros verificados de sus chunks; reanudarlo con el flag
+    activo produciria una cobertura parcial presentada como completa. Es
+    keyword-only y SIN default a proposito: omitirlo es un TypeError, no un
+    fingerprint silenciosamente incompleto."""
     from factory.regulatory.requirement_catalog.requirement_catalog_loader import catalog_fingerprint
     cat = catalog_fingerprint()
     return {
@@ -360,7 +368,47 @@ def build_run_fingerprint(meta: dict, *, model_digest: str, document_sha256: str
         "agent_version": agent_version,
         "catalog_version": cat["catalog_version"],
         "catalog_sha256": cat["catalog_sha256"],
+        "use_verified_pipeline": bool(use_verified_pipeline),
     }
+
+
+def verified_records_coverage_gap(state: dict, req_ids: list[str]) -> dict | None:
+    """Reanudacion verificada (2026-07-27): decide si un checkpoint puede
+    reanudarse con use_verified_pipeline=True.
+
+    El fingerprint ya impide reanudar un checkpoint escrito con otro valor
+    del flag, pero eso solo prueba la INTENCION del run que lo escribio, no
+    que los registros verificados esten realmente ahi y completos. Esta
+    funcion comprueba el hecho: cada chunk ya ejecutado tuvo que aportar al
+    menos un registro verificado por CADA requisito del prompt (observado,
+    no-observado o rejected_by_verifier -- el motor nunca omite ninguno).
+
+    Importa porque `consolidate(..., coverage_complete=True)` de mas abajo
+    afirma que la cobertura es total: si un resume arrancara con registros
+    faltantes, esa afirmacion seria falsa y la conclusion se decidiria sobre
+    una fraccion del documento sin que nada lo delatara.
+
+    Retorna None si el checkpoint es apto, o el detalle del descarte."""
+    stored = state.get("verified_records_by_req")
+    chunks_completed = len(state.get("chunk_executions") or [])
+    if not isinstance(stored, dict):
+        return {
+            "discarded_run_id": state.get("run_id"),
+            "reason": "checkpoint_without_verified_records",
+            "detail": "checkpoint anterior al soporte de reanudacion verificada",
+        }
+    below = {
+        req_id: len(stored.get(req_id) or [])
+        for req_id in req_ids
+        if len(stored.get(req_id) or []) < chunks_completed
+    }
+    if below:
+        return {
+            "discarded_run_id": state.get("run_id"),
+            "reason": "checkpoint_verified_records_incomplete",
+            "detail": {"chunks_completed": chunks_completed, "records_below_coverage": below},
+        }
+    return None
 
 
 class CheckpointStore:
@@ -456,10 +504,15 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     consolidate, vía verified_pipeline_adapter) sobre los mismos chunks ya
     ejecutados -- nunca reemplaza los Finding existentes, solo agrega
     result['verified_conclusions'] (dict req_id -> conclusion real). Exige
-    document_type (ValueError si falta) y checkpoint_store=None (reanudar
-    un run con este flag no esta soportado todavia -- los chunk_executions
-    de un checkpoint viejo no traen los registros verificados, ver
-    verified_records_by_req más abajo).
+    document_type (ValueError si falta).
+
+    Reanudacion con use_verified_pipeline=True (2026-07-27): soportada. El
+    checkpoint persiste tambien verified_records_by_req, y reanudar exige
+    (a) fingerprint identico -- que ahora incluye el propio flag -- y (b)
+    cobertura verificada completa de los chunks ya ejecutados
+    (verified_records_coverage_gap). Si alguna falla, no se reanuda nada y
+    el descarte queda en preflight_metadata. Antes de esta fecha la
+    combinacion era un ValueError.
 
     provider (W5 V2 Fase D, default None -- cero cambio de comportamiento
     para todo llamador existente): implementación de ModelProvider a usar;
@@ -468,14 +521,8 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     llamada al modelo pasa por esta interfaz (ver model_provider.py)."""
     if run_context not in ("production", "validation"):
         raise ValueError(f"run_context invalido: {run_context!r} (debe ser 'production' o 'validation')")
-    if use_verified_pipeline:
-        if not document_type:
-            raise ValueError("use_verified_pipeline=True exige document_type (obligatorio, sin default)")
-        if checkpoint_store is not None:
-            raise ValueError(
-                "use_verified_pipeline=True no soporta checkpoint_store/reanudacion todavia -- "
-                "los chunk_executions de un checkpoint previo no persisten los registros verificados"
-            )
+    if use_verified_pipeline and not document_type:
+        raise ValueError("use_verified_pipeline=True exige document_type (obligatorio, sin default)")
     provider = provider or DEFAULT_PROVIDER
     meta = load_prompt_meta(prompt_path)
     # Captura de metadata de reproducibilidad ANTES de la primera inferencia
@@ -490,6 +537,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
 
     run_fingerprint = build_run_fingerprint(
         meta, model_digest=model_digest, document_sha256=document_sha256, agent_version=agent_version,
+        use_verified_pipeline=use_verified_pipeline,
     )
 
     chunks = build_page_chunks(per_unit_text)
@@ -498,10 +546,21 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
 
     resumed = None
     fingerprint_mismatch = None
+    verified_coverage_discard = None
     if checkpoint_store is not None:
         resumed, fingerprint_mismatch = checkpoint_store.find_resumable(
             document_sha256, agent_id, run_fingerprint,
         )
+        # Segunda barrera, independiente del fingerprint: comprobar que los
+        # registros verificados estan REALMENTE en el checkpoint y cubren
+        # todos los chunks ya ejecutados (ver verified_records_coverage_gap).
+        # Nunca en silencio: si no cumplen, se descarta y queda en preflight.
+        if resumed is not None and use_verified_pipeline:
+            verified_coverage_discard = verified_records_coverage_gap(
+                resumed, [cp["req_id"] for cp in meta["checkpoints"]],
+            )
+            if verified_coverage_discard is not None:
+                resumed = None
 
     if resumed is not None:
         run_id = resumed["run_id"]
@@ -521,12 +580,27 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         # descarto y la corrida empezo de cero (no se resumio nada).
         "checkpoint_fingerprint_mismatch_discarded": fingerprint_mismatch is not None,
         "checkpoint_fingerprint_mismatch_detail": fingerprint_mismatch,
+        # Reanudacion verificada (2026-07-27): mismo principio que arriba --
+        # un checkpoint descartado por no traer cobertura verificada completa
+        # queda registrado, nunca se descarta en silencio.
+        "checkpoint_verified_coverage_discarded": verified_coverage_discard is not None,
+        "checkpoint_verified_coverage_detail": verified_coverage_discard,
+        "resumed_from_checkpoint": resumed is not None,
+        "resumed_chunk_count": start_index,
     }
 
     by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
     cp_label_by_req = {cp["req_id"]: cp["label"] for cp in meta["checkpoints"]}
 
     verified_records_by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
+    # Reanudacion verificada (2026-07-27): restaurar los registros verificados
+    # de los chunks ya ejecutados. Sin esto, reanudar arrancaria la
+    # consolidacion con los registros de los chunks restantes UNICAMENTE, y
+    # coverage_complete=True mentiria. Solo se llega aqui si
+    # verified_records_coverage_gap() ya confirmo que estan completos.
+    if resumed is not None:
+        for req_id, records in (resumed.get("verified_records_by_req") or {}).items():
+            verified_records_by_req.setdefault(req_id, []).extend(records)
     known_verified_requirement_ids: set = set(by_req.keys())
     # W5 V2 Fase F: se computa siempre (no solo bajo use_verified_pipeline)
     # -- ahora tambien lo consume la validacion C real (verify_evidence_abcd)
@@ -684,6 +758,12 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 "documento": documento, "archivo": archivo, "total_chunks": len(chunks),
                 "chunk_executions": chunk_executions, "completed": False,
                 "fingerprint": run_fingerprint,
+                # Reanudacion verificada (2026-07-27): los registros
+                # verificados viajan CON el checkpoint. Se guardan siempre
+                # (vacios si el flag esta apagado) para que la comprobacion
+                # de cobertura del resume sea un hecho verificable y no una
+                # suposicion sobre quien lo escribio.
+                "verified_records_by_req": verified_records_by_req,
             })
 
     any_unresolved_technical_failure = any(
@@ -877,11 +957,19 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         # aprobacion humana inexistente.
         applicability_rule_approved = _matrix_approved()
         contradicted_req_ids = {c["req_id"] for c in contradictions}
-        # coverage_complete=True es real, no asumido: evaluate_chunked() sin
-        # checkpoint_store (bloqueado arriba para este flag) siempre procesa
-        # TODOS los chunks del documento -- cada uno aporto un registro
-        # (observado, no-observado o rejected_by_verifier) para cada
-        # requisito, nunca un subconjunto parcial.
+        # coverage_complete=True es real, no asumido: evaluate_chunked()
+        # siempre procesa TODOS los chunks del documento -- cada uno aporto
+        # un registro (observado, no-observado o rejected_by_verifier) para
+        # cada requisito, nunca un subconjunto parcial.
+        #
+        # 2026-07-27: esto sigue siendo cierto al reanudar. Antes se apoyaba
+        # en que checkpoint_store estaba prohibido con este flag; ahora se
+        # apoya en dos barreras verificadas al arrancar: el fingerprint
+        # incluye use_verified_pipeline (no se mezcla con checkpoints de otro
+        # contrato) y verified_records_coverage_gap() comprueba que los
+        # registros de los chunks ya ejecutados esten completos, restaurados
+        # arriba en verified_records_by_req. Si cualquiera falla, no se
+        # reanuda: la corrida empieza de cero y queda dicho en preflight.
         verified_conclusions = {}
         for cp in meta["checkpoints"]:
             req_id = cp["req_id"]
@@ -977,6 +1065,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             "documento": documento, "archivo": archivo, "total_chunks": len(chunks),
             "chunk_executions": chunk_executions, "completed": True,
             "fingerprint": run_fingerprint,
+            "verified_records_by_req": verified_records_by_req,
         })
 
     _write_audit_event(result)
