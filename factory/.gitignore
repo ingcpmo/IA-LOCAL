@@ -4,3 +4,35 @@ logs/*
 *.tar.gz
 audit/factory_audit.jsonl
 .env
+
+# --- Artefactos de runtime (salida de corridas, no fuente) ---
+
+# Locks de cualquier motor/paquete/cola (layer9, remediation_packages, audit, test_results)
+*.lock
+
+# Estado mutable del runtime (el .example sí se versiona)
+runtime/claude_status.json
+
+# Logs append-only de auditoría
+audit/*.jsonl
+
+# Resultados de corridas de tests de soluciones
+test_results/
+
+# Estado de conectores y logs append-only del módulo regulatorio
+regulatory/connector_state.json
+regulatory/broken_link_report.jsonl
+regulatory/source_currency_log.jsonl
+regulatory/case_memory/*.jsonl
+
+# Estado interno de paquetes de remediación (el contenido versionado v*/ sí se conserva)
+remediation_packages/**/state.json
+
+# Checkpoints de motores (p.ej. engines/gmpai_integrity/.checkpoints_autoclave_urs/)
+**/.checkpoints_*/
+
+# Config local de Claude Code dentro de deployments
+deployments/*/.claude/
+
+# Artefacto de un `pip install paquete >=1.1.0` mal citado
+=1.1.0

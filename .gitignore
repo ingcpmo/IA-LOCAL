@@ -7,3 +7,74 @@ __pycache__/
 *.pyc
 .cache/
 *.tar.gz
+
+# --- Secretos: nunca deben entrar al repo (el home es también el working tree) ---
+.ssh/
+.claude/.credentials.json
+.claude.json
+
+# --- Ruido de home: el working tree es /home/ing_cpmo, no solo el proyecto ---
+
+# Dotfiles y estado de la cuenta de usuario
+.bash_history
+.bash_logout
+.bashrc
+.profile
+.zshrc
+.lesshst
+.wget-hsts
+.config/
+.local/
+.docker/
+.npm/
+.nvm/
+.ollama/
+
+# Otras CLIs de agentes instaladas en el home
+.codex/
+.gemini/
+.kimi/
+
+# Estado local de Claude Code (skills/ y settings.json sí se versionan)
+.claude/.last-*
+.claude/backups/
+.claude/cache/
+.claude/file-history/
+.claude/history.jsonl
+.claude/mcp-needs-auth-cache.json
+.claude/paste-cache/
+.claude/plans/
+.claude/plugins/
+.claude/projects/
+.claude/sessions/
+.claude/shell-snapshots/
+.claude/tasks/
+
+# Otros proyectos que conviven en el mismo home
+/ARIA/
+/GMPAI/
+/hotelbot/
+node_modules/
+/package.json
+/package-lock.json
+
+# Scripts y logs de la instalación inicial del servidor
+# (anclados a la raíz: scripts/08_*.sh y scripts/ops/backup.sh SÍ se versionan)
+/0[0-9]_*.sh
+/phase*.sh
+/phase*.log
+/preflight.sh
+/backup.sh
+/get-docker.sh
+/generate_*.sh
+/generate_*.log
+/resultado_*.log
+/registro_instalacion.txt
+/backups/
+
+# Descargas, respaldos sueltos y archivos de trabajo temporales
+/*.zip
+/*.diff
+/requirements.txt.backup.*
+/index*.html
+/log_llamada_exitosa.txt
