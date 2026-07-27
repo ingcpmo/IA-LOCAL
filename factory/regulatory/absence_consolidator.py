@@ -129,3 +129,166 @@ def consolidate(requirement_id: str, document_type: str, applicability_value: st
         c.conclusion = "EVALUATION_INCOMPLETE"
         c.review_flags.append("APPLICABILITY_UNRESOLVED")
     return c
+
+
+# ---------------------------------------------------------------------------
+# W5 V2 §13.3 -- precondiciones de conclusion que consolidate() no puede
+# conocer (2026-07-27).
+#
+# consolidate() decide sobre los chunk records: cobertura, observacion y
+# status del verificador. §13.3 exige ADEMAS, para toda conclusion que
+# afirme soporte documental o ausencia consolidada: fuente verificada,
+# aplicabilidad aprobada, 0 contradicciones abiertas y evidencia sustantiva
+# A∧B∧C∧D (§12.1). Nada de eso es derivable de `records`.
+#
+# Estas precondiciones viven AQUI y no en cada llamador para que exista UNA
+# sola autoridad de conclusion: consolidate() propone sobre los registros,
+# apply_conclusion_preconditions() aplica las reglas duras. Ningun llamador
+# debe re-derivar D, aplicabilidad ni gobernanza de fuente por su cuenta.
+# ---------------------------------------------------------------------------
+
+# Conclusiones que AFIRMAN soporte documental (sujetas a A∧B∧C∧D, §12.1).
+_SUPPORT_ASSERTING = frozenset({"DOCUMENTED_AND_SUPPORTED", "PARTIALLY_DOCUMENTED"})
+# Conclusiones que AFIRMAN una ausencia consolidada (sujetas a §13.3).
+_ABSENCE_ASSERTING = frozenset({"DOCUMENTATION_GAP"})
+# Aplicabilidad que excluye el requisito de este documento (matriz v2).
+_NOT_APPLICABLE_VALUES = frozenset({"out_of_document_scope"})
+_APPLICABILITY_RESOLVED = frozenset({"expected", "optional", "cross_reference_expected"})
+
+# Estados NO finales bajo fuente PENDING_REVERIFICATION: no afirman soporte
+# documental ni ausencia consolidada -- ya exigen revision o registran una
+# no-observacion sin consecuencia regulatoria. El modelo de evidencia
+# provisional no los gobierna (no estan en ALLOWED ni en PROHIBITED), asi que
+# quedan exentos de validate_result_status_allowed; SI conservan la marca
+# SOURCE_PENDING_REVERIFICATION. Hacerlos fallar detendria el analisis
+# provisional que §10 habilita expresamente.
+_NON_FINAL_UNDER_PENDING = frozenset({
+    "SUPPORTING_EVIDENCE_UNDER_REVIEW",
+    "CROSS_REFERENCE_MISSING",
+    "NOT_OBSERVED_OPTIONAL",
+})
+
+# §10 + provisional_evidence_model: con la fuente PENDING_REVERIFICATION el
+# resultado solo puede ser PROVISIONAL. Mapeo final -> provisional.
+_PROVISIONAL_EQUIVALENT = {
+    "DOCUMENTED_AND_SUPPORTED": "PROVISIONALLY_DOCUMENTED",
+    "PARTIALLY_DOCUMENTED": "PROVISIONALLY_PARTIALLY_DOCUMENTED",
+    "DOCUMENTATION_GAP": "PROVISIONAL_GAP",
+    "DEVIATION_IDENTIFIED": "PROVISIONAL_DEVIATION",
+}
+
+
+def _replace(c: DocumentConclusion, conclusion: str, flag: str) -> DocumentConclusion:
+    """Nueva DocumentConclusion degradada. Nunca muta la entrada ni pierde
+    los contadores/registros de soporte ya calculados (P1: ningun dato de
+    consolidacion se descarta al degradar)."""
+    return DocumentConclusion(
+        requirement_id=c.requirement_id, document_type=c.document_type, conclusion=conclusion,
+        chunks_evaluated=c.chunks_evaluated, chunks_observed=c.chunks_observed,
+        chunks_review_pending=c.chunks_review_pending,
+        supporting_records=list(c.supporting_records),
+        review_flags=list(c.review_flags) + ([flag] if flag not in c.review_flags else []),
+    )
+
+
+def apply_conclusion_preconditions(
+    c: DocumentConclusion, *,
+    d_sufficiency: str | None,
+    substantive_evidence_accepted: bool | None,
+    operational_result: str | None,
+    applicability_value: str,
+    positive_conclusion_eligibility: str,
+    has_open_contradiction: bool,
+    applicability_rule_approved: bool,
+) -> DocumentConclusion:
+    """Aplica las precondiciones de §13.3 sobre una conclusion ya producida
+    por consolidate(). Determinista, sin LLM, sin efectos secundarios.
+
+    Los tres campos ABCD provienen de semantic_evidence_verification.ABCDResult
+    a traves del Finding ya consolidado -- esta funcion NUNCA re-evalua D.
+
+    Orden (de mas fuerte a mas debil; cada paso solo puede degradar):
+      1. Aplicabilidad -- NOT_APPLICABLE no puede coexistir con una
+         conclusion de soporte ni de ausencia (invariante W5 V2).
+      2. Contradiccion abierta -- §12.2: bloquea conclusion positiva; §13.3:
+         bloquea DOCUMENTATION_GAP.
+      3. Evidencia sustantiva A∧B∧C∧D (§12.1) -- techo de la conclusion
+         positiva. §12.2: evidencia parcial ⇒ maximo PARTIALLY_DOCUMENTED.
+      4. Gobernanza de fuente (§10) -- con la fuente sin verificar el
+         resultado solo puede ser PROVISIONAL, nunca final.
+    """
+    # ── 1. Aplicabilidad ───────────────────────────────────────────────
+    if applicability_value in _NOT_APPLICABLE_VALUES:
+        # Invariante duro: consolidate() decide `if observed:` ANTES de mirar
+        # la aplicabilidad, asi que un requisito fuera del alcance documental
+        # con evidencia observada salia DOCUMENTED_AND_SUPPORTED. Un
+        # requisito que no aplica no puede estar "documentado y soportado".
+        if c.conclusion != "NOT_APPLICABLE":
+            c = _replace(c, "NOT_APPLICABLE", "NOT_APPLICABLE_BY_APPLICABILITY_MATRIX")
+        return c
+    if applicability_value not in _APPLICABILITY_RESOLVED:
+        # review_required o valor no contemplado: la aplicabilidad no esta
+        # resuelta, ninguna conclusion terminal puede sostenerse.
+        if c.conclusion in _SUPPORT_ASSERTING or c.conclusion in _ABSENCE_ASSERTING:
+            c = _replace(c, "EVALUATION_INCOMPLETE", "APPLICABILITY_UNRESOLVED")
+
+    # ── 2. Contradiccion abierta ───────────────────────────────────────
+    if has_open_contradiction:
+        if c.conclusion in _SUPPORT_ASSERTING:
+            c = _replace(c, "SUPPORTING_EVIDENCE_UNDER_REVIEW",
+                          "POSITIVE_BLOCKED_BY_OPEN_CONTRADICTION")
+        elif c.conclusion in _ABSENCE_ASSERTING:
+            c = _replace(c, "EVALUATION_INCOMPLETE",
+                          "ABSENCE_BLOCKED_BY_OPEN_CONTRADICTION")
+
+    # ── 3. Evidencia sustantiva A∧B∧C∧D ────────────────────────────────
+    if c.conclusion in _SUPPORT_ASSERTING and substantive_evidence_accepted is not True:
+        if operational_result == "EVALUATION_INCOMPLETE" or d_sufficiency == "NOT_ASSESSABLE":
+            # D no se pudo evaluar: no es "sin soporte", es "sin evaluar".
+            c = _replace(c, "EVALUATION_INCOMPLETE", "ABCD_D_NOT_ASSESSABLE")
+        elif d_sufficiency == "PARTIALLY_MET":
+            # §12.2: evidencia parcial ⇒ FAIL en D ⇒ maximo PARTIALLY_DOCUMENTED.
+            if c.conclusion != "PARTIALLY_DOCUMENTED":
+                c = _replace(c, "PARTIALLY_DOCUMENTED", "ABCD_D_PARTIALLY_MET")
+            elif "ABCD_D_PARTIALLY_MET" not in c.review_flags:
+                c = _replace(c, c.conclusion, "ABCD_D_PARTIALLY_MET")
+        elif d_sufficiency == "NOT_MET":
+            c = _replace(c, "SUPPORTING_EVIDENCE_UNDER_REVIEW",
+                          "SUBSTANTIVE_EVIDENCE_NOT_ACCEPTED")
+        else:
+            # Sin datos ABCD para una conclusion que afirma soporte: el
+            # verificador nunca corrio sobre esta evidencia. Fail-closed.
+            c = _replace(c, "EVALUATION_INCOMPLETE", "ABCD_NOT_EVALUATED")
+
+    # ── 4. Gobernanza de fuente (§10) ──────────────────────────────────
+    if positive_conclusion_eligibility == "BLOCKED":
+        if c.conclusion != "NOT_APPLICABLE":
+            c = _replace(c, "EVALUATION_INCOMPLETE", "SOURCE_CONCLUSION_BLOCKED")
+        return c
+    if positive_conclusion_eligibility == "PROVISIONAL_ONLY":
+        provisional = _PROVISIONAL_EQUIVALENT.get(c.conclusion)
+        if provisional is not None:
+            c = _replace(c, provisional, "SOURCE_PENDING_REVERIFICATION")
+        elif "SOURCE_PENDING_REVERIFICATION" not in c.review_flags:
+            # CROSS_REFERENCE_MISSING / NOT_OBSERVED_OPTIONAL / estados ya
+            # degradados: conservan su valor, pero jamas pierden la marca de
+            # que su base regulatoria sigue pendiente de reverificacion.
+            c = _replace(c, c.conclusion, "SOURCE_PENDING_REVERIFICATION")
+        # Conecta el control ya implementado (y hasta ahora sin llamador) que
+        # prohibe resultados finales con la fuente PENDING_REVERIFICATION.
+        #
+        # P3 (2026-07-27): este llamado estaba condicionado a que la
+        # conclusion YA estuviera en ALLOWED_RESULTS_WHILE_PENDING_
+        # REVERIFICATION, es decir, solo se validaba lo que por definicion
+        # iba a pasar -- un resultado final prohibido que se escapara del
+        # mapeo _PROVISIONAL_EQUIVALENT quedaba sin validar. La validacion
+        # es ahora incondicional salvo para los estados NO finales de abajo.
+        from factory.regulatory.requirement_catalog.provisional_evidence_model import (
+            validate_result_status_allowed,
+        )
+        if c.conclusion not in _NON_FINAL_UNDER_PENDING:
+            validate_result_status_allowed(
+                c.conclusion, "PENDING_REVERIFICATION",
+                applicability_determined_by_independent_rule=applicability_rule_approved,
+            )
+    return c

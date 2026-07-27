@@ -87,6 +87,40 @@ corrida de diseño.
 - **Código reutilizable**: `app/risk_agent.py`.
 - **Dependencias**: H.
 
+### Deuda abierta I-1 — adaptador `Finding` → narrative JSON → remediación
+
+Registrada en Fase F (cableado de D a la decisión, 2026-07-25) y **no
+resuelta ahí a propósito**: el veredicto sustantivo (`substantive_support`,
+derivado de `substantive_evidence_accepted` = A∧B∧C∧D==MET) vive hoy sólo en
+`chunked_engine.Finding` y en `substantive_support_summary`. El pipeline de
+remediación (`gap_assessment_finding_mapper.py`,
+`remediation_package_service.py`) no consume `Finding`: consume un narrative
+JSON y una `DocumentConclusion` de `absence_consolidator`, y esa segunda ruta
+**no conoce D**.
+
+- **Ya cerrado en Fase F (no forma parte de esta deuda)**: la ruta
+  `verified_conclusions`. `absence_consolidator` sigue sin conocer D, pero
+  `evaluate_chunked` degrada su conclusión fail-closed contra el veredicto
+  del `Finding` (`_degrade_conclusion_by_substantive_support`): un positivo
+  `NOT_SUPPORTED` nunca sale como `DOCUMENTED_AND_SUPPORTED` /
+  `PARTIALLY_DOCUMENTED` — pasa a `EVALUATION_INCOMPLETE` (D
+  `NOT_ASSESSABLE`) o `SUPPORTING_EVIDENCE_UNDER_REVIEW` (D evaluada y no
+  satisfecha), ambos rechazados por el mapper.
+- **Lo que queda**: la ruta del narrative JSON. `Finding` sigue sin llegar al
+  pipeline de remediación, así que un consumidor que arme el narrative por su
+  cuenta (sin `verified_conclusion`) cae en la heurística de texto de
+  `_derive_coverage_status`, que no conoce D.
+- **Alcance del adaptador**: transportar `d_sufficiency`,
+  `substantive_evidence_accepted`, `operational_result` y
+  `substantive_support` desde `Finding` hasta el narrative JSON, y hacer que
+  la heurística de texto no pueda emitir `FULL_COVERAGE` sin veredicto
+  sustantivo.
+- **Regla al implementarlo**: no crear una segunda autoridad de decisión —
+  la degradación debe derivarse de los campos ABCD ya existentes, no
+  recalcular D.
+- **Dependencias**: F (hecha), H. No abrir antes de la adjudicación humana
+  de H.
+
 ## J — Motor de generación por formato
 
 - **Objetivo**: generadores DOCX/PDF/XLSX/DOCM según estrategia por

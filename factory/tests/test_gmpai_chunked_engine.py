@@ -16,6 +16,7 @@ import json
 from pathlib import Path
 
 from factory.engines.gmpai_integrity import chunked_engine as ce
+from factory.engines.gmpai_integrity import models
 from factory.engines.gmpai_integrity import ollama_client
 
 PROMPT_PATH = Path(__file__).parent.parent / "engines" / "gmpai_integrity" / "prompts" / "part11_prompts.yaml"
@@ -431,11 +432,17 @@ def test_verified_pipeline_rejects_checkpoint_store(tmp_path):
                              document_type="FS", checkpoint_store=store)
 
 
-def test_verified_pipeline_all_insufficient_across_all_chunks_is_documentation_gap(monkeypatch):
+def test_verified_pipeline_all_insufficient_across_all_chunks_is_provisional_gap(monkeypatch):
     """El fix central de Fase 3: 'evidencia_insuficiente' ya NO se descarta
     en silencio del pipeline verificado -- cada chunk aporta un registro
-    not_observed_in_chunk real, coverage_complete=True, sin rejected ->
-    DOCUMENTATION_GAP (nunca EVALUATION_INCOMPLETE por falta de registros)."""
+    not_observed_in_chunk real, coverage_complete=True, sin rejected -> la
+    ausencia SI se consolida (nunca EVALUATION_INCOMPLETE por falta de
+    registros).
+
+    W5 V2 §10 (2026-07-27): con las 19 fuentes del catalogo todavia en
+    PENDING_REVERIFICATION, la ausencia consolidada se emite como
+    PROVISIONAL_GAP, no DOCUMENTATION_GAP -- este ultimo esta en
+    provisional_evidence_model.PROHIBITED_FINAL_RESULTS_WHILE_PENDING."""
     pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
     monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
@@ -447,39 +454,240 @@ def test_verified_pipeline_all_insufficient_across_all_chunks_is_documentation_g
     assert n_chunks >= 2
     conclusions = result["verified_conclusions"]
     # Solo los requisitos con applicability_value='expected' para document_type
-    # 'FS' (ver applicability_matrix.yaml) llegan a DOCUMENTATION_GAP por esta
-    # via -- 21_CFR_11.10(a) es cross_reference_expected y 11.50_11.70 es
-    # optional, cada uno con su propia regla, fuera de alcance de este gate.
+    # 'FS' (ver applicability_matrix.yaml) consolidan ausencia por esta via --
+    # 21_CFR_11.10(a) es cross_reference_expected y 11.50_11.70 es optional,
+    # cada uno con su propia regla, fuera de alcance de este gate.
     for req_id in ("21_CFR_11.10(d)", "21_CFR_11.10(e)", "21_CFR_11.10(g)"):
         c = conclusions[req_id]
-        assert c["conclusion"] == "DOCUMENTATION_GAP", (req_id, c)
+        assert c["conclusion"] == "PROVISIONAL_GAP", (req_id, c)
+        assert "SOURCE_PENDING_REVERIFICATION" in c["review_flags"], (req_id, c)
         assert c["chunks_evaluated"] == n_chunks
 
 
-def test_verified_pipeline_real_anchored_citation_is_documented_and_supported(monkeypatch):
-    """Evidencia real, anclada y tematicamente relevante -> 'observed' ->
-    DOCUMENTED_AND_SUPPORTED (nunca DOCUMENTATION_GAP con evidencia positiva real)."""
-    # Debe superar DOS heuristicas distintas y reales: _is_topically_relevant
-    # de chunked_engine.py (contra el label en espanol del checkpoint) y
-    # relevance_score de evidence_verifier.py (contra requirement_terms.yaml
-    # en ingles) -- de ahi la mezcla deliberada de ambos idiomas.
-    quote = ("El acceso de los individuos esta controlado: access is restricted to "
-              "authorized users only, enforced via role-based permission and login authentication.")
-    pages = [f"Introduccion general. {quote} Resto del documento sin relacion. " * 40]
-    payload = _all_insufficient({
-        "21_CFR_11.10(d)": {"req_id": "21_CFR_11.10(d)", "estado": "cumple",
-                             "evidencia_exacta": quote,
-                             "brecha": "n/a", "recomendacion": "n/a"},
-    })
+# Debe superar DOS heuristicas distintas y reales: _is_topically_relevant
+# de chunked_engine.py (contra el label en espanol del checkpoint) y
+# relevance_score de evidence_verifier.py (contra requirement_terms.yaml
+# en ingles) -- de ahi la mezcla deliberada de ambos idiomas.
+_ANCHORED_QUOTE = ("El acceso de los individuos esta controlado: access is restricted to "
+                    "authorized users only, enforced via role-based permission and login authentication.")
+# Texto literal de evidence_min_criteria de 21_CFR_11.10(d) en el catalogo
+# (requirement_catalog): criterion_text debe coincidir o el contrato de D
+# se considera violado (criterios inventados -> NOT_ASSESSABLE).
+_D_CRITERIA_11_10_D = [
+    "Mecanismo de control de acceso (propio o federado) sobre el sistema, descrito.",
+    "Alta, cambio, revision periodica y revocacion de cuentas.",
+    "Cuentas humanas individuales (no compartidas).",
+    "Cuentas tecnicas no interactivas, si existen, gobernadas con propietario, proposito, privilegio "
+    "minimo y prohibicion de firma electronica.",
+    "Evidencia de prueba de acceso permitido y denegado.",
+]
+
+
+def _d_assessments(statuses):
+    """criterion_assessments reales para 21_CFR_11.10(d). evidence_quote = el
+    propio texto del criterio, que las paginas del test contienen literalmente
+    -> anclaje real (verify_anchor PASS), nunca simulado."""
+    return [
+        {"criterion_index": i + 1, "criterion_text": text, "status": status,
+          "evidence_quote": text if status == "MET" else "",
+          "evidence_location": "pag 1" if status == "MET" else "",
+          "justification": "test", "limitations": ""}
+        for i, (text, status) in enumerate(zip(_D_CRITERIA_11_10_D, statuses))
+    ]
+
+
+def _run_verified_pipeline_with_positive_citation(monkeypatch, criterion_assessments):
+    pages = [f"Introduccion general. {_ANCHORED_QUOTE} " + " ".join(_D_CRITERIA_11_10_D)
+              + " Resto del documento sin relacion. " * 40]
+    entry = {"req_id": "21_CFR_11.10(d)", "estado": "cumple",
+              "evidencia_exacta": _ANCHORED_QUOTE, "brecha": "n/a", "recomendacion": "n/a"}
+    if criterion_assessments is not None:
+        entry["criterion_assessments"] = criterion_assessments
+    payload = _all_insufficient({"21_CFR_11.10(d)": entry})
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    return ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                run_context="production", use_verified_pipeline=True, document_type="FS")
+
+
+def test_verified_pipeline_real_anchored_citation_is_provisionally_documented(monkeypatch):
+    """Evidencia real, anclada, tematicamente relevante Y con D==MET sobre
+    todos los criterios minimos -> 'observed' -> conclusion positiva (nunca
+    una ausencia con evidencia positiva real).
+
+    W5 V2 §10: el techo hoy es PROVISIONALLY_DOCUMENTED, no
+    DOCUMENTED_AND_SUPPORTED -- la fuente sigue PENDING_REVERIFICATION.
+    A∧B∧C∧D==MET es NECESARIO pero no suficiente para un resultado final."""
+    result = _run_verified_pipeline_with_positive_citation(
+        monkeypatch, _d_assessments(["MET"] * 5))
+    c = result["verified_conclusions"]["21_CFR_11.10(d)"]
+    assert c["conclusion"] == "PROVISIONALLY_DOCUMENTED"
+    assert "SOURCE_PENDING_REVERIFICATION" in c["review_flags"]
+    assert c["chunks_observed"] >= 1
+    # el Finding SI quedo sustentado: lo provisional es la autoridad de la
+    # fuente, no el veredicto sustantivo.
+    finding = next(f for f in result["findings"]
+                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
+    assert finding["substantive_support"] == "SUPPORTED"
+
+
+# ── W5 V2 Fase F: cierre del hueco de verified_conclusions (2026-07-25) ────
+# absence_consolidator decide sobre chunk records y NO conoce D. Sin este
+# cableado, una cita positiva anclada concluia DOCUMENTED_AND_SUPPORTED
+# (-> FULL_COVERAGE en gap_assessment_finding_mapper) con D sin satisfacer.
+
+def test_verified_conclusion_degrades_when_d_not_assessable(monkeypatch):
+    """Misma cita positiva anclada, pero SIN criterion_assessments
+    (D=NOT_ASSESSABLE): la evaluacion sustantiva no se hizo -> nunca
+    DOCUMENTED_AND_SUPPORTED, sino EVALUATION_INCOMPLETE (el mapper la
+    rechaza explicitamente, jamas llega a FULL_COVERAGE)."""
+    result = _run_verified_pipeline_with_positive_citation(monkeypatch, None)
+    c = result["verified_conclusions"]["21_CFR_11.10(d)"]
+    assert c["conclusion"] == "EVALUATION_INCOMPLETE"
+    assert "ABCD_D_NOT_ASSESSABLE" in c["review_flags"]
+    assert c["chunks_observed"] >= 1  # la evidencia SI se observo; lo que falta es D
+
+
+def test_verified_conclusion_ceiling_is_partially_documented_when_d_partially_met(monkeypatch):
+    """W5 V2 §12.2: 'Evidencia parcial ⇒ FAIL en D ⇒ maximo
+    PARTIALLY_DOCUMENTED'. D=PARTIALLY_MET no puede quedar como
+    DOCUMENTED_AND_SUPPORTED, pero tampoco debe hundirse por debajo del
+    techo que el plan autoriza."""
+    result = _run_verified_pipeline_with_positive_citation(
+        monkeypatch, _d_assessments(["MET", "MET", "NOT_MET", "NOT_MET", "NOT_MET"]))
+    c = result["verified_conclusions"]["21_CFR_11.10(d)"]
+    # techo §12.2 + provisionalidad §10 aplicados en ese orden
+    assert c["conclusion"] == "PROVISIONALLY_PARTIALLY_DOCUMENTED"
+    assert "ABCD_D_PARTIALLY_MET" in c["review_flags"]
+    assert "SOURCE_PENDING_REVERIFICATION" in c["review_flags"]
+
+
+def test_verified_conclusion_under_review_when_d_not_met(monkeypatch):
+    """D=NOT_MET (ningun criterio minimo confirmado): hay evidencia
+    observada pero no sostiene el requisito -> SUPPORTING_EVIDENCE_UNDER_REVIEW,
+    nunca una conclusion de soporte ni siquiera parcial."""
+    result = _run_verified_pipeline_with_positive_citation(
+        monkeypatch, _d_assessments(["NOT_MET"] * 5))
+    c = result["verified_conclusions"]["21_CFR_11.10(d)"]
+    assert c["conclusion"] == "SUPPORTING_EVIDENCE_UNDER_REVIEW"
+    assert "SUBSTANTIVE_EVIDENCE_NOT_ACCEPTED" in c["review_flags"]
+
+
+def test_verified_conclusion_degradation_is_consistent_with_finding(monkeypatch):
+    """La conclusion verificada y el Finding no pueden contradecirse: si el
+    Finding quedo NOT_SUPPORTED, la conclusion no puede afirmar soporte --
+    ni en su forma final ni en su forma provisional."""
+    asserting = ("DOCUMENTED_AND_SUPPORTED", "PARTIALLY_DOCUMENTED",
+                 "PROVISIONALLY_DOCUMENTED", "PROVISIONALLY_PARTIALLY_DOCUMENTED")
+    for assessments in (None, _d_assessments(["NOT_MET"] * 5)):
+        result = _run_verified_pipeline_with_positive_citation(monkeypatch, assessments)
+        finding = next(f for f in result["findings"]
+                        if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
+        c = result["verified_conclusions"]["21_CFR_11.10(d)"]
+        assert finding["substantive_support"] == "NOT_SUPPORTED", assessments
+        assert c["conclusion"] not in asserting, c
+
+
+def test_absence_conclusion_is_never_degraded_by_abcd(monkeypatch):
+    """Una ausencia consolidada no afirma soporte documental: las reglas
+    ABCD no la tocan aunque D nunca se haya evaluado en ese run (solo la
+    gobernanza de fuente la marca como provisional)."""
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
     monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
     monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
     result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                                   "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
                                   run_context="production", use_verified_pipeline=True, document_type="FS")
-    c = result["verified_conclusions"]["21_CFR_11.10(d)"]
-    assert c["conclusion"] == "DOCUMENTED_AND_SUPPORTED"
-    assert c["chunks_observed"] >= 1
+    for req_id in ("21_CFR_11.10(d)", "21_CFR_11.10(e)", "21_CFR_11.10(g)"):
+        c = result["verified_conclusions"][req_id]
+        assert c["conclusion"] == "PROVISIONAL_GAP", (req_id, c)
+        assert "ABCD_D_NOT_ASSESSABLE" not in c["review_flags"]
+        assert "ABCD_NOT_EVALUATED" not in c["review_flags"]
+
+
+def test_governed_exceptions_key_present_and_empty_on_clean_run(monkeypatch):
+    """§13.4: la corrida siempre expone su lista de excepciones gobernadas,
+    tambien cuando esta vacia -- nunca 'ausente' (indistinguible de 'no se
+    registro')."""
+    result = _run_verified_pipeline_with_positive_citation(
+        monkeypatch, _d_assessments(["MET"] * 5))
+    assert result["governed_exceptions"] == []
+
+
+def test_consolidation_exception_does_not_abort_the_run(monkeypatch):
+    """§13.4.5 + gate '0 fallos recuperables bloqueando toda la corrida':
+    si consolidar UN requisito lanza, ese requisito queda
+    EVALUATION_INCOMPLETE con excepcion gobernada y los DEMAS se consolidan
+    normalmente. Antes de este fix la excepcion se propagaba y tumbaba
+    evaluate_chunked() entero."""
+    import factory.regulatory.absence_consolidator as ac
+    real_consolidate = ac.consolidate
+
+    def exploding(req_id, *a, **k):
+        if req_id == "21_CFR_11.10(e)":
+            raise RuntimeError("fallo simulado de consolidacion")
+        return real_consolidate(req_id, *a, **k)
+
+    monkeypatch.setattr(ac, "consolidate", exploding)
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+    failed = result["verified_conclusions"]["21_CFR_11.10(e)"]
+    assert failed["conclusion"] == "EVALUATION_INCOMPLETE"
+    assert "CONSOLIDATION_EXCEPTION" in failed["review_flags"]
+    exc = [e for e in result["governed_exceptions"] if e["req_id"] == "21_CFR_11.10(e)"]
+    assert len(exc) == 1 and exc[0]["exception"] == "RuntimeError"
+    # los demas requisitos NO se vieron afectados: la corrida continuo
+    assert result["verified_conclusions"]["21_CFR_11.10(d)"]["conclusion"] == "PROVISIONAL_GAP"
+    assert len(result["findings"]) == len(ce.load_prompt_meta(PROMPT_PATH)["checkpoints"])
+
+
+def test_duplicate_requirement_checkpoint_never_silently_overwrites(monkeypatch):
+    """P1 / 'ningun finding puede perderse o sobrescribirse silenciosamente':
+    con un req_id repetido en el prompt, el indice req_id->Finding conserva
+    solo el ultimo. Los DOS findings siguen en result['findings'] y la
+    conclusion se degrada con excepcion gobernada en vez de decidirse sobre
+    un indice ambiguo."""
+    meta = dict(ce.load_prompt_meta(PROMPT_PATH))
+    cps = list(meta["checkpoints"])
+    meta["checkpoints"] = cps + [dict(cps[0])]          # req_id duplicado
+    monkeypatch.setattr(ce, "load_prompt_meta", lambda _p: meta)
+    pages = ["Pagina uno sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+    dup_id = cps[0]["req_id"]
+    # ningun finding se perdio: hay uno por CADA checkpoint, duplicado incluido
+    assert len(result["findings"]) == len(meta["checkpoints"])
+    assert sum(1 for f in result["findings"]
+                if f["requisito_regulatorio"].startswith(dup_id)) == 2
+    c = result["verified_conclusions"][dup_id]
+    assert c["conclusion"] == "EVALUATION_INCOMPLETE"
+    assert "DUPLICATE_REQUIREMENT_CHECKPOINT" in c["review_flags"]
+    exc = [e for e in result["governed_exceptions"]
+            if e["exception"] == "DUPLICATE_REQUIREMENT_CHECKPOINT"]
+    assert len(exc) == 1 and exc[0]["req_id"] == dup_id
+
+
+def test_substantive_support_summary_counts_unknown_explicitly(monkeypatch):
+    """Un Finding sin veredicto sustantivo se cuenta como UNKNOWN, nunca se
+    absorbe en NOT_APPLICABLE (eso presentaria un vacio como 'no aplica')."""
+    result = _run_verified_pipeline_with_positive_citation(
+        monkeypatch, _d_assessments(["MET"] * 5))
+    summary = result["substantive_support_summary"]
+    assert set(summary) == set(ce.SUBSTANTIVE_SUPPORT_VALUES)
+    assert summary["UNKNOWN"] == 0            # el motor siempre fija el veredicto
+    assert sum(summary.values()) == len(result["findings"])
 
 
 def test_verified_pipeline_technical_failure_chunk_blocks_documentation_gap(monkeypatch):
@@ -512,3 +720,76 @@ def test_verified_pipeline_technical_failure_chunk_blocks_documentation_gap(monk
         c = result["verified_conclusions"][req_id]
         assert c["conclusion"] == "EVALUATION_INCOMPLETE", (req_id, c)
         assert "ABSENCE_BLOCKED_BY_REJECTED_CHUNKS" in c["review_flags"]
+
+
+# ---------------------------------------------------------------------------
+# W5 V2 Fase F -- cableado de D a substantive_support (2026-07-25).
+# ---------------------------------------------------------------------------
+
+def test_compute_substantive_support_positive_accepted_is_supported():
+    assert ce._compute_substantive_support("cumple", True) == "SUPPORTED"
+    assert ce._compute_substantive_support("cumple_parcialmente", True) == "SUPPORTED"
+
+
+def test_compute_substantive_support_positive_not_accepted_is_not_supported():
+    # Fail-closed: False Y None (checkpoint reanudado pre-fase, sin D) ->
+    # NOT_SUPPORTED para un estado positivo. Solo True explicito sustenta.
+    assert ce._compute_substantive_support("cumple", False) == "NOT_SUPPORTED"
+    assert ce._compute_substantive_support("cumple", None) == "NOT_SUPPORTED"
+    assert ce._compute_substantive_support("cumple_parcialmente", None) == "NOT_SUPPORTED"
+
+
+def test_compute_substantive_support_non_positive_is_not_applicable():
+    for estado in ("no_cumple", "evidencia_insuficiente", "no_aplica"):
+        assert ce._compute_substantive_support(estado, True) == "NOT_APPLICABLE"
+        assert ce._compute_substantive_support(estado, None) == "NOT_APPLICABLE"
+
+
+# ── P2 (2026-07-27): "aplicabilidad aprobada" es precondicion VERIFICADA ──
+
+def test_applicability_rule_approved_is_read_not_assumed(monkeypatch):
+    """Defecto reproducido: evaluate_chunked() pasaba
+    applicability_rule_approved=True fijo, comentado como "verificado por
+    _require_matrix_approved". Esa guardia NO lo verifica: con
+    run_context='validation' deja pasar la matriz sin aprobar. El motor
+    afirmaba entonces una aprobacion humana inexistente, justo el flag del
+    que depende que NOT_APPLICABLE sea legal con fuente pendiente (§13.3).
+
+    Fail-closed esperado: el valor se LEE de la matriz real. (El escenario
+    real alcanzable es run_context='validation' con la matriz sin aprobar;
+    aqui se sustituye el lector para aislar la precondicion sin arrastrar la
+    escritura de evidencia de validacion.)"""
+    from factory.regulatory import absence_consolidator, applicability
+
+    seen = []
+    real = absence_consolidator.apply_conclusion_preconditions
+
+    def _spy(c, **kw):
+        seen.append(kw["applicability_rule_approved"])
+        return real(c, **kw)
+
+    monkeypatch.setattr(absence_consolidator, "apply_conclusion_preconditions", _spy)
+    monkeypatch.setattr(applicability, "matrix_approved", lambda: False)
+
+    _run_verified_pipeline_with_positive_citation(monkeypatch, _d_assessments(["MET"] * 5))
+
+    assert seen, "apply_conclusion_preconditions no fue invocada"
+    assert all(v is False for v in seen), (
+        "el motor siguio afirmando applicability_rule_approved=True con la matriz sin aprobar")
+
+
+def test_applicability_rule_approved_true_when_matrix_is_approved(monkeypatch):
+    """Contraparte: con la matriz human_confirmed (estado real hoy) el flag
+    llega True -- la correccion no degrada el caso legitimo."""
+    from factory.regulatory import absence_consolidator
+
+    seen = []
+    real = absence_consolidator.apply_conclusion_preconditions
+
+    def _spy(c, **kw):
+        seen.append(kw["applicability_rule_approved"])
+        return real(c, **kw)
+
+    monkeypatch.setattr(absence_consolidator, "apply_conclusion_preconditions", _spy)
+    _run_verified_pipeline_with_positive_citation(monkeypatch, _d_assessments(["MET"] * 5))
+    assert seen and all(v is True for v in seen)

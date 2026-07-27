@@ -46,6 +46,13 @@ class Finding:
     d_sufficiency: str | None = None
     substantive_evidence_accepted: bool | None = None
     operational_result: str | None = None
+    # W5 V2 Fase F (cableado de D a decision, 2026-07-25). Veredicto
+    # explicito derivado de estado + substantive_evidence_accepted: un
+    # estado positivo (cumple/cumple_parcialmente) cuya evidencia sustantiva
+    # NO fue aceptada (D != MET) nunca se presenta como sustentado. Valores:
+    # SUPPORTED | NOT_SUPPORTED | NOT_APPLICABLE. None == no computado
+    # (Finding construido por codigo previo a esta fase).
+    substantive_support: str | None = None
 
     def to_dict(self) -> dict:
         return self.__dict__.copy()

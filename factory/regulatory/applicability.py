@@ -31,6 +31,17 @@ def load_matrix() -> dict:
     return data
 
 
+def matrix_approved() -> bool:
+    """True solo si la matriz esta human_confirmed. W5 V2 §13.3 exige
+    "aplicabilidad aprobada" como PRECONDICION VERIFICADA de toda conclusion
+    terminal, no como suposicion del llamador: run_context='validation'
+    puede ejecutar con la matriz SIN aprobar (ver
+    require_matrix_approved_for_production), asi que haber pasado esa
+    guardia NO demuestra que la regla de aplicabilidad este aprobada.
+    Quien necesite afirmar lo segundo debe preguntarlo aqui."""
+    return (load_matrix().get("approval") or {}).get("status") == "human_confirmed"
+
+
 def require_matrix_approved_for_production(run_context: str) -> None:
     """Bloque 3.3: si la matriz no esta human_confirmed, el pipeline solo
     puede ejecutarse con run_context='validation'. Cualquier otro contexto

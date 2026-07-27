@@ -230,7 +230,24 @@ _COVERAGE_STATUS_BY_VERIFIED_CONCLUSION = {
     "DOCUMENTATION_GAP": "FULL_COVERAGE",
     "DOCUMENTED_AND_SUPPORTED": "FULL_COVERAGE",
     "PARTIALLY_DOCUMENTED": "FULL_COVERAGE",
+    # W5 V2 §10 (2026-07-27): equivalentes provisionales emitidos cuando la
+    # fuente sigue PENDING_REVERIFICATION. coverage_status responde "se
+    # evaluaron TODOS los chunks relevantes", que es exactamente igual de
+    # cierto en ambos casos -- lo provisional es la AUTORIDAD regulatoria del
+    # resultado, no la cobertura. Bloquear aqui detendria la remediacion en
+    # borrador (draft_remediation_eligibility=ENABLED_WITH_TRACEABILITY) que
+    # el modelo provisional habilita expresamente. Baseline formal, candidato
+    # limpio y liberacion siguen bloqueados por FORMAL_RELEASE_GATE.
+    "PROVISIONAL_GAP": "FULL_COVERAGE",
+    "PROVISIONALLY_DOCUMENTED": "FULL_COVERAGE",
+    "PROVISIONALLY_PARTIALLY_DOCUMENTED": "FULL_COVERAGE",
 }
+# Conclusiones cuya autoridad regulatoria es PROVISIONAL (fuente sin
+# reverificar). Nunca se presentan como resultado final.
+_PROVISIONAL_CONCLUSIONS = frozenset({
+    "PROVISIONAL_GAP", "PROVISIONALLY_DOCUMENTED", "PROVISIONALLY_PARTIALLY_DOCUMENTED",
+    "PROVISIONAL_DEVIATION",
+})
 
 
 def _derive_coverage_status_from_verified_conclusion(conclusion: DocumentConclusion) -> tuple[str, str]:
@@ -248,9 +265,13 @@ def _derive_coverage_status_from_verified_conclusion(conclusion: DocumentConclus
             f"(flags={conclusion.review_flags}) -- coverage_complete=False o chunks rejected_by_verifier; "
             "nunca se mapea a FULL_COVERAGE aunque el texto de 'evidencia' lo sugiera")
     if conclusion.conclusion in _COVERAGE_STATUS_BY_VERIFIED_CONCLUSION:
+        authority = ("PROVISIONAL (fuente PENDING_REVERIFICATION; no habilita baseline formal, "
+                      "candidato limpio ni liberacion)"
+                      if conclusion.conclusion in _PROVISIONAL_CONCLUSIONS else "FORMAL")
         return (_COVERAGE_STATUS_BY_VERIFIED_CONCLUSION[conclusion.conclusion],
                 f"absence_consolidator.consolidate() real concluyo '{conclusion.conclusion}' "
-                "(coverage_complete=True, sin chunks rejected_by_verifier) -> FULL_COVERAGE verificado")
+                f"(coverage_complete=True, sin chunks rejected_by_verifier) -> FULL_COVERAGE verificado; "
+                f"autoridad del resultado={authority}")
     raise NotMappableToCurrentSchema(
         f"coverage_status: absence_consolidator.consolidate() real concluyo '{conclusion.conclusion}' -- "
         "sin regla de mapeo a RemediationChange todavia")

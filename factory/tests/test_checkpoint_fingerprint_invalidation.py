@@ -217,3 +217,67 @@ class TestCheckpointInvalidatedByFingerprintMismatch:
         assert mismatch is None
         assert resumable is not None
         assert resumable["run_id"] == "run-matching"
+
+
+class TestSubstantiveSupportWiredToDecision:
+    """W5 V2 Fase F -- D cableada a la decision substantive_support en la
+    consolidacion de evaluate_chunked (2026-07-25)."""
+
+    def test_positive_finding_with_full_met_is_supported(self):
+        doc = _EVIDENCIA + " " + " ".join(_ACCESS_CRITERIA)
+        assessments = [_assessment(i + 1, c, "MET", quote=c, location="pag 1") for i, c in enumerate(_ACCESS_CRITERIA)]
+        provider = _FakeProvider(_checkpoints_payload(assessments))
+        result = ce.evaluate_chunked(
+            PROMPT_PATH, "fda_part11_agent", "v-test", [doc], "sys", "doc", "v1", "doc.pdf",
+            "s" * 64, run_context="validation", provider=provider,
+        )
+        finding = _find_finding(result, _REQ_ID)
+        assert finding["estado"] == "cumple_parcialmente"      # observacion del modelo intacta
+        assert finding["substantive_support"] == "SUPPORTED"
+        assert result["substantive_support_summary"]["SUPPORTED"] >= 1
+
+    def test_positive_finding_legacy_response_is_not_supported(self):
+        """Sin criterion_assessments (D=NOT_ASSESSABLE) un estado positivo
+        nunca se presenta como sustentado -- fail-closed, revision humana."""
+        doc = _EVIDENCIA
+        provider = _FakeProvider(_checkpoints_payload(None))
+        result = ce.evaluate_chunked(
+            PROMPT_PATH, "fda_part11_agent", "v-test", [doc], "sys", "doc", "v1", "doc.pdf",
+            "t" * 64, run_context="validation", provider=provider,
+        )
+        finding = _find_finding(result, _REQ_ID)
+        assert finding["estado"] == "cumple_parcialmente"      # el modelo dijo cumple_parcialmente
+        assert finding["substantive_support"] == "NOT_SUPPORTED"
+        assert finding["revision_humana_requerida"] is True
+        assert result["substantive_support_summary"]["NOT_SUPPORTED"] >= 1
+
+    def test_absence_findings_are_not_applicable(self):
+        """Un checkpoint sin candidato positivo (evidencia_insuficiente en
+        todos los chunks) -> substantive_support=NOT_APPLICABLE."""
+        doc = _EVIDENCIA
+        provider = _FakeProvider(_checkpoints_payload(None))
+        result = ce.evaluate_chunked(
+            PROMPT_PATH, "fda_part11_agent", "v-test", [doc], "sys", "doc", "v1", "doc.pdf",
+            "u" * 64, run_context="validation", provider=provider,
+        )
+        # los otros 4 checkpoints del prompt quedan evidencia_insuficiente
+        na = [f for f in result["findings"] if f["substantive_support"] == "NOT_APPLICABLE"]
+        assert na, "debe haber al menos un finding NOT_APPLICABLE (checkpoints sin candidato positivo)"
+        assert all(f["estado"] not in ("cumple", "cumple_parcialmente") for f in na)
+
+    def test_summary_counts_cover_all_findings_and_reach_audit(self, monkeypatch, tmp_path):
+        from factory.core import audit_writer
+        audit_file = tmp_path / "factory_audit.jsonl"
+        monkeypatch.setattr(audit_writer, "AUDIT_FILE", audit_file)
+        monkeypatch.setattr(audit_writer, "_last_entry_hash", None)
+
+        doc = _EVIDENCIA
+        provider = _FakeProvider(_checkpoints_payload(None))
+        result = ce.evaluate_chunked(
+            PROMPT_PATH, "fda_part11_agent", "v-test", [doc], "sys", "doc", "v1", "doc.pdf",
+            "v" * 64, run_context="production", provider=provider,
+        )
+        summary = result["substantive_support_summary"]
+        assert sum(summary.values()) == len(result["findings"])  # cubre TODOS los findings
+        entry = json.loads(audit_file.read_text(encoding="utf-8").strip().splitlines()[-1])
+        assert entry["data"]["substantive_support_summary"] == summary

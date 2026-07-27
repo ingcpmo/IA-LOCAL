@@ -222,6 +222,45 @@ def _validate_checkpoint_schema(parsed) -> bool:
     return True
 
 
+_POSITIVE_ESTADOS = {"cumple", "cumple_parcialmente"}
+# Valores de substantive_support. UNKNOWN no es un estado alcanzable por el
+# motor (las 4 ramas de consolidacion lo fijan siempre): existe para que un
+# Finding sin veredicto -- historico o construido por otro codigo -- se
+# CUENTE como desconocido en vez de colarse como NOT_APPLICABLE.
+SUBSTANTIVE_SUPPORT_VALUES = ("SUPPORTED", "NOT_SUPPORTED", "NOT_APPLICABLE", "UNKNOWN")
+
+
+def _compute_substantive_support(estado, substantive_evidence_accepted) -> str:
+    """W5 V2 Fase F (cableado de D a decision, 2026-07-25). Veredicto
+    determinista: un estado positivo (cumple/cumple_parcialmente) solo se
+    presenta como sustentado si la evidencia sustantiva fue aceptada
+    (A^B^C^D==MET, ver semantic_evidence_verification.ABCDResult.
+    substantive_evidence_accepted). Fail-closed: None/False para un positivo
+    -> NOT_SUPPORTED (solo True explicito -> SUPPORTED). Un estado no positivo
+    (no_cumple/evidencia_insuficiente/no_aplica) no es sujeto de sustento
+    sustantivo -> NOT_APPLICABLE."""
+    if estado not in _POSITIVE_ESTADOS:
+        return "NOT_APPLICABLE"
+    return "SUPPORTED" if substantive_evidence_accepted is True else "NOT_SUPPORTED"
+
+
+def _positive_conclusion_eligibility(req_id: str) -> str:
+    """Gobernanza de fuente por requisito (W5 V2 §10). Lee el campo real del
+    Requirement Evidence Pack -- hasta 2026-07-27 este campo existia en el
+    catalogo y en el schema para los 19 requisitos, y NINGUN codigo lo leia.
+
+    Fail-closed: un requisito sin entrada en el catalogo no tiene fuente
+    gobernada, asi que no puede sostener ninguna conclusion -> BLOCKED."""
+    from factory.regulatory.requirement_catalog.requirement_catalog_loader import (
+        CatalogValidationError, get_requirement,
+    )
+    try:
+        entry = get_requirement(req_id)
+    except CatalogValidationError:
+        return "BLOCKED"
+    return entry.get("positive_conclusion_eligibility") or "BLOCKED"
+
+
 def _normalize(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip().lower()
 
@@ -646,8 +685,20 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     )
 
     findings: list[Finding] = []
+    # W5 V2 Fase F (cierre del hueco de verified_conclusions, 2026-07-25):
+    # indice req_id -> Finding ya consolidado, para que la degradacion de la
+    # conclusion verificada lea el veredicto ABCD YA DECIDIDO aqui y no
+    # re-derive D por su cuenta (una sola autoridad de decision).
+    finding_by_req: dict[str, Finding] = {}
+    # P1 (2026-07-27): un req_id repetido en el prompt haria que el segundo
+    # Finding sobrescribiera al primero en el indice. `findings` conserva
+    # ambos; estos req_id se marcan para que la conclusion verificada nunca
+    # se decida sobre un indice ambiguo.
+    duplicate_req_ids: set[str] = set()
     contradictions = []
     for cp in meta["checkpoints"]:
+        if cp["req_id"] in finding_by_req:
+            duplicate_req_ids.add(cp["req_id"])
         req_id, label = cp["req_id"], cp["label"]
         all_candidates = [c for c in by_req.get(req_id, []) if c["anchored"]]
         # Fix 2026-07-16: separar afirmaciones POSITIVAS (con cita real,
@@ -680,6 +731,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     confianza="baja", agente_responsable=agent_id, revision_humana_requerida=True,
                     agent_version=agent_version, prompt_version=meta["prompt_version"],
                     model=model_name, verifier_version=meta["verifier_version"],
+                    substantive_support="NOT_APPLICABLE",  # no_cumple no es sujeto de sustento sustantivo
                 ))
             else:
                 # Fix TE-01: si existe algun fallo tecnico de ejecucion SIN
@@ -715,7 +767,9 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     agent_version=agent_version, prompt_version=meta["prompt_version"],
                     model=model_name, verifier_version=meta["verifier_version"],
                     technical_execution_failure_pending=any_unresolved_technical_failure,
+                    substantive_support="NOT_APPLICABLE",  # evidencia_insuficiente no es sujeto de sustento sustantivo
                 ))
+            finding_by_req[req_id] = findings[-1]
             continue
 
         if len(distinct_estados) > 1:
@@ -733,7 +787,12 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 confianza="media", agente_responsable=agent_id, revision_humana_requerida=True,
                 agent_version=agent_version, prompt_version=meta["prompt_version"],
                 model=model_name, verifier_version=meta["verifier_version"],
+                # Una contradiccion abierta (cumple vs no_cumple) nunca esta
+                # sustancialmente sustentada mientras no se resuelva, sin
+                # importar D de un candidato individual.
+                substantive_support="NOT_SUPPORTED",
             ))
+            finding_by_req[req_id] = findings[-1]
             continue
 
         best = candidates[0]
@@ -741,6 +800,13 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         if not_observed:
             brecha += (f" ({len(not_observed)} seccion(es) adicionales no trataron este checkpoint — "
                        "not_observed_in_chunk, no cuentan como evidencia en contra.)")
+        # W5 V2 Fase F (cableado de D a decision): un estado positivo cuya
+        # evidencia sustantiva no fue aceptada (D != MET, incl. None por
+        # checkpoint reanudado pre-fase) queda NOT_SUPPORTED -- nunca se
+        # presenta como sustentado (revision_humana_requerida ya es True).
+        substantive_support = _compute_substantive_support(
+            best["estado"], best.get("substantive_evidence_accepted"),
+        )
         findings.append(Finding(
             sistema=sistema, documento=documento, version=version, archivo=archivo,
             pagina_o_seccion=f"pag {best['page_start']}-{best['page_end']} (chunk {best['chunk_index']})",
@@ -758,17 +824,53 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             d_sufficiency=best.get("d_sufficiency"),
             substantive_evidence_accepted=best.get("substantive_evidence_accepted"),
             operational_result=best.get("operational_result"),
+            substantive_support=substantive_support,
         ))
+        finding_by_req[req_id] = findings[-1]
 
     technical_execution_failures = [
         {"chunk_index": ce["chunk_index"], "task_id": ce["task_id"], "error": ce["error"]}
         for ce in chunk_executions if ce.get("technical_execution_failure")
     ]
 
+    # W5 V2 Fase F (cableado de D a decision): superficie la decision para
+    # que un reporte/consumidor pueda actuar sobre "N hallazgos positivos NO
+    # sustentados sustantivamente" sin re-derivarlo del detalle por finding.
+    # UNKNOWN explicito: un Finding sin veredicto se cuenta como desconocido,
+    # nunca se absorbe en NOT_APPLICABLE (eso ocultaria el vacio).
+    substantive_support_summary = {k: 0 for k in SUBSTANTIVE_SUPPORT_VALUES}
+    for f in findings:
+        key = f.substantive_support if f.substantive_support in SUBSTANTIVE_SUPPORT_VALUES else "UNKNOWN"
+        substantive_support_summary[key] += 1
+
+    # W5 V2 §13.4.5 / gate "0 fallos recuperables bloqueando toda la corrida":
+    # una excepcion consolidando UN requisito no puede tumbar la corrida
+    # entera. Se registra como excepcion gobernada y el requisito queda
+    # EVALUATION_INCOMPLETE.
+    governed_exceptions = []
     verified_conclusions = None
     if use_verified_pipeline:
-        from factory.regulatory.absence_consolidator import consolidate as _consolidate
-        from factory.regulatory.applicability import applicability as _applicability
+        from factory.regulatory.absence_consolidator import (
+            DocumentConclusion as _DocumentConclusion,
+            apply_conclusion_preconditions as _apply_preconditions,
+            consolidate as _consolidate,
+        )
+        from factory.regulatory.applicability import (
+            applicability as _applicability,
+            matrix_approved as _matrix_approved,
+            require_matrix_approved_for_production as _require_matrix_approved,
+        )
+        # §13.3 "aplicabilidad aprobada": guardia ya implementada y hasta
+        # 2026-07-27 sin ningun llamador de runtime. Si la matriz no esta
+        # human_confirmed, solo run_context='validation' puede continuar.
+        _require_matrix_approved(run_context)
+        # P2 (2026-07-27): esta guardia NO demuestra que la matriz este
+        # aprobada -- con run_context='validation' pasa con la matriz
+        # pending_human_confirmation. La precondicion §13.3 "aplicabilidad
+        # aprobada" se consulta aparte; darla por cierta aqui afirmaba una
+        # aprobacion humana inexistente.
+        applicability_rule_approved = _matrix_approved()
+        contradicted_req_ids = {c["req_id"] for c in contradictions}
         # coverage_complete=True es real, no asumido: evaluate_chunked() sin
         # checkpoint_store (bloqueado arriba para este flag) siempre procesa
         # TODOS los chunks del documento -- cada uno aporto un registro
@@ -777,17 +879,59 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         verified_conclusions = {}
         for cp in meta["checkpoints"]:
             req_id = cp["req_id"]
-            app = _applicability(req_id, document_type)
-            conclusion = _consolidate(
-                req_id, document_type, app["value"], verified_records_by_req.get(req_id, []),
-                coverage_complete=True,
-            )
+            if req_id in duplicate_req_ids:
+                # P1: un req_id duplicado en el prompt hace que finding_by_req
+                # (y verified_conclusions) conserven solo el ultimo. Ningun
+                # Finding se pierde -- `findings` los lleva todos -- pero la
+                # conclusion seria no determinista, asi que se degrada y se
+                # registra como excepcion gobernada en vez de resolverse a
+                # ciegas.
+                if req_id not in verified_conclusions:
+                    governed_exceptions.append({
+                        "req_id": req_id, "stage": "verified_conclusions",
+                        "exception": "DUPLICATE_REQUIREMENT_CHECKPOINT",
+                        "detail": "req_id repetido en meta['checkpoints']; conclusion no determinista",
+                    })
+                verified_conclusions[req_id] = {
+                    "conclusion": "EVALUATION_INCOMPLETE", "chunks_evaluated": 0,
+                    "chunks_observed": 0, "chunks_review_pending": 0,
+                    "review_flags": ["DUPLICATE_REQUIREMENT_CHECKPOINT"],
+                }
+                continue
+            try:
+                app = _applicability(req_id, document_type)
+                conclusion = _consolidate(
+                    req_id, document_type, app["value"], verified_records_by_req.get(req_id, []),
+                    coverage_complete=True,
+                )
+                finding = finding_by_req.get(req_id)
+                conclusion = _apply_preconditions(
+                    conclusion,
+                    d_sufficiency=finding.d_sufficiency if finding else None,
+                    substantive_evidence_accepted=(
+                        finding.substantive_evidence_accepted if finding else None),
+                    operational_result=finding.operational_result if finding else None,
+                    applicability_value=app["value"],
+                    positive_conclusion_eligibility=_positive_conclusion_eligibility(req_id),
+                    has_open_contradiction=req_id in contradicted_req_ids,
+                    applicability_rule_approved=applicability_rule_approved,
+                )
+            except Exception as exc:  # noqa: BLE001 -- excepcion gobernada, ver arriba
+                governed_exceptions.append({
+                    "req_id": req_id, "stage": "verified_conclusions",
+                    "exception": type(exc).__name__, "detail": str(exc),
+                })
+                conclusion = _DocumentConclusion(
+                    requirement_id=req_id, document_type=document_type,
+                    conclusion="EVALUATION_INCOMPLETE",
+                    review_flags=["CONSOLIDATION_EXCEPTION"],
+                )
             verified_conclusions[req_id] = {
                 "conclusion": conclusion.conclusion,
                 "chunks_evaluated": conclusion.chunks_evaluated,
                 "chunks_observed": conclusion.chunks_observed,
                 "chunks_review_pending": conclusion.chunks_review_pending,
-                "review_flags": conclusion.review_flags,
+                "review_flags": list(conclusion.review_flags),
             }
 
     result = {
@@ -808,6 +952,8 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         "ollama_version": ollama_version_str,
         "preflight_metadata": preflight_metadata,
         "technical_execution_failures": technical_execution_failures,
+        "substantive_support_summary": substantive_support_summary,
+        "governed_exceptions": governed_exceptions,
         # El analisis (chunk_executions + findings) ya esta completo en este
         # punto independientemente de lo que pase abajo con la persistencia
         # de evidencia -- se declara ANALYSIS_COMPLETE explicitamente antes
@@ -895,6 +1041,14 @@ def _write_audit_event(result: dict) -> None:
                 "chunks_ok": sum(1 for ce in result["chunk_executions"] if ce["ok"]),
                 "contradictions": len(result["contradictions"]),
                 "findings_count": len(result["findings"]),
+                # W5 V2 Fase F (cableado de D): hallazgos positivos NO
+                # sustentados sustantivamente quedan en la cadena de
+                # auditoria, nunca solo en el JSON de salida.
+                "substantive_support_summary": result.get("substantive_support_summary"),
+                # W5 V2 §13.4: toda excepcion gobernada queda en la cadena de
+                # auditoria -- un requisito que no se pudo consolidar nunca
+                # desaparece en silencio del registro de la corrida.
+                "governed_exceptions": result.get("governed_exceptions"),
                 "model": result["model"],
                 "model_digest": result["model_digest"],
                 # Fase 5.3 -- nunca oculta un fallo de persistencia de
