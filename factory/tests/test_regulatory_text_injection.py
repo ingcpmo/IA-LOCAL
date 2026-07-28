@@ -63,16 +63,21 @@ class TestBuildPromptInjectsRegulatoryText:
         prompt = ce.build_prompt(meta, "documento de prueba")
         assert prompt.count("Texto normativo canonico") == len(meta["checkpoints"])
 
-    def test_falls_back_gracefully_for_checkpoint_outside_catalog(self):
-        """Un req_id inventado en un prompt sintetico no debe romper la
-        construccion -- solo omite la linea de texto normativo para ese
-        checkpoint, conserva el label."""
+    def test_checkpoint_outside_catalog_is_excluded_from_prompt(self):
+        """Gate 4 (2026-07-28): un req_id sin Evidence Pack NO viaja al
+        modelo con solo label -- queda EXCLUIDO del prompt.
+
+        Este test verificaba antes lo contrario ('falls back gracefully'):
+        codificaba el fail-open que la auditoria identifico como defecto
+        real. El gate declara 'FAIL: pack incompleto -> bloquea la llamada'
+        y el codigo hacia lo opuesto."""
         meta = {
             "common_contract": "contrato de prueba",
             "checkpoints": [{"req_id": "REQ_INVENTADO_XYZ", "label": "checkpoint de prueba"}],
         }
         prompt = ce.build_prompt(meta, "doc")
-        assert "REQ_INVENTADO_XYZ: checkpoint de prueba" in prompt
+        assert "REQ_INVENTADO_XYZ" not in prompt
+        assert "checkpoint de prueba" not in prompt
         assert "Texto normativo canonico" not in prompt
 
     def test_governed_yaml_common_contract_and_checkpoints_untouched(self):
@@ -136,13 +141,15 @@ class TestBuildPromptInjectsEvidenceMinCriteria:
         prompt = ce.build_prompt(meta, "documento de prueba")
         assert prompt.count("Criterios minimos de evidencia") == len(meta["checkpoints"])
 
-    def test_falls_back_gracefully_for_checkpoint_outside_catalog(self):
+    def test_checkpoint_outside_catalog_gets_no_criteria_because_it_is_blocked(self):
+        """Gate 4: sin pack no hay criterios PORQUE el checkpoint ni siquiera
+        entra al prompt (antes entraba con solo label)."""
         meta = {
             "common_contract": "contrato de prueba",
             "checkpoints": [{"req_id": "REQ_INVENTADO_XYZ", "label": "checkpoint de prueba"}],
         }
         prompt = ce.build_prompt(meta, "doc")
-        assert "REQ_INVENTADO_XYZ: checkpoint de prueba" in prompt
+        assert "REQ_INVENTADO_XYZ" not in prompt
         assert "Criterios minimos de evidencia" not in prompt
 
     def test_common_contract_asks_for_criterion_assessments(self):

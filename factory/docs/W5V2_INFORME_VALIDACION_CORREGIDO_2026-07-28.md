@@ -133,7 +133,7 @@ Sin truncamientos. `IMPL` = IMPLEMENTATION_VALIDATED, `PILOT` = PILOT_VALIDATED,
 | 1 | Inventario 100%, 0 omitidos | `GLOBAL_PASS` | 14/14 en allowlist, estado terminal |
 | 2 | Originales con SHA-256, 0 sobrescritos | `PARTIAL` | Hashes registrados e íntegros; la verificación **continua** no está programada |
 | 3 | 100% requisitos con fuente gobernada (`LOCAL_CANONICAL_COPY_VERIFIED`) | **`FAIL`** | `source_registry_entry_v1.json` fija `regulatory_currency_status` a un enum de **un solo valor** (`pending_reverification`): 0/3 fuentes pueden alcanzar el estado exigido |
-| 4 | 100% prompts con Evidence Pack completo | **`FAIL`** | El gate exige *bloquear la llamada* si el pack está incompleto. La implementación hace lo contrario: fallback silencioso a solo `label` (`chunked_engine.py:135-141`, `166-169`) — **fail-open** |
+| 4 | 100% prompts con Evidence Pack completo | `GLOBAL_PASS` *(era FAIL; corregido el 2026-07-28)* | El fail-open está cerrado: `evidence_pack_gate()` excluye del prompt todo req_id sin pack completo y, si ninguno lo tiene, no se hace ninguna llamada. Los 19/19 packs del catálogo pasan el gate, así que las 3 familias de prompts gobernados envían su contrato íntegro. La ruta de bloqueo está probada por mutación, no por haberse disparado en producción |
 | 5 | Fuentes con URL, versión, SHA-256 | `PARTIAL` | Schema completo, pero `version="NO_DISPONIBLE"` en eCFR y 2 URLs que no apuntan al artefacto gobernado |
 | 6 | Evidencias con anclaje documental (validación A) | `PILOT_PASS` | Ejercitado en corrida real (chunk 19); 1 agente / 1 documento |
 | 7 | Conclusiones positivas con A/B/C/D | `PILOT_PASS` | Incondicional y fail-closed; ejercitado en corrida real |
@@ -166,13 +166,17 @@ Sin truncamientos. `IMPL` = IMPLEMENTATION_VALIDATED, `PILOT` = PILOT_VALIDATED,
 
 | Estado | Gates | n |
 |---|---|---|
-| `GLOBAL_PASS` | 1, 13, 14 | **3** |
+| `GLOBAL_PASS` | 1, 4, 13, 14 | **4** |
 | `PILOT_PASS` | 6, 7, 9, 10, 12, 16, 17, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29 | **17** |
 | `PARTIAL` | 2, 5, 8, 11, 15, 18, 20, 30 | **8** |
-| `FAIL` | 3, 4 | **2** |
+| `FAIL` | 3 | **1** |
 | `BLOCKED` | — | **0** |
 | `NOT_EXECUTED` | 31 | **1** |
 | **Total** | | **31** |
+
+> **Actualización 2026-07-28 (posterior a la primera emisión):** el gate 4
+> pasó de `FAIL` a `GLOBAL_PASS` al cerrarse su fail-open (pendiente 7 de
+> §10). El gate 3 sigue en `FAIL` y no depende de código.
 
 > **Corrección explícita al informe anterior:** los gates **23–30 no son PASS
 > global**. Los ocho derivan su evidencia del mismo y único candidato
@@ -286,7 +290,7 @@ Listados para trazabilidad. Ninguno se ejecutó aquí.
 | 4 | Corregir `official_source_url` de MHRA y de eCFR | Datos | #3 |
 | 5 | Revisión humana documentada de los 19 `evidence_min_criteria` | Humano | — |
 | 6 | Adjudicación de los 25 `review_required` + 3 `rejected_by_verifier` de URS v2.1 (Fase H) | Humano | — |
-| 7 | Corregir el fail-open del gate 4 (`_lookup_regulatory_text`) | Código | Aprobación |
+| ~~7~~ | ~~Corregir el fail-open del gate 4~~ — **CERRADO 2026-07-28**: `evidence_pack_gate()` en `chunked_engine.py`; 15 tests (mutación + extremo a extremo); suite 1411, Gate 0 PASS=5 | Código | — |
 | 8 | Actualizar el `production_status`/disclaimer desactualizado de `requirements.yaml` | Documentación | — |
 | 9 | Investigar los 2 FAIL del candidato (`referencias_cruzadas`, `sin_duplicaciones`): ¿defecto del extractor o del documento? | Investigación | — |
 | 10 | Identidad formal de AGT-RSG, AGT-EVD, AGT-VER, AGT-GAP | Diseño | Decidir schemas |

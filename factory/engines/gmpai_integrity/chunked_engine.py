@@ -132,11 +132,12 @@ def _lookup_regulatory_text(req_id: str) -> str | None:
     antipatrón confirmado del baseline de 121 llamadas -- causa raíz del
     falso positivo ANNEX11_4).
 
-    Retorna None si el req_id no está en el catálogo (p.ej. checkpoints de
-    agentes/prompts todavía no cubiertos, como traceability) -- fallback
-    silencioso a solo label, NUNCA rompe la construcción del prompt por
-    esto. Solo se captura CatalogValidationError/ImportError (fallos de
-    catálogo ya cubiertos por sus propios tests dedicados,
+    Retorna None si el req_id no está en el catálogo o si el catálogo no
+    valida. Este None YA NO degrada el prompt en silencio: desde el cierre
+    del gate 4 (2026-07-28) es `evidence_pack_gate()` quien decide, y un
+    req_id sin pack completo queda EXCLUIDO del prompt en vez de viajar con
+    solo label. Solo se captura CatalogValidationError/ImportError (fallos
+    de catálogo ya cubiertos por sus propios tests dedicados,
     test_requirement_catalog_loader.py) -- cualquier otro error se
     propaga, no se enmascara."""
     try:
@@ -181,13 +182,116 @@ def _lookup_evidence_min_criteria(req_id: str) -> list[str] | None:
     return list(criteria) if criteria else None
 
 
+# ---------------------------------------------------------------------------
+# GATE 4 (ACCEPTANCE_AND_VALIDATION_GATES.md): "100% prompts con Evidence Pack
+# completo -- validacion del pack ANTES de invocar la LLM. FAIL: pack
+# incompleto. Efecto: BLOQUEA LA LLAMADA, NO LA CORRIDA."
+#
+# Defecto que esto cierra (auditoria del 2026-07-28, informe de validacion
+# corregido §5): _lookup_regulatory_text() y _lookup_evidence_min_criteria()
+# devolvian None en silencio y build_prompt() seguia adelante con solo
+# req_id + label -- es decir, FAIL-OPEN, exactamente el antipatron del
+# baseline de 121 llamadas que la Fase E existe para erradicar (§3.1.5-6 del
+# plan: "una LLM NUNCA recibe unicamente requirement_id + descripcion breve").
+# El gate declaraba una cosa y el codigo hacia la contraria.
+#
+# Campos exigidos: son los que el prompt REALMENTE inyecta. No se exige aqui
+# `ready_for_regulatory_use` ni `runtime_eligibility=ENABLED_FULL`: esos
+# gobiernan la LIBERACION (FORMAL_RELEASE_GATE), no la completitud del pack
+# para construir el prompt. Confundirlos bloquearia hoy los 19 requisitos y
+# dejaria el motor sin poder evaluar nada en contexto de validacion.
+_EVIDENCE_PACK_REQUIRED = (
+    "citation.citation_text",
+    "citation.section_page_paragraph",
+    "source_id->registry",
+    "evidence_min_criteria",
+)
+
+
+@dataclass(frozen=True)
+class EvidencePackVerdict:
+    """Resultado de la validacion del Evidence Pack de UN req_id."""
+    req_id: str
+    complete: bool
+    missing: tuple[str, ...]
+    detail: str
+
+
+def validate_evidence_pack(req_id: str) -> EvidencePackVerdict:
+    """Gate 4, fail-CLOSED: un req_id solo llega a la LLM si su Evidence Pack
+    trae todo lo que el prompt inyecta. Cualquier ausencia -> pack incompleto.
+
+    Nunca lanza: devuelve un veredicto. Un catalogo ausente o invalido
+    (ImportError / CatalogValidationError) es pack incompleto para TODOS los
+    req_id -- que es el lado seguro: sin catalogo no hay texto normativo que
+    inyectar, y evaluar sin el es justo lo que produjo el falso positivo de
+    ANNEX11_4."""
+    try:
+        from factory.regulatory.requirement_catalog.requirement_catalog_loader import (
+            CatalogValidationError, get_requirement, get_source,
+        )
+    except ImportError as e:
+        return EvidencePackVerdict(
+            req_id, False, _EVIDENCE_PACK_REQUIRED,
+            f"catalogo de requisitos no disponible ({type(e).__name__}: {e})",
+        )
+    try:
+        entry = get_requirement(req_id)
+    except CatalogValidationError as e:
+        return EvidencePackVerdict(
+            req_id, False, _EVIDENCE_PACK_REQUIRED,
+            f"sin entrada valida en el catalogo ({e})",
+        )
+
+    missing: list[str] = []
+    citation = entry.get("citation") or {}
+    if not str(citation.get("citation_text") or "").strip():
+        missing.append("citation.citation_text")
+    if not str(citation.get("section_page_paragraph") or "").strip():
+        missing.append("citation.section_page_paragraph")
+    try:
+        source = get_source(entry["source_id"])
+        if not str(source.get("official_source_description") or "").strip():
+            missing.append("source_id->registry")
+    except (CatalogValidationError, KeyError):
+        missing.append("source_id->registry")
+    if not (entry.get("evidence_min_criteria") or []):
+        missing.append("evidence_min_criteria")
+
+    if missing:
+        return EvidencePackVerdict(
+            req_id, False, tuple(missing),
+            "Evidence Pack incompleto: faltan " + ", ".join(missing),
+        )
+    return EvidencePackVerdict(req_id, True, (), "Evidence Pack completo")
+
+
+def evidence_pack_gate(meta: dict) -> tuple[list[dict], list[EvidencePackVerdict]]:
+    """Particiona los checkpoints del prompt en (admitidos, bloqueados).
+
+    Los bloqueados NO se envian al modelo. La corrida continua con los
+    admitidos -- el gate bloquea la llamada, nunca la corrida."""
+    admitted, blocked = [], []
+    for cp in meta["checkpoints"]:
+        verdict = validate_evidence_pack(cp["req_id"])
+        if verdict.complete:
+            admitted.append(cp)
+        else:
+            blocked.append(verdict)
+    return admitted, blocked
+
+
 def build_prompt(meta: dict, doc_text: str, max_chars: int = CHUNK_MAX_CHARS) -> str:
+    """Construye el prompt SOLO con los checkpoints cuyo Evidence Pack esta
+    completo (gate 4). Un checkpoint sin pack no aparece en el prompt: no se
+    le pregunta al modelo por un requisito que no le podemos describir."""
     doc = sanitize_document(doc_text)
     truncated = len(doc) > max_chars
     if truncated:
         doc = doc[:max_chars]
+    admitted, _blocked = evidence_pack_gate(meta)
     lines = []
-    for c in meta["checkpoints"]:
+    for c in admitted:
         lines.append(f"  - {c['req_id']}: {c['label']}")
         reg_text = _lookup_regulatory_text(c["req_id"])
         if reg_text:
@@ -282,10 +386,15 @@ def _count_contract_criteria(meta: dict) -> int:
     """Numero total de criterios minimos de evidencia que el prompt pedira
     evaluar, leido del MISMO catalogo que build_prompt() usa para
     construirlo. Es la unica fuente del dimensionamiento -- si el catalogo
-    gana criterios, el presupuesto sube solo."""
+    gana criterios, el presupuesto sube solo.
+
+    Cuenta los checkpoints ADMITIDOS por el gate 4, que son los unicos que
+    build_prompt() escribe: contar los bloqueados dimensionaria el
+    presupuesto para un contrato que nunca se envia."""
+    admitted, _blocked = evidence_pack_gate(meta)
     return sum(
         len(_lookup_evidence_min_criteria(cp["req_id"]) or [])
-        for cp in meta["checkpoints"]
+        for cp in admitted
     )
 
 
@@ -766,8 +875,14 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     # Presupuesto de salida derivado del contrato REAL del prompt + guardia
     # de contexto, ambos ANTES de la primera inferencia (2026-07-28). Ningun
     # numero se escribe a mano: si el catalogo gana criterios, sube solo.
+    # Gate 4 (2026-07-28): se evalua UNA vez por corrida, antes de la primera
+    # inferencia. Los req_id sin Evidence Pack completo no entran al prompt y
+    # no generan ninguna llamada; la corrida sigue con los admitidos.
+    admitted_checkpoints, blocked_packs = evidence_pack_gate(meta)
+    blocked_req_ids = {v.req_id: v for v in blocked_packs}
+
     n_criteria = _count_contract_criteria(meta)
-    num_predict = output_token_budget(len(meta["checkpoints"]), n_criteria)
+    num_predict = output_token_budget(len(admitted_checkpoints), n_criteria)
     context_window = getattr(provider, "context_window", None)
     token_budget = _assert_token_budget_fits(chunks, meta, num_predict, context_window)
     token_budget["contract_criteria"] = n_criteria
@@ -828,6 +943,18 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         "token_budget": token_budget,
         "retry_technical_failures_requested": retry_technical_failures,
         "retried_chunk_indices": [],
+        # Gate 4 (evidence_pack_validation): queda SIEMPRE en el preflight,
+        # tambien cuando no bloquea nada -- un dossier debe poder demostrar
+        # que el gate se evaluo, no solo que no salto.
+        "evidence_pack_gate": {
+            "checkpoints_total": len(meta["checkpoints"]),
+            "admitted_req_ids": [cp["req_id"] for cp in admitted_checkpoints],
+            "blocked": [
+                {"req_id": v.req_id, "missing": list(v.missing), "detail": v.detail}
+                for v in blocked_packs
+            ],
+            "all_checkpoints_blocked": not admitted_checkpoints,
+        },
     }
 
     by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
@@ -904,7 +1031,19 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         technical_execution_failure = False
         failure_reason = None
         raw_response_text = ""
-        if not text.strip():
+        if not admitted_checkpoints:
+            # Gate 4: ningun checkpoint tiene Evidence Pack completo, asi que
+            # no hay nada que preguntarle al modelo. Se BLOQUEA la llamada
+            # (no la corrida): el chunk queda registrado, la corrida termina
+            # y cada requisito sale como no evaluado, nunca como incumplido.
+            # No es technical_execution_failure: no fallo nada tecnico, se
+            # aplico un control de gobernanza.
+            chunk_result = None
+            error = (
+                "evidence_pack_gate: llamada bloqueada -- ningun checkpoint del prompt "
+                "tiene Evidence Pack completo (gate 4)"
+            )
+        elif not text.strip():
             chunk_result = None
             error = "chunk sin texto extraible"
         else:
@@ -1012,7 +1151,14 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             reason = "technical_execution_failure" if technical_execution_failure else "checkpoint_missing_from_response"
             for req_id in verified_records_by_req:
                 if req_id not in responded_req_ids:
-                    verified_records_by_req[req_id].append(rejected_record(f"vrec-{task_id}-{req_id}", reason))
+                    # Gate 4: un requisito bloqueado por pack incompleto nunca
+                    # se registra como "el modelo no lo devolvio" -- jamas se
+                    # le pregunto. La causa real viaja en el registro.
+                    req_reason = (
+                        "evidence_pack_incomplete" if req_id in blocked_req_ids else reason
+                    )
+                    verified_records_by_req[req_id].append(
+                        rejected_record(f"vrec-{task_id}-{req_id}", req_reason))
 
         execution = {
             "run_id": run_id, "task_id": task_id, "chunk_index": chunk["chunk_index"],
@@ -1083,6 +1229,45 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         if cp["req_id"] in finding_by_req:
             duplicate_req_ids.add(cp["req_id"])
         req_id, label = cp["req_id"], cp["label"]
+
+        # Gate 4: requisito cuya llamada se BLOQUEO por Evidence Pack
+        # incompleto. Sale explicitamente como NO EVALUADO. Nunca puede caer
+        # en las ramas de abajo: sin candidatos, la rama de ausencia lo
+        # convertiria en 'no_cumple / mayor' -- un incumplimiento afirmado
+        # sobre un requisito que jamas se le mostro al modelo.
+        if req_id in blocked_req_ids:
+            verdict = blocked_req_ids[req_id]
+            finding = Finding(
+                sistema=sistema, documento=documento, version=version, archivo=archivo,
+                pagina_o_seccion="(no evaluado: llamada bloqueada por el gate 4)",
+                requisito_regulatorio=f"{req_id} — {label}",
+                evidencia_exacta="",
+                estado="evidencia_insuficiente",
+                brecha=(
+                    "EVIDENCE_PACK_INCOMPLETE: este requisito NO fue evaluado. Su Evidence "
+                    f"Pack no esta completo ({verdict.detail}), asi que el checkpoint no se "
+                    "incluyo en el prompt y no hubo ninguna llamada al modelo. La ausencia de "
+                    "hallazgo NO es evidencia de cumplimiento ni de incumplimiento: es ausencia "
+                    "de evaluacion. Completar el pack en el catalogo de requisitos y re-ejecutar."
+                ),
+                severidad="no_determinada",
+                riesgo="No evaluado: el requisito nunca se sometio al modelo (gate 4).",
+                recomendacion=(
+                    f"Completar en requirements.yaml los campos faltantes de {req_id} "
+                    f"({', '.join(verdict.missing)}) y volver a ejecutar este documento."
+                ),
+                confianza="baja",
+                agente_responsable=agent_id,
+                revision_humana_requerida=True,
+                agent_version=agent_version,
+                prompt_version=meta.get("prompt_version"),
+                model=model_name,
+                verifier_version=meta.get("verifier_version"),
+            )
+            findings.append(finding)
+            finding_by_req.setdefault(req_id, finding)
+            continue
+
         all_candidates = [c for c in by_req.get(req_id, []) if c["anchored"]]
         # Fix 2026-07-16: separar afirmaciones POSITIVAS (con cita real,
         # has_evidence=True) de no_cumple "por defecto" sin cita
