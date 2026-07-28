@@ -1,0 +1,203 @@
+{
+  "status": "QUALIFIED_FOR_VALIDATION_ONLY",
+  "evaluated_at": "2026-07-28T13:32:46+00:00",
+  "fingerprint": {
+    "model_name": "qwen2.5:7b-instruct-q4_K_M",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "prompt_versions": {
+      "alcoa_prompts.yaml": "1.1.0",
+      "annex11_prompts.yaml": "1.1.0",
+      "part11_prompts.yaml": "1.1.0",
+      "traceability_prompts.yaml": "1.0.0"
+    },
+    "schema_version": "checkpoint_llm_response_v1",
+    "schema_sha256": "00ccc255e3b6397f42ab2ff0bbe516eb487f90a8a4530603d631f92f8c40a8bf",
+    "catalog_version": "1.0",
+    "catalog_sha256": "6486405abecd729d85e32ec4a9af03cd13ad144162ebcb300ee9d25016202b8d",
+    "num_ctx": 16384,
+    "temperature": 0.0,
+    "chunk_max_chars": 6000,
+    "chunk_overlap_chars": 500,
+    "output_token_budget_formula": {
+      "tokens_per_criterion": 130,
+      "tokens_per_checkpoint": 60,
+      "json_overhead": 120
+    }
+  },
+  "previous_fingerprint": null,
+  "metrics": [
+    {
+      "name": "schema_valid_rate",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "14 casos del Golden Dataset (schema/contrato de salida)"
+    },
+    {
+      "name": "citation_anchor_precision",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "3 casos: evidence_from_wrong_document, invented_citation, nonexistent_clause"
+    },
+    {
+      "name": "semantic_precision",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "2 casos: ANNEX11_4_reference_list, evidence_out_of_context"
+    },
+    {
+      "name": "semantic_recall",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "1 casos: incomplete_coverage_never_gap"
+    },
+    {
+      "name": "false_positive_rate",
+      "value": 0.0,
+      "threshold": 0.0,
+      "measured": true,
+      "passed": true,
+      "basis": "2 casos: ANNEX11_4_reference_list, evidence_out_of_context"
+    },
+    {
+      "name": "false_negative_rate",
+      "value": 0.0,
+      "threshold": 0.0,
+      "measured": true,
+      "passed": true,
+      "basis": "1 casos: incomplete_coverage_never_gap"
+    },
+    {
+      "name": "contradiction_detection_rate",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "1 casos: contradiction_between_sections"
+    },
+    {
+      "name": "remediation_acceptance_rate",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "7 casos: partial_evidence_sufficiency, sufficiency_duplicate_criterion_rejected_atomically, sufficiency_incomplete_coverage_never_guessed, sufficiency_invented_criterion_rejected_atomically, sufficiency_met_all_criteria_anchored, sufficiency_met_without_evidence_rejected_atomically, sufficiency_not_met_all_criteria_unmet"
+    },
+    {
+      "name": "unsupported_claim_rate",
+      "value": 0.0,
+      "threshold": 0.0,
+      "measured": true,
+      "passed": true,
+      "basis": "3 casos: evidence_from_wrong_document, invented_citation, nonexistent_clause"
+    },
+    {
+      "name": "latency_p50",
+      "value": null,
+      "threshold": null,
+      "measured": false,
+      "passed": null,
+      "basis": "NOT_MEASURED: requiere una corrida real de inferencia; el Golden Dataset es determinista y no la produce. Nunca se sustituye por 0."
+    },
+    {
+      "name": "latency_p95",
+      "value": null,
+      "threshold": null,
+      "measured": false,
+      "passed": null,
+      "basis": "NOT_MEASURED: requiere una corrida real de inferencia; el Golden Dataset es determinista y no la produce. Nunca se sustituye por 0."
+    },
+    {
+      "name": "tokens_per_task",
+      "value": null,
+      "threshold": null,
+      "measured": false,
+      "passed": null,
+      "basis": "NOT_MEASURED: requiere una corrida real de inferencia; el Golden Dataset es determinista y no la produce. Nunca se sustituye por 0."
+    },
+    {
+      "name": "retry_rate",
+      "value": null,
+      "threshold": null,
+      "measured": false,
+      "passed": null,
+      "basis": "NOT_MEASURED: requiere una corrida real de inferencia; el Golden Dataset es determinista y no la produce. Nunca se sustituye por 0."
+    }
+  ],
+  "golden_dataset": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0,
+    "failed_case_ids": []
+  },
+  "failed_metrics": [],
+  "unmeasured_metrics": [
+    "latency_p50",
+    "latency_p95",
+    "tokens_per_task",
+    "retry_rate"
+  ],
+  "priority_verdicts": [
+    {
+      "priority": "cero_citas_inventadas",
+      "metrics": [
+        "citation_anchor_precision",
+        "unsupported_claim_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "menor_tasa_falsos_positivos",
+      "metrics": [
+        "false_positive_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "menor_tasa_falsos_negativos_criticos",
+      "metrics": [
+        "false_negative_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "cumplimiento_de_schema",
+      "metrics": [
+        "schema_valid_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "estabilidad",
+      "metrics": [
+        "contradiction_detection_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "calidad_de_remediacion",
+      "metrics": [
+        "remediation_acceptance_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "rendimiento",
+      "metrics": [
+        "latency_p50",
+        "latency_p95",
+        "tokens_per_task",
+        "retry_rate"
+      ],
+      "verdict": "NOT_MEASURED"
+    }
+  ],
+  "blocking_reason": "4 de 13 metricas sin medir (latency_p50, latency_p95, tokens_per_task, retry_rate): habilita run_context='validation', NUNCA produccion. Para QUALIFIED hace falta una corrida real de inferencia que mida latencia, tokens y reintentos."
+}
