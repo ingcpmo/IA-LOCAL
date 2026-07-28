@@ -35,6 +35,17 @@ _CROSS_REFERENCE_RE = re.compile(
 _MIN_PARAGRAPH_LEN_FOR_DUPLICATE_CHECK = 20  # evita falsos positivos en lineas cortas (titulos, "N/A", etc.)
 
 
+def _original_full_text(structure: dict) -> str:
+    """Texto del documento ORIGINAL tal como lo modela el extractor:
+    frontmatter (portada, TOC, cabeceras previas a la seccion 1) + los
+    parrafos de cada seccion. Omitir el frontmatter subcuenta las
+    repeticiones estructurales y reintroduce el falso positivo."""
+    lines = list(structure.get("texto_previo_a_primera_seccion") or [])
+    for seccion in structure["secciones"]:
+        lines.extend(seccion.get("parrafos") or [])
+    return "\n".join(lines)
+
+
 def check_section_numbering_sequential(structure: dict) -> dict:
     """Numeración: los números de sección de nivel 1 deben ser
     estrictamente secuenciales (1, 2, 3, ...) y sin duplicados -- mismo
@@ -77,24 +88,56 @@ def check_cross_references_resolve(structure: dict, candidate_full_text: str) ->
     }
 
 
-def check_no_duplicate_paragraphs(candidate_full_text: str) -> dict:
-    """Duplicaciones: un párrafo sustantivo (>= 20 caracteres) que aparece
-    más de una vez en el documento candidato es una señal real de
-    inserción duplicada -- comparación literal determinista, no
-    heurística de similitud."""
-    paragraphs = [
-        p.strip() for p in candidate_full_text.split("\n")
+def _substantive_paragraph_counts(text: str) -> Counter:
+    return Counter(
+        p.strip() for p in text.split("\n")
         if len(p.strip()) >= _MIN_PARAGRAPH_LEN_FOR_DUPLICATE_CHECK
-    ]
-    counts = Counter(paragraphs)
-    duplicated = [p for p, c in counts.items() if c > 1]
-    if duplicated:
+    )
+
+
+def check_no_duplicate_paragraphs(candidate_full_text: str, original_full_text: str) -> dict:
+    """Duplicaciones INTRODUCIDAS por la generación: un párrafo sustantivo
+    (>= 20 caracteres) cuya multiplicidad en el candidato SUPERA la que ya
+    tenía en el documento original.
+
+    Por qué no basta "aparece más de una vez" (defecto real medido el
+    2026-07-28 sobre FS_v1.2): el texto de un PDF paginado repite
+    necesariamente sus encabezados y pies de página una vez por página --
+    el FS tiene 58 páginas y su cabecera aparece 58 veces-- y una
+    especificación funcional repite legítimamente frases de plantilla
+    ("This function implements the following user requirement(s)", 51
+    veces). La regla anterior reportaba 76 párrafos duplicados; los 76 ya
+    estaban en el original con multiplicidad igual o mayor. Cero eran
+    inserciones nuestras.
+
+    La comparación contra el original NO oculta nada: una duplicación
+    realmente introducida por la remediación aumenta la multiplicidad, y
+    eso es exactamente lo que se sigue reportando. Lo que deja de afirmarse
+    es que la estructura propia del documento fuente sea un defecto del
+    candidato."""
+    candidate_counts = _substantive_paragraph_counts(candidate_full_text)
+    original_counts = _substantive_paragraph_counts(original_full_text)
+
+    introduced = {
+        p: (c, original_counts.get(p, 0))
+        for p, c in candidate_counts.items()
+        if c > 1 and c > original_counts.get(p, 0)
+    }
+    if introduced:
+        worst = max(introduced.items(), key=lambda kv: kv[1][0] - kv[1][1])
+        p, (in_candidate, in_original) = worst
         return {
             "status": "FAIL",
-            "reason": f"{len(duplicated)} parrafo(s) duplicado(s) literalmente en el candidato "
-                      f"(ejemplo: {duplicated[0][:80]!r})",
+            "reason": f"{len(introduced)} parrafo(s) con multiplicidad AUMENTADA respecto al "
+                      f"original (ejemplo: {in_original} -> {in_candidate} veces, {p[:80]!r})",
         }
-    return {"status": "PASS", "reason": f"{len(paragraphs)} parrafos evaluados, ninguno duplicado literalmente"}
+    preexisting = sum(1 for p, c in candidate_counts.items() if c > 1)
+    return {
+        "status": "PASS",
+        "reason": f"{sum(candidate_counts.values())} parrafos evaluados, 0 duplicaciones introducidas "
+                  f"({preexisting} repeticion(es) ya presentes en el original: encabezados de pagina "
+                  f"y texto de plantilla, no inserciones)",
+    }
 
 
 def check_terminology_consistency_document_wide() -> dict:
@@ -141,10 +184,17 @@ def evaluate_document_quality(
     intermedios."""
     per_change_results = [evaluate_quality_gates(change, structure) for change in changes]
 
+    # Texto ORIGINAL completo reconstruido desde la misma `structure` que ya
+    # recibe esta funcion -- incluye el frontmatter previo a la seccion 1
+    # (portada, TOC, cabeceras), sin el cual la comparacion de multiplicidad
+    # subcontaria las repeticiones legitimas y volveria a dar falsos
+    # positivos. No hace falta ningun parametro nuevo.
+    original_full_text = _original_full_text(structure)
+
     document_wide_controls = {
         "numeracion_secuencial": check_section_numbering_sequential(structure),
         "referencias_cruzadas": check_cross_references_resolve(structure, candidate_full_text),
-        "sin_duplicaciones": check_no_duplicate_paragraphs(candidate_full_text),
+        "sin_duplicaciones": check_no_duplicate_paragraphs(candidate_full_text, original_full_text),
         "terminologia_documento_completo": check_terminology_consistency_document_wide(),
         "ortografia_gramatica_documento_completo": check_orthography_grammar_document_wide(),
         "tablas_preservadas": check_tables_preserved(),

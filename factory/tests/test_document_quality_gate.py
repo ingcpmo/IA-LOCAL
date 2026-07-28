@@ -101,24 +101,48 @@ class TestCrossReferencesResolve:
 
 
 class TestNoDuplicateParagraphs:
+    """2026-07-28: la regla pasó de "aparece más de una vez" a "multiplicidad
+    AUMENTADA respecto al original". Motivo medido sobre FS_v1.2: 76/76
+    duplicados reportados ya estaban en el documento fuente (encabezados de
+    página × 58 páginas y texto de plantilla), 0 eran inserciones."""
 
     def test_no_duplicates_passes(self):
         text = "Primer parrafo bastante largo y distinto.\nSegundo parrafo tambien distinto y largo."
-        result = check_no_duplicate_paragraphs(text)
+        result = check_no_duplicate_paragraphs(text, text)
         assert result["status"] == "PASS"
 
-    def test_literal_duplicate_paragraph_fails(self):
-        text = (
-            "Este parrafo aparece dos veces en el documento completo.\n"
+    def test_duplicate_introduced_by_generation_fails(self):
+        original = "Este parrafo aparece una sola vez en el original.\n"
+        candidate = (
+            "Este parrafo aparece una sola vez en el original.\n"
             "Otro parrafo distinto que aparece una sola vez aqui.\n"
-            "Este parrafo aparece dos veces en el documento completo.\n"
+            "Este parrafo aparece una sola vez en el original.\n"
         )
-        result = check_no_duplicate_paragraphs(text)
+        result = check_no_duplicate_paragraphs(candidate, original)
         assert result["status"] == "FAIL"
+        assert "1 -> 2 veces" in result["reason"]
+
+    def test_repetition_already_present_in_the_original_does_not_fail(self):
+        """Encabezado de página del documento fuente: se repite en el
+        original y en el candidato con la MISMA multiplicidad. No es un
+        defecto del candidato y no puede reportarse como tal."""
+        header = "MCCPDC - SCADA and PCS MISC. PLC System encabezado de pagina.\n"
+        original = header * 58
+        candidate = header * 58 + "Parrafo nuevo agregado por la remediacion documental.\n"
+        result = check_no_duplicate_paragraphs(candidate, original)
+        assert result["status"] == "PASS"
+        assert "ya presentes en el original" in result["reason"]
+
+    def test_extra_copy_of_a_repeated_header_is_still_caught(self):
+        """Guardia anti-silenciamiento: que una repetición sea legítima en el
+        original NO da licencia para insertar una copia más."""
+        header = "MCCPDC - SCADA and PCS MISC. PLC System encabezado de pagina.\n"
+        result = check_no_duplicate_paragraphs(header * 59, header * 58)
+        assert result["status"] == "FAIL"
+        assert "58 -> 59 veces" in result["reason"]
 
     def test_short_lines_never_flagged_as_duplicates(self):
-        text = "N/A\nN/A\nN/A\n"
-        result = check_no_duplicate_paragraphs(text)
+        result = check_no_duplicate_paragraphs("N/A\nN/A\nN/A\n", "")
         assert result["status"] == "PASS"
 
 
