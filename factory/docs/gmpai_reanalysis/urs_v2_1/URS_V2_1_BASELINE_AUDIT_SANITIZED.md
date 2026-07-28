@@ -33,6 +33,14 @@ adjudicación de `ANNEX11_4`, (3) resolución humana de los 25
 > SAFE_TO_USE_AS_BASELINE = true (Fase H, ver ADJUDICACION_HUMANA_FASE_H_2026-07-23.md)
 > ```
 >
+> **Precisión de alcance (2026-07-28):** ambas banderas se refieren a **esta
+> corrida histórica** (`w5v3-validation-2dbce2f4fb42`, motor anterior,
+> catálogo v1.0), no al baseline formal del W5 V2 actual. Ese sigue en
+> `CURRENT_W5_FORMAL_BASELINE_READY = false` /
+> `FORMAL_BASELINE_STATUS = BLOCKED_PENDING_SOURCE_REVERIFICATION`, porque
+> las 3 fuentes siguen en `PENDING_REVERIFICATION` y los 19 Evidence Packs
+> en `PROVISIONAL_ONLY` — condiciones que esta adjudicación no toca.
+>
 > Esta actualización no modifica los artefactos crudos de la corrida ni el
 > análisis técnico original de este documento (secciones siguientes) — es
 > una capa de decisión humana superpuesta, igual que declara el propio

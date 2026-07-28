@@ -79,3 +79,35 @@ REGULATORY_COMPLIANCE = NOT_DETERMINED
 resuelve el estado de revisión pendiente de la corrida (Fase H), **no**
 declara cumplimiento regulatorio, que sigue siendo una decisión humana
 separada y posterior (QA/Validación, fuera de este roadmap).
+
+---
+
+## Precisión de alcance (reconciliación, 2026-07-28)
+
+Esta nota **no modifica ninguna decisión de arriba**. Precisa a qué se
+refiere el `FORMAL_BASELINE_READY = true` del bloque anterior, porque leído
+sin contexto se confundió con el baseline formal del W5 actual.
+
+`FORMAL_BASELINE_READY = true` aplica **exclusivamente a la corrida
+histórica `w5v3-validation-2dbce2f4fb42`** (URS v2.1, motor anterior,
+catálogo v1.0, 2026-07-23): ninguno de sus registros quedó sin resolución
+humana. Es un hecho cerrado sobre esa corrida.
+
+**No convierte esa corrida en el baseline formal del W5 V2 actual**, que
+sigue bloqueado por razones ajenas a esta adjudicación — las 3 fuentes
+regulatorias siguen sin reverificar y los 19 Evidence Packs siguen
+provisionales:
+
+```
+HUMAN_ADJUDICATION_STATUS          = COMPLETED
+HISTORICAL_URS_BASELINE_EXISTS     = true
+CURRENT_W5_FORMAL_BASELINE_READY   = false
+FORMAL_BASELINE_STATUS             = BLOCKED_PENDING_SOURCE_REVERIFICATION
+SOURCE_VERIFICATION_STATUS         = PENDING_REVERIFICATION  (3/3 fuentes)
+FORMAL_RELEASE_GATE                = BLOCKED
+REGULATORY_COMPLIANCE              = NOT_DETERMINED
+```
+
+No se readjudicó nada: los 25 `review_required` y los 3
+`rejected_by_verifier` quedaron resueltos aquí el 2026-07-23 y esa decisión
+se conserva intacta.
