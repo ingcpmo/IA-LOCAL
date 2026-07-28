@@ -1,0 +1,121 @@
+{
+  "per_change_results": [
+    {
+      "change_id": "COR-5",
+      "controls": {
+        "validez_regulatoria_y_trazabilidad": {
+          "status": "PASS",
+          "reason": "validate_remediation_change() sin errores"
+        },
+        "validez_tecnica_capacidad_inventada": {
+          "status": "PASS",
+          "reason": "no afirma una capacidad ausente del documento fuente"
+        },
+        "redaccion_longitud": {
+          "status": "PASS",
+          "reason": "55 palabras, dentro de [3, 2000]"
+        },
+        "redaccion_verbo_controlado": {
+          "status": "PASS",
+          "reason": "verbo inicial 'agregar' es de acción documental reconocida"
+        },
+        "redaccion_terminologia": {
+          "status": "NOT_EVALUATED",
+          "reason": "sin tabla real de equivalencias terminológicas construida con evidencia -- no se inventa"
+        },
+        "redaccion_ortografia": {
+          "status": "NOT_EVALUATED",
+          "reason": "herramienta determinista de ortografía/gramática no disponible en este entorno"
+        },
+        "coherencia_documental": {
+          "status": "PASS",
+          "reason": "sin negación contradictoria detectada en el documento fuente"
+        },
+        "ausencia_afirmacion_no_demostrada": {
+          "status": "PASS",
+          "reason": "no afirma implementación/verificación ya realizada"
+        }
+      },
+      "applied": true,
+      "human_input_required": false,
+      "failed_controls": []
+    },
+    {
+      "change_id": "COR-2",
+      "controls": {
+        "validez_regulatoria_y_trazabilidad": {
+          "status": "PASS",
+          "reason": "validate_remediation_change() sin errores"
+        },
+        "validez_tecnica_capacidad_inventada": {
+          "status": "PASS",
+          "reason": "no afirma una capacidad ausente del documento fuente"
+        },
+        "redaccion_longitud": {
+          "status": "PASS",
+          "reason": "10 palabras, dentro de [3, 2000]"
+        },
+        "redaccion_verbo_controlado": {
+          "status": "PASS",
+          "reason": "verbo inicial 'incluir' es de acción documental reconocida"
+        },
+        "redaccion_terminologia": {
+          "status": "NOT_EVALUATED",
+          "reason": "sin tabla real de equivalencias terminológicas construida con evidencia -- no se inventa"
+        },
+        "redaccion_ortografia": {
+          "status": "NOT_EVALUATED",
+          "reason": "herramienta determinista de ortografía/gramática no disponible en este entorno"
+        },
+        "coherencia_documental": {
+          "status": "PASS",
+          "reason": "sin negación contradictoria detectada en el documento fuente"
+        },
+        "ausencia_afirmacion_no_demostrada": {
+          "status": "PASS",
+          "reason": "no afirma implementación/verificación ya realizada"
+        }
+      },
+      "applied": true,
+      "human_input_required": false,
+      "failed_controls": []
+    }
+  ],
+  "document_wide_controls": {
+    "numeracion_secuencial": {
+      "status": "PASS",
+      "reason": "8 secciones, numeración secuencial sin huecos ni duplicados"
+    },
+    "referencias_cruzadas": {
+      "status": "FAIL",
+      "reason": "referencias cruzadas a secciones inexistentes en el documento: ['2.1.1', '3.1.12', '3.1.3', '7.1.1']"
+    },
+    "sin_duplicaciones": {
+      "status": "FAIL",
+      "reason": "76 parrafo(s) duplicado(s) literalmente en el candidato (ejemplo: 'MCCPDC - SCADA and PCS MISC. PLC System')"
+    },
+    "terminologia_documento_completo": {
+      "status": "NOT_EVALUATED",
+      "reason": "sin tabla real de equivalencias terminológicas construida con evidencia -- no se inventa (mismo criterio de document_quality_gates.check_writing_terminology_consistency, Fase 6)"
+    },
+    "ortografia_gramatica_documento_completo": {
+      "status": "NOT_EVALUATED",
+      "reason": "herramienta determinista de ortografía/gramática no disponible en este entorno (mismo criterio de document_quality_gates.check_writing_orthography, Fase 6)"
+    },
+    "tablas_preservadas": {
+      "status": "NOT_EVALUATED",
+      "reason": "document_structure_extractor.py no modela tablas como estructura de datos propia todavía -- no se finge una verificación sin esa representación real"
+    },
+    "abreviaturas_y_definiciones": {
+      "status": "NOT_EVALUATED",
+      "reason": "sin glosario real de abreviaturas/definiciones del documento construido con evidencia -- no se inventa una lista"
+    }
+  },
+  "applied": false,
+  "human_input_required": true,
+  "failed_document_wide_controls": [
+    "referencias_cruzadas",
+    "sin_duplicaciones"
+  ],
+  "failed_change_ids": []
+}

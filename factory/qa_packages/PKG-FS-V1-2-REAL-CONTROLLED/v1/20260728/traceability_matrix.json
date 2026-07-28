@@ -1,0 +1,26 @@
+[
+  {
+    "requirement_id": "ANNEX11_7.1",
+    "change_id": "COR-5",
+    "final_status": "AUTO_APPLIED_TO_DRAFT",
+    "included_in_clean_candidate": true,
+    "section_numero": "4",
+    "citation_ids": [
+      "CIT-FSV12-07"
+    ],
+    "revalidation_status": "CLOSED",
+    "revalidation_detail": "proposed_content anclado en el candidato real (match_type=exact)"
+  },
+  {
+    "requirement_id": "ALCOA_CONTEMPORANEOUS",
+    "change_id": "COR-2",
+    "final_status": "AUTO_APPLIED_TO_DRAFT",
+    "included_in_clean_candidate": true,
+    "section_numero": "4",
+    "citation_ids": [
+      "CIT-FSV12-13"
+    ],
+    "revalidation_status": "CLOSED",
+    "revalidation_detail": "proposed_content anclado en el candidato real (match_type=exact)"
+  }
+]

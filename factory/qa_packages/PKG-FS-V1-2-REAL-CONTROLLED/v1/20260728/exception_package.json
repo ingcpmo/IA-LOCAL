@@ -1,0 +1,28 @@
+[
+  {
+    "tipo": "exception_review",
+    "exception_id": "EXC-COR-5",
+    "package_id": "PKG-FS-V1-2-REAL-CONTROLLED",
+    "package_version": 1,
+    "change_id": "COR-5",
+    "change_risk": "HIGH_RISK",
+    "human_review_decision": "ACCEPTED_WITH_JUSTIFICATION",
+    "responsible": "Cesar (ing_cpmo)",
+    "justification": "Se acepta COR-5 unicamente para su incorporacion en el borrador candidato.\n\nEl FS_v1.2 ya describe capacidades de archivo y consulta de datos, alarmas y eventos; sin embargo, debe incorporar de forma explicita los criterios de retencion, respaldo, prueba de restauracion y proteccion de los datos archivados frente a perdida, dano o alteracion.\n\nEsta decision aprueba la propuesta documental para el borrador. No confirma la implementacion tecnica de los controles, la validacion del sistema ni el cumplimiento regulatorio final.",
+    "status": "REVIEWED",
+    "decided_at": "2026-07-21T14:36:58.294902+00:00"
+  },
+  {
+    "tipo": "exception_review",
+    "exception_id": "EXC-COR-2",
+    "package_id": "PKG-FS-V1-2-REAL-CONTROLLED",
+    "package_version": 1,
+    "change_id": "COR-2",
+    "change_risk": "HIGH_RISK",
+    "human_review_decision": "ACCEPTED_WITH_JUSTIFICATION",
+    "responsible": "Cesar (ing_cpmo)",
+    "justification": "Se acepta COR-2 unicamente para su incorporacion en el borrador candidato.",
+    "status": "REVIEWED",
+    "decided_at": "2026-07-21T14:38:11.119835+00:00"
+  }
+]

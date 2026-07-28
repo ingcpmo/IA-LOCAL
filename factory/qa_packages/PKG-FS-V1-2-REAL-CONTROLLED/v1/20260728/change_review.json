@@ -1,0 +1,38 @@
+[
+  {
+    "change_id": "COR-5",
+    "requirement_id": "ANNEX11_7.1",
+    "document_location": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf — pag 4-4:no_cumple, pag 7-9:no_cumple, pag 18-19:no_cumple, pag 20-21:cumple_parcialmente, pag 26-28:cumple_parcialmente, pag 35-36:cumple_parcialmente, pag 39-40:cumple_parcialmente, pag 41-42:cumple_parcialmente, pag 56-56:no_cumple, pag 58-58:no_cumple",
+    "contenido_anterior": "| | | The Rockwell Software FactoryTalk View SE platform provides the ability to archive continuous process data, alarms, alarm acknowledgement, events, parameters, and ancillary data. | Per the specification a Print Screen button is available on each screen to capture the current screen contents. | UR5.2.9 [URS-PCS-SR-015] The system shall provide display of analog signal status, numerical values, engineering units, and alarming. | Alarm limit values cannot be changed by user input. | The FactoryTalk View SE ID code: 215115305 -FS (V1.2) Page 40 of 58 © 2022 Rockwell Automation, Inc. All Rights Reserved / Author: Buol, ScottProject: Mark Cuban Cost Plus Drug Company, PBC – MCCPDC - SCADA and PCS MISC. PLC System Functional Specification for the MCCPDC - SCADA and PCS MISC. PLC System server in this system uses Windows Server 2016 while the Engineering Workstation uses Remote Desktop Client and will be viewing Windows Server 2016 desktops. | |",
+    "contenido_nuevo": "Agregar al FS una seccion especifica de politica de retencion de datos historizados, procedimiento de backup y prueba periodica de restauracion, y descripcion explicita de proteccion contra perdida/alteracion de datos (Annex 11 S7.1, S7.2) -- ver COR-5. Verificable mediante revision QA de la nueva seccion mas evidencia de al menos un ciclo de backup/restauracion documentado.",
+    "motivo": "Existe descripcion parcial o total en el FS, pero el dossier no incluye evidencia de implementacion, prueba o verificacion que demuestre el control operando.",
+    "regulacion_fuente_id": "eu_gmp_annex11",
+    "numeral": "p40-40",
+    "cita": "| | | The Rockwell Software FactoryTalk View SE platform provides the ability to archive continuous process data, alarms, alarm acknowledgement, events, parameters, and ancillary data. | Per the specification a Print Screen button is available on each screen to capture the current screen contents. | UR5.2.9 [URS-PCS-SR-015] The system shall provide display of analog signal status, numerical values, engineering units, and alarming. | Alarm limit values cannot be changed by user input. | The FactoryTalk View SE ID code: 215115305 -FS (V1.2) Page 40 of 58 © 2022 Rockwell Automation, Inc. All Rights Reserved / Author: Buol, ScottProject: Mark Cuban Cost Plus Drug Company, PBC – MCCPDC - SCADA and PCS MISC. PLC System Functional Specification for the MCCPDC - SCADA and PCS MISC. PLC System server in this system uses Windows Server 2016 while the Engineering Workstation uses Remote Desktop Client and will be viewing Windows Server 2016 desktops. | |",
+    "url_oficial": "https://health.ec.europa.eu/system/files/2016-11/annex11_01-2011_en_0.pdf",
+    "evidencia": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf, pag 4-4:no_cumple, pag 7-9:no_cumple, pag 18-19:no_cumple, pag 20-21:cumple_parcialmente, pag 26-28:cumple_parcialmente, pag 35-36:cumple_parcialmente, pag 39-40:cumple_parcialmente, pag 41-42:cumple_parcialmente, pag 56-56:no_cumple, pag 58-58:no_cumple",
+    "estado_aplicacion": "AUTO_APPLIED_TO_DRAFT: HIGH_RISK con excepcion revisada y aceptada (EXC-COR-5)",
+    "resultado_revalidacion": "CLOSED",
+    "resultado_revalidacion_detalle": "proposed_content anclado en el candidato real (match_type=exact)",
+    "implementacion_pendiente": "Este cambio corrige documentacion, no implica que la capacidad descrita ya este verificada como implementada en el sistema fisico -- esa verificacion (IMPLEMENTATION_VERIFICATION) permanece siempre fuera de este sistema.",
+    "narrativa": "Incompleto: Existe descripcion parcial o total en el FS, pero el dossier no incluye evidencia de implementacion, prueba o verificacion que demuestre el control operando.. Se modifico: se agrego contenido en 215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf — pag 4-4:no_cumple, pag 7-9:no_cumple, pag 18-19:no_cumple, pag 20-21:cumple_parcialmente, pag 26-28:cumple_parcialmente, pag 35-36:cumple_parcialmente, pag 39-40:cumple_parcialmente, pag 41-42:cumple_parcialmente, pag 56-56:no_cumple, pag 58-58:no_cumple. Fundamento regulatorio: eu_gmp_annex11 (p40-40). Fuente oficial: https://health.ec.europa.eu/system/files/2016-11/annex11_01-2011_en_0.pdf. Revalidacion independiente (AGT-RVL, Fase O): CLOSED."
+  },
+  {
+    "change_id": "COR-2",
+    "requirement_id": "ALCOA_CONTEMPORANEOUS",
+    "document_location": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf — pag 41-42 (chunk 17)",
+    "contenido_anterior": null,
+    "contenido_nuevo": "Incluir detalles sobre la sincronización de registros con eventos operativos.",
+    "motivo": "El FS no documenta el control evaluado en ninguno de los chunks cubiertos. No implica que el control no exista en el sistema real -- solo que no esta descrito en ESTE documento.",
+    "regulacion_fuente_id": "mhra_gxp_di_guidance_2018",
+    "numeral": "chunk_17#p41-42",
+    "cita": "ABSENCE_CONFIRMED_IN_FS -- ausencia confirmada de forma consistente en TODAS las secciones evaluadas (pag 41-42); el FS no menciona el control evaluado en ningun chunk cubierto por este checkpoint.",
+    "url_oficial": "https://www.gov.uk/government/publications/guidance-on-gxp-data-integrity",
+    "evidencia": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf, pag 41-42 (chunk 17)",
+    "estado_aplicacion": "AUTO_APPLIED_TO_DRAFT: HIGH_RISK con excepcion revisada y aceptada (EXC-COR-2)",
+    "resultado_revalidacion": "CLOSED",
+    "resultado_revalidacion_detalle": "proposed_content anclado en el candidato real (match_type=exact)",
+    "implementacion_pendiente": "Este cambio corrige documentacion, no implica que la capacidad descrita ya este verificada como implementada en el sistema fisico -- esa verificacion (IMPLEMENTATION_VERIFICATION) permanece siempre fuera de este sistema.",
+    "narrativa": "Incompleto: El FS no documenta el control evaluado en ninguno de los chunks cubiertos. No implica que el control no exista en el sistema real -- solo que no esta descrito en ESTE documento.. Se modifico: se agrego contenido en 215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf — pag 41-42 (chunk 17). Fundamento regulatorio: mhra_gxp_di_guidance_2018 (chunk_17#p41-42). Fuente oficial: https://www.gov.uk/government/publications/guidance-on-gxp-data-integrity. Revalidacion independiente (AGT-RVL, Fase O): CLOSED."
+  }
+]

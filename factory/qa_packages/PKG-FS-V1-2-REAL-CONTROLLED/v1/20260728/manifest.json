@@ -1,0 +1,47 @@
+{
+  "run_id": "pkg-fsv12-real-controlled-20260728",
+  "package_id": "PKG-FS-V1-2-REAL-CONTROLLED",
+  "package_version": 1,
+  "artifact_hashes": {
+    "candidate_document.docx": "3a879dc64c7e85efbd5c513883849a0464f019be470e3d5ae8829ae90121ec2e",
+    "redline_document.docx": "885cb3dd580bd1225c5d6241ad7c44b997b29db3b02c712a6fe428cd4744c457",
+    "findings_report.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "traceability_matrix.json": "a9fffd5c1fe5743a8d5024f985ecb41bbaf899f474e120d18562b57ed4251de2",
+    "exception_package.json": "e60a6097acbdd4a9ccb3ab781a4a0c012ffe866388a80355848beb5c7ed66fa8",
+    "quality_report.json": "177df0d88359780692b37731e10a7432764d3c9ae7490129d3565ccffa2e1193",
+    "change_review.json": "483ee68c1eb5f8ef4d082aef02cf94d9efe13427f230139aa41c6f587b3c48c2",
+    "revalidation_report.json": "541436c0a90f230b1a7fe444bc271f347d5f57164d03608f22aef942b2c4122f"
+  },
+  "run_fingerprint": {
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "prompt_version": {
+      "alcoa_prompts.yaml": "1.1.0",
+      "annex11_prompts.yaml": "1.1.0",
+      "part11_prompts.yaml": "1.1.0",
+      "traceability_prompts.yaml": "1.0.0"
+    },
+    "schema_version": "checkpoint_llm_response_v1",
+    "catalog_version_hash": "6486405abecd729d85e32ec4a9af03cd13ad144162ebcb300ee9d25016202b8d",
+    "applicability_matrix_version_hash": "ac4590c36393dcb7ba8435c1d01ad000e3935479b5fc0bef488561dafcc2218b",
+    "agent_versions": {
+      "AGT-DOC": "1.0.0",
+      "AGT-QLT": "1.0.0",
+      "AGT-RVL": "1.0.0"
+    }
+  },
+  "fingerprint": "da0ad429472da1447010e02e2b292f25ce6bd6d995a6b441e2e32485968ae05b",
+  "fingerprint_covers": [
+    "package_id",
+    "package_version",
+    "run_id",
+    "artifact_hashes",
+    "agent_versions",
+    "applicability_matrix_version_hash",
+    "catalog_version_hash",
+    "model_digest",
+    "prompt_version",
+    "schema_version"
+  ],
+  "fingerprint_missing_components": [],
+  "fingerprint_complete": true
+}

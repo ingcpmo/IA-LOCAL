@@ -1,0 +1,37 @@
+{
+  "run_id": "pkg-fsv12-real-controlled-20260728",
+  "package_id": "PKG-FS-V1-2-REAL-CONTROLLED",
+  "package_version": 1,
+  "generated_at": "2026-07-28T13:54:26+00:00",
+  "included_change_ids": [
+    "COR-5",
+    "COR-2"
+  ],
+  "excluded_change_ids": [],
+  "exclusion_reasons": {},
+  "artifacts": [
+    "candidate_document.docx",
+    "change_review.json",
+    "exception_package.json",
+    "findings_report.json",
+    "manifest.json",
+    "quality_report.json",
+    "redline_document.docx",
+    "revalidation_report.json",
+    "traceability_matrix.json"
+  ],
+  "artifact_count": 9,
+  "manifest_fingerprint": "da0ad429472da1447010e02e2b292f25ce6bd6d995a6b441e2e32485968ae05b",
+  "manifest_fingerprint_complete": true,
+  "quality_applied": false,
+  "revalidation_passed": true,
+  "gate_status": "DOCUMENT_GENERATION_PARTIAL",
+  "gate_passed": false,
+  "gate_failed_criteria": [
+    "reporte_de_calidad_existe"
+  ],
+  "qa_package_ready": false,
+  "blocking_reasons": [
+    "gate=DOCUMENT_GENERATION_PARTIAL; criterios en rojo: reporte_de_calidad_existe"
+  ]
+}

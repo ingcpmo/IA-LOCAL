@@ -1,0 +1,21 @@
+{
+  "gap_results": [
+    {
+      "change_id": "COR-5",
+      "requirement_id": "ANNEX11_7.1",
+      "gap_status": "CLOSED",
+      "detail": "proposed_content anclado en el candidato real (match_type=exact)"
+    },
+    {
+      "change_id": "COR-2",
+      "requirement_id": "ALCOA_CONTEMPORANEOUS",
+      "gap_status": "CLOSED",
+      "detail": "proposed_content anclado en el candidato real (match_type=exact)"
+    }
+  ],
+  "new_gaps_introduced": [],
+  "all_hashes_valid": true,
+  "document_opens_correctly": true,
+  "artifacts_consistent": true,
+  "revalidation_passed": true
+}
