@@ -195,9 +195,16 @@ def build_full_change_review(package_state: dict, revalidation=None) -> list[dic
     return narratives
 
 
+REQUIRED_FINGERPRINT_COMPONENTS = (
+    "model_digest", "prompt_version", "schema_version", "catalog_version_hash",
+    "applicability_matrix_version_hash", "agent_versions",
+)
+
+
 def build_package_manifest(
     *, run_id: str, package_id: str, package_version: int,
     artifacts: dict[str, bytes],
+    run_fingerprint: dict | None = None,
 ) -> dict:
     """MANIFEST (artefacto 7 de 9): SHA-256 real de cada artefacto
     provisto + run_id + fingerprint. El fingerprint aqui cubre SOLO los
@@ -207,23 +214,35 @@ def build_package_manifest(
     aplicabilidad con hash, ver PERFORMANCE_AND_INFERENCE_ORCHESTRATION_SPEC.md
     seccion 5) no esta completamente cableado todavia en ningun runner
     real -- se declara explicitamente que campos faltan, en vez de
-    fabricar un fingerprint incompleto disfrazado de completo."""
+    fabricar un fingerprint incompleto disfrazado de completo.
+
+    run_fingerprint (2026-07-28, default None = comportamiento historico
+    intacto): los componentes de identidad de corrida que hasta hoy ningun
+    runner aportaba. Cuando el orquestador
+    (`regulatory_document_package_pipeline`) los provee COMPLETOS, el
+    fingerprint pasa a cubrirlos y `fingerprint_complete` es True. Si falta
+    alguno, se listan los que faltan y sigue siendo False: nunca se declara
+    completo un fingerprint parcial."""
     artifact_hashes = {name: _sha256_bytes(data) for name, data in artifacts.items()}
+    provided = {k: v for k, v in (run_fingerprint or {}).items()
+                if k in REQUIRED_FINGERPRINT_COMPONENTS and v not in (None, "", {}, [])}
+    missing = [c for c in REQUIRED_FINGERPRINT_COMPONENTS if c not in provided]
+
     fingerprint_basis = {
         "package_id": package_id, "package_version": package_version,
         "run_id": run_id, "artifact_hashes": artifact_hashes,
+        **({"run_fingerprint": provided} if provided else {}),
     }
     fingerprint = _sha256_bytes(
         json.dumps(fingerprint_basis, sort_keys=True, ensure_ascii=False).encode("utf-8")
     )
+    covers = ["package_id", "package_version", "run_id", "artifact_hashes"] + sorted(provided)
     return {
         "run_id": run_id, "package_id": package_id, "package_version": package_version,
         "artifact_hashes": artifact_hashes,
+        "run_fingerprint": provided or None,
         "fingerprint": fingerprint,
-        "fingerprint_covers": ["package_id", "package_version", "run_id", "artifact_hashes"],
-        "fingerprint_missing_components": [
-            "model_digest", "prompt_version", "schema_version", "catalog_version_hash",
-            "applicability_matrix_version_hash", "agent_versions",
-        ],
-        "fingerprint_complete": False,
+        "fingerprint_covers": covers,
+        "fingerprint_missing_components": missing,
+        "fingerprint_complete": not missing,
     }
