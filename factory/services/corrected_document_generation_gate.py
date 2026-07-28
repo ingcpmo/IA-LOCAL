@@ -21,6 +21,7 @@ Fase O)."""
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import dataclass, field
 
 from docx import Document
@@ -66,6 +67,35 @@ def _document_paragraph_texts(doc: Document) -> list[str]:
     return [p.text for p in doc.paragraphs]
 
 
+def _is_heading_for(parrafo: str, titulo: str) -> bool:
+    """True si `parrafo` es el ENCABEZADO de la seccion `titulo` en el
+    candidato generado, que lo renderiza como "<numero> <titulo>".
+
+    Defecto real corregido el 2026-07-28, encontrado la primera vez que la
+    cadena L->M->QLT->O->N se ejecuto entera sobre un documento real
+    (FS_v1.2, paquete PKG-FS-V1-2-REAL-CONTROLLED):
+
+      present_titles = {t for t in candidate_texts if any(t.endswith(...))}
+      len(present_titles) == len(real_section_titles)
+
+    comparaba un conteo de PARRAFOS del candidato contra un conteo de
+    SECCIONES. Sobre el documento real dio 14 vs 8 y el criterio fallo con
+    las 8 secciones intactas. Las 6 coincidencias de mas eran parrafos de
+    cuerpo que terminaban por casualidad en un titulo corto ("F09.00:
+    Physical Security" termina en "Security"; una linea que acaba en "Data"
+    tambien colaba).
+
+    El mismo `endswith` suelto podia producir el error contrario y mas
+    grave: dar por presente una seccion AUSENTE porque algun parrafo de
+    cuerpo terminaba con su titulo. De ahi que aqui se exija igualdad exacta
+    o el prefijo de numeracion, y que la cobertura se mida sobre el conjunto
+    de secciones, no sobre el de parrafos."""
+    limpio = parrafo.strip()
+    if limpio == titulo:
+        return True
+    return bool(re.match(rf"^\d+(\.\d+)*\s+{re.escape(titulo)}$", limpio))
+
+
 def evaluate_corrected_document_generation_gate(
     *,
     candidate_document: Document,
@@ -102,11 +132,14 @@ def evaluate_corrected_document_generation_gate(
     ))
 
     real_section_titles = {s["titulo"] for s in structure["secciones"]}
-    present_titles = {t for t in candidate_texts if any(t.endswith(s["titulo"]) for s in structure["secciones"])}
+    covered_titles = {t for t in real_section_titles
+                      if any(_is_heading_for(parrafo, t) for parrafo in candidate_texts)}
+    missing_titles = sorted(real_section_titles - covered_titles)
     checks.append(GateCheckResult(
         "conserva_estructura_requerida",
-        len(present_titles) == len(real_section_titles) if real_section_titles else False,
-        f"{len(present_titles)}/{len(real_section_titles)} titulos de seccion originales presentes",
+        bool(real_section_titles) and not missing_titles,
+        f"{len(covered_titles)}/{len(real_section_titles)} secciones originales presentes"
+        + (f"; faltan: {', '.join(missing_titles)}" if missing_titles else ""),
     ))
     checks.append(GateCheckResult(
         "no_truncado",

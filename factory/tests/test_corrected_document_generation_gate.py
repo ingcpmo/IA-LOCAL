@@ -357,3 +357,54 @@ class TestAGTRVLConnected:
         )
         assert result.gate_passed is True
         assert result.final_state == "CORRECTED_DOCUMENT_GENERATED"
+
+
+# --- defecto real del criterio conserva_estructura_requerida (2026-07-28) ---
+# Encontrado la primera vez que la cadena L->M->QLT->O->N se ejecuto entera
+# sobre un documento real (FS_v1.2): el criterio comparaba conteo de PARRAFOS
+# contra conteo de SECCIONES (14 vs 8) y fallaba con las 8 secciones intactas.
+
+from factory.services.corrected_document_generation_gate import _is_heading_for  # noqa: E402
+
+def test_heading_reconoce_el_encabezado_numerado():
+    assert _is_heading_for("1 Introduction", "Introduction") is True
+    assert _is_heading_for("Introduction", "Introduction") is True
+    assert _is_heading_for("3.1.2 Data", "Data") is True
+
+
+def test_heading_no_confunde_un_parrafo_de_cuerpo_con_una_seccion():
+    """El bug real: `endswith` daba por presente la seccion "Security"
+    porque un parrafo de cuerpo terminaba en "...Physical Security", y daba
+    por presente "Data" con cualquier linea acabada en esa palabra. Sobre
+    FS_v1.2 eso produjo 14 coincidencias para 8 secciones y tumbo el
+    criterio con el documento intacto."""
+    assert _is_heading_for("F09.00: Physical Security", "Security") is False
+    assert _is_heading_for("El servidor almacena la Data", "Data") is False
+    assert _is_heading_for("Company, PBC. The communication ... Data", "Data") is False
+
+
+def test_una_seccion_ausente_tumba_el_criterio():
+    """El criterio sigue siendo capaz de detectar lo que debe detectar."""
+    estructura = {
+        "documento": "DOC_TEST",
+        "secciones": [
+            {"numero": "1", "titulo": "Introduction", "pagina_inicio": 1,
+             "parrafos": ["Texto original 1."]},
+            {"numero": "2", "titulo": "Data", "pagina_inicio": 10,
+             "parrafos": ["Texto original 2."]},
+        ],
+        "texto_previo_a_primera_seccion": ["Portada."],
+        "toc_anchored": True,
+    }
+    from docx import Document as _Docx
+    doc = _Docx()
+    doc.add_paragraph("1 Introduction")     # falta la seccion "Data"
+    r = evaluate_corrected_document_generation_gate(
+        candidate_document=doc, redline_document=doc, structure=estructura,
+        original_document_sha256="0" * 64, candidate_document_bytes=b"x",
+        included_change_ids=[], traceability_matrix_change_ids=[],
+        insertion_manifest=[], manifest={"artifact_hashes": {}},
+        required_manifest_artifacts=[], change_review=[])
+    criterio = next(c for c in r.checks if c.criterion == "conserva_estructura_requerida")
+    assert criterio.passed is False
+    assert "Data" in criterio.detail
