@@ -53,6 +53,58 @@ from .models import Finding
 CHUNK_MAX_CHARS = 6000
 CHUNK_OVERLAP_CHARS = 500
 
+# Ratio caracteres/token medido en vivo el 2026-07-28 sobre el prompt real de
+# annex11 (15 347 chars -> 3903 tokens de prompt_eval_count reportados por
+# Ollama). Se usa SOLO para la guardia de preflight, que necesita una
+# estimacion conservadora del prompt antes de hacer ninguna llamada; el
+# conteo real lo hace el runtime. Se redondea a la baja (3.6 en vez de 3.95)
+# a proposito: sobreestimar el prompt hace la guardia mas estricta, que es el
+# lado seguro.
+PROMPT_CHARS_PER_TOKEN = 3.6
+
+# Dimensionamiento del presupuesto de SALIDA (medido en vivo el 2026-07-28
+# contra qwen2.5:7b-instruct-q4_K_M: 8 criterios + 2 envelopes ~= 1000 tokens
+# de salida). Vive aqui, no en ollama_client, porque se deriva del contrato
+# del PROMPT -- no del runtime de inferencia.
+TOKENS_PER_CRITERION = 130   # ~110 medidos + 18 % de margen
+TOKENS_PER_CHECKPOINT = 60   # envelope: estado/evidencia_exacta/brecha/recomendacion
+TOKENS_JSON_OVERHEAD = 120   # llaves, "checkpoints", indentacion
+
+
+def output_token_budget(n_checkpoints: int, n_criteria: int) -> int:
+    """Presupuesto de tokens de salida derivado del CONTRATO REAL del prompt
+    (numero de checkpoints y de criterios minimos de evidencia del catalogo),
+    redondeado hacia arriba a multiplo de 512.
+
+    Existe para que el presupuesto no vuelva a ser una constante que queda
+    atras cuando crece el contrato de salida -- que es exactamente lo que
+    paso con NUM_PREDICT=1024 al agregarse criterion_assessments en la
+    ampliacion D de la Fase F. Si el catalogo gana criterios, este numero
+    sube solo; nunca se escribe un presupuesto a mano.
+
+    Valores actuales: eu_annex11_agent (5 cp, 20 crit) -> 3584;
+    alcoa_plus_agent (9 cp, 25 crit) -> 4608."""
+    if n_checkpoints < 0 or n_criteria < 0:
+        raise ValueError(f"contrato invalido: {n_checkpoints=} {n_criteria=}")
+    raw = (
+        TOKENS_JSON_OVERHEAD
+        + n_checkpoints * TOKENS_PER_CHECKPOINT
+        + n_criteria * TOKENS_PER_CRITERION
+    )
+    return max(512, -(-raw // 512) * 512)
+
+
+class TokenBudgetError(RuntimeError):
+    """El presupuesto de salida no cabe en la ventana de contexto junto al
+    prompt. Se lanza en el PREFLIGHT, antes de la primera inferencia.
+
+    Por que es un error duro y no un aviso: si prompt + num_predict supera
+    num_ctx, Ollama no falla -- trunca el PROMPT para que quepa, y lo que se
+    pierde es el principio, donde viven common_contract y la lista de req_id.
+    El modelo responderia algo bien formado sobre un contrato mutilado. Ese
+    fallo silencioso es estrictamente peor que el truncamiento de salida que
+    motivo esta guardia (que al menos deja done_reason='length')."""
+
 _MARKER_START = "[DOCUMENTO INICIO]"
 _MARKER_END = "[DOCUMENTO FIN]"
 _VALID_ESTADOS = {"cumple", "cumple_parcialmente", "no_cumple", "evidencia_insuficiente", "no_aplica"}
@@ -188,6 +240,142 @@ def _extract_json(raw: str) -> dict | None:
             return parsed
         return None  # JSON valido pero no cumple el esquema esperado
     return None
+
+
+# Causas EXPLICITAS de fallo de una respuesta del modelo (2026-07-28).
+# Antes las cuatro se colapsaban en un unico mensaje generico -- ver
+# W5v2_POSTMORTEM_TRUNCAMIENTO_NUM_PREDICT.md defecto D-1: nueve chunks se
+# marcaron como "el modelo no devolvio JSON valido" cuando en realidad la
+# respuesta se habia truncado por presupuesto de tokens, que es un error de
+# CONFIGURACION del operador, no un fallo del modelo.
+FAILURE_OUTPUT_TRUNCATED = "output_truncated"
+FAILURE_NO_JSON_OBJECT = "no_json_object"
+FAILURE_JSON_PARSE = "json_parse_failed"
+FAILURE_SCHEMA_VALIDATION = "schema_validation_failed"
+
+_FAILURE_DETAIL = {
+    FAILURE_OUTPUT_TRUNCATED: (
+        "technical_execution_failure: la generacion se TRUNCO por presupuesto de tokens "
+        "(done_reason='length'). NO es un fallo del modelo: el presupuesto de salida es "
+        "insuficiente para el contrato del prompt. Subir num_predict "
+        "(ollama_client.output_token_budget) -- reintentar sin cambiarlo dara el mismo resultado."
+    ),
+    FAILURE_NO_JSON_OBJECT: (
+        "technical_execution_failure: la respuesta del modelo no contiene ningun objeto JSON"
+    ),
+    FAILURE_JSON_PARSE: (
+        "technical_execution_failure: la respuesta del modelo no es JSON valido "
+        "(tras reparacion acotada)"
+    ),
+    FAILURE_SCHEMA_VALIDATION: (
+        "technical_execution_failure: la respuesta del modelo es JSON valido pero no cumple "
+        "checkpoint_llm_response_v1"
+    ),
+}
+
+_RAW_PERSIST_MAX_CHARS = 8192
+
+
+def _count_contract_criteria(meta: dict) -> int:
+    """Numero total de criterios minimos de evidencia que el prompt pedira
+    evaluar, leido del MISMO catalogo que build_prompt() usa para
+    construirlo. Es la unica fuente del dimensionamiento -- si el catalogo
+    gana criterios, el presupuesto sube solo."""
+    return sum(
+        len(_lookup_evidence_min_criteria(cp["req_id"]) or [])
+        for cp in meta["checkpoints"]
+    )
+
+
+def _assert_token_budget_fits(chunks: list[dict], meta: dict, num_predict: int,
+                              num_ctx: int | None) -> dict:
+    """Verifica que el PEOR chunk (el de prompt mas largo) quepa junto al
+    presupuesto de salida. Lanza TokenBudgetError antes de gastar una sola
+    llamada. Devuelve el detalle para preflight_metadata.
+
+    num_ctx None = el provider no declara ventana de contexto. Entonces NO
+    se aplica la guardia: no se puede verificar un limite que no se conoce, y
+    suponer uno bloquearia corridas legitimas (p. ej. providers de test) por
+    un numero inventado. Queda declarado en `context_window_declared`. La
+    guardia sigue plenamente activa donde importa: OllamaProvider si declara
+    su ventana."""
+    worst_chars, worst_index = 0, -1
+    for chunk in chunks:
+        prompt_chars = len(build_prompt(meta, sanitize_document(chunk["text"])))
+        if prompt_chars > worst_chars:
+            worst_chars, worst_index = prompt_chars, chunk["chunk_index"]
+
+    worst_prompt_tokens = int(worst_chars / PROMPT_CHARS_PER_TOKEN) + 1
+    required = worst_prompt_tokens + num_predict
+    detail = {
+        "num_ctx": num_ctx,
+        "context_window_declared": num_ctx is not None,
+        "num_predict": num_predict,
+        "worst_chunk_index": worst_index,
+        "worst_prompt_chars": worst_chars,
+        "worst_prompt_tokens_estimated": worst_prompt_tokens,
+        "required_context_tokens": required,
+        "headroom_tokens": None if num_ctx is None else num_ctx - required,
+    }
+    if num_ctx is None:
+        return detail
+    if required > num_ctx:
+        raise TokenBudgetError(
+            f"el presupuesto no cabe en la ventana de contexto: prompt del chunk "
+            f"{worst_index} ~{worst_prompt_tokens} tokens + num_predict {num_predict} "
+            f"= {required} > num_ctx {num_ctx}. Ollama truncaria el PROMPT en silencio. "
+            f"Subir FACTORY_OLLAMA_NUM_CTX a >= {required}, o reducir el contrato del prompt."
+        )
+    return detail
+
+
+def _provider_honors_token_budget(provider: ModelProvider) -> bool:
+    """True si generate() del provider acepta el keyword num_predict. Se
+    comprueba una sola vez, con inspect -- nunca con un try/except TypeError,
+    que enmascararia un TypeError real lanzado DENTRO del provider."""
+    import inspect
+    try:
+        params = inspect.signature(provider.generate).parameters
+    except (TypeError, ValueError):
+        return False
+    return "num_predict" in params or any(
+        p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()
+    )
+
+
+def classify_model_response(raw: dict | None) -> tuple[dict | None, str | None, str]:
+    """Clasifica la respuesta CRUDA del provider en (parsed, failure_reason,
+    raw_text). `failure_reason` es None si la respuesta es utilizable, o una
+    de las cuatro causas explicitas de arriba.
+
+    El truncamiento se decide con `done_reason`, que ya viene en la propia
+    respuesta de Ollama -- no es heuristica. Se comprueba ANTES de intentar
+    parsear porque una respuesta truncada casi siempre falla tambien el
+    parseo, y reportar 'json_parse_failed' escondería la causa real."""
+    raw_text = raw.get("response", "") if isinstance(raw, dict) else ""
+    done_reason = raw.get("done_reason") if isinstance(raw, dict) else None
+
+    if done_reason == "length":
+        return None, FAILURE_OUTPUT_TRUNCATED, raw_text
+
+    stripped = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip())
+    if not re.search(r"\{.*\}", stripped, re.DOTALL):
+        return None, FAILURE_NO_JSON_OBJECT, raw_text
+
+    parsed = _extract_json(raw_text)
+    if parsed is not None:
+        return parsed, None, raw_text
+
+    # _extract_json ya no distingue entre "no parsea" y "parsea pero viola el
+    # esquema"; se re-deriva aqui para dar la causa exacta.
+    candidate = re.search(r"\{.*\}", stripped, re.DOTALL).group(0)
+    for attempt in (candidate, _repair_json(candidate)):
+        try:
+            json.loads(attempt)
+        except json.JSONDecodeError:
+            continue
+        return None, FAILURE_SCHEMA_VALIDATION, raw_text
+    return None, FAILURE_JSON_PARSE, raw_text
 
 
 def _validate_checkpoint_schema(parsed) -> bool:
@@ -436,9 +624,21 @@ class CheckpointStore:
         tmp.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
         tmp.replace(p)
 
-    def find_resumable(self, document_sha256: str, agent_id: str, expected_fingerprint: dict) -> tuple[dict | None, dict | None]:
+    def find_resumable(self, document_sha256: str, agent_id: str, expected_fingerprint: dict,
+                       *, include_completed_with_failures: bool = False) -> tuple[dict | None, dict | None]:
         """Busca un checkpoint incompleto previo para el mismo documento
         (por SHA-256) y agente, para reanudar en vez de reiniciar.
+
+        include_completed_with_failures (2026-07-28, default False = cero
+        cambio de comportamiento): permite ademas reabrir un run COMPLETADO
+        que dejo chunks con technical_execution_failure. Sin esto, el
+        reintento dirigido solo servia para runs interrumpidos, y un run que
+        termina con fallos tecnicos —el caso normal desde que existe la
+        marca PROVISIONAL— quedaba irrecuperable.
+
+        Un run completado SIN fallos tecnicos nunca se reabre: solo se
+        permite volver sobre lo que fallo tecnicamente, jamas re-analizar
+        contenido ya evaluado.
 
         W5 V2 Fase F: SOLO se considera resumable si su fingerprint
         (prompt_version/schema_version/model_digest/document_sha256/
@@ -455,9 +655,13 @@ class CheckpointStore:
                 state = json.loads(f.read_text(encoding="utf-8"))
             except (json.JSONDecodeError, OSError):
                 continue
-            if (state.get("document_sha256") == document_sha256
-                    and state.get("agent_id") == agent_id
-                    and not state.get("completed", False)):
+            if state.get("document_sha256") != document_sha256 or state.get("agent_id") != agent_id:
+                continue
+            reopenable = include_completed_with_failures and any(
+                execution.get("technical_execution_failure")
+                for execution in state.get("chunk_executions", [])
+            )
+            if not state.get("completed", False) or reopenable:
                 if state.get("fingerprint") == expected_fingerprint:
                     return state, None
                 return None, {
@@ -477,6 +681,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                       run_id: str | None = None,
                       use_verified_pipeline: bool = False,
                       document_type: str | None = None,
+                      retry_technical_failures: bool = False,
                       provider: ModelProvider | None = None) -> dict:
     """Procesa TODO el documento (todas las páginas reales) en chunks
     acotados, con metadata de runtime completa por chunk, checkpoints de
@@ -514,6 +719,20 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     el descarte queda en preflight_metadata. Antes de esta fecha la
     combinacion era un ValueError.
 
+    retry_technical_failures (2026-07-28, default False -- cero cambio de
+    comportamiento para todo llamador existente): al reanudar, reejecuta los
+    chunks que quedaron con technical_execution_failure en vez de saltarlos.
+    Sin esto, un fallo tecnico es PERMANENTE (el chunk ya figura en
+    chunk_executions y start_index lo salta), asi que un error de
+    configuracion como el de NUM_PREDICT obliga a descartar la corrida
+    entera -- ver W5v2_POSTMORTEM_TRUNCAMIENTO_NUM_PREDICT.md.
+
+    El intento anterior NUNCA se borra: se conserva en
+    chunk_execution['superseded_attempts'], porque un run regulatorio debe
+    poder demostrar que hubo un fallo y que se resolvio, no aparentar que
+    nunca ocurrio. Los verified_records del intento viejo se purgan por
+    record_id para no duplicar cobertura.
+
     provider (W5 V2 Fase D, default None -- cero cambio de comportamiento
     para todo llamador existente): implementación de ModelProvider a usar;
     None usa DEFAULT_PROVIDER (OllamaProvider, mismo cliente Ollama de
@@ -541,6 +760,19 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     )
 
     chunks = build_page_chunks(per_unit_text)
+
+    # Presupuesto de salida derivado del contrato REAL del prompt + guardia
+    # de contexto, ambos ANTES de la primera inferencia (2026-07-28). Ningun
+    # numero se escribe a mano: si el catalogo gana criterios, sube solo.
+    n_criteria = _count_contract_criteria(meta)
+    num_predict = output_token_budget(len(meta["checkpoints"]), n_criteria)
+    context_window = getattr(provider, "context_window", None)
+    token_budget = _assert_token_budget_fits(chunks, meta, num_predict, context_window)
+    token_budget["contract_criteria"] = n_criteria
+    token_budget["contract_checkpoints"] = len(meta["checkpoints"])
+    honors_budget = _provider_honors_token_budget(provider)
+    token_budget["provider_honors_token_budget"] = honors_budget
+
     chunk_executions: list[dict] = []
     start_index = 0
 
@@ -550,6 +782,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     if checkpoint_store is not None:
         resumed, fingerprint_mismatch = checkpoint_store.find_resumable(
             document_sha256, agent_id, run_fingerprint,
+            include_completed_with_failures=retry_technical_failures,
         )
         # Segunda barrera, independiente del fingerprint: comprobar que los
         # registros verificados estan REALMENTE en el checkpoint y cubren
@@ -587,6 +820,12 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         "checkpoint_verified_coverage_detail": verified_coverage_discard,
         "resumed_from_checkpoint": resumed is not None,
         "resumed_chunk_count": start_index,
+        # Presupuesto de tokens (2026-07-28): queda en el preflight para que
+        # un dossier pueda declarar con que presupuesto se produjo, y para
+        # que un truncamiento futuro sea diagnosticable sin re-ejecutar.
+        "token_budget": token_budget,
+        "retry_technical_failures_requested": retry_technical_failures,
+        "retried_chunk_indices": [],
     }
 
     by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
@@ -618,11 +857,41 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             cand["candidate"].setdefault("has_evidence", True)
             by_req.setdefault(cand["req_id"], []).append(cand["candidate"])
 
-    for chunk in chunks[start_index:]:
+    # Plan de ejecucion: primero los chunks a REEMPLAZAR (reintento dirigido
+    # de fallos tecnicos, 2026-07-28), luego los que faltan por ejecutar. Un
+    # reintento reemplaza su entrada en chunk_executions en vez de anadir una
+    # nueva -- si se anadiera, len(chunk_executions) dejaria de ser el indice
+    # de reanudacion y la cobertura verificada contaria doble.
+    pending: list[tuple[dict, int | None]] = []
+    if retry_technical_failures and resumed is not None:
+        by_index = {c["chunk_index"]: c for c in chunks}
+        for position, previous in enumerate(chunk_executions):
+            if not previous.get("technical_execution_failure"):
+                continue
+            chunk_to_retry = by_index.get(previous["chunk_index"])
+            if chunk_to_retry is None:
+                continue  # el chunking cambio; el fingerprint ya lo habria detectado
+            pending.append((chunk_to_retry, position))
+            preflight_metadata["retried_chunk_indices"].append(previous["chunk_index"])
+    pending.extend((chunk, None) for chunk in chunks[start_index:])
+
+    for chunk, replace_at in pending:
         task_id = f"task-{uuid.uuid4().hex[:12]}"
         text = sanitize_document(chunk["text"])
         started_at = datetime.now(timezone.utc).isoformat()
         t0 = time.monotonic()
+
+        if replace_at is not None:
+            # Purga de los registros verificados del intento anterior, por
+            # record_id: sin esto el chunk reintentado aportaria DOS registros
+            # por requisito (el rechazado y el nuevo) y coverage_complete
+            # contaria una cobertura que no existe.
+            stale_task_id = chunk_executions[replace_at].get("task_id")
+            for req_id, records in verified_records_by_req.items():
+                verified_records_by_req[req_id] = [
+                    r for r in records
+                    if r.get("record_id") != f"vrec-{stale_task_id}-{req_id}"
+                ]
 
         # Fix TE-01: distinguir "chunk sin texto extraible" (no es un fallo
         # tecnico, es una pagina vacia legitima) de un fallo TECNICO real de
@@ -631,22 +900,25 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         # tecnico NUNCA debe terminar convertido silenciosamente en
         # 'evidencia_insuficiente' a nivel de finding sin quedar marcado.
         technical_execution_failure = False
+        failure_reason = None
+        raw_response_text = ""
         if not text.strip():
             chunk_result = None
             error = "chunk sin texto extraible"
         else:
             prompt = build_prompt(meta, text)
             try:
-                raw = provider.generate(prompt)
-                response_text = raw.get("response", "") if isinstance(raw, dict) else ""
-                chunk_result = _extract_json(response_text)
-                if chunk_result:
+                raw = (provider.generate(prompt, num_predict=num_predict)
+                       if honors_budget else provider.generate(prompt))
+                chunk_result, failure_reason, raw_response_text = classify_model_response(raw)
+                if failure_reason is None:
                     error = None
                 else:
-                    error = "technical_execution_failure: respuesta del modelo no es JSON valido o no cumple el esquema esperado (tras reparacion acotada)"
+                    error = _FAILURE_DETAIL[failure_reason]
                     technical_execution_failure = True
             except Exception as e:
                 chunk_result = None
+                failure_reason = "provider_call_failed"
                 error = f"technical_execution_failure: fallo de llamada al modelo ({type(e).__name__}: {e})"
                 technical_execution_failure = True
 
@@ -740,7 +1012,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 if req_id not in responded_req_ids:
                     verified_records_by_req[req_id].append(rejected_record(f"vrec-{task_id}-{req_id}", reason))
 
-        chunk_executions.append({
+        execution = {
             "run_id": run_id, "task_id": task_id, "chunk_index": chunk["chunk_index"],
             "page_start": chunk["page_start"], "page_end": chunk["page_end"],
             "has_overlap_prefix": chunk["has_overlap_prefix"], "text_chars": chunk["text_chars"],
@@ -749,8 +1021,31 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             "ollama_version": ollama_version_str,
             "ok": chunk_result is not None, "error": error,
             "technical_execution_failure": technical_execution_failure,
+            # Causa EXPLICITA del fallo (2026-07-28): output_truncated /
+            # no_json_object / json_parse_failed / schema_validation_failed /
+            # provider_call_failed. Antes las cuatro primeras compartian un
+            # unico mensaje y un truncamiento por presupuesto era
+            # indistinguible de un modelo devolviendo basura.
+            "failure_reason": failure_reason,
+            "num_predict": num_predict if honors_budget else None,
+            # La respuesta CRUDA se conserva (acotada) para que un fallo sea
+            # diagnosticable post-hoc sin re-ejecutar el chunk, y para poder
+            # auditar que dijo el modelo en un run regulatorio.
+            "raw_response": raw_response_text[:_RAW_PERSIST_MAX_CHARS],
+            "raw_response_truncated_in_log": len(raw_response_text) > _RAW_PERSIST_MAX_CHARS,
             "_by_req_candidates": by_req_candidates,
-        })
+        }
+
+        if replace_at is None:
+            chunk_executions.append(execution)
+        else:
+            # El intento fallido NUNCA se borra: un run regulatorio debe poder
+            # demostrar que hubo un fallo y que se resolvio.
+            previous = chunk_executions[replace_at]
+            history = list(previous.pop("superseded_attempts", []))
+            history.append(previous)
+            execution["superseded_attempts"] = history
+            chunk_executions[replace_at] = execution
 
         if checkpoint_store is not None:
             checkpoint_store.save(run_id, {
@@ -800,23 +1095,47 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         if not candidates:
             if not_observed:
                 pages = ", ".join(f"pag {c['page_start']}-{c['page_end']}" for c in not_observed)
+                brecha_no_cumple = (
+                    f"Ninguna de las {len(not_observed)} secciones que mencionaron este checkpoint "
+                    "aporto una cita verificable; la conclusion se basa en ausencia generalizada, "
+                    "no en una demostracion positiva de incumplimiento del sistema. No documentado "
+                    "en el FS != control inexistente en el sistema — requiere revision del expediente "
+                    "completo (SOPs, IQ/OQ) antes de asumir incumplimiento real."
+                )
+                # Fix D-5 (2026-07-28): esta rama emitia un incumplimiento
+                # MAYOR sin marcarlo provisional aunque hubiera chunks
+                # fallidos, a diferencia de la rama `else` de abajo que si lo
+                # hacia. Un "no_cumple/mayor" presentado como definitivo con
+                # parte del documento sin evaluar es exactamente lo que el
+                # fail-closed de la Fase F existe para impedir.
+                if any_unresolved_technical_failure:
+                    n_fail = sum(1 for ce in chunk_executions if ce.get("technical_execution_failure"))
+                    brecha_no_cumple = (
+                        f"PROVISIONAL (technical_execution_failure_pending): {n_fail} chunk(s) de este "
+                        "run tuvieron un fallo tecnico de ejecucion sin reintento agotado. La ausencia "
+                        "de evidencia que sostiene este no_cumple puede deberse al fallo tecnico y no a "
+                        "una ausencia real en el documento. Reintentar los chunks fallidos "
+                        "(retry_technical_failures=True) antes de tratar este incumplimiento como "
+                        "definitivo. " + brecha_no_cumple
+                    )
                 findings.append(Finding(
                     sistema=sistema, documento=documento, version=version, archivo=archivo,
                     pagina_o_seccion=f"{pages} (not_observed_in_chunk en todas las secciones evaluadas)",
                     requisito_regulatorio=f"{req_id} — {label}",
                     evidencia_exacta="(ninguna seccion citó evidencia positiva ni negativa para este checkpoint)",
                     estado="no_cumple",
-                    brecha=(f"Ninguna de las {len(not_observed)} secciones que mencionaron este checkpoint "
-                            "aporto una cita verificable; la conclusion se basa en ausencia generalizada, "
-                            "no en una demostracion positiva de incumplimiento del sistema. No documentado "
-                            "en el FS != control inexistente en el sistema — requiere revision del expediente "
-                            "completo (SOPs, IQ/OQ) antes de asumir incumplimiento real."),
+                    brecha=brecha_no_cumple,
                     severidad="mayor",
                     riesgo="Ausencia de evidencia documental; no confirma ausencia del control en el sistema.",
-                    recomendacion="Revisar expediente completo (SOPs/IQ/OQ) antes de concluir incumplimiento real.",
+                    recomendacion=(
+                        "Reintentar los chunks con technical_execution_failure antes de aceptar este "
+                        "incumplimiento." if any_unresolved_technical_failure else
+                        "Revisar expediente completo (SOPs/IQ/OQ) antes de concluir incumplimiento real."
+                    ),
                     confianza="baja", agente_responsable=agent_id, revision_humana_requerida=True,
                     agent_version=agent_version, prompt_version=meta["prompt_version"],
                     model=model_name, verifier_version=meta["verifier_version"],
+                    technical_execution_failure_pending=any_unresolved_technical_failure,
                     substantive_support="NOT_APPLICABLE",  # no_cumple no es sujeto de sustento sustantivo
                 ))
             else:

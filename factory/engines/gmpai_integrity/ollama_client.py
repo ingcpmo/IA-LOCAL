@@ -17,18 +17,62 @@ from factory.regulatory.schema_loader import load_schema, schema_sha256, validat
 
 OLLAMA_BASE_URL = os.getenv("FACTORY_OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("FACTORY_OLLAMA_MODEL", "qwen2.5:7b-instruct-q4_K_M")
-NUM_PREDICT = 1024
-NUM_CTX = int(os.getenv("FACTORY_OLLAMA_NUM_CTX", "8192"))
+# Fallback SOLO para llamadas que no declaran su contrato de salida. El
+# camino real (evaluate_chunked) calcula su presupuesto con
+# output_token_budget() y lo pasa explicitamente -- ver el post-mortem
+# W5v2_POSTMORTEM_TRUNCAMIENTO_NUM_PREDICT.md: este 1024 quedo atras cuando
+# la ampliacion D de la Fase F agrego criterion_assessments al contrato, y
+# trunco (done_reason="length") toda respuesta que analizara contenido real.
+# Ajustable por entorno igual que NUM_CTX (antes era el unico de los dos
+# hardcodeado, asimetria sin razon).
+NUM_PREDICT = int(os.getenv("FACTORY_OLLAMA_NUM_PREDICT", "1024"))
+# Subido de 8192 a 16384 (2026-07-28): con el presupuesto de salida real,
+# alcoa_plus_agent no cabia en 8192 (4019 tokens de prompt + 4608 de salida
+# = 8627). Un prompt que no cabe NO falla: Ollama lo trunca en silencio, y
+# lo que se pierde es el principio -- common_contract y la lista de req_id.
+# Ver la guardia de preflight en chunked_engine._assert_token_budget_fits().
+NUM_CTX = int(os.getenv("FACTORY_OLLAMA_NUM_CTX", "16384"))
 # Fix TE-01 (post-mortem cierre FS_v1.2 v3): temperatura 0 (determinista, no 0.1)
 # reduce la tasa de respuestas no-JSON del modelo.
 TEMPERATURE = 0.0
 TIMEOUT_READ_S = float(os.getenv("FACTORY_OLLAMA_TIMEOUT_READ_S", "1200"))
 
+# El timeout de lectura tambien tiene que escalar con el presupuesto de
+# salida (2026-07-28). Con TIMEOUT_READ_S fijo en 1200 s, la primera
+# validacion real del presupuesto nuevo (num_predict=3072) murio por
+# ReadTimeout: generar 3072 tokens a la velocidad real del host son ~15 min,
+# mas ~4 min de prompt eval, justo por encima de los 20 min. Es la MISMA
+# clase de defecto que motivo todo este trabajo -- una constante que no se
+# recalculo cuando crecio el contrato de salida -- asi que se deriva igual
+# que num_predict en vez de subirla a otro numero fijo.
+#
+# Velocidad DELIBERADAMENTE conservadora: la medida fue 3,33 tok/s; se usa
+# 2,0 para que una maquina cargada (este host es compartido) no produzca un
+# timeout espureo. Un timeout holgado no cuesta nada cuando la respuesta
+# llega antes; uno corto tira a la basura una generacion de 20 minutos.
+MIN_TOKENS_PER_SECOND = float(os.getenv("FACTORY_OLLAMA_MIN_TOK_S", "2.0"))
+PROMPT_EVAL_ALLOWANCE_S = float(os.getenv("FACTORY_OLLAMA_PROMPT_ALLOWANCE_S", "600"))
 
-def generate(prompt: str, temperature: float = TEMPERATURE, num_ctx: int | None = None) -> dict:
+
+def read_timeout_for(num_predict: int | None) -> float:
+    """Timeout de lectura suficiente para generar num_predict tokens a la
+    velocidad minima asumida, mas margen para el prompt eval. Nunca por
+    debajo de TIMEOUT_READ_S (que sigue siendo el piso configurable)."""
+    if not num_predict:
+        return TIMEOUT_READ_S
+    return max(TIMEOUT_READ_S,
+               num_predict / MIN_TOKENS_PER_SECOND + PROMPT_EVAL_ALLOWANCE_S)
+
+
+def generate(prompt: str, temperature: float = TEMPERATURE, num_ctx: int | None = None,
+             num_predict: int | None = None) -> dict:
     # Fix TE-01: 'format': 'json' fuerza a Ollama a devolver JSON válido a
     # nivel de API (no elimina la necesidad de validar el esquema del
     # contenido, pero elimina la clase de fallo 'no es JSON en absoluto').
+    # NOTA: 'format':'json' NO protege del truncamiento -- si la generacion
+    # agota num_predict, Ollama devuelve JSON incompleto con
+    # done_reason="length". Esa clase de fallo se detecta rio arriba
+    # (chunked_engine._extract_json), no aqui.
     r = httpx.post(
         f"{OLLAMA_BASE_URL}/api/generate",
         json={
@@ -36,10 +80,12 @@ def generate(prompt: str, temperature: float = TEMPERATURE, num_ctx: int | None 
             "prompt": prompt,
             "stream": False,
             "format": "json",
-            "options": {"num_predict": NUM_PREDICT, "temperature": temperature,
+            "options": {"num_predict": num_predict if num_predict is not None else NUM_PREDICT,
+                        "temperature": temperature,
                         "num_ctx": num_ctx if num_ctx is not None else NUM_CTX},
         },
-        timeout=httpx.Timeout(connect=5.0, read=TIMEOUT_READ_S, write=10.0, pool=5.0),
+        timeout=httpx.Timeout(connect=5.0, read=read_timeout_for(num_predict),
+                              write=10.0, pool=5.0),
     )
     r.raise_for_status()
     return r.json()
@@ -163,7 +209,8 @@ def generate_controlled(prompt: str, chunk: dict, *, run_context: str,
                 f"{OLLAMA_BASE_URL}/api/generate",
                 json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
                       "format": schema, "options": options},
-                timeout=httpx.Timeout(connect=5.0, read=TIMEOUT_READ_S, write=10.0, pool=5.0),
+                timeout=httpx.Timeout(connect=5.0, read=read_timeout_for(options["num_predict"]),
+                                      write=10.0, pool=5.0),
             )
             r.raise_for_status()
         except httpx.HTTPError as e:
