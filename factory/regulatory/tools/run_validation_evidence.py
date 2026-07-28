@@ -25,7 +25,12 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
-from factory.engines.gmpai_integrity import ollama_client
+from factory.engines.gmpai_integrity.model_provider import (
+    DEFAULT_PROVIDER,
+    ControlledGenerationNotSupportedError,
+    ModelProvider,
+    supports_controlled_generation,
+)
 from factory.engines.gmpai_integrity.chunked_engine import build_page_chunks, sanitize_document
 from factory.regulatory.absence_consolidator import consolidate
 from factory.regulatory.applicability import applicability, pre_inference_filter
@@ -142,12 +147,27 @@ def _default_prompt(requirement_id: str, chunk_text: str) -> str:
     )
 
 
-def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
+def run_validation_evidence(config: EvidenceRunConfig,
+                            provider: ModelProvider | None = None) -> EvidenceRunResult:
     """Ejecuta el pipeline v2 completo (filtro de aplicabilidad ->
     generate_controlled -> verify_llm_output -> consolidate) sobre un
     documento real, SIEMPRE run_context='validation'. No escribe evento de
     auditoría por si solo -- el caller decide si y como auditar (ver
-    write_audit_event() abajo, opcional)."""
+    write_audit_event() abajo, opcional).
+
+    provider (2026-07-28, default None -- cero cambio de comportamiento para
+    todo llamador existente): implementación de ModelProvider a usar; None
+    usa DEFAULT_PROVIDER (OllamaProvider, el mismo cliente de siempre).
+
+    Por qué se añade: hasta hoy este runner llamaba a
+    `ollama_client.generate_controlled()`, `show_digest()`, `ollama_version()`
+    y `OLLAMA_MODEL` DIRECTAMENTE, saltándose la abstracción de Fase D. Era
+    el único incumplimiento real del gate 14 de la sección 22 del plan
+    ("100% de agentes híbridos con ModelProvider") en código git-trackeado, y
+    hacía imposible ejecutar la evidencia regulatoria contra otro modelo sin
+    tocar el módulo. Toda la metadata del manifiesto (`model`,
+    `model_digest`, `ollama_version`) pasa a leerse del provider: si no, el
+    artefacto mentiría al inyectar uno distinto."""
     if config.extractor is None:
         raise ValueError("config.extractor es obligatorio (funcion Path -> list[str] por pagina)")
 
@@ -162,8 +182,18 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
     # cobertura parcial (P3 reforzado, absence_consolidator.py).
     coverage_complete = not config.max_chunks or config.max_chunks >= len(all_chunks)
 
-    model_digest = ollama_client.show_digest()
-    ollama_version_str = ollama_client.ollama_version()
+    provider = provider if provider is not None else DEFAULT_PROVIDER
+    # Fail-closed antes de gastar una sola llamada: si el provider inyectado
+    # no ofrece la ruta controlada, se aborta. NUNCA se cae de vuelta a
+    # ollama_client -- eso produciria evidencia regulatoria atribuida a un
+    # modelo que no es el inyectado.
+    if not supports_controlled_generation(provider):
+        raise ControlledGenerationNotSupportedError(
+            f"{type(provider).__name__} no ofrece generate_controlled(); la evidencia "
+            f"regulatoria exige la ruta con schema forzado finding_llm_v1."
+        )
+    model_digest = provider.show_digest()
+    ollama_version_str = provider.runtime_version()
 
     run_id = f"w5v3-validation-{uuid.uuid4().hex[:12]}"
     result = EvidenceRunResult(run_id=run_id)
@@ -207,7 +237,7 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
                 continue
             else:
                 prompt = _default_prompt(req_id, chunk["text"])
-                gen = ollama_client.generate_controlled(prompt, chunk, run_context="validation")
+                gen = provider.generate_controlled(prompt, chunk, run_context="validation")
                 record_id = f"rec-{uuid.uuid4().hex[:12]}"
                 if not gen["ok"] or gen["llm_output"] is None:
                     record = {
@@ -297,7 +327,7 @@ def run_validation_evidence(config: EvidenceRunConfig) -> EvidenceRunResult:
         "total_chunks_real": len(all_chunks),
         "chunks_used": len(chunks_used),
         "coverage": "partial" if config.max_chunks and config.max_chunks < len(all_chunks) else "full",
-        "model": ollama_client.OLLAMA_MODEL,
+        "model": provider.model_name,
         "model_digest": model_digest,
         "ollama_version": ollama_version_str,
         "records_by_status": status_counts,
