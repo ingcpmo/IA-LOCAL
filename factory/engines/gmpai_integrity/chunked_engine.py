@@ -82,8 +82,10 @@ def output_token_budget(n_checkpoints: int, n_criteria: int) -> int:
     ampliacion D de la Fase F. Si el catalogo gana criterios, este numero
     sube solo; nunca se escribe un presupuesto a mano.
 
-    Valores actuales: eu_annex11_agent (5 cp, 20 crit) -> 3584;
-    alcoa_plus_agent (9 cp, 25 crit) -> 4608."""
+    Valores actuales, calculados con esta funcion y confirmados contra
+    corridas reales: eu_annex11_agent (5 cp, 20 crit) -> 3072
+    (preflight_metadata de la corrida de FS_v1.2 del 2026-07-28);
+    alcoa_plus_agent (9 cp, 25 crit) -> 4096."""
     if n_checkpoints < 0 or n_criteria < 0:
         raise ValueError(f"contrato invalido: {n_checkpoints=} {n_criteria=}")
     raw = (

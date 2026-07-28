@@ -27,10 +27,18 @@ OLLAMA_MODEL = os.getenv("FACTORY_OLLAMA_MODEL", "qwen2.5:7b-instruct-q4_K_M")
 # hardcodeado, asimetria sin razon).
 NUM_PREDICT = int(os.getenv("FACTORY_OLLAMA_NUM_PREDICT", "1024"))
 # Subido de 8192 a 16384 (2026-07-28): con el presupuesto de salida real,
-# alcoa_plus_agent no cabia en 8192 (4019 tokens de prompt + 4608 de salida
-# = 8627). Un prompt que no cabe NO falla: Ollama lo trunca en silencio, y
-# lo que se pierde es el principio -- common_contract y la lista de req_id.
-# Ver la guardia de preflight en chunked_engine._assert_token_budget_fits().
+# alcoa_plus_agent no cabe en 8192. Medido sobre FS_v1.2 ejecutando la propia
+# guardia: peor prompt 4410 tokens estimados (chunk 3) + num_predict 4096 =
+# 8506 > 8192, y _assert_token_budget_fits() aborta con TokenBudgetError.
+#
+# El margen es mas estrecho de lo que parece y conviene no perderlo de vista:
+# la tokenizacion REAL de ese prompt son ~4019 tokens (prompt_eval_count
+# medido), o sea 8115, que cabria en 8192 por 77 tokens. La guardia usa la
+# estimacion conservadora de PROMPT_CHARS_PER_TOKEN a proposito -- 77 tokens
+# de holgura sobre un documento concreto no son margen para ningun otro
+# documento. Y pasarse no falla ruidosamente: Ollama trunca el PROMPT en
+# silencio, y lo que se pierde es el principio, common_contract y la lista de
+# req_id. Ver chunked_engine._assert_token_budget_fits().
 NUM_CTX = int(os.getenv("FACTORY_OLLAMA_NUM_CTX", "16384"))
 # Fix TE-01 (post-mortem cierre FS_v1.2 v3): temperatura 0 (determinista, no 0.1)
 # reduce la tasa de respuestas no-JSON del modelo.
