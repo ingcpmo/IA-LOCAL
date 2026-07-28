@@ -99,6 +99,40 @@ class TestCrossReferencesResolve:
         result = check_cross_references_resolve(STRUCTURE, "Texto sin ninguna referencia cruzada.")
         assert result["status"] == "PASS"
 
+    def test_subsection_reference_is_not_evaluable_when_structure_has_no_subsections(self):
+        """2026-07-28: document_structure_extractor modela SOLO nivel 1, asi
+        que 'Section 2.1.1' no puede refutarse desde esta estructura.
+        Reportarla como inexistente (comportamiento anterior) era afirmar lo
+        que la estructura no puede saber -- los 4 casos reales de FS_v1.2
+        (2.1.1, 3.1.3, 3.1.12, 7.1.1) son subsecciones reales cuya
+        numeracion se perdio en la extraccion."""
+        text = "Per Section 2.1.1 Software, la estacion de ingenieria esta incluida."
+        result = check_cross_references_resolve(STRUCTURE, text)
+        assert result["status"] == "NOT_EVALUATED"
+        assert "2.1.1" in result["reason"]
+        assert "solo secciones de nivel 1" in result["reason"]
+
+    def test_level_one_reference_is_still_refuted_alongside_subsections(self):
+        """Guardia anti-silenciamiento: que haya subsecciones no evaluables
+        no puede tapar una referencia de nivel 1 que si es refutable."""
+        text = "Ver seccion 99 y tambien la Section 2.1.1 Software del documento."
+        result = check_cross_references_resolve(STRUCTURE, text)
+        assert result["status"] == "FAIL"
+        assert "99" in result["reason"]
+
+    def test_subsection_reference_is_adjudicated_when_structure_models_subsections(self):
+        """Si la estructura si modela subsecciones, la referencia vuelve a
+        ser refutable y una subseccion inexistente falla."""
+        with_subsections = {**STRUCTURE, "secciones": [
+            *STRUCTURE["secciones"],
+            {"numero": "2.1", "titulo": "Software", "pagina_inicio": 4, "parrafos": []},
+        ]}
+        ok = check_cross_references_resolve(with_subsections, "Ver seccion 2.1 del documento.")
+        assert ok["status"] == "PASS"
+        bad = check_cross_references_resolve(with_subsections, "Ver seccion 9.9 del documento.")
+        assert bad["status"] == "FAIL"
+        assert "9.9" in bad["reason"]
+
 
 class TestNoDuplicateParagraphs:
     """2026-07-28: la regla pasó de "aparece más de una vez" a "multiplicidad

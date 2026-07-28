@@ -69,18 +69,57 @@ def check_section_numbering_sequential(structure: dict) -> dict:
     return {"status": "PASS", "reason": f"{len(parsed)} secciones, numeración secuencial sin huecos ni duplicados"}
 
 
+def _reference_depth(numero: str) -> int:
+    return numero.count(".") + 1
+
+
 def check_cross_references_resolve(structure: dict, candidate_full_text: str) -> dict:
-    """Referencias cruzadas: toda mención tipo 'sección N'/'section N' en
-    el texto del candidato debe corresponder a un número de sección
-    real del propio documento -- una referencia a una sección inexistente
-    es un error de consistencia real, detectable de forma determinista."""
+    """Referencias cruzadas: una mención tipo 'sección N'/'section N' que no
+    corresponde a ninguna sección real es un error de consistencia.
+
+    Se adjudica SOLO a la granularidad que la estructura realmente modela.
+    `document_structure_extractor` extrae por diseño **solo secciones de
+    nivel 1** (su propio docstring lo declara: la heurística de subsecciones
+    producía 19 "secciones" donde hay 8). Comparar una referencia a `2.1.1`
+    contra ese universo garantiza un falso positivo: la subsección puede
+    existir perfectamente y el extractor no la modela.
+
+    Defecto real medido el 2026-07-28 sobre FS_v1.2: la regla reportaba
+    2.1.1, 3.1.12, 3.1.3 y 7.1.1 como inexistentes. Las cuatro se citan en
+    el documento junto a su título ("Section 2.1.1 Software", "Section
+    3.1.12 Overview Screen", "Section 3.1.3 F01.03: Engineering
+    Workstation") y esos títulos SÍ están en el texto extraído: son
+    subsecciones reales cuya numeración se perdió en la extracción, no
+    referencias rotas.
+
+    Por tanto: una referencia de nivel 1 sigue siendo refutable y se reporta
+    FAIL si no existe. Una referencia a subsección solo se adjudica si la
+    estructura modela subsecciones; si no las modela, queda NOT_EVALUATED
+    con la razón explícita -- afirmar que no existe sería afirmar algo que
+    esta estructura no puede saber."""
     real_section_numbers = {s["numero"] for s in structure["secciones"]}
+    structure_models_subsections = any(_reference_depth(n) > 1 for n in real_section_numbers)
     referenced = set(_CROSS_REFERENCE_RE.findall(candidate_full_text))
-    dangling = referenced - real_section_numbers
+
+    adjudicable = {
+        r for r in referenced
+        if _reference_depth(r) == 1 or structure_models_subsections
+    }
+    not_adjudicable = sorted(referenced - adjudicable)
+    dangling = sorted(adjudicable - real_section_numbers)
+
     if dangling:
         return {
             "status": "FAIL",
-            "reason": f"referencias cruzadas a secciones inexistentes en el documento: {sorted(dangling)}",
+            "reason": f"referencias cruzadas a secciones inexistentes en el documento: {dangling}",
+        }
+    if not_adjudicable:
+        return {
+            "status": "NOT_EVALUATED",
+            "reason": f"{len(adjudicable)} referencia(s) de nivel 1 resuelven correctamente; "
+                      f"{len(not_adjudicable)} referencia(s) a subseccion ({not_adjudicable}) no son "
+                      "evaluables: document_structure_extractor modela solo secciones de nivel 1, "
+                      "asi que su existencia no puede confirmarse ni refutarse desde esta estructura",
         }
     return {
         "status": "PASS",
