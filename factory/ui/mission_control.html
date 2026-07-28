@@ -35,6 +35,7 @@
       <button data-v="create">Crear misión</button>
       <button data-v="approve">Aprobación de misión</button>
       <button data-v="review">Revisión humana</button>
+      <button data-v="w5">Decisiones W5</button>
       <button data-v="pipeline">Pipeline Capa 8</button>
       <div class="grp">Cumplimiento</div>
       <button data-v="audit">Auditoría</button>
@@ -441,6 +442,19 @@
           <div class="card"><div class="meta" style="color:var(--faint)">(conectar para ver cola de revisión…)</div></div>
         </div>
         <p class="note">El deploy nunca es automático: aprobar el RC habilita la autorización de despliegue, que es un paso humano adicional.</p>
+      </section>
+
+      <!-- 05b W5 — DECISIONES HUMANAS -->
+      <section class="view" id="v-w5">
+        <p class="lead">Decisiones humanas W5 V2 (D1–D5) sobre el corpus regulatorio y sus fuentes.
+        <b>No son release candidates, ni aprobación de misión, ni assessments GAMP 5</b>: son actos de
+        gobernanza regulatoria y ninguna de esas tres vistas puede sustituirlos. Consultar esta página
+        no reverifica fuentes, no promueve Evidence Packs, no lanza corridas y no descongela ALCOA+.</p>
+        <div id="w5-list">
+          <div class="card"><div class="meta" style="color:var(--faint)">(cargando decisiones…)</div></div>
+        </div>
+        <p class="note">Registrar una decisión deja constancia del acto humano con identidad real y
+        decision_origin=human_confirmed. Ejecutar sus consecuencias es un paso posterior y separado.</p>
       </section>
 
       <!-- 06 AUDIT -->

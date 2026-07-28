@@ -11,6 +11,7 @@ import {
 } from './dash.js';
 import { renderApproveMissions } from './missions.js';
 import { renderReview } from './review.js';
+import { renderW5Decisions, renderW5Error } from './w5_decisions.js';
 import { refreshPipeline, loadClaudeStatus } from './pipeline.js';
 import { renderExecStatus, renderExecMissions, renderExecReview, renderExecRisks } from './exec.js';
 import { renderRisksView, renderReadiness } from './risks_view.js';
@@ -32,6 +33,7 @@ const TITLES={
   approve:["Aprobación de misión","mission-control / approvals"],
   pipeline:["Pipeline Capa 8","mission-control / layer8 / pipeline"],
   review:["Revisión humana","mission-control / review-queue"],
+  w5:["Decisiones humanas W5","mission-control / governance / w5-decisions"],
   audit:["Auditoría","mission-control / audit / chain"],
   risks:["Riesgos y Readiness","mission-control / risks"],
   system:["Estado del sistema","mission-control / system"],
@@ -147,9 +149,26 @@ export async function refresh(v){
     }
     if(v==='dash'||v==='review'){
       const r=await fetch(API_BASE+"/api/v1/layer9/review-queue",{headers:headers()});
+      if(_checkAuthFailure(r)) return;
       if(r.ok){ const d=await r.json();
         document.getElementById('m-rc').innerHTML=(d.summary?.pending??0)+'<small> / revisar</small>';
         if(v==='review') renderReview(d.pending||[]);
+      } else if(v==='review'){
+        /* Antes: sin rama else, un 404/500 dejaba el placeholder
+           "(conectar para ver cola de revisión…)" mientras el header seguía
+           en "conectado" -- indistinguible de no estar conectado. */
+        const el=document.getElementById('review-list');
+        if(el) el.innerHTML='<div class="card"><div class="meta" style="color:var(--fail)">'
+          +'Error HTTP '+r.status+' al leer la cola de revisión (no es un problema de conexión).</div></div>';
+      }
+    }
+    if(v==='w5'){
+      const r=await fetch(API_BASE+"/api/v1/layer9/w5-decisions",{headers:headers()});
+      if(_checkAuthFailure(r)) return;
+      if(r.ok){ renderW5Decisions(await r.json()); }
+      else {
+        const err=await r.json().catch(()=>({}));
+        renderW5Error(r.status, typeof err.detail==='string'?err.detail:'');
       }
     }
     if(v==='pipeline'||v==='dash'){

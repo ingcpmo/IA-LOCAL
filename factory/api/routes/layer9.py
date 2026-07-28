@@ -1205,3 +1205,64 @@ def get_gmpai_artifact_view(run_id: str, artifact_path: str):
 @router.get("/missions/gmpai_document_validation/gmpai-artifacts/{run_id}/{artifact_path:path}/download")
 def get_gmpai_artifact_download(run_id: str, artifact_path: str):
     return _gmpai_artifact_response(run_id, artifact_path, "attachment")
+
+
+# ---------------------------------------------------------------------------
+# W5 V2 — decisiones humanas D1–D5
+#
+# Superficie propia a proposito. NO se reutiliza review-queue (release
+# candidates), ni approvals (misiones), ni validacion GAMP (assessments):
+# ninguna de las tres puede sustituir un acto de gobernanza regulatoria sobre
+# el corpus y las fuentes. Ver factory/services/w5_human_decisions.py.
+# ---------------------------------------------------------------------------
+
+class W5DecisionBody(BaseModel):
+    decision: str
+    approved_by: str
+    notes: str = ""
+    decision_date: str | None = None
+    # Solo D1
+    approved_source_ids: Any = None
+    reverification_cadence_months: int | None = None
+    reverification_authority: str | None = None
+    # Solo D2
+    approved_pack_ids: Any = None
+
+
+@router.get("/w5-decisions")
+def get_w5_decisions():
+    """Estado de D1-D5 + datos de revision. SOLO LECTURA: no escribe
+    auditoria, no promueve estados, no dispara reverificacion ni corridas."""
+    from factory.services import w5_human_decisions as _w5
+    try:
+        return _w5.get_decisions_state()
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {e}")
+
+
+@router.post("/w5-decisions/{decision_id}")
+def post_w5_decision(decision_id: str, body: W5DecisionBody):
+    """Registra UNA decision humana. Un solo evento de auditoria.
+    Registrar no ejecuta consecuencias: no reverifica, no promueve, no lanza
+    corridas, no descongela nada."""
+    from factory.services import w5_human_decisions as _w5
+    try:
+        return _w5.record_decision(
+            decision_id,
+            decision=body.decision,
+            approved_by=body.approved_by,
+            notes=body.notes,
+            decision_date=body.decision_date,
+            approved_source_ids=body.approved_source_ids,
+            reverification_cadence_months=body.reverification_cadence_months,
+            reverification_authority=body.reverification_authority,
+            approved_pack_ids=body.approved_pack_ids,
+        )
+    except _w5.DecisionAlreadyRecordedError as e:
+        raise HTTPException(409, str(e))
+    except _w5.DecisionValidationError as e:
+        raise HTTPException(422, str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {e}")
