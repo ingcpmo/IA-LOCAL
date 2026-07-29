@@ -61,17 +61,28 @@ def _normalize_with_mapping(text: str) -> tuple[str, list[int]]:
     return "".join(out), mapping
 
 
+#: Extractores gobernados cuyos artefactos derivados sirven como texto
+#: completo. `ecfr_xml` se anadio con la ingesta de Part 211 (2026-07-29):
+#: su copia canonica es XML, formato que ni la rama .txt ni pdfplumber
+#: cubrian, de modo que la fuente era ilegible para este constructor.
+_SUPPORTED_EXTRACTORS = ("pdfplumber", "ecfr_xml")
+
+
 def _load_source_full_text(source_entry: dict) -> str:
     canonical_path = Path(source_entry["canonical_path"])
     if canonical_path.suffix == ".txt":
         return canonical_path.read_text(encoding="utf-8")
-    for artifact in source_entry.get("derived_artifacts", []):
-        if artifact["extractor"] == "pdfplumber":
-            data = json.loads(Path(artifact["artifact_path"]).read_text(encoding="utf-8"))
-            return "\n".join(data["pages"])
+    artifacts = source_entry.get("derived_artifacts", [])
+    for extractor in _SUPPORTED_EXTRACTORS:
+        for artifact in artifacts:
+            if artifact["extractor"] == extractor:
+                data = json.loads(Path(artifact["artifact_path"]).read_text(encoding="utf-8"))
+                return "\n".join(data["pages"])
+    found = sorted({a["extractor"] for a in artifacts}) or ["ninguno"]
     raise ValueError(
         f"sin texto completo disponible para source_id={source_entry['source_id']} "
-        f"(ni .txt canonico ni derived_artifact pdfplumber)"
+        f"(canonico {canonical_path.suffix or 'sin extension'}, extractores presentes: "
+        f"{found}; soportados: {list(_SUPPORTED_EXTRACTORS)})"
     )
 
 

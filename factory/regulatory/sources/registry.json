@@ -111,7 +111,22 @@
       "official_origin_status": "FIRST_INGESTION_NO_PRIOR_KNOWN_HASH_TO_COMPARE",
       "regulatory_currency_status": "pending_reverification",
       "copied_at": "2026-07-29T02:25:06.536379+00:00",
-      "derived_artifacts": [],
+      "derived_artifacts": [
+        {
+          "extractor": "ecfr_xml",
+          "extractor_version": "1.0",
+          "source_sha256": "ecd9f8ba39e59c7713be98c293f1da4b125a68706d32ce4c77a0b579797423e3",
+          "extraction_params": {
+            "unit": "section",
+            "skipped_tags": [
+              "EDNOTE",
+              "FTNT"
+            ]
+          },
+          "artifact_path": "factory/regulatory/sources/derived/ecd9f8ba39e59c7713be98c293f1da4b125a68706d32ce4c77a0b579797423e3/ecfr_xml_extraction_v1.json",
+          "artifact_sha256": "20615ee25a43c85541fcad449875b66d464f0ba8d21823fb7cbf5d9292421004"
+        }
+      ],
       "version": "NO_DISPONIBLE (eCFR es texto consolidado sin edicion discreta declarada; el cuerpo del XML no embebe la fecha del snapshot)",
       "effective_date": "NO_DISPONIBLE (texto consolidado sin fecha de vigencia unica aplicable a todo el Part 211; origen declarado 43 FR 45077, Sept. 29, 1978; enmienda mas reciente citada en el texto 89 FR 51770, June 18, 2024)",
       "supersedes": null,
