@@ -44,6 +44,11 @@ DELEGATION_SURFACES = {
     # delega en el gate en vez de resolver por su cuenta. Es la misma forma
     # que la de arriba -- una sola superficie, y el consumidor la usa.
     "factory/core/quality_gate_runner.py": {"g15_decision_coverage"},
+    # G1.12: `_dim_human_decision_coverage` no calcula cobertura -- PROYECTA
+    # el `coverage_basis` del resolver sobre el vocabulario de dimensiones del
+    # ciclo de vida. El resolver sigue siendo la única autoridad sobre quién
+    # firmó qué; esto solo le pone nombre de dimensión a su respuesta.
+    "factory/regulatory/source_lifecycle.py": {"_dim_human_decision_coverage"},
 }
 DELEGATED_NAMES = {n for names in DELEGATION_SURFACES.values() for n in names}
 
@@ -51,6 +56,7 @@ DELEGATED_NAMES = {n for names in DELEGATION_SURFACES.values() for n in names}
 # archivos reales.
 CONSUMERS = {
     "source_reverification": ["factory/regulatory/source_currency_checker.py"],
+    "source_lifecycle_transition": ["factory/regulatory/source_lifecycle.py"],
     "evidence_pack_eligibility": [
         "factory/regulatory/requirement_catalog/requirement_catalog_loader.py",
         "factory/regulatory/requirement_catalog/provisional_evidence_model.py",
@@ -74,6 +80,7 @@ WIRED = {
     "factory/regulatory/tools/build_source_baseline_allowlist.py",           # G1.10
     "factory/core/quality_gate_runner.py",                                   # G1.11
     "factory/core/release_manager.py",                                       # G1.11
+    "factory/regulatory/source_lifecycle.py",                                # G1.12
 }
 
 ALL_CONSUMER_FILES = sorted({f for fs in CONSUMERS.values() for f in fs})
@@ -285,15 +292,15 @@ def test_t24_every_declared_consumer_is_a_known_one():
         assert declared <= known, f"familia {name}: consumidores desconocidos {declared - known}"
 
 
-# G1.11 cerró los CINCO consumidores de la spec §6, y este test sigue en
-# xfail: el registro de familias declara ocho más (version_guard,
-# model_qualification_gate, audit_reporting, package_regeneration,
-# run_driver, source_lifecycle_transition, source_registration_apply,
-# applicability_resolution) que se cablean en G1.12-G1.15. Que el andamio no
+# G1.11 cerró los CINCO consumidores de la spec §6 y G1.12 añadió
+# `source_lifecycle_transition`, y este test sigue en xfail: el registro de
+# familias declara siete más (version_guard, model_qualification_gate,
+# audit_reporting, package_regeneration, run_driver, source_registration_apply,
+# applicability_resolution) que se cablean en G1.13-G1.15. Que el andamio no
 # se retire aquí es correcto -- mide lo declarado, no las fases del plan, y
 # por eso caza lo que el plan no previó.
 @pytest.mark.xfail(strict=True,
-                   reason="G1.12-G1.15: 8 consumidores declarados fuera de la spec §6 "
+                   reason="G1.13-G1.15: 7 consumidores declarados fuera de la spec §6 "
                           "aún sin módulo cableado")
 def test_t24_declared_consumers_have_a_wired_module():
     """El test que impide que el diseño se degrade con el tiempo: añadir una

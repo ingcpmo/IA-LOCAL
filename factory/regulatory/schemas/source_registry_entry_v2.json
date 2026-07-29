@@ -1,0 +1,226 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "source_registry_entry_v2",
+  "description": "W5 V2 G1.12 -- entrada del registro de fuentes regulatorias con su CICLO DE VIDA explicito (SOURCE_LIFECYCLE_SPEC.md). Estrictamente ADITIVO sobre v1: todos los campos de v1 se conservan con su semantica intacta, porque local_integrity_status, official_origin_status y regulatory_currency_status son las ENTRADAS de las dimensiones, no sus sustitutos. Ninguna entrada v1 valida deja de serlo aqui. El artefacto que usa este schema (registry_v2.json) es DERIVADO y verificable: registry.json no se reescribe y el rollback es borrar el derivado.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_id",
+    "canonical_path",
+    "official_source_url",
+    "official_source_description",
+    "sha256_original",
+    "sha256_copy",
+    "hashes_match",
+    "size_bytes",
+    "normative_type",
+    "jurisdiction",
+    "local_integrity_status",
+    "official_origin_status",
+    "regulatory_currency_status",
+    "version",
+    "effective_date",
+    "supersedes",
+    "reverification_due"
+  ],
+  "properties": {
+    "source_id": {
+      "type": "string",
+      "minLength": 3
+    },
+    "original_path": {
+      "type": "string"
+    },
+    "canonical_path": {
+      "type": "string",
+      "description": "Ruta al archivo ORIGINAL (PDF/texto) dentro del almacen inmutable factory/regulatory/sources/sha256/<hash>/. Nunca apunta a un artefacto derivado."
+    },
+    "official_source_url": {
+      "type": "string"
+    },
+    "official_source_description": {
+      "type": "string"
+    },
+    "sha256_original": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sha256_copy": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "hashes_match": {
+      "type": "boolean",
+      "const": true
+    },
+    "size_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "normative_type": {
+      "enum": [
+        "regulation",
+        "official_guidance",
+        "internal_interpretation"
+      ]
+    },
+    "jurisdiction": {
+      "type": "string",
+      "minLength": 2
+    },
+    "local_integrity_status": {
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "official_origin_status": {
+      "type": "string",
+      "minLength": 3
+    },
+    "regulatory_currency_status": {
+      "type": "string",
+      "description": "NUNCA 'verified_current'/'current' en este ciclo -- solo 'pending_reverification' hasta que exista una re-verificacion real contra la fuente oficial en linea.",
+      "enum": [
+        "pending_reverification"
+      ]
+    },
+    "copied_at": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "W5 V2 Fase B -- edicion/revision declarada DENTRO del propio texto gobernado (cita literal, nunca inventada). Si el documento no declara una edicion discreta (p.ej. eCFR, texto consolidado continuo), usar una nota explicita del tipo 'NO_DISPONIBLE (motivo)' -- nunca dejar vacio ni asumir un valor."
+    },
+    "effective_date": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Fecha de entrada en vigor declarada DENTRO del propio texto gobernado (cita literal, formato ISO YYYY-MM-DD o YYYY-MM si el texto solo declara mes/anio). 'NO_DISPONIBLE (motivo)' si el documento no declara una fecha de vigencia unica aplicable a todo el texto."
+    },
+    "supersedes": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "source_id de la version anterior que esta fuente reemplaza, o null si es la primera version gobernada de esa fuente. Nunca se infiere automaticamente -- requiere aprobacion humana via human_source_update.py, igual que cualquier otro cambio de este registro."
+    },
+    "reverification_due": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Fecha ISO en la que corresponde re-verificar esta fuente (accesibilidad+hash via source_currency_checker.py), o null si aun no existe una politica de cadencia aprobada por Capa 9. NUNCA se calcula con una cadencia inventada sin decision humana explicita -- null es el valor honesto mientras esa politica no exista."
+    },
+    "derived_artifacts": {
+      "type": "array",
+      "description": "Artefactos de extraccion DERIVADOS (ej. pdfplumber). Nunca reemplazan canonical_path.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "extractor",
+          "extractor_version",
+          "source_sha256",
+          "artifact_path",
+          "artifact_sha256"
+        ],
+        "properties": {
+          "extractor": {
+            "type": "string"
+          },
+          "extractor_version": {
+            "type": "string"
+          },
+          "source_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "Debe coincidir con sha256_copy del source padre -- validado por el loader, no solo por el schema."
+          },
+          "extraction_params": {
+            "type": "object"
+          },
+          "artifact_path": {
+            "type": "string"
+          },
+          "artifact_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "Hash del propio archivo de artefacto derivado (no del texto extraido -- ver extracted_text_sha256 dentro del artefacto)."
+          }
+        }
+      },
+      "default": []
+    },
+    "lifecycle_state": {
+      "enum": [
+        "REGISTERED_PENDING_AUTHORIZATION",
+        "AUTHORIZED_PENDING_REVERIFICATION",
+        "LOCAL_CANONICAL_COPY_VERIFIED",
+        "SOURCE_UNAVAILABLE",
+        "REVERIFICATION_EXPIRED",
+        "REVOKED"
+      ],
+      "description": "Etiqueta unica DERIVADA de las cinco dimensiones por source_lifecycle.derive_lifecycle_state(). Existe para que haya un solo vocabulario, NO para sustituir a las dimensiones: nunca se expone sin ellas."
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "COPY_HASH_INTEGRITY",
+        "OFFICIAL_ORIGIN_VERIFICATION",
+        "REGULATORY_CURRENCY",
+        "HUMAN_DECISION_COVERAGE",
+        "FORMAL_USE_ELIGIBILITY"
+      ],
+      "description": "Las CINCO dimensiones ortogonales de SOURCE_LIFECYCLE_SPEC.md §2. Las cinco son required a proposito: un objeto `dimensions` parcial seria exactamente el colapso que este schema existe para impedir. Ninguna se deriva de otra salvo FORMAL_USE_ELIGIBILITY, que es la conjuncion estricta de las cuatro.",
+      "properties": {
+        "COPY_HASH_INTEGRITY": {
+          "enum": [
+            "VERIFIED",
+            "CORRUPTED",
+            "FILE_MISSING"
+          ],
+          "description": "sha256 recalculado del fichero canonico vs sha256_copy. Se recalcula: local_integrity_status es el resultado de un calculo pasado."
+        },
+        "OFFICIAL_ORIGIN_VERIFICATION": {
+          "enum": [
+            "VERIFIED",
+            "NOT_COMPARABLE_FIRST_INGESTION",
+            "UNVERIFIED"
+          ],
+          "description": "NOT_COMPARABLE_FIRST_INGESTION es AMBAR, no rojo: en una primera ingesta no existe hash previo gobernado con el que comparar, y apply_source_registration() rechaza por codigo declarar lo contrario. Se resuelve con una reverificacion posterior, no con una correccion."
+        },
+        "REGULATORY_CURRENCY": {
+          "enum": [
+            "CURRENT",
+            "PENDING_REVERIFICATION",
+            "EXPIRED"
+          ],
+          "description": "reverification_due vencido gana sobre el estado almacenado: caducar restringe, y restringir es seguro."
+        },
+        "HUMAN_DECISION_COVERAGE": {
+          "enum": [
+            "COVERED",
+            "NOT_COVERED",
+            "REVOKED",
+            "RECONSTRUCTED_PENDING_FORMAL_CORRECTION"
+          ],
+          "description": "Proyeccion del coverage_basis del DecisionScopeResolver sobre D1. RECONSTRUCTED_PENDING_FORMAL_CORRECTION se distingue de NOT_COVERED para poder decirlo en un informe; no autoriza igualmente."
+        },
+        "FORMAL_USE_ELIGIBILITY": {
+          "type": "boolean",
+          "description": "Conjuncion estricta de las cuatro anteriores. UNICA condicion que habilita conclusiones formales sobre esta fuente. Ninguna de las cuatro por separado lo hace, y ninguna combinacion de tres tampoco."
+        }
+      }
+    },
+    "ineligibility_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Que dimension bloquea, en palabras. Un FORMAL_USE_ELIGIBILITY=false sin motivo obliga a reconstruir el razonamiento a mano en cada informe.",
+      "default": []
+    }
+  }
+}
