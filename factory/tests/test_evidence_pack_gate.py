@@ -37,19 +37,42 @@ class TestValidateEvidencePack:
         assert verdict.complete is False
         assert "sin entrada valida en el catalogo" in verdict.detail
 
-    def test_all_19_catalog_requirements_are_complete(self):
-        """Cobertura real: los 19 req_id del catalogo pasan el gate hoy. Si
-        este test falla, el catalogo perdio un campo que el prompt inyecta."""
+    def test_every_interpreted_requirement_has_a_complete_pack(self):
+        """Cobertura real: todo req_id con interpretacion humana pasa el gate.
+        Si falla, el catalogo perdio un campo que el prompt inyecta.
+
+        Los requisitos en PENDING_HUMAN_INTERPRETATION_REQ_IDS se excluyen a
+        proposito -- su pack esta incompleto POR DISENO, y el test de abajo
+        exige que por eso mismo sigan bloqueados."""
         import yaml
+        from tests.conftest import PENDING_HUMAN_INTERPRETATION_REQ_IDS
         catalog = yaml.safe_load(
             Path("factory/regulatory/requirement_catalog/requirements.yaml").read_text()
         )
         incomplete = {
             rid: ce.validate_evidence_pack(rid).missing
             for rid in catalog["requirements"]
-            if not ce.validate_evidence_pack(rid).complete
+            if rid not in PENDING_HUMAN_INTERPRETATION_REQ_IDS
+            and not ce.validate_evidence_pack(rid).complete
         }
-        assert incomplete == {}, f"req_id del catalogo con pack incompleto: {incomplete}"
+        assert incomplete == {}, f"req_id interpretado con pack incompleto: {incomplete}"
+
+    def test_pending_interpretation_requirements_are_incomplete_and_blocked(self):
+        """La otra mitad de la invariante: un requisito sin interpretacion
+        humana NO puede colarse como operativo. Debe estar incompleto de
+        verdad (si estuviera completo, sobraria en la lista) y bloqueado."""
+        import yaml
+        from tests.conftest import PENDING_HUMAN_INTERPRETATION_REQ_IDS
+        catalog = yaml.safe_load(
+            Path("factory/regulatory/requirement_catalog/requirements.yaml").read_text()
+        )
+        for rid in PENDING_HUMAN_INTERPRETATION_REQ_IDS:
+            entry = catalog["requirements"][rid]
+            assert not ce.validate_evidence_pack(rid).complete, rid
+            assert entry["evidence_pack_status"] == "structure_only_pending_human_interpretation", rid
+            assert entry["content_review_status"] == "PENDING_HUMAN_INTERPRETATION", rid
+            assert entry["production_eligibility"] == "BLOCKED", rid
+            assert entry["ready_for_regulatory_use"] is False, rid
 
     @pytest.mark.parametrize("field,expected_missing", [
         ("citation_text", "citation.citation_text"),

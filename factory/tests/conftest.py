@@ -15,6 +15,23 @@ REPO_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 
+#: Requisitos del catalogo cuyo Evidence Pack existe pero AUN NO tiene
+#: interpretacion humana (`structure_only_pending_human_interpretation`).
+#:
+#: No es una lista de excepciones toleradas: es una declaracion consciente.
+#: Un requisito aqui tiene cita anclada y estructura valida, pero le faltan
+#: los campos interpretativos (evidence_min_criteria, exclusion_criteria,
+#: governed_interpretation...), asi que NO puede evaluarse en una corrida.
+#: Los tests exigen que todo lo que este aqui siga bloqueado para produccion,
+#: y que todo lo que NO este aqui tenga su pack completo.
+#:
+#: Anadir un id a este conjunto es un acto deliberado que debe acompanar a un
+#: alta real de requisito -- nunca la via para silenciar un pack incompleto.
+#: `21_CFR_211.68(b)` entro el 2026-07-29 con la ingesta de Part 211; espera
+#: la redaccion humana de Capa 9.
+PENDING_HUMAN_INTERPRETATION_REQ_IDS = frozenset({"21_CFR_211.68(b)"})
+
+
 @pytest.fixture()
 def isolated_audit(tmp_path, monkeypatch):
     """

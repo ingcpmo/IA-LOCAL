@@ -376,6 +376,61 @@ def _case_evidence_out_of_context() -> GoldenCaseResult:
     )
 
 
+# --- 21 CFR 211.68(b): la regla predicado ingerida el 2026-07-29 -------------
+# Estos 3 casos existen porque un requisito recien anadido, con pack todavia
+# sin interpretacion humana, es exactamente donde un motor puede empezar a
+# producir DOCUMENTATION_GAP falsos en masa. Se afirman antes de correr nada.
+
+def _case_predicate_rule_resolves_in_catalog() -> GoldenCaseResult:
+    """Positivo: 21_CFR_211.68(b) resuelve contra el catalogo gobernado y su
+    fuente tiene integridad verificada. Si esto falla, la ingesta de Part 211
+    quedo a medias y ningun hallazgo suyo seria trazable."""
+    status = sev.verify_regulatory_source("21_CFR_211.68(b)")
+    passed = status == "PASS"
+    return GoldenCaseResult(
+        "predicate_rule_resolves_in_catalog", "B",
+        "El requisito de la regla predicado resuelve en el catalogo y su fuente tiene hashes_match.",
+        expected="B=PASS", actual=f"B={status}", passed=passed,
+    )
+
+
+def _case_invented_part211_section_rejected() -> GoldenCaseResult:
+    """Anti-fabricacion: inventar un numeral de Part 211 que no existe debe
+    fallar aunque la FUENTE (Part 211) si este gobernada. Tener la regulacion
+    ingerida no autoriza a citar cualquier numeral de ella."""
+    status = sev.verify_regulatory_source("21_CFR_211.999(z)")
+    passed = status == "FAIL"
+    return GoldenCaseResult(
+        "invented_part211_section_rejected", "B",
+        "Un numeral inexistente de una fuente SI gobernada debe fallar igual que uno de fuente desconocida.",
+        expected="B=FAIL", actual=f"B={status}", passed=passed,
+    )
+
+
+def _case_predicate_rule_quote_not_in_document() -> GoldenCaseResult:
+    """El texto real de 211.68(b) es la REGULACION, no el documento evaluado.
+    Citarlo como si fuera evidencia encontrada en el documento Rockwell debe
+    fallar el anclaje: la regulacion dice que exigir, no que el documento
+    cumpla."""
+    texto_regulacion = (
+        "Appropriate controls shall be exercised over computer or related systems to assure "
+        "that changes in master production and control records or other records are instituted "
+        "only by authorized personnel."
+    )
+    documento_evaluado = (
+        "El sistema SCADA gestiona los lazos de control de la unidad WFI y "
+        "registra las alarmas en el historiador del servidor."
+    )
+    status, match_type = sev.verify_anchor(texto_regulacion, documento_evaluado)
+    passed = status == "FAIL"
+    return GoldenCaseResult(
+        "predicate_rule_quote_not_in_document", "A",
+        "El texto de la regulacion citado como si fuera evidencia del documento debe fallar el anclaje.",
+        expected="A=FAIL", actual=f"A={status}", passed=passed,
+        detail={"match_type": match_type},
+    )
+
+
 _ALL_CASES = [
     _case_annex11_4_reference_list,
     _case_invented_citation,
@@ -391,6 +446,9 @@ _ALL_CASES = [
     _case_sufficiency_invented_criterion_rejected_atomically,
     _case_sufficiency_duplicate_criterion_index_rejected_atomically,
     _case_sufficiency_met_without_evidence_rejected_atomically,
+    _case_predicate_rule_resolves_in_catalog,
+    _case_invented_part211_section_rejected,
+    _case_predicate_rule_quote_not_in_document,
 ]
 
 

@@ -14,10 +14,17 @@
 # default OBLIGATORIO por requisito: review_required
 # (P1: un tipo documental no contemplado JAMAS se omite en silencio)
 #
-# NO FABRICACION: solo los 19 requirement_id que existen HOY en
+# NO FABRICACION: los 19 requirement_id originales existen en
 # factory/engines/gmpai_integrity/prompts/*.yaml (ver
 # factory/docs/W5v2_FASE0_INVENTARIO.md §6). Regulaciones no ingeridas:
 # comentario PENDING_DOCUMENT, sin filas inventadas.
+#
+# EXCEPCION DECLARADA (v2.1, 2026-07-29): "21_CFR_211.68(b)" SI esta en el
+# catalogo y en esta matriz, pero TODAVIA NO tiene prompt ni agente en
+# factory/engines/gmpai_integrity/prompts/. En una corrida real no se
+# evaluaria: falta el agente fda_cgmp_211. La fila se declara aqui porque la
+# aplicabilidad documental es una decision de gobernanza independiente de que
+# el motor ya sepa ejecutarla -- pero no confundir "declarado" con "operativo".
 #
 # TODAS las filas de este archivo estan marcadas # PROPUESTO -- son una
 # primera pasada de Claude Code razonada sobre el V-model GAMP 5 y el
@@ -31,7 +38,10 @@
 # aprobación debe marcarse # PROPUESTO de nuevo hasta la siguiente
 # confirmación explícita.
 
-matrix_version: "2.0"
+matrix_version: "2.1"
+# v2.1 (2026-07-29): se agregan las filas de 21_CFR_211.68(b) tras la
+# ingesta de ecfr_21cfr_part211. MC-0001 NO las cubre -- estan marcadas
+# PROPUESTO y requieren una confirmacion humana nueva.
 approval:            # Checkpoint B confirmado — ver factory/layer9/decisions/decisions.jsonl (MC-0001)
   status: "human_confirmed"
   decision_id: "MC-0001"
@@ -181,6 +191,16 @@ requirements:
     SOP: expected
     OQ: optional
     evidence_expected_in: [FS, SOP]
+    default: review_required
+
+  # --- FDA 21 CFR Part 211 (regla predicado, ingerida 2026-07-29) ---
+  "21_CFR_211.68(b)":  # PROPUESTO -- NO cubierto por MC-0001
+    URS: cross_reference_expected
+    FS: expected
+    DS: expected
+    OQ: expected
+    IQ: cross_reference_expected
+    evidence_expected_in: [FS, DS, OQ]
     default: review_required
 
 # PENDING_DOCUMENT: FDA OOS 2022, FDA DI 2018, USP <621>, USP <1058>,

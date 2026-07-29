@@ -19,8 +19,10 @@ from factory.regulatory.requirement_catalog import requirement_catalog_loader as
 EXPECTED_ENTRY_COUNT = 19
 
 
-def test_catalog_has_exactly_19_entries():
-    assert len(catalog.known_entry_ids()) == EXPECTED_ENTRY_COUNT
+def test_catalog_keeps_at_least_the_original_entries():
+    """El catalogo puede crecer con altas aprobadas por Capa 9 (2026-07-29:
+    21_CFR_211.68(b)); lo que no puede es encoger en silencio."""
+    assert len(catalog.known_entry_ids()) >= EXPECTED_ENTRY_COUNT
 
 
 def test_alcoa_contemporaneous_present():

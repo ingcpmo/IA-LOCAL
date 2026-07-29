@@ -46,15 +46,19 @@ def test_no_source_declares_itself_verified_current():
         assert "current" != entry["regulatory_currency_status"]
 
 
-def test_requirements_catalog_has_all_19_ids():
+def test_requirements_catalog_keeps_all_original_ids():
+    """Los 19 originales no pueden desaparecer. El catalogo SI puede crecer
+    (2026-07-29: 21_CFR_211.68(b)), asi que se afirma inclusion, no igualdad."""
     catalog = load_requirements()
-    assert set(catalog["requirements"].keys()) == ALL_19_REQ_IDS
+    assert ALL_19_REQ_IDS <= set(catalog["requirements"].keys())
 
 
-def test_all_19_requirements_are_covered_with_verified_citations():
+def test_every_requirement_is_covered_with_verified_citations():
+    """Invariante: ninguna entrada queda en review_required. Vale para 19 o
+    para 200 -- lo que no puede pasar es que una cita no ancle."""
     summary = validate_all()
-    assert summary.total == 19
-    assert summary.covered == 19
+    assert summary.total == len(load_requirements()["requirements"])
+    assert summary.covered == summary.total
     assert summary.review_required == 0
 
 

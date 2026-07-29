@@ -14,9 +14,16 @@ from factory.regulatory.applicability import (
 
 
 def test_load_matrix_is_valid():
+    """Invariante, no conteo: toda fila de la matriz debe corresponder a un
+    requisito REAL del catalogo gobernado. Eso es lo que impide una fila
+    inventada; el numero de filas cambia legitimamente con cada alta
+    (v2.1, 2026-07-29: 21_CFR_211.68(b))."""
+    from factory.regulatory.requirement_catalog.requirement_catalog_loader import load_requirements
     data = load_matrix()
-    assert data["matrix_version"] == "2.0"
-    assert len(data["requirements"]) == 19  # los 19 requirement_id reales de Fase 0
+    assert data["matrix_version"].startswith("2.")
+    del_catalogo = set(load_requirements()["requirements"])
+    inventadas = set(data["requirements"]) - del_catalogo
+    assert inventadas == set(), f"filas de la matriz sin requisito en el catalogo: {inventadas}"
 
 
 def test_matrix_is_approved_via_checkpoint_b():

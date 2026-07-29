@@ -114,12 +114,28 @@ class TestLookupEvidenceMinCriteria:
     def test_returns_none_for_unknown_requirement_id(self):
         assert ce._lookup_evidence_min_criteria("REQ_QUE_NO_EXISTE_EN_EL_CATALOGO") is None
 
-    def test_19_catalog_requirement_ids_all_resolve_to_real_criteria(self):
+    def test_interpreted_catalog_requirement_ids_all_resolve_to_real_criteria(self):
+        """Los requisitos pendientes de interpretacion humana no tienen
+        criterios todavia -- esa ausencia es lo que declara su estado, y el
+        gate 4 impide que se evaluen. Se excluyen aqui y se comprueban aparte."""
+        from tests.conftest import PENDING_HUMAN_INTERPRETATION_REQ_IDS
         catalog = yaml.safe_load(
             Path("factory/regulatory/requirement_catalog/requirements.yaml").read_text()
         )
-        missing = [rid for rid in catalog["requirements"] if not ce._lookup_evidence_min_criteria(rid)]
-        assert missing == [], f"req_id del catalogo sin evidence_min_criteria resuelto: {missing}"
+        missing = [
+            rid for rid in catalog["requirements"]
+            if rid not in PENDING_HUMAN_INTERPRETATION_REQ_IDS
+            and not ce._lookup_evidence_min_criteria(rid)
+        ]
+        assert missing == [], f"req_id interpretado sin evidence_min_criteria resuelto: {missing}"
+
+    def test_pending_interpretation_requirements_have_no_criteria_yet(self):
+        from tests.conftest import PENDING_HUMAN_INTERPRETATION_REQ_IDS
+        for rid in PENDING_HUMAN_INTERPRETATION_REQ_IDS:
+            assert not ce._lookup_evidence_min_criteria(rid), (
+                f"{rid} ya tiene criterios: si hay interpretacion humana real, "
+                "sacarlo de PENDING_HUMAN_INTERPRETATION_REQ_IDS"
+            )
 
 
 class TestBuildPromptInjectsEvidenceMinCriteria:

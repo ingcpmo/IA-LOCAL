@@ -38,7 +38,7 @@ requirements:
       (b) The ability to generate accurate and complete copies of records in both human readable and electronic
       form suitable for inspection, review, and copying by the agency. Persons should contact the agency
       if there are any questions regarding the ability of the agency to perform such review and cop'
-    pack_version: 2.0-draft
+    pack_version: 2.1-draft
     evidence_pack_status: human_drafted_provisional
     source_verification_status: PENDING_REVERIFICATION
     pack_lifecycle_status: DRAFT
@@ -52,10 +52,10 @@ requirements:
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
     applicability_profile_ref: PART11_APPLICABILITY_V1
-    predicate_rule_id: NOT_DETERMINED
-    part11_scope_status: NOT_DETERMINED
+    predicate_rule_id: 21_CFR_211.68(b)
+    part11_scope_status: IN_SCOPE
     system_environment: NOT_DETERMINED
-    applicability_status: NOT_DETERMINED
+    applicability_status: APPLICABLE
     governed_interpretation: Exige validacion documentada basada en riesgo y en el uso previsto del sistema,
       con criterios de aceptacion definidos antes de ejecutar, evidencia real de ejecucion, trazabilidad
       requisito-prueba-resultado, y capacidad demostrada de discernir registros invalidos o alterados.
@@ -122,7 +122,7 @@ requirements:
       and time of operator entries and actions that create, modify, or delete electronic records. Record
       changes shall not obscure previously recorded information. Such audit trail documentation shall
       be re'
-    pack_version: 2.0-draft
+    pack_version: 2.1-draft
     evidence_pack_status: human_drafted_provisional
     source_verification_status: PENDING_REVERIFICATION
     pack_lifecycle_status: DRAFT
@@ -136,10 +136,10 @@ requirements:
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
     applicability_profile_ref: PART11_APPLICABILITY_V1
-    predicate_rule_id: NOT_DETERMINED
-    part11_scope_status: NOT_DETERMINED
+    predicate_rule_id: 21_CFR_211.68(b)
+    part11_scope_status: IN_SCOPE
     system_environment: NOT_DETERMINED
-    applicability_status: NOT_DETERMINED
+    applicability_status: APPLICABLE
     governed_interpretation: 'Exige control efectivo y probado sobre el sistema regulado -- local o integrado
       con un proveedor de identidad (SSO/LDAP/AD) -- mas gestion de acceso a lo largo del ciclo de vida
       de la cuenta (alta, cambio, revision, revocacion). Las cuentas humanas compartidas se rechazan.
@@ -213,7 +213,7 @@ requirements:
 
 
       (f) Use of operational system checks to enforce'
-    pack_version: 2.0-draft
+    pack_version: 2.1-draft
     evidence_pack_status: human_drafted_provisional
     source_verification_status: PENDING_REVERIFICATION
     pack_lifecycle_status: DRAFT
@@ -227,10 +227,10 @@ requirements:
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
     applicability_profile_ref: PART11_APPLICABILITY_V1
-    predicate_rule_id: NOT_DETERMINED
-    part11_scope_status: NOT_DETERMINED
+    predicate_rule_id: 21_CFR_211.68(b)
+    part11_scope_status: IN_SCOPE
     system_environment: NOT_DETERMINED
-    applicability_status: NOT_DETERMINED
+    applicability_status: APPLICABLE
     governed_interpretation: Exige generacion automatica e independiente del operador, con timestamp,
       registrando entradas y acciones (crear/modificar/eliminar), preservando la informacion previa (no
       sobrescribir), con controles de acceso privilegiado, trazabilidad y deteccion de manipulacion sobre
@@ -307,7 +307,7 @@ requirements:
 
       (i) Determination that persons who develop, maintain, or use electronic record/electronic signature
       systems have the education, training, and experience to '
-    pack_version: 2.0-draft
+    pack_version: 2.1-draft
     evidence_pack_status: human_drafted_provisional
     source_verification_status: PENDING_REVERIFICATION
     pack_lifecycle_status: DRAFT
@@ -321,10 +321,10 @@ requirements:
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
     applicability_profile_ref: PART11_APPLICABILITY_V1
-    predicate_rule_id: NOT_DETERMINED
-    part11_scope_status: NOT_DETERMINED
+    predicate_rule_id: 21_CFR_211.68(b)
+    part11_scope_status: IN_SCOPE
     system_environment: NOT_DETERMINED
-    applicability_status: NOT_DETERMINED
+    applicability_status: APPLICABLE
     governed_interpretation: 'Distinto de 11.10(d): exige verificacion de autoridad para cada operacion
       aplicable que ofrezca el sistema -- consultar, crear, modificar, aprobar, firmar, eliminar, administrar,
       operar (segun corresponda) -- no limitado a "firmar vs. ver". Chequeo tecnico de autoridad ejecutado
@@ -397,7 +397,7 @@ requirements:
 
 
       § 11.70 Signature/record l'
-    pack_version: 2.0-draft
+    pack_version: 2.1-draft
     evidence_pack_status: human_drafted_provisional
     source_verification_status: PENDING_REVERIFICATION
     pack_lifecycle_status: DRAFT
@@ -411,10 +411,10 @@ requirements:
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
     applicability_profile_ref: PART11_APPLICABILITY_V1
-    predicate_rule_id: NOT_DETERMINED
-    part11_scope_status: NOT_DETERMINED
+    predicate_rule_id: 21_CFR_211.68(b)
+    part11_scope_status: IN_SCOPE
     system_environment: NOT_DETERMINED
-    applicability_status: NOT_DETERMINED
+    applicability_status: APPLICABLE
     additional_citations:
     - citation_id: P11-11.50b
       citation_text: The items identified in paragraphs (a)(1), (a)(2), and (a)(3) of this section shall
@@ -1705,3 +1705,43 @@ requirements:
     implementation_evidence_expected:
     - Evidencia real de una recuperacion ejecutada sin demora indebida, directamente accesible y en forma
       legible.
+  21_CFR_211.68(b):
+    label: 'Controles sobre sistemas computarizados: cambios por personal autorizado, verificacion de exactitud
+      de entrada/salida y respaldo de datos'
+    source_id: ecfr_21cfr_part211
+    citation:
+      citation_id: P211-211.68b
+      citation_text: Appropriate controls shall be exercised over computer or related systems to assure
+        that changes in master production and control records or other records are instituted only by authorized
+        personnel.
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: § 211.68, paragraph (b)
+      citation_sha256: cb5ed0016e4a767fc9f063ab71afc3c29342dbc6bee16c9bf6739dc8a9f16143
+    normative_type: regulation
+    jurisdiction: US
+    binding_status: binding_regulation
+    review_status: covered
+    pack_version: 1.0-draft
+    context_before: 'cture, processing, packing, and holding of a drug product. If such equipment is so
+      used, it shall be routinely calibrated, inspected, or checked according to a written program designed
+      to assure proper performance. Written records of those calibration checks and inspections shall be
+      maintained.
+
+      (b) '
+    context_after: ' Input to and output from the computer or related system of formulas or other records
+      or data shall be checked for accuracy. The degree and frequency of input/output verification shall
+      be based on the complexity and reliability of the computer or related system. A backup file of data
+      entered into th'
+    evidence_pack_status: structure_only_pending_human_interpretation
+    pack_lifecycle_status: DRAFT
+    content_review_status: PENDING_HUMAN_INTERPRETATION
+    source_verification_status: PENDING_REVERIFICATION
+    runtime_eligibility: ENABLED_REVIEW_ONLY
+    baseline_eligibility: PROVISIONAL_ONLY
+    positive_conclusion_eligibility: PROVISIONAL_ONLY
+    draft_remediation_eligibility: BLOCKED
+    clean_candidate_eligibility: BLOCKED
+    release_eligibility: BLOCKED
+    production_eligibility: BLOCKED
+    ready_for_regulatory_use: false

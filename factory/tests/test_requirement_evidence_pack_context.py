@@ -144,14 +144,26 @@ class TestRealCatalogHasMechanicalFieldsOnly:
             full = {"requirement_id": rid, **entry}
             jsonschema.validate(full, _SCHEMA)
 
-    def test_all_19_requirements_are_human_drafted(self):
-        """Fase C completa (2026-07-23, aprobado por Cesar): los 19
-        requisitos (CFR11 5 + ANNEX11 5 + ALCOA 9) tienen interpretacion
-        humana real. Ninguno debe quedar en el estado inicial
-        structure_only_pending_human_interpretation."""
-        assert set(_REAL_CATALOG["requirements"].keys()) == HUMAN_DRAFTED_REQ_IDS
+    def test_every_requirement_is_either_human_drafted_or_declared_pending(self):
+        """Fase C completa (2026-07-23, aprobado por Cesar): los 19 requisitos
+        originales (CFR11 5 + ANNEX11 5 + ALCOA 9) tienen interpretacion humana
+        real. Un requisito solo puede escapar de eso estando declarado en
+        PENDING_HUMAN_INTERPRETATION_REQ_IDS -- nunca en silencio.
+
+        Esto es mas fuerte que el conteo que habia antes: cubre cualquier
+        requisito futuro, no solo los 19 de entonces."""
+        from tests.conftest import PENDING_HUMAN_INTERPRETATION_REQ_IDS
+        ids = set(_REAL_CATALOG["requirements"].keys())
+        assert HUMAN_DRAFTED_REQ_IDS <= ids, "desaparecio un requisito ya interpretado"
+        no_declarados = ids - HUMAN_DRAFTED_REQ_IDS - PENDING_HUMAN_INTERPRETATION_REQ_IDS
+        assert no_declarados == set(), (
+            f"requisitos sin interpretacion humana y sin declarar: {no_declarados}"
+        )
         for rid, entry in _REAL_CATALOG["requirements"].items():
-            assert entry["evidence_pack_status"] == "human_drafted_provisional", rid
+            esperado = ("structure_only_pending_human_interpretation"
+                        if rid in PENDING_HUMAN_INTERPRETATION_REQ_IDS
+                        else "human_drafted_provisional")
+            assert entry["evidence_pack_status"] == esperado, rid
 
     def test_human_drafted_batches_have_human_drafted_provisional_status(self):
         for rid in HUMAN_DRAFTED_REQ_IDS:

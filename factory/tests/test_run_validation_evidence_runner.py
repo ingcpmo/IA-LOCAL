@@ -188,12 +188,15 @@ def test_runner_real_ollama_smoke(tmp_path):
     assert result.records_total >= 1
 
 
-def test_requirement_ids_from_catalog_returns_all_19():
+def test_requirement_ids_from_catalog_returns_every_catalog_id():
     """Fase 5.3, Bloque 5.3.3: el runner puede derivar requirement_ids
     directamente del catalogo real de Fase 5.2, sin listarlos a mano."""
+    from factory.regulatory.requirement_catalog.requirement_catalog_loader import load_requirements
     from factory.regulatory.tools.run_validation_evidence import requirement_ids_from_catalog
     ids = requirement_ids_from_catalog()
-    assert len(ids) == 19
+    # Invariante: el runner deriva TODOS los ids del catalogo, sean cuantos
+    # sean -- si listara un subconjunto, un requisito quedaria sin evaluar.
+    assert set(ids) == set(load_requirements()["requirements"])
     assert "21_CFR_11.10(d)" in ids
     assert "ALCOA_AVAILABLE" in ids
 

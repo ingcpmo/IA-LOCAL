@@ -19,12 +19,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from factory.regulatory.golden_dataset import semantic_verification_golden_dataset as gd
 
 
-def test_all_14_golden_cases_pass_today():
+def test_all_golden_cases_pass_today():
+    """Invariante: NINGUN caso falla. El total crece cuando se anaden casos
+    (2026-07-29: +3 por la regla predicado 21 CFR 211.68(b)); lo que no puede
+    pasar nunca es que uno falle o que el dataset se quede vacio."""
     results = gd.run_all()
     summary = gd.summarize(results)
     assert summary["failed_case_ids"] == []
-    assert summary["total"] == 14
-    assert summary["passed"] == 14
+    assert summary["total"] >= 14
+    assert summary["passed"] == summary["total"]
 
 
 def test_expected_case_ids_are_all_present():
@@ -37,6 +40,10 @@ def test_expected_case_ids_are_all_present():
         "sufficiency_invented_criterion_rejected_atomically",
         "sufficiency_duplicate_criterion_rejected_atomically",
         "sufficiency_met_without_evidence_rejected_atomically",
+        # Regla predicado ingerida el 2026-07-29 (21 CFR 211.68(b)).
+        "predicate_rule_resolves_in_catalog",
+        "invented_part211_section_rejected",
+        "predicate_rule_quote_not_in_document",
     }
     results = gd.run_all()
     assert {r.case_id for r in results} == expected_ids
