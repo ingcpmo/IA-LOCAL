@@ -19,7 +19,8 @@ que se queda mintiendo en verde.
 
 Cerrados: G1.7 `source_currency_checker` · G1.8 catálogo de requisitos y
 modelo provisional · G1.9 `verified_pipeline` · G1.10 baseline formal ·
-G1.11 release gate · G1.12 `source_lifecycle` · G1.13 `artifact_version_guard`.
+G1.11 release gate · G1.12 `source_lifecycle` · G1.13 `artifact_version_guard` ·
+G1.14 `audit_writer` (excepciones de auditoria).
 """
 import ast
 from pathlib import Path
@@ -66,6 +67,7 @@ CONSUMERS = {
     "corpus_planner": ["factory/regulatory/verified_pipeline.py"],
     "formal_baseline": ["factory/regulatory/tools/build_source_baseline_allowlist.py"],
     "version_guard": ["factory/core/artifact_version_guard.py"],
+    "audit_reporting": ["factory/core/audit_writer.py"],
     "release_gate": [
         "factory/core/quality_gate_runner.py",
         "factory/core/release_manager.py",
@@ -85,6 +87,7 @@ WIRED = {
     "factory/core/release_manager.py",                                       # G1.11
     "factory/regulatory/source_lifecycle.py",                                # G1.12
     "factory/core/artifact_version_guard.py",                                # G1.13
+    "factory/core/audit_writer.py",                                          # G1.14
 }
 
 ALL_CONSUMER_FILES = sorted({f for fs in CONSUMERS.values() for f in fs})
@@ -297,14 +300,15 @@ def test_t24_every_declared_consumer_is_a_known_one():
 
 
 # G1.11 cerró los CINCO consumidores de la spec §6; G1.12 añadió
-# `source_lifecycle_transition` y G1.13 `version_guard`. Este test sigue en
-# xfail: el registro de familias declara seis más (model_qualification_gate,
-# audit_reporting, package_regeneration, run_driver, source_registration_apply,
-# applicability_resolution) que se cablean en G1.14-G1.15. Que el andamio no
+# `source_lifecycle_transition`, G1.13 `version_guard` y G1.14
+# `audit_reporting`. Este test sigue en
+# xfail: el registro de familias declara cinco más (model_qualification_gate,
+# package_regeneration, run_driver, source_registration_apply,
+# applicability_resolution) que se cablean en G1.16-G1.17 y G8. Que el andamio no
 # se retire aquí es correcto -- mide lo declarado, no las fases del plan, y
 # por eso caza lo que el plan no previó.
 @pytest.mark.xfail(strict=True,
-                   reason="G1.14-G1.15: 6 consumidores declarados fuera de la spec §6 "
+                   reason="G1.16+: 5 consumidores declarados fuera de la spec §6 "
                           "aún sin módulo cableado")
 def test_t24_declared_consumers_have_a_wired_module():
     """El test que impide que el diseño se degrade con el tiempo: añadir una

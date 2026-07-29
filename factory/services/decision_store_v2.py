@@ -33,6 +33,7 @@ from pathlib import Path
 import yaml
 
 from factory.core.audit_writer import write_event
+from factory.core import identity_policy as _identity
 from factory.regulatory.schema_loader import validate_against
 from factory.services import paths
 
@@ -41,21 +42,26 @@ FAMILIES_FILE = paths.FACTORY_ROOT / "registry" / "decision_families.yaml"
 
 SCHEMA_NAME = "decision_record_v1"
 
-# Mismo criterio que _RESERVED_APPROVERS de layer9/mission_control.py,
-# RESERVED_RUN_BY de test_console_service.py y RESERVED_IDENTITIES de
-# w5_human_decisions.py. Se centraliza AQUI (una sola funcion, `validate_identity`)
-# porque tener dos estandares distintos para el mismo acto era el hallazgo A-4:
-# el Sistema A aceptaba confirmed_by="human" y el B devolvia 422.
-RESERVED_IDENTITIES = frozenset({
-    "", "human", "humano", "agent", "agente", "layer8_agent", "auto",
-    "system", "sistema", "admin", "user", "usuario", "factory", "capa8",
-    "capa9", "layer8", "layer9", "claude", "qa",
-})
+# G1.15: la lista vive en factory/core/identity_policy.py, que es el UNICO
+# sitio donde se define. G1.1 la habia escrito aqui diciendo "se centraliza
+# AQUI" y no se centralizo -- las otras siete superficies siguieron con su
+# copia. Se reexporta el nombre para no romper importadores existentes.
+RESERVED_IDENTITIES = _identity.RESERVED_IDENTITIES
 
 INSTANCE_ID_RE = re.compile(r"^[A-Z][A-Z0-9_]*-[0-9]{4}-[0-9]{3}$")
 
 AMENDING_TYPES = frozenset({"CORRECTION", "SUPERSESSION", "REVOCATION"})
 COVERING_TYPES = frozenset({"ORIGINAL", "CORRECTION", "ADDENDUM", "SUPERSESSION"})
+
+# Veredictos que OTORGAN cobertura. `decision_type` dice que FORMA tiene el
+# registro (original, adendo, correccion); `decision` dice que se resolvio.
+# Hacian falta las dos y solo se miraba la primera: hasta G1.15, un registro
+# con decision="REJECT" y decision_type="ORIGINAL" pasaba las doce invariantes
+# y AUTORIZABA. Un rechazo firmado concedia exactamente lo que rechazaba.
+#
+# PARTIAL otorga sobre sus `resolved_target_ids` y solo sobre ellos, que es
+# justo lo que significa: se aprobo una parte, y la parte esta materializada.
+GRANTING_DECISIONS = frozenset({"APPROVE", "PARTIAL"})
 
 W5_PROJECT_ID = "gmpai_document_validation"
 
@@ -129,14 +135,16 @@ def compute_target_set_hash(target_ids) -> str:
 
 
 def validate_identity(name: str | None) -> str:
-    """UNICA validacion de identidad de la fabrica para actos de gobernanza."""
-    clean = (name or "").strip()
-    if not clean or clean.lower() in RESERVED_IDENTITIES:
-        raise DecisionValidationError(
-            f"approved_by_id={name!r} es una identidad generica o vacia. "
-            "Una decision regulatoria exige el nombre real de quien la firma."
-        )
-    return clean
+    """Delega en la politica unica y traduce a la excepcion de este modulo.
+
+    La traduccion existe porque los llamadores de este almacen ya capturan
+    `DecisionValidationError`; cambiarles el tipo de excepcion seria romperlos
+    para ganar nada. La REGLA es una sola; solo el envoltorio cambia.
+    """
+    try:
+        return _identity.validate_identity(name, field="approved_by_id")
+    except _identity.IdentityValidationError as exc:
+        raise DecisionValidationError(str(exc)) from exc
 
 
 def read_all(store_file: Path | None = None) -> list[dict]:

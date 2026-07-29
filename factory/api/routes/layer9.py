@@ -21,6 +21,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+from factory.core import identity_policy as _identity
 from factory.layer9.mission_control import (
     create_mission,
     approve_mission,
@@ -367,7 +368,8 @@ def post_reject_mission(project_id: str, body: MissionReject):
 
 # ── RC Canónico ────────────────────────────────────────────────────────────────
 
-_RESERVED_CANONICAL = {"human", "agent", "system", "admin", "capa8", "capa9", "layer8"}
+# G1.15: la lista unica vive en factory/core/identity_policy.py (cierra A-4).
+# La copia local decia `admin` reservado mientras approvals.py lo aceptaba.
 
 
 class MarkCanonical(BaseModel):
@@ -424,8 +426,10 @@ def post_mark_canonical(rc_id: str, body: MarkCanonical):
     from pathlib import Path
     from factory.core.audit_writer import write_event as _we
 
-    if body.marked_by.lower().strip() in _RESERVED_CANONICAL:
-        raise HTTPException(422, f"marked_by='{body.marked_by}' es reservado. Usa el nombre real.")
+    try:
+        _identity.validate_identity(body.marked_by, field="marked_by")
+    except _identity.IdentityValidationError as e:
+        raise HTTPException(422, str(e))
 
     rc = get_rc(rc_id)
     if rc is None:
@@ -481,7 +485,7 @@ def post_mark_canonical(rc_id: str, body: MarkCanonical):
 
 # ── Revisión de misión ─────────────────────────────────────────────────────────
 
-_RESERVED_REVISE  = {"human", "agent", "system", "admin", "capa8", "capa9", "layer8"}
+# G1.15: ver nota de identity_policy mas arriba.
 _EDITABLE_FIELDS  = {"objective", "client_type", "regulatory_scope", "documents",
                      "constraints", "mission_approval", "linked_release"}
 _BLOCKED_STATUSES = {"rejected", "closed"}
@@ -527,8 +531,10 @@ def post_revise_mission(project_id: str, body: MissionRevise):
 
     if not body.reason.strip():
         raise HTTPException(422, "El campo 'reason' es obligatorio y no puede estar vacío.")
-    if body.changed_by.lower().strip() in _RESERVED_REVISE:
-        raise HTTPException(422, f"changed_by='{body.changed_by}' es reservado. Usa el nombre real.")
+    try:
+        _identity.validate_identity(body.changed_by, field="changed_by")
+    except _identity.IdentityValidationError as e:
+        raise HTTPException(422, str(e))
 
     invalid_fields = set(body.changes.keys()) - _EDITABLE_FIELDS
     if invalid_fields:
@@ -1305,3 +1311,144 @@ def post_w5_decision_correction(decision_id: str, body: W5CorrectionBody):
         raise
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {e}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Gobernanza de decisiones — W5 V2 G1.15 (GOVERNANCE_UI_SPEC.md §3)
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Capa HTTP fina sobre factory/services/governance_service.py. Los seis
+# paneles de la UI usan estos endpoints: el panel es una vista sobre una
+# familia, no un sistema aparte, así que no hay un endpoint por panel.
+#
+# 422 identidad genérica · 409 state_hash obsoleto o ya resuelta · 404 no existe
+
+class GovernanceProposeBody(BaseModel):
+    target_ids: list[str]
+    proposed_by_id: str
+    decision: str = "APPROVE"
+    decision_type: str = "ORIGINAL"
+    selection_mode: str = "EXPLICIT_LIST"
+    reason: str = ""
+    payload: dict | None = None
+    supersedes_instance_id: str | None = None
+    amendment_sequence: int = 0
+
+
+class GovernanceConfirmBody(BaseModel):
+    approved_by_id: str
+    approved_by_display_name: str | None = None
+    reason: str = ""
+    state_hash: str | None = None
+
+
+class GovernanceRejectBody(BaseModel):
+    rejected_by_id: str
+    rejected_by_display_name: str | None = None
+    reason: str = ""
+    state_hash: str | None = None
+
+
+class GovernanceReturnBody(BaseModel):
+    returned_by_id: str
+    returned_by_display_name: str | None = None
+    comment: str = ""
+    state_hash: str | None = None
+
+
+def _governance_error(exc: Exception) -> HTTPException:
+    """Traducción única excepción -> código. Que sea una sola función es lo que
+    impide que dos endpoints devuelvan códigos distintos para el mismo fallo."""
+    from factory.services import governance_service as _gov
+    from factory.services import decision_store_v2 as _store
+
+    if isinstance(exc, _gov.GovernanceNotFoundError):
+        return HTTPException(404, str(exc))
+    if isinstance(exc, (_gov.StaleStateError, _store.DecisionConflictError)):
+        return HTTPException(409, str(exc))
+    if isinstance(exc, (_identity.IdentityValidationError, _store.DecisionValidationError)):
+        return HTTPException(422, str(exc))
+    return HTTPException(500, f"{type(exc).__name__}: {exc}")
+
+
+@router.get("/governance/state")
+def get_governance_state():
+    """Índice de los seis paneles. SOLO LECTURA: no escribe auditoría, no
+    promueve estados, no dispara nada."""
+    from factory.services import governance_service as _gov
+    try:
+        return _gov.get_state()
+    except Exception as e:
+        raise _governance_error(e)
+
+
+@router.get("/governance/coverage/{family}")
+def get_governance_coverage(family: str):
+    """CoverageReport de una familia. Solo lectura."""
+    from factory.services import governance_service as _gov
+    try:
+        report = _gov.get_coverage(family)
+    except Exception as e:
+        raise _governance_error(e)
+    if report.get("unavailable_reason") and not report.get("registry_ids"):
+        # Familia no declarada: 404. Se distingue de "declarada pero sin datos",
+        # que es un 200 con `unavailable_reason` -- no saber y no existir son
+        # cosas distintas y colapsarlas es el defecto de siempre.
+        if "no declarada" in report["unavailable_reason"]:
+            raise HTTPException(404, report["unavailable_reason"])
+    return report
+
+
+@router.post("/governance/decisions/{family}/propose", status_code=201)
+def post_governance_propose(family: str, body: GovernanceProposeBody):
+    """Registra una propuesta `agent_proposed`. NO autoriza nada."""
+    from factory.services import governance_service as _gov
+    try:
+        return _gov.propose(
+            family, target_ids=body.target_ids, decision=body.decision,
+            decision_type=body.decision_type, selection_mode=body.selection_mode,
+            proposed_by_id=body.proposed_by_id, reason=body.reason,
+            payload=body.payload,
+            supersedes_instance_id=body.supersedes_instance_id,
+            amendment_sequence=body.amendment_sequence)
+    except Exception as e:
+        raise _governance_error(e)
+
+
+@router.post("/governance/decisions/{instance_id}/confirm", status_code=201)
+def post_governance_confirm(instance_id: str, body: GovernanceConfirmBody):
+    """Confirma una propuesta. El snapshot se materializa AQUÍ."""
+    from factory.services import governance_service as _gov
+    try:
+        return _gov.confirm(
+            instance_id, approved_by_id=body.approved_by_id,
+            approved_by_display_name=body.approved_by_display_name,
+            reason=body.reason, state_hash=body.state_hash)
+    except Exception as e:
+        raise _governance_error(e)
+
+
+@router.post("/governance/decisions/{instance_id}/return", status_code=201)
+def post_governance_return(instance_id: str, body: GovernanceReturnBody):
+    """Devuelve la propuesta al proponente con comentario. La propuesta sigue."""
+    from factory.services import governance_service as _gov
+    try:
+        return _gov.return_to_proposer(
+            instance_id, returned_by_id=body.returned_by_id,
+            returned_by_display_name=body.returned_by_display_name,
+            comment=body.comment, state_hash=body.state_hash)
+    except Exception as e:
+        raise _governance_error(e)
+
+
+@router.post("/governance/decisions/{instance_id}/reject", status_code=201)
+def post_governance_reject(instance_id: str, body: GovernanceRejectBody):
+    """Rechazo registrado. La propuesta NO se borra: el almacén es append-only."""
+    from factory.services import governance_service as _gov
+    try:
+        return _gov.reject(
+            instance_id, rejected_by_id=body.rejected_by_id,
+            rejected_by_display_name=body.rejected_by_display_name,
+            reason=body.reason, state_hash=body.state_hash)
+    except Exception as e:
+        raise _governance_error(e)

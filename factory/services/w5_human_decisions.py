@@ -40,14 +40,9 @@ DECISIONS_FILE = paths.FACTORY_ROOT / "layer9" / "decisions" / "w5_human_decisio
 
 W5_PROJECT_ID = "gmpai_document_validation"
 
-# Mismo criterio que _RESERVED_APPROVERS de layer9/mission_control.py y
-# RESERVED_RUN_BY de test_console_service.py -- una decisión regulatoria
-# firmada por "human" no identifica a nadie.
-RESERVED_IDENTITIES = {
-    "", "human", "humano", "agent", "agente", "layer8_agent", "auto",
-    "system", "sistema", "admin", "user", "usuario", "factory", "capa8",
-    "capa9", "layer8", "layer9", "claude", "qa",
-}
+# G1.15: definida en factory/core/identity_policy.py. Se reexporta el nombre
+# porque hay importadores; la lista ya no se escribe aqui.
+from factory.core.identity_policy import RESERVED_IDENTITIES  # noqa: E402
 
 VALID_DECISIONS = ("APPROVE", "PARTIAL", "REJECT")
 

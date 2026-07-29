@@ -171,8 +171,12 @@ def _effective_coverage(valid: list[dict], statuses: dict[str, str]):
         if r["decision_origin"] != "human_confirmed":
             continue
         if r["decision_type"] == "REVOCATION":
+            # Sin filtrar por `decision`: revocar RESTRINGE, y restringir es la
+            # operacion segura. Una REVOCATION mal etiquetada debe retirar
+            # igualmente.
             revoked.update(r["resolved_target_ids"])
-        elif r["decision_type"] in store.COVERING_TYPES:
+        elif (r["decision_type"] in store.COVERING_TYPES
+                and r["decision"] in store.GRANTING_DECISIONS):
             for tid in r["resolved_target_ids"]:
                 covered.setdefault(tid, []).append(r)
     for tid in revoked:
