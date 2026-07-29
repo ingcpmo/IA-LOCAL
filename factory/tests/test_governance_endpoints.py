@@ -502,11 +502,48 @@ def test_http_full_cycle_propose_then_confirm(client):
 # Nada se migra en esta fase
 # ===========================================================================
 
-def test_the_real_decision_store_is_still_untouched():
-    """La migracion es lo PRIMERO de G2. G1.15 construye la superficie, no la usa.
+def test_the_migrated_store_authorizes_nothing():
+    """G2: el almacen v2 YA EXISTE. Lo que sigue siendo cierto es lo que importa.
 
-    Si este test falla, alguien corrio los endpoints contra el almacen real o
-    un test escribio sin aislar.
+    Hasta G2 este test afirmaba que el fichero no existia. Ese cambio es el
+    registro de que la migracion ocurrio, y por eso el test se reescribe en vez
+    de borrarse: la invariante que SOBREVIVE a la migracion es que proyectar
+    historia no crea autorizacion.
+
+    Los 14 registros son de tres clases y ninguna otorga:
+      RECONSTRUCTED_SNAPSHOT       reconstruir != tener la firma
+      INVALID_PENDING_RESIGNATURE  firmadas sin objetivo (G2')
+      LEGACY_UNMAPPED              never_authorizes por registro de familias
+    ...mas las de SOURCE_REGISTRATION / APPLICABILITY_MATRIX, cuya confirmacion
+    humana ya estaba en la cadena y cuyo enforcement no cambia aqui.
     """
-    assert not store.STORE_FILE.exists(), (
-        f"{store.STORE_FILE} existe: se migro o se escribio fuera de un tmp_store")
+    from factory.core import decision_scope_resolver as resolver
+
+    assert store.STORE_FILE.exists(), "el almacen v2 deberia existir tras G2"
+    records = store.read_all()
+    assert len(records) == 14, f"se esperaban 14 registros migrados, hay {len(records)}"
+
+    # Ninguna de las cinco familias gobernadas autoriza a nadie todavia.
+    for family in ("D1", "D2", "D3", "D4", "D5"):
+        c = resolver.coverage_report(family)
+        assert c.covered_ids == (), (
+            f"{family} autoriza {list(c.covered_ids)} solo por haber migrado")
+
+
+def test_the_migration_did_not_touch_the_legacy_stores():
+    """V-2: las entradas se abren en LECTURA. El rollback es `rm` del derivado."""
+    from factory.services import decision_legacy_adapter as adapter
+
+    for legacy in (adapter.LEGACY_A_FILE, adapter.LEGACY_B_FILE):
+        assert legacy.is_file(), f"almacen legacy desaparecido: {legacy}"
+
+
+def test_the_artifact_version_store_is_still_untouched():
+    """La otra mitad del checkpoint: el bootstrap de artefactos es de G4.
+
+    Migrar decisiones NO arrastra el versionado de artefactos, y este test
+    impide que las dos cosas se confundan en una sola pasada.
+    """
+    from factory.core import artifact_version_guard as guard
+    assert not guard.STORE_FILE.exists(), (
+        f"{guard.STORE_FILE} existe: el bootstrap se ejecuto, y eso es G4")

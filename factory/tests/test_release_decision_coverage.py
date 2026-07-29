@@ -129,17 +129,44 @@ def test_gate_blocks_today_because_nothing_is_covered():
     assert "BLOCKED" in gate["evidence"]
 
 
-def test_today_the_block_is_indeterminacy_not_denial():
-    """Hoy el almacen v2 NO EXISTE: nada se ha migrado (la migracion es G2).
+def test_after_the_migration_the_block_is_denial_not_indeterminacy():
+    """Tras G2 el almacen EXISTE, y el motivo del bloqueo cambia de sitio.
 
-    El gate debe decir NOT_DETERMINED, no "cubierto" ni "denegado". Es la
-    distincion que este trabajo entero defiende: no saber no es saber que no,
-    y ninguna de las dos es saber que si. Cuando G2 cree el almacen, este test
-    tendra que cambiar -- y ese cambio es el registro de que algo se migro.
+    Antes de migrar el gate decia NOT_DETERMINED: no habia almacen, y no saber
+    no es saber que no. Ahora hay almacen y el gate puede DENEGAR con nombres
+    concretos -- que es un bloqueo mejor, no uno peor: accionable en vez de
+    opaco.
+
+    Este test reemplaza al que afirmaba la indeterminacion. La sustitucion es
+    deliberada y es el registro de que la migracion ocurrio.
     """
     gate = qgr.g15_decision_coverage()
-    assert "NOT_DETERMINED" in gate["evidence"]
-    assert "indeterminada" in gate["evidence"]
+    assert gate["status"] == "FAIL"
+    assert "NOT_DETERMINED" not in gate["evidence"], (
+        "el almacen ya existe: la indeterminacion deberia haber desaparecido")
+    assert "UNCOVERED" in gate["evidence"]
+
+
+def test_part211_is_named_by_the_real_gate_after_the_migration():
+    """La senal que habria cazado el defecto el 2026-07-29 a las 02:25.
+
+    Sobre el almacen REAL, sin fixtures: Part 211 sale listado por su nombre.
+    """
+    gate = qgr.g15_decision_coverage()
+    assert "ecfr_21cfr_part211" in gate["evidence"]
+
+
+def test_the_three_original_sources_are_reported_as_reconstructed_only():
+    """Y la otra mitad de la verdad: las tres antiguas tampoco autorizan.
+
+    Se distinguen de Part 211 -- `RECONSTRUCTED_SNAPSHOT` frente a
+    `NOT_COVERED` -- porque los remedios son distintos: una correccion formal
+    para las tres, un adendo para la cuarta. Colapsarlas en "sin cobertura"
+    perderia esa diferencia justo cuando hay que actuar sobre ella.
+    """
+    gate = qgr.g15_decision_coverage()
+    assert "solo " in gate["evidence"] and "RECONSTRUCTED_SNAPSHOT" in gate["evidence"]
+    assert "no autoriza" in gate["evidence"]
 
 
 def test_the_real_fork_blocks_and_is_named():
