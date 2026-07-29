@@ -12,6 +12,7 @@ task_dispatched, gates_executed, diff_presented, approval_granted, approval_reje
 release_created, deployment_created, deployment_started,
 layer9_mission_created, layer9_mission_approved, layer9_requirement_submitted,
 layer9_decision_recorded, layer9_risk_accepted,
+layer9_decision_store_migrated, layer9_decision_store_migration_reverted,
 layer8_mission_started, layer8_requirement_interpreted, layer8_agent_design_generated,
 layer8_regulatory_matrix_generated, layer8_workspace_created, layer8_workspace_resumed,
 layer8_claude_status_checked, layer8_claude_execution_started, layer8_claude_execution_completed,
@@ -43,6 +44,10 @@ VALID_EVENTS = {
     "layer9_mission_created", "layer9_mission_approved",
     "layer9_requirement_submitted", "layer9_decision_recorded",
     "layer9_risk_accepted",
+    # W5 V2 G1 -- migracion de los dos almacenes historicos al modelo unico.
+    # La reversion tiene su propio evento: revertir es un hecho tan real como
+    # migrar, y el evento de migracion NUNCA se borra de la cadena.
+    "layer9_decision_store_migrated", "layer9_decision_store_migration_reverted",
     # Eventos Capa 8 Tier-1 diseño (F4.5b)
     "layer8_mission_started", "layer8_requirement_interpreted",
     "layer8_agent_design_generated", "layer8_regulatory_matrix_generated",

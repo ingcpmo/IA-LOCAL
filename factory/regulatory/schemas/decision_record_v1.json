@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "decision_record_v1",
+  "description": "W5 V2 G1.2 -- un acto de gobernanza registrado. Modelo UNICO que reemplaza a los dos almacenes previos (factory/layer9/decisions/decisions.jsonl del Sistema A y w5_human_decisions.jsonl del Sistema B). La invariante central es resolved_target_ids: el alcance de una decision SIEMPRE esta materializado, nunca almacenado como comodin abierto ('ALL'). Ver EXTENSIBLE_DECISION_MODEL_SPEC.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "decision_family", "decision_instance_id",
+    "decision_type", "amendment_sequence",
+    "selection_mode", "resolved_target_ids", "target_set_hash",
+    "decision", "decision_origin", "decision_date", "recorded_at",
+    "status", "provenance"
+  ],
+  "properties": {
+    "schema_version": { "const": "decision_record_v1" },
+
+    "decision_family": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Clave del registro factory/registry/decision_families.yaml. NO es un enum aqui a proposito: el conjunto valido vive en el YAML y se valida contra el en decision_store_v2, para que agregar una familia no exija tocar este schema."
+    },
+    "decision_instance_id": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*-[0-9]{4}-[0-9]{3}$",
+      "description": "<FAMILIA>-<anio>-<secuencia>, p.ej. D1-2026-002. Derivado y unico (I-11); NO un uuid4 libre -- ese fue el defecto A-10 que permitio que MC-0001 se escribiera fuera de la API del almacen."
+    },
+    "decision_type": {
+      "enum": ["ORIGINAL", "CORRECTION", "ADDENDUM", "SUPERSESSION", "REVOCATION"]
+    },
+    "amendment_sequence": { "type": "integer", "minimum": 0 },
+    "supersedes_event_id": { "type": ["string", "null"] },
+    "supersedes_instance_id": { "type": ["string", "null"] },
+
+    "selection_mode": { "enum": ["EXPLICIT_LIST", "ALL_SNAPSHOT"] },
+    "resolved_target_ids": {
+      "type": "array",
+      "minItems": 0,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "not": { "enum": ["ALL", "all", "*"] }
+      },
+      "description": "SIEMPRE materializada. selection_mode=ALL_SNAPSHOT resuelve el conjunto EN EL MOMENTO DE LA FIRMA y lo persiste aqui: 'ALL' nunca queda almacenado como comodin (por eso el items.not lo prohibe explicitamente). NOTA sobre minItems:0 -- la invariante 'conjunto no vacio' (I-3) se aplica en decision_store_v2, NO aqui, y solo para status=ACTIVE. El schema debe poder representar los 4 registros historicos (D2/D3/D4/D5) que se firmaron APPROVE sin declarar objetivo: si el schema los rechazara, la migracion no podria almacenarlos y se perderian. Se guardan con status=INVALID_PENDING_RESIGNATURE, legibles y sin autorizar nada."
+    },
+    "target_set_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "sha256 de '\\n'.join(sorted(resolved_target_ids)). Se RECOMPUTA en cada lectura; discrepancia => registro corrupto => no autorizado (I-4)."
+    },
+    "registry_hash_at_decision": {
+      "type": ["string", "null"],
+      "description": "sha256 del target_registry en el instante de la firma. Su divergencia respecto del registry vigente es la senal REGISTRY_DRIFT_SINCE_DECISION -- la que habria cazado el alta de Part 211 el mismo 29-jul a las 02:25."
+    },
+    "families_registry_hash": { "type": ["string", "null"] },
+
+    "decision": { "enum": ["APPROVE", "PARTIAL", "REJECT", "DEFER"] },
+    "decision_origin": { "enum": ["agent_proposed", "human_confirmed"] },
+    "proposed_by_id": { "type": ["string", "null"] },
+    "confirms_instance_id": { "type": ["string", "null"] },
+    "approved_by_id": {
+      "type": ["string", "null"],
+      "description": "Identidad real de quien firma. Validada contra RESERVED_IDENTITIES (I-8) por una UNICA funcion compartida -- cierra A-4, donde el Sistema A aceptaba cualquier valor no vacio y el B devolvia 422."
+    },
+    "approved_by_display_name": { "type": ["string", "null"] },
+    "recorded_by": { "type": ["string", "null"] },
+    "decision_date": { "type": "string", "minLength": 10 },
+    "recorded_at": { "type": "string", "minLength": 10 },
+    "reason": {
+      "type": "string",
+      "description": "Obligatoria en CORRECTION/SUPERSESSION/REVOCATION (I-6). Validada en decision_store_v2, no aqui: depende de decision_type."
+    },
+
+    "status": { "enum": ["ACTIVE", "SUPERSEDED", "REVOKED", "INVALID_PENDING_RESIGNATURE"] },
+    "payload": { "type": "object" },
+
+    "provenance": {
+      "enum": [
+        "NATIVE",
+        "RECONSTRUCTED_SNAPSHOT",
+        "MIGRATED_FROM_SYSTEM_A",
+        "MIGRATED_FROM_SYSTEM_B"
+      ],
+      "description": "RECONSTRUCTED_SNAPSHOT nunca autoriza: permite LEER el historico sin ambiguedad, no sustituye a la Correccion D1 formal."
+    },
+    "reconstruction_evidence": {
+      "type": ["object", "null"],
+      "description": "Obligatoria si provenance=RECONSTRUCTED_SNAPSHOT: como se dedujo el conjunto y con que evidencia."
+    },
+    "audit_event_id": { "type": ["string", "null"] },
+    "invalid_reason": {
+      "type": ["string", "null"],
+      "description": "Por que el registro quedo INVALID_PENDING_RESIGNATURE. Se llena en la migracion para los 4 registros historicos sin objetivo."
+    }
+  }
+}

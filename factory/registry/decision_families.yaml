@@ -1,0 +1,151 @@
+# Registro de FAMILIAS DE DECISION — W5 V2, G1.1
+#
+# Fuente unica de verdad de que familias de decision existen. Vive aqui, en
+# factory/registry/, junto a ports.yaml y agents_catalog.yaml, porque es un
+# dato declarativo de la fabrica, no logica.
+#
+# REGLA DURA: agregar una familia o un adendo NUNCA requiere tocar una tupla
+# de codigo. Si una fase futura propone "añadir un nombre a DECISION_IDS",
+# esa fase esta mal disenada -- ese es exactamente el defecto que este
+# archivo existe para cerrar (ver GOVERNANCE_STATE_AUDIT.md A-2/A-3 y
+# EXTENSIBLE_DECISION_MODEL_SPEC.md §1-2).
+#
+# D1-A, D2-A y D4-A NO aparecen aqui a proposito: no son familias, son
+# ADDENDUM de D1, D2 y D4 (decision_type=ADDENDUM, amendment_sequence>0).
+# Modelar cada adendo como familia propia es como se llego a la tupla
+# cerrada.
+#
+# `consumers` NO es documentacion: factory/tests/test_decision_resolver_no_bypass.py
+# lo lee y falla si un consumidor declarado aqui no llama al resolver.
+
+registry_version: 1
+
+# Consumidores validos. Un `consumers:` que nombre algo fuera de esta lista
+# es un error de configuracion (fail-closed en load_families()).
+known_consumers:
+  - source_reverification
+  - source_lifecycle_transition
+  - source_registration_apply
+  - evidence_pack_eligibility
+  - corpus_planner
+  - run_driver
+  - formal_baseline
+  - release_gate
+  - applicability_resolution
+  - version_guard
+  - model_qualification_gate
+  - audit_reporting
+  - package_regeneration
+
+families:
+
+  D1:
+    label: "Fuentes regulatorias — cadencia y autoridad de reverificacion"
+    target_kind: source_id
+    target_registry: factory/regulatory/sources/registry.json
+    target_registry_id_path: "sources[].source_id"
+    selection_modes: [EXPLICIT_LIST, ALL_SNAPSHOT]
+    consumers: [source_reverification, source_lifecycle_transition]
+    requires_human_confirmation: true
+    legacy_w5_decision_id: D1_regulatory_sources
+
+  D2:
+    label: "Evidence Packs — criterios interpretativos"
+    target_kind: requirement_id
+    target_registry: factory/regulatory/requirement_catalog/requirements.yaml
+    target_registry_id_path: "requirements{}"
+    # ALL_SNAPSHOT PROHIBIDO a proposito: cada pack se aprueba por su
+    # contenido concreto. Un "apruebo todos" es lo que produjo el registro
+    # D2_evidence_packs sin ningun objetivo (ver G2' del plan).
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [evidence_pack_eligibility, corpus_planner, formal_baseline]
+    requires_human_confirmation: true
+    legacy_w5_decision_id: D2_evidence_packs
+
+  D3:
+    label: "Clasificacion documental (T-039 y sucesores)"
+    target_kind: document_id
+    target_registry: factory/regulatory/scope/source_baseline_allowlist.yaml
+    target_registry_id_path: "documents[].document_id"
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [corpus_planner]
+    requires_human_confirmation: true
+    legacy_w5_decision_id: D3_T039
+
+  D4:
+    label: "Ejecucion de corpus — presupuesto y limites duros"
+    target_kind: run_scope
+    # Sin target_registry: el objetivo es un plan de corrida, no un id que
+    # viva en un registry. coverage_report() lo declara N/A en vez de
+    # inventar un conjunto contra el que comparar.
+    target_registry: null
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [corpus_planner, run_driver]
+    requires_human_confirmation: true
+    legacy_w5_decision_id: D4_corpus_execution
+
+  D5:
+    label: "Regeneracion de paquetes QA"
+    target_kind: package_id
+    target_registry: factory/remediation_packages/
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [package_regeneration]
+    requires_human_confirmation: true
+    legacy_w5_decision_id: D5_regenerate_qa_package
+
+  SOURCE_REGISTRATION:
+    label: "Alta de fuente regulatoria en el registry"
+    target_kind: source_id
+    target_registry: factory/regulatory/sources/registry.json
+    target_registry_id_path: "sources[].source_id"
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [source_registration_apply]
+    requires_human_confirmation: true
+    # Sistema A: esta familia YA tiene enforcement real hoy
+    # (human_source_registration.apply_source_registration l.212-222).
+    legacy_action: regulatory_source_registration
+
+  APPLICABILITY_MATRIX:
+    label: "Aprobacion de la matriz de aplicabilidad documental"
+    target_kind: matrix_version
+    target_registry: factory/regulatory/applicability_matrix.yaml
+    target_registry_id_path: "matrix_version"
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [applicability_resolution, corpus_planner]
+    requires_human_confirmation: true
+    legacy_action: w5v2_applicability_matrix_approval
+
+  ARTIFACT_VERSION:
+    label: "Aprobacion de una version de artefacto gobernado"
+    target_kind: artifact_id
+    target_registry: null
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [version_guard, model_qualification_gate, release_gate]
+    requires_human_confirmation: true
+
+  AUDIT_EXCEPTION:
+    label: "Excepcion humana sobre una anomalia de la cadena de auditoria"
+    target_kind: audit_event_id
+    target_registry: factory/audit/factory_audit.jsonl
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [audit_reporting, release_gate]
+    requires_human_confirmation: true
+
+  # Cajon explicito para las decisiones historicas del Sistema A que NO son
+  # de gobernanza del corpus (deploy, agent_design, resolucion de
+  # contradicciones de un documento concreto). Se proyectan para poder
+  # LEERLAS; nunca autorizan nada. Forzarlas a una familia real seria
+  # fabricar cobertura.
+  LEGACY_UNMAPPED:
+    label: "Decision historica sin familia de gobernanza equivalente"
+    target_kind: none
+    target_registry: null
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: []
+    requires_human_confirmation: true
+    never_authorizes: true
