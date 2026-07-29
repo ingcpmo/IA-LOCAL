@@ -66,7 +66,12 @@ families:
     label: "Clasificacion documental (T-039 y sucesores)"
     target_kind: document_id
     target_registry: factory/regulatory/scope/source_baseline_allowlist.yaml
-    target_registry_id_path: "documents[].document_id"
+    # El allowlist es una LISTA plana de entradas y el identificador se llama
+    # `file_id` (RW-NNNN), no `document_id`. G1.10 lo corrigio contra el
+    # artefacto real: el valor anterior ("documents[].document_id") describia
+    # una estructura que no existe, y coverage_report(D3) habria fallado en
+    # silencio al resolverla.
+    target_registry_id_path: "[].file_id"
     selection_modes: [EXPLICIT_LIST]
     consumers: [corpus_planner]
     requires_human_confirmation: true

@@ -443,8 +443,9 @@ def resolve_all_snapshot(family: str, *, families: dict | None = None) -> tuple[
     id_path = spec.get("target_registry_id_path") or ""
     if id_path.endswith("[].source_id"):
         ids = [s["source_id"] for s in data.get("sources", [])]
-    elif id_path.endswith("[].document_id"):
-        ids = [d["document_id"] for d in data.get("documents", [])]
+    elif id_path == "[].file_id":
+        # El allowlist de documentos es una lista plana en la raiz.
+        ids = [e["file_id"] for e in (data or [])]
     elif id_path == "requirements{}":
         ids = list((data.get("requirements") or {}).keys())
     else:

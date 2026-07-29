@@ -237,3 +237,124 @@ class TestRealRockwellCorpusGate:
         on_disk_by_sha = {e["sha256"]: e["processing_state"] for e in on_disk}
         fresh_by_sha = {e["sha256"]: e["processing_state"] for e in fresh}
         assert on_disk_by_sha == fresh_by_sha
+
+
+# ===========================================================================
+# G1.10 -- elegibilidad para la baseline FORMAL (consumidor C-4)
+# ===========================================================================
+
+import json as _json
+
+import pytest as _pytest
+
+from factory.regulatory.tools.build_source_baseline_allowlist import (
+    FORMAL,
+    PROVISIONAL,
+    classify_baseline_eligibility,
+)
+from factory.services import decision_store_v2 as _store
+
+DOC = "RW-0005"
+SOURCES = ["ecfr_21cfr_part11", "eu_gmp_annex11"]
+
+
+def _decisions(tmp_path, *, docs=(), sources=()):
+    recs = []
+    if docs:
+        recs.append(_store.build_record(
+            decision_family="D3", decision_type="ORIGINAL",
+            selection_mode="EXPLICIT_LIST", resolved_target_ids=list(docs),
+            decision="APPROVE", decision_origin="human_confirmed",
+            approved_by_id="Cesar", approved_by_display_name="Cesar",
+            decision_instance_id="D3-2026-001"))
+    if sources:
+        recs.append(_store.build_record(
+            decision_family="D1", decision_type="ORIGINAL",
+            selection_mode="EXPLICIT_LIST", resolved_target_ids=list(sources),
+            decision="APPROVE", decision_origin="human_confirmed",
+            approved_by_id="Cesar", approved_by_display_name="Cesar",
+            decision_instance_id="D1-2026-001"))
+    path = tmp_path / "decisions_v2.jsonl"
+    path.write_text("".join(_json.dumps(r, ensure_ascii=False) + "\n" for r in recs),
+                    encoding="utf-8")
+    return path
+
+
+def test_inventory_never_depends_on_decisions():
+    """Negarse a inventariar por falta de firma dejaría a la fábrica sin saber
+    siquiera QUÉ documentos existen -- lo contrario de la gobernanza."""
+    import ast
+    from pathlib import Path as _Path
+    from factory.regulatory.tools import build_source_baseline_allowlist as _mod
+
+    tree = ast.parse(_Path(_mod.__file__).read_text(encoding="utf-8"))
+    fn = next(n for n in ast.walk(tree)
+              if isinstance(n, ast.FunctionDef) and n.name == "build_allowlist")
+    assert "_resolver" not in ast.dump(fn)
+
+
+def test_nothing_is_formal_without_any_decision(tmp_path):
+    """Estado real de hoy."""
+    result = classify_baseline_eligibility(
+        [DOC], SOURCES, decision_store_file=_decisions(tmp_path))
+    assert result[0].eligibility == PROVISIONAL
+    assert result[0].formal is False
+
+
+def test_document_signed_but_sources_not_is_still_provisional(tmp_path):
+    """Una baseline formal se apoya en las fuentes regulatorias: si alguna no
+    está cubierta, ningún documento sustenta una conclusión formal por
+    impecable que sea su propia clasificación."""
+    store_path = _decisions(tmp_path, docs=[DOC])
+    result = classify_baseline_eligibility([DOC], SOURCES, decision_store_file=store_path)[0]
+    assert result.document_decision_authorized is True
+    assert result.regulatory_sources_authorized is False
+    assert result.eligibility == PROVISIONAL
+    assert set(result.uncovered_source_ids) == set(SOURCES)
+
+
+def test_sources_signed_but_document_not_is_still_provisional(tmp_path):
+    store_path = _decisions(tmp_path, sources=SOURCES)
+    result = classify_baseline_eligibility([DOC], SOURCES, decision_store_file=store_path)[0]
+    assert result.document_decision_authorized is False
+    assert result.regulatory_sources_authorized is True
+    assert result.eligibility == PROVISIONAL
+
+
+def test_formal_requires_both(tmp_path):
+    store_path = _decisions(tmp_path, docs=[DOC], sources=SOURCES)
+    result = classify_baseline_eligibility([DOC], SOURCES, decision_store_file=store_path)[0]
+    assert result.eligibility == FORMAL
+    assert result.declared_limitations == ()
+
+
+def test_uncovered_documents_are_declared_never_dropped(tmp_path):
+    """Lo no cubierto sigue en la lista con el motivo escrito. Una baseline a
+    la que le faltan documentos sin explicación es peor que una que declara
+    sus límites."""
+    store_path = _decisions(tmp_path, docs=[DOC], sources=SOURCES)
+    result = classify_baseline_eligibility(
+        [DOC, "RW-0006"], SOURCES, decision_store_file=store_path)
+    assert [r.file_id for r in result] == [DOC, "RW-0006"]
+    excluded = [r for r in result if not r.formal][0]
+    assert excluded.file_id == "RW-0006"
+    assert excluded.declared_limitations
+    assert "D3/RW-0006" in excluded.declared_limitations[0]
+
+
+def test_a_single_uncovered_source_blocks_every_document(tmp_path):
+    store_path = _decisions(tmp_path, docs=[DOC, "RW-0006"],
+                            sources=[SOURCES[0]])   # falta el segundo
+    result = classify_baseline_eligibility(
+        [DOC, "RW-0006"], SOURCES, decision_store_file=store_path)
+    assert all(r.eligibility == PROVISIONAL for r in result)
+    assert all(r.uncovered_source_ids == (SOURCES[1],) for r in result)
+
+
+def test_d3_resolves_against_the_real_allowlist_structure():
+    """El allowlist es una lista plana con `file_id`. La declaración anterior
+    ('documents[].document_id') describía una estructura inexistente y
+    coverage_report(D3) habría fallado al resolverla."""
+    ids, registry_hash = _store.resolve_all_snapshot("D3")
+    assert "RW-0001" in ids
+    assert len(registry_hash) == 64

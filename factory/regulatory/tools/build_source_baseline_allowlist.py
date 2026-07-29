@@ -23,6 +23,33 @@ Reglas duras aplicadas (ver ROCKWELL_SOURCE_INVENTORY_AND_SCOPE_SPEC.md):
   explícitamente por qué -- nunca se declara silenciosamente.
 - applicability es SIEMPRE 'PENDING_AGT_APP_ASSIGNMENT' en esta fase; AGT-INV
   no decide aplicabilidad regulatoria (responsabilidad de AGT-APP, Fase B).
+
+W5 V2 G1.10 -- CONSUMIDOR C-4 del DecisionScopeResolver
+--------------------------------------------------------
+El INVENTARIO no se gobierna: enumerar los ficheros que hay en un arbol es
+solo lectura y no autoriza nada, asi que `build_allowlist()` sigue sin
+consultar ninguna decision. Negarse a inventariar por falta de firma dejaria
+a la fabrica sin saber siquiera QUE documentos existen, que es lo contrario
+de lo que busca la gobernanza.
+
+Lo que si se gobierna es la BASELINE FORMAL: `classify_baseline_eligibility()`
+separa lo que puede sustentar una conclusion formal de lo que solo entra a la
+baseline provisional CON SU LIMITACION DECLARADA. Exige dos coberturas
+distintas:
+
+  D3 sobre el `file_id` del documento    -- alguien firmo su clasificacion
+  D1 sobre CADA fuente regulatoria       -- alguien firmo que esas normas se
+                                            usen
+
+La segunda es por documento pero no del documento: una baseline formal se
+apoya en las fuentes regulatorias, asi que si alguna no esta cubierta, NINGUN
+documento puede sustentar una conclusion formal por impecable que sea su
+propia clasificacion.
+
+Se anade como CONSULTA, no como campo nuevo del YAML: ese artefacto esta
+gobernado por `source_baseline_allowlist_entry_v1` con
+`additionalProperties:false`, y meterle campos derivados de un estado que
+cambia con cada decision lo volveria un dato mutable disfrazado de inventario.
 """
 from __future__ import annotations
 
@@ -35,6 +62,8 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 import yaml
+
+from factory.core import decision_scope_resolver as _resolver
 
 _WORD_NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
 
@@ -340,6 +369,69 @@ def verify_coverage(source_dir: Path, entries: list[AllowlistEntry]) -> None:
         raise AssertionError(f"Archivos omitidos del allowlist: {sorted(missing)}")
 
 
+# ---------------------------------------------------------------------------
+# C-4 -- elegibilidad para la BASELINE FORMAL
+# ---------------------------------------------------------------------------
+
+FORMAL = "FORMAL_BASELINE_ELIGIBLE"
+PROVISIONAL = "PROVISIONAL_ONLY"
+
+
+@dataclass(frozen=True)
+class BaselineEligibility:
+    file_id: str
+    eligibility: str                 # FORMAL | PROVISIONAL
+    document_decision_authorized: bool
+    regulatory_sources_authorized: bool
+    uncovered_source_ids: tuple[str, ...]
+    declared_limitations: tuple[str, ...]
+
+    @property
+    def formal(self) -> bool:
+        return self.eligibility == FORMAL
+
+
+def classify_baseline_eligibility(
+    file_ids,
+    regulatory_source_ids,
+    *,
+    decision_store_file: Path | None = None,
+) -> list[BaselineEligibility]:
+    """Separa lo que puede sustentar una conclusion FORMAL de lo que solo
+    entra a la baseline PROVISIONAL con su limitacion declarada.
+
+    Nunca excluye en silencio: lo no cubierto sigue en la lista, marcado
+    PROVISIONAL y con el motivo escrito. Una baseline a la que le faltan
+    documentos sin explicacion es peor que una que declara sus limites.
+    """
+    source_results = {
+        sid: _resolver.resolve("D1", sid, store_file=decision_store_file)
+        for sid in sorted(set(regulatory_source_ids))
+    }
+    uncovered_sources = tuple(
+        sid for sid, r in sorted(source_results.items()) if not r.authorized)
+    sources_ok = not uncovered_sources
+
+    out = []
+    for file_id in file_ids:
+        doc = _resolver.resolve("D3", file_id, store_file=decision_store_file)
+        limitations = []
+        if not doc.authorized:
+            limitations.append(f"D3/{file_id}: {doc.denial_reason}")
+        for sid in uncovered_sources:
+            limitations.append(f"D1/{sid}: {source_results[sid].denial_reason}")
+
+        out.append(BaselineEligibility(
+            file_id=file_id,
+            eligibility=FORMAL if (doc.authorized and sources_ok) else PROVISIONAL,
+            document_decision_authorized=doc.authorized,
+            regulatory_sources_authorized=sources_ok,
+            uncovered_source_ids=uncovered_sources,
+            declared_limitations=tuple(limitations),
+        ))
+    return out
+
+
 def entries_to_yaml_dict(entries: list[AllowlistEntry]) -> list[dict]:
     return [
         {
@@ -384,6 +476,26 @@ def main() -> None:
         encoding="utf-8",
     )
     print(f"OK: {len(entries)} entradas escritas en {args.out}")
+
+    # El inventario no depende de decisiones, pero quien lo genera debe ver el
+    # estado REAL de la baseline formal -- no descubrirlo al intentar liberar.
+    try:
+        from factory.regulatory.requirement_catalog.requirement_catalog_loader import (
+            known_source_ids,
+        )
+        classification = classify_baseline_eligibility(
+            [e.file_id for e in entries], known_source_ids())
+    except Exception as exc:  # noqa: BLE001 -- informativo; nunca tumba el build
+        print(f"AVISO: no se pudo clasificar la baseline ({type(exc).__name__}: {exc})")
+        return
+
+    formal = [c for c in classification if c.formal]
+    print(f"  baseline formal elegible : {len(formal)}/{len(classification)}")
+    if not formal:
+        uncovered = classification[0].uncovered_source_ids if classification else ()
+        print("  NINGUN documento puede sustentar una conclusion formal todavia.")
+        if uncovered:
+            print(f"  fuentes regulatorias sin cobertura D1: {list(uncovered)}")
 
 
 if __name__ == "__main__":

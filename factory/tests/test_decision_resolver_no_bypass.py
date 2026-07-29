@@ -67,6 +67,7 @@ WIRED = {
     "factory/regulatory/requirement_catalog/requirement_catalog_loader.py",  # G1.8
     "factory/regulatory/requirement_catalog/provisional_evidence_model.py",  # G1.8
     "factory/regulatory/verified_pipeline.py",                               # G1.9
+    "factory/regulatory/tools/build_source_baseline_allowlist.py",           # G1.10
 }
 
 ALL_CONSUMER_FILES = sorted({f for fs in CONSUMERS.values() for f in fs})
