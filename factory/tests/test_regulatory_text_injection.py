@@ -85,17 +85,19 @@ class TestBuildPromptInjectsRegulatoryText:
         regulatorio se inyecta en runtime desde requirements.yaml (Fase C),
         SIN modificar common_contract ni la lista de checkpoints de los
         YAML gobernados -- estos siguen siendo solo req_id+label."""
-        for filename in ("part11_prompts.yaml", "annex11_prompts.yaml", "alcoa_prompts.yaml"):
-            meta = yaml.safe_load((PROMPTS_DIR / filename).read_text(encoding="utf-8"))
-            for cp in meta["checkpoints"]:
+        for path in sorted(PROMPTS_DIR.glob("*_prompts.yaml")):
+            filename = path.name
+            meta = yaml.safe_load(path.read_text(encoding="utf-8"))
+            for cp in meta.get("checkpoints", []):
                 assert set(cp.keys()) == {"req_id", "label"}, (
                     f"{filename}: checkpoint {cp} tiene campos fuera de req_id/label -- "
                     "Fase E no debia modificar el YAML gobernado"
                 )
 
-    def test_19_catalog_requirement_ids_all_resolve_to_real_text(self):
-        """Cobertura completa: los 19 req_id de requirements.yaml (Fase C)
-        deben producir texto normativo real, no None."""
+    def test_every_catalog_requirement_id_resolves_to_real_text(self):
+        """Cobertura completa: TODO req_id de requirements.yaml (Fase C) debe
+        producir texto normativo real, no None. Se deriva del catalogo, no de
+        un conteo -- eran 19 hasta la ingesta de Part 211 (2026-07-29)."""
         catalog = yaml.safe_load(
             Path("factory/regulatory/requirement_catalog/requirements.yaml").read_text()
         )
@@ -173,11 +175,13 @@ class TestBuildPromptInjectsEvidenceMinCriteria:
         a clasificar los criterios via criterion_assessments (Fase F,
         contrato unificado) -- guardia contra remocion accidental futura
         del bloque."""
-        for filename in ("part11_prompts.yaml", "annex11_prompts.yaml", "alcoa_prompts.yaml"):
-            meta = yaml.safe_load((PROMPTS_DIR / filename).read_text(encoding="utf-8"))
-            assert "criterion_assessments" in meta["common_contract"], filename
-            assert "criterion_index" in meta["common_contract"], filename
-            assert meta["schema_version"] == "checkpoint_llm_response_v1", filename
+        for path in sorted(PROMPTS_DIR.glob("*_prompts.yaml")):
+            meta = yaml.safe_load(path.read_text(encoding="utf-8"))
+            if "checkpoints" not in meta:
+                continue  # traceability_prompts.yaml: otro contrato de salida
+            assert "criterion_assessments" in meta["common_contract"], path.name
+            assert "criterion_index" in meta["common_contract"], path.name
+            assert meta["schema_version"] == "checkpoint_llm_response_v1", path.name
 
     def test_criteria_are_numbered_in_prompt(self):
         """El indice numerado en el prompt debe coincidir con

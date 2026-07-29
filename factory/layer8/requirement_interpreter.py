@@ -75,6 +75,12 @@ class RequirementSpec:
     constraints: list[str]
     pending_documents: list[str]
     raw_objective: str
+    # 2026-07-29: la deteccion de 21_CFR_PART_211 ya existia en
+    # REGULATORY_KEYWORDS y en detected_flags, pero no llegaba a la spec ni,
+    # por tanto, a ninguna decision de agente -- la regla predicado se
+    # detectaba y se descartaba. Con default False: toda construccion previa
+    # de RequirementSpec sigue siendo valida sin cambios.
+    cgmp211_required: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -85,6 +91,7 @@ class RequirementSpec:
             "part11_required": self.part11_required,
             "alcoa_plus_required": self.alcoa_plus_required,
             "annex11_required": self.annex11_required,
+            "cgmp211_required": self.cgmp211_required,
             "client_needs": self.client_needs,
             "constraints": self.constraints,
             "pending_documents": self.pending_documents,
@@ -135,6 +142,7 @@ def extract_regulatory_scope(mission: dict) -> dict[str, Any]:
         "part11_required": scope_flags.get("21_CFR_PART_11", False),
         "alcoa_plus_required": scope_flags.get("ALCOA_PLUS", False),
         "annex11_required": scope_flags.get("EU_GMP_ANNEX_11", False),
+        "cgmp211_required": scope_flags.get("21_CFR_PART_211", False),
     }
 
 
@@ -198,6 +206,7 @@ def generate_requirement_spec(project_id: str, mission: dict) -> RequirementSpec
         part11_required=reg_scope["part11_required"],
         alcoa_plus_required=reg_scope["alcoa_plus_required"],
         annex11_required=reg_scope["annex11_required"],
+        cgmp211_required=reg_scope["cgmp211_required"],
         client_needs=client_needs,
         constraints=constraints,
         pending_documents=pending_docs,

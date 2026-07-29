@@ -121,14 +121,28 @@ class TestValidateEvidencePack:
 
 class TestEvidencePackGatePartitionsCheckpoints:
 
-    def test_real_agents_admit_every_checkpoint_today(self):
-        """El fix no cambia el comportamiento de los 3 agentes reales: sus
-        19 req_id resuelven. El gate es una guardia, no una regresion."""
-        for filename in ("part11_prompts.yaml", "annex11_prompts.yaml", "alcoa_prompts.yaml"):
-            meta = ce.load_prompt_meta(PROMPTS_DIR / filename)
+    def test_real_agents_block_exactly_what_lacks_human_interpretation(self):
+        """Invariante, no conteo (reescrito 2026-07-29): para TODO prompt
+        gobernado del directorio, el gate bloquea exactamente sus req_id
+        pendientes de interpretacion humana y admite todo lo demas.
+
+        Antes esto recorria una lista fija de 3 archivos y exigia blocked==[]
+        -- cgmp211_prompts.yaml no se habria comprobado nunca, y si se hubiera
+        agregado a la lista habria fallado por hacer lo correcto."""
+        import yaml
+        from tests.conftest import PENDING_HUMAN_INTERPRETATION_REQ_IDS
+        prompts = sorted(PROMPTS_DIR.glob("*_prompts.yaml"))
+        assert len(prompts) >= 4
+        for path in prompts:
+            meta = yaml.safe_load(path.read_text(encoding="utf-8"))
+            if "checkpoints" not in meta:
+                continue
             admitted, blocked = ce.evidence_pack_gate(meta)
-            assert blocked == [], f"{filename}: {[v.req_id for v in blocked]}"
-            assert len(admitted) == len(meta["checkpoints"])
+            req_ids = [cp["req_id"] for cp in meta["checkpoints"]]
+            esperado_bloqueado = [r for r in req_ids if r in PENDING_HUMAN_INTERPRETATION_REQ_IDS]
+            assert [v.req_id for v in blocked] == esperado_bloqueado, path.name
+            assert [c["req_id"] for c in admitted] == \
+                [r for r in req_ids if r not in PENDING_HUMAN_INTERPRETATION_REQ_IDS], path.name
 
     def test_mixed_meta_admits_only_the_one_with_a_pack(self):
         meta = {

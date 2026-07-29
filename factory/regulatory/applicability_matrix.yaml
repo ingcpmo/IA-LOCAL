@@ -19,12 +19,20 @@
 # factory/docs/W5v2_FASE0_INVENTARIO.md §6). Regulaciones no ingeridas:
 # comentario PENDING_DOCUMENT, sin filas inventadas.
 #
-# EXCEPCION DECLARADA (v2.1, 2026-07-29): "21_CFR_211.68(b)" SI esta en el
-# catalogo y en esta matriz, pero TODAVIA NO tiene prompt ni agente en
-# factory/engines/gmpai_integrity/prompts/. En una corrida real no se
-# evaluaria: falta el agente fda_cgmp_211. La fila se declara aqui porque la
-# aplicabilidad documental es una decision de gobernanza independiente de que
-# el motor ya sepa ejecutarla -- pero no confundir "declarado" con "operativo".
+# EXCEPCION DECLARADA (v2.1, 2026-07-29), ACTUALIZADA el mismo dia:
+# "21_CFR_211.68(b)" ya TIENE agente y prompt gobernado —
+# fda_cgmp_211_agent (cgmp211_prompts.yaml, perfil
+# integrity_cgmp211_ot_profile), y Capa 8 lo propone cuando la mision
+# declara 21 CFR Part 211. Lo que sigue faltando es OTRA cosa: el Evidence
+# Pack del requisito esta en content_review_status=PENDING_HUMAN_INTERPRETATION
+# (sin evidence_min_criteria / governed_interpretation / exclusion_criteria,
+# que son juicio regulatorio humano). Mientras siga asi, el gate 4 bloquea la
+# llamada: en una corrida real el requisito sale NO EVALUADO —nunca
+# incumplido— y no se gasta ninguna inferencia. Probado en
+# factory/tests/test_cgmp211_agent.py, ambas mitades. La fila se declara aqui
+# porque la aplicabilidad documental es una decision de gobernanza
+# independiente de que el motor sepa ejecutarla -- pero no confundir
+# "declarado" con "operativo".
 #
 # TODAS las filas de este archivo estan marcadas # PROPUESTO -- son una
 # primera pasada de Claude Code razonada sobre el V-model GAMP 5 y el

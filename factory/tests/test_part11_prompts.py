@@ -21,7 +21,20 @@ import yaml
 
 PROMPTS_DIR = Path(__file__).parent.parent / "engines" / "gmpai_integrity" / "prompts"
 
-_PROMPTS_WITH_DECLARED_SHA256 = ["part11_prompts.yaml", "annex11_prompts.yaml", "alcoa_prompts.yaml"]
+# Derivado del directorio, no escrito a mano (2026-07-29): la lista fija se
+# quedo atras al agregarse cgmp211_prompts.yaml, y un prompt gobernado sin
+# test de sha256 es exactamente la salvaguarda-que-no-se-cumple que este
+# archivo existe para cerrar. `traceability_prompts.yaml` no declara hash y
+# se excluye por ese hecho, no por su nombre.
+_ALL_PROMPTS = sorted(p.name for p in PROMPTS_DIR.glob("*_prompts.yaml"))
+
+
+def _declares_sha256(filename: str) -> bool:
+    return "common_contract_sha256" in yaml.safe_load(
+        (PROMPTS_DIR / filename).read_text(encoding="utf-8"))
+
+
+_PROMPTS_WITH_DECLARED_SHA256 = [f for f in _ALL_PROMPTS if _declares_sha256(f)]
 
 
 def _load(filename: str) -> dict:
@@ -43,7 +56,19 @@ def test_common_contract_sha256_matches_declared_value(filename):
     )
 
 
-@pytest.mark.parametrize("filename", _PROMPTS_WITH_DECLARED_SHA256 + ["traceability_prompts.yaml"])
+def test_every_governed_prompt_is_under_hash_governance():
+    """Guardia sobre la propia derivacion: si un prompt nuevo se agrega sin
+    common_contract_sha256, la lista de arriba lo excluiria en silencio y su
+    contrato quedaria editable sin romper nada. traceability_prompts.yaml es
+    la unica excepcion historica conocida."""
+    assert len(_ALL_PROMPTS) >= 4
+    sin_hash = set(_ALL_PROMPTS) - set(_PROMPTS_WITH_DECLARED_SHA256)
+    assert sin_hash == {"traceability_prompts.yaml"}, (
+        f"prompt gobernado sin common_contract_sha256: {sin_hash - {'traceability_prompts.yaml'}}"
+    )
+
+
+@pytest.mark.parametrize("filename", _ALL_PROMPTS)
 def test_prompt_version_is_declared_and_well_formed(filename):
     meta = _load(filename)
     assert "prompt_version" in meta

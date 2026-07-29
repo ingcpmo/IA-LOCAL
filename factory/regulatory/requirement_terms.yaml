@@ -168,3 +168,20 @@
   - retrieval
   - review
   - audit
+
+# --- FDA 21 CFR Part 211, regla predicado (cgmp211_prompts.yaml) ---
+# Agregado el 2026-07-29 con el agente fda_cgmp_211_agent. Mismo regimen que
+# el resto del archivo: PROPUESTO, sin confirmacion humana todavia, y la
+# relevancia baja solo marca revision -- nunca auto-rechaza (P6).
+"21_CFR_211.68(b)":  # PROPUESTO — Controles sobre sistemas computarizados
+  - computer
+  - authorized
+  - change
+  - master
+  - production
+  - record
+  - input
+  - output
+  - accuracy
+  - verification
+  - backup

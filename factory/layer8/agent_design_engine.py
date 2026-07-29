@@ -208,6 +208,24 @@ def decide_inherited_profiles_custom(spec: RequirementSpec) -> list[AgentDecisio
             routing_key="annex11_ot",
         ))
 
+    if getattr(spec, "cgmp211_required", False) and "LIMS" not in domains:
+        decisions.append(AgentDecision(
+            agent_id="fda_cgmp_211_agent",
+            decision="profile",
+            base_agent="integrity",
+            profile_name="integrity_cgmp211_ot_profile",
+            rationale=(
+                "21 CFR 211.68(b) es la regla PREDICADO de los controles sobre sistemas "
+                "computarizados (cambios solo por personal autorizado, verificación de "
+                "exactitud entrada/salida, respaldo). El agente base integrity cubre el "
+                "dominio al ~70%; el delta es de encuadre: separa la exigencia cGMP de su "
+                "gestión bajo Part 11, que es la confusión que produce falsos cumplimientos. "
+                "Se declara aquí porque hasta 2026-07-29 la regla predicado se detectaba en "
+                "el alcance regulatorio y no generaba ningún agente."
+            ),
+            routing_key="cgmp211_ot",
+        ))
+
     if spec.alcoa_plus_required and "LIMS" not in domains:
         decisions.append(AgentDecision(
             agent_id="alcoa_plus_agent",

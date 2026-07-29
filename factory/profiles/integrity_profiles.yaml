@@ -55,6 +55,39 @@ profiles:
         expected_keywords: ["evidencia insuficiente", "validation", "11.10(a)"]
         acceptance: "Debe responder 'evidencia insuficiente', nunca asumir cumplimiento sin evidencia documental explicita"
 
+  integrity_cgmp211_ot_profile:
+    profile_id: integrity_cgmp211_ot_profile
+    base_agent: integrity
+    coverage_estimate: "70%"
+    justification: >
+      21 CFR Part 211 §211.68(b) es la REGLA PREDICADO de los controles sobre
+      sistemas computarizados en manufactura farmaceutica: cambios instituidos
+      solo por personal autorizado, verificacion de exactitud de entrada/salida
+      y respaldo de datos. Comparte con el agente base integrity el dominio de
+      control de acceso, exactitud del dato y respaldo (~70%). El delta es de
+      ENCUADRE, no de tema: separa la exigencia predicado (que control exige la
+      cGMP) de Part 11 (como se gestiona el registro electronico que esa
+      exigencia produce) — confundirlas es el error que el propio prompt
+      prohibe en su regla 5. Contexto OT (PLC/SCADA/HMI): el "computer or
+      related system" es el controlador y el SCADA, y los "master production
+      and control records" son recetas, setpoints y configuracion de proyecto.
+      Mision de origen: gmpai_document_validation.
+    rag_collection: ot_cgmp211_reference
+    corpus_available:
+      - "21 CFR Part 211 texto oficial completo (XML eCFR, source_id ecfr_21cfr_part211, sha256 ecd9f8ba..., ingerido 2026-07-29) — texto normativo real, no solo numeracion"
+    corpus_pending:
+      - "FDA Guidance on Computerized Systems Used in Clinical/GMP settings — no disponible en la fabrica"
+    test_questions:
+      - question: "Las recetas del SCADA-PCS pueden editarse desde una cuenta de mantenimiento sin aprobacion registrada. ¿Que exige 211.68(b)?"
+        expected_keywords: ["211.68", "authorized personnel", "master production", "control records", "cambios"]
+        acceptance: "Debe citar 211.68(b) (cambios en master production and control records solo por personal autorizado) y NO resolverlo citando 11.10(d)"
+      - question: "El FS no describe ninguna verificacion de exactitud de los valores que el PLC envia al historiador. ¿Es evidencia suficiente de cumplimiento de 211.68(b)?"
+        expected_keywords: ["evidencia insuficiente", "input", "output", "accuracy", "verification"]
+        acceptance: "Debe responder 'evidencia insuficiente', nunca afirmar incumplimiento del sistema por ausencia en un documento de ingenieria (regla 4 del prompt)"
+      - question: "El documento describe audit trail conforme a Part 11 pero no menciona respaldo de los datos ingresados al sistema. ¿Cubre eso 211.68(b)?"
+        expected_keywords: ["backup", "respaldo", "no", "211.68", "predicado"]
+        acceptance: "Debe rechazar el control de Part 11 como evidencia del requisito predicado de backup file — es el caso exacto que la regla 5 del common_contract prohibe"
+
   integrity_annex11_ot_profile:
     profile_id: integrity_annex11_ot_profile
     base_agent: integrity
