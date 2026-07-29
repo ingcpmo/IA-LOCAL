@@ -141,7 +141,34 @@ def test_document_type_guard_inferred_high_confidence_is_confirmed():
     assert g["flags"] == []
 
 
-def test_document_type_unconfirmed_propagates_to_all_conclusions():
+# G1.9 -- evaluate_document exige cobertura de decision antes de inferir.
+def _authorized_store(tmp_path, *pairs):
+    """pairs: (requirement_id, source_id). Firma D2+D1 reales."""
+    import json as _json
+    from factory.services import decision_store_v2 as _store
+    reqs = [r for r, _ in pairs]
+    srcs = sorted({s for _, s in pairs})
+    recs = [
+        _store.build_record(
+            decision_family="D2", decision_type="ORIGINAL",
+            selection_mode="EXPLICIT_LIST", resolved_target_ids=reqs,
+            decision="APPROVE", decision_origin="human_confirmed",
+            approved_by_id="Cesar", approved_by_display_name="Cesar",
+            decision_instance_id="D2-2026-001"),
+        _store.build_record(
+            decision_family="D1", decision_type="ORIGINAL",
+            selection_mode="EXPLICIT_LIST", resolved_target_ids=srcs,
+            decision="APPROVE", decision_origin="human_confirmed",
+            approved_by_id="Cesar", approved_by_display_name="Cesar",
+            decision_instance_id="D1-2026-001"),
+    ]
+    path = tmp_path / "decisions_v2.jsonl"
+    path.write_text("".join(_json.dumps(r, ensure_ascii=False) + "\n" for r in recs),
+                    encoding="utf-8")
+    return path
+
+
+def test_document_type_unconfirmed_propagates_to_all_conclusions(tmp_path):
     from factory.regulatory.verified_pipeline import evaluate_document
 
     def fake_generate(prompt, chunk):
@@ -170,6 +197,8 @@ def test_document_type_unconfirmed_propagates_to_all_conclusions():
         generate_fn=fake_generate,
         prompt_by_requirement={"21_CFR_11.10(d)": "prompt"},
         requirement_ids={"21_CFR_11.10(d)"},
+        decision_store_file=_authorized_store(
+            tmp_path, ("21_CFR_11.10(d)", "ecfr_21cfr_part11")),
     )
     assert result.document_type_confirmed is False
     assert "DOCUMENT_TYPE_UNCONFIRMED" in result.document_level_flags
@@ -177,7 +206,7 @@ def test_document_type_unconfirmed_propagates_to_all_conclusions():
     assert "DOCUMENT_TYPE_UNCONFIRMED" in result.requirement_summaries[0].conclusion.review_flags
 
 
-def test_review_queue_never_silently_drops_unmapped_requirements():
+def test_review_queue_never_silently_drops_unmapped_requirements(tmp_path):
     from factory.regulatory.verified_pipeline import evaluate_document
 
     result = evaluate_document(
@@ -188,5 +217,7 @@ def test_review_queue_never_silently_drops_unmapped_requirements():
         generate_fn=lambda p, c: (_ for _ in ()).throw(AssertionError("no deberia llamarse")),
         prompt_by_requirement={},
         requirement_ids={"21_CFR_11.10(a)"},  # CS no mapeado explicitamente para este req
+        decision_store_file=_authorized_store(
+            tmp_path, ("21_CFR_11.10(a)", "ecfr_21cfr_part11")),
     )
     assert "21_CFR_11.10(a)" in result.review_queue
