@@ -18,10 +18,18 @@ def _real_pdata():
     return svc.load_canonical_pipeline_data()[1]
 
 
-def test_readiness_matrix_covers_exactly_13_documents_excluding_piloted():
+def test_readiness_matrix_covers_every_record_except_the_piloted_one():
+    """Invariante, no conteo: la matriz cubre TODOS los documentos del RC
+    salvo el ya piloteado — ni uno menos (omision silenciosa) ni uno mas.
+
+    Antes afirmaba `len(rows) == 13`. Un documento nuevo en el RC canonico
+    rompia el test con "13 != 14", que no dice nada de lo que importa; y un
+    documento OMITIDO en silencio, junto con otro anadido, habria pasado
+    inadvertido con el conteo intacto."""
     pdata = _real_pdata()
     rows = rs.build_readiness_matrix(pdata)
-    assert len(rows) == 13
+    esperado = {r["filename"] for r in pdata["records"]} - {rs.PILOTED_DOCUMENT}
+    assert {r["nombre"] for r in rows} == esperado
     assert rs.PILOTED_DOCUMENT not in {r["nombre"] for r in rows}
 
 
@@ -96,8 +104,24 @@ def test_destination_matrix_never_marks_modify_existing_without_draft_ready():
     assert all(row["correction_type"] != "modify_existing_document" for row in dest)
 
 
-def test_destination_matrix_covers_247_findings_for_13_documents():
+def test_destination_matrix_covers_every_finding_of_the_covered_documents():
+    """La regla que sostenia al `== 247` (267 totales - 19 del piloto - 1 de
+    trazabilidad): un finding entra si y solo si su documento esta en la
+    matriz de readiness. Se comprueba la regla contra los findings reales,
+    en vez de congelar su resultado aritmetico de un dia concreto."""
     pdata = _real_pdata()
     readiness = rs.build_readiness_matrix(pdata)
     dest = rs.build_finding_destination_matrix(pdata, readiness)
-    assert len(dest) == 247  # 267 totales - 19 del piloto - 1 de trazabilidad
+    cubiertos = {r["nombre"] for r in readiness}
+    esperados = [f for f in pdata["findings"] if f["documento"] in cubiertos]
+    assert len(dest) == len(esperados)
+    assert {row["source_document"] for row in dest} <= cubiertos
+    assert rs.PILOTED_DOCUMENT not in {row["source_document"] for row in dest}
+    # ningun finding se cae por un motivo no declarado: lo excluido es del
+    # piloto o de un documento que no esta en los records del RC (SCADA)
+    en_records = {r["filename"] for r in pdata["records"]}
+    fuera = {f["documento"] for f in pdata["findings"]} - cubiertos
+    assert fuera & en_records <= {rs.PILOTED_DOCUMENT}, (
+        f"documentos del RC con findings pero sin fila de readiness: "
+        f"{fuera & en_records - {rs.PILOTED_DOCUMENT}}"
+    )

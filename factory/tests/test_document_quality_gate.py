@@ -218,8 +218,16 @@ class TestEvaluateDocumentQuality:
         candidate = generate_candidate_document(STRUCTURE, [change])
         full_text = "\n".join(p.text for p in candidate.paragraphs)
         result = evaluate_document_quality(structure=STRUCTURE, candidate_full_text=full_text, changes=[change])
-        not_evaluated = [
+        not_evaluated = {
             name for name, r in result["document_wide_controls"].items() if r["status"] == "NOT_EVALUATED"
-        ]
-        assert len(not_evaluated) == 4  # terminologia, ortografia, tablas, abreviaturas
+        }
+        # Se nombran en vez de contarse (antes: `len(...) == 4`): asi el test
+        # falla diciendo QUE control cambio de estado, y un control nuevo que
+        # nazca NOT_EVALUATED se nota en vez de pasar dentro del conteo.
+        assert not_evaluated == {
+            "terminologia_documento_completo", "ortografia_gramatica_documento_completo",
+            "tablas_preservadas", "abreviaturas_y_definiciones",
+        }
+        # y ninguno de ellos declara NOT_EVALUATED sin decir por que
+        assert all(result["document_wide_controls"][n]["reason"] for n in not_evaluated)
         assert result["applied"] is True

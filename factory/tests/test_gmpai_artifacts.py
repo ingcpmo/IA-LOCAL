@@ -49,9 +49,14 @@ def test_load_canonical_pipeline_data_reads_approved_rc():
 
 def test_build_final_report_data_declares_scada_scope_limitation():
     data = svc.build_final_report_data()
-    assert data["scope"]["total_documents_declared"] == 32
-    assert data["scope"]["rockwell_documents"] == 14
-    assert data["scope"]["scada_documents"] == 18
+    scope = data["scope"]
+    # El alcance declarado debe cuadrar consigo mismo: las dos familias
+    # suman el total, sin documentos huerfanos ni contados dos veces. Antes
+    # se congelaban 32/14/18 -- tres numeros que hay que reeditar cada vez
+    # que el corpus crezca, y que no comprueban que la suma cierre.
+    assert scope["rockwell_documents"] > 0 and scope["scada_documents"] > 0
+    assert scope["total_documents_declared"] == \
+        scope["rockwell_documents"] + scope["scada_documents"]
     # No debe declarar SCADA con findings de cumplimiento (limitación real).
     assert data["scope"]["documents_with_compliance_findings"] == ["Rockwell"]
     assert "SCADA" in data["scope"]["limitation"]

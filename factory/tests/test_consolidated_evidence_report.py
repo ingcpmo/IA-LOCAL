@@ -30,13 +30,22 @@ def test_phase_status_has_all_8_phases_declared():
     }
 
 
-def test_only_fases_0_2_y_4_estan_completamente_cerradas():
-    """Hallazgo real de esta consolidacion: de las 8 fases con codigo,
-    solo 0, 2 y 4 no dejaron ningun pendiente declarado."""
-    fully_closed = [name for name, info in report.PHASE_STATUS.items() if info["status"] == "CERRADA"]
-    assert set(fully_closed) == {
-        "fase_0_higiene", "fase_2_unificar_cobertura", "fase_4_extraccion_estructurada",
-    }
+def test_closed_phases_declare_the_commit_that_closed_them():
+    """Invariante en vez de fotografia: una fase solo puede declararse
+    CERRADA si dice en que commit se cerro, y una no cerrada debe declarar
+    sus pendientes.
+
+    Antes congelaba que las cerradas eran exactamente {0, 2, 4}. Cerrar la
+    Fase 3 -- el objetivo declarado del roadmap -- habria roto este test,
+    que es exactamente la presion perversa documentada en
+    test_status_risks.py: la suite castigando el progreso real."""
+    for name, info in report.PHASE_STATUS.items():
+        assert info["commit"], f"{name}: sin commit declarado"
+        cerrada = info["status"] == "CERRADA"
+        assert cerrada == (not info["pendientes"]), (
+            f"{name}: status={info['status']} con {len(info['pendientes'])} pendientes -- "
+            "'CERRADA' significa exactamente 'sin pendientes declarados'"
+        )
 
 
 def test_fase_0_flagged_as_committed():
@@ -65,7 +74,13 @@ def test_fase8_consolidated_report_runs_against_real_evidence():
 
     assert result["release_decision"] == report.RELEASE_DECISION
     assert result["any_gate_failed"] is False
-    assert len(result["phases_not_fully_closed"]) == 5
+    # El reporte no puede sub-declarar: toda fase con pendientes reales
+    # aparece en la lista. Se contrasta contra `pendientes` (la evidencia) y
+    # NO contra `status` -- comparar con status seria repetir la linea del
+    # servicio, que es tan inutil como el `== 5` que habia aqui.
+    assert set(result["phases_not_fully_closed"]) == {
+        name for name, info in report.PHASE_STATUS.items() if info["pendientes"]
+    }
     assert set(result["golden_dataset_results"].keys()) == {
         "PKG-FS-V1-2-MEDIUM-RISK-REAL", "PKG-FS-V1-2-REAL-CONTROLLED",
     }

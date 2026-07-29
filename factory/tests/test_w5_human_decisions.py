@@ -53,7 +53,7 @@ class TestReadIsSideEffectFree:
         state = w5.get_decisions_state()
         ids = [d["decision_id"] for d in state["decisions"]]
         assert ids == list(w5.DECISION_IDS)
-        assert state["pending_count"] == 5
+        assert state["pending_count"] == len(w5.DECISION_IDS)
         assert all(d["status"] == "PENDING" for d in state["decisions"])
         assert state["read_only"] is True
 

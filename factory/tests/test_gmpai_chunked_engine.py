@@ -64,7 +64,8 @@ def test_evaluate_chunked_covers_start_middle_end(monkeypatch):
     assert len(calls) == len(result["chunk_executions"]) >= 2
     assert result["chunk_executions"][0]["page_start"] == 1
     assert result["chunk_executions"][-1]["page_end"] == 3
-    assert len(result["findings"]) == 5
+    # un finding por checkpoint del prompt real, sean los que sean (antes: == 5)
+    assert len(result["findings"]) == len(ce.load_prompt_meta(PROMPT_PATH)["checkpoints"])
     assert all(f["estado"] == "evidencia_insuficiente" for f in result["findings"])
     assert all(e["run_id"] == result["run_id"] for e in result["chunk_executions"])
     assert len({e["task_id"] for e in result["chunk_executions"]}) == len(result["chunk_executions"])

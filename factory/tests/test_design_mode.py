@@ -94,7 +94,11 @@ def test_real_source_registry_connectors():
     explícita."""
     out = svc.read_source_registry()
     assert out["connectors_implemented"] is True
-    assert len(out["sources"]) == 9
+    assert out["sources"], "el registry real no puede quedar vacio"
+    # El tripwire real es el conjunto de CONECTADAS (abajo): conectar una
+    # fuente exige aprobacion humana. Cuantas fuentes hay declaradas en total
+    # no lo es -- registrar una fuente nueva sin conectarla es una operacion
+    # legitima que no deberia romper este test (antes: `== 9`).
     connected = {s["source_id"] for s in out["sources"] if s["status"] == "connected"}
     assert connected == {"openfda_enforcement", "openfda_device_enforcement",
                          "openfda_food_enforcement"}

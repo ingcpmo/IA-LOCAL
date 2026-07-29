@@ -54,9 +54,17 @@ COMPLETE_CASES = [c for c in ALL_CASES if c.get("complete") is True]
 INCOMPLETE_CASES = [c for c in ALL_CASES if c.get("complete") is False]
 
 
-def test_golden_dataset_has_all_four_c1_c4_cases():
+def test_golden_dataset_keeps_the_four_historical_cases_and_declares_the_rest():
+    """C1-C4 son los casos historicos reales: ninguno puede desaparecer, que
+    es la regresion que importa. Antes se exigia igualdad exacta, asi que
+    ANADIR un caso nuevo -- ampliar el dataset, algo deseable -- rompia el
+    test. Un caso nuevo entra sin fricción, pero debe declarar `complete` y
+    un req_id conocido como todos los demas."""
     ids = {c["case_id"] for c in ALL_CASES}
-    assert ids == {"C1", "C2", "C3", "C4"}
+    assert {"C1", "C2", "C3", "C4"} <= ids, f"caso historico perdido: {{'C1','C2','C3','C4'}} - {ids}"
+    for case in ALL_CASES:
+        assert isinstance(case.get("complete"), bool), case["case_id"]
+        assert case["requirement_id"] in KNOWN_REQS, (case["case_id"], case["requirement_id"])
 
 
 def test_incomplete_cases_declare_pending_fields_not_fabricated():

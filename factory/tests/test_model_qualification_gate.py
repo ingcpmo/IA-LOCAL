@@ -41,10 +41,15 @@ def _isolate_record(monkeypatch, tmp_path):
     monkeypatch.setattr(mqg, "RECORD_PATH", tmp_path / "mq" / "qualification_record.json")
 
 
-def test_las_13_metricas_del_spec_estan_todas_presentes():
+def test_las_metricas_del_spec_estan_todas_presentes_y_en_orden():
+    """El invariante es que el resultado trae EXACTAMENTE las metricas
+    requeridas, en su orden. El `len(REQUIRED_METRICS) == 13` que habia
+    debajo solo repetia el tamano de la constante de al lado: no podia
+    fallar sin que fallara antes la linea anterior, y obligaba a editar dos
+    sitios para anadir una metrica."""
     r = mqg.evaluate_model_qualification(FakeProvider())
     assert [m.name for m in r.metrics] == list(mqg.REQUIRED_METRICS)
-    assert len(mqg.REQUIRED_METRICS) == 13
+    assert len(set(mqg.REQUIRED_METRICS)) == len(mqg.REQUIRED_METRICS), "sin duplicados"
 
 
 def test_estado_actual_es_validation_only_no_qualified():
@@ -154,5 +159,5 @@ def test_registro_persistido_es_json_valido_y_completo():
     mqg.evaluate_model_qualification(FakeProvider(), persist=True)
     d = json.loads(mqg.RECORD_PATH.read_text(encoding="utf-8"))
     assert d["status"] == mqg.STATUS_VALIDATION_ONLY
-    assert len(d["metrics"]) == 13
+    assert len(d["metrics"]) == len(mqg.REQUIRED_METRICS)
     assert d["fingerprint"]["model_digest"] == "digest-A"

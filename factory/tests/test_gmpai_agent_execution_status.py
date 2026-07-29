@@ -29,11 +29,15 @@ def _real_report_data():
     return svc.build_final_report_data()
 
 
-def test_classifies_all_8_agents():
+def test_classifies_exactly_the_declared_agent_roster():
+    """EXPECTED_AGENTS es el roster declarado a proposito (un agente nuevo
+    debe pasar por aqui conscientemente). El `len(rows) == 8` que habia
+    debajo no anadia nada: repetia el tamano del propio roster y obligaba a
+    editar dos sitios para el mismo cambio."""
     data = _real_report_data()
     rows = aes.build_agent_execution_status(data)
     assert {r["agent_id"] for r in rows} == EXPECTED_AGENTS
-    assert len(rows) == 8
+    assert len(rows) == len(EXPECTED_AGENTS)
 
 
 def test_no_agent_is_executed_verified_on_canonical_rc():
@@ -56,27 +60,33 @@ def test_no_agent_is_configured_only_or_failed():
 
 def test_integrity_agents_detect_real_llm_calls_vs_fallback():
     """fda_part11_agent/eu_annex11_agent/alcoa_plus_agent deben mostrar
-    llamadas reales > 0 (documentos con texto extraible) Y al menos un
-    fallback detectado (los 2 documentos escaneados sin OCR real de la
-    familia Rockwell::MCCPDC-215115305)."""
+    llamadas reales > 0 (documentos con texto extraible) Y detectar el
+    fallback de los documentos escaneados sin OCR real.
+
+    El `== 2` congelaba cuantos escaneados hay hoy en el corpus. Lo que de
+    verdad prueba que la deteccion funciona es que sea >0 y que los tres
+    agentes, que ven exactamente el mismo corpus, coincidan: si uno contara
+    distinto, la deteccion dependeria del agente y no del documento."""
     data = _real_report_data()
     rows = {r["agent_id"]: r for r in aes.build_agent_execution_status(data)}
-    for agent_id in ("fda_part11_agent", "eu_annex11_agent", "alcoa_plus_agent"):
-        row = rows[agent_id]
-        assert row["llamadas_reales_detectadas"] > 0
-        assert row["llamadas_fallback_sin_texto"] == 2
+    integridad = ("fda_part11_agent", "eu_annex11_agent", "alcoa_plus_agent")
+    fallbacks = {rows[a]["llamadas_fallback_sin_texto"] for a in integridad}
+    for agent_id in integridad:
+        assert rows[agent_id]["llamadas_reales_detectadas"] > 0, agent_id
+    assert len(fallbacks) == 1, f"los 3 agentes ven el mismo corpus: {fallbacks}"
+    assert fallbacks.pop() > 0, "el fallback por documento sin texto debe detectarse"
 
 
 def test_summary_counts_match_rows():
     data = _real_report_data()
     rows = aes.build_agent_execution_status(data)
     summary = aes.summarize_agent_execution_status(rows)
-    assert summary["total_agentes"] == 8
-    assert sum(summary["por_estado"].values()) == 8
+    assert summary["total_agentes"] == len(rows)
+    assert sum(summary["por_estado"].values()) == len(rows)
 
 
 def test_build_final_report_data_embeds_agent_execution_status():
     data = _real_report_data()
     assert "agent_execution_status" in data
     assert "agent_execution_summary" in data
-    assert len(data["agent_execution_status"]) == 8
+    assert len(data["agent_execution_status"]) == len(EXPECTED_AGENTS)

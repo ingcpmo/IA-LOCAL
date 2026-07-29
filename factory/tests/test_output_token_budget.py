@@ -144,10 +144,29 @@ class TestOutputTokenBudget:
             ce.output_token_budget(5, -1)
 
     def test_budget_matches_the_real_catalog_for_annex11(self):
-        """Contra el catalogo REAL, no contra numeros escritos a mano."""
+        """Contra el catalogo REAL. El cuerpo anterior contradecia su propio
+        docstring: afirmaba 5 checkpoints y 20 criterios, dos numeros
+        escritos a mano que se rompen en cuanto el catalogo gane un criterio
+        -- justo el cambio que el presupuesto derivado existe para absorber.
+
+        Lo que se comprueba ahora es el enlace real: el presupuesto que se
+        usaria para este prompt sale del contrato que se le va a enviar."""
         meta = ce.load_prompt_meta(ANNEX11)
-        assert len(meta["checkpoints"]) == 5
-        assert ce._count_contract_criteria(meta) == 20
+        admitidos, _bloqueados = ce.evidence_pack_gate(meta)
+        criterios = ce._count_contract_criteria(meta)
+        assert admitidos and criterios > 0, "el prompt real debe tener contrato que dimensionar"
+
+        provider = _BaseProvider([{"response": json.dumps(_payload(ANNEX11)),
+                                   "done_reason": "stop"}])
+        result = ce.evaluate_chunked(
+            ANNEX11, "eu_annex11_agent", "v-test", ["texto de prueba " * 50], "sys",
+            "doc", "v1", "doc.pdf", "b" * 64, run_context="validation", provider=provider,
+        )
+        usado = result["preflight_metadata"]["token_budget"]["num_predict"]
+        assert usado == ce.output_token_budget(len(admitidos), criterios), (
+            "el motor debe usar el presupuesto derivado del contrato real que envia"
+        )
+        assert all(c["num_predict"] == usado for c in provider.calls)
 
 
 class TestPreflightContextGuard:

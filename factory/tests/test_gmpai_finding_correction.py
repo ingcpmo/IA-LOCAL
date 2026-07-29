@@ -26,10 +26,14 @@ def test_classify_correction_mapping():
     assert fcs.classify_correction({"estado": "cumple"}) == "human_decision_required"  # no hay 0 "cumple" reales
 
 
-def test_build_matrix_covers_all_267_real_findings():
+def test_build_matrix_covers_every_real_finding_without_losing_any():
+    """La matriz cubre TODOS los findings reales del reporte, sean los que
+    sean. El `== 267` que habia aqui era redundante: el invariante util ya
+    estaba escrito al lado (`len(matrix) == data["findings_total"]`), y el
+    numero solo anadia una forma de romperse cuando el corpus cambie."""
     data = _real_report_data()
     matrix = fcs.build_finding_correction_matrix(data)
-    assert len(matrix) == data["findings_total"] == 267
+    assert len(matrix) == data["findings_total"]
     assert all(row["finding_id"] for row in matrix)
     assert len({row["finding_id"] for row in matrix}) == len(matrix), "finding_id debe ser unico"
 
@@ -43,19 +47,39 @@ def test_matrix_never_marks_evidencia_insuficiente_as_correction_generated():
             assert row["correccion_posible"] is False
 
 
-def test_summary_matches_real_distribution():
+def test_summary_is_a_faithful_partition_of_the_real_matrix():
+    """Lo que el resumen debe garantizar es que NO pierde ni duplica
+    findings al agregarlos: las 4 categorias son una particion exacta de la
+    matriz real, y cada una cuenta lo que dice contar.
+
+    Antes congelaba la distribucion de un dia (267/83/184). Ese conteo se
+    rompe con cualquier reanalisis legitimo del corpus, y aun asi no habria
+    detectado el fallo que de verdad importa aqui: un finding contado en dos
+    categorias a la vez, o perdido entre ellas."""
     data = _real_report_data()
     matrix = fcs.build_finding_correction_matrix(data)
     summary = fcs.summarize_correction_matrix(matrix)
-    assert summary["findings_totales"] == 267
-    # 80 no_cumple + 3 cumple_parcialmente = 83 corregibles (ver risk_summary real)
-    assert summary["corregibles"] == 83
-    assert summary["evidencia_requerida"] == 184
+
+    esperado = {
+        "corregibles": "correction_generated",
+        "evidencia_requerida": "evidence_required",
+        "no_aplica_requiere_justificacion": "not_applicable_justification_required",
+        "decision_humana_requerida": "human_decision_required",
+    }
+    for clave, estado in esperado.items():
+        assert summary[clave] == sum(1 for r in matrix if r["estado_correccion"] == estado), clave
+
+    assert summary["findings_totales"] == len(matrix)
+    assert sum(summary[c] for c in esperado) == len(matrix), (
+        "las 4 categorias deben particionar la matriz: ni un finding fuera, "
+        "ni uno contado dos veces"
+    )
+    assert summary["documentos_afectados"] == len({r["documento"] for r in matrix})
 
 
 def test_build_final_report_data_embeds_correction_summary():
     data = _real_report_data()
-    assert data["finding_correction_summary"]["findings_totales"] == 267
+    assert data["finding_correction_summary"]["findings_totales"] == data["findings_total"]
 
 
 def test_document_correction_draft_docx_is_valid_and_grouped_by_status():

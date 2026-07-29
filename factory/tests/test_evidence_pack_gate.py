@@ -295,8 +295,10 @@ class TestEvaluateChunkedBlocksTheCallNotTheRun:
             assert "evidence_pack_gate" in execution["error"]
 
     def test_real_agent_run_is_unchanged_by_the_gate(self, tmp_path, monkeypatch):
-        """Guardia de no-regresion: con el prompt gobernado real, los 5
-        checkpoints se envian igual que antes del fix."""
+        """Guardia de no-regresion: con el prompt gobernado real, TODOS sus
+        checkpoints se envian igual que antes del fix (antes se congelaba el
+        numero: 5)."""
+        meta = ce.load_prompt_meta(PROMPTS_DIR / "part11_prompts.yaml")
         calls = []
         _mock_runtime(monkeypatch, calls)
         result = ce.evaluate_chunked(
@@ -306,5 +308,6 @@ class TestEvaluateChunkedBlocksTheCallNotTheRun:
 
         assert len(calls) == len(result["chunk_executions"]) >= 1
         assert result["preflight_metadata"]["evidence_pack_gate"]["blocked"] == []
-        assert len(result["findings"]) == 5
+        assert {f["requisito_regulatorio"].split(" ")[0] for f in result["findings"]} == \
+            {cp["req_id"] for cp in meta["checkpoints"]}
         assert all("EVIDENCE_PACK_INCOMPLETE" not in f["brecha"] for f in result["findings"])

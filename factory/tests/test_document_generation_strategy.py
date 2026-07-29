@@ -124,10 +124,13 @@ class TestIsStrategyImplemented:
 
 class TestRealRockwellAllowlistCoverage:
 
-    def test_all_14_real_files_get_a_decision(self):
+    def test_every_real_file_gets_a_decision(self):
+        """Ninguna entrada del allowlist se queda sin estrategia. El
+        `== 14` congelaba el tamano del corpus; lo que importa es que la
+        cobertura sea total, sea cual sea ese tamano."""
         entries = yaml.safe_load(_ALLOWLIST_PATH.read_text(encoding="utf-8"))
         decisions = [decide_generation_strategy(e) for e in entries]
-        assert len(decisions) == 14
+        assert len(decisions) == len(entries)
         assert all(d.strategy for d in decisions)
 
     def test_expected_strategy_distribution_on_real_corpus(self):
@@ -143,7 +146,18 @@ class TestRealRockwellAllowlistCoverage:
         assert decisions["RW-0007"] == "DOCM_CANDIDATE_SAFE_EXTRACTION"
         assert decisions["RW-0008"] == "NOT_ELIGIBLE_YET"  # T-039 PDF (HUMAN_REVIEW_REQUIRED)
         assert decisions["RW-0013"] == "XLSX_CANDIDATE_CELL_LEVEL"
-        ready_count = sum(
-            1 for e in entries if decide_generation_strategy(e).generation_ready
-        )
-        assert ready_count == 8
+        # Los NO listos se nombran uno a uno en vez de contarse (antes:
+        # `ready_count == 8`). Sigue siendo el mismo tripwire -- un cambio de
+        # distribucion se nota igual -- pero al fallar dice QUE documento
+        # cambio de estado, que es la informacion que hacia falta.
+        no_listos = {
+            e["file_id"] for e in entries if not decide_generation_strategy(e).generation_ready
+        }
+        assert no_listos == {
+            "RW-0001",  # PLC Panel, OCR_REQUIRED
+            "RW-0003",  # SAT3 Scanned, OCR_REQUIRED
+            "RW-0004",  # FS_v1.2-2, DUPLICATE
+            "RW-0008",  # T-039 PDF, HUMAN_REVIEW_REQUIRED
+            "RW-0007",  # DOCM: estrategia definida, generador no construido
+            "RW-0013",  # XLSX: estrategia definida, generador no construido
+        }

@@ -174,14 +174,20 @@ class TestRealRockwellCorpusGate:
     documento real, no solo fixtures sinteticos, es lo que expone bugs
     reales de clasificacion/extraccion)."""
 
-    def test_covers_all_14_real_files_exactly_once(self):
+    def test_covers_every_real_file_exactly_once(self):
+        """`verify_coverage` ya es el gate real (0 omisiones permitidas). El
+        `len(entries) == 14` que habia debajo congelaba el tamano del corpus
+        de hoy sin anadir cobertura; se sustituye por el conteo real del
+        directorio, que es contra lo que el gate se mide."""
         entries = build_allowlist(
             _REAL_SOURCE_DIR,
             manifest_path=Path("/home/ing_cpmo/GMPAI/manifests/SHA256SUMS.txt"),
             manifest_root=Path("/home/ing_cpmo/GMPAI"),
         )
         verify_coverage(_REAL_SOURCE_DIR, entries)
-        assert len(entries) == 14
+        archivos_reales = [p for p in _REAL_SOURCE_DIR.rglob("*") if p.is_file()]
+        assert len(entries) == len(archivos_reales)
+        assert {e.name for e in entries} == {p.name for p in archivos_reales}
 
     def test_exactly_one_duplicate_pair_fs_v1_2(self):
         entries = build_allowlist(
