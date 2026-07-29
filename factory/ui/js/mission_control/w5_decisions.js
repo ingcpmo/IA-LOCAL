@@ -65,8 +65,22 @@ function d1Card(d){
       ${done ? `<div class="meta" style="margin-top:10px;color:var(--pass)">
           Decidida: <b>${esc(rec.decision)}</b> por ${esc(rec.approved_by)}
           el ${esc((rec.decision_date||'').slice(0,16).replace('T',' '))}
-          · cadencia ${esc(rec.reverification_cadence_months)} meses
-          · autoridad ${esc(rec.reverification_authority)}</div>`
+          · cadencia <b>${esc(rec.reverification_cadence_months)}</b> meses
+          · autoridad ${esc(rec.reverification_authority)}</div>
+        ${historyBlock(d)}
+        <div class="hr"></div>
+        <div class="meta" style="margin-bottom:6px">Corregir (añade un registro que supersede al anterior; el original se conserva)</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div class="field"><label>Cadencia corregida (meses)</label>
+            <input id="w5-d1-fix-cadence" type="number" min="1" max="60"></div>
+          <div class="field"><label>Motivo de la corrección</label>
+            <input id="w5-d1-fix-reason" placeholder="por qué el valor anterior era incorrecto"></div>
+          <div class="field"><label>Firmado por (nombre real)</label>
+            <input id="w5-d1-fix-by" placeholder="p.ej. Cesar" autocomplete="off"></div>
+        </div>
+        <div class="actions">
+          <button class="btn" onclick="submitW5Correction('D1_regulatory_sources')">Registrar corrección</button>
+        </div>`
       : `
       <div class="hr"></div>
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
@@ -93,6 +107,40 @@ function d1Card(d){
         LOCAL_CANONICAL_COPY_VERIFIED: eso es un paso posterior y separado.</div>`}
     </div>
   </div>`;
+}
+
+function historyBlock(d){
+  const h = d.history || [];
+  if(h.length < 2) return '';
+  return `<div class="meta" style="margin-top:8px;color:var(--faint)">
+    Histórico (${h.length} registros, ${d.corrections} corrección(es) — nada se borra):
+    ${h.map((r,i)=>`<div class="mono" style="font-size:10.5px">
+      ${i+1}. ${esc((r.recorded_at||'').slice(0,16).replace('T',' '))}
+      ${r.record_type==='correction' ? '· CORRECCIÓN por '+esc(r.corrected_by)+' · '+esc(r.correction_reason) : '· original'}
+      ${r.reverification_cadence_months!=null ? '· cadencia '+esc(r.reverification_cadence_months)+'m' : ''}
+    </div>`).join('')}
+  </div>`;
+}
+
+export async function submitW5Correction(decisionId){
+  const val = id => (document.getElementById(id)?.value || '').trim();
+  const cadence = val('w5-d1-fix-cadence'), reason = val('w5-d1-fix-reason'), by = val('w5-d1-fix-by');
+  if(!cadence){ toast('Indica la cadencia corregida en meses.'); return; }
+  if(!reason){ toast('Indica el motivo de la corrección — queda en la auditoría.'); return; }
+  if(!by){ toast('Ingresa el nombre real de quien firma la corrección.'); return; }
+  try{
+    const r = await fetch(API_BASE+'/api/v1/layer9/w5-decisions/'+encodeURIComponent(decisionId)+'/correct',
+      {method:'POST', headers:headers(),
+       body:JSON.stringify({corrected_by:by, reason, reverification_cadence_months:parseInt(cadence,10)})});
+    if(r.ok){
+      toast('Corrección registrada · cadencia '+cadence+' meses · '+by);
+      const { refresh } = await import('./refresh.js');
+      setTimeout(()=>refresh('w5'), 600);
+    } else {
+      const err = await r.json().catch(()=>({}));
+      toast('Error '+r.status+': '+(typeof err.detail==='string'?err.detail:JSON.stringify(err.detail||{})));
+    }
+  }catch(e){ toast('Error de red: '+e.message); }
 }
 
 function genericCard(d, idx){

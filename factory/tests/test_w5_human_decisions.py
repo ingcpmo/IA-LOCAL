@@ -244,3 +244,91 @@ class TestFrontendContract:
         review_block = refresh.split("v==='dash'||v==='review'")[1].split("if(v==='w5')")[0]
         assert "else if(v==='review')" in review_block, (
             "la cola de RC debe distinguir error de 'no conectado'")
+
+
+class TestGovernedCorrection:
+    """Una cadencia firmada por error es un hecho histórico. Se corrige
+    SUPERPONIENDO un registro firmado, nunca reescribiendo el anterior: el
+    almacén es append-only y la cadena es Part 11."""
+
+    def _record_d1(self, months=1):
+        return w5.record_decision(
+            "D1_regulatory_sources", decision="APPROVE", approved_by="cesar",
+            approved_source_ids="ALL", reverification_cadence_months=months,
+            reverification_authority="cesar")
+
+    def test_correction_appends_and_never_edits_the_original(self, isolated_store):
+        original = self._record_d1(months=1)
+        raw_before = w5.DECISIONS_FILE.read_text(encoding="utf-8")
+
+        w5.record_correction("D1_regulatory_sources", corrected_by="cesar",
+                             reason="la cadencia de 1 mes fue un valor de prueba",
+                             reverification_cadence_months=12)
+
+        raw_after = w5.DECISIONS_FILE.read_text(encoding="utf-8")
+        assert raw_after.startswith(raw_before), "el registro original fue alterado"
+        history = w5.decision_history("D1_regulatory_sources")
+        assert len(history) == 2
+        assert history[0]["reverification_cadence_months"] == 1, "el original debe conservarse"
+        assert history[0] == original
+
+    def test_current_record_is_the_correction(self, isolated_store):
+        self._record_d1(months=1)
+        w5.record_correction("D1_regulatory_sources", corrected_by="cesar",
+                             reason="valor de prueba", reverification_cadence_months=12)
+        current = w5.recorded_decisions()["D1_regulatory_sources"]
+        assert current["reverification_cadence_months"] == 12
+        assert current["record_type"] == "correction"
+        assert current["corrected_fields"]["reverification_cadence_months"] == {"from": 1, "to": 12}
+        assert current["approved_by"] == "cesar", "el firmante original se conserva"
+
+    def test_correction_writes_exactly_one_audit_event(self, isolated_store):
+        self._record_d1()
+        isolated_store.clear()
+        w5.record_correction("D1_regulatory_sources", corrected_by="cesar",
+                             reason="valor de prueba", reverification_cadence_months=12)
+        assert len(isolated_store) == 1
+        _, _, data = isolated_store[0]
+        assert data["scope"] == "w5_human_decision_correction"
+        assert data["side_effects_applied"] is False
+        assert data["corrected_fields"]["reverification_cadence_months"]["to"] == 12
+
+    def test_history_travels_in_the_read_state(self, isolated_store):
+        self._record_d1()
+        w5.record_correction("D1_regulatory_sources", corrected_by="cesar",
+                             reason="valor de prueba", reverification_cadence_months=12)
+        d1 = next(d for d in w5.get_decisions_state()["decisions"]
+                  if d["decision_id"] == "D1_regulatory_sources")
+        assert d1["corrections"] == 1
+        assert len(d1["history"]) == 2
+        assert d1["recorded"]["reverification_cadence_months"] == 12
+
+    def test_correction_requires_a_reason_and_a_real_identity(self, isolated_store):
+        self._record_d1()
+        with pytest.raises(w5.DecisionValidationError, match="reason"):
+            w5.record_correction("D1_regulatory_sources", corrected_by="cesar",
+                                 reason="  ", reverification_cadence_months=12)
+        with pytest.raises(w5.DecisionValidationError):
+            w5.record_correction("D1_regulatory_sources", corrected_by="human",
+                                 reason="x", reverification_cadence_months=12)
+
+    def test_correction_without_any_change_is_rejected(self, isolated_store):
+        self._record_d1(months=1)
+        with pytest.raises(w5.DecisionValidationError, match="no cambia ningún campo"):
+            w5.record_correction("D1_regulatory_sources", corrected_by="cesar",
+                                 reason="sin cambios", reverification_cadence_months=1)
+
+    def test_correcting_a_decision_that_was_never_recorded_is_404(self, client, isolated_store):
+        r = client.post("/api/v1/layer9/w5-decisions/D2_evidence_packs/correct",
+                        json={"corrected_by": "cesar", "reason": "x",
+                              "reverification_cadence_months": 12})
+        assert r.status_code == 404
+
+    def test_correction_changes_no_governed_state(self, isolated_store):
+        from factory.services import paths
+        registry = paths.FACTORY_ROOT / "regulatory" / "sources" / "registry.json"
+        self._record_d1()
+        before = registry.read_bytes()
+        w5.record_correction("D1_regulatory_sources", corrected_by="cesar",
+                             reason="valor de prueba", reverification_cadence_months=12)
+        assert registry.read_bytes() == before

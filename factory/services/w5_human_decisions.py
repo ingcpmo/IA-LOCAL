@@ -84,8 +84,17 @@ def _read_all() -> list[dict]:
 
 
 def recorded_decisions() -> dict[str, dict]:
-    """decision_id -> última decisión registrada. Solo lectura."""
+    """decision_id -> registro VIGENTE (el último). Solo lectura.
+
+    Una corrección se añade como registro nuevo que supersede al anterior; el
+    anterior NUNCA se borra ni se edita. Ver `decision_history()`."""
     return {d["decision_id"]: d for d in _read_all()}
+
+
+def decision_history(decision_id: str) -> list[dict]:
+    """Todos los registros de un decision_id, en orden cronológico. El
+    primero es la decisión original; los siguientes, sus correcciones."""
+    return [d for d in _read_all() if d["decision_id"] == decision_id]
 
 
 # ---------------------------------------------------------------------------
@@ -192,11 +201,16 @@ def get_decisions_state() -> dict:
     recorded = recorded_decisions()
     decisions = []
     for did in DECISION_IDS:
+        history = decision_history(did)
         entry = {
             "decision_id": did,
             "title": _TITLES[did],
             "status": "RECORDED" if did in recorded else "PENDING",
             "recorded": recorded.get(did),
+            # El histórico completo viaja siempre: una corrección no puede
+            # ocultar lo que se firmó antes.
+            "history": history,
+            "corrections": max(0, len(history) - 1),
         }
         if did == "D1_regulatory_sources":
             entry["context"] = _regulatory_sources_context()
@@ -304,3 +318,102 @@ def record_decision(
         "side_effects_applied": False,
     })
     return record
+
+
+class DecisionNotRecordedError(RuntimeError):
+    """404 -- no hay decisión previa que corregir."""
+
+
+def record_correction(
+    decision_id: str,
+    *,
+    corrected_by: str,
+    reason: str,
+    decision: str | None = None,
+    approved_source_ids: list[str] | str | None = None,
+    reverification_cadence_months: int | None = None,
+    reverification_authority: str | None = None,
+    approved_pack_ids: list[str] | str | None = None,
+    notes: str = "",
+) -> dict:
+    """Corrige una decisión ya registrada AÑADIENDO un registro que supersede
+    al anterior. Nunca edita ni borra el original.
+
+    Por qué así y no reescribiendo la línea: el almacén es append-only y la
+    cadena de auditoría es Part 11. Un valor firmado por error es un hecho
+    histórico; lo que corresponde es superponerle una corrección firmada, con
+    su motivo y su identidad, no hacer desaparecer lo que se firmó. Quien
+    audite debe poder ver ambos.
+
+    Igual que registrar: corregir NO ejecuta ninguna consecuencia.
+    """
+    if decision_id not in DECISION_IDS:
+        raise DecisionValidationError(f"decision_id desconocido: {decision_id!r}")
+    name = _validate_identity(corrected_by)
+    if not (reason or "").strip():
+        raise DecisionValidationError(
+            "Una corrección exige `reason`: por qué el valor anterior era incorrecto."
+        )
+
+    history = decision_history(decision_id)
+    if not history:
+        raise DecisionNotRecordedError(
+            f"{decision_id} no tiene ninguna decisión registrada que corregir."
+        )
+    previous = history[-1]
+
+    corrected = {
+        "decision_id": decision_id,
+        "record_type": "correction",
+        "supersedes_recorded_at": previous["recorded_at"],
+        "correction_reason": reason.strip(),
+        "corrected_by": name,
+        # Lo no corregido se hereda del registro anterior: una corrección
+        # cambia campos concretos, no reabre toda la decisión.
+        "decision": decision or previous["decision"],
+        "approved_by": previous["approved_by"],
+        "decision_date": previous["decision_date"],
+        "decision_origin": "human_confirmed",
+        "notes": notes or previous.get("notes", ""),
+        "recorded_at": _now(),
+    }
+    changed: dict[str, dict] = {}
+    for field, value in (
+        ("approved_source_ids", approved_source_ids),
+        ("reverification_cadence_months", reverification_cadence_months),
+        ("reverification_authority", reverification_authority),
+        ("approved_pack_ids", approved_pack_ids),
+    ):
+        if value is not None:
+            corrected[field] = int(value) if field.endswith("_months") else value
+            # Solo cuenta como corrección si el valor REALMENTE difiere: repetir
+            # el valor vigente no es una corrección, es ruido en el histórico.
+            if corrected[field] != previous.get(field):
+                changed[field] = {"from": previous.get(field), "to": corrected[field]}
+        elif field in previous:
+            corrected[field] = previous[field]
+    if decision and decision != previous["decision"]:
+        if decision not in VALID_DECISIONS:
+            raise DecisionValidationError(
+                f"decision={decision!r} inválida. Válidas: {list(VALID_DECISIONS)}")
+        changed["decision"] = {"from": previous["decision"], "to": decision}
+    if not changed:
+        raise DecisionValidationError(
+            "La corrección no cambia ningún campo respecto al registro vigente.")
+    corrected["corrected_fields"] = changed
+
+    with DECISIONS_FILE.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(corrected, ensure_ascii=False) + "\n")
+
+    write_event("layer9_decision_recorded", W5_PROJECT_ID, {
+        "scope": "w5_human_decision_correction",
+        "decision_id": decision_id,
+        "decision": corrected["decision"],
+        "corrected_by": name,
+        "correction_reason": corrected["correction_reason"],
+        "corrected_fields": changed,
+        "supersedes_recorded_at": previous["recorded_at"],
+        "decision_origin": "human_confirmed",
+        "side_effects_applied": False,
+    })
+    return corrected

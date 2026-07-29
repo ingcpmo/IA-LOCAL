@@ -1266,3 +1266,42 @@ def post_w5_decision(decision_id: str, body: W5DecisionBody):
         raise
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {e}")
+
+
+class W5CorrectionBody(BaseModel):
+    corrected_by: str
+    reason: str
+    decision: str | None = None
+    notes: str = ""
+    approved_source_ids: Any = None
+    reverification_cadence_months: int | None = None
+    reverification_authority: str | None = None
+    approved_pack_ids: Any = None
+
+
+@router.post("/w5-decisions/{decision_id}/correct")
+def post_w5_decision_correction(decision_id: str, body: W5CorrectionBody):
+    """Corrige una decision ya registrada ANADIENDO un registro que supersede
+    al anterior. El original nunca se edita ni se borra: el almacen es
+    append-only y la cadena de auditoria es Part 11."""
+    from factory.services import w5_human_decisions as _w5
+    try:
+        return _w5.record_correction(
+            decision_id,
+            corrected_by=body.corrected_by,
+            reason=body.reason,
+            decision=body.decision,
+            notes=body.notes,
+            approved_source_ids=body.approved_source_ids,
+            reverification_cadence_months=body.reverification_cadence_months,
+            reverification_authority=body.reverification_authority,
+            approved_pack_ids=body.approved_pack_ids,
+        )
+    except _w5.DecisionNotRecordedError as e:
+        raise HTTPException(404, str(e))
+    except _w5.DecisionValidationError as e:
+        raise HTTPException(422, str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {e}")

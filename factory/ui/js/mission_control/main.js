@@ -7,7 +7,7 @@ import { show, connect, refresh } from './refresh.js';
 import { toast, fakeSubmit } from './core.js';
 import { submitCreateMission, submitMissionDecision } from './missions.js';
 import { submitRCDecision } from './review.js';
-import { submitW5Decision } from './w5_decisions.js';
+import { submitW5Decision, submitW5Correction } from './w5_decisions.js';
 import {
   viewHeadlessLogs, submitHeadlessOff, submitModelChange,
   refreshPipeline, refreshPipelineIfConnected,
@@ -31,7 +31,7 @@ import { doCaseSearch, submitRegQuery, promptCaseFetch,
 
 Object.assign(window, {
   show, connect, refresh, toast, fakeSubmit,
-  submitCreateMission, submitMissionDecision, submitRCDecision, submitW5Decision,
+  submitCreateMission, submitMissionDecision, submitRCDecision, submitW5Decision, submitW5Correction,
   viewHeadlessLogs, submitHeadlessOff, submitModelChange,
   refreshPipeline, refreshPipelineIfConnected,
   openMissionDetail, closeDetail, toggleGrp, toggleEv,
