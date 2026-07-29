@@ -350,3 +350,110 @@ def test_no_test_in_this_file_wrote_to_the_real_store():
     for iid in PENDIENTES:
         r = [x for x in registros if x["decision_instance_id"] == iid][0]
         assert r["status"] == "INVALID_PENDING_RESIGNATURE"
+
+
+# ===========================================================================
+# Una PROPUESTA no cambia la vigencia de nada
+# ===========================================================================
+
+def _firmada(path, iid="D1-2026-001"):
+    return store.build_record(
+        decision_family="D1", decision_type="ORIGINAL",
+        selection_mode="EXPLICIT_LIST", resolved_target_ids=["ecfr_21cfr_part11"],
+        decision="APPROVE", decision_origin="human_confirmed",
+        approved_by_id="Cesar", approved_by_display_name="Cesar",
+        decision_instance_id=iid, store_file=path)
+
+
+def _propuesta(path, tipo, supersede, iid="D1-2026-002"):
+    return store.build_record(
+        decision_family="D1", decision_type=tipo,
+        selection_mode="EXPLICIT_LIST", resolved_target_ids=[],
+        decision="APPROVE", decision_origin="agent_proposed",
+        proposed_by_id="layer8_agent", supersedes_instance_id=supersede,
+        reason="propuesta que nadie confirma",
+        status="INVALID_PENDING_RESIGNATURE", decision_instance_id=iid,
+        store_file=path)
+
+
+@pytest.mark.parametrize("tipo", ["CORRECTION", "SUPERSESSION"])
+def test_an_unconfirmed_proposal_cannot_supersede_a_signed_decision(tmp_path, tipo):
+    """DEFECTO REAL de severidad alta, cerrado en G2.
+
+    Un registro `agent_proposed` con `supersedes_instance_id` marcaba SUPERSEDED
+    a la decision firmada. Proponer una correccion RETIRABA la autorizacion
+    vigente sin que ningun humano confirmara nada: **un agente podia anular una
+    decision de Cesar solo pidiendolo**, que es la inversion exacta que este
+    sistema existe para impedir.
+
+    En el caso SUPERSESSION el agujero era mayor: barria de golpe toda la
+    familia anterior.
+
+    Salio a la luz probando el panel de la Correccion D1 antes de que Cesar
+    firmara -- la propuesta y la confirmacion son dos registros, y la propuesta
+    llegaba primero.
+    """
+    d = tmp_path / "d.jsonl"
+    a = _firmada(d)
+    b = _propuesta(d, tipo, "D1-2026-001")
+    d.write_text("".join(json.dumps(x, ensure_ascii=False) + "\n" for x in (a, b)),
+                 encoding="utf-8")
+
+    estados = store.project_status(store.read_all(d))
+    assert estados["D1-2026-001"] == "ACTIVE", (
+        f"una propuesta {tipo} sin confirmar supersedio una decision firmada")
+    assert resolver.resolve("D1", "ecfr_21cfr_part11", store_file=d).authorized
+
+
+def test_a_confirmed_correction_does_supersede(tmp_path):
+    """La regla no es "nada supersede": una firma humana si lo hace.
+
+    Sin este par, el arreglo podria ser "ignorar todos los supersedes" y
+    pasaria igual.
+    """
+    d = tmp_path / "d.jsonl"
+    a = _firmada(d)
+    b = store.build_record(
+        decision_family="D1", decision_type="CORRECTION",
+        selection_mode="EXPLICIT_LIST", resolved_target_ids=["ecfr_21cfr_part11"],
+        decision="APPROVE", decision_origin="human_confirmed",
+        approved_by_id="Cesar", approved_by_display_name="Cesar",
+        supersedes_instance_id="D1-2026-001", reason="correccion real",
+        decision_instance_id="D1-2026-002", store_file=d)
+    d.write_text("".join(json.dumps(x, ensure_ascii=False) + "\n" for x in (a, b)),
+                 encoding="utf-8")
+
+    estados = store.project_status(store.read_all(d))
+    assert estados["D1-2026-001"] == "SUPERSEDED"
+    assert estados["D1-2026-002"] == "ACTIVE"
+
+
+def test_confirmed_active_excludes_proposals(tmp_path):
+    """`active_instances` incluye PROPUESTAS; una superficie que necesite
+    "a quien supersedo" no puede elegir una.
+
+    Lo destapo el panel de la Correccion D1, que derivaba el objetivo del
+    ultimo activo sin filtrar: se supersede una decision, no una peticion.
+    """
+    d = tmp_path / "d.jsonl"
+    a = _firmada(d)
+    # Una propuesta REAL de `propose()` nace ACTIVE y con alcance: el fixture
+    # tiene que parecerse a eso. La primera version le puso
+    # `INVALID_PENDING_RESIGNATURE`, con lo que no era ACTIVE y el test no
+    # probaba nada.
+    b = store.build_record(
+        decision_family="D1", decision_type="CORRECTION",
+        selection_mode="EXPLICIT_LIST", resolved_target_ids=["ecfr_21cfr_part11"],
+        decision="APPROVE", decision_origin="agent_proposed",
+        proposed_by_id="layer8_agent", supersedes_instance_id="D1-2026-001",
+        reason="propuesta que nadie confirma", decision_instance_id="D1-2026-002",
+        store_file=d)
+    d.write_text("".join(json.dumps(x, ensure_ascii=False) + "\n" for x in (a, b)),
+                 encoding="utf-8")
+
+    c = resolver.coverage_report("D1", store_file=d)
+    assert "D1-2026-002" in c.active_instances, "la propuesta deberia estar ACTIVE"
+    assert "D1-2026-002" not in c.confirmed_active_instances
+    assert c.confirmed_active_instances == ("D1-2026-001",)
+    # Y la propuesta, aun ACTIVE, no otorga ni retira nada.
+    assert resolver.resolve("D1", "ecfr_21cfr_part11", store_file=d).authorized

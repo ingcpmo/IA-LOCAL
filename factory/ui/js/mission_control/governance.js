@@ -246,6 +246,11 @@ function panelD1Correccion(){
       </div>` : ''}
 
     <div class="meta" style="margin-top:10px">
+      supersede a: <span class="mono">${esc((c.confirmed_active_instances||[]).slice(-1)[0] || '(ninguna vigente)')}</span>
+      <span style="color:var(--faint)"> — la correccion reemplaza a la D1 vigente;
+      el original se conserva, el almacen es append-only.</span>
+    </div>
+    <div class="meta" style="margin-top:6px">
       target_set_hash: <span class="mono" id="d1c-hash">(calculando…)</span>
       <span style="color:var(--faint)"> — cambia al marcar o desmarcar: lo que
       se firma es un conjunto concreto, no una intención.</span>
@@ -478,8 +483,19 @@ async function proponerYConfirmar(family, targetIds, sig, extra={}){
 
 export async function govSubmitD1Correccion(){
   const ids = [...document.querySelectorAll('.d1c-src:checked')].map(i=>i.value);
+  /* Una CORRECTION tiene que decir A QUE supersede (I-6), y se deriva del
+     estado en vez de fijarse a mano: la D1 vigente puede haber cambiado -- de
+     hecho cambio, cuando Cesar corrigio la cadencia por la UI legacy. Sin
+     esto el panel devolvia 422 en el primer clic. */
+  const activas = GOV?.coverage?.D1?.confirmed_active_instances || [];
+  const supersede = activas[activas.length - 1];
+  if(!supersede){
+    toast('No hay ninguna D1 vigente que corregir. Recarga el estado.');
+    return;
+  }
   await proponerYConfirmar('D1', ids, readSignature('d1c'),
-                           {decision_type:'CORRECTION'});
+                           {decision_type:'CORRECTION',
+                            supersedes_instance_id: supersede});
 }
 
 export async function govSubmitD1A(){

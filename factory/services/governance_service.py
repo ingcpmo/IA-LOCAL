@@ -117,7 +117,8 @@ def get_coverage(family: str, *, store_file: Path | None = None) -> dict:
             "reconstructed_only_ids": list(report.reconstructed_only_ids),
             "invalid_instances": list(report.invalid_instances),
             "pending_resignature_instances": list(report.pending_resignature_instances),
-            "active_instances": list(report.active_instances)}
+            "active_instances": list(report.active_instances),
+            "confirmed_active_instances": list(report.confirmed_active_instances)}
 
 
 def _critical_path(coverage: dict, audit: dict, artifacts: dict) -> list[dict]:
@@ -245,7 +246,7 @@ def _find(instance_id: str, records: list[dict]) -> dict:
     raise GovernanceNotFoundError(f"no existe la decision {instance_id!r}")
 
 
-def _closing_record(instance_id: str, *, decision: str, decision_type: str,
+def _closing_record(instance_id: str, *, decision: str, decision_type: str | None,
                     by_id: str, by_name: str | None, reason: str,
                     field: str, store_file: Path | None) -> dict:
     """Registro humano que cierra una propuesta. NUNCA borra la propuesta.
@@ -253,6 +254,18 @@ def _closing_record(instance_id: str, *, decision: str, decision_type: str,
     El almacén es append-only y la cadena es Part 11: rechazar es añadir el
     rechazo, no hacer desaparecer lo rechazado. Quien audite tiene que poder
     ver qué se propuso y que se dijo que no.
+
+    `decision_type=None` significa CONSERVAR el de la propuesta, y es lo que
+    hace `confirm()`. Antes se fijaba a `"ORIGINAL"` mientras se heredaba el
+    `amendment_sequence`, con dos consecuencias: un ADDENDUM confirmado violaba
+    I-5, y **confirmar una CORRECTION producía un ORIGINAL** -- exactamente el
+    mismo defecto que `project_system_b` tenía con las correcciones legacy, que
+    se acababa de corregir. La forma del acto la decide la propuesta; la firma
+    solo dice quién y cuándo.
+
+    Un rechazo o una devolución SÍ son ORIGINAL y con `amendment_sequence=0`:
+    no enmiendan nada, declinan. Heredar el alcance de enmienda de la propuesta
+    haría que un "no" pareciera una corrección.
     """
     _identity.validate_identity(by_id, field=field)
     records = store.read_all(store_file)
@@ -269,9 +282,11 @@ def _closing_record(instance_id: str, *, decision: str, decision_type: str,
             f"{instance_id} ya fue resuelta por "
             f"{already[0]['decision_instance_id']} ({already[0]['decision']})")
 
+    conserva = decision_type is None
+    tipo = proposal["decision_type"] if conserva else decision_type
     record = store.build_record(
         decision_family=proposal["decision_family"],
-        decision_type=decision_type,
+        decision_type=tipo,
         selection_mode=proposal["selection_mode"],
         resolved_target_ids=proposal["resolved_target_ids"],
         decision=decision,
@@ -279,8 +294,10 @@ def _closing_record(instance_id: str, *, decision: str, decision_type: str,
         approved_by_id=by_id,
         approved_by_display_name=by_name or by_id,
         confirms_instance_id=instance_id,
-        supersedes_instance_id=proposal.get("supersedes_instance_id"),
-        amendment_sequence=proposal.get("amendment_sequence", 0),
+        supersedes_instance_id=(proposal.get("supersedes_instance_id")
+                               if conserva else None),
+        amendment_sequence=(proposal.get("amendment_sequence", 0)
+                            if conserva else 0),
         reason=reason,
         payload=proposal.get("payload"),
         store_file=store_file,
@@ -301,7 +318,7 @@ def confirm(instance_id: str, *, approved_by_id: str,
     """
     _require_fresh(state_hash, store_file=store_file)
     return _closing_record(
-        instance_id, decision="APPROVE", decision_type="ORIGINAL",
+        instance_id, decision="APPROVE", decision_type=None,   # conserva el de la propuesta
         by_id=approved_by_id, by_name=approved_by_display_name,
         reason=reason, field="approved_by_id", store_file=store_file)
 

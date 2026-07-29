@@ -93,6 +93,12 @@ class CoverageReport:
     drift_determinable: bool
     pending_resignature_instances: tuple[str, ...]
     active_instances: tuple[str, ...]
+    # ACTIVE ∧ human_confirmed ∧ de un tipo que cubre. `active_instances` a
+    # secas incluye PROPUESTAS (`agent_proposed`), y una superficie que
+    # necesite "a quien supersedo" no puede elegir una propuesta: se supersede
+    # una decision, no una peticion. Lo destapo el panel de la Correccion D1,
+    # que derivaba el objetivo del ultimo activo sin filtrar.
+    confirmed_active_instances: tuple[str, ...] = ()
     unavailable_reason: str | None = None
 
 
@@ -361,6 +367,11 @@ def coverage_report(decision_family: str, *,
             and statuses.get(r["decision_instance_id"]) != "SUPERSEDED")),
         active_instances=tuple(
             iid for iid, st in sorted(statuses.items()) if st == "ACTIVE"),
+        confirmed_active_instances=tuple(
+            r["decision_instance_id"] for r in sorted(valid, key=lambda x: x["recorded_at"])
+            if statuses.get(r["decision_instance_id"]) == "ACTIVE"
+            and r["decision_origin"] == "human_confirmed"
+            and r["decision_type"] in store.COVERING_TYPES),
         unavailable_reason=None,
     )
 

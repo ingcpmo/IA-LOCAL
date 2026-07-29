@@ -303,6 +303,18 @@ def project_status(records: list[dict]) -> dict[str, str]:
         sup = r.get("supersedes_instance_id")
         if not sup or sup not in status:
             continue
+        if r["decision_origin"] != "human_confirmed":
+            # DEFECTO REAL cerrado en G2: una PROPUESTA superseia.
+            #
+            # Un registro `agent_proposed` con `supersedes_instance_id` marcaba
+            # SUPERSEDED a la decision firmada, asi que proponer una correccion
+            # RETIRABA la autorizacion vigente sin que ningun humano confirmara
+            # nada. Un agente podia anular una decision de Cesar solo pidiendolo
+            # -- la inversion exacta que este sistema existe para impedir.
+            #
+            # Proponer no cambia la vigencia de nada. Solo una firma humana
+            # supersede.
+            continue
         if r["decision_type"] in ("CORRECTION", "SUPERSESSION"):
             status[sup] = "SUPERSEDED"
         elif r["decision_type"] == "REVOCATION":
@@ -310,7 +322,10 @@ def project_status(records: list[dict]) -> dict[str, str]:
             # La previa sigue ACTIVE; la resta la hace `effective_coverage`.
             pass
     for r in records:
-        if r["decision_type"] == "SUPERSESSION":
+        # Misma regla que arriba, y aqui el agujero era mayor: una SUPERSESSION
+        # solo PROPUESTA barria de golpe TODA la familia anterior.
+        if (r["decision_type"] == "SUPERSESSION"
+                and r["decision_origin"] == "human_confirmed"):
             for other in records:
                 if (other["decision_family"] == r["decision_family"]
                         and other["decision_instance_id"] != r["decision_instance_id"]
