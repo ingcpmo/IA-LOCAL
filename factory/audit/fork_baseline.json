@@ -1,0 +1,37 @@
+{
+  "baseline_version": 1,
+  "frozen_at": "2026-07-29T18:27:06.851998+00:00",
+  "frozen_by": "Capa 8 (W5 V2 G1.14)",
+  "frozen_by_is_human_acceptance": false,
+  "known_forks": [
+    {
+      "fork_id": "FORK-2026-06-15-001",
+      "line_number": 108,
+      "line_number_note": "informativo, NO identificador: si el fichero se rota, la linea cambia. El identificador estable es entry_id + entry_hash.",
+      "entry_id": "ab689c7c-3e0a-4c77-936b-152851f51a30",
+      "timestamp": "2026-06-15T13:54:43.350825+00:00",
+      "event_type": "gates_executed",
+      "project_id": "lab_qc_project",
+      "entry_hash": "sha256:a1228396bc445b8036112c4b43514026402aeae08989a9d9fc0f78d9ae8dcdfe",
+      "prev_entry_hash_declared": "sha256:20b262690f5b1c0c3cd0a13504c23744d765cde20c14e62cb6ff489f82f6622b",
+      "prev_entry_hash_actual": "sha256:a46ca408a4e70721b218e8e1ad0bc72e2d432f6ac52db3ee54e8ed2cf72ce97a",
+      "competing_writer": {
+        "line_number": 107,
+        "entry_id": "6a680163-f4b0-4c50-9c1c-ec79f433b94b",
+        "project_id": "factory_cleanup",
+        "timestamp": "2026-06-15T13:51:32.834011+00:00"
+      },
+      "root_cause": "stale_in_process_head_cache",
+      "root_cause_detail": "Dos procesos (factory_cleanup y lab_qc_project) mantenian en memoria un _last_entry_hash cacheado a las 13:47:55 apuntando a la linea 106. factory_cleanup escribio a las 13:51:32 y avanzo la cabeza real; lab_qc_project escribio a las 13:54:43 sin releerla. Con 3 min 10 s entre ambas escrituras, un lock por si solo no lo habria evitado: el problema era la cache, no la simultaneidad.",
+      "fixed_by_commit": "8c033fa",
+      "fixed_at": "2026-06-15T14:21:43+00:00",
+      "fix_evidence": "El fork ocurrio a las 13:54:43 y el arreglo se commiteo 27 min despues. Ninguna ruptura en las entradas posteriores.",
+      "accepted_by_decision": null,
+      "acceptance_note": "PENDIENTE de decision AUDIT_EXCEPTION de Capa 9 (paquete AUDIT-EXC-2026-001, spec §7). Sin ella, PART11_COMPLIANCE permanece NOT_DETERMINED."
+    }
+  ],
+  "log_count_at_baseline": 21052,
+  "hash_errors_at_baseline": 0,
+  "chain_errors_at_baseline": 1,
+  "measured_note": "Valores recomputados entrada por entrada sobre la cadena real el dia de la congelacion. Una sola ruptura de enlace en 21052 entradas; hash_errors=0 significa que NINGUN contenido fue alterado."
+}

@@ -16,6 +16,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+from factory.core import audit_writer as aw
 from factory.core.audit_writer import (
     VALID_EVENTS,
     verify_chain,
@@ -101,11 +102,16 @@ class TestWriteEvent:
 
 class TestVerifyChain:
     def test_empty_log_returns_verified_true_not_part11(self, isolated_audit):
-        """Log vacío: verified=True (no hay errores) pero part11_compliant=False."""
+        """Log vacío: verified=True (no hay errores) pero conformidad NO determinada.
+
+        W5 V2 G1.14: `part11_compliant` es un enum. Lo que este test defendía
+        —que un log vacío no habilita una afirmación de conformidad— sigue
+        siendo cierto y ahora se dice con el valor exacto.
+        """
         result = verify_chain()
         assert result["verified"] is True
         assert result["log_count"] == 0
-        assert result["part11_compliant"] is False
+        assert result["part11_compliant"] == aw.PART11_NOT_DETERMINED
 
     def test_single_event_chain_verifies(self, isolated_audit):
         write_event("project_created", "p1")
@@ -122,7 +128,7 @@ class TestVerifyChain:
         assert result["verified"] is True
         assert result["log_count"] == 3
         assert result["verified_count"] == 3
-        assert result["part11_compliant"] is True
+        assert result["part11_compliant"] == aw.PART11_COMPLIANT
 
     def test_corrupted_hash_is_detected(self, isolated_audit):
         """Si se modifica el hash almacenado, verify_chain debe reportar hash_error."""
@@ -217,7 +223,7 @@ class TestVerifyChainSemantics:
         r = verify_chain()
         assert r["assessment"] == "OK"
         assert r["is_fork"] is False
-        assert r["part11_compliant"] is True
+        assert r["part11_compliant"] == aw.PART11_COMPLIANT
 
     def test_fork_assessment_is_warn_not_fail(self, isolated_audit):
         self._make_fork(isolated_audit)
@@ -227,11 +233,24 @@ class TestVerifyChainSemantics:
         assert r["hash_errors"] == 0
         assert r["chain_errors"] > 0
 
-    def test_fork_is_part11_compliant(self, isolated_audit):
-        """Un fork no invalida Part-11: el contenido es auténtico."""
+    def test_fork_leaves_part11_undetermined_not_compliant(self, isolated_audit):
+        """REGLA SUPERSEDED por W5 V2 G1.14.
+
+        Este test afirmaba: *"un fork no invalida Part-11: el contenido es
+        auténtico"*. La premisa es correcta y la conclusión no. Que el
+        contenido sea auténtico es UNA de las condiciones de Part 11
+        (§11.10(e)); la continuidad verificable de la secuencia es otra, y con
+        un fork está rota. Un sistema no puede firmar su propio certificado de
+        conformidad sobre la dimensión que él mismo reporta como fallida.
+
+        Se conserva lo que el test defendía bien —el contenido sigue siendo
+        auténtico y hay que poder decirlo— y se corrige lo que concluía mal.
+        """
         self._make_fork(isolated_audit)
         r = verify_chain()
-        assert r["part11_compliant"] is True
+        assert r["content_hash_integrity"] == aw.CONTENT_HASH_INTEGRITY_VERIFIED
+        assert r["part11_compliant"] == aw.PART11_NOT_DETERMINED
+        assert r["part11_compliant"] != aw.PART11_COMPLIANT
 
     def test_hash_corruption_assessment_is_fail(self, isolated_audit):
         write_event("project_created", "p1")
@@ -251,7 +270,8 @@ class TestVerifyChainSemantics:
         entry["entry_hash"] = "sha256:" + "0" * 64
         isolated_audit.write_text(json.dumps(entry) + "\n")
         r = verify_chain()
-        assert r["part11_compliant"] is False
+        assert r["part11_compliant"] == aw.PART11_NOT_DETERMINED
+        assert r["content_hash_integrity"] == aw.CONTENT_HASH_INTEGRITY_COMPROMISED
 
     def test_result_has_detail_field(self, isolated_audit):
         write_event("project_created", "p1")

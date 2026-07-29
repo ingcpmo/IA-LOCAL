@@ -53,7 +53,13 @@ export function renderMissions(ms){
 /* ---- render: audit seal + chain (view 06) ---- */
 export function renderAuditSeal(d){
   const el=document.getElementById('audit-seal-text'); if(!el) return;
-  const ok=d.verified&&d.part11_compliant;
+  /* W5 V2 G1.14: part11_compliant es un ENUM (NOT_DETERMINED |
+     ACCEPTED_WITH_DOCUMENTED_EXCEPTION | COMPLIANT), no un booleano.
+     `d.verified&&d.part11_compliant` daria verdadero con 'NOT_DETERMINED',
+     que es truthy: el sello se pondria verde justo cuando la conformidad no
+     esta determinada. Se compara contra el valor exacto. */
+  const ok=d.verified&&d.part11_compliant==='COMPLIANT';
+  const accepted=d.part11_compliant==='ACCEPTED_WITH_DOCUMENTED_EXCEPTION';
   const isFork=!ok&&(d.hash_errors??0)===0&&(d.chain_errors??0)>0;
   const seal=el.parentElement?.querySelector('.seal');
   if(seal){
@@ -61,9 +67,14 @@ export function renderAuditSeal(d){
     seal.style.borderColor=ok?'var(--accent)':isFork?'var(--warn)':'var(--fail)';
     seal.style.color=ok?'var(--accent)':isFork?'var(--warn)':'var(--fail)';
   }
-  const estado=ok?'Cadena verificada':isFork?'Fork concurrente — contenido auténtico':'⚠ Hash corrupto — cadena inválida';
+  /* Una excepcion aceptada NUNCA se muestra como "sin errores": viaja siempre
+     acompañada de que hubo una ruptura y de que alguien la acepto. */
+  const estado=ok?'Cadena verificada'
+    :accepted?'Ruptura historica ACEPTADA con excepcion documentada'
+    :isFork?'Fork — continuidad rota, conformidad NO determinada'
+    :'⚠ Hash corrupto — cadena inválida';
   el.innerHTML=`<b>${estado}</b> · ${d.log_count} entradas · ${d.hash_errors} errores de hash · ${d.chain_errors} errores de cadena · part11_compliant: ${d.part11_compliant}`;
-  el.style.color=ok?'#d7c79a':isFork?'var(--warn)':'var(--fail)';
+  el.style.color=ok?'#d7c79a':(isFork||accepted)?'var(--warn)':'var(--fail)';
 }
 
 export function renderAuditChain(entries){

@@ -16,7 +16,7 @@ import yaml
 from fastapi import APIRouter
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-from factory.core.audit_writer import verify_chain
+from factory.core.audit_writer import PART11_COMPLIANT, verify_chain
 
 router = APIRouter(prefix="/api/v1/status", tags=["status"])
 
@@ -114,7 +114,11 @@ def get_risks():
     # R1: cadena de auditoría — distingue fork concurrente de hash corrupto
     try:
         audit = verify_chain()
-        if not audit.get("part11_compliant"):
+        # W5 V2 G1.14: `part11_compliant` es un ENUM, no un bool. El
+        # `if not audit.get(...)` de antes se volvería siempre falso -- la
+        # cadena en NOT_DETERMINED dejaría de emitir el riesgo justo cuando
+        # más falta hace. Se compara contra COMPLIANT explícitamente.
+        if audit.get("part11_compliant") != PART11_COMPLIANT:
             h_err = audit.get("hash_errors", 0)
             c_err = audit.get("chain_errors", 0)
             is_fork_only = h_err == 0 and c_err > 0

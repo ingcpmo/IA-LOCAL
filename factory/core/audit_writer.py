@@ -29,8 +29,48 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 AUDIT_FILE = Path(__file__).parent.parent / "audit" / "factory_audit.jsonl"
+FORK_BASELINE_FILE = Path(__file__).parent.parent / "audit" / "fork_baseline.json"
 
 _last_entry_hash: str | None = None
+
+# --- W5 V2 G1.14 — reporte por dimensión ------------------------------------
+#
+# `verify_chain()` colapsaba tres cosas distintas en un booleano y producía
+# esto sobre la cadena real:
+#
+#     {"verified": false, ..., "part11_compliant": true}
+#
+# El sistema se declaraba conforme a Part 11 sobre una cadena que él mismo
+# reportaba como no verificada.
+#
+# La regla anterior —"fork concurrente ⇒ contenido auténtico ⇒ Part-11
+# cumplido"— era CORRECTA en su análisis técnico y EQUIVOCADA en su
+# conclusión. Que el contenido sea auténtico es *una* de las condiciones de
+# Part 11 (§11.10(e)); la continuidad verificable de la secuencia es otra, y
+# está rota. Un sistema no puede firmar su propio certificado de cumplimiento,
+# y menos sobre la dimensión que él mismo reporta como fallida.
+#
+# `part11_compliant` pasa de `bool` a uno de los tres valores de abajo.
+# Cambiar el TIPO es deliberado: obliga a que cada lector actual se revise, en
+# vez de seguir tratando el valor como un `bool` que ahora mentiría al revés
+# (`"NOT_DETERMINED"` es truthy). Los dos lectores que ramificaban por
+# veracidad —`api/routes/status.py` y `ui/js/mission_control/dash.js`— se
+# corrigieron en esta misma fase.
+
+CONTENT_HASH_INTEGRITY_VERIFIED = "VERIFIED"
+CONTENT_HASH_INTEGRITY_COMPROMISED = "COMPROMISED"
+
+CHAIN_CONTINUITY_VERIFIED = "VERIFIED"
+CHAIN_CONTINUITY_BROKEN_HISTORICAL = "BROKEN_HISTORICAL"
+CHAIN_CONTINUITY_BROKEN_NEW = "BROKEN_NEW"
+CHAIN_CONTINUITY_ACCEPTED = "ACCEPTED_WITH_DOCUMENTED_EXCEPTION"
+
+PART11_NOT_DETERMINED = "NOT_DETERMINED"
+PART11_ACCEPTED_WITH_EXCEPTION = "ACCEPTED_WITH_DOCUMENTED_EXCEPTION"
+PART11_COMPLIANT = "COMPLIANT"
+
+PART11_VALUES = (PART11_NOT_DETERMINED, PART11_ACCEPTED_WITH_EXCEPTION,
+                 PART11_COMPLIANT)
 
 VALID_EVENTS = {
     # Eventos de fábrica (F1-F4)
@@ -224,13 +264,14 @@ def verify_chain() -> dict:
     """
     Verifica la integridad de factory_audit.jsonl.
 
-    Semántica Part-11:
-      assessment="OK"   → cadena íntegra (hash_errors=0, chain_errors=0)
-      assessment="WARN" → fork concurrente (hash_errors=0, chain_errors>0):
-                          enlace roto por escrituras paralelas, contenido auténtico,
-                          Part-11 cumplido.
-      assessment="FAIL" → corrupción real (hash_errors>0): contenido puede estar
-                          alterado, Part-11 NO cumplido.
+    `assessment` conserva su semántica operativa (OK/WARN/FAIL) por
+    retrocompatibilidad, pero **no es la conclusión regulatoria**: esa vive en
+    las cinco dimensiones que añade `_dimensions()`, y `part11_compliant` es
+    ahora un enum, nunca un booleano.
+
+    Regla SUPERSEDED: *"fork concurrente ⇒ WARN con part11_compliant=true;
+    contenido auténtico, Part-11 cumplido"*. Lo que esa regla debió producir
+    es "contenido auténtico, continuidad rota, conformidad no determinada".
     """
     if not AUDIT_FILE.exists():
         return {
@@ -239,38 +280,15 @@ def verify_chain() -> dict:
             "log_count": 0, "verified_count": 0,
             "hash_errors": 0, "chain_errors": 0, "failed_count": 0,
             "hash_algo": "sha256",
-            "part11_compliant": False, "audit_file": str(AUDIT_FILE),
+            **_dimensions(0, 0, 0),
+            "audit_file": str(AUDIT_FILE),
         }
 
-    lines = [ln.strip() for ln in AUDIT_FILE.read_text(encoding="utf-8").splitlines() if ln.strip()]
-    total = len(lines)
-    verified_count = 0
-    hash_errors = 0
-    chain_errors = 0
-    prev_hash = "GENESIS"
-
-    for raw in lines:
-        try:
-            entry = json.loads(raw)
-        except Exception:
-            hash_errors += 1
-            continue
-
-        stored_hash = entry.get("entry_hash", "")
-        body = {k: v for k, v in entry.items() if k != "entry_hash"}
-        expected_hash = f"sha256:{_compute_entry_hash(body)}"
-
-        if stored_hash != expected_hash:
-            hash_errors += 1
-            prev_hash = stored_hash
-            continue
-
-        if entry.get("prev_entry_hash") != prev_hash:
-            chain_errors += 1
-        else:
-            verified_count += 1
-
-        prev_hash = stored_hash
+    walk = _walk_chain(AUDIT_FILE)
+    total = walk["total"]
+    verified_count = walk["verified_count"]
+    hash_errors = walk["hash_errors"]
+    chain_errors = walk["chain_errors"]
 
     is_fork = hash_errors == 0 and chain_errors > 0
     if hash_errors == 0 and chain_errors == 0:
@@ -300,10 +318,209 @@ def verify_chain() -> dict:
         "chain_errors": chain_errors,
         "failed_count": hash_errors + chain_errors,
         "hash_algo": "sha256",
-        # Part-11: hash_errors=0 garantiza autenticidad de contenido.
-        # Un fork (chain_errors>0, hash_errors=0) es auténtico aunque el enlace esté roto.
-        "part11_compliant": hash_errors == 0 and total > 0,
+        **_dimensions(hash_errors, chain_errors, total,
+                      break_ids=walk["break_ids"]),
         "audit_file": str(AUDIT_FILE),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Recorrido único de la cadena
+# ---------------------------------------------------------------------------
+
+def _walk_chain(path: Path) -> dict:
+    """Recorre la cadena UNA vez y devuelve todo lo que se puede saber de ella.
+
+    Existe porque `verify_chain()` y `chain_break_entry_ids()` respondían la
+    misma pregunta —"¿dónde se rompe el enlace?"— con dos bucles distintos.
+    Dos implementaciones de la misma regla en el mismo módulo acaban
+    divergiendo, y aquí divergir significa que las dimensiones dirían una cosa
+    y el conteo otra. De paso, recorrer 21 000 entradas una vez en lugar de
+    dos.
+
+    Distingue las dos patologías, que NO son la misma:
+      - hash de contenido incorrecto  => corrupción. No cuenta como fork y no
+        es exceptuable por diseño.
+      - enlace `prev_entry_hash` roto => fork. Es lo que un humano puede
+        aceptar con una excepción documentada.
+    """
+    if not path.exists():
+        return {"total": 0, "verified_count": 0, "hash_errors": 0,
+                "chain_errors": 0, "break_ids": ()}
+
+    verified_count = hash_errors = chain_errors = 0
+    breaks: list[str] = []
+    prev_hash = "GENESIS"
+    total = 0
+
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        raw = raw.strip()
+        if not raw:
+            continue
+        total += 1
+        try:
+            entry = json.loads(raw)
+        except Exception:  # noqa: BLE001 -- ilegible: corrupción, no fork
+            hash_errors += 1
+            continue
+
+        stored_hash = entry.get("entry_hash", "")
+        body = {k: v for k, v in entry.items() if k != "entry_hash"}
+        if stored_hash != f"sha256:{_compute_entry_hash(body)}":
+            hash_errors += 1
+            prev_hash = stored_hash
+            continue
+
+        if entry.get("prev_entry_hash") != prev_hash:
+            chain_errors += 1
+            # Sin `entry_id` no hay nada que un humano pueda firmar. Se declara
+            # con un id sintético en vez de omitirse: una ruptura invisible
+            # para el gate es exactamente lo que este módulo evita.
+            breaks.append(entry.get("entry_id") or f"<sin entry_id:{stored_hash}>")
+        else:
+            verified_count += 1
+
+        prev_hash = stored_hash
+
+    return {"total": total, "verified_count": verified_count,
+            "hash_errors": hash_errors, "chain_errors": chain_errors,
+            "break_ids": tuple(breaks)}
+
+
+# ---------------------------------------------------------------------------
+# Baseline de forks conocidos y detección de forks NUEVOS
+# ---------------------------------------------------------------------------
+
+def load_fork_baseline(baseline_file: Path | None = None) -> dict:
+    """Lee `fork_baseline.json`. Fail-closed: ilegible == baseline vacío.
+
+    Un baseline vacío no silencia nada -- al contrario, hace que TODO fork
+    detectado cuente como nuevo. Degradar hacia "no conozco ninguno" es el
+    lado seguro; degradar hacia "los conozco todos" sería una alfombra.
+    """
+    path = baseline_file or FORK_BASELINE_FILE
+    if not path.is_file():
+        return {"known_forks": []}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return {"known_forks": []}
+    if not isinstance(data, dict) or not isinstance(data.get("known_forks"), list):
+        return {"known_forks": []}
+    return data
+
+
+def known_fork_entry_ids(baseline_file: Path | None = None) -> tuple[str, ...]:
+    baseline = load_fork_baseline(baseline_file)
+    return tuple(f.get("entry_id") for f in baseline["known_forks"] if f.get("entry_id"))
+
+
+def new_forks_since_baseline(audit_file: Path | None = None,
+                             baseline_file: Path | None = None) -> tuple[str, ...]:
+    """Forks detectados que NO están en el baseline, por `entry_id`. Read-only.
+
+    Se identifican por `entry_id` y no por número de línea: si el fichero se
+    rota, la línea cambia y el evento no.
+    """
+    known = set(known_fork_entry_ids(baseline_file))
+    return tuple(eid for eid in chain_break_entry_ids(audit_file) if eid not in known)
+
+
+def unbacked_known_forks(baseline_file: Path | None = None, *,
+                         decision_store_file: Path | None = None) -> tuple[str, ...]:
+    """`known_forks` del baseline SIN una decisión AUDIT_EXCEPTION que los cubra.
+
+    Es lo que impide que el baseline se convierta en una alfombra: no se puede
+    silenciar un fork editando el JSON. El fichero se valida contra las
+    excepciones REGISTRADAS, y un `known_fork` sin decisión que lo respalde es
+    una señal de FAIL para Gate 0, no una aceptación.
+
+    Import local a propósito, y por DOS razones. La primera es el ciclo:
+    `audit_writer` es dependencia de casi todo y el resolver importa
+    `decision_store_v2`. La segunda la destapó Gate 0: `schema_loader` exige
+    `jsonschema` de forma fail-closed al importarse, y `verify_chain()` se
+    llama desde `factory_selfcheck.sh` y `factory_status.sh` con el `python3`
+    del SISTEMA, que no lo tiene. Con el import a nivel de módulo, preguntar
+    por la integridad de la cadena empezaba a reventar en los dos scripts que
+    más falta hace que funcionen.
+
+    De ahí que se capture también el fallo de import: verificar la cadena es
+    una lectura fundacional y no puede depender de que una dependencia de
+    gobernanza esté instalada. Los cuatro campos que esos scripts leen
+    (`verified`, `log_count`, `hash_errors`, `chain_errors`) no tocan el
+    resolver en absoluto.
+    """
+    known = known_fork_entry_ids(baseline_file)
+    try:
+        from factory.core import decision_scope_resolver as _resolver
+        return tuple(
+            eid for eid in known
+            if not _resolver.is_authorized("AUDIT_EXCEPTION", eid,
+                                           store_file=decision_store_file)
+        )
+    except Exception:  # noqa: BLE001 -- import roto, familias inválidas, etc.
+        # No se puede DEMOSTRAR ninguna excepción, así que ninguna cuenta. Se
+        # degrada hacia "todos sin respaldo": el lado seguro, porque nunca
+        # puede sobre-reportar conformidad. Lo contrario -- asumir que están
+        # aceptados -- convertiría una dependencia ausente en una absolución.
+        return known
+
+
+def _dimensions(hash_errors: int, chain_errors: int, total: int, *,
+                break_ids: tuple[str, ...] | None = None,
+                audit_file: Path | None = None,
+                baseline_file: Path | None = None,
+                decision_store_file: Path | None = None) -> dict:
+    """Las cinco dimensiones de §1.2. NINGUNA se deriva de otra.
+
+    `CONTENT_HASH_INTEGRITY = VERIFIED` es una buena noticia real y debe poder
+    decirse sin que arrastre una conclusión de conformidad.
+
+    `break_ids` lo pasa `verify_chain()` desde su propio recorrido para no
+    recorrer la cadena dos veces. Si no se pasa, se calcula.
+    """
+    content = (CONTENT_HASH_INTEGRITY_VERIFIED if hash_errors == 0
+               else CONTENT_HASH_INTEGRITY_COMPROMISED)
+
+    if break_ids is None:
+        break_ids = chain_break_entry_ids(audit_file)
+    known = set(known_fork_entry_ids(baseline_file))
+    new_forks = tuple(eid for eid in break_ids if eid not in known)
+    unbacked = unbacked_known_forks(baseline_file,
+                                    decision_store_file=decision_store_file)
+    historical_present = bool(known_fork_entry_ids(baseline_file)) and chain_errors > 0
+
+    if chain_errors == 0:
+        continuity = CHAIN_CONTINUITY_VERIFIED
+    elif new_forks:
+        continuity = CHAIN_CONTINUITY_BROKEN_NEW
+    elif unbacked:
+        continuity = CHAIN_CONTINUITY_BROKEN_HISTORICAL
+    else:
+        continuity = CHAIN_CONTINUITY_ACCEPTED
+
+    # PART11_COMPLIANCE. `hash_errors > 0` NO es exceptuable por diseño: es
+    # corrupción de contenido, no de enlace, y ninguna firma humana la
+    # convierte en otra cosa.
+    if hash_errors > 0 or total == 0:
+        part11 = PART11_NOT_DETERMINED
+    elif chain_errors == 0:
+        part11 = PART11_COMPLIANT
+    elif continuity == CHAIN_CONTINUITY_ACCEPTED:
+        part11 = PART11_ACCEPTED_WITH_EXCEPTION
+    else:
+        part11 = PART11_NOT_DETERMINED
+
+    return {
+        "content_hash_integrity": content,
+        "chain_continuity": continuity,
+        "historical_fork_present": historical_present,
+        "new_forks_since_baseline": len(new_forks),
+        "new_fork_entry_ids": list(new_forks),
+        "unbacked_known_fork_entry_ids": list(unbacked),
+        # Conserva el NOMBRE por retrocompatibilidad de acceso y cambia el
+        # TIPO para que ningún lector lo siga tratando como bool sin enterarse.
+        "part11_compliant": part11,
     }
 
 
@@ -315,42 +532,8 @@ def chain_break_entry_ids(audit_file: Path | None = None) -> tuple[str, ...]:
     concreto (familia AUDIT_EXCEPTION, target_kind=audit_event_id), no sobre
     un numero. Esto es lo que consume el gate G15 (W5 V2 G1.11).
 
-    Deliberadamente NO toca `verify_chain()` ni su contrato: la conversion de
-    `part11_compliant` a enum es de G1.14, y adelantarla aqui obligaria a
-    revisar a todos sus lectores en una fase que no es la suya.
-
     Solo reporta rupturas de ENLACE. Una entrada con hash de contenido malo no
     es un fork: es corrupcion, no se gobierna con una excepcion, y por eso no
     aparece en esta lista.
     """
-    path = audit_file or AUDIT_FILE
-    if not path.exists():
-        return ()
-
-    breaks: list[str] = []
-    prev_hash = "GENESIS"
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        raw = raw.strip()
-        if not raw:
-            continue
-        try:
-            entry = json.loads(raw)
-        except Exception:  # noqa: BLE001 -- ilegible: corrupcion, no fork
-            prev_hash = None
-            continue
-
-        stored_hash = entry.get("entry_hash", "")
-        body = {k: v for k, v in entry.items() if k != "entry_hash"}
-        if stored_hash != f"sha256:{_compute_entry_hash(body)}":
-            prev_hash = stored_hash
-            continue
-
-        if entry.get("prev_entry_hash") != prev_hash:
-            # Sin entry_id no hay nada que un humano pueda firmar. Se declara
-            # con un id sintetico en vez de omitirse: una ruptura invisible
-            # para el gate es exactamente lo que este modulo evita.
-            breaks.append(entry.get("entry_id") or f"<sin entry_id:{stored_hash}>")
-
-        prev_hash = stored_hash
-
-    return tuple(breaks)
+    return _walk_chain(audit_file or AUDIT_FILE)["break_ids"]
