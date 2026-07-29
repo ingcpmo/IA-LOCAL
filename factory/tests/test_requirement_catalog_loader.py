@@ -211,3 +211,98 @@ def test_derived_artifact_source_sha256_mismatch_is_rejected(tmp_path, monkeypat
             mod.load_source_registry()
     finally:
         mod.load_source_registry.cache_clear()
+
+
+# ===========================================================================
+# G1.8 -- elegibilidad de uso de un Evidence Pack (consumidor C-2)
+# ===========================================================================
+
+REQ = "21_CFR_11.10(a)"
+SRC = "ecfr_21cfr_part11"
+
+
+def _store(tmp_path, *records):
+    import json as _json
+    path = tmp_path / "decisions_v2.jsonl"
+    path.write_text(
+        "".join(_json.dumps(r, ensure_ascii=False) + "\n" for r in records),
+        encoding="utf-8")
+    return path
+
+
+def _decision(family, targets, instance_id):
+    from factory.services import decision_store_v2 as store
+    return store.build_record(
+        decision_family=family, decision_type="ORIGINAL",
+        selection_mode="EXPLICIT_LIST", resolved_target_ids=list(targets),
+        decision="APPROVE", decision_origin="human_confirmed",
+        approved_by_id="Cesar", approved_by_display_name="Cesar",
+        decision_instance_id=instance_id)
+
+
+def test_loading_the_catalog_never_depends_on_decisions(tmp_path):
+    """Cargar y estar autorizado son cosas distintas. Si `load_requirements()`
+    dependiera del almacén de decisiones, faltar una firma rompería toda
+    lectura -- informes, diagnóstico y la propia UI de gobernanza."""
+    catalog = mod.load_requirements()
+    assert len(catalog["requirements"]) >= 20
+    src = Path(mod.__file__).read_text(encoding="utf-8")
+    load_fn = src.split("def load_requirements(", 1)[1].split("\ndef ", 1)[0]
+    assert "_resolver" not in load_fn
+
+
+def test_pack_use_requires_BOTH_pack_and_source_coverage(tmp_path):
+    """Un pack impecable sobre una fuente no autorizada no es utilizable."""
+    solo_pack = _store(tmp_path, _decision("D2", [REQ], "D2-2026-001"))
+    e = mod.evaluate_pack_eligibility(REQ, decision_store_file=solo_pack)
+    assert e.pack_decision_authorized is True
+    assert e.source_decision_authorized is False
+    assert e.pack_use_allowed is False
+    assert any("D1/" in r for r in e.denial_reasons)
+
+
+def test_pack_use_allowed_when_both_are_signed(tmp_path):
+    both = _store(tmp_path,
+                  _decision("D2", [REQ], "D2-2026-001"),
+                  _decision("D1", [SRC], "D1-2026-001"))
+    e = mod.evaluate_pack_eligibility(REQ, decision_store_file=both)
+    assert e.pack_use_allowed is True
+    assert e.formal_conclusion_allowed is True
+    assert set(e.covering_decisions) == {"D2-2026-001", "D1-2026-001"}
+    assert e.denial_reasons == ()
+
+
+def test_pack_eligibility_is_denied_not_raised(tmp_path):
+    """Un requisito no autorizado debe salir NO EVALUADO del pipeline, nunca
+    incumplido -- para eso el llamador necesita el motivo, no una excepción."""
+    empty = _store(tmp_path)
+    e = mod.evaluate_pack_eligibility(REQ, decision_store_file=empty)
+    assert e.pack_use_allowed is False
+    assert len(e.denial_reasons) == 2
+
+
+def test_unknown_requirement_still_raises(tmp_path):
+    """Eso SÍ es un error de programación, no una denegación de gobernanza."""
+    with pytest.raises(CatalogValidationError):
+        mod.evaluate_pack_eligibility("NO_EXISTE", decision_store_file=_store(tmp_path))
+
+
+def test_eligible_requirement_ids_is_empty_without_decisions(tmp_path):
+    """Estado REAL de hoy: ningún requisito es utilizable todavía."""
+    assert mod.eligible_requirement_ids(decision_store_file=_store(tmp_path)) == []
+
+
+def test_eligible_requirement_ids_lists_only_the_signed_ones(tmp_path):
+    both = _store(tmp_path,
+                  _decision("D2", [REQ], "D2-2026-001"),
+                  _decision("D1", [SRC], "D1-2026-001"))
+    assert mod.eligible_requirement_ids(decision_store_file=both) == [REQ]
+
+
+def test_part211_pack_is_not_eligible_even_if_its_pack_were_signed(tmp_path):
+    """El caso real: firmar el pack de 21_CFR_211.68(b) no basta mientras
+    ecfr_21cfr_part211 siga sin cobertura D1."""
+    solo_pack = _store(tmp_path, _decision("D2", ["21_CFR_211.68(b)"], "D2-2026-001"))
+    e = mod.evaluate_pack_eligibility("21_CFR_211.68(b)", decision_store_file=solo_pack)
+    assert e.source_id == "ecfr_21cfr_part211"
+    assert e.pack_use_allowed is False

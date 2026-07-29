@@ -30,6 +30,19 @@ REPO = FACTORY.parent
 
 RESOLVER_MODULE = "decision_scope_resolver"
 
+# Superficies que SATISFACEN la guardia. Además del resolver, la superficie de
+# elegibilidad de packs: `provisional_evidence_model` delega en
+# `evaluate_pack_eligibility` en vez de resolver por su cuenta, y eso es
+# exactamente el diseño buscado -- una sola superficie. Lo prohibido es
+# reimplementar la resolución localmente, no delegar en quien la implementa.
+# `test_delegation_targets_really_reach_the_resolver` impide que esto sea un
+# agujero: la superficie delegada tiene que llegar al resolver de verdad.
+DELEGATION_SURFACES = {
+    "factory/regulatory/requirement_catalog/requirement_catalog_loader.py":
+        {"evaluate_pack_eligibility", "eligible_requirement_ids"},
+}
+DELEGATED_NAMES = {n for names in DELEGATION_SURFACES.values() for n in names}
+
 # Los cinco consumidores de DECISION_SCOPE_RESOLVER_SPEC.md §6, con sus
 # archivos reales.
 CONSUMERS = {
@@ -50,7 +63,9 @@ CONSUMERS = {
 # G1.7-G1.11. Un fichero aquí se prueba de verdad; uno fuera queda en
 # xfail(strict), que fallará en cuanto se cablee y obligará a moverlo.
 WIRED = {
-    "factory/regulatory/source_currency_checker.py",     # G1.7
+    "factory/regulatory/source_currency_checker.py",                        # G1.7
+    "factory/regulatory/requirement_catalog/requirement_catalog_loader.py",  # G1.8
+    "factory/regulatory/requirement_catalog/provisional_evidence_model.py",  # G1.8
 }
 
 ALL_CONSUMER_FILES = sorted({f for fs in CONSUMERS.values() for f in fs})
@@ -96,13 +111,17 @@ def _imports_resolver(tree: ast.AST) -> bool:
         elif isinstance(node, ast.ImportFrom):
             if RESOLVER_MODULE in (node.module or ""):
                 return True
-            if any(RESOLVER_MODULE in a.name for a in node.names):
+            names = {a.name for a in node.names}
+            if any(RESOLVER_MODULE in n for n in names):
+                return True
+            if names & DELEGATED_NAMES:
                 return True
     return False
 
 
 def _calls_resolver(tree: ast.AST) -> bool:
-    wanted = {"resolve", "resolve_many", "coverage_report", "is_authorized"}
+    wanted = {"resolve", "resolve_many", "coverage_report",
+              "is_authorized"} | DELEGATED_NAMES
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
@@ -140,6 +159,27 @@ def test_t21_consumer_calls_the_resolver(rel):
     assert _calls_resolver(_tree(rel)), (
         f"{rel} importa el resolver pero no lo llama"
     )
+
+
+def test_delegation_targets_really_reach_the_resolver():
+    """Impide que DELEGATION_SURFACES sea un agujero: una superficie delegada
+    solo vale si ella misma llama al resolver de verdad. Sin esto, bastaría
+    con declarar cualquier función como 'delegada' para esquivar la guardia."""
+    for rel, names in DELEGATION_SURFACES.items():
+        tree = _tree(rel)
+        assert _imports_resolver(tree), f"{rel} no importa el resolver"
+        defined = {n.name for n in ast.walk(tree)
+                   if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+        assert names <= defined, f"{rel} no define {names - defined}"
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in names:
+                reaches = any(
+                    isinstance(c, ast.Call)
+                    and getattr(c.func, "attr", getattr(c.func, "id", "")) in
+                        {"resolve", "resolve_many", "coverage_report", "is_authorized"}
+                        | (names - {node.name})
+                    for c in ast.walk(node))
+                assert reaches, f"{rel}:{node.name} no llega al resolver"
 
 
 def test_every_consumer_file_exists():

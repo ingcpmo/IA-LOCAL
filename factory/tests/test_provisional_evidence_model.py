@@ -4,12 +4,50 @@ una fuente PENDING_REVERIFICATION puede ejecutar analisis provisional, no
 puede producir una conclusion final, no puede pasar el
 FORMAL_RELEASE_GATE, puede generar un REVIEW_DRAFT trazable, no puede
 generar un CLEAN_CANDIDATE liberable, y ningun pendiente queda omitido
-del paquete QA."""
+del paquete QA.
+
+W5 V2 G1.8 -- los dos gates son ahora consumidores C-2 del
+DecisionScopeResolver. `evidence_pack_approved_by_human` desaparece como
+parametro: era un booleano que el llamador declaraba, y ahora lo calcula el
+resolver."""
 from __future__ import annotations
+
+import json
 
 import pytest
 
 from factory.regulatory.requirement_catalog import provisional_evidence_model as mod
+from factory.services import decision_store_v2 as store
+
+# Requisito real del catalogo y su fuente real -- no fixtures inventados: si
+# el catalogo cambia de forma, estos tests deben enterarse.
+REQ = "21_CFR_11.10(a)"
+SRC = "ecfr_21cfr_part11"
+
+
+@pytest.fixture()
+def authorized(tmp_path):
+    """Almacen con D2 sobre el requisito y D1 sobre su fuente. Hacen falta
+    LAS DOS: un pack impecable sobre una fuente no autorizada no es
+    utilizable."""
+    path = tmp_path / "decisions_v2.jsonl"
+    recs = [
+        store.build_record(
+            decision_family="D2", decision_type="ORIGINAL",
+            selection_mode="EXPLICIT_LIST", resolved_target_ids=[REQ],
+            decision="APPROVE", decision_origin="human_confirmed",
+            approved_by_id="Cesar", approved_by_display_name="Cesar",
+            decision_instance_id="D2-2026-001"),
+        store.build_record(
+            decision_family="D1", decision_type="ORIGINAL",
+            selection_mode="EXPLICIT_LIST", resolved_target_ids=[SRC],
+            decision="APPROVE", decision_origin="human_confirmed",
+            approved_by_id="Cesar", approved_by_display_name="Cesar",
+            decision_instance_id="D1-2026-001"),
+    ]
+    path.write_text(
+        "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in recs), encoding="utf-8")
+    return path
 
 
 # ---------------------------------------------------------------------------
@@ -118,59 +156,99 @@ def test_provisional_annotation_absent_when_source_verified():
 # EXECUTION_GATE -- una fuente pendiente NO lo bloquea
 # ---------------------------------------------------------------------------
 
-def test_execution_gate_passes_with_pending_reverification_source():
+def test_execution_gate_passes_with_pending_reverification_source(authorized):
+    """PENDING_REVERIFICATION sigue SIN bloquear este gate: la corrección
+    original no se revierte. Lo que G1.8 añade es una dimensión distinta."""
     result = mod.evaluate_execution_gate(
         has_local_copy=True, has_sha256=True, has_clause=True,
         has_canonical_text=True, has_valid_schema=True,
+        requirement_id=REQ, source_id=SRC, decision_store_file=authorized,
     )
     assert result.gate_passed is True
     assert result.failed_criteria == []
 
 
-def test_execution_gate_fails_when_missing_real_artifact():
+def test_execution_gate_fails_when_missing_real_artifact(authorized):
     result = mod.evaluate_execution_gate(
         has_local_copy=True, has_sha256=False, has_clause=True,
         has_canonical_text=True, has_valid_schema=True,
+        requirement_id=REQ, source_id=SRC, decision_store_file=authorized,
     )
     assert result.gate_passed is False
     assert "sha256_disponible" in result.failed_criteria
+
+
+def test_execution_gate_blocked_without_human_decision_coverage(tmp_path):
+    """Lo NUEVO de G1.8: sin cobertura humana se bloquea incluso el trabajo
+    provisional -- nadie firmó que ese pack o esa fuente se pudieran tocar."""
+    empty = tmp_path / "sin_decisiones.jsonl"
+    empty.write_text("", encoding="utf-8")
+    result = mod.evaluate_execution_gate(
+        has_local_copy=True, has_sha256=True, has_clause=True,
+        has_canonical_text=True, has_valid_schema=True,
+        requirement_id=REQ, source_id=SRC, decision_store_file=empty,
+    )
+    assert result.gate_passed is False
+    assert result.failed_criteria == ["cobertura_de_decision_humana"]
+
+
+def test_technical_and_governance_dimensions_never_collapse(tmp_path, authorized):
+    """Las dos dimensiones se reportan por separado y ninguna se deriva de la
+    otra: técnicamente completo + sin firmar, y firmado + técnicamente
+    incompleto, son estados distintos y ambos bloquean por su motivo."""
+    empty = tmp_path / "vacio.jsonl"
+    empty.write_text("", encoding="utf-8")
+
+    tecnico_ok_sin_firma = mod.evaluate_execution_gate(
+        has_local_copy=True, has_sha256=True, has_clause=True,
+        has_canonical_text=True, has_valid_schema=True,
+        requirement_id=REQ, source_id=SRC, decision_store_file=empty,
+    )
+    firmado_sin_artefacto = mod.evaluate_execution_gate(
+        has_local_copy=False, has_sha256=True, has_clause=True,
+        has_canonical_text=True, has_valid_schema=True,
+        requirement_id=REQ, source_id=SRC, decision_store_file=authorized,
+    )
+    assert tecnico_ok_sin_firma.failed_criteria == ["cobertura_de_decision_humana"]
+    assert firmado_sin_artefacto.failed_criteria == ["copia_local_disponible"]
 
 
 # ---------------------------------------------------------------------------
 # FORMAL_RELEASE_GATE -- fuente pendiente SIEMPRE lo bloquea
 # ---------------------------------------------------------------------------
 
-def _all_criteria_ok(**overrides):
+def _all_criteria_ok(store, **overrides):
     base = dict(
         source_verification_status="LOCAL_CANONICAL_COPY_VERIFIED",
         official_url_verified=True, local_copy_exists=True,
         source_sha256_matches=True, canonical_text_validated=True,
         clause_validated=True, citation_sha256_valid=True,
-        evidence_pack_approved_by_human=True,
         golden_dataset_no_critical_regressions=True,
         gate_0_green=True, open_critical_contradictions=0,
         unresolved_critical_exceptions=0,
+        requirement_id=REQ, decision_store_file=store,
     )
     base.update(overrides)
     return base
 
 
-def test_formal_release_gate_passes_when_all_criteria_real():
-    result = mod.evaluate_formal_release_gate(**_all_criteria_ok())
+def test_formal_release_gate_passes_when_all_criteria_real(authorized):
+    result = mod.evaluate_formal_release_gate(**_all_criteria_ok(authorized))
     assert result.gate_passed is True
 
 
-def test_formal_release_gate_blocked_by_pending_reverification():
+def test_formal_release_gate_blocked_by_pending_reverification(authorized):
     result = mod.evaluate_formal_release_gate(
-        **_all_criteria_ok(source_verification_status="PENDING_REVERIFICATION")
+        **_all_criteria_ok(authorized, source_verification_status="PENDING_REVERIFICATION")
     )
     assert result.gate_passed is False
     assert "source_verification_status_verificado" in result.failed_criteria
 
 
-def test_formal_release_gate_evaluates_all_criteria_without_short_circuit():
+def test_formal_release_gate_evaluates_all_criteria_without_short_circuit(authorized):
     result = mod.evaluate_formal_release_gate(
         **_all_criteria_ok(
+            authorized,
             source_verification_status="PENDING_REVERIFICATION",
             gate_0_green=False,
             open_critical_contradictions=2,
@@ -180,6 +258,26 @@ def test_formal_release_gate_evaluates_all_criteria_without_short_circuit():
         "source_verification_status_verificado", "gate_0_en_verde",
         "cero_contradicciones_criticas_abiertas",
     }
+
+
+def test_pack_approval_can_no_longer_be_declared_by_the_caller(tmp_path):
+    """El anti-patrón que G1.8 elimina: `evidence_pack_approved_by_human` era
+    un booleano que el llamador afirmaba. Ya no existe como parámetro, y
+    pasarlo es un TypeError -- no un valor que se ignora en silencio."""
+    empty = tmp_path / "vacio.jsonl"
+    empty.write_text("", encoding="utf-8")
+    with pytest.raises(TypeError):
+        mod.evaluate_formal_release_gate(
+            **_all_criteria_ok(empty), evidence_pack_approved_by_human=True)
+
+
+def test_formal_release_gate_blocked_without_decisions(tmp_path):
+    empty = tmp_path / "vacio.jsonl"
+    empty.write_text("", encoding="utf-8")
+    result = mod.evaluate_formal_release_gate(**_all_criteria_ok(empty))
+    assert result.gate_passed is False
+    assert "evidence_pack_aprobado_por_identidad_humana_real" in result.failed_criteria
+    assert "fuente_cubierta_por_decision_humana" in result.failed_criteria
 
 
 # ---------------------------------------------------------------------------

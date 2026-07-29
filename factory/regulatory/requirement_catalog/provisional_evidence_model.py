@@ -26,6 +26,7 @@ automatico."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # PART11_APPLICABILITY_V1 -- perfil de aplicabilidad EXCLUSIVO de la familia
@@ -189,16 +190,46 @@ class ExecutionGateResult:
 def evaluate_execution_gate(
     *, has_local_copy: bool, has_sha256: bool, has_clause: bool,
     has_canonical_text: bool, has_valid_schema: bool,
+    requirement_id: str, source_id: str,
+    decision_store_file: Path | None = None,
 ) -> ExecutionGateResult:
     """A proposito NO evalua source_verification_status -- ese es el punto
-    central de esta correccion: PENDING_REVERIFICATION no debe bloquear
-    este gate."""
+    central de aquella correccion: PENDING_REVERIFICATION no debe bloquear
+    este gate, y eso NO se revierte aqui.
+
+    W5 V2 G1.8 anade una dimension DISTINTA, que no existia: la cobertura
+    humana. Son cosas separadas y no deben colapsarse:
+
+      PENDIENTE DE VERIFICAR   estado tecnico. No bloquea el trabajo
+                               provisional -- la copia local esta integra y se
+                               puede razonar sobre ella con la limitacion
+                               declarada.
+      NO AUTORIZADA POR UN HUMANO   estado de gobernanza. Si bloquea, incluso
+                               lo provisional: nadie firmo que ese pack o esa
+                               fuente se pudieran tocar.
+
+    `requirement_id` y `source_id` son OBLIGATORIOS. Hacerlos opcionales con
+    un default permisivo convertiria la guardia en decorativa: bastaria con
+    no pasarlos.
+    """
+    from factory.regulatory.requirement_catalog.requirement_catalog_loader import (
+        evaluate_pack_eligibility,
+    )
+    eligibility = evaluate_pack_eligibility(
+        requirement_id, decision_store_file=decision_store_file)
+
     checks = [
         GateCheckResult("copia_local_disponible", has_local_copy, "local_copy presente"),
         GateCheckResult("sha256_disponible", has_sha256, "source_sha256 presente"),
         GateCheckResult("numeral_identificado", has_clause, "clause presente"),
         GateCheckResult("texto_canonico_disponible", has_canonical_text, "canonical_text presente"),
         GateCheckResult("schema_valido", has_valid_schema, "entrada valida contra requirement_catalog_entry_v1"),
+        GateCheckResult(
+            "cobertura_de_decision_humana",
+            eligibility.pack_use_allowed,
+            "; ".join(eligibility.denial_reasons) or
+            f"D2={eligibility.pack_coverage_basis} D1={eligibility.source_coverage_basis}",
+        ),
     ]
     return ExecutionGateResult(checks=checks)
 
@@ -229,15 +260,30 @@ def evaluate_formal_release_gate(
     canonical_text_validated: bool,
     clause_validated: bool,
     citation_sha256_valid: bool,
-    evidence_pack_approved_by_human: bool,
     golden_dataset_no_critical_regressions: bool,
     gate_0_green: bool,
     open_critical_contradictions: int,
     unresolved_critical_exceptions: int,
+    requirement_id: str,
+    decision_store_file: Path | None = None,
 ) -> FormalReleaseGateResult:
     """Evalua TODOS los criterios sin detenerse en el primero (mismo patron
     que evaluate_corrected_document_generation_gate, Fase N) -- el caller
-    necesita ver la lista completa de lo que falta."""
+    necesita ver la lista completa de lo que falta.
+
+    W5 V2 G1.8: `evidence_pack_approved_by_human` DESAPARECE como parametro.
+    Era un booleano que el llamador declaraba, es decir, exactamente el
+    anti-patron que la auditoria encontro en `applicability_matrix.yaml`
+    (`approval.status: human_confirmed` escrito a mano sobre filas que la
+    decision no cubria). Ahora se CALCULA con el resolver: quien invoque este
+    gate no puede afirmar que un pack esta aprobado, solo el registro de
+    decisiones puede.
+    """
+    from factory.regulatory.requirement_catalog.requirement_catalog_loader import (
+        evaluate_pack_eligibility,
+    )
+    eligibility = evaluate_pack_eligibility(
+        requirement_id, decision_store_file=decision_store_file)
     checks = [
         GateCheckResult(
             "source_verification_status_verificado",
@@ -252,7 +298,13 @@ def evaluate_formal_release_gate(
         GateCheckResult("citation_sha256_valido", citation_sha256_valid, "citation_sha256_valid"),
         GateCheckResult(
             "evidence_pack_aprobado_por_identidad_humana_real",
-            evidence_pack_approved_by_human, "evidence_pack_approved_by_human",
+            eligibility.pack_decision_authorized,
+            f"D2/{requirement_id}: {eligibility.pack_coverage_basis}",
+        ),
+        GateCheckResult(
+            "fuente_cubierta_por_decision_humana",
+            eligibility.source_decision_authorized,
+            f"D1/{eligibility.source_id}: {eligibility.source_coverage_basis}",
         ),
         GateCheckResult(
             "golden_dataset_sin_regresiones_criticas",
