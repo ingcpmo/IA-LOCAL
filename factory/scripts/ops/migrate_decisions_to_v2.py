@@ -31,6 +31,51 @@ from factory.services import decision_store_v2 as store    # noqa: E402
 
 W5_PROJECT_ID = "gmpai_document_validation"
 
+# Provenances que la migracion produce. Un registro con otra es NATIVO: lo
+# escribio la superficie humana, no esta proyeccion.
+MIGRATION_PROVENANCES = frozenset({
+    "MIGRATED_FROM_SYSTEM_A", "MIGRATED_FROM_SYSTEM_B", "RECONSTRUCTED_SNAPSHOT",
+})
+
+
+class WouldDiscardNativeRecords(RuntimeError):
+    """`--apply` sobrescribe el fichero entero. Si el almacen ya contiene
+    registros NATIVOS -- una firma humana por la UI, por ejemplo -- re-migrar
+    los borraria sin dejar rastro.
+
+    Hoy el almacen solo tiene proyecciones y re-migrar es inocuo, pero en cuanto
+    Cesar firme la Correccion D1 deja de serlo. La guardia se pone ANTES de que
+    exista el problema, no despues.
+    """
+
+
+def native_records(store_file: Path | None = None) -> list[str]:
+    """decision_instance_id de los registros que la migracion NO produjo."""
+    target = store_file or store.STORE_FILE
+    if not target.is_file():
+        return []
+    return [r["decision_instance_id"] for r in store.read_all(target)
+            if r.get("provenance") not in MIGRATION_PROVENANCES]
+
+
+def is_stale(store_file: Path | None = None, **kwargs) -> dict:
+    """Compara el almacen con la proyeccion ACTUAL de los almacenes legacy.
+
+    Existe porque la migracion es un disparo unico y los almacenes legacy
+    siguen vivos: una escritura legacy posterior deja el v2 desincronizado y
+    nada lo notaba. Read-only.
+    """
+    target = store_file or store.STORE_FILE
+    projected = serialize(adapter.project_all(**kwargs))
+    actual = target.read_text(encoding="utf-8") if target.is_file() else ""
+    return {
+        "store_exists": target.is_file(),
+        "stale": actual != projected,
+        "records_in_store": len(store.read_all(target)) if target.is_file() else 0,
+        "records_projected": len(projected.splitlines()),
+        "native_records": native_records(target),
+    }
+
 
 def _sha256(path: Path) -> str | None:
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
@@ -49,7 +94,8 @@ def serialize(records: list[dict]) -> str:
     )
 
 
-def run(apply: bool = False, *, out_file: Path | None = None,
+def run(apply: bool = False, *, force: bool = False,
+        out_file: Path | None = None,
         legacy_a: Path | None = None, legacy_b: Path | None = None,
         registry_file: Path | None = None, emit_audit: bool = True) -> dict:
     src_a = legacy_a or adapter.LEGACY_A_FILE
@@ -74,6 +120,14 @@ def run(apply: bool = False, *, out_file: Path | None = None,
     out_hash = hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     if apply:
+        nativos = native_records(target)
+        if nativos and not force:
+            raise WouldDiscardNativeRecords(
+                f"{target} contiene {len(nativos)} registro(s) NATIVO(s) que esta "
+                f"migracion borraria: {nativos}. Son firmas hechas por la "
+                "superficie humana, no proyecciones. Usa --force solo si de verdad "
+                "quieres descartarlas."
+            )
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(payload, encoding="utf-8")
 
@@ -127,9 +181,15 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--apply", action="store_true",
                     help="escribe decisions_v2.jsonl (por defecto: dry-run)")
+    ap.add_argument("--force", action="store_true",
+                    help="sobrescribe aunque haya registros NATIVOS (los DESCARTA)")
     args = ap.parse_args()
 
-    s = run(apply=args.apply)
+    try:
+        s = run(apply=args.apply, force=args.force)
+    except WouldDiscardNativeRecords as exc:
+        print(f"ABORTADA: {exc}")
+        return 2
 
     print(f"{'APLICADA' if s['applied'] else 'DRY-RUN (nada escrito)'}")
     print(f"  entrada            : {s['records_in']} registros")

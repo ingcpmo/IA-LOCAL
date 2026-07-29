@@ -48,7 +48,16 @@ def _state(**over) -> guard.ArtifactState:
 
 
 def _record(state: guard.ArtifactState, **over) -> dict:
-    rec = guard.build_version_record(state)
+    """Registro APROBADO por defecto.
+
+    Trae `approved_by_decision` porque los tests de las tres invariantes de
+    trazabilidad (VZ-01..VZ-03) prueban hash-vs-version, y sin aprobacion
+    arrastrarian ademas el WARN de `NO_APPROVING_DECISION`, mezclando dos
+    reglas distintas en una sola asercion. Los tests que SI prueban la
+    aprobacion nula la ponen explicitamente.
+    """
+    rec = guard.build_version_record(
+        state, approved_by_decision="ARTIFACT_VERSION-2026-001")
     rec.update(over)
     return rec
 
@@ -91,7 +100,7 @@ def test_vz01_content_changed_with_same_version_fails(empty_decisions):
                                     decision_store_file=empty_decisions)
     codes = {f.code for f in findings}
     assert guard.CONTENT_CHANGED_VERSION_SAME in codes
-    assert all(f.severity == "FAIL" for f in findings)
+    assert [f.severity for f in findings if f.code == guard.CONTENT_CHANGED_VERSION_SAME] == ["FAIL"]
 
 
 def test_vz02_version_changed_with_same_content_fails(empty_decisions):
@@ -259,17 +268,61 @@ def test_vz08_bootstrap_emits_null_approval(tmp_path):
         assert "NO representa una aprobacion humana" in r["bootstrap_note"]
 
 
-def test_vz08_a_null_approval_is_a_warn_never_a_pass(empty_decisions):
-    """La cuarta regla: sin `version_record` es WARN, no aprobacion.
+def test_vz08_no_version_record_is_a_warn_never_a_pass(empty_decisions):
+    """Sin `version_record`: WARN, no aprobacion.
 
-    WARN y no FAIL porque hoy NINGUN artefacto tiene registro -- el almacen no
-    existe. Un FAIL aqui dejaria la fabrica en rojo por una tarea pendiente,
-    no por una corrupcion.
+    WARN y no FAIL porque un artefacto sin fotografiar es una tarea pendiente,
+    no una corrupcion. Un FAIL aqui dejaria la fabrica en rojo por el bootstrap
+    sin correr.
+
+    Este test SE LLAMABA `..._a_null_approval_is_a_warn_never_a_pass` y no
+    comprobaba eso: probaba `record=None`, que es "sin registro", no "registro
+    con aprobacion nula". El nombre prometia lo que nunca verificaba, y por ese
+    hueco entro el defecto que cerro
+    `test_vz08_a_bootstrap_record_is_still_a_warn_not_an_approval`.
     """
     findings = guard.check_artifact(_state(), None,
                                     decision_store_file=empty_decisions)
     assert [f.code for f in findings] == [guard.NO_VERSION_RECORD]
     assert findings[0].severity == "WARN"
+
+
+def test_vz08_a_bootstrap_record_is_still_a_warn_not_an_approval(empty_decisions):
+    """DEFECTO REAL, detectado al EJECUTAR el bootstrap de G4.
+
+    `check_artifact` solo avisaba cuando NO habia registro. En cuanto el
+    bootstrap escribio los 28, la guardia paso a PASS y Gate 0 a verde --
+    **sin que nadie hubiera aprobado nada**. Una foto leida como una
+    aprobacion, que es exactamente el colapso que este trabajo combate.
+
+    La spec lo dice literal: "la guardia de Gate 0 trata `null` como WARN, no
+    como aprobacion".
+    """
+    estado = _state(version="1.0", sha256="c" * 64)
+    boot = guard.build_version_record(estado, bootstrap=True,
+                                      bootstrap_note="foto del estado observado")
+    assert boot["approved_by_decision"] is None
+
+    findings = guard.check_artifact(estado, boot,
+                                    decision_store_file=empty_decisions)
+    codes = [f.code for f in findings]
+    assert guard.NO_APPROVING_DECISION in codes, (
+        "un registro de bootstrap paso como aprobado")
+    assert all(f.severity == "WARN" for f in findings)
+    assert any("no habilita conclusiones formales" in f.detail for f in findings)
+
+
+def test_vz08_a_record_with_a_real_decision_stops_warning(empty_decisions):
+    """El aviso no es perpetuo: con una decision que lo apruebe, se apaga.
+
+    Sin esto, la guardia seria un WARN eterno y alguien la silenciaria entera.
+    """
+    estado = _state(version="1.0", sha256="d" * 64)
+    aprobado = guard.build_version_record(
+        estado, approved_by_decision="ARTIFACT_VERSION-2026-001")
+    findings = guard.check_artifact(estado, aprobado,
+                                    decision_store_file=empty_decisions)
+    assert findings == []
 
 
 def test_vz08_bootstrap_record_does_not_authorize_a_version_change(tmp_path,
@@ -443,17 +496,44 @@ def test_guard_report_turns_red_on_a_single_silent_content_change(tmp_path,
 
     report = guard.guard_report(store_file=almacen,
                                 decision_store_file=empty_decisions)
+    # Un FAIL manda sobre cualquier cantidad de WARN: el estado del reporte es
+    # el peor de sus hallazgos, no el mas frecuente.
     assert report["status"] == "FAIL"
     assert report["fail_count"] == 1
-    assert report["findings"][0]["code"] == guard.CONTENT_CHANGED_VERSION_SAME
+    fails = [f for f in report["findings"] if f["severity"] == "FAIL"]
+    assert fails[0]["code"] == guard.CONTENT_CHANGED_VERSION_SAME
 
 
-def test_guard_report_is_green_when_the_store_matches_reality(tmp_path,
-                                                              empty_decisions):
-    """Y verde de verdad cuando todo cuadra -- si no, seria un gate que solo
-    sabe decir que no."""
+def test_guard_report_is_green_only_when_everything_is_also_approved(
+        tmp_path, empty_decisions):
+    """Verde de verdad exige hash y version consistentes Y aprobacion.
+
+    Antes este test usaba registros de bootstrap y esperaba PASS -- por eso el
+    defecto de G4 paso: una foto contaba como aprobacion. Ahora los registros
+    llevan `approved_by_decision`, y con bootstrap el mismo almacen sale WARN.
+    """
     states = guard.enumerate_artifacts()
     almacen = tmp_path / "av.jsonl"
+    almacen.write_text(
+        "".join(json.dumps(guard.build_version_record(
+            s, approved_by_decision="ARTIFACT_VERSION-2026-001"),
+            ensure_ascii=False) + "\n" for s in states),
+        encoding="utf-8")
+
+    report = guard.guard_report(store_file=almacen,
+                                decision_store_file=empty_decisions)
+    assert report["status"] == "PASS"
+    assert report["fail_count"] == 0 and report["warn_count"] == 0
+
+
+def test_guard_report_stays_warn_when_the_store_is_only_a_photograph(
+        tmp_path, empty_decisions):
+    """El mismo almacen, con registros de bootstrap: WARN, no PASS.
+
+    Es el par del test de arriba y la prueba directa del defecto de G4.
+    """
+    states = guard.enumerate_artifacts()
+    almacen = tmp_path / "boot.jsonl"
     almacen.write_text(
         "".join(json.dumps(guard.build_version_record(s, bootstrap=True),
                            ensure_ascii=False) + "\n" for s in states),
@@ -461,8 +541,9 @@ def test_guard_report_is_green_when_the_store_matches_reality(tmp_path,
 
     report = guard.guard_report(store_file=almacen,
                                 decision_store_file=empty_decisions)
-    assert report["status"] == "PASS"
-    assert report["fail_count"] == 0 and report["warn_count"] == 0
+    assert report["status"] == "WARN"
+    assert report["fail_count"] == 0
+    assert report["warn_count"] == len(states)
 
 
 def test_guard_never_writes_anything(tmp_path, empty_decisions):
@@ -472,8 +553,33 @@ def test_guard_never_writes_anything(tmp_path, empty_decisions):
     assert not almacen.exists()
 
 
-def test_the_store_is_not_created_by_this_phase():
-    """G1.13 crea la maquinaria, no el almacen. Nada se ha versionado aun."""
-    assert not guard.STORE_FILE.exists(), (
-        "artifact_versions.jsonl existe: el bootstrap se ejecuto con --apply, "
-        "y eso es G4, no G1.13")
+def test_the_bootstrapped_store_photographs_without_approving():
+    """G4: el almacen YA EXISTE con los 28 registros, y NINGUNO aprueba nada.
+
+    Hasta G4 este test afirmaba que el fichero no existia. Su sustitucion es el
+    registro de que el bootstrap se ejecuto, y la invariante que sobrevive es la
+    que importa: fotografiar no es aprobar.
+    """
+    assert guard.STORE_FILE.exists(), "el almacen deberia existir tras el bootstrap de G4"
+    records = guard.read_version_records()
+    assert len(records) == 28, f"se esperaban 28 registros, hay {len(records)}"
+    for r in records:
+        assert r["approved_by_decision"] is None, (
+            f"{r['artifact_id']} salio aprobado del bootstrap")
+        assert r["bootstrap"] is True
+
+    # Y el guardia lo refleja: 0 inconsistencias de trazabilidad, 28 avisos de
+    # aprobacion ausente. Ni rojo ni verde -- exactamente el estado real.
+    report = guard.guard_report()
+    assert report["status"] == "WARN"
+    assert report["fail_count"] == 0
+    assert report["warn_count"] == 28
+
+
+def test_the_bootstrap_is_idempotent_on_the_real_store():
+    """Volver a correrlo no re-fotografia lo ya versionado.
+
+    Rebootstrapear sobrescribiria la historia de un artefacto con una foto sin
+    firma.
+    """
+    assert bootstrap.build_bootstrap_records() == []

@@ -136,16 +136,36 @@ def test_a_version_inconsistency_is_a_fail():
 
 
 def test_missing_version_records_are_a_warn_not_a_fail():
-    """Hoy los 28 artefactos están sin registro: el bootstrap es de G4.
-
-    Un FAIL aquí pondría Gate 0 en rojo por una tarea pendiente, no por un
-    defecto.
-    """
-    r = _run_verdict('_verdict_artifact_versions WARN 0 28')
+    """Un FAIL aquí pondría Gate 0 en rojo por una tarea pendiente, no por un
+    defecto."""
+    r = _run_verdict('_verdict_artifact_versions WARN 0 28 NO_VERSION_RECORD')
     assert r["fail"] == 0
     assert r["warn"] == 1
     assert r["pass"] == 1
     assert "bootstrap pendiente" in r["salida"]
+
+
+def test_the_warn_message_names_its_real_cause():
+    """Hay DOS motivos de WARN y el mensaje tiene que decir el correcto.
+
+    Tras correr el bootstrap de G4 el gate seguía diciendo "sin version_record —
+    bootstrap pendiente" sobre 28 artefactos que ya estaban fotografiados: un
+    aviso cierto en el número y falso en la causa, que es peor que no avisar
+    porque manda a corregir lo que ya está hecho.
+    """
+    r = _run_verdict('_verdict_artifact_versions WARN 0 28 NO_APPROVING_DECISION')
+    assert r["warn"] == 1
+    assert "SIN decision que lo apruebe" in r["salida"]
+    assert "bootstrap pendiente" not in r["salida"]
+
+
+def test_an_unknown_warn_code_does_not_invent_a_cause():
+    """Si aparece un motivo nuevo, se dice que hay avisos y no se atribuye a
+    ninguna causa concreta. Inventarla sería el mismo defecto al revés."""
+    r = _run_verdict('_verdict_artifact_versions WARN 0 3 CODIGO_NUEVO')
+    assert r["warn"] == 1
+    assert "con avisos de versionado" in r["salida"]
+    assert "bootstrap pendiente" not in r["salida"]
 
 
 def test_an_unevaluable_guard_is_a_fail_not_a_pass():

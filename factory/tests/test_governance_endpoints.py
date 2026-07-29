@@ -30,6 +30,20 @@ from factory.services import governance_service as gov
 REPO = Path(__file__).resolve().parents[2]
 
 
+def _store_matches_git_head(path: Path) -> bool:
+    """El almacen v2 esta TRACKEADO, asi que "intacto" es "igual que HEAD".
+
+    Mejor que fijar un numero de registros: si un test escribe, difiere de HEAD
+    y salta; si Cesar firma algo, EL lo commitea y vuelve a coincidir. Un
+    `== 14` convertiria una firma humana legitima en un build rojo -- que es
+    exactamente lo que paso con `test_v1_no_record_is_lost`.
+    """
+    import subprocess
+    rel = path.relative_to(REPO).as_posix()
+    r = subprocess.run(["git", "-C", str(REPO), "diff", "--quiet", "HEAD", "--", rel])
+    return r.returncode == 0
+
+
 @pytest.fixture()
 def tmp_store(tmp_path, monkeypatch) -> Path:
     """Almacen de decisiones y cadena de auditoria aislados.
@@ -521,7 +535,7 @@ def test_the_migrated_store_authorizes_nothing():
 
     assert store.STORE_FILE.exists(), "el almacen v2 deberia existir tras G2"
     records = store.read_all()
-    assert len(records) == 14, f"se esperaban 14 registros migrados, hay {len(records)}"
+    assert records, "el almacen v2 esta vacio"
 
     # Ninguna de las cinco familias gobernadas autoriza a nadie todavia.
     for family in ("D1", "D2", "D3", "D4", "D5"):
@@ -538,12 +552,19 @@ def test_the_migration_did_not_touch_the_legacy_stores():
         assert legacy.is_file(), f"almacen legacy desaparecido: {legacy}"
 
 
-def test_the_artifact_version_store_is_still_untouched():
-    """La otra mitad del checkpoint: el bootstrap de artefactos es de G4.
+def test_the_two_stores_stayed_independent():
+    """Migrar decisiones y fotografiar artefactos son dos actos separados.
 
-    Migrar decisiones NO arrastra el versionado de artefactos, y este test
-    impide que las dos cosas se confundan en una sola pasada.
+    Este test afirmaba que el almacen de versiones NO existia; tras el bootstrap
+    de G4 existe, y lo que sigue importando es que los dos almacenes tengan
+    tamanos y semanticas propias -- que nadie los haya llenado en una sola
+    pasada confundiendo migrar con aprobar.
     """
     from factory.core import artifact_version_guard as guard
-    assert not guard.STORE_FILE.exists(), (
-        f"{guard.STORE_FILE} existe: el bootstrap se ejecuto, y eso es G4")
+
+    assert _store_matches_git_head(store.STORE_FILE), (
+        "el almacen de decisiones difiere de HEAD: algun test escribio en el real")
+    assert len(guard.read_version_records()) == 28, "el de versiones cambio de tamano"
+    # Y ninguno de los 28 nombra una decision: el bootstrap no aprueba.
+    assert all(r["approved_by_decision"] is None
+               for r in guard.read_version_records())

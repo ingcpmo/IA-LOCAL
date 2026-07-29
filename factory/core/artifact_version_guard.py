@@ -311,6 +311,7 @@ CONTENT_CHANGED_VERSION_SAME = "CONTENT_CHANGED_VERSION_SAME"
 VERSION_CHANGED_CONTENT_SAME = "VERSION_CHANGED_CONTENT_SAME"
 VERSION_CHANGED_WITHOUT_DECISION = "VERSION_CHANGED_WITHOUT_DECISION"
 NO_VERSION_RECORD = "NO_VERSION_RECORD"
+NO_APPROVING_DECISION = "NO_APPROVING_DECISION"
 
 
 def check_artifact(state: ArtifactState, record: dict | None, *,
@@ -328,9 +329,27 @@ def check_artifact(state: ArtifactState, record: dict | None, *,
                         NO_VERSION_RECORD,
                         "sin version_record: estado inicial, pendiente de bootstrap")]
 
+    findings_prev: list[Finding] = []
+    if not record.get("approved_by_decision"):
+        # El bootstrap FOTOGRAFIA, no aprueba, y esa diferencia tiene que
+        # sobrevivir al bootstrap. Sin esta rama, ejecutarlo ponia la guardia en
+        # PASS y Gate 0 en verde sin que nadie hubiera aprobado nada -- una foto
+        # leida como una aprobacion, que es exactamente el colapso que este
+        # trabajo entero combate.
+        #
+        # Se detecto al EJECUTAR el bootstrap: el test que decia cubrirlo
+        # (`..._a_null_approval_is_a_warn_never_a_pass`) comprobaba en realidad
+        # el caso "sin registro", no el caso "registro con aprobacion nula". El
+        # nombre prometia lo que nunca verificaba.
+        nota = "bootstrap: foto del estado observado" if record.get("bootstrap") else \
+               "registro sin decision que lo apruebe"
+        findings_prev.append(Finding(
+            state.artifact, state.artifact_id, "WARN", NO_APPROVING_DECISION,
+            f"approved_by_decision=null ({nota}): no habilita conclusiones formales"))
+
     hash_changed = state.sha256 != record.get("sha256")
     version_changed = state.version != record.get("version")
-    findings: list[Finding] = []
+    findings: list[Finding] = list(findings_prev)
 
     if hash_changed and not version_changed:
         findings.append(Finding(

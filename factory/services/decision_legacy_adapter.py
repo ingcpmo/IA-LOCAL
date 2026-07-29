@@ -187,7 +187,28 @@ def project_system_a(records: list[dict], families: dict) -> list[dict]:
 
 def project_system_b(records: list[dict], families: dict, *,
                      registry_file: Path | None = None) -> list[dict]:
+    """Proyecta el Sistema B, incluidas sus CORRECCIONES.
+
+    Una correccion legacy trae todo lo necesario y el adaptador lo descartaba:
+    `record_type="correction"`, `supersedes_recorded_at` (apunta al original),
+    `correction_reason` (el motivo, bajo OTRO nombre que `reason`) y
+    `corrected_fields`. Se emitia como un segundo ORIGINAL, con tres
+    consecuencias reales:
+
+      - la relacion de supersesion se PERDIA;
+      - los dos quedaban ACTIVE, asi que "que D1 es la vigente" pasaba a ser
+        ambiguo en v2 mientras el almacen legacy lo sabia perfectamente;
+      - al no tiparse CORRECTION, esquivaba I-6 sin que nada lo notara.
+
+    Salio a la luz cuando Cesar corrigio la cadencia de D1 (1 -> 3 meses) por la
+    UI legacy DESPUES de la migracion: el defecto era invisible mientras no
+    hubiera ninguna correccion en el almacen.
+    """
     out, counters = [], {}
+    # recorded_at -> instance_id, para resolver `supersedes_recorded_at`. Se
+    # indexa por marca de tiempo porque es lo que el registro legacy guarda;
+    # no se adivina por familia ni por posicion.
+    by_recorded_at: dict[str, str] = {}
     for r in sorted(records, key=lambda x: x["recorded_at"]):
         did = r["decision_id"]
         family = _family_for_w5_id(did, families)
@@ -220,9 +241,26 @@ def project_system_b(records: list[dict], families: dict, *,
             if k in r:
                 payload[k] = r[k]
 
+        # Una correccion legacy se tipa CORRECTION y conserva a QUIEN supersede.
+        es_correccion = r.get("record_type") == "correction"
+        supersedes = by_recorded_at.get(r.get("supersedes_recorded_at") or "")
+        dtype = "CORRECTION" if (es_correccion and supersedes) else "ORIGINAL"
+        if es_correccion:
+            # El motivo vive en `correction_reason`, no en `reason`. Si el
+            # original no se puede resolver se degrada a ORIGINAL en vez de
+            # emitir una CORRECTION que apunta al vacio: I-6 la marcaria
+            # invalida y perderiamos tambien el registro.
+            payload["legacy_corrected_by"] = r.get("corrected_by")
+            payload["legacy_corrected_fields"] = r.get("corrected_fields")
+            if not supersedes:
+                payload["correction_unresolved"] = (
+                    "record_type=correction pero supersedes_recorded_at "
+                    f"{r.get('supersedes_recorded_at')!r} no resuelve a ningun "
+                    "registro proyectado; se conserva como ORIGINAL y se declara")
+
         rec = store.build_record(
             decision_family=family,
-            decision_type="ORIGINAL",
+            decision_type=dtype,
             selection_mode=mode,
             resolved_target_ids=targets,
             decision=_DECISION_MAP.get(r.get("decision", ""), "APPROVE"),
@@ -230,15 +268,18 @@ def project_system_b(records: list[dict], families: dict, *,
             approved_by_id=r.get("approved_by"),
             approved_by_display_name=r.get("approved_by"),
             amendment_sequence=0,
-            reason=r.get("notes", ""),
+            reason=(r.get("correction_reason") or "") if es_correccion
+                   else r.get("notes", ""),
             payload=payload,
             provenance=provenance,
             reconstruction_evidence=evidence,
             status=status,
             decision_date=r["decision_date"],
             decision_instance_id=instance_id,
+            supersedes_instance_id=supersedes if dtype == "CORRECTION" else None,
         )
         rec["recorded_at"] = r["recorded_at"]
+        by_recorded_at[r["recorded_at"]] = instance_id
         if status == "INVALID_PENDING_RESIGNATURE":
             rec["invalid_reason"] = (
                 f"{did} se firmo APPROVE sin declarar objetivo: record_decision() no "

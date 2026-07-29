@@ -30,6 +30,8 @@ from factory.core import audit_writer as aw
 from factory.core import decision_scope_resolver as resolver
 from factory.services import decision_store_v2 as store
 
+REPO = Path(__file__).resolve().parents[2]
+
 PENDIENTES = ("D2-2026-001", "D3-2026-001", "D4-2026-001", "D5-2026-001")
 
 
@@ -339,8 +341,12 @@ def test_no_test_in_this_file_wrote_to_the_real_store():
     if not store.STORE_FILE.exists():
         pytest.skip("almacen v2 no migrado en este entorno")
     registros = store.read_all()
-    assert len(registros) == 14, (
-        f"el almacen real tiene {len(registros)} registros: algun test escribio en el")
+    # Se compara con HEAD, no con un numero: el almacen esta trackeado, y fijar
+    # el conteo convertiria una firma humana legitima en un build rojo.
+    import subprocess
+    rel = store.STORE_FILE.relative_to(REPO).as_posix()
+    r = subprocess.run(["git", "-C", str(REPO), "diff", "--quiet", "HEAD", "--", rel])
+    assert r.returncode == 0, "el almacen real difiere de HEAD: algun test escribio en el"
     for iid in PENDIENTES:
         r = [x for x in registros if x["decision_instance_id"] == iid][0]
         assert r["status"] == "INVALID_PENDING_RESIGNATURE"

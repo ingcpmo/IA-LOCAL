@@ -60,11 +60,25 @@ _verdict_audit_chain() {
     fi
 }
 
-# _verdict_artifact_versions <status> <fail_count> <warn_count>
+# _verdict_artifact_versions <status> <fail_count> <warn_count> [codigo_warn]
+#
+# El cuarto argumento existe porque hay DOS motivos de WARN distintos y el
+# mensaje tiene que decir el correcto. Con solo el recuento, tras correr el
+# bootstrap de G4 el gate seguia diciendo "sin version_record — bootstrap
+# pendiente" sobre 28 artefactos que ya estaban fotografiados: un aviso cierto
+# en el numero y falso en la causa, que es peor que no avisar.
 _verdict_artifact_versions() {
+    local motivo
+    case "${4:-}" in
+        NO_APPROVING_DECISION)
+            motivo="con version_record pero SIN decision que lo apruebe — fotografiados, no aprobados (G4c/G5)" ;;
+        NO_VERSION_RECORD)
+            motivo="sin version_record — bootstrap pendiente (G4)" ;;
+        *)  motivo="con avisos de versionado" ;;
+    esac
     case "$1" in
         PASS) ok "artifact versions: hash y versión consistentes en todos los artefactos" ;;
-        WARN) warn_ "artifact versions: $3 artefacto(s) sin version_record — bootstrap pendiente (G4)"
+        WARN) warn_ "artifact versions: $3 artefacto(s) $motivo"
               ok "artifact versions: 0 inconsistencias de trazabilidad" ;;
         FAIL) ko "artifact versions: $2 inconsistencia(s) de trazabilidad (ver arriba)" ;;
         *)    ko "artifact versions: la guardia no pudo evaluarse" ;;
@@ -240,7 +254,10 @@ for f in r["findings"][:12]:
     print(f"  {f['severity']:4s} {f['artifact']}/{f['artifact_id']}: {f['code']}")
 if len(r["findings"]) > 12:
     print(f"  … y {len(r['findings']) - 12} mas")
-print(f"STATUS={r['status']}|{r['fail_count']}|{r['warn_count']}")
+from collections import Counter
+warn_codes = Counter(f["code"] for f in r["findings"] if f["severity"] == "WARN")
+top = warn_codes.most_common(1)[0][0] if warn_codes else ""
+print(f"STATUS={r['status']}|{r['fail_count']}|{r['warn_count']}|{top}")
 PYEOF
 )
 echo "$VER_OUT" | grep -v '^STATUS=' || true
@@ -248,8 +265,9 @@ VER_STATUS=$(echo "$VER_OUT" | grep '^STATUS=' | tail -1 | cut -d'=' -f2)
 V_ST=$(echo "$VER_STATUS" | cut -d'|' -f1)
 V_FAIL=$(echo "$VER_STATUS" | cut -d'|' -f2)
 V_WARN=$(echo "$VER_STATUS" | cut -d'|' -f3)
+V_CODE=$(echo "$VER_STATUS" | cut -d'|' -f4)
 
-_verdict_artifact_versions "$V_ST" "$V_FAIL" "$V_WARN"
+_verdict_artifact_versions "$V_ST" "$V_FAIL" "$V_WARN" "$V_CODE"
 
 # ── RESUMEN ───────────────────────────────────────────────────────────────────
 printf "\n${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
