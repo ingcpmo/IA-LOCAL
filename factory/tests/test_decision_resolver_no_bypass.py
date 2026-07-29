@@ -40,6 +40,10 @@ RESOLVER_MODULE = "decision_scope_resolver"
 DELEGATION_SURFACES = {
     "factory/regulatory/requirement_catalog/requirement_catalog_loader.py":
         {"evaluate_pack_eligibility", "eligible_requirement_ids"},
+    # G1.11: el gate G15 pregunta cobertura al resolver y `release_manager`
+    # delega en el gate en vez de resolver por su cuenta. Es la misma forma
+    # que la de arriba -- una sola superficie, y el consumidor la usa.
+    "factory/core/quality_gate_runner.py": {"g15_decision_coverage"},
 }
 DELEGATED_NAMES = {n for names in DELEGATION_SURFACES.values() for n in names}
 
@@ -68,6 +72,8 @@ WIRED = {
     "factory/regulatory/requirement_catalog/provisional_evidence_model.py",  # G1.8
     "factory/regulatory/verified_pipeline.py",                               # G1.9
     "factory/regulatory/tools/build_source_baseline_allowlist.py",           # G1.10
+    "factory/core/quality_gate_runner.py",                                   # G1.11
+    "factory/core/release_manager.py",                                       # G1.11
 }
 
 ALL_CONSUMER_FILES = sorted({f for fs in CONSUMERS.values() for f in fs})
@@ -229,6 +235,12 @@ def test_t23_no_parallel_decision_coverage_logic():
     concepto distinto y no tiene nada que ver con decisiones. Una guardia con
     falsos positivos estructurales se acaba borrando entera, y con ella la
     protección real. Se acota a la semántica que sí importa.
+
+    Se exceptúan las funciones declaradas en DELEGATION_SURFACES, y solo en su
+    propio fichero: no son lógica paralela sino la superficie única en la que
+    los demás delegan, y `test_delegation_targets_really_reach_the_resolver`
+    ya prueba que llegan al resolver de verdad. Sin esa excepción, el gate
+    G15 tendría que llamarse algo que no dijera lo que hace.
     """
     import re
     pattern = re.compile(
@@ -240,6 +252,8 @@ def test_t23_no_parallel_decision_coverage_logic():
             continue
         for node in ast.walk(_tree(rel)):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if node.name in DELEGATION_SURFACES.get(rel, set()):
+                    continue
                 if pattern.search(node.name):
                     offenders.append(f"{rel}:{node.lineno} def {node.name}")
     assert not offenders, (
@@ -271,7 +285,16 @@ def test_t24_every_declared_consumer_is_a_known_one():
         assert declared <= known, f"familia {name}: consumidores desconocidos {declared - known}"
 
 
-@pytest.mark.xfail(strict=True, reason="pendiente G1.8-G1.11: 4 de 5 consumidores sin cablear")
+# G1.11 cerró los CINCO consumidores de la spec §6, y este test sigue en
+# xfail: el registro de familias declara ocho más (version_guard,
+# model_qualification_gate, audit_reporting, package_regeneration,
+# run_driver, source_lifecycle_transition, source_registration_apply,
+# applicability_resolution) que se cablean en G1.12-G1.15. Que el andamio no
+# se retire aquí es correcto -- mide lo declarado, no las fases del plan, y
+# por eso caza lo que el plan no previó.
+@pytest.mark.xfail(strict=True,
+                   reason="G1.12-G1.15: 8 consumidores declarados fuera de la spec §6 "
+                          "aún sin módulo cableado")
 def test_t24_declared_consumers_have_a_wired_module():
     """El test que impide que el diseño se degrade con el tiempo: añadir una
     familia con un consumidor nuevo falla HASTA que ese consumidor llame al

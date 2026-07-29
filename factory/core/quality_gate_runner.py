@@ -1,5 +1,5 @@
 """
-Ejecutor de los 14 quality gates obligatorios de GMP AI Factory.
+Ejecutor de los 15 quality gates obligatorios de GMP AI Factory.
 
 Salida: quality_gates_report.json con {gate, status, evidence, timestamp}.
 Registra gates_executed + hash del reporte en factory_audit.jsonl.
@@ -232,6 +232,101 @@ def g14_approval(workspace_path: str) -> dict:
         return _gate("G14", "FAIL", f"Error leyendo approval.json: {e}")
 
 
+# ── G15 — cobertura de decisiones (W5 V2 G1.11, consumidor C-5) ─────────────
+#
+# Los catorce gates anteriores preguntan si la solución está bien CONSTRUIDA.
+# Este pregunta algo que ninguno preguntaba: si alguien AUTORIZÓ el material
+# regulatorio sobre el que se construyó. Son dimensiones distintas y G15 no
+# se deriva de ninguna de las otras -- una solución puede tener los catorce en
+# verde y apoyarse en fuentes que nadie firmó. Ese era exactamente el estado
+# del 2026-07-29.
+#
+# Fail-closed en los dos sentidos que importan:
+#   - una familia con `uncovered_ids` no vacía BLOQUEA, con los ids listados;
+#   - si el resolver no puede leer el almacén, BLOQUEA también. "No sé" nunca
+#     se reporta como "sí".
+#
+# HOY ESTE GATE FALLA A PROPÓSITO. Ninguna fuente está formalmente cubierta
+# hasta la Corrección D1 de G2 (DECISION_SCOPE_RESOLVER_SPEC.md §5); las tres
+# antiguas quedan en `reconstructed_only`, que no autoriza. Que el gate esté
+# en rojo entre G1.11 y G2 es el diseño, no una regresión.
+
+_GOVERNED_FAMILIES = ("D1", "D2", "D3", "D4", "D5")
+
+
+def g15_decision_coverage(*, decision_store_file=None, audit_file=None) -> dict:
+    """Cobertura humana de D1..D5 + excepción firmada por cada fork de auditoría.
+
+    Devuelve un gate normal (`_gate`) con la evidencia desglosada por familia:
+    quien lea el reporte tiene que poder ver QUÉ falta firmar, no solo que
+    algo falta.
+    """
+    from factory.core import decision_scope_resolver as resolver
+    from factory.core.audit_writer import chain_break_entry_ids
+
+    lines: list[str] = []
+    blocking: list[str] = []
+
+    for family in _GOVERNED_FAMILIES:
+        try:
+            report = resolver.coverage_report(family, store_file=decision_store_file)
+        except resolver.ResolverConfigurationError as exc:
+            # Despliegue roto: no es una denegación, es que no hay gobernanza.
+            return _gate("G15", "FAIL",
+                         f"registro de familias inválido — {exc}")
+
+        # Un id del registry solo está autorizado si está en `covered_ids`.
+        # Se computa así y no como `uncovered_ids != ()` a propósito:
+        # `coverage_report` resta de `uncovered` lo reconstruido y lo revocado
+        # porque son dimensiones distintas y las reporta aparte -- correcto
+        # para un informe, y una puerta abierta para un gate. Ninguna de las
+        # tres autoriza, y aquí lo único que importa es autorizar.
+        not_authorized = tuple(
+            sorted(set(report.registry_ids) - set(report.covered_ids)))
+
+        if report.unavailable_reason:
+            lines.append(f"{family}: NOT_DETERMINED — {report.unavailable_reason}")
+            blocking.append(f"{family}(indeterminada)")
+        elif not_authorized:
+            lines.append(f"{family}: UNCOVERED {list(not_authorized)}")
+            blocking.append(f"{family}({len(not_authorized)} sin cubrir)")
+        elif not report.registry_ids:
+            # D4/D5 no tienen `target_registry`: su objetivo es un plan o un
+            # paquete, no un id de un registro. Decir "cubierta" sería fabricar
+            # una garantía sobre un conjunto vacío; se declara como lo que es.
+            lines.append(f"{family}: NO_REGISTRY_TO_COMPARE (sin target_registry)")
+        else:
+            lines.append(f"{family}: COVERED ({len(report.covered_ids)} ids)")
+
+        if report.reconstructed_only_ids:
+            lines.append(
+                f"    {family}: {list(report.reconstructed_only_ids)} solo "
+                "RECONSTRUCTED_SNAPSHOT — no autoriza")
+        if report.registry_drift_since_decision:
+            lines.append(f"    {family}: el registry cambió desde la última decisión")
+
+    forks = chain_break_entry_ids(audit_file)
+    unexcused = [
+        eid for eid in forks
+        if not resolver.is_authorized("AUDIT_EXCEPTION", eid,
+                                      store_file=decision_store_file)
+    ]
+    if not forks:
+        lines.append("AUDIT_EXCEPTION: sin rupturas de cadena que excusar")
+    elif unexcused:
+        lines.append(f"AUDIT_EXCEPTION: rupturas sin excepción firmada {unexcused}")
+        blocking.append(f"AUDIT_EXCEPTION({len(unexcused)} sin firmar)")
+    else:
+        lines.append(f"AUDIT_EXCEPTION: {len(forks)} ruptura(s), todas con excepción firmada")
+
+    evidence = "\n".join(lines)
+    if blocking:
+        return _gate("G15", "FAIL",
+                     "BLOCKED — sin cobertura de decisión humana: "
+                     f"{', '.join(blocking)}\n{evidence}")
+    return _gate("G15", "PASS", evidence)
+
+
 # ── Runner principal ─────────────────────────────────────────────────────────
 
 def run_all_gates(
@@ -242,9 +337,10 @@ def run_all_gates(
     for_deploy: bool = False,
 ) -> dict:
     """
-    Ejecuta G01-G14 y retorna el reporte completo.
+    Ejecuta G01-G15 y retorna el reporte completo.
     - G03-G10 se marcan SKIPPED si la solución no está levantada.
     - G14 solo es obligatorio para deploy (for_deploy=True).
+    - G15 (cobertura de decisiones) corre siempre — ver su docstring.
     """
     project_id = manifest.get("project", {}).get("id", "unknown")
     dep = manifest.get("deployment", {})
@@ -274,6 +370,12 @@ def run_all_gates(
     else:
         results.append(_gate("G14", "SKIPPED",
                              "G14 solo requerido para deploy (for_deploy=False)"))
+
+    # G15 corre SIEMPRE, también con for_deploy=False. No es un requisito de
+    # despliegue sino del material sobre el que se construyó: un reporte de
+    # gates que lo omitiera en modo verificación diría "todo bien" sobre algo
+    # que nadie autorizó.
+    results.append(g15_decision_coverage())
 
     report = {
         "project_id": project_id,

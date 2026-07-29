@@ -305,3 +305,52 @@ def verify_chain() -> dict:
         "part11_compliant": hash_errors == 0 and total > 0,
         "audit_file": str(AUDIT_FILE),
     }
+
+
+def chain_break_entry_ids(audit_file: Path | None = None) -> tuple[str, ...]:
+    """`entry_id` de cada entrada cuyo `prev_entry_hash` no enlaza. Read-only.
+
+    `verify_chain()` cuenta las rupturas pero no dice CUALES son, y contar no
+    basta para gobernarlas: una excepcion humana se firma sobre un evento
+    concreto (familia AUDIT_EXCEPTION, target_kind=audit_event_id), no sobre
+    un numero. Esto es lo que consume el gate G15 (W5 V2 G1.11).
+
+    Deliberadamente NO toca `verify_chain()` ni su contrato: la conversion de
+    `part11_compliant` a enum es de G1.14, y adelantarla aqui obligaria a
+    revisar a todos sus lectores en una fase que no es la suya.
+
+    Solo reporta rupturas de ENLACE. Una entrada con hash de contenido malo no
+    es un fork: es corrupcion, no se gobierna con una excepcion, y por eso no
+    aparece en esta lista.
+    """
+    path = audit_file or AUDIT_FILE
+    if not path.exists():
+        return ()
+
+    breaks: list[str] = []
+    prev_hash = "GENESIS"
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            entry = json.loads(raw)
+        except Exception:  # noqa: BLE001 -- ilegible: corrupcion, no fork
+            prev_hash = None
+            continue
+
+        stored_hash = entry.get("entry_hash", "")
+        body = {k: v for k, v in entry.items() if k != "entry_hash"}
+        if stored_hash != f"sha256:{_compute_entry_hash(body)}":
+            prev_hash = stored_hash
+            continue
+
+        if entry.get("prev_entry_hash") != prev_hash:
+            # Sin entry_id no hay nada que un humano pueda firmar. Se declara
+            # con un id sintetico en vez de omitirse: una ruptura invisible
+            # para el gate es exactamente lo que este modulo evita.
+            breaks.append(entry.get("entry_id") or f"<sin entry_id:{stored_hash}>")
+
+        prev_hash = stored_hash
+
+    return tuple(breaks)

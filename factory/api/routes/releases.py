@@ -4,7 +4,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-from factory.core.release_manager import create_release, list_releases, get_release
+from factory.core.release_manager import (
+    DecisionCoverageBlocked, create_release, list_releases, get_release,
+)
 
 router = APIRouter(prefix="/api/v1/releases", tags=["releases"])
 
@@ -31,5 +33,10 @@ def post_release(project_id: str, version: str, body: ReleaseCreate):
         raise HTTPException(404, f"Workspace no encontrado: {ws_path}")
     try:
         return create_release(project_id, version, ws_path)
+    except DecisionCoverageBlocked as e:
+        # 423 y no 409: 409 ya significa "esa version existe", que se resuelve
+        # cambiando el numero. Esto no se resuelve reintentando -- falta una
+        # firma humana. Se separan para que el llamador no confunda los dos.
+        raise HTTPException(423, str(e))
     except ValueError as e:
         raise HTTPException(409, str(e))
