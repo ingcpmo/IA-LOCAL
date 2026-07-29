@@ -96,6 +96,10 @@ VALID_EVENTS = {
     "regulatory_source_currency_checked",
     "regulatory_broken_link_report_generated",
     "regulatory_source_url_updated",
+    # W5 V2 — alta gobernada de una fuente regulatoria NUEVA
+    # (human_source_registration). Distinto de _url_updated: aquel modifica una
+    # fuente existente, este ingiere la copia canónica y crea la entrada.
+    "regulatory_source_registered",
     # W6.5 — propuestas de agente sobre el dossier: el agente propone, el humano decide
     "dossier_agent_proposal_generated",
     "dossier_agent_proposal_failed",
