@@ -1,0 +1,353 @@
+"""UI de gobernanza — W5 V2 G1.16 (GOVERNANCE_UI_SPEC.md).
+
+Los seis paneles se prueban EJECUTANDOLOS con un DOM minimo en node, no
+mirando el fichero con `grep`. La diferencia importa: un `grep` pasa en verde
+sobre una funcion que lanza al primer render, y una UI de gobernanza que
+revienta al abrirse deja al humano sin la superficie para decidir -- que es
+justo el estado que este trabajo entero existe para cerrar.
+
+Si node no esta disponible, los tests de render se saltan (declarado, no
+silenciado). Los estructurales corren siempre.
+"""
+import json
+import shutil
+import subprocess
+import sys
+import textwrap
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+REPO = Path(__file__).resolve().parents[2]
+UI = REPO / "factory" / "ui"
+JS = UI / "js" / "mission_control"
+GOVERNANCE_JS = JS / "governance.js"
+
+NODE = shutil.which("node")
+needs_node = pytest.mark.skipif(NODE is None, reason="node no disponible en el entorno")
+
+
+# ---------------------------------------------------------------------------
+# DOM minimo + estado de fixture
+# ---------------------------------------------------------------------------
+
+_HARNESS = """
+const nodes = {};
+const mkEl = id => ({ id, innerHTML:'', textContent:'', style:{},
+                      parentElement:null, querySelector:()=>null });
+globalThis.document = {
+  getElementById: id => (nodes[id] ??= mkEl(id)),
+  querySelectorAll: () => [],
+};
+globalThis.location = { hash:'' };
+globalThis.window = { crypto:{} };
+globalThis.fetch = async () => ({ok:true, json:async()=>({})});
+const gov = await import(%(mod)s);
+const estado = %(estado)s;
+const out = {};
+gov.renderGovernance(estado);
+out.index = nodes['gov-body'].innerHTML;
+out.panels = {};
+for (const p of ['d1-correccion','d1a','excepcion-auditoria','pack-211','d2a','d4a']) {
+  gov.govOpen(p);
+  out.panels[p] = nodes['gov-body'].innerHTML;
+}
+gov.renderGovernanceError(500, 'boom');
+out.error500 = nodes['gov-body'].innerHTML;
+out.state_hash_shown = nodes['gov-state-hash'].textContent;
+console.log(JSON.stringify(out));
+"""
+
+FIXTURE_STATE = {
+    "state_hash": "a" * 64,
+    "families": {"D1": {"label": "Fuentes regulatorias"}, "D2": {"label": "Packs"},
+                 "D3": {}, "D4": {}, "D5": {}},
+    "coverage": {
+        "D1": {"registry_ids": ["ecfr_21cfr_part11", "ecfr_21cfr_part211",
+                                "eu_gmp_annex11", "mhra_gxp_di_guidance_2018"],
+               "covered_ids": [], "uncovered_ids": ["ecfr_21cfr_part211"],
+               "reconstructed_only_ids": ["ecfr_21cfr_part11"], "revoked_ids": [],
+               "active_instances": [], "registry_drift_since_decision": True,
+               "drift_determinable": True},
+        "D2": {"registry_ids": [], "covered_ids": [], "uncovered_ids": [],
+               "reconstructed_only_ids": [], "revoked_ids": [], "active_instances": []},
+        "D3": {"unavailable_reason": "almacen no encontrado"},
+        "D4": {"registry_ids": [], "covered_ids": [], "uncovered_ids": [],
+               "reconstructed_only_ids": [], "revoked_ids": [], "active_instances": []},
+        "D5": {"registry_ids": [], "covered_ids": [], "uncovered_ids": [],
+               "reconstructed_only_ids": [], "revoked_ids": [], "active_instances": []},
+    },
+    "audit": {"content_hash_integrity": "VERIFIED",
+              "chain_continuity": "BROKEN_HISTORICAL",
+              "historical_fork_present": True, "new_forks_since_baseline": 0,
+              "new_fork_entry_ids": [],
+              "unbacked_known_fork_entry_ids": ["ab689c7c-3e0a-4c77-936b-152851f51a30"],
+              "part11_compliant": "NOT_DETERMINED", "log_count": 21572,
+              "hash_errors": 0, "chain_errors": 1},
+    "critical_path": [
+        {"gate": "G1", "status": "CERRADO", "blocked_by": []},
+        {"gate": "G2", "status": "LISTO", "blocked_by": []},
+        {"gate": "G7", "status": "BLOQUEADO",
+         "blocked_by": ["fork sin excepcion firmada"]},
+    ],
+}
+
+
+def _render(tmp_path_factory, estado: dict, nombre: str) -> dict:
+    if NODE is None:
+        pytest.skip("node no disponible")
+    script = tmp_path_factory.mktemp(nombre) / "harness.mjs"
+    script.write_text(_HARNESS % {
+        "mod": json.dumps(str(GOVERNANCE_JS)),
+        "estado": json.dumps(estado, ensure_ascii=False),
+    }, encoding="utf-8")
+
+    proc = subprocess.run([NODE, str(script)], capture_output=True, text=True,
+                          timeout=60)
+    assert proc.returncode == 0, (
+        f"la UI de gobernanza no renderiza:\nstdout:{proc.stdout}\nstderr:{proc.stderr}")
+    return json.loads(proc.stdout.strip().splitlines()[-1])
+
+
+@pytest.fixture(scope="module")
+def rendered(tmp_path_factory):
+    return _render(tmp_path_factory, FIXTURE_STATE, "gov_ui")
+
+
+# Marcado inyectado en TODOS los campos de texto que el backend controla y que
+# la vista muestra: ids de fuentes, etiquetas de familia, motivos de bloqueo,
+# entry_ids de forks y valores de dimension.
+_XSS = '<script>alert(1)</script>PAYLOAD"><img src=x onerror=alert(2)>'
+
+
+@pytest.fixture(scope="module")
+def hostile_render(tmp_path_factory):
+    import copy
+    estado = copy.deepcopy(FIXTURE_STATE)
+    estado["families"]["D1"]["label"] = _XSS
+    estado["coverage"]["D1"]["registry_ids"] = [_XSS, "ecfr_21cfr_part211"]
+    estado["coverage"]["D1"]["uncovered_ids"] = [_XSS]
+    estado["coverage"]["D1"]["reconstructed_only_ids"] = [_XSS]
+    estado["coverage"]["D1"]["revoked_ids"] = [_XSS]
+    estado["coverage"]["D1"]["active_instances"] = [_XSS]
+    estado["coverage"]["D3"]["unavailable_reason"] = _XSS
+    estado["audit"]["chain_continuity"] = _XSS
+    estado["audit"]["part11_compliant"] = _XSS
+    estado["audit"]["unbacked_known_fork_entry_ids"] = [_XSS]
+    estado["critical_path"][2]["blocked_by"] = [_XSS]
+    estado["critical_path"][2]["status"] = _XSS
+    return _render(tmp_path_factory, estado, "gov_ui_xss")
+
+
+# ===========================================================================
+# Render real
+# ===========================================================================
+
+@needs_node
+def test_the_six_panels_all_render(rendered):
+    """Ninguno vacio y ninguno lanza. Un panel que revienta al abrirse deja al
+    humano sin superficie para decidir."""
+    assert len(rendered["panels"]) == 6
+    for pid, html in rendered["panels"].items():
+        assert len(html) > 400, f"panel {pid} practicamente vacio ({len(html)} bytes)"
+
+
+@needs_node
+def test_u7_a_blocked_gate_says_why_in_the_card(rendered):
+    """Lo bloqueado se muestra deshabilitado CON EL MOTIVO, jamas oculto.
+
+    Un boton ausente es un bloqueo inexplicable.
+    """
+    assert "fork sin excepcion firmada" in rendered["index"]
+    assert "BLOQUEADO" in rendered["index"]
+
+
+@needs_node
+def test_part211_checkbox_is_disabled_with_its_reason(rendered):
+    """El punto pedagogico del panel A.
+
+    El usuario tiene que VER por que Part 211 no esta en el snapshot, en vez
+    de deducirlo. Mezclar la correccion con la ampliacion produciria un solo
+    registro que hace dos cosas distintas.
+    """
+    html = rendered["panels"]["d1-correccion"]
+    assert "ecfr_21cfr_part211" in html
+    assert "disabled" in html
+    assert "POSTERIOR a la firma" in html
+    assert "D1-A" in html
+
+
+@needs_node
+def test_accepting_the_audit_exception_is_disabled_until_prevention_is_done(rendered):
+    """Aceptar una excepcion cuya prevencion no esta implementada es aceptar
+    que vuelva a pasar. Rechazar SI esta disponible: es un final legitimo."""
+    html = rendered["panels"]["excepcion-auditoria"]
+    assert "disabled" in html
+    assert "faltan 4 de las 5" in html
+    assert "Rechazar" in html
+
+
+@needs_node
+def test_the_exception_panel_states_what_is_not_being_asked(rendered):
+    """§7.2: la excepcion cubre UN entry_id. Decir que NO se pide es tan
+    importante como decir que se pide."""
+    html = rendered["panels"]["excepcion-auditoria"]
+    assert "NO SE PIDE" in html
+    assert "Declarar la cadena íntegra" in html
+    assert "ab689c7c-3e0a-4c77-936b-152851f51a30" in html
+
+
+@needs_node
+def test_reconstructed_coverage_is_shown_as_not_authorizing(rendered):
+    """Una D1 reconstruida se distingue Y se declara que no autoriza."""
+    assert "NO autorizan" in rendered["index"]
+    assert "ecfr_21cfr_part11" in rendered["index"]
+
+
+@needs_node
+def test_an_undeterminable_family_is_declared_not_shown_as_covered(rendered):
+    """D3 con `unavailable_reason`: NO DETERMINADA, nunca "0 sin cobertura"."""
+    assert "NO DETERMINADA" in rendered["index"]
+    assert "almacen no encontrado" in rendered["index"]
+
+
+@needs_node
+def test_the_five_audit_dimensions_are_shown_separately(rendered):
+    """G1.14 llega hasta la pantalla: nunca un booleano de conformidad."""
+    for dim in ("CONTENT_HASH_INTEGRITY", "CHAIN_CONTINUITY",
+                "HISTORICAL_FORK_PRESENT", "NEW_FORKS_SINCE_BASELINE",
+                "PART11_COMPLIANCE"):
+        assert dim in rendered["index"], dim
+    assert "NOT_DETERMINED" in rendered["index"]
+    # La buena noticia real se dice, sin arrastrar conformidad.
+    assert "VERIFIED" in rendered["index"]
+
+
+@needs_node
+def test_a_500_shows_the_error_and_no_partial_governance_state(rendered):
+    """§10: preferir un error visible a un valor por defecto."""
+    html = rendered["error500"]
+    assert "Error del backend" in html
+    assert "NOT_DETERMINED" not in html
+    assert "ecfr_21cfr_part211" not in html
+
+
+@needs_node
+def test_the_state_hash_is_shown_to_the_user(rendered):
+    """U-4: el usuario ve sobre que estado esta a punto de firmar."""
+    assert rendered["state_hash_shown"].startswith("aaaa")
+
+
+# ===========================================================================
+# Estructural (sin node)
+# ===========================================================================
+
+def test_u6_the_frontend_backup_is_a_real_pre_change_copy():
+    """U-6 exige backup de index.html y mission_control.html antes de tocar.
+
+    `backups/` esta en .gitignore -- correctamente: son datos de operacion, no
+    codigo. Asi que este test SE SALTA si el directorio no esta, igual que el
+    gate real contra GMPAI/source/Rockwell en test_source_baseline_allowlist:
+    afirmar la presencia de un artefacto no versionado pasaria en esta maquina
+    y fallaria en un clon limpio, que es un test que miente segun donde corra.
+
+    Lo que si comprueba cuando el backup existe es que sea de ANTES: un backup
+    tomado despues del cambio no es un backup, es una copia del cambio.
+    """
+    directorio = REPO / "backups" / "frontend"
+    if not directorio.is_dir():
+        pytest.skip("backups/frontend/ no existe en este entorno (dir gitignorado)")
+    backups = sorted(directorio.glob("pre_g116_*"))
+    if not backups:
+        pytest.skip("sin backup pre-G1.16 en este entorno")
+
+    previo = backups[-1] / "mission_control.html"
+    assert previo.is_file(), "el backup no incluye mission_control.html"
+    assert (backups[-1] / "index.html").is_file(), "U-6 exige tambien index.html"
+    assert 'id="v-gobierno"' not in previo.read_text(encoding="utf-8"), (
+        "el backup ya incluye la vista nueva: es una copia del cambio, no un backup")
+
+
+def test_the_view_is_wired_in_html_nav_and_dispatcher():
+    html = (UI / "mission_control.html").read_text(encoding="utf-8")
+    assert 'data-v="gobierno"' in html
+    assert 'id="v-gobierno"' in html
+    assert 'id="gov-body"' in html
+
+    refresh = (JS / "refresh.js").read_text(encoding="utf-8")
+    assert "renderGovernance" in refresh
+    assert "/api/v1/layer9/governance/state" in refresh
+    assert "gobierno:[" in refresh
+
+    main = (JS / "main.js").read_text(encoding="utf-8")
+    for fn in ("govOpen", "govSubmitD1Correccion", "govSubmitD1A",
+               "govSubmitExcepcion", "govRecalcHash"):
+        assert fn in main, f"{fn} no expuesto como global: los onclick del HTML fallarian"
+
+
+def test_every_exported_handler_used_in_html_is_exported_by_the_module():
+    """Los `onclick` generados llaman por nombre global. Un nombre que el
+    modulo no exporte es un boton que no hace nada y no avisa."""
+    import re
+    js = GOVERNANCE_JS.read_text(encoding="utf-8")
+    usados = set(re.findall(r'onclick="(gov[A-Za-z]+)\(', js))
+    exportados = set(re.findall(r"export (?:async )?function (gov[A-Za-z]+)", js))
+    assert usados <= exportados, f"handlers sin exportar: {usados - exportados}"
+
+
+def test_the_legacy_w5_view_is_not_removed():
+    """Conviven durante la transicion y la vieja se retira en G8.
+
+    Apagarla ahora dejaria sin superficie a lo unico que hoy tiene datos.
+    """
+    html = (UI / "mission_control.html").read_text(encoding="utf-8")
+    assert 'data-v="w5"' in html
+    assert (JS / "w5_decisions.js").is_file()
+
+
+@needs_node
+def test_api_data_is_escaped_before_reaching_innerhtml(hostile_render):
+    """Se RENDERIZA con una respuesta hostil y se comprueba la salida.
+
+    La primera version de este test buscaba interpolaciones sin `esc()` con una
+    regex sobre el fichero, y era un mal test: no sabe parsear plantillas
+    anidadas, asi que marcaba `dimClass(v)` (devuelve una constante CSS), `cls`
+    (nombre de clase literal), `prefix` (constante interna) y `a.log_count` (un
+    numero) -- 21 hallazgos y ninguno real, porque el escapado ocurre una capa
+    mas adentro (`fila()` hace `esc(extra)`, `chips()` escapa cada id).
+
+    Una guardia con falsos positivos estructurales se acaba borrando entera, y
+    con ella la proteccion real. Esta version prueba la PROPIEDAD -- ningun
+    marcado del backend llega vivo a la pantalla -- en vez de inspeccionar la
+    forma del codigo, y por eso no se puede esquivar reordenando plantillas.
+    """
+    superficies = {"index": hostile_render["index"],
+                   "error500": hostile_render["error500"],
+                   **{f"panel:{k}": v for k, v in hostile_render["panels"].items()}}
+    for nombre, html in superficies.items():
+        # La propiedad exacta: el payload NO aparece literal en ningun sitio.
+        # Basta con eso -- sin `<` sin escapar no se puede formar una etiqueta,
+        # y por tanto ningun atributo ni handler.
+        assert _XSS not in html, f"{nombre}: el payload del backend llego literal"
+        assert "<script" not in html.lower(), f"{nombre}: <script> del backend sin escapar"
+        assert "<img" not in html.lower(), f"{nombre}: <img> del backend sin escapar"
+
+    # `onerror=` SI sobrevive como texto escapado dentro de un <td>, y debe:
+    # es parte del dato. Lo que no puede es venir precedido de un `<` vivo.
+    idx = hostile_render["index"]
+    assert "onerror=" in idx, "el dato desaparecio en vez de escaparse"
+    assert "&lt;img" in idx, "el `<` del payload no quedo escapado"
+
+
+@needs_node
+def test_the_hostile_payload_is_actually_visible_as_text(hostile_render):
+    """El escapado no puede ser "borrar el dato".
+
+    Si un `source_id` llega con marcado, hay que MOSTRARLO tal cual escapado:
+    un id que desaparece de la pantalla es peor que uno feo -- el humano firma
+    creyendo que ese id no esta en el conjunto.
+    """
+    assert "&lt;script&gt;" in hostile_render["index"] or "&lt;" in hostile_render["index"]
+    assert "PAYLOAD" in hostile_render["index"]

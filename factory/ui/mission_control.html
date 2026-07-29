@@ -36,6 +36,7 @@
       <button data-v="approve">Aprobación de misión</button>
       <button data-v="review">Revisión humana</button>
       <button data-v="w5">Decisiones W5</button>
+      <button data-v="gobierno">Gobernanza de decisiones</button>
       <button data-v="pipeline">Pipeline Capa 8</button>
       <div class="grp">Cumplimiento</div>
       <button data-v="audit">Auditoría</button>
@@ -455,6 +456,26 @@
         </div>
         <p class="note">Registrar una decisión deja constancia del acto humano con identidad real y
         decision_origin=human_confirmed. Ejecutar sus consecuencias es un paso posterior y separado.</p>
+      </section>
+
+      <!-- W5 V2 G1.16 — GOBERNANZA DE DECISIONES (seis paneles) -->
+      <section class="view" id="v-gobierno">
+        <p class="lead">Gobernanza de decisiones sobre el corpus regulatorio: familias, cobertura
+        humana, versionado de artefactos y estado de la cadena de auditoría por dimensión.
+        <b>Convive con "Decisiones W5"</b> durante la transición: aquella lee el almacén legacy y
+        esta el modelo nuevo. Consultar esta página no reverifica fuentes, no promueve packs,
+        no lanza corridas y no cambia ningún estado.</p>
+        <div class="meta" style="margin-bottom:8px">
+          state_hash leído: <span class="mono" id="gov-state-hash">—</span>
+          <span style="color:var(--faint)"> — cada firma lo reenvía; si el estado cambió entre
+          medias, el backend responde 409 en vez de firmar sobre datos que ya no existen.</span>
+        </div>
+        <div id="gov-body">
+          <div class="card"><div class="meta" style="color:var(--faint)">(cargando estado de gobernanza…)</div></div>
+        </div>
+        <p class="note">Registrar una decisión deja constancia del acto humano con identidad real
+        y decision_origin=human_confirmed. <b>Registrar no es ejecutar</b>: las consecuencias son
+        un paso posterior y separado.</p>
       </section>
 
       <!-- 06 AUDIT -->

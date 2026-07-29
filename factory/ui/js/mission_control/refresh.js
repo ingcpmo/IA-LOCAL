@@ -12,6 +12,7 @@ import {
 import { renderApproveMissions } from './missions.js';
 import { renderReview } from './review.js';
 import { renderW5Decisions, renderW5Error } from './w5_decisions.js';
+import { renderGovernance, renderGovernanceError } from './governance.js';
 import { refreshPipeline, loadClaudeStatus } from './pipeline.js';
 import { renderExecStatus, renderExecMissions, renderExecReview, renderExecRisks } from './exec.js';
 import { renderRisksView, renderReadiness } from './risks_view.js';
@@ -34,6 +35,7 @@ const TITLES={
   pipeline:["Pipeline Capa 8","mission-control / layer8 / pipeline"],
   review:["Revisión humana","mission-control / review-queue"],
   w5:["Decisiones humanas W5","mission-control / governance / w5-decisions"],
+  gobierno:["Gobernanza de decisiones","mission-control / governance / decisions"],
   audit:["Auditoría","mission-control / audit / chain"],
   risks:["Riesgos y Readiness","mission-control / risks"],
   system:["Estado del sistema","mission-control / system"],
@@ -169,6 +171,18 @@ export async function refresh(v){
       else {
         const err=await r.json().catch(()=>({}));
         renderW5Error(r.status, typeof err.detail==='string'?err.detail:'');
+      }
+    }
+    if(v==='gobierno'){
+      const r=await fetch(API_BASE+"/api/v1/layer9/governance/state",{headers:headers()});
+      if(_checkAuthFailure(r)) return;
+      if(r.ok){ renderGovernance(await r.json()); }
+      else {
+        /* §10: ningun estado de gobernanza parcial. Un valor por defecto seria
+           indistinguible de uno real, que es la ambiguedad que este trabajo
+           existe para eliminar. */
+        const err=await r.json().catch(()=>({}));
+        renderGovernanceError(r.status, typeof err.detail==='string'?err.detail:'');
       }
     }
     if(v==='pipeline'||v==='dash'){
