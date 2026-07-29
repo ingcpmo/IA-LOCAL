@@ -11,13 +11,15 @@ Todo se comprueba por AST, no por `grep`: un `grep` se esquiva con una
 concatenación de cadenas, y una guardia que se esquiva sin querer no es una
 guardia.
 
-ESTADO: los consumidores se cablean uno a uno en G1.7-G1.11. `WIRED` lleva la
-cuenta; lo que no está en esa lista se marca `xfail(strict=True)`. `strict` es
-deliberado: en cuanto un consumidor llame al resolver, su test pasará
-inesperadamente y la suite EXIGIRÁ moverlo a `WIRED`. Es un andamio que se
-retira solo, no un test que se queda mintiendo en verde.
+ESTADO: los consumidores se cablean uno a uno. `WIRED` lleva la cuenta; lo que
+no está en esa lista se marca `xfail(strict=True)`. `strict` es deliberado: en
+cuanto un consumidor llame al resolver, su test pasará inesperadamente y la
+suite EXIGIRÁ moverlo a `WIRED`. Es un andamio que se retira solo, no un test
+que se queda mintiendo en verde.
 
-G1.7 cerrado: `source_currency_checker.py` (reverificación de fuentes).
+Cerrados: G1.7 `source_currency_checker` · G1.8 catálogo de requisitos y
+modelo provisional · G1.9 `verified_pipeline` · G1.10 baseline formal ·
+G1.11 release gate · G1.12 `source_lifecycle` · G1.13 `artifact_version_guard`.
 """
 import ast
 from pathlib import Path
@@ -63,6 +65,7 @@ CONSUMERS = {
     ],
     "corpus_planner": ["factory/regulatory/verified_pipeline.py"],
     "formal_baseline": ["factory/regulatory/tools/build_source_baseline_allowlist.py"],
+    "version_guard": ["factory/core/artifact_version_guard.py"],
     "release_gate": [
         "factory/core/quality_gate_runner.py",
         "factory/core/release_manager.py",
@@ -81,6 +84,7 @@ WIRED = {
     "factory/core/quality_gate_runner.py",                                   # G1.11
     "factory/core/release_manager.py",                                       # G1.11
     "factory/regulatory/source_lifecycle.py",                                # G1.12
+    "factory/core/artifact_version_guard.py",                                # G1.13
 }
 
 ALL_CONSUMER_FILES = sorted({f for fs in CONSUMERS.values() for f in fs})
@@ -292,15 +296,15 @@ def test_t24_every_declared_consumer_is_a_known_one():
         assert declared <= known, f"familia {name}: consumidores desconocidos {declared - known}"
 
 
-# G1.11 cerró los CINCO consumidores de la spec §6 y G1.12 añadió
-# `source_lifecycle_transition`, y este test sigue en xfail: el registro de
-# familias declara siete más (version_guard, model_qualification_gate,
+# G1.11 cerró los CINCO consumidores de la spec §6; G1.12 añadió
+# `source_lifecycle_transition` y G1.13 `version_guard`. Este test sigue en
+# xfail: el registro de familias declara seis más (model_qualification_gate,
 # audit_reporting, package_regeneration, run_driver, source_registration_apply,
-# applicability_resolution) que se cablean en G1.13-G1.15. Que el andamio no
+# applicability_resolution) que se cablean en G1.14-G1.15. Que el andamio no
 # se retire aquí es correcto -- mide lo declarado, no las fases del plan, y
 # por eso caza lo que el plan no previó.
 @pytest.mark.xfail(strict=True,
-                   reason="G1.13-G1.15: 7 consumidores declarados fuera de la spec §6 "
+                   reason="G1.14-G1.15: 6 consumidores declarados fuera de la spec §6 "
                           "aún sin módulo cableado")
 def test_t24_declared_consumers_have_a_wired_module():
     """El test que impide que el diseño se degrade con el tiempo: añadir una
