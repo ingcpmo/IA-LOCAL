@@ -345,9 +345,20 @@ def coverage_report(decision_family: str, *,
         registry_drift_since_decision=bool(
             last_hash and registry_hash_now and last_hash != registry_hash_now),
         drift_determinable=bool(last_hash and registry_hash_now),
+        # "Pendiente" exige las DOS cosas: que el registro se escribiera como
+        # INVALID_PENDING_RESIGNATURE y que la proyeccion no lo haya superado
+        # ya. Leer solo el campo almacenado hacia que un registro siguiera
+        # figurando como pendiente DESPUES de re-firmarse -- un panel diciendole
+        # a Cesar que le falta firmar algo que acaba de firmar.
+        #
+        # Es el mismo error que este modulo corrige en otros sitios: `status` es
+        # el estado AL ESCRIBIRSE, y la vigencia se DERIVA (`project_status`).
+        # `active_instances`, dos lineas mas abajo, ya usaba la proyeccion; esta
+        # no. Detectado al probar la re-firma por SUPERSESSION de G2'.
         pending_resignature_instances=tuple(sorted(
             r["decision_instance_id"] for r in valid
-            if r["status"] == "INVALID_PENDING_RESIGNATURE")),
+            if r["status"] == "INVALID_PENDING_RESIGNATURE"
+            and statuses.get(r["decision_instance_id"]) != "SUPERSEDED")),
         active_instances=tuple(
             iid for iid, st in sorted(statuses.items()) if st == "ACTIVE"),
         unavailable_reason=None,
