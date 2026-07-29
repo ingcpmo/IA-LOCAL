@@ -94,6 +94,28 @@
       "effective_date": "2018-03",
       "supersedes": null,
       "reverification_due": null
+    },
+    {
+      "source_id": "ecfr_21cfr_part211",
+      "original_path": "factory/regulatory/sources/incoming/OFFICIAL_ECFR_21CFR_part211_20260701.xml",
+      "canonical_path": "factory/regulatory/sources/sha256/ecd9f8ba39e59c7713be98c293f1da4b125a68706d32ce4c77a0b579797423e3/OFFICIAL_ECFR_21CFR_part211_20260701.xml",
+      "official_source_url": "https://www.ecfr.gov/api/versioner/v1/full/2026-07-01/title-21.xml?part=211",
+      "official_source_description": "eCFR Title 21 Part 211 -- Current Good Manufacturing Practice for Finished Pharmaceuticals (snapshot de la API versioner, fecha fijada 2026-07-01)",
+      "sha256_original": "ecd9f8ba39e59c7713be98c293f1da4b125a68706d32ce4c77a0b579797423e3",
+      "sha256_copy": "ecd9f8ba39e59c7713be98c293f1da4b125a68706d32ce4c77a0b579797423e3",
+      "hashes_match": true,
+      "size_bytes": 96680,
+      "normative_type": "regulation",
+      "jurisdiction": "US",
+      "local_integrity_status": "PASS",
+      "official_origin_status": "FIRST_INGESTION_NO_PRIOR_KNOWN_HASH_TO_COMPARE",
+      "regulatory_currency_status": "pending_reverification",
+      "copied_at": "2026-07-29T02:25:06.536379+00:00",
+      "derived_artifacts": [],
+      "version": "NO_DISPONIBLE (eCFR es texto consolidado sin edicion discreta declarada; el cuerpo del XML no embebe la fecha del snapshot)",
+      "effective_date": "NO_DISPONIBLE (texto consolidado sin fecha de vigencia unica aplicable a todo el Part 211; origen declarado 43 FR 45077, Sept. 29, 1978; enmienda mas reciente citada en el texto 89 FR 51770, June 18, 2024)",
+      "supersedes": null,
+      "reverification_due": null
     }
   ]
 }

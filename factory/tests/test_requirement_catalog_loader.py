@@ -23,8 +23,13 @@ ALL_19_REQ_IDS = {
 
 
 def test_source_registry_loads_and_validates():
+    """Invariante, no conteo. El numero de fuentes cambia cuando Capa 9 aprueba
+    un alta (2026-07-29: ecfr_21cfr_part211); lo que NO puede cambiar sin
+    decision es que toda fuente cargue integra y sin declararse vigente. El
+    conjunto exacto se fija a proposito en
+    test_human_source_registration.test_real_registry_has_no_unauthorized_source."""
     registry = load_source_registry()
-    assert len(registry["sources"]) == 3
+    assert registry["sources"], "el registry nunca queda vacio"
     for entry in registry["sources"]:
         assert entry["regulatory_currency_status"] == "pending_reverification"
         assert entry["hashes_match"] is True

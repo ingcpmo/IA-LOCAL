@@ -65,6 +65,11 @@ PROJECT_ID = "gmpai_document_validation"
 SOURCES_REGISTRY_FILE = Path(__file__).parent / "sources" / "registry.json"
 SOURCES_STORE_DIR = Path(__file__).parent / "sources" / "sha256"
 
+#: Las rutas del registry se guardan RELATIVAS a la raiz del repositorio, como
+#: las 3 entradas historicas. Una ruta absoluta del host (/home/ing_cpmo/...)
+#: no resuelve dentro de factory-api, que monta ese arbol en /app/factory.
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
 CURRENCY_STATUS = "pending_reverification"
 
 #: Valor honesto de `official_origin_status` para una primera ingesta: no hay
@@ -267,8 +272,8 @@ def apply_source_registration(decision_id: str) -> dict:
     store_path = SOURCES_STORE_DIR / real_sha256 / canonical_file.name
     entry = {
         "source_id": source_id,
-        "original_path": str(canonical_file),
-        "canonical_path": str(store_path),
+        "original_path": repo_relative(canonical_file),
+        "canonical_path": repo_relative(store_path),
         "official_source_url": declared["official_source_url"],
         "official_source_description": declared["official_source_description"],
         "sha256_original": declared["sha256_original"],
@@ -384,6 +389,23 @@ def _validate_declared_or_unavailable(field: str, value: object) -> None:
             f"{field}={value!r}: 'NO_DISPONIBLE' exige motivo entre parentesis, "
             "p.ej. 'NO_DISPONIBLE (eCFR es texto consolidado sin edicion discreta)'"
         )
+
+
+def repo_relative(path: Path) -> str:
+    """Ruta relativa a la raiz del repo cuando cuelga de ella; absoluta si no.
+
+    Las 3 entradas historicas del registry usan rutas relativas
+    (`factory/regulatory/sources/sha256/<hash>/<fichero>`) y los consumidores
+    las abren desde la raiz del repo. Una ruta absoluta del host romperia esos
+    consumidores dentro de `factory-api`, que ve el mismo arbol en
+    `/app/factory`. Fuera del repo (ficheros de entrada en otro punto de
+    montaje) no hay relativa posible y se conserva la absoluta, que al menos
+    es cierta."""
+    resolved = Path(path).resolve()
+    try:
+        return str(resolved.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(resolved)
 
 
 def _sha256_file(path: Path) -> str:

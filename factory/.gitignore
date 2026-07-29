@@ -19,6 +19,12 @@ audit/*.jsonl
 # Resultados de corridas de tests de soluciones
 test_results/
 
+# Área de paso de la ingesta de fuentes: el fichero descargado antes de que
+# human_source_registration lo copie al almacén inmutable. La copia gobernada
+# (regulatory/sources/sha256/<hash>/) SÍ se versiona; ésta es byte a byte
+# idéntica, así que versionarla sólo duplicaría el artefacto.
+regulatory/sources/incoming/
+
 # Estado de conectores y logs append-only del módulo regulatorio
 regulatory/connector_state.json
 regulatory/broken_link_report.jsonl

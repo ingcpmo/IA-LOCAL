@@ -350,18 +350,54 @@ def test_apply_detects_store_collision_with_different_content(registry_env):
     assert registry_file.read_text(encoding="utf-8") == before
 
 
+# --- rutas relativas al repo ----------------------------------------------
+
+def test_repo_relative_strips_repo_root():
+    """Defecto real corregido en la primera ejecucion sobre el registry: la
+    entrada se escribio con canonical_path ABSOLUTO del host. factory-api
+    monta ese arbol en /app/factory, asi que esa ruta no resuelve dentro del
+    contenedor y los consumidores de canonical_path se rompen."""
+    inside = hsr.REPO_ROOT / "factory" / "regulatory" / "sources" / "sha256" / "abc" / "x.xml"
+    assert hsr.repo_relative(inside) == "factory/regulatory/sources/sha256/abc/x.xml"
+
+
+def test_repo_relative_keeps_absolute_outside_repo(tmp_path):
+    """Fuera del repo no hay relativa posible: se conserva la absoluta, que al
+    menos es cierta -- nunca se inventa una relativa falsa."""
+    outside = tmp_path / "descarga.xml"
+    outside.write_bytes(b"x")
+    assert hsr.repo_relative(outside) == str(outside.resolve())
+
+
 # --- estado real del repositorio ------------------------------------------
 
 REAL_REGISTRY = Path("/home/ing_cpmo/factory/regulatory/sources/registry.json")
 
 
-def test_real_registry_still_has_no_new_source_registered():
-    """La herramienta existe y esta probada, pero NO se ha ejecutado sobre el
-    registry real: fda_cfr_210_211 sigue sin darse de alta porque su ingesta
-    (descarga desde eCFR) no esta autorizada todavia."""
+def test_real_registry_paths_are_repo_relative():
+    """Invariante sobre el registry REAL: ninguna ruta gobernada es absoluta.
+    Es la regresion que dejo la primera ejecucion de esta herramienta."""
+    if not REAL_REGISTRY.exists():
+        pytest.skip("registry real no disponible en este entorno")
+    registry = json.loads(REAL_REGISTRY.read_text(encoding="utf-8"))
+    for source in registry["sources"]:
+        assert not source["canonical_path"].startswith("/"), source["source_id"]
+
+
+def test_real_registry_has_no_unauthorized_source():
+    """Las fuentes del registry real son exactamente las decididas por Capa 9:
+    las 3 historicas mas ecfr_21cfr_part211 (alcance reducido aprobado el
+    2026-07-29). Cualquier alta futura debe pasar por aqui conscientemente."""
     if not REAL_REGISTRY.exists():
         pytest.skip("registry real no disponible en este entorno")
     registry = json.loads(REAL_REGISTRY.read_text(encoding="utf-8"))
     source_ids = {s["source_id"] for s in registry["sources"]}
-    assert SOURCE_ID not in source_ids
-    assert source_ids == {"ecfr_21cfr_part11", "eu_gmp_annex11", "mhra_gxp_di_guidance_2018"}
+    assert source_ids == {
+        "ecfr_21cfr_part11",
+        "eu_gmp_annex11",
+        "mhra_gxp_di_guidance_2018",
+        "ecfr_21cfr_part211",
+    }
+    # Las fuentes NO adoptadas siguen fuera: Capa 9 eligio alcance reducido.
+    assert "eu_gmp_ch4" not in source_ids
+    assert "eu_gmp_annex15" not in source_ids

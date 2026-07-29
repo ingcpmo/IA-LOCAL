@@ -76,7 +76,18 @@ class TestD1IsIndependentOfTheReleaseCandidateQueue:
         state = w5.get_decisions_state()
         d1 = next(d for d in state["decisions"] if d["decision_id"] == "D1_regulatory_sources")
         assert d1["status"] == "PENDING"
-        assert len(d1["context"]["sources"]) == 3
+        # Invariante, no conteo: la tarjeta D1 muestra TODAS las fuentes
+        # gobernadas, sean las que sean. El número cambia cuando Capa 9 aprueba
+        # un alta (2026-07-29: ecfr_21cfr_part211); lo que no puede cambiar es
+        # que la tarjeta oculte alguna.
+        import json as _json
+        from pathlib import Path as _Path
+        registry = _json.loads(
+            _Path("factory/regulatory/sources/registry.json").read_text(encoding="utf-8")
+        )
+        assert {s["source_id"] for s in d1["context"]["sources"]} == {
+            s["source_id"] for s in registry["sources"]
+        }
 
     def test_d1_context_carries_the_fields_the_card_must_show(self, isolated_store):
         d1 = next(d for d in w5.get_decisions_state()["decisions"]

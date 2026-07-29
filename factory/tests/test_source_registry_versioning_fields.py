@@ -118,18 +118,37 @@ class TestRealRegistryValidatesAgainstExtendedSchema:
         assert all(s["reverification_due"] is None for s in _REGISTRY["sources"])
 
 
+def _registry_within_backfill_domain() -> dict:
+    """El backfill es una migración de Fase B YA ejecutada, con un mapeo de
+    evidencia fijo para las fuentes que existían entonces. Alimentarlo con el
+    registry vivo hacía que cualquier alta legítima posterior rompiera el test
+    de una migración terminada (paso con `ecfr_21cfr_part211`, 2026-07-29).
+
+    Su dominio real son las fuentes que mapea; las altas nuevas nacen ya con
+    los 4 campos de versionado y no necesitan backfill. El rechazo de fuentes
+    fuera de ese dominio se sigue probando explícitamente en
+    `test_raises_on_source_id_without_backfill_mapping`."""
+    data = copy.deepcopy(_REGISTRY)
+    data["sources"] = [
+        s for s in data["sources"] if s["source_id"] in backfill_mod._BACKFILL
+    ]
+    return data
+
+
 class TestBackfillScript:
 
     def test_backfill_is_idempotent(self, tmp_path):
         registry_copy = tmp_path / "registry.json"
-        registry_copy.write_text(json.dumps(copy.deepcopy(_REGISTRY)), encoding="utf-8")
+        registry_copy.write_text(
+            json.dumps(_registry_within_backfill_domain()), encoding="utf-8"
+        )
         result1 = backfill_mod.backfill(registry_copy)
         registry_copy.write_text(json.dumps(result1), encoding="utf-8")
         result2 = backfill_mod.backfill(registry_copy)
         assert result1 == result2
 
     def test_raises_on_source_id_without_backfill_mapping(self, tmp_path):
-        data = copy.deepcopy(_REGISTRY)
+        data = _registry_within_backfill_domain()
         data["sources"].append({"source_id": "unmapped_new_source"})
         registry_copy = tmp_path / "registry.json"
         registry_copy.write_text(json.dumps(data), encoding="utf-8")
@@ -137,7 +156,7 @@ class TestBackfillScript:
             backfill_mod.backfill(registry_copy)
 
     def test_raises_if_registry_missing_a_mapped_source(self, tmp_path):
-        data = copy.deepcopy(_REGISTRY)
+        data = _registry_within_backfill_domain()
         data["sources"] = [s for s in data["sources"] if s["source_id"] != "eu_gmp_annex11"]
         registry_copy = tmp_path / "registry.json"
         registry_copy.write_text(json.dumps(data), encoding="utf-8")

@@ -347,14 +347,23 @@ ninguno?~~ **RESUELTA 2026-07-29: solo `fda_cfr_210_211` (ver B.7).**
 ~~3. ¿Se amplía el alcance de W5 para admitir GAMP 5 bajo licencia?~~
 **RESUELTA: no en esta iteración.**
 
+~~4. ¿Se autoriza la ingesta real de 21 CFR 210/211 desde eCFR?~~
+**RESUELTA 2026-07-29: sí, solo Part 211** — ingerida como
+`ecfr_21cfr_part211` desde la API versioner con fecha fijada.
+~~5. ¿Cómo se da de alta una fuente nueva?~~ **RESUELTA:**
+`factory/regulatory/human_source_registration.py`.
+
 Abiertas:
 
-4. **¿Se autoriza la ingesta real de 21 CFR 210/211 desde eCFR?** Sin ella la
-   adopción no puede materializarse (A.0). Implica descarga a red y escritura
-   en el almacén inmutable de fuentes.
-5. **¿Cómo se da de alta una fuente nueva?** No existe camino gobernado
-   (A.0). Hace falta una herramienta de alta, o una decisión explícita de
-   Capa 9 que autorice una escritura puntual auditada.
+4-bis. **`ecfr_21cfr_part211` NO está cubierta por D1.** Cesar precisó el
+   2026-07-29 que el `approved_source_ids: "ALL"` registrado a las 00:15 UTC
+   se refería **solo a las tres fuentes que existían entonces**. La cuarta
+   queda por tanto **sin cadencia de reverificación aprobada y sin autoridad
+   declarante asignada**: hereda `reverification_due: null`, que es el valor
+   honesto. Antes de reverificarla hace falta una decisión adicional —o una
+   que supersede a D1— que la incluya explícitamente. Esta precisión se
+   registra aquí, en un documento de estado; **no** se editó
+   `w5_human_decisions.jsonl`, cuyo contenido permanece tal como se aprobó.
 6. ¿Se reanudan D1–D5 tras la adopción, o siguen pausados?
 7. ¿Quién y cuándo redacta la interpretación humana de los 6 packs
    (5 re-versionados + NR-01)? Es la única tarea del camino crítico que no
