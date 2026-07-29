@@ -11,11 +11,13 @@ Todo se comprueba por AST, no por `grep`: un `grep` se esquiva con una
 concatenación de cadenas, y una guardia que se esquiva sin querer no es una
 guardia.
 
-ESTADO: T-20/T-21/T-24 están marcados `xfail(strict=True)` porque los cinco
-consumidores se cablean en G1.7-G1.11, que todavía no se ha hecho. `strict`
-es deliberado: en cuanto un consumidor llame al resolver, el test pasará
-inesperadamente y la suite EXIGIRÁ quitar el marcador. Es un andamio que se
+ESTADO: los consumidores se cablean uno a uno en G1.7-G1.11. `WIRED` lleva la
+cuenta; lo que no está en esa lista se marca `xfail(strict=True)`. `strict` es
+deliberado: en cuanto un consumidor llame al resolver, su test pasará
+inesperadamente y la suite EXIGIRÁ moverlo a `WIRED`. Es un andamio que se
 retira solo, no un test que se queda mintiendo en verde.
+
+G1.7 cerrado: `source_currency_checker.py` (reverificación de fuentes).
 """
 import ast
 from pathlib import Path
@@ -43,6 +45,22 @@ CONSUMERS = {
         "factory/core/release_manager.py",
     ],
 }
+
+# Consumidores YA cableados. Esta lista solo crece, y crecer es el progreso de
+# G1.7-G1.11. Un fichero aquí se prueba de verdad; uno fuera queda en
+# xfail(strict), que fallará en cuanto se cablee y obligará a moverlo.
+WIRED = {
+    "factory/regulatory/source_currency_checker.py",     # G1.7
+}
+
+ALL_CONSUMER_FILES = sorted({f for fs in CONSUMERS.values() for f in fs})
+
+
+def _param(rel):
+    if rel in WIRED:
+        return rel
+    return pytest.param(rel, marks=pytest.mark.xfail(
+        strict=True, reason="pendiente G1.8-G1.11: consumidor sin cablear"))
 
 # Únicos módulos autorizados a tocar un almacén de decisiones directamente.
 STORE_OWNERS = {
@@ -109,8 +127,7 @@ def _python_files():
 # T-20 / T-21 -- los consumidores llaman al resolver
 # ===========================================================================
 
-@pytest.mark.xfail(strict=True, reason="pendiente G1.7-G1.11: consumidores sin cablear")
-@pytest.mark.parametrize("rel", sorted({f for fs in CONSUMERS.values() for f in fs}))
+@pytest.mark.parametrize("rel", [_param(f) for f in ALL_CONSUMER_FILES])
 def test_t20_consumer_imports_the_resolver(rel):
     assert (REPO / rel).is_file(), f"consumidor declarado inexistente: {rel}"
     assert _imports_resolver(_tree(rel)), (
@@ -118,12 +135,18 @@ def test_t20_consumer_imports_the_resolver(rel):
     )
 
 
-@pytest.mark.xfail(strict=True, reason="pendiente G1.7-G1.11: consumidores sin cablear")
-@pytest.mark.parametrize("rel", sorted({f for fs in CONSUMERS.values() for f in fs}))
+@pytest.mark.parametrize("rel", [_param(f) for f in ALL_CONSUMER_FILES])
 def test_t21_consumer_calls_the_resolver(rel):
     assert _calls_resolver(_tree(rel)), (
         f"{rel} importa el resolver pero no lo llama"
     )
+
+
+def test_every_consumer_file_exists():
+    """Sin xfail: un consumidor declarado que apunta a un fichero inexistente
+    es un error de configuración hoy, no una tarea pendiente."""
+    missing = [f for f in ALL_CONSUMER_FILES if not (REPO / f).is_file()]
+    assert not missing, f"consumidores declarados inexistentes: {missing}"
 
 
 # ===========================================================================
@@ -206,7 +229,7 @@ def test_t24_every_declared_consumer_is_a_known_one():
         assert declared <= known, f"familia {name}: consumidores desconocidos {declared - known}"
 
 
-@pytest.mark.xfail(strict=True, reason="pendiente G1.7-G1.11: consumidores sin cablear")
+@pytest.mark.xfail(strict=True, reason="pendiente G1.8-G1.11: 4 de 5 consumidores sin cablear")
 def test_t24_declared_consumers_have_a_wired_module():
     """El test que impide que el diseño se degrade con el tiempo: añadir una
     familia con un consumidor nuevo falla HASTA que ese consumidor llame al
