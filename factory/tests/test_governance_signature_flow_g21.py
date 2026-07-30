@@ -813,3 +813,90 @@ def test_n16_the_addendum_alone_does_not_cover_the_three_old_sources(tmp_store):
     assert g2["status"] != "CERRADO", (
         "el adendo por si solo no puede cerrar G2: las tres antiguas siguen "
         "necesitando la Correccion")
+
+
+# ===========================================================================
+# [N17] el codigo HTTP no puede anunciar una escritura que no ocurrio
+# ===========================================================================
+#
+# Cesar creyo haber registrado el adendo D1-A. El servidor recibio en realidad
+# una CORRECTION sobre las tres fuentes antiguas, reutilizo una propuesta
+# huerfana y corto-circuito por idempotencia: no se escribio NADA. Pero las dos
+# llamadas devolvieron 201 Created, y un navegador con el JS anterior cacheado
+# solo tiene el codigo de estado para saberlo: vio un 2xx y dijo "Registrada".
+#
+# El cuerpo ya traia `already_signed` / `reused_existing_proposal`. El codigo es
+# la parte del contrato que un cliente puede comprobar sin leer el cuerpo, y era
+# la que mentia.
+
+def _cliente():
+    """Solo el router, no la app completa.
+
+    Importar `factory.api.main` monta un handler de logging sobre
+    `factory/logs/access.jsonl`, que lo escribe el contenedor como root: desde el
+    host da PermissionError y el test moriria por una razon que no tiene nada que
+    ver con lo que mide. Mismo patron que el fixture de `test_governance_endpoints`.
+    """
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from factory.api.routes import layer9
+
+    app = FastAPI()
+    app.include_router(layer9.router)
+    return TestClient(app)
+
+
+def test_n17_reusing_a_proposal_answers_200_not_201(tmp_store, monkeypatch):
+    monkeypatch.setattr(store, "STORE_FILE", tmp_store)
+    _firmada(tmp_store, iid="D1-2026-002")
+    cli = _cliente()
+
+    cuerpo = {"target_ids": TRES, "proposed_by_id": "mission_control_ui",
+              "reason": "primera", "decision_type": "CORRECTION",
+              "supersedes_instance_id": "D1-2026-002"}
+    primera = cli.post("/api/v1/layer9/governance/decisions/D1/propose", json=cuerpo)
+    assert primera.status_code == 201, primera.text
+    assert primera.json()["reused_existing_proposal"] is False
+
+    segunda = cli.post("/api/v1/layer9/governance/decisions/D1/propose", json=cuerpo)
+    assert segunda.json()["reused_existing_proposal"] is True
+    assert segunda.status_code == 200, (
+        "reutilizar una propuesta no crea nada: 201 Created seria mentira")
+
+
+def test_n17_an_already_signed_act_answers_200_not_201(tmp_store, monkeypatch):
+    monkeypatch.setattr(store, "STORE_FILE", tmp_store)
+    _firmada(tmp_store, iid="D1-2026-002")
+    p1 = _correccion_propuesta(tmp_store)
+    _confirmar(tmp_store, p1)
+
+    p2 = _correccion_propuesta(tmp_store, proposed_by_id="otro_cliente")
+    cli = _cliente()
+    res = cli.post(
+        f"/api/v1/layer9/governance/decisions/{p2['proposal_id']}/confirm",
+        json={"approved_by_id": "Cesar", "reason": "segundo clic",
+              "family_state_hash": p2["family_state_hash"],
+              "expected_active_instance_id": p2["expected_active_instance_id"]})
+    assert res.json()["already_signed"] is True
+    assert res.status_code == 200, (
+        "no se anexo nada: anunciar Created es afirmar una escritura que no ocurrio")
+
+
+def test_n17_a_real_signature_still_answers_201(tmp_store, monkeypatch):
+    """La otra mitad: cuando SI se crea, sigue siendo 201.
+
+    Sin ella, esto lo aprobaria un servidor que respondiera 200 siempre y ningun
+    cliente podria distinguir ya una firma de un no-op.
+    """
+    monkeypatch.setattr(store, "STORE_FILE", tmp_store)
+    _firmada(tmp_store, iid="D1-2026-002")
+    p = _correccion_propuesta(tmp_store)
+
+    cli = _cliente()
+    res = cli.post(
+        f"/api/v1/layer9/governance/decisions/{p['proposal_id']}/confirm",
+        json={"approved_by_id": "Cesar", "reason": "firma real",
+              "family_state_hash": p["family_state_hash"],
+              "expected_active_instance_id": p["expected_active_instance_id"]})
+    assert res.status_code == 201, res.text
+    assert res.json()["already_signed"] is False

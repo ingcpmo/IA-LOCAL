@@ -1421,15 +1421,21 @@ def get_governance_coverage(family: str):
 
 
 @router.post("/governance/decisions/{family}/propose", status_code=201)
-def post_governance_propose(family: str, body: GovernanceProposeBody):
+def post_governance_propose(family: str, body: GovernanceProposeBody,
+                            response: Response):
     """Registra una propuesta `agent_proposed`. NO autoriza nada.
 
     Devuelve el `state_hash` posterior a la escritura: es el que el `confirm`
     tiene que reenviar. Reenviar el del GET previo daba 409 garantizado (G2.1).
+
+    **201 solo si de verdad se creo algo.** Si el dedupe reutiliza una propuesta
+    viva no se anexa nada, y anunciar "Created" es afirmar una escritura que no
+    ocurrio. El codigo es la parte del contrato que un cliente puede comprobar
+    sin leer el cuerpo — y un cliente con el JS cacheado solo tiene eso.
     """
     from factory.services import governance_service as _gov
     try:
-        return _gov.propose(
+        resultado = _gov.propose(
             family, target_ids=body.target_ids, decision=body.decision,
             decision_type=body.decision_type, selection_mode=body.selection_mode,
             proposed_by_id=body.proposed_by_id, reason=body.reason,
@@ -1437,21 +1443,35 @@ def post_governance_propose(family: str, body: GovernanceProposeBody):
             supersedes_instance_id=body.supersedes_instance_id,
             amendment_sequence=body.amendment_sequence,
             state_hash=body.state_hash)
+        if resultado.get("reused_existing_proposal"):
+            response.status_code = 200
+        return resultado
     except Exception as e:
         raise _governance_error(e)
 
 
 @router.post("/governance/decisions/{instance_id}/confirm", status_code=201)
-def post_governance_confirm(instance_id: str, body: GovernanceConfirmBody):
-    """Confirma una propuesta. El snapshot se materializa AQUÍ."""
+def post_governance_confirm(instance_id: str, body: GovernanceConfirmBody,
+                            response: Response):
+    """Confirma una propuesta. El snapshot se materializa AQUÍ.
+
+    **200, no 201, cuando el acto ya estaba firmado.** El corto-circuito de
+    idempotencia no anexa nada, y devolver "Created" es anunciar una escritura
+    que no ocurrio. No es cosmetico: Cesar creyo haber registrado el adendo D1-A
+    porque su navegador, con el JS anterior cacheado, vio un 2xx y dijo
+    "Registrada". El estado es la unica senal que un cliente viejo puede leer.
+    """
     from factory.services import governance_service as _gov
     try:
-        return _gov.confirm(
+        resultado = _gov.confirm(
             instance_id, approved_by_id=body.approved_by_id,
             approved_by_display_name=body.approved_by_display_name,
             reason=body.reason, state_hash=body.state_hash,
             family_state_hash=body.family_state_hash,
             expected_active_instance_id=body.expected_active_instance_id)
+        if resultado.get("already_signed"):
+            response.status_code = 200
+        return resultado
     except Exception as e:
         raise _governance_error(e)
 
