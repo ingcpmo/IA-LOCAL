@@ -1,0 +1,45 @@
+project_id: gmpai_document_validation
+domains:
+- DATA_INTEGRITY
+- DOC_INVENTORY_VERSION
+- DOC_CLASSIFICATION
+- TRACEABILITY
+- COMPLIANCE_RISK
+- FINAL_REVIEW_GATE
+regulatory_scope:
+- 21_CFR_PART_11
+- EU_GMP_ANNEX_11
+- ALCOA_PLUS
+dual_use: false
+part11_required: true
+alcoa_plus_required: true
+annex11_required: true
+client_needs:
+- Control de integridad de datos (ALCOA+ / 21 CFR Part 11)
+- Inventario documental, verificación SHA-256 y selección de versión vigente
+- Clasificación de documentos por tipo (URS/FS/DS/arquitectura/narrativa/SAT/reporte)
+- Trazabilidad de requisitos URS→FS→DS→IQ→OQ→PQ
+- Evaluación de riesgos y priorización de brechas de cumplimiento
+- Consolidación final con gate de revisión humana (sin auto-aprobación)
+constraints:
+- no inventar texto regulatorio — toda fuente no disponible queda como PENDING_DOCUMENT
+- no tocar producto base (gmp-api puerto 8000)
+- no modificar, eliminar ni sobrescribir los originales en GMPAI/source/
+- no ejecutar macros de archivos .docm
+- workspace confinado a /home/ing_cpmo/factory/workspaces/gmpai_document_validation/
+- sin Docker — analisis documental puro, sin despliegue de contenedor
+- trazabilidad completa via factory_audit.jsonl (21 CFR Part 11)
+- no guardar credenciales ni tokens en codigo ni en git
+- no usar --dangerously-skip-permissions
+- ausencia de evidencia se clasifica como evidencia insuficiente, nunca como cumplimiento
+- el sistema no puede declarar cumplimiento GMP final ni aprobar documentos automaticamente
+pending_documents: []
+raw_objective: 'Analizar los 32 documentos de Rockwell y SCADA (URS, FS, DS, arquitectura,
+  listados de alarmas, narrativas de control, protocolos SAT y documentacion de red/CSV),
+  inventariarlos y verificarlos contra SHA256SUMS.txt, seleccionar las versiones vigentes
+  ante posibles conflictos, crear agentes especializados, y determinar si la documentacion
+  esta completa, trazable (URS-FS-DS-IQ-OQ-PQ) y alineada con FDA 21 CFR Part 11,
+  EU GMP Annex 11 y principios ALCOA+, generando matrices de cumplimiento, evaluacion
+  de riesgos y brechas con evidencia trazable a pagina/seccion de cada documento fuente.
+  El sistema no declara cumplimiento GMP final ni aprueba documentos automaticamente:
+  produce hallazgos para revision y decision humana (accept/reject/request_changes).'

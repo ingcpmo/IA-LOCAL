@@ -1,0 +1,20 @@
+{
+  "documento": "215115305 SCADA-PCS Misc PLC System URS v2.1.pdf",
+  "document_sha256": "d9e24467a66d52fb1a641b6de901ceff1dcdaf66af1ae80cb94a433c40c939c8",
+  "generated_at": "2026-07-16T00:00:00Z",
+  "agentes": {
+    "fda_part11_agent": {"status": "completed", "chunks_ok": "10/10", "findings": 5, "contradictions": 0},
+    "eu_annex11_agent": {"status": "completed", "chunks_ok": "10/10", "findings": 5, "contradictions": 0},
+    "alcoa_plus_agent": {"status": "completed_with_failures", "chunks_ok": "8/10", "findings": 9, "contradictions": 0,
+      "chunks_failed": [5, 8], "pages_not_evaluated": ["12-13", "19-21"],
+      "error_code": "invalid_json_model_output", "coverage_effective_pct": 80}
+  },
+  "classification": "PARTIALLY_DRAFT_READY",
+  "classification_rationale": "fda_part11_agent y eu_annex11_agent completaron 10/10 chunks sin fallos. alcoa_plus_agent tiene 8/10 findings sustentados en paginas evaluadas (chunk 0: pag 1-2; chunk 9: pag 22-24), suficientes para generar correcciones sobre esas paginas. El gap (paginas 12-13 y 19-21, checkpoint ALCOA_LEGIBLE) es un fallo tecnico de ejecucion, no evidencia de incumplimiento, y queda excluido de generacion de correcciones hasta reanalisis.",
+  "draft_generation_constraints": [
+    "NO generar correcciones para paginas 12-13 y 19-21 hasta reanalisis exitoso de los chunks 5 y 8",
+    "El finding ALCOA_LEGIBLE (classification=analysis_incomplete_due_to_model_error) no debe usarse como base de correccion regulatoria",
+    "Las 8 findings restantes de alcoa_plus_agent, y las 10 de fda_part11_agent + eu_annex11_agent, si son sustento valido para draft"
+  ],
+  "revision_humana_requerida": true
+}

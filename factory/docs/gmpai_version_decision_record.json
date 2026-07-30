@@ -1,0 +1,72 @@
+{
+  "record_id": "VDR-GMPAI-001",
+  "generated_at": "2026-07-15T00:00:00Z",
+  "generated_by": "claude-code (analisis manual, sin decision automatica de contenido no verificable)",
+  "method": "revision_interna > version_declarada > estado_approved_effective_released > fecha_aprobacion_vigencia > historial_de_cambios > firmas > metadata > nombre_archivo(secundario)",
+  "families": [
+    {
+      "family_key": "rockwell::215115305 scada pcs misc plc system fs v1 2",
+      "candidates": [
+        {
+          "file": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+          "sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+          "size_bytes": 578088,
+          "text_chars": 132506,
+          "pages": 58
+        },
+        {
+          "file": "215115305 SCADA-PCS Misc PLC System FS_v1.2-2.pdf",
+          "sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+          "size_bytes": 578088,
+          "text_chars": 132506,
+          "pages": 58
+        }
+      ],
+      "prior_automated_decision": "version_selection.py: version_conflict=True, basis='empate' (comparo solo señales de nombre/version_semver, no hash de contenido)",
+      "content_comparison": "SHA-256 IDENTICO en ambos archivos (bit-a-bit el mismo PDF, mismo tamano, mismo texto extraido). No existe conflicto de version real: son la MISMA version del documento con dos nombres de archivo distintos.",
+      "corroborating_evidence": "Transmittal MAVERICK/215115305/039 (215115305-T-039 Design Docs for ASantiago.pdf, pagina 1) lista explicitamente 'FS_v1.2.pdf ... Revision 1.2 ... Functional Specification' como el documento transmitido — no menciona ni referencia un '-2'.",
+      "selected_version": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+      "superseded_or_duplicate": [
+        {
+          "file": "215115305 SCADA-PCS Misc PLC System FS_v1.2-2.pdf",
+          "disposition": "DUPLICATE (bit-idéntico), no una version distinta. Se conserva el nombre sin sufijo '-2' por ser el referenciado en el transmittal oficial; el sufijo '-2' es evidencia secundaria de copia, no de revision superior (regla explicita del encargo: NO asumir que '-2' es mas reciente — aqui se confirma justamente que no lo es, es un duplicado)."
+        }
+      ],
+      "version_conflict": false,
+      "confianza": "alta",
+      "fundamento": "Hash SHA-256 identico elimina cualquier ambiguedad de contenido; el transmittal firmado corrobora el nombre canonico. No requiere decision humana adicional sobre CUAL version analizar (ambas son la misma), pero el hallazgo de que version_selection.py no deduplicaba por hash antes de declarar conflicto es un bug a corregir.",
+      "revision_humana_requerida": false
+    },
+    {
+      "family_key": "rockwell::215115305 t 039 design docs for asantiago",
+      "candidates": [
+        {
+          "file": "215115305-T-039 Design Docs for ASantiago.pdf",
+          "sha256": "84e7b4dbdac47a03ba556dc963a2dd8d38a61e8fbb51127b81af7f397f6db352",
+          "size_bytes": 291392,
+          "text_chars": 5591,
+          "pages": 3,
+          "real_content_type": "TRANSMITTAL (MAVERICK/215115305/039, fechado 2023-03-27, con lista de documentos transmitidos, firmas y seccion 'DOCUMENT APPROVAL')"
+        },
+        {
+          "file": "215115305-T-039 Design Docs for ASantiago.docm",
+          "sha256": "12f6d2bb3d085886cefffbba15890cb0bbffaab7fd2e773480e1baa8767bf45e",
+          "size_bytes": null,
+          "text_chars": 3786,
+          "pages": 194,
+          "real_content_type": "NO DETERMINADO CON CONFIANZA — contiene vbaProject.bin (macros, NO ejecutadas), controles ActiveX y >10 imagenes WMF/PNG/JPG embebidas; 194 paginas con solo 3786 caracteres de texto (~19.5 chars/pagina) es consistente con un paquete de planos/dibujos CAD exportado a Word, no con un documento de texto (\"Design Docs\")."
+        }
+      ],
+      "prior_automated_decision": "version_selection.py: version_conflict=True, basis='empate' — agrupo ambos archivos en la misma familia solo por normalizacion de nombre.",
+      "content_comparison": "Los dos archivos NO son versiones del mismo documento. El .pdf es un TRANSMITTAL (portada de envio), no 'Design Docs'. El .docm, por su estructura (macros + ActiveX + planos embebidos + relacion pagina/texto), es probablemente un paquete de dibujos, no el mismo tipo de contenido que el .pdf.",
+      "selected_version": null,
+      "superseded_or_duplicate": [],
+      "version_conflict": true,
+      "conflict_type": "FAMILY_GROUPING_ERROR (no es un conflicto de version del mismo documento; es un error de agrupamiento por nombre de archivo — son documentos distintos que casualmente comparten base de nombre)",
+      "confianza": "alta en la NO-equivalencia; baja en el contenido real del .docm (requiere extraccion confiable para clasificar, ver evidence_request)",
+      "fundamento": "El .pdf se autoidentifica textualmente como TRANSMITTAL, no como Design Docs. El .docm no puede clasificarse con confianza sin extraccion de texto fiable (imagenes/CAD). No hay base para declarar cual es 'vigente' de cual, porque no son la misma cosa.",
+      "revision_humana_requerida": true,
+      "recommended_action": "Reclasificar '215115305-T-039 Design Docs for ASantiago.pdf' como TRANSMITTAL (no DS) — esto cambia su aplicabilidad regulatoria a NO_APPLICABLE_CORRECTION (Part11/Annex11/ALCOA+ no aplican a una portada de transmision). Para el .docm: generar evidence_request (ya cubierto por el documento escaneado equivalente en el punto 5 del encargo), no reanalizar como si fuera texto."
+    }
+  ]
+}

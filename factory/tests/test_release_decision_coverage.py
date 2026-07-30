@@ -147,13 +147,31 @@ def test_after_the_migration_the_block_is_denial_not_indeterminacy():
     assert "UNCOVERED" in gate["evidence"]
 
 
-def test_part211_is_named_by_the_real_gate_after_the_migration():
+def test_what_is_uncovered_is_named_by_the_real_gate():
     """La senal que habria cazado el defecto el 2026-07-29 a las 02:25.
 
-    Sobre el almacen REAL, sin fixtures: Part 211 sale listado por su nombre.
+    Sobre el almacen REAL, sin fixtures: lo que falta sale listado POR SU NOMBRE.
+    El defecto de aquel dia fue un gate que decia "sin cobertura" sin decir de
+    que, y con eso Part 211 se quedo fuera de una D1 que decia cubrirlo todo.
+
+    Nombraba a Part 211 en concreto, y eso era el mundo de aquel dia: el
+    2026-07-30 Cesar firmo el adendo D1-A y Part 211 quedo cubierto. La regla que
+    sobrevive no es "Part 211 sale listado" sino "lo que este sin cubrir sale
+    listado, sea lo que sea" — y si no queda nada, el gate no puede seguir
+    bloqueando por D1.
     """
+    from factory.core import decision_scope_resolver as resolver
+
     gate = qgr.g15_decision_coverage()
-    assert "ecfr_21cfr_part211" in gate["evidence"]
+    sin_cubrir = resolver.coverage_report("D1").uncovered_ids
+
+    for sid in sin_cubrir:
+        assert sid in gate["evidence"], (
+            f"{sid} esta sin cubrir y el gate no lo nombra: un bloqueo sin "
+            "nombres es el defecto que este test existe para impedir")
+    if not sin_cubrir:
+        assert "D1(" not in gate["evidence"], (
+            "D1 esta cubierta entera y el gate sigue contandola como bloqueo")
 
 
 def test_reconstructed_sources_are_distinguished_from_uncovered_ones():
@@ -190,14 +208,36 @@ def test_reconstructed_sources_are_distinguished_from_uncovered_ones():
             assert sid in d1.covered_ids, f"{sid} ni cubierta ni reconstruida"
 
 
-def test_the_real_fork_blocks_and_is_named():
-    """La ruptura real de la cadena bloquea, y el gate dice CUAL es.
+def test_an_unbacked_fork_blocks_and_is_named():
+    """Una ruptura SIN excepcion bloquea, y el gate dice CUAL es.
 
-    `ab689c7c-…` es el fork localizado en AUDIT_FORK_REMEDIATION_SPEC.md §2.
-    Un humano solo puede firmar una excepcion sobre un id concreto.
+    `ab689c7c-…` es el fork localizado en AUDIT_FORK_REMEDIATION_SPEC.md §2. Un
+    humano solo puede firmar una excepcion sobre un id concreto, y por eso el
+    gate tiene que nombrarlo en vez de decir "hay una ruptura".
+
+    Exigia que ese id apareciera siempre. El 2026-07-30 Cesar firmo
+    AUDIT_EXCEPTION-2026-002 y dejo de estar sin respaldo, asi que el gate ya no
+    lo cuenta como bloqueo — que es el efecto de la firma, no un fallo. La regla
+    que sobrevive: lo que este sin respaldo sale por su nombre, y lo aceptado no
+    bloquea.
     """
+    from factory.core import audit_writer as aw
+
     gate = qgr.g15_decision_coverage()
-    assert "ab689c7c-3e0a-4c77-936b-152851f51a30" in gate["evidence"]
+    sin_respaldo = aw.unbacked_known_forks()
+
+    for fork_id in sin_respaldo:
+        assert fork_id in gate["evidence"], (
+            f"{fork_id} no tiene excepcion y el gate no lo nombra")
+    if not sin_respaldo:
+        # Se mira la LINEA DE BLOQUEO, no el informe entero: `AUDIT_EXCEPTION`
+        # sigue apareciendo mas abajo en una linea informativa que dice
+        # exactamente lo contrario ("todas con excepcion firmada"), y buscar la
+        # cadena suelta daba por bloqueo lo que era su desmentido.
+        bloqueo = gate["evidence"].splitlines()[0]
+        assert "AUDIT_EXCEPTION" not in bloqueo, (
+            f"no queda fork sin respaldo y el gate sigue bloqueando: {bloqueo}")
+        assert "todas con excepción firmada" in gate["evidence"]
 
 
 def test_part211_appears_by_name_once_the_store_exists(tmp_path, clean_chain):

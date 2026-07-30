@@ -1,0 +1,205 @@
+meta:
+  version: 1
+  generated_at: '2026-07-16T23:23:00Z'
+  generated_by: cesar
+documents:
+  intended_use:
+    status: agent_proposed
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: acef5d9cc78f4054aaa29ab5664e6e4509a011621d82d8a00e86251da73d4fcd
+    missing: []
+    evidence_sources:
+    - layer9/missions/c8_alcoa_validator.yaml
+    - misión · constraints
+    - misión · regulatory_scope
+    agent_proposal:
+      version: 1
+      status: agent_proposed
+      agent: qa_oos_profile
+      supporting: []
+      confidence: baja
+      corpus_sufficiency: partial
+      claims:
+        supported: 0
+        partially_supported: 3
+        unsupported: 0
+        unverifiable: 4
+      generated_at: '2026-07-16T23:40:02Z'
+      path: agent_proposals/intended_use/v01.json
+  gxp_impact_assessment:
+    status: needs_human_review
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: a163c27c6a9039ad39613bbaece2ef2e5e58035a89c8a8e34a08bf30da6bb174
+    missing: []
+    evidence_sources:
+    - layer9/missions/c8_alcoa_validator.yaml
+    - misión · regulatory_scope
+  system_risk_assessment:
+    status: needs_human_review
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: 8b198dfcb0e5b77500355f947d07097becab0a064e3458f74c78d23a43eb2d5a
+    missing: []
+    evidence_sources:
+    - designs/·/agent_design_proposal.yaml
+  supplier_ai_model_assessment:
+    status: missing_evidence
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: 4e3356bb44afbc3e2bf859842089f94579e540acd4c42ef1743411fb059aaf7e
+    missing:
+    - rc
+    evidence_sources:
+    - arquitectura factory · manifest
+  urs:
+    status: draft
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: ba16a193840dd98e6b880472c9ae19ef0d714a5c24496d5a17b7922d8c4a7600
+    missing: []
+    evidence_sources:
+    - layer9/missions/c8_alcoa_validator.yaml
+    - misión · constraints
+    - misión · documents
+    - misión · regulatory_scope
+  frs:
+    status: missing_evidence
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: 70a853608adf2f32863bcd8513f365da6bd6954d7c0f4c57b00547979a4f8b2a
+    missing:
+    - catalog
+    evidence_sources:
+    - designs/·/agent_design_proposal.yaml
+  design_spec:
+    status: draft
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: 74e5e8a639d7f5daf61f8b31480efee325835ee3427d07f908c6c85714756490
+    missing: []
+    evidence_sources:
+    - designs/ de la misión
+    - designs/·/agent_design_proposal.yaml
+  configuration_spec:
+    status: missing_evidence
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: cad8cd7fc688855bf80b2e1b13a1d8eb742a23318748a22c5a48245759ed08cd
+    missing:
+    - deployment
+    evidence_sources: []
+  data_integrity_assessment:
+    status: needs_human_review
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: 0b8c7bcba812245f0d0f637c81dc2e704246ead25006f4e072da815997f02447
+    missing: []
+    evidence_sources:
+    - audit/factory_audit.jsonl (cadena verificable)
+  part11_assessment:
+    status: needs_human_review
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: fd95e1442ae97e0fe63b37ccbf7d0b696a12633b74b816176fb4fdad810358e9
+    missing: []
+    evidence_sources:
+    - audit/factory_audit.jsonl (cadena verificable)
+  alcoa_plus_assessment:
+    status: needs_human_review
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: f9c3422ae4b9cae3bcc845e72c47b8fcfd1b5807cb5628c6f06c885021f053fe
+    missing: []
+    evidence_sources:
+    - audit/factory_audit.jsonl (cadena verificable)
+  traceability_matrix:
+    status: missing_evidence
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: fc2a6b6f3a7bda7c64530f0367ef17531ea08c3d0a479896a376b4eb3f803360
+    missing:
+    - catalog
+    evidence_sources: []
+  test_strategy:
+    status: missing_evidence
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: 624ef8913836be0a63945b896af9eb6c9fe2d15810c02a0803ccb1ae82187982
+    missing:
+    - catalog
+    evidence_sources:
+    - factory/scripts/ops/factory_selfcheck.sh · quality_gate_runner
+  iq:
+    status: missing_evidence
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: d7475fe0ac1812351033b07673ed92cfd448da7fa9b98c2a6269d70d753a1510
+    missing:
+    - deployment
+    evidence_sources: []
+  oq:
+    status: missing_evidence
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: dd2867825a34ef6e3bfa2c96057dd205743f01277597d6aa33187793106fcb24
+    missing:
+    - runs
+    evidence_sources: []
+  pq:
+    status: missing_evidence
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: 8a6f85e162486b68a9b4ea8087c509b5b858cd18fe46365946489e77da5a185f
+    missing:
+    - __pq_production_data__
+    evidence_sources: []
+  validation_summary_report:
+    status: needs_human_review
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: fcc4a695a61601524c0c0a1124f1485771bc0878f597f5e061dbcbcbe0650d61
+    missing: []
+    evidence_sources:
+    - layer9/missions/c8_alcoa_validator.yaml
+  sop_suggested:
+    status: needs_human_review
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: 12d2fc18a5228d65e8d76201a2167a96b7e7e48b9fa442b44051d9c9175bc1ff
+    missing: []
+    evidence_sources:
+    - capacidades observables del sistema — propuesta, no SOP
+  change_control:
+    status: draft
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: 51f8d787c6e3c7a4ccf5a864d8edfe0678631dbe37361907e6c861af9a494111
+    missing: []
+    evidence_sources:
+    - audit/factory_audit.jsonl (cadena verificable)
+  periodic_review:
+    status: missing_evidence
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: 9ea3789f1191cd3894982c87afa1fe4ee541d44ae25e92a8c65a4ffa9754eeae
+    missing:
+    - __periodic_review_done__
+    evidence_sources: []
+  incident_deviation_handling:
+    status: missing_evidence
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: ba6a1e33efe0d0cefc25362942f38d961584e8ba763f92a46ff55e7175b9c65e
+    missing:
+    - __incident_records__
+    evidence_sources: []
+  retirement_plan:
+    status: missing_evidence
+    generated_at: '2026-07-16T23:23:00Z'
+    generated_by: cesar
+    content_sha256: eaae8059e57c6f9ca51c7c249e02afc22086640f2bf7258e98d73f12933075b1
+    missing:
+    - deployment
+    evidence_sources: []

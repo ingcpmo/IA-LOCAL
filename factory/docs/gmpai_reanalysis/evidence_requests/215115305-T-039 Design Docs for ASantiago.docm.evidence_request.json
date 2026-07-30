@@ -1,0 +1,17 @@
+{
+  "tipo": "evidence_request",
+  "documento": "215115305-T-039 Design Docs for ASantiago.docm",
+  "sha256": "12f6d2bb3d085886cefffbba15890cb0bbffaab7fd2e773480e1baa8767bf45e",
+  "paginas_totales": 194,
+  "paginas_con_texto_real": 63,
+  "confianza_extraccion": 0.3247,
+  "muestra_texto_extraido_raw": "Outgoing Transmittal\nIncoming Transmittal\nDate:March 27, 2023\nTransmittal Number:MAVERICK/215115305 / 039\nTo:Jacobs c/o Mark Cuban Cost Plus Drug Company, PBC\nAttn:Sergey Yezril, Jacobs, Lead I&C Engi",
+  "mecanismo_ocr_disponible": false,
+  "hallazgo": "Documento sin texto util extraible (63/194 paginas con contenido real). No se genera correccion ni se infiere contenido: se requiere OCR o extraccion manual confiable antes de poder evaluar este documento.",
+  "accion_requerida": [
+    "Ejecutar OCR con una herramienta autorizada (no incluida en este entorno) sobre el documento original",
+    "o aportar una version del documento con texto nativo/embebido"
+  ],
+  "revision_humana_requerida": true,
+  "estado_correccion": "evidence_required"
+}

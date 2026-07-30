@@ -1,0 +1,17 @@
+{
+  "tipo": "evidence_request",
+  "documento": "215115305 SCADA-PCS Misc PLC SAT3 Scanned-1.pdf",
+  "sha256": "e96f67f7eadc3062530e7f5f4ec85fdab1c2e8ee6086489091546371e299271a",
+  "paginas_totales": 204,
+  "paginas_con_texto_real": 0,
+  "confianza_extraccion": 0.0,
+  "muestra_texto_extraido_raw": "\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f",
+  "mecanismo_ocr_disponible": false,
+  "hallazgo": "Documento sin texto util extraible (0/204 paginas con contenido real). No se genera correccion ni se infiere contenido: se requiere OCR o extraccion manual confiable antes de poder evaluar este documento.",
+  "accion_requerida": [
+    "Ejecutar OCR con una herramienta autorizada (no incluida en este entorno) sobre el documento original",
+    "o aportar una version del documento con texto nativo/embebido"
+  ],
+  "revision_humana_requerida": true,
+  "estado_correccion": "evidence_required"
+}

@@ -146,8 +146,14 @@ def test_n11_the_live_flow_sends_the_token_propose_returned(pagina):
         f"family_state_hash no es un sha256: {conf['family_state_hash']!r}")
 
     # Y el propose del servidor VIVO tiene que haber devuelto ese mismo token.
+    #
+    # 201 si creo la propuesta, 200 si el dedupe reutilizo una viva y equivalente:
+    # las dos son respuestas correctas y en las dos viaja el token, que es lo que
+    # este test mide. Exigia 201 a secas, y eso empezo a fallar en cuanto el
+    # codigo dejo de anunciar "Created" sobre escrituras que no ocurrian —
+    # confundia "el propose funciono" con "el propose escribio".
     propose_resp = [s for u, s in respuestas if u.endswith("/propose")]
-    assert propose_resp and propose_resp[0] == 201, propose_resp
+    assert propose_resp and propose_resp[0] in (200, 201), propose_resp
 
     confirm_status = [s for u, s in respuestas if u.endswith("/confirm")]
     assert confirm_status, "no hubo respuesta al confirm"

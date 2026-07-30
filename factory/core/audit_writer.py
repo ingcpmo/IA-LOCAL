@@ -369,9 +369,16 @@ def write_event(event_type: str, project_id: str, data: dict | None = None) -> d
         return {"error": str(e)}
 
 
-def verify_chain() -> dict:
+def verify_chain(*, decision_store_file: Path | None = None) -> dict:
     """
     Verifica la integridad de factory_audit.jsonl.
+
+    `decision_store_file` solo dice CONTRA QUE ALMACEN se resuelven las
+    excepciones firmadas; la cadena leida es siempre la real. Sin el,
+    `get_state(store_file=X)` mezclaba dos almacenes —cobertura del indicado y
+    excepciones del real— y en un almacen de prueba con la excepcion firmada G7
+    seguia sin cerrar. En produccion nunca se pasa y no cambia nada; el defecto
+    solo asomaba donde se mide, que es justo donde peor sienta.
 
     `assessment` conserva su semántica operativa (OK/WARN/FAIL) por
     retrocompatibilidad, pero **no es la conclusión regulatoria**: esa vive en
@@ -389,7 +396,8 @@ def verify_chain() -> dict:
             "log_count": 0, "verified_count": 0,
             "hash_errors": 0, "chain_errors": 0, "failed_count": 0,
             "hash_algo": "sha256",
-            **_dimensions(0, 0, 0),
+            **_dimensions(0, 0, 0,
+                          decision_store_file=decision_store_file),
             "audit_file": str(AUDIT_FILE),
         }
 
@@ -428,7 +436,8 @@ def verify_chain() -> dict:
         "failed_count": hash_errors + chain_errors,
         "hash_algo": "sha256",
         **_dimensions(hash_errors, chain_errors, total,
-                      break_ids=walk["break_ids"]),
+                      break_ids=walk["break_ids"],
+                      decision_store_file=decision_store_file),
         "audit_file": str(AUDIT_FILE),
     }
 

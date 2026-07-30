@@ -1,0 +1,248 @@
+meta:
+  version: 1
+  generated_at: '2026-07-03T14:37:48Z'
+  generated_by: Cesar
+documents:
+  intended_use:
+    status: needs_human_review
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 926a60cda4a5338b4509a9562d777afcd90fabbc16521d932c4475fcc1166441
+    missing: []
+    evidence_sources:
+    - layer9/missions/oos_hplc_investigator.yaml
+    - misión · constraints
+    - misión · regulatory_scope
+  gxp_impact_assessment:
+    status: needs_human_review
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 063c5340110b2306f13705744eba594eeaaf4f2d17291151b4d022b722bfc501
+    missing: []
+    evidence_sources:
+    - layer9/missions/oos_hplc_investigator.yaml
+    - misión · regulatory_scope
+  system_risk_assessment:
+    status: needs_human_review
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: da3409191c9d847c6244a473a67994550a1f0e7f131e40e0e168274b34413511
+    missing: []
+    evidence_sources:
+    - deployments/ + port_registry + /health
+    - designs/·/agent_design_proposal.yaml
+  supplier_ai_model_assessment:
+    status: needs_human_review
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 5d24f1a4fce8d518a792bbb2bfd99adcd3de067f758e79241afd7a6fb7c87850
+    missing: []
+    evidence_sources:
+    - arquitectura factory · manifest
+    - release_candidates/·/rc_manifest.json
+  urs:
+    status: approved
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: d06c3445ee2137f4099873205ba8a4f368e17ab2811cd5f3d6c9ab2c4215ee21
+    missing: []
+    evidence_sources:
+    - layer9/missions/oos_hplc_investigator.yaml
+    - misión · constraints
+    - misión · documents
+    - misión · regulatory_scope
+    approved_by: Cesar
+    approved_at: '2026-07-03T14:41:04Z'
+  frs:
+    status: approved
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 4bf8f180e63b6a1a6b356d43976225d74b280895573d8bbad5978192a727ef08
+    missing: []
+    evidence_sources:
+    - designs/·/agent_design_proposal.yaml
+    - test_catalogs/oos_hplc_investigator.yaml
+    - test_catalogs/oos_hplc_investigator.yaml (catálogo curado W4)
+    approved_by: Cesar
+    approved_at: '2026-07-03T14:46:47Z'
+  design_spec:
+    status: approved
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 1f8870bf4b3cbff7bf7a7117f942645397aee33a94dee709781f4de416ddd97d
+    missing: []
+    evidence_sources:
+    - designs/ de la misión
+    - designs/·/agent_design_proposal.yaml
+    approved_by: Cesar
+    approved_at: '2026-07-03T14:46:47Z'
+  configuration_spec:
+    status: approved
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 1512f1b7ce9392cb00ce57613eb4f807b781127d776426c908aab1eab2b0d1b1
+    missing: []
+    evidence_sources:
+    - deployments/ + port_registry + /health
+    - release_candidates/·/rc_manifest.json
+    approved_by: Cesar
+    approved_at: '2026-07-03T14:46:48Z'
+  data_integrity_assessment:
+    status: needs_human_review
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: a35ddef3178549e19e13c5101a10b4f5149d1783154ec4c5c21fe7997da2fa5b
+    missing: []
+    evidence_sources:
+    - audit/factory_audit.jsonl (cadena verificable)
+    agent_proposal:
+      version: 8
+      status: rejected
+      agent: integrity_lims_profile
+      supporting:
+      - qa_oos_profile
+      confidence: media
+      corpus_sufficiency: partial
+      claims:
+        supported: 2
+        partially_supported: 4
+        unsupported: 0
+        unverifiable: 7
+      generated_at: '2026-07-07T18:11:33Z'
+      path: agent_proposals/data_integrity_assessment/v08.json
+    case_references:
+    - case_id: openfda_enforcement:D-0546-2026
+      analysis_version: 1
+      mission_id: oos_hplc_investigator
+      status: accepted
+      analysis_pointer: regulatory/case_analyses/oos_hplc_investigator/openfda_enforcement__D-0546-2026/v01.json
+      analysis_sha256: 914414d67525fa032ca11b421c2d10fdb2cf1503990b6c37813715e614dc57bf
+      decided_at: '2026-07-10T20:27:31Z'
+      decided_by: Cesar
+      decision: accept
+      audit_event_hash: sha256:cc74aab49e06d05c8a5dea6eadb3d4d9b938fc5716fb310c3088e0f8c6137cd8
+      audit_event_timestamp: '2026-07-10T20:27:31.328415+00:00'
+      linked_at: '2026-07-10T21:06:15Z'
+      linked_by: Claude (autorizado por Cesar, W8 Bloque 2)
+  part11_assessment:
+    status: needs_human_review
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 2ab24cb4830408b8d653872f1330bc4aa94e9cffdc8415724ba4e6a33c98828e
+    missing: []
+    evidence_sources:
+    - audit/factory_audit.jsonl (cadena verificable)
+  alcoa_plus_assessment:
+    status: needs_human_review
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 900f51075099c2a175053c0cd3682d7705af1ca88566d9d4d39f5a0581b22e40
+    missing: []
+    evidence_sources:
+    - audit/factory_audit.jsonl (cadena verificable)
+  traceability_matrix:
+    status: approved
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: f07c6f0baa1788474d0abdc3c56a9ce76cea3ffa1a77f943f2a32d2ee0c3e7e9
+    missing: []
+    evidence_sources:
+    - misión + agent_design_proposal + catálogo W4 + test_results
+    approved_by: Cesar
+    approved_at: '2026-07-03T14:41:04Z'
+  test_strategy:
+    status: needs_human_review
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 81ee0a78a9992c05e2bdf9984b33a0a0e3585f9e00f0dbbaaba5ef0361e21f86
+    missing: []
+    evidence_sources:
+    - factory/scripts/ops/factory_selfcheck.sh · quality_gate_runner
+    - test_catalogs/oos_hplc_investigator.yaml
+    - workspace · test_report.json
+  iq:
+    status: approved
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 0222bd1c15632b7f574dc8bba3759d52761719fd8bc34b1576235a0ee00479d9
+    missing: []
+    evidence_sources:
+    - deployments/ + port_registry + /health
+    - release_candidates/·/rc_manifest.json
+    approved_by: Cesar
+    approved_at: '2026-07-03T14:46:48Z'
+  oq:
+    status: approved
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: a4d440e347cc9269c8390bd7f6c781295a58dc40034e20e3f03e2296709cd311
+    missing: []
+    evidence_sources:
+    - misión + agent_design_proposal + catálogo W4 + test_results
+    - test_results/oos_hplc_investigator.jsonl
+    - test_results/oos_hplc_investigator.jsonl (última ejecución por prueba)
+    approved_by: Cesar
+    approved_at: '2026-07-03T14:41:04Z'
+  pq:
+    status: missing_evidence
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 8a6f85e162486b68a9b4ea8087c509b5b858cd18fe46365946489e77da5a185f
+    missing:
+    - __pq_production_data__
+    evidence_sources: []
+  validation_summary_report:
+    status: needs_human_review
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 2705051671810cabb3590eb45a217cd6a8735e64bdbbc06353ac10514f8e00b6
+    missing: []
+    evidence_sources:
+    - deployments/ + port_registry + /health
+    - layer9/missions/oos_hplc_investigator.yaml
+    - release_candidates/·/rc_manifest.json
+    - test_results/oos_hplc_investigator.jsonl
+    - workspace · test_report.json
+  sop_suggested:
+    status: needs_human_review
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 12d2fc18a5228d65e8d76201a2167a96b7e7e48b9fa442b44051d9c9175bc1ff
+    missing: []
+    evidence_sources:
+    - capacidades observables del sistema — propuesta, no SOP
+  change_control:
+    status: approved
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: ce69351a52f2516ec320c8ebe0ff9ac73c5f45aa4871c45b8996bafb4572f122
+    missing: []
+    evidence_sources:
+    - audit/factory_audit.jsonl (cadena verificable)
+    approved_by: Cesar
+    approved_at: '2026-07-03T14:46:48Z'
+  periodic_review:
+    status: missing_evidence
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 9ea3789f1191cd3894982c87afa1fe4ee541d44ae25e92a8c65a4ffa9754eeae
+    missing:
+    - __periodic_review_done__
+    evidence_sources: []
+  incident_deviation_handling:
+    status: missing_evidence
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: ba6a1e33efe0d0cefc25362942f38d961584e8ba763f92a46ff55e7175b9c65e
+    missing:
+    - __incident_records__
+    evidence_sources: []
+  retirement_plan:
+    status: needs_human_review
+    generated_at: '2026-07-03T14:37:48Z'
+    generated_by: Cesar
+    content_sha256: 678bc0e184b90524b6865df3dacbaff23683beb993b1cbbcaed4ce2ba0edcdd0
+    missing: []
+    evidence_sources:
+    - deployments/ + port_registry + /health
+    - release_candidates/·/rc_manifest.json

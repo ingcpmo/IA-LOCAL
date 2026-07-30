@@ -425,47 +425,130 @@ def test_g7_closes_only_when_no_fork_is_left_unbacked():
     assert _g7(True, [])["status"] == "CERRADO"
 
 
-def test_the_live_gate_is_reachable_today():
-    """Sobre el estado REAL: G7 abierto para decidir, no bloqueado.
+def test_the_live_gate_is_never_blocked_by_the_signature_it_collects():
+    """Sobre el estado REAL: G7 nunca queda BLOQUEADO por falta de firma.
 
-    Es la asercion que le faltaba a la sesion anterior — verifique el panel
-    llamando a `govOpen` a mano, que salta justo el enlace roto.
+    Exigia `LISTO` y un fork sin respaldo, que era el estado mientras la
+    excepcion estaba pendiente. Cesar la firmo el 2026-07-30
+    (AUDIT_EXCEPTION-2026-002) y G7 paso a CERRADO — el desenlace que este gate
+    existe para producir.
+
+    La regla que sobrevive es la del bloqueo circular: con la prevencion
+    completa, G7 esta LISTO (falta decidir) o CERRADO (ya se decidio), nunca
+    BLOQUEADO, porque "falta tu firma" no es una precondicion.
     """
     from factory.services import governance_service as gov
     st = gov.get_state()
     g7 = next(g for g in st["critical_path"] if g["gate"] == "G7")
+
     assert st["preventive_measures_complete"] is True
-    assert g7["status"] == "LISTO", g7
-    assert st["audit"]["unbacked_known_fork_entry_ids"], (
-        "sin fork sin respaldo no habria nada que firmar")
+    assert g7["status"] in ("LISTO", "CERRADO"), g7
+    assert g7["blocked_by"] == [], g7
+
+    sin_respaldo = st["audit"]["unbacked_known_fork_entry_ids"]
+    assert (g7["status"] == "CERRADO") == (not sin_respaldo), (
+        f"G7={g7['status']} y sin respaldo={sin_respaldo}: no concuerdan")
 
 
 # ===========================================================================
 # Lo que sigue siendo de un humano
 # ===========================================================================
 
-def test_no_measure_grants_the_exception(redirected):
+def test_no_measure_grants_the_exception(redirected, tmp_path):
     """Implementar las cinco medidas NO acepta el fork.
 
     Es la frontera de esta fase: la prevencion la construye Capa 8, la
     aceptacion la firma Capa 9. Si `preventive_measures_complete` moviera
     `part11_compliant`, un agente habria firmado una conclusion regulatoria.
+
+    Se comprueba contra un almacen VACIO y no contra el real: desde que Cesar
+    firmo la excepcion, el real dice ACCEPTED_WITH_DOCUMENTED_EXCEPTION —por la
+    firma, no por las medidas—, y usarlo ya no permite distinguir una causa de la
+    otra. Lo que se mide es que con la prevencion completa y SIN firma la
+    conclusion siga sin determinarse.
     """
     chain = _chain_with_identity(redirected / "c.jsonl", [True, True])
     assert aw.preventive_measures_complete(chain) is True
 
-    real = aw.verify_chain()
-    assert real["part11_compliant"] == aw.PART11_NOT_DETERMINED
-    assert real["unbacked_known_fork_entry_ids"]
+    sin_firmas = tmp_path / "sin_decisiones.jsonl"
+    sin_firmas.write_text("", encoding="utf-8")
+    r = aw.verify_chain(decision_store_file=sin_firmas)
+    assert r["part11_compliant"] == aw.PART11_NOT_DETERMINED
+    assert r["unbacked_known_fork_entry_ids"], (
+        "sin ninguna decision, el fork no puede figurar como respaldado")
 
 
-def test_the_real_baseline_still_has_no_human_acceptance():
-    """El baseline lo congelo Capa 8 y lo dice de si mismo.
+def test_freezing_the_baseline_is_never_an_acceptance():
+    """Congelar el baseline y aceptar el fork son dos actos distintos.
 
-    §5 pide `frozen_by` con identidad humana real. Hasta la firma, el fichero
-    declara que su congelacion NO es una aceptacion.
+    Lo congelo Capa 8; la aceptacion la firmo Cesar el 2026-07-30. El fichero
+    tiene que seguir diciendo que su congelacion NO fue una aceptacion aunque
+    ahora nombre la decision que si lo es — si no, un agente podria "aceptar"
+    escribiendo un JSON.
+
+    Afirmaba ademas `accepted_by_decision is None`, que era el mundo previo a la
+    firma. Ahora se exige la coherencia: lo que el fichero declare tiene que
+    existir en el almacen y cubrir ese entry_id.
     """
+    from factory.services import decision_store_v2 as store
+
     baseline = json.loads((REPO / "factory/audit/fork_baseline.json")
                           .read_text(encoding="utf-8"))
     assert baseline["frozen_by_is_human_acceptance"] is False
-    assert baseline["known_forks"][0]["accepted_by_decision"] is None
+    assert "Capa 8" in baseline["frozen_by"]
+
+    fork = baseline["known_forks"][0]
+    declarada = fork.get("accepted_by_decision")
+    if declarada is None:
+        assert aw.unbacked_known_forks() == (fork["entry_id"],)
+        return
+
+    registros = [r for r in store.read_all()
+                 if r.get("decision_instance_id") == declarada]
+    assert registros, f"el baseline nombra {declarada} y no existe en el almacen"
+    rec = registros[0]
+    assert rec["decision_origin"] == "human_confirmed", (
+        "el baseline no puede declararse aceptado por una propuesta de agente")
+    assert fork["entry_id"] in rec["resolved_target_ids"]
+    assert aw.unbacked_known_forks() == ()
+
+
+def test_the_state_resolves_exceptions_against_the_store_it_was_asked_about(tmp_path):
+    """`get_state(store_file=X)` no puede mezclar dos almacenes.
+
+    La cobertura salia del almacen indicado y las excepciones del REAL, asi que
+    en un almacen con la excepcion firmada G7 seguia sin cerrar. En produccion
+    `store_file` es None y el defecto no asomaba; solo aparecia donde se MIDE,
+    que es justo donde peor sienta: un ensayo del camino de firma habria
+    concluido que aceptar la excepcion no cierra el gate.
+    """
+    from factory.services import decision_store_v2 as store
+    from factory.services import governance_service as gov
+
+    almacen = tmp_path / "decisions_v2.jsonl"
+    almacen.write_text("", encoding="utf-8")
+
+    fork = aw.known_fork_entry_ids()[0]
+    rec = store.build_record(
+        decision_family="AUDIT_EXCEPTION", decision_type="ORIGINAL",
+        selection_mode="EXPLICIT_LIST", resolved_target_ids=[fork],
+        decision="APPROVE", decision_origin="human_confirmed",
+        approved_by_id="Cesar", approved_by_display_name="Cesar",
+        store_file=almacen)
+    store.append_record(rec, store_file=almacen)
+
+    st = gov.get_state(store_file=almacen)
+    assert st["audit"]["unbacked_known_fork_entry_ids"] == [], (
+        "la excepcion firmada en ESE almacen no se esta viendo")
+    assert st["audit"]["chain_continuity"] == aw.CHAIN_CONTINUITY_ACCEPTED
+    g7 = next(g for g in st["critical_path"] if g["gate"] == "G7")
+    assert g7["status"] == "CERRADO", g7
+
+    # Y un almacen VACIO sigue diciendo lo suyo: la resolucion depende del
+    # almacen que se pregunta, que es justo lo que este test fija. Se usa uno
+    # vacio y no el real porque el real ya tiene la excepcion firmada, y entonces
+    # los dos lados darian lo mismo y el test no distinguiria nada.
+    vacio = tmp_path / "vacio.jsonl"
+    vacio.write_text("", encoding="utf-8")
+    assert gov.get_state(store_file=vacio)["audit"][
+        "unbacked_known_fork_entry_ids"] == [fork]

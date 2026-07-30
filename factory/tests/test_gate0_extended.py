@@ -90,14 +90,34 @@ def test_a_new_fork_is_a_fail():
     assert "NUEVO" in r["salida"]
 
 
-def test_the_historical_fork_is_a_warn_today_not_a_fail():
+def test_the_historical_fork_was_a_warn_before_g7():
     """Antes de G7 la excepción no puede existir, y dejar Gate 0 en rojo
-    permanente hasta entonces garantiza que se deje de leer."""
-    r = _run_verdict('_verdict_audit_chain 0 0 True BROKEN_HISTORICAL 21884')
+    permanente hasta entonces garantiza que se deje de leer.
+
+    Se fuerza `FORK_HISTORICO_ES_FAIL=0` porque desde el cierre de G7
+    (2026-07-30, AUDIT_EXCEPTION-2026-002) el valor por defecto es 1. La rama
+    sigue existiendo y se sigue probando: describe la fase anterior, y borrarla
+    dejaria sin cubrir el unico camino por el que este gate fue WARN durante
+    semanas.
+    """
+    r = _run_verdict('FORK_HISTORICO_ES_FAIL=0; '
+                     '_verdict_audit_chain 0 0 True BROKEN_HISTORICAL 21884')
     assert r["fail"] == 0
     assert r["warn"] == 1
     assert r["pass"] == 1
     assert "G7" in r["salida"]
+
+
+def test_a_fork_left_without_its_exception_is_a_fail_now():
+    """Y desde G7, esa MISMA situacion para la fabrica.
+
+    Es lo que enciende el cambio de fase: si la excepcion desaparece —revocada,
+    superseded, o un almacen que deje de resolverla— el fork se queda sin
+    respaldo y el gate para la fabrica en vez de avisar.
+    """
+    r = _run_verdict('_verdict_audit_chain 0 0 True BROKEN_HISTORICAL 21884')
+    assert r["fail"] == 1, r["salida"]
+    assert "sin excepción firmada" in r["salida"]
 
 
 def test_the_historical_fork_becomes_a_fail_from_g7():
@@ -228,11 +248,20 @@ def test_the_real_artifact_guard_is_warn_with_zero_fails():
 
 
 def test_the_real_chain_dimensions_land_on_warn_not_fail():
-    """Y el paso 3: contenido auténtico, continuidad rota, conformidad sin
-    determinar. Ningún FAIL, porque nada está corrupto ni hay forks nuevos."""
+    """Y el paso 3 sobre la cadena REAL: nada corrupto, ningun fork nuevo.
+
+    Fijaba `part11_compliant == NOT_DETERMINED`, que era el valor hasta que Cesar
+    firmo la excepcion. Lo que sostiene el "no hay FAIL" no es ese valor concreto
+    sino las dos dimensiones que si mandan en el veredicto: hash_errors y
+    new_forks_since_baseline. El fork historico sigue presente, aceptado no es
+    corregido.
+    """
     from factory.core import audit_writer as aw
     r = aw.verify_chain()
     assert r["hash_errors"] == 0
     assert r["new_forks_since_baseline"] == 0
     assert r["historical_fork_present"] is True
-    assert r["part11_compliant"] == aw.PART11_NOT_DETERMINED
+    assert r["part11_compliant"] != aw.PART11_COMPLIANT
+    # Y si esta aceptada, el gate exige que la excepcion se resuelva de verdad.
+    if r["part11_compliant"] == aw.PART11_ACCEPTED_WITH_EXCEPTION:
+        assert r["unbacked_known_fork_entry_ids"] == []

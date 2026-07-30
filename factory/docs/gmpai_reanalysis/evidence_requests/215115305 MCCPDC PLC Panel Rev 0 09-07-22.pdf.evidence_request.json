@@ -1,0 +1,17 @@
+{
+  "tipo": "evidence_request",
+  "documento": "215115305 MCCPDC PLC Panel Rev 0 09-07-22.pdf",
+  "sha256": "dc733c64c747d84d21111fa7f68df41c79f5de5a5add338d4f3a984cafb65cea",
+  "paginas_totales": 24,
+  "paginas_con_texto_real": 0,
+  "confianza_extraccion": 0.0,
+  "muestra_texto_extraido_raw": "\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n\n\f\n",
+  "mecanismo_ocr_disponible": false,
+  "hallazgo": "Documento sin texto util extraible (0/24 paginas con contenido real). No se genera correccion ni se infiere contenido: se requiere OCR o extraccion manual confiable antes de poder evaluar este documento.",
+  "accion_requerida": [
+    "Ejecutar OCR con una herramienta autorizada (no incluida en este entorno) sobre el documento original",
+    "o aportar una version del documento con texto nativo/embebido"
+  ],
+  "revision_humana_requerida": true,
+  "estado_correccion": "evidence_required"
+}

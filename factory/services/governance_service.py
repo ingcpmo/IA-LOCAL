@@ -370,7 +370,7 @@ def get_state(*, store_file: Path | None = None) -> dict:
     """
     families = store.load_families()
     coverage = {f: get_coverage(f, store_file=store_file) for f in GOVERNED_FAMILIES}
-    audit = _audit.verify_chain()
+    audit = _audit.verify_chain(decision_store_file=store_file)
     artifacts = _artifacts.guard_report(decision_store_file=store_file)
 
     return {

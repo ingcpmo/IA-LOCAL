@@ -461,21 +461,32 @@ def test_l08_no_real_source_is_eligible_for_formal_use():
 
 
 def test_l08_the_signature_authorizes_without_reverifying():
-    """La Correccion D1 autoriza y NO reverifica — el invariante de U-5.
+    """Firmar autoriza y NO reverifica — el invariante de U-5.
 
-    Es la mitad que faltaba: sin ella, el test anterior lo aprobaria un sistema
-    en el que firmar no hubiera hecho nada.
+    Es la mitad que faltaba en el test anterior: sin ella, lo aprobaria un
+    sistema en el que firmar no hubiera hecho nada.
+
+    Fijaba ademas Part 211 en REGISTERED_PENDING_AUTHORIZATION "porque le falta
+    el adendo D1-A". Eso duro cuatro horas: Cesar firmo D1-A el 2026-07-30 y
+    Part 211 paso a autorizada, asi que el test se ponia rojo por el exito del
+    sistema. Es MI PROPIO test cayendo en el patron que esta misma sesion venia
+    corrigiendo en otros tres — fotografiar el estado en vez de medir la regla.
+    Ahora se derivan las autorizadas de la cobertura real y se exige lo que no
+    cambia: cubierta <=> autorizada, y ninguna llega a VERIFIED por firmar.
     """
+    from factory.core import decision_scope_resolver as resolver
+
     por_id = {d.source_id: d for d in sl.evaluate_registry()}
+    cubiertas = set(resolver.coverage_report("D1").covered_ids)
+    assert cubiertas, "sin ninguna fuente cubierta este test no mide nada"
 
-    firmadas = ("ecfr_21cfr_part11", "eu_gmp_annex11", "mhra_gxp_di_guidance_2018")
-    for sid in firmadas:
-        assert por_id[sid].lifecycle_state == sl.AUTHORIZED_PENDING_REVERIFICATION, \
-            f"{sid}: la firma de la Correccion D1 no se refleja"
-
-    # Part 211 no entraba en la Correccion: le falta el adendo D1-A.
-    assert por_id["ecfr_21cfr_part211"].lifecycle_state == \
-        sl.REGISTERED_PENDING_AUTHORIZATION
+    for sid, dim in por_id.items():
+        esperado = (sl.AUTHORIZED_PENDING_REVERIFICATION if sid in cubiertas
+                    else sl.REGISTERED_PENDING_AUTHORIZATION)
+        assert dim.lifecycle_state == esperado, (
+            f"{sid}: cubierta={sid in cubiertas} pero estado {dim.lifecycle_state}")
+        # Autorizar no es reverificar, ni siquiera para las firmadas.
+        assert dim.formal_use_eligibility is False
 
 
 def test_l08_part211_origin_is_amber_and_the_others_are_green():

@@ -140,11 +140,33 @@ def test_f04_without_an_exception_part11_is_not_determined(tmp_path, empty_store
     assert d["chain_continuity"] == aw.CHAIN_CONTINUITY_BROKEN_HISTORICAL
 
 
-def test_f04_today_the_real_chain_is_not_determined():
-    """Estado real: el fork esta en el baseline pero nadie lo ha aceptado."""
+def test_f04_the_real_chain_never_claims_plain_compliance():
+    """Sobre la cadena REAL: con una ruptura, NUNCA se llega a COMPLIANT.
+
+    Afirmaba `NOT_DETERMINED` y `unbacked == [el fork]`, que era el estado hasta
+    que Cesar firmo AUDIT_EXCEPTION-2026-002 el 2026-07-30. Al firmarla, ambos
+    valores cambiaron —a ACCEPTED_WITH_DOCUMENTED_EXCEPTION y a lista vacia— y el
+    test se puso rojo por el exito del proceso que existe para producir ese
+    cambio.
+
+    La regla que NO cambia: mientras `chain_errors > 0`, la unica diferencia que
+    una firma humana puede introducir es entre "no determinada" y "aceptada con
+    excepcion documentada". COMPLIANT queda fuera del alcance de cualquier firma,
+    y `unbacked` vacio SOLO puede venir de una excepcion registrada.
+    """
     r = aw.verify_chain()
-    assert r["part11_compliant"] == aw.PART11_NOT_DETERMINED
-    assert r["unbacked_known_fork_entry_ids"] == [REAL_FORK_ENTRY_ID]
+    assert r["chain_errors"] > 0, "sin ruptura este test no mide nada"
+    assert r["part11_compliant"] != aw.PART11_COMPLIANT, (
+        "ninguna firma puede declarar la cadena integra")
+    assert r["part11_compliant"] in (aw.PART11_NOT_DETERMINED,
+                                     aw.PART11_ACCEPTED_WITH_EXCEPTION)
+
+    if r["part11_compliant"] == aw.PART11_ACCEPTED_WITH_EXCEPTION:
+        assert r["unbacked_known_fork_entry_ids"] == [], (
+            "aceptada con excepcion pero quedan forks sin respaldo")
+        assert aw.unbacked_known_forks() == ()
+    else:
+        assert r["unbacked_known_fork_entry_ids"] == [REAL_FORK_ENTRY_ID]
 
 
 # ===========================================================================
@@ -170,9 +192,15 @@ def test_f02_the_real_chain_reports_all_five_dimensions():
                 "historical_fork_present", "new_forks_since_baseline",
                 "part11_compliant"):
         assert key in r
-    # La dimension buena en verde y la conclusion sin determinar, a la vez.
+    # La dimension buena en verde SIN arrastrar una conclusion de conformidad:
+    # el contenido es autentico y la cadena sigue rota, y las dos cosas se dicen
+    # a la vez. Fijaba `NOT_DETERMINED`, que era el valor de aquel dia; lo que no
+    # cambia con la firma de la excepcion es que VERIFIED aqui no implica
+    # COMPLIANT alli.
     assert r["content_hash_integrity"] == aw.CONTENT_HASH_INTEGRITY_VERIFIED
-    assert r["part11_compliant"] == aw.PART11_NOT_DETERMINED
+    assert r["chain_continuity"] != aw.CHAIN_CONTINUITY_VERIFIED, (
+        "la continuidad NUNCA vuelve a VERIFIED: la ruptura sigue ahi")
+    assert r["part11_compliant"] != aw.PART11_COMPLIANT
 
 
 def test_f02_a_clean_chain_is_compliant(tmp_path, empty_store):
@@ -324,9 +352,27 @@ def test_f08_the_real_baseline_names_the_real_fork():
     fork = baseline["known_forks"][0]
     assert fork["root_cause"] == "stale_in_process_head_cache"
     assert fork["fixed_by_commit"] == "8c033fa"
-    # El baseline lo congela la Capa 8; NO es la aceptacion humana.
-    assert fork["accepted_by_decision"] is None
+
+    # Congelar el baseline NO es aceptar el fork, ni antes ni despues de la
+    # firma: son dos actos distintos y el fichero tiene que seguir diciendolo.
     assert baseline["frozen_by_is_human_acceptance"] is False
+
+    # Y lo que el baseline AFIRMA sobre la aceptacion tiene que coincidir con el
+    # almacen. Fijaba `accepted_by_decision is None`, o sea el mundo previo a la
+    # firma de Cesar; la regla real es que el fichero no puede declararse
+    # aceptado por su cuenta -- si nombra una decision, esa decision tiene que
+    # existir y cubrir este entry_id.
+    declarada = fork.get("accepted_by_decision")
+    if declarada is None:
+        assert aw.unbacked_known_forks() == (REAL_FORK_ENTRY_ID,)
+    else:
+        assert aw.unbacked_known_forks() == (), (
+            f"el baseline dice aceptado por {declarada} y el resolver no lo ve")
+        cubre = [r for r in store.read_all()
+                 if r.get("decision_instance_id") == declarada]
+        assert cubre, f"{declarada} no existe en el almacen"
+        assert REAL_FORK_ENTRY_ID in cubre[0]["resolved_target_ids"]
+        assert cubre[0]["decision_origin"] == "human_confirmed"
 
 
 # ===========================================================================

@@ -417,10 +417,36 @@ audit_exception_package:
     - "Aceptar forks futuros: la excepción cubre UN entry_id y solo uno."
     - "Reescribir, borrar o reordenar ningún evento."
 
-  decision: PENDING            # APPROVE | REJECT — solo Cesar
-  approved_by_id: null
-  decision_date: null
+  decision: APPROVE            # firmado por Cesar
+  approved_by_id: cesar
+  decision_date: "2026-07-30T14:21:22.934301+00:00"
+  decision_instance_id: AUDIT_EXCEPTION-2026-002
 ```
+
+### 7.3 Resultado (2026-07-30) — G7 CERRADO
+
+Cesar **aceptó** la excepción. Efecto medido sobre la cadena real:
+
+```
+CONTENT_HASH_INTEGRITY   VERIFIED                            (sin cambio)
+CHAIN_CONTINUITY         ACCEPTED_WITH_DOCUMENTED_EXCEPTION  (era BROKEN_HISTORICAL)
+HISTORICAL_FORK_PRESENT  true                                (sin cambio: no se corrige, se acepta)
+NEW_FORKS_SINCE_BASELINE 0                                   (sin cambio)
+PART11_COMPLIANCE        ACCEPTED_WITH_DOCUMENTED_EXCEPTION  (era NOT_DETERMINED)
+```
+
+`chain_errors` sigue siendo 1 y el fork sigue en la línea 108: **aceptado no es
+corregido**. `CHAIN_CONTINUITY` no vuelve a `VERIFIED` en ningún caso.
+
+`fork_baseline.json` queda sellado con `accepted_by_decision`, `accepted_by_id` y
+`accepted_at`. **`frozen_by` NO cambia** y `frozen_by_is_human_acceptance` sigue
+en `false`: congelar el baseline lo hizo Capa 8 y aceptar el fork lo firmó Cesar
+— son dos actos distintos, y colapsarlos permitiría "aceptar" editando un JSON.
+
+`FORK_HISTORICO_ES_FAIL` pasa a **1** (§6). Con la excepción vigente no enciende
+nada; lo que cubre es que la excepción DESAPAREZCA —revocada, superseded, o un
+almacén que deje de resolverla— y el fork se quede otra vez sin respaldo. Ahí el
+gate para la fábrica en vez de avisar.
 
 ### 7.1 Efecto de la aceptación
 

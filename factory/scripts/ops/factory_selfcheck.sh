@@ -34,9 +34,17 @@ section() { printf "\n${BOLD}${B}━━━ %s ━━━${NC}\n" "$1"; }
 # corrupción, un fork nuevo y una inconsistencia de versión ponen el gate en
 # rojo de verdad.
 #
-# Desde G7, FORK_HISTORICO_ES_FAIL pasa a 1. Es una variable y no un literal
-# para que el cambio de fase sea una línea, no una reescritura del bloque.
-FORK_HISTORICO_ES_FAIL="${FORK_HISTORICO_ES_FAIL:-0}"
+# G7 CERRADO el 2026-07-30: Cesar firmó AUDIT_EXCEPTION-2026-002 sobre
+# ab689c7c y FORK_HISTORICO_ES_FAIL pasa a 1, como preveía el spec §6. Antes de
+# la firma habría dejado Gate 0 en rojo permanente por una excepción que todavía
+# no podía existir, y un gate siempre rojo deja de leerse.
+#
+# Con la excepción vigente esto NO pone nada en rojo: el fork histórico entra
+# ahora por la rama ACCEPTED_WITH_DOCUMENTED_EXCEPTION. Lo que la variable
+# enciende es el caso en que la excepción DESAPAREZCA —revocada, superseded o un
+# almacén que deje de resolverla— y el fork se quede otra vez sin respaldo. Ahí
+# el gate tiene que parar la fábrica, no avisar.
+FORK_HISTORICO_ES_FAIL="${FORK_HISTORICO_ES_FAIL:-1}"
 
 # _verdict_audit_chain <hash_errors> <new_forks> <historical> <continuity> <count>
 _verdict_audit_chain() {

@@ -1,0 +1,9 @@
+project_id: gmpai_document_validation
+collections:
+- name: data_integrity
+  domain: DATA_INTEGRITY
+  sources:
+  - FDA_DI_GUIDANCE_2018
+  - ALCOA_PLUS
+  status: pending
+  note: PENDING_DOCUMENT — requiere PDF validado para ingesta. Ver pending_documents.

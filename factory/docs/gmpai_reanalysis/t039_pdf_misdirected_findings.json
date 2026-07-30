@@ -1,0 +1,16 @@
+{
+  "documento": "215115305-T-039 Design Docs for ASantiago.pdf",
+  "sha256": "84e7b4dbdac47a03ba556dc963a2dd8d38a61e8fbb51127b81af7f397f6db352",
+  "clasificacion_previa": "DS (Design Docs) — por nombre de archivo, confianza no verificada contra contenido real",
+  "clasificacion_correcta_por_contenido": "TRANSMITTAL (auto-identificado como tal en su propio texto: 'TRANSMITTAL ... Transmittal # - MAVERICK/215115305/039', fechado 2023-03-27)",
+  "fuente": "factory/docs/GMPAI_VERSION_DECISION_RECORD.md, seccion 2",
+  "aplicabilidad_correcta": "TRANSMITTAL -> Part11=False, Annex11=False, ALCOA+=False (portada de transmision/tapa, no contiene controles evaluables)",
+  "findings_afectados": 19,
+  "desglose_por_agente": {"alcoa_plus_agent": 9, "fda_part11_agent": 5, "eu_annex11_agent": 5},
+  "estado_previo_de_todos": "evidencia_insuficiente (ningun finding declaraba incumplimiento activo; el riesgo es de categoria, no de contenido fabricado)",
+  "disposicion": "MISDIRECTED_FINDING",
+  "explicacion": "Los 3 agentes evaluaron Part11/Annex11/ALCOA+ contra una portada de transmision de 3 paginas que no es un registro GxP ni un documento de diseno — error de categoria documental (el archivo se nombro 'Design Docs' pero su contenido real es un transmittal). No se eliminan los findings: quedan marcados como no aplicables por tipo documental, no como hallazgos de cumplimiento reales.",
+  "documento_destino_correcto": "no aplica — el transmittal SOLO transmite otros documentos que ya tienen su propio analisis independiente en este corpus: SI Prop for MCCPDCa.pdf (rev 5), URS v2.1.pdf (rev 2.1), FS_v1.2.pdf (rev 1.2), EMS/WFI/PCS Signal Interface Narratives (rev B/B/A), Alarms IO Listing (rev H). Si se requiere evaluar el contenido tecnico referenciado, ya esta cubierto por el analisis de esos documentos individuales.",
+  "revision_humana_requerida": true,
+  "accion_pendiente_para_cesar": "Confirmar reclasificacion DS -> TRANSMITTAL antes de excluir definitivamente este documento del set REANALYSIS_REQUIRED (pasaria a NO_APPLICABLE_CORRECTION)."
+}

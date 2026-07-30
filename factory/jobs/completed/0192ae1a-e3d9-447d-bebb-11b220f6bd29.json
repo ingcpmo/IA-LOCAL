@@ -1,0 +1,16 @@
+{
+  "job_id": "0192ae1a-e3d9-447d-bebb-11b220f6bd29",
+  "project_id": "oos_hplc_investigator",
+  "job_type": "layer8_run_mission",
+  "status": "completed",
+  "payload": {
+    "plan_only": true
+  },
+  "created_at": "2026-06-26T17:39:14.965682+00:00",
+  "updated_at": "2026-06-26T17:39:14.979440+00:00",
+  "result": {
+    "status": "plan_generated",
+    "design_dir": "/home/ing_cpmo/factory/designs/oos_hplc_investigator"
+  },
+  "error": null
+}

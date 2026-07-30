@@ -26,8 +26,10 @@
       "fixed_by_commit": "8c033fa",
       "fixed_at": "2026-06-15T14:21:43+00:00",
       "fix_evidence": "El fork ocurrio a las 13:54:43 y el arreglo se commiteo 27 min despues. Ninguna ruptura en las entradas posteriores.",
-      "accepted_by_decision": null,
-      "acceptance_note": "PENDIENTE de decision AUDIT_EXCEPTION de Capa 9 (paquete AUDIT-EXC-2026-001, spec §7). Sin ella, PART11_COMPLIANCE permanece NOT_DETERMINED."
+      "accepted_by_decision": "AUDIT_EXCEPTION-2026-002",
+      "accepted_by_id": "cesar",
+      "accepted_at": "2026-07-30T14:21:22.934301+00:00",
+      "acceptance_note": "ACEPTADO por decision humana AUDIT_EXCEPTION-2026-002 (Capa 9). CHAIN_CONTINUITY pasa a ACCEPTED_WITH_DOCUMENTED_EXCEPTION y NUNCA a VERIFIED: la ruptura sigue ahi, documentada y aceptada, no corregida. La aceptacion cubre ESTE entry_id y solo este; un fork nuevo exige su propia decision y hace FAIL el Gate 0."
     }
   ],
   "log_count_at_baseline": 21052,
