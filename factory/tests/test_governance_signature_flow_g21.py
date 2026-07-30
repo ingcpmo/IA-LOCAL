@@ -695,3 +695,121 @@ def test_n14_identity_is_validated_before_the_idempotent_shortcut(tmp_store):
                     family_state_hash=p2["family_state_hash"],
                     expected_active_instance_id=p2["expected_active_instance_id"],
                     store_file=tmp_store)
+
+
+# ===========================================================================
+# [N16] el camino del adendo D1-A, de punta a punta por el servicio
+# ===========================================================================
+#
+# I-7 (ADDENDUM exige amendment_sequence>=1 y prohibe supersedes) ya se prueba en
+# `test_decision_model_v2`, pero eso valida el REGISTRO, no el camino: que lo que
+# `govSubmitD1A` manda —ADDENDUM, amendment_sequence 1, sin supersedes— atraviese
+# propose y confirm y acabe ampliando la cobertura. Un ensayo manual lo demostro
+# una vez; esto lo fija.
+
+PART211 = "ecfr_21cfr_part211"
+
+
+def _adendo_propuesta(tmp_store, **over):
+    kwargs = dict(target_ids=[PART211], proposed_by_id="mission_control_ui",
+                  decision_type="ADDENDUM", amendment_sequence=1,
+                  reason="adendo de prueba")
+    kwargs.update(over)
+    return gov.propose("D1", store_file=tmp_store, **kwargs)
+
+
+def test_n16_the_addendum_extends_coverage_without_touching_the_correction(tmp_store):
+    """El adendo AMPLIA: suma Part 211 y deja la Correccion en pie.
+
+    Es la diferencia entre los dos remedios, y es la razon de que D1-A exista como
+    acto separado en vez de re-firmar la Correccion con un objetivo mas.
+    """
+    _firmada(tmp_store, iid="D1-2026-002")
+    correccion = _confirmar(tmp_store, _correccion_propuesta(tmp_store))
+
+    p = _adendo_propuesta(tmp_store)
+    a = _confirmar(tmp_store, p)
+
+    assert a["decision_type"] == "ADDENDUM"
+    assert a["amendment_sequence"] >= 1
+    assert a["supersedes_instance_id"] is None, "un adendo no supersede nada (I-7)"
+
+    cov = gov.get_coverage("D1", store_file=tmp_store)
+    assert PART211 in cov["covered_ids"]
+    for sid in TRES:
+        assert sid in cov["covered_ids"], f"{sid} dejo de estar cubierta"
+    assert correccion["decision_instance_id"] in cov["confirmed_active_instances"], (
+        "la Correccion tiene que seguir vigente tras el adendo")
+
+
+def test_n16_the_addendum_is_idempotent_too(tmp_store):
+    """El mismo agujero de /confirm valdria para el adendo: un clic, un registro."""
+    _firmada(tmp_store, iid="D1-2026-002")
+    _confirmar(tmp_store, _correccion_propuesta(tmp_store))
+    primero = _confirmar(tmp_store, _adendo_propuesta(tmp_store))
+
+    segundo = _confirmar(tmp_store,
+                         _adendo_propuesta(tmp_store, proposed_by_id="otro_cliente"))
+    assert segundo["already_signed"] is True
+    assert segundo["decision_instance_id"] == primero["decision_instance_id"]
+
+    adendos = [r for r in store.read_all(tmp_store)
+               if r.get("decision_type") == "ADDENDUM"
+               and r.get("decision_origin") == "human_confirmed"]
+    assert len(adendos) == 1
+
+
+def test_n16_g2_closes_and_g3_opens_once_d1_is_fully_covered(tmp_store):
+    """El efecto que se busca: G2 CERRADO y G3 deja de estar bloqueado.
+
+    Sin esta asercion, el adendo podria registrarse correctamente y no mover la
+    ruta critica, que es lo unico por lo que se firma.
+    """
+    _firmada(tmp_store, iid="D1-2026-002")
+    _confirmar(tmp_store, _correccion_propuesta(tmp_store))
+    _confirmar(tmp_store, _adendo_propuesta(tmp_store))
+
+    st = gov.get_state(store_file=tmp_store)
+    gates = {g["gate"]: g for g in st["critical_path"]}
+    assert gates["G2"]["status"] == "CERRADO", gates["G2"]
+    assert gates["G3"]["blocked_by"] == [], gates["G3"]
+
+
+def test_n16_the_addendum_alone_does_not_cover_the_three_old_sources(tmp_store):
+    """Y no se cuela por el otro lado: el adendo NO sustituye a la Correccion.
+
+    Si firmar solo el adendo cerrara G2, se podria saltar la Correccion entera.
+
+    El punto de partida es un SNAPSHOT RECONSTRUIDO, que es lo que era
+    D1-2026-002 en el almacen real: reconstruir no es tener la firma. Con una
+    firma humana de verdad como base, las tres ya estarian cubiertas y no habria
+    Correccion que saltarse -- asi que el fixture tiene que reproducir la
+    procedencia, no solo los objetivos.
+    """
+    rec = store.build_record(
+        decision_family="D1", decision_type="ORIGINAL",
+        selection_mode="EXPLICIT_LIST", resolved_target_ids=TRES,
+        decision="APPROVE", decision_origin="human_confirmed",
+        approved_by_id="Cesar", approved_by_display_name="Cesar",
+        decision_instance_id="D1-2026-002", store_file=tmp_store)
+    rec["provenance"] = "RECONSTRUCTED_SNAPSHOT"
+    rec["reconstruction_evidence"] = {
+        "nota": "reproduce la procedencia real de D1-2026-002, cuyo 'ALL' nunca "
+                "se materializo",
+        "fuente": "fixture de test",
+    }
+    store.append_record(rec, store_file=tmp_store)
+
+    reconstruidas = gov.get_coverage("D1", store_file=tmp_store)["reconstructed_only_ids"]
+    assert set(reconstruidas) == set(TRES), (
+        f"el fixture no reprodujo el estado reconstruido: {reconstruidas}")
+
+    _confirmar(tmp_store, _adendo_propuesta(tmp_store))
+
+    cov = gov.get_coverage("D1", store_file=tmp_store)
+    assert PART211 in cov["covered_ids"]
+    st = gov.get_state(store_file=tmp_store)
+    g2 = next(g for g in st["critical_path"] if g["gate"] == "G2")
+    assert g2["status"] != "CERRADO", (
+        "el adendo por si solo no puede cerrar G2: las tres antiguas siguen "
+        "necesitando la Correccion")
