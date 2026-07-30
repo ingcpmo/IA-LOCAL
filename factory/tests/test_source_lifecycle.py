@@ -435,19 +435,47 @@ def test_l07_integrity_is_recomputed_not_trusted(tmp_path):
 # L-08 -- las cuatro fuentes reales
 # ===========================================================================
 
-def test_l08_the_four_real_sources_land_in_pending_authorization():
-    """Hoy la fabrica NO TIENE NINGUNA fuente formalmente autorizada.
+def test_l08_no_real_source_is_eligible_for_formal_use():
+    """Ninguna de las cuatro fuentes reales es usable formalmente todavia.
 
-    Las tres antiguas lo parecian porque D1 decia "ALL". Este test hace
-    visible que ese "ALL" nunca se materializo. Cambiara en G2, y ese cambio
-    es la prueba de que la Correccion D1 hizo algo.
+    El test afirmaba que las cuatro estaban en REGISTERED_PENDING_AUTHORIZATION,
+    y su propio docstring anunciaba el cambio: "cambiara en G2, y ese cambio es
+    la prueba de que la Correccion D1 hizo algo". Paso el 2026-07-30 — Cesar
+    firmo la Correccion (D1-2026-049/050) y las tres antiguas pasaron a
+    AUTHORIZED_PENDING_REVERIFICATION.
+
+    Asi que la asercion se mueve a la regla que NO cambia con la firma:
+    autorizar no es reverificar. Firmar mueve la fuente a "autorizada pendiente
+    de reverificacion", NUNCA a VERIFIED, y la elegibilidad para uso formal sigue
+    siendo False en las cuatro. Lo que la firma cambia es de que estado se parte,
+    no si se puede usar.
     """
     dims = sl.evaluate_registry()
     assert {d.source_id for d in dims} == set(REAL_SOURCE_IDS)
     for d in dims:
-        assert d.lifecycle_state == sl.REGISTERED_PENDING_AUTHORIZATION, \
+        assert d.lifecycle_state in (sl.REGISTERED_PENDING_AUTHORIZATION,
+                                     sl.AUTHORIZED_PENDING_REVERIFICATION), \
             f"{d.source_id}: {d.lifecycle_state}"
-        assert d.formal_use_eligibility is False
+        assert d.formal_use_eligibility is False, (
+            f"{d.source_id} elegible para uso formal sin reverificacion")
+
+
+def test_l08_the_signature_authorizes_without_reverifying():
+    """La Correccion D1 autoriza y NO reverifica — el invariante de U-5.
+
+    Es la mitad que faltaba: sin ella, el test anterior lo aprobaria un sistema
+    en el que firmar no hubiera hecho nada.
+    """
+    por_id = {d.source_id: d for d in sl.evaluate_registry()}
+
+    firmadas = ("ecfr_21cfr_part11", "eu_gmp_annex11", "mhra_gxp_di_guidance_2018")
+    for sid in firmadas:
+        assert por_id[sid].lifecycle_state == sl.AUTHORIZED_PENDING_REVERIFICATION, \
+            f"{sid}: la firma de la Correccion D1 no se refleja"
+
+    # Part 211 no entraba en la Correccion: le falta el adendo D1-A.
+    assert por_id["ecfr_21cfr_part211"].lifecycle_state == \
+        sl.REGISTERED_PENDING_AUTHORIZATION
 
 
 def test_l08_part211_origin_is_amber_and_the_others_are_green():

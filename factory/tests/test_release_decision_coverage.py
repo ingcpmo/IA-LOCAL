@@ -156,17 +156,38 @@ def test_part211_is_named_by_the_real_gate_after_the_migration():
     assert "ecfr_21cfr_part211" in gate["evidence"]
 
 
-def test_the_three_original_sources_are_reported_as_reconstructed_only():
-    """Y la otra mitad de la verdad: las tres antiguas tampoco autorizan.
+def test_reconstructed_sources_are_distinguished_from_uncovered_ones():
+    """`RECONSTRUCTED_SNAPSHOT` y `NOT_COVERED` no se colapsan.
 
-    Se distinguen de Part 211 -- `RECONSTRUCTED_SNAPSHOT` frente a
-    `NOT_COVERED` -- porque los remedios son distintos: una correccion formal
-    para las tres, un adendo para la cuarta. Colapsarlas en "sin cobertura"
-    perderia esa diferencia justo cuando hay que actuar sobre ella.
+    Los remedios son distintos —una correccion formal para lo reconstruido, un
+    adendo para lo no cubierto— y colapsarlos perderia la diferencia justo cuando
+    hay que actuar sobre ella.
+
+    Este test afirmaba que las TRES fuentes antiguas salian reportadas como
+    solo-reconstruidas. Eso era el mundo del 2026-07-29: el 2026-07-30 Cesar
+    firmo la Correccion D1 (D1-2026-049/050) y las tres pasaron a cubiertas, que
+    es el efecto que la correccion existe para producir. El test se ponia rojo
+    por el exito del sistema, asi que ahora mide la REGLA: lo reconstruido, si
+    queda algo, se reporta como tal y sin autorizar; y lo que la firma cubrio ya
+    no se reporta como pendiente.
     """
+    from factory.core import decision_scope_resolver as resolver
+
     gate = qgr.g15_decision_coverage()
-    assert "solo " in gate["evidence"] and "RECONSTRUCTED_SNAPSHOT" in gate["evidence"]
-    assert "no autoriza" in gate["evidence"]
+    d1 = resolver.coverage_report("D1")
+
+    if d1.reconstructed_only_ids:
+        assert "RECONSTRUCTED_SNAPSHOT" in gate["evidence"]
+        assert "no autoriza" in gate["evidence"]
+        for sid in d1.reconstructed_only_ids:
+            assert sid not in d1.covered_ids, (
+                f"{sid} no puede estar reconstruido Y cubierto a la vez")
+    else:
+        # Cubiertas por firma humana: ninguna de las tres puede seguir
+        # apareciendo como pendiente de correccion.
+        for sid in ("ecfr_21cfr_part11", "eu_gmp_annex11",
+                    "mhra_gxp_di_guidance_2018"):
+            assert sid in d1.covered_ids, f"{sid} ni cubierta ni reconstruida"
 
 
 def test_the_real_fork_blocks_and_is_named():
