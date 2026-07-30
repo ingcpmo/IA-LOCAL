@@ -88,11 +88,30 @@ def test_no_zombie_port_r6_after_u12():
     )
 
 
+def _audit_chain_state():
+    from factory.core.audit_writer import verify_chain
+    return verify_chain()
+
+
 def test_every_blocking_risk_is_justified_by_a_real_state():
     """U12+V1, reformulado: no se exige "cero riesgos bloqueantes" —eso haría
     fallar la suite cada vez que la gobernanza detecta algo de verdad— sino
     que todo riesgo bloqueante corresponda a un estado real y comprobable.
-    Un riesgo sin causa verificable sigue siendo un fallo."""
+    Un riesgo sin causa verificable sigue siendo un fallo.
+
+    W5 V2 G2.2: el `else` de abajo declaraba injustificado TODO riesgo que no
+    fuera de remediación, es decir afirmaba de facto "el riesgo de cadena de
+    auditoría nunca existe". G1.14 (`f0c59a2`, un día posterior a este test)
+    convirtió `part11_compliant` en enum y hizo que la cadena reportara
+    `NOT_DETERMINED` mientras el fork histórico conocido siga sin excepción
+    humana registrada — exactamente el comportamiento que
+    AUDIT_FORK_REMEDIATION_SPEC §1.2 pide. El riesgo pasó a ser correcto y el
+    test lo leyó como fallo, repitiendo el error que su propio docstring
+    describe: fotografiar el mundo en vez de medir la regla. Se le enseña a
+    verificar RISK_AUDIT_CHAIN contra `verify_chain()`, igual que ya verifica
+    los de remediación contra el estado de la misión. Sigue detectando el
+    zombie (riesgo con cadena COMPLIANT) y no exige que el fork desaparezca.
+    """
     blocking = [r for r in _get_risks()["risks"] if r.get("severity") not in ("info",)]
     unjustified = []
     for risk in blocking:
@@ -100,9 +119,45 @@ def test_every_blocking_risk_is_justified_by_a_real_state():
             pid = risk["id"].removeprefix("RISK_REMEDIATION_").lower()
             if _mission_status(pid) != "returned_to_adjustments":
                 unjustified.append(risk)
+        elif risk["id"] == "RISK_AUDIT_CHAIN":
+            if _audit_chain_state().get("part11_compliant") == "COMPLIANT":
+                unjustified.append(risk)
         else:
             unjustified.append(risk)
     assert unjustified == [], f"riesgos bloqueantes sin estado real que los sustente: {unjustified}"
+
+
+def test_audit_chain_risk_is_visible_whenever_part11_is_not_compliant():
+    """La otra mitad del invariante anterior: un riesgo justificado no basta si
+    puede faltar. Mientras la cadena no esté COMPLIANT —fork histórico sin
+    excepción registrada, o corrupción real— el riesgo tiene que ser visible.
+    Su ausencia sería el fallo silencioso que G1.14 vino a impedir."""
+    chain = _audit_chain_state()
+    ids = [r["id"] for r in _get_risks()["risks"]]
+    present = "RISK_AUDIT_CHAIN" in ids
+    should_be_present = chain.get("part11_compliant") != "COMPLIANT"
+    assert present == should_be_present, (
+        "el riesgo de cadena no corresponde al estado real de la cadena: "
+        f"riesgo_presente={present}, part11_compliant={chain.get('part11_compliant')!r}, "
+        f"hash_errors={chain.get('hash_errors')}, chain_errors={chain.get('chain_errors')}"
+    )
+
+
+def test_audit_chain_risk_severity_distinguishes_fork_from_corruption():
+    """Un fork histórico con contenido auténtico (hash_errors=0) y una cadena
+    con hashes corruptos no pueden reportarse con la misma severidad: la
+    respuesta operativa es distinta. AUDIT_FORK_REMEDIATION_SPEC §1.2."""
+    chain = _audit_chain_state()
+    risk = next((r for r in _get_risks()["risks"] if r["id"] == "RISK_AUDIT_CHAIN"), None)
+    if risk is None:
+        pytest.skip("cadena COMPLIANT: no hay riesgo que clasificar")
+
+    fork_only = chain.get("hash_errors", 0) == 0 and chain.get("chain_errors", 0) > 0
+    expected = "medio" if fork_only else "alto"
+    assert risk["severity"] == expected, (
+        f"severidad={risk['severity']} con hash_errors={chain.get('hash_errors')}, "
+        f"chain_errors={chain.get('chain_errors')} — se esperaba {expected}"
+    )
 
 
 def test_returned_mission_yields_no_go_never_a_false_approval():
