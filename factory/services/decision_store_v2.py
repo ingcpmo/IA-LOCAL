@@ -23,9 +23,11 @@ Reglas duras:
 """
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import re
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -338,6 +340,34 @@ def project_status(records: list[dict]) -> dict[str, str]:
 # Escritura
 # ---------------------------------------------------------------------------
 
+@contextmanager
+def _exclusive(path: Path):
+    """Serializa comprobar-y-escribir sobre el almacen.
+
+    G2.1: sin esto, comprobar el duplicado y escribirlo eran dos pasos con una
+    ventana en medio, y el id se habia asignado ANTES leyendo el mismo fichero
+    (`build_record` -> `next_instance_id`). Dos peticiones casi simultaneas
+    calculaban el MISMO id, las dos veian que aun no existia y las dos
+    escribian: I-11 violado en el propio registro de registros, no en teoria.
+    Paso en produccion -- D1-2026-017, -018 y -021 estan duplicados, cada par
+    con el mismo segundo, hijos de un doble clic.
+
+    El candado va en un fichero aparte y no en el almacen porque el almacen se
+    abre en modo append y se lee en otros sitios sin candado; bloquear el
+    sidecar no cambia como se lee. Con esto el segundo escritor ve la linea del
+    primero y sale con DecisionConflictError, que es un error honesto, en vez
+    de duplicar en silencio.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock = path.with_suffix(path.suffix + ".lock")
+    with lock.open("a+", encoding="utf-8") as fh:
+        fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+
+
 def append_record(record: dict, *, store_file: Path | None = None,
                   emit_audit: bool = True) -> dict:
     """Anade UN registro validado y emite UN evento. Nunca edita lo anterior."""
@@ -350,15 +380,17 @@ def append_record(record: dict, *, store_file: Path | None = None,
             "registro invalido:\n  - " + "\n  - ".join(result.violations)
         )
 
-    existing = {r["decision_instance_id"] for r in read_all(store_file)}
-    if record["decision_instance_id"] in existing:
-        raise DecisionConflictError(
-            f"decision_instance_id {record['decision_instance_id']!r} ya existe (I-11)"
-        )
+    with _exclusive(path):
+        # La relectura ocurre DENTRO del candado a proposito: leer fuera es
+        # exactamente lo que dejo pasar los duplicados.
+        existing = {r["decision_instance_id"] for r in read_all(store_file)}
+        if record["decision_instance_id"] in existing:
+            raise DecisionConflictError(
+                f"decision_instance_id {record['decision_instance_id']!r} ya existe (I-11)"
+            )
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
     if emit_audit:
         event = write_event("layer9_decision_recorded", W5_PROJECT_ID, {

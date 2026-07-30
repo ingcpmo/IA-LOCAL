@@ -140,6 +140,27 @@ families:
     consumers: [audit_reporting, release_gate]
     requires_human_confirmation: true
 
+  # Anotacion sobre el propio registro. Existe porque el almacen es
+  # append-only: cuando un defecto de software deja basura en el registro de
+  # registros, la unica forma honesta de explicarla es AÑADIR la explicacion,
+  # no limpiarla. Un auditor que encuentre 32 correcciones D1 sin firmar y 3
+  # ids duplicados tiene derecho a encontrar tambien la causa, fechada y en el
+  # mismo fichero.
+  #
+  # `never_authorizes` + `consumers: []` la hacen inerte por construccion: el
+  # resolver la deniega antes de leer ningun registro. Una anotacion que
+  # pudiera otorgar algo seria una puerta trasera con nombre de comentario.
+  # Por eso tampoco exige confirmacion humana: no pide permiso, constata.
+  RECORD_ANNOTATION:
+    label: "Anotacion sobre el registro de decisiones — explica, no autoriza"
+    target_kind: decision_instance_id
+    target_registry: factory/layer9/decisions/decisions_v2.jsonl
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: []
+    requires_human_confirmation: false
+    never_authorizes: true
+
   # Cajon explicito para las decisiones historicas del Sistema A que NO son
   # de gobernanza del corpus (deploy, agent_design, resolucion de
   # contradicciones de un documento concreto). Se proyectan para poder

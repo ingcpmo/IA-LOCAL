@@ -1333,6 +1333,8 @@ class GovernanceProposeBody(BaseModel):
     payload: dict | None = None
     supersedes_instance_id: str | None = None
     amendment_sequence: int = 0
+    # Opcional a propósito: proponer no otorga nada. Ver `governance_service.propose`.
+    state_hash: str | None = None
 
 
 class GovernanceConfirmBody(BaseModel):
@@ -1401,7 +1403,11 @@ def get_governance_coverage(family: str):
 
 @router.post("/governance/decisions/{family}/propose", status_code=201)
 def post_governance_propose(family: str, body: GovernanceProposeBody):
-    """Registra una propuesta `agent_proposed`. NO autoriza nada."""
+    """Registra una propuesta `agent_proposed`. NO autoriza nada.
+
+    Devuelve el `state_hash` posterior a la escritura: es el que el `confirm`
+    tiene que reenviar. Reenviar el del GET previo daba 409 garantizado (G2.1).
+    """
     from factory.services import governance_service as _gov
     try:
         return _gov.propose(
@@ -1410,7 +1416,8 @@ def post_governance_propose(family: str, body: GovernanceProposeBody):
             proposed_by_id=body.proposed_by_id, reason=body.reason,
             payload=body.payload,
             supersedes_instance_id=body.supersedes_instance_id,
-            amendment_sequence=body.amendment_sequence)
+            amendment_sequence=body.amendment_sequence,
+            state_hash=body.state_hash)
     except Exception as e:
         raise _governance_error(e)
 

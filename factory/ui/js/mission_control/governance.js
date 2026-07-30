@@ -455,7 +455,13 @@ function explicaError(status, data){
 
 /* Ciclo completo: proponer y confirmar. Se hace en dos POST y no en uno
    porque son dos actos distintos y el almacén los distingue -- la propuesta
-   queda registrada aunque la firma se rechace después. */
+   queda registrada aunque la firma se rechace después.
+
+   El `state_hash` se ENCADENA: el del GET va al propose (que valida lo que el
+   humano leyó), y el que devuelve el propose va al confirm. Mandar el del GET
+   a las DOS llamadas era el defecto: el propose escribe, así que para cuando
+   llegaba el confirm ese hash ya estaba obsoleto por la propia acción del
+   usuario, y el 409 era inevitable en todos los casos. Ver G2.1. */
 async function proponerYConfirmar(family, targetIds, sig, extra={}){
   if(!sig.reason){ toast('El motivo es obligatorio.'); return; }
   if(!sig.id){ toast('La firma exige un identificador real.'); return; }
@@ -463,14 +469,14 @@ async function proponerYConfirmar(family, targetIds, sig, extra={}){
 
   const prop = await postJSON(`/api/v1/layer9/governance/decisions/${family}/propose`, {
     target_ids: targetIds, proposed_by_id: 'mission_control_ui',
-    reason: sig.reason, ...extra,
+    reason: sig.reason, state_hash: GOV?.state_hash, ...extra,
   });
   if(!prop.ok){ toast(explicaError(prop.status, prop.data)); return; }
 
   const iid = prop.data.decision_instance_id;
   const conf = await postJSON(`/api/v1/layer9/governance/decisions/${iid}/confirm`, {
     approved_by_id: sig.id, approved_by_display_name: sig.name || sig.id,
-    reason: sig.reason, state_hash: GOV?.state_hash,
+    reason: sig.reason, state_hash: prop.data.state_hash,
   });
   if(!conf.ok){
     toast(explicaError(conf.status, conf.data) +
@@ -512,18 +518,21 @@ export async function govSubmitExcepcion(verdict){
 
   const prop = await postJSON('/api/v1/layer9/governance/decisions/AUDIT_EXCEPTION/propose', {
     target_ids: forks, proposed_by_id:'mission_control_ui', reason: sig.reason,
+    state_hash: GOV?.state_hash,
   });
   if(!prop.ok){ toast(explicaError(prop.status, prop.data)); return; }
   const iid = prop.data.decision_instance_id;
 
+  /* Mismo encadenamiento que en `proponerYConfirmar`: el hash del propose, no
+     el del GET. Este panel arrastraba el defecto idéntico. */
   const url = verdict==='APPROVE'
     ? `/api/v1/layer9/governance/decisions/${iid}/confirm`
     : `/api/v1/layer9/governance/decisions/${iid}/reject`;
   const body = verdict==='APPROVE'
     ? {approved_by_id:sig.id, approved_by_display_name:sig.name||sig.id,
-       reason:sig.reason, state_hash:GOV?.state_hash}
+       reason:sig.reason, state_hash:prop.data.state_hash}
     : {rejected_by_id:sig.id, rejected_by_display_name:sig.name||sig.id,
-       reason:sig.reason, state_hash:GOV?.state_hash};
+       reason:sig.reason, state_hash:prop.data.state_hash};
 
   const res = await postJSON(url, body);
   if(!res.ok){ toast(explicaError(res.status, res.data)); return; }

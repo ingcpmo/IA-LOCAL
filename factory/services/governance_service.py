@@ -208,6 +208,7 @@ def propose(family: str, *, target_ids, decision: str = "APPROVE",
             proposed_by_id: str, reason: str = "", payload: dict | None = None,
             supersedes_instance_id: str | None = None,
             amendment_sequence: int = 0,
+            state_hash: str | None = None,
             store_file: Path | None = None) -> dict:
     """Registra una PROPUESTA (`agent_proposed`). No autoriza nada.
 
@@ -219,8 +220,27 @@ def propose(family: str, *, target_ids, decision: str = "APPROVE",
     `validate_identity`: quien propone puede ser un agente, y exigirle nombre
     humano produciría un campo falso o una suplantación. Lo que impide que sea
     un bypass es que una propuesta no otorga cobertura.
+
+    `state_hash` es OPCIONAL aquí y OBLIGATORIO en `confirm`, y esa asimetría
+    es el punto: proponer no otorga nada, así que una propuesta sobre un estado
+    viejo es inocua; firmar sobre un estado viejo no lo es. Cuando el cliente
+    sí lo manda -- la UI lo hace -- se valida aquí, que es donde de verdad
+    sirve: es el PRIMER acto del ciclo que toca el almacén, y por tanto el
+    único momento en que el hash que el humano leyó todavía describe el estado.
+
+    G2.1: el `state_hash` devuelto NO es decorativo. Antes, la UI proponía y
+    después firmaba reenviando el hash del GET previo; pero el propose acababa
+    de escribir en el almacén que `compute_state_hash` resume, así que el hash
+    del humano quedaba obsoleto por su propia acción y el confirm daba 409
+    SIEMPRE -- sin concurrencia, sin segunda pestaña, con un solo usuario. El
+    control optimista se había vuelto un bloqueo total: 32 propuestas D1
+    huérfanas y cero firmas. La cadena correcta es leer -> proponer (valida lo
+    leído) -> firmar (valida lo que devolvió el propose), y así ningún eslabón
+    valida contra un estado que el propio ciclo invalidó.
     """
     _identity.validate_actor(proposed_by_id, field="proposed_by_id")
+    if state_hash is not None:
+        _require_fresh(state_hash, store_file=store_file)
 
     record = store.build_record(
         decision_family=family,
@@ -236,7 +256,12 @@ def propose(family: str, *, target_ids, decision: str = "APPROVE",
         payload=payload,
         store_file=store_file,
     )
-    return store.append_record(record, store_file=store_file)
+    written = store.append_record(record, store_file=store_file)
+    # El `state_hash` viaja FUERA del registro almacenado: es estado de sesión
+    # del ciclo de firma, no un hecho de la decisión. Meterlo en el registro lo
+    # volvería un campo que el esquema no declara y que un auditor tendría que
+    # interpretar.
+    return {**written, "state_hash": compute_state_hash(store_file=store_file)}
 
 
 def _find(instance_id: str, records: list[dict]) -> dict:
