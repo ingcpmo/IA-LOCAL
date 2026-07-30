@@ -545,11 +545,29 @@ def test_the_migrated_store_authorizes_nothing():
     records = store.read_all()
     assert records, "el almacen v2 esta vacio"
 
-    # Ninguna de las cinco familias gobernadas autoriza a nadie todavia.
+    # La invariante NO es "nadie autoriza": es "nadie autoriza POR HABER
+    # MIGRADO". Afirmar `covered_ids == ()` colapsaba las dos cosas, y se puso
+    # rojo en cuanto llego la primera firma humana real (Cesar, D1-2026-049/050,
+    # 2026-07-30) -- o sea el test declaraba defectuoso el exito del sistema.
+    # Lo que se exige es que cada id cubierto tenga detras un registro NATIVE
+    # confirmado por un humano, y que ningun registro migrado cubra nada.
+    nativos_confirmados = {
+        r["decision_instance_id"] for r in records
+        if r.get("provenance") == "NATIVE"
+        and r.get("decision_origin") == "human_confirmed"
+        and r.get("decision") == "APPROVE"
+    }
     for family in ("D1", "D2", "D3", "D4", "D5"):
         c = resolver.coverage_report(family)
-        assert c.covered_ids == (), (
-            f"{family} autoriza {list(c.covered_ids)} solo por haber migrado")
+        if not c.covered_ids:
+            continue
+        assert nativos_confirmados, (
+            f"{family} autoriza {list(c.covered_ids)} sin una sola firma nativa: "
+            "eso solo puede venir de la migracion")
+        # Y lo reconstruido sigue sin cubrir: reconstruir != tener la firma.
+        assert not (set(c.covered_ids) & set(c.reconstructed_only_ids)), (
+            f"{family}: {set(c.covered_ids) & set(c.reconstructed_only_ids)} "
+            "aparece como cubierto Y como solo-reconstruido")
 
 
 def test_the_migration_did_not_touch_the_legacy_stores():

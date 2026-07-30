@@ -326,8 +326,25 @@ def _critical_path(coverage: dict, audit: dict, artifacts: dict) -> list[dict]:
              ["G3: la vigencia de las fuentes no esta verificada"] if not g2_done
              else (["packs sin cobertura D2"] if d2_uncovered else [])),
         gate("G6", "Matriz de aplicabilidad", False, []),
-        gate("G7", "Excepcion de auditoria", False,
-             [f"fork sin excepcion firmada: {forks_sin_aceptar}"] if forks_sin_aceptar else []),
+        # G7 se CIERRA cuando no queda ningun fork sin respaldo, y esta LISTO
+        # cuando la prevencion esta completa: lo unico que falta entonces es la
+        # decision humana que el panel existe para registrar.
+        #
+        # Decia `blocked_by: "fork sin excepcion firmada"`, y eso era un bloqueo
+        # circular con consecuencia real: `panelCard` deshabilita "Abrir panel"
+        # en todo gate BLOQUEADO, asi que la unica superficie para firmar la
+        # excepcion quedaba detras de un boton que la propia falta de firma
+        # apagaba. La tarjeta se veia en el indice y no se podia abrir.
+        #
+        # "Falta tu firma" NO es una precondicion: es el trabajo pendiente, igual
+        # que en G2 —que por eso figura LISTO y no BLOQUEADO con "falta firmar la
+        # Correccion D1"—. La precondicion de verdad es la prevencion: aceptar
+        # una excepcion cuya prevencion no esta implementada es aceptar que vuelva
+        # a pasar (spec §7).
+        gate("G7", "Excepcion de auditoria", not forks_sin_aceptar,
+             [] if _audit.preventive_measures_complete() else
+             ["medidas preventivas de §7 incompletas: aceptar una excepcion sin "
+              "prevencion es aceptar que vuelva a pasar"]),
         gate("G8", "Retirada de los escritores legacy", False,
              ["G2-G7 abiertos"]),
     ]

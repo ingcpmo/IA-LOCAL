@@ -382,6 +382,65 @@ def test_the_governance_state_exposes_the_measures():
 
 
 # ===========================================================================
+# El gate G7 no puede bloquearse con la firma que el panel registra
+# ===========================================================================
+
+def _g7(measures_complete: bool, forks: list[str]) -> dict:
+    from factory.services import governance_service as gov
+    import unittest.mock as mock
+    cov = {f: {"uncovered_ids": [], "reconstructed_only_ids": []}
+           for f in ("D1", "D2", "D3", "D4", "D5")}
+    audit = {"unbacked_known_fork_entry_ids": forks}
+    with mock.patch.object(gov._audit, "preventive_measures_complete",
+                           return_value=measures_complete):
+        path = gov._critical_path(cov, audit, {"records_in_store": 1})
+    return next(g for g in path if g["gate"] == "G7")
+
+
+def test_g7_is_not_blocked_by_the_signature_it_exists_to_collect():
+    """"Falta tu firma" no es una precondicion: es el trabajo pendiente.
+
+    Decia `blocked_by: "fork sin excepcion firmada"`, y `panelCard` deshabilita
+    "Abrir panel" en todo gate BLOQUEADO — asi que la unica superficie para
+    firmar la excepcion quedaba detras de un boton que la propia falta de firma
+    apagaba. La tarjeta se veia en el indice y no se podia abrir.
+
+    Es la misma trampa que la medida 2 tenia dentro: esperar el efecto de la
+    firma para permitir la firma.
+    """
+    g7 = _g7(True, ["ab689c7c-3e0a-4c77-936b-152851f51a30"])
+    assert g7["status"] == "LISTO"
+    assert g7["blocked_by"] == []
+
+
+def test_g7_is_blocked_by_incomplete_prevention_which_is_a_real_precondition():
+    """La precondicion de verdad: aceptar una excepcion sin prevencion es
+    aceptar que vuelva a pasar (§7)."""
+    g7 = _g7(False, ["ab689c7c-3e0a-4c77-936b-152851f51a30"])
+    assert g7["status"] == "BLOQUEADO"
+    assert "medidas preventivas" in g7["blocked_by"][0]
+
+
+def test_g7_closes_only_when_no_fork_is_left_unbacked():
+    assert _g7(True, [])["status"] == "CERRADO"
+
+
+def test_the_live_gate_is_reachable_today():
+    """Sobre el estado REAL: G7 abierto para decidir, no bloqueado.
+
+    Es la asercion que le faltaba a la sesion anterior — verifique el panel
+    llamando a `govOpen` a mano, que salta justo el enlace roto.
+    """
+    from factory.services import governance_service as gov
+    st = gov.get_state()
+    g7 = next(g for g in st["critical_path"] if g["gate"] == "G7")
+    assert st["preventive_measures_complete"] is True
+    assert g7["status"] == "LISTO", g7
+    assert st["audit"]["unbacked_known_fork_entry_ids"], (
+        "sin fork sin respaldo no habria nada que firmar")
+
+
+# ===========================================================================
 # Lo que sigue siendo de un humano
 # ===========================================================================
 

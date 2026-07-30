@@ -214,6 +214,55 @@ def test_accepting_the_audit_exception_is_disabled_until_prevention_is_done(rend
 
 
 @needs_node
+def test_the_index_can_actually_open_the_exception_panel(tmp_path_factory):
+    """El indice tiene que poder ABRIR el panel, no solo mostrar su tarjeta.
+
+    Con G7 en LISTO —prevencion completa, falta solo la decision— el boton "Abrir
+    panel" debe estar habilitado. La tarjeta se veia y el boton estaba apagado,
+    asi que la unica superficie para firmar la excepcion era inalcanzable desde
+    la UI. Un panel al que no se llega es lo mismo que un panel que no existe.
+
+    Verificar el panel llamando a `govOpen` directamente NO cubre esto: se salta
+    exactamente el enlace que estaba roto.
+    """
+    import copy
+    estado = copy.deepcopy(FIXTURE_STATE)
+    for g in estado["critical_path"]:
+        if g["gate"] == "G7":
+            g["status"], g["blocked_by"] = "LISTO", []
+
+    index = _render(tmp_path_factory, estado, "gov_ui_indice")["index"]
+    i = index.index("govOpen('excepcion-auditoria')")
+    tag = index[index.rindex("<button", 0, i):index.index(">", i)]
+    assert "disabled" not in tag, tag
+
+
+@needs_node
+def test_the_index_still_disables_panels_blocked_by_a_real_precondition(
+        tmp_path_factory):
+    """La otra mitad: un gate con precondicion real SI queda cerrado.
+
+    G5 depende de que G3 verifique la vigencia de las fuentes — eso no lo
+    resuelve firmar en el panel de G5, y abrirlo invitaria a decidir sobre un
+    estado que todavia no existe. Sin esta direccion, el test anterior lo
+    aprobaria una UI que abriera todos los paneles siempre.
+
+    El estado se construye aqui: el fixture no declara G5 en su camino critico, y
+    un gate ausente no es un gate bloqueado.
+    """
+    import copy
+    estado = copy.deepcopy(FIXTURE_STATE)
+    estado["critical_path"].append(
+        {"gate": "G5", "status": "BLOQUEADO",
+         "blocked_by": ["G3: la vigencia de las fuentes no esta verificada"]})
+
+    index = _render(tmp_path_factory, estado, "gov_ui_g5_bloqueado")["index"]
+    i = index.index("govOpen('d2a')")
+    tag = index[index.rindex("<button", 0, i):index.index(">", i)]
+    assert "disabled" in tag, tag
+
+
+@needs_node
 def test_the_accept_button_opens_when_the_backend_says_prevention_is_done(
         tmp_path_factory):
     """La otra mitad del invariante: con las cinco medidas, el boton abre.
