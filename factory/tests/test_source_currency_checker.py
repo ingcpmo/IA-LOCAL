@@ -40,15 +40,17 @@ GOVERNED_SHA = "a" * 64
 
 
 class FakeResp:
-    def __init__(self, status_code=200, content=b""):
+    def __init__(self, status_code=200, content=b"", content_type=""):
         self.status_code = status_code
         self.content = content
+        self.headers = {"content-type": content_type} if content_type else {}
 
 
 ENTRY = {
     "source_id": "fake_source",
     "official_source_url": "https://example.org/norma.pdf",
     "sha256_original": GOVERNED_SHA,
+    "canonical_path": "factory/regulatory/sources/sha256/xxx/OFFICIAL_FAKE.pdf",
 }
 
 
@@ -134,6 +136,45 @@ def test_missing_url_never_attempts_network(checker_env, decisions, monkeypatch)
     result = checker.check_source(entry, decision_store_file=decisions)
     assert result["reachable"] is False
     assert result["content_matches_governed_copy"] is None
+
+
+# ===========================================================================
+# G3 -- comparabilidad de tipo de artefacto (2026-07-30)
+# ===========================================================================
+
+def test_mismatched_artifact_type_is_not_comparable_not_changed(checker_env, decisions, monkeypatch):
+    """Canonico PDF servido como HTML: no es 'cambio', es tipo distinto."""
+    monkeypatch.setattr(checker, "_http_get",
+                        lambda url: FakeResp(200, b"<html>pagina de publicaciones</html>",
+                                              content_type="text/html; charset=utf-8"))
+    result = checker.check_source(ENTRY, decision_store_file=decisions)
+    assert result["reachable"] is True
+    assert result["comparable"] is False
+    assert result["content_matches_governed_copy"] is None
+    assert result["downloaded_sha256"] is not None  # el hecho crudo se registra siempre
+    assert result["note"].startswith("no comparable")
+
+
+def test_matching_artifact_type_is_compared_normally(checker_env, decisions, monkeypatch):
+    content, real_sha = _matching_content()
+    monkeypatch.setattr(checker, "_http_get",
+                        lambda url: FakeResp(200, content, content_type="application/pdf"))
+    result = checker.check_source({**ENTRY, "sha256_original": real_sha},
+                                  decision_store_file=decisions)
+    assert result["comparable"] is True
+    assert result["content_matches_governed_copy"] is True
+
+
+def test_unknown_content_type_defaults_to_comparable(checker_env, decisions, monkeypatch):
+    """Ante la duda se declara comparable: un falso 'no comparable' silenciaria
+    un cambio real, y eso es peor que una falsa alarma ocasional."""
+    content, real_sha = _matching_content()
+    monkeypatch.setattr(checker, "_http_get",
+                        lambda url: FakeResp(200, content, content_type=""))
+    result = checker.check_source({**ENTRY, "sha256_original": real_sha},
+                                  decision_store_file=decisions)
+    assert result["comparable"] is True
+    assert result["content_matches_governed_copy"] is True
 
 
 def test_run_by_reserved_name_rejected(checker_env, decisions, monkeypatch):

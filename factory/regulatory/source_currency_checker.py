@@ -23,6 +23,31 @@ tiene. Por eso el resultado se llama `content_matches_governed_copy`
 ("el contenido que hay hoy en la URL coincide con lo que tenemos
 gobernado"), nunca "vigente"/"current".
 
+COMPARABILIDAD (G3, 2026-07-30)
+-------------------------------
+La comparación de hash solo significa algo si los dos lados son **el mismo
+tipo de artefacto**. La primera corrida real de G3 lo destapó: de las cuatro
+fuentes, dos comparaban una copia canónica `.txt`/`.pdf` contra la **página
+HTML** que devuelve su `official_source_url` -- dos documentos distintos, que
+por construcción nunca pueden coincidir. El checker lo reportaba como
+`content_matches_governed_copy: False`, que se lee como "la norma cambió".
+
+Una falsa alarma en un control regulatorio es peor que no tenerlo: gasta
+juicio humano en algo que no pasó y, repetida, enseña a ignorar el control.
+
+Desde G3 el resultado distingue tres cosas que antes eran una:
+
+  - `True`  -- mismo tipo de artefacto y mismo sha256.
+  - `False` -- mismo tipo de artefacto y sha256 distinto. **Esto sí** merece
+    juicio humano: lo que hay en la URL cambió respecto a lo gobernado.
+  - `None` con `comparable: False` -- no son comparables (o no se pudo
+    llegar). No se afirma nada del contenido, y el motivo viaja en `note`.
+
+`comparable: False` **no se arregla desde aquí**: la remediación es apuntar
+`official_source_url` al artefacto realmente archivado, y esa URL vive en el
+registry, que es el objetivo gobernado de la familia D1. Cambiarla es un acto
+de gobernanza con firma, no una corrección de código.
+
 Mismo patrón de auditoría (`run_by` real obligatorio, 1 evento por
 ejecución) que `regulatory_connector_service.py` (W6.3) ya usa -- sin rate
 limit de cupo diario porque este checker opera sobre un conjunto fijo y
@@ -87,6 +112,75 @@ def _denied(source_id: str, url: str | None, checked_at: str, entry: dict,
     }
 
 
+# Tipo de artefacto por extension de la copia canonica. Se mira la COPIA y no
+# la URL porque la copia es lo gobernado: es el documento contra el que se
+# compara y el que un auditor puede abrir.
+_ARTIFACT_BY_SUFFIX = {
+    ".pdf": "pdf",
+    ".xml": "xml",
+    ".txt": "text",
+    ".html": "html",
+    ".htm": "html",
+    ".json": "json",
+}
+
+# Que tipo declara el servidor. Solo se usa para DESCARTAR comparaciones
+# imposibles, nunca para afirmar que dos cosas son iguales.
+_ARTIFACT_BY_CONTENT_TYPE = (
+    ("application/pdf", "pdf"),
+    ("text/html", "html"),
+    ("application/xhtml", "html"),
+    ("application/xml", "xml"),
+    ("text/xml", "xml"),
+    ("application/json", "json"),
+    ("text/plain", "text"),
+)
+
+
+def _governed_artifact_kind(entry: dict) -> str | None:
+    ruta = entry.get("canonical_path") or entry.get("original_path") or ""
+    return _ARTIFACT_BY_SUFFIX.get(Path(ruta).suffix.lower())
+
+
+def _served_artifact_kind(resp) -> str | None:
+    ctype = (resp.headers.get("content-type") or "").lower()
+    for prefijo, kind in _ARTIFACT_BY_CONTENT_TYPE:
+        if ctype.startswith(prefijo):
+            return kind
+    return None
+
+
+def _comparability(entry: dict, resp) -> tuple[bool, str | None]:
+    """¿Tiene sentido comparar el sha256 de lo descargado con lo gobernado?
+
+    Solo si son el MISMO tipo de artefacto. Comparar el PDF archivado de la guia
+    MHRA contra la pagina HTML que lista sus publicaciones no da "el documento
+    cambio": da dos documentos distintos, y afirmarlo como cambio es una falsa
+    alarma en un control regulatorio.
+
+    Ante la duda se declara COMPARABLE. Es deliberado y es el lado incomodo:
+    un falso "cambio" gasta juicio humano, pero un falso "no comparable"
+    SILENCIA un cambio real, y eso es peor. Solo se descarta cuando los dos
+    tipos se conocen y son distintos.
+    """
+    gobernado = _governed_artifact_kind(entry)
+    servido = _served_artifact_kind(resp)
+
+    if gobernado is None or servido is None:
+        return True, None
+    if gobernado == servido:
+        return True, None
+
+    return False, (
+        f"no comparable: la copia gobernada es {gobernado.upper()} "
+        f"({Path(entry.get('canonical_path') or '').name}) y la URL sirve "
+        f"{servido.upper()}. No se afirma nada sobre el contenido. "
+        "Remediacion: apuntar official_source_url al artefacto archivado — "
+        "esa URL vive en el registry gobernado por D1, asi que es un acto de "
+        "gobernanza con firma, no un arreglo de codigo."
+    )
+
+
 def check_source(entry: dict, *, decision_store_file: Path | None = None) -> dict:
     """Verifica UNA fuente ya gobernada (una entrada real de registry.json).
     No escribe nada -- solo retorna el resultado. Separada de
@@ -139,9 +233,16 @@ def check_source(entry: dict, *, decision_store_file: Path | None = None) -> dic
     reachable = resp.status_code == 200
     downloaded_sha256 = None
     content_matches = None
+    comparable = None
+    nota = None
     if reachable:
+        # El sha256 crudo se registra SIEMPRE, comparable o no: es el hecho
+        # observado, y sin el no se puede reconstruir despues por que se
+        # concluyo lo que se concluyo.
         downloaded_sha256 = hashlib.sha256(resp.content).hexdigest()
-        content_matches = downloaded_sha256 == entry.get("sha256_original")
+        comparable, nota = _comparability(entry, resp)
+        if comparable:
+            content_matches = downloaded_sha256 == entry.get("sha256_original")
 
     return {
         "source_id": source_id, "checked_at": checked_at, "url": url,
@@ -149,8 +250,9 @@ def check_source(entry: dict, *, decision_store_file: Path | None = None) -> dic
         "downloaded_sha256": downloaded_sha256,
         "governed_sha256_original": entry.get("sha256_original"),
         "content_matches_governed_copy": content_matches,
+        "comparable": comparable,
         **authorized_meta,
-        "note": None,
+        "note": nota,
     }
 
 
