@@ -317,8 +317,18 @@ def _critical_path(coverage: dict, audit: dict, artifacts: dict) -> list[dict]:
         gate("G1", "Modelo, resolver y enforcement", True, []),
         gate("G2", "Correccion D1 + D1-A", g2_done,
              [] if not g2_done else []),
+        # El motivo dice QUE falta, medido. Decia "G2: ninguna fuente esta
+        # autorizada todavia", y tras la Correccion D1 eso era falso —3 de 4
+        # autorizadas— justo en la pantalla que Cesar usa para decidir. Un
+        # mensaje que afirma menos de lo que hay invita a re-firmar lo ya
+        # firmado, y es plausiblemente lo que produjo la tercera firma.
         gate("G3", "Reverificacion de fuentes", False,
-             [] if g2_done else ["G2: ninguna fuente esta autorizada todavia"]),
+             [] if g2_done else [
+                 "G2: falta cobertura humana de " + ", ".join(
+                     sorted(set(d1_uncovered) | set(d1_reconstructed)))
+                 + (f" ({len(d1_uncovered)} sin cubrir"
+                    f"{f', {len(d1_reconstructed)} solo reconstruida(s)' if d1_reconstructed else ''})")
+             ]),
         gate("G4", "Versionado de artefactos", False,
              [] if artifacts.get("records_in_store") else
              ["bootstrap de artifact_versions.jsonl sin ejecutar"]),
@@ -641,6 +651,38 @@ def _proposal_family(instance_id: str, *, store_file: Path | None) -> str | None
         return None
 
 
+def equivalent_signed_decision(family: str, *, decision_type: str,
+                               target_set_hash: str,
+                               store_file: Path | None = None) -> dict | None:
+    """Decisión ya FIRMADA y vigente equivalente a la que se va a firmar.
+
+    Equivalente = misma familia, mismo tipo y mismo conjunto objetivo (por
+    `target_set_hash`, no por el orden de la lista). Vigente = `status ACTIVE`,
+    `human_confirmed` y otorgante (`APPROVE`): un REJECT o una DEFER no impiden
+    volver a intentar el acto, y una superseded ya no es la vigente.
+
+    **Solo cuenta si nació de confirmar una propuesta** (`confirms_instance_id`).
+    Ese filtro es el que mantiene la regla estrecha, y no está por conveniencia:
+    sin él, cualquier decisión previa registrada por otra vía —una firma directa,
+    un snapshot— convertía la siguiente firma equivalente en un no-op, y
+    **silenciar una decisión real es peor que duplicarla**. Lo que se dedupe es el
+    ciclo propose→confirm consigo mismo, que es exactamente donde estaba el
+    agujero: `_reusable_proposal` ya lo hacía en `/propose` mirando solo
+    propuestas, y esto es su mitad simétrica en `/confirm`.
+    """
+    vigente = None
+    for r in store.read_all(store_file):
+        if (r.get("decision_family") == family
+                and r.get("decision_type") == decision_type
+                and r.get("target_set_hash") == target_set_hash
+                and r.get("decision_origin") == "human_confirmed"
+                and r.get("confirms_instance_id")
+                and r.get("decision") in store.GRANTING_DECISIONS
+                and r.get("status") == "ACTIVE"):
+            vigente = r  # la última en orden de inserción
+    return vigente
+
+
 def confirm(instance_id: str, *, approved_by_id: str,
             approved_by_display_name: str | None = None, reason: str = "",
             state_hash: str | None = None,
@@ -675,10 +717,48 @@ def confirm(instance_id: str, *, approved_by_id: str,
         hash_family=familia if family_state_hash is not None else None,
         family=familia,
         expected_active_instance_id=expected_active_instance_id)
-    return _closing_record(
+
+    # IDEMPOTENCIA. El dedupe de G2.1 cubria /propose y no /confirm, y eso dejaba
+    # un agujero con consecuencia regulatoria: Cesar firmo la Correccion D1 tres
+    # veces (D1-2026-049/050/051) y las tres quedaron ACTIVE, cada una
+    # confirmando una propuesta huerfana distinta y superseding a D1-2026-002. Un
+    # solo acto humano acuñado como tres decisiones autoritativas distintas — y un
+    # auditor no puede saber cual es LA decision.
+    #
+    # No es un 409: repetir un acto que ya esta hecho no es un conflicto, y
+    # devolver error invita al tercer clic. Se devuelve la decision que YA existe,
+    # marcada, sin escribir nada. El almacen es append-only: la forma de no
+    # duplicar es no anexar, no borrar despues.
+    # Solo sobre una propuesta VIVA Y FIRMABLE. Las guardias de `_closing_record`
+    # —esta propuesta ya se resolvio (409), esta EXPIRED, esta ABANDONED— miden
+    # otra cosa y tienen que seguir disparando ANTES: si alguien firma desde una
+    # pagina de hace dias, lo que necesita oir es que su lectura caduco, no un
+    # "ya estaba firmada" que no explica por que su papel no valia.
+    # La identidad se valida ANTES del corto-circuito. Lo aprendi por el test
+    # vivo: con la validacion solo dentro de `_closing_record`, una identidad
+    # reservada recibia 201 "ya estaba firmada" en vez de 422, o sea el endpoint
+    # respondia con estado de firma a quien no puede firmar. Que no se escriba
+    # nada no lo hace inocuo: sigue siendo un control de Part 11 saltado.
+    _identity.validate_identity(approved_by_id, field="approved_by_id")
+
+    registros = store.read_all(store_file)
+    propuesta = _find(instance_id, registros)
+    if proposal_state(instance_id, records=registros) == PROPOSAL_PROPOSED:
+        ya_firmada = equivalent_signed_decision(
+            familia, decision_type=propuesta["decision_type"],
+            target_set_hash=propuesta["target_set_hash"], store_file=store_file)
+        if ya_firmada is not None:
+            return {**ya_firmada,
+                    "already_signed": True,
+                    "signed_by_id": ya_firmada.get("approved_by_id"),
+                    "signed_at": ya_firmada.get("recorded_at"),
+                    "requested_proposal_id": instance_id}
+
+    return {**_closing_record(
         instance_id, decision="APPROVE", decision_type=None,   # conserva el de la propuesta
         by_id=approved_by_id, by_name=approved_by_display_name,
-        reason=reason, field="approved_by_id", store_file=store_file)
+        reason=reason, field="approved_by_id", store_file=store_file),
+        "already_signed": False}
 
 
 def reject(instance_id: str, *, rejected_by_id: str,

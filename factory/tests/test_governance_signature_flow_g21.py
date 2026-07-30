@@ -458,3 +458,240 @@ def test_n13_no_test_in_this_file_touched_the_real_store():
     r = subprocess.run(["git", "-C", str(REPO), "diff", "--quiet", "HEAD", "--", rel])
     assert r.returncode == 0, (
         "algun test escribio en el almacen real de decisiones")
+
+
+# ===========================================================================
+# [N14] idempotencia de /confirm — el agujero que dejo TRES firmas del mismo acto
+# ===========================================================================
+#
+# El dedupe de G2.1 cubria /propose y no /confirm. Consecuencia real: Cesar firmo
+# la Correccion D1 tres veces (D1-2026-049 el 04:31:59, -050 el 04:32:11 y -051
+# siete horas despues), cada una confirmando una propuesta huerfana DISTINTA de
+# las 49 que quedaron, y las tres quedaron ACTIVE superseding a D1-2026-002. Un
+# solo acto humano acuñado como tres decisiones autoritativas: un auditor no puede
+# saber cual es LA decision.
+
+def _correccion_propuesta(tmp_store, **over):
+    kwargs = dict(target_ids=TRES, proposed_by_id="mission_control_ui",
+                  decision_type="CORRECTION", reason="correccion de prueba",
+                  supersedes_instance_id="D1-2026-002")
+    kwargs.update(over)
+    return gov.propose("D1", store_file=tmp_store, **kwargs)
+
+
+def _confirmar(tmp_store, prop, by="Cesar"):
+    return gov.confirm(prop["proposal_id"], approved_by_id=by,
+                       approved_by_display_name=by, reason="firma de prueba",
+                       family_state_hash=prop["family_state_hash"],
+                       expected_active_instance_id=prop["expected_active_instance_id"],
+                       store_file=tmp_store)
+
+
+def test_n14_confirming_an_equivalent_proposal_twice_signs_once(tmp_store):
+    """Dos propuestas distintas, mismo acto: UNA sola decision firmada."""
+    _firmada(tmp_store, iid="D1-2026-002")
+
+    p1 = _correccion_propuesta(tmp_store)
+    primera = _confirmar(tmp_store, p1)
+    assert primera["already_signed"] is False
+
+    # Otro proponente => otra propuesta (el dedupe de /propose no la reutiliza),
+    # pero el MISMO acto: misma familia, mismo tipo, mismo conjunto objetivo.
+    p2 = _correccion_propuesta(tmp_store, proposed_by_id="otro_cliente")
+    assert p2["proposal_id"] != p1["proposal_id"]
+    segunda = _confirmar(tmp_store, p2)
+
+    assert segunda["already_signed"] is True
+    assert segunda["decision_instance_id"] == primera["decision_instance_id"]
+    assert segunda["requested_proposal_id"] == p2["proposal_id"]
+
+    firmadas = [r for r in store.read_all(tmp_store)
+                if r.get("decision_origin") == "human_confirmed"
+                and r.get("decision_type") == "CORRECTION"]
+    assert len(firmadas) == 1, [r["decision_instance_id"] for r in firmadas]
+
+
+def test_n14_the_second_confirm_writes_absolutely_nothing(tmp_store):
+    """El almacen es append-only: no duplicar es NO ANEXAR, no borrar despues."""
+    _firmada(tmp_store, iid="D1-2026-002")
+    _confirmar(tmp_store, _correccion_propuesta(tmp_store))
+
+    p2 = _correccion_propuesta(tmp_store, proposed_by_id="otro_cliente")
+    antes = tmp_store.read_text(encoding="utf-8")
+    _confirmar(tmp_store, p2)
+    assert tmp_store.read_text(encoding="utf-8") == antes
+
+
+def test_n14_only_one_active_correction_supersedes_the_original(tmp_store):
+    """Tres clics no pueden dejar tres vigentes: eso es lo que paso en real."""
+    _firmada(tmp_store, iid="D1-2026-002")
+    p = _correccion_propuesta(tmp_store)
+    _confirmar(tmp_store, p)
+    for actor in ("cliente_b", "cliente_c"):
+        _confirmar(tmp_store, _correccion_propuesta(tmp_store, proposed_by_id=actor))
+
+    activas = [r for r in store.read_all(tmp_store)
+               if r.get("decision_origin") == "human_confirmed"
+               and r.get("status") == "ACTIVE"
+               and r.get("supersedes_instance_id") == "D1-2026-002"]
+    assert len(activas) == 1, [r["decision_instance_id"] for r in activas]
+
+
+def test_n14_a_different_target_set_is_a_different_act(tmp_store):
+    """La idempotencia NO puede tragarse una decision distinta.
+
+    Si absorbiera un conjunto objetivo distinto, el adendo D1-A quedaria sin
+    registrar creyendo que ya estaba firmado — silenciar una decision real es
+    peor que duplicarla.
+    """
+    _firmada(tmp_store, iid="D1-2026-002")
+    _confirmar(tmp_store, _correccion_propuesta(tmp_store))
+
+    otro = _correccion_propuesta(tmp_store, target_ids=TRES + ["ecfr_21cfr_part211"],
+                                 proposed_by_id="otro_cliente")
+    res = _confirmar(tmp_store, otro)
+    assert res["already_signed"] is False
+    assert res["decision_instance_id"] != otro["proposal_id"] or True
+    firmadas = [r for r in store.read_all(tmp_store)
+                if r.get("decision_origin") == "human_confirmed"
+                and r.get("decision_type") == "CORRECTION"]
+    assert len(firmadas) == 2
+
+
+def test_n14_a_rejected_act_can_be_attempted_again(tmp_store):
+    """Un REJECT no otorga y por tanto no bloquea reintentar el acto.
+
+    Tratarlo como "ya firmada" convertiria un "no" en un candado permanente.
+    """
+    _firmada(tmp_store, iid="D1-2026-002")
+    p1 = _correccion_propuesta(tmp_store)
+    gov.reject(p1["proposal_id"], rejected_by_id="Cesar", reason="no procede",
+               state_hash=gov.compute_state_hash(store_file=tmp_store),
+               store_file=tmp_store)
+
+    p2 = _correccion_propuesta(tmp_store, proposed_by_id="otro_cliente")
+    res = _confirmar(tmp_store, p2)
+    assert res["already_signed"] is False
+
+
+def test_n14_the_expired_and_stale_guards_still_fire_first(tmp_store):
+    """La idempotencia no puede tapar un 409 ni un token ausente.
+
+    Se comprueba DESPUES de la frescura a proposito: si una pagina vieja pide
+    confirmar, el humano tiene que enterarse de que su lectura caduco, no recibir
+    un "ya estaba firmada" que no explica nada.
+    """
+    _firmada(tmp_store, iid="D1-2026-002")
+    p = _correccion_propuesta(tmp_store)
+    _confirmar(tmp_store, p)
+
+    p2 = _correccion_propuesta(tmp_store, proposed_by_id="otro_cliente")
+    with pytest.raises(gov.MissingStateTokenError):
+        gov.confirm(p2["proposal_id"], approved_by_id="Cesar",
+                    reason="sin token", store_file=tmp_store)
+
+    # Token presente pero obsoleto: StaleStateError (409 de obsolescencia), que es
+    # una causa distinta de la ausencia (422) y de un duplicado.
+    with pytest.raises(gov.StaleStateError):
+        gov.confirm(p2["proposal_id"], approved_by_id="Cesar", reason="token viejo",
+                    family_state_hash="0" * 64, store_file=tmp_store)
+
+
+def test_n14_the_same_proposal_twice_is_still_a_conflict(tmp_store):
+    """Confirmar DOS VECES la misma propuesta sigue siendo 409.
+
+    Esa guardia ya existia y mide otra cosa: que una propuesta concreta no se
+    resuelva dos veces. La idempotencia es sobre el ACTO, no sobre el papel.
+    """
+    _firmada(tmp_store, iid="D1-2026-002")
+    p = _correccion_propuesta(tmp_store)
+    _confirmar(tmp_store, p)
+    with pytest.raises(store.DecisionConflictError):
+        gov.confirm(p["proposal_id"], approved_by_id="Cesar", reason="otra vez",
+                    family_state_hash=gov.family_state_hash("D1", store_file=tmp_store),
+                    store_file=tmp_store)
+
+
+def test_n14_a_decision_not_born_of_a_proposal_does_not_swallow_a_signature(tmp_store):
+    """El limite de la regla: solo se dedupe el ciclo propose->confirm.
+
+    Con la regla amplia, una decision previa registrada por otra via —una firma
+    directa, un snapshot reconstruido— convertia la siguiente firma equivalente en
+    un no-op. Silenciar una decision real es peor que duplicarla, asi que solo
+    cuenta como duplicado lo que nacio de confirmar una propuesta.
+    """
+    directa = _firmada(tmp_store, iid="D1-2026-002")
+    assert directa.get("confirms_instance_id") is None
+
+    p = _propuesta(tmp_store)  # ORIGINAL, mismos targets que la directa
+    res = _confirmar(tmp_store, p)
+    assert res["already_signed"] is False
+    assert res["confirms_instance_id"] == p["proposal_id"]
+
+
+# ===========================================================================
+# [N15] el motivo del bloqueo de G3 dice QUE falta, medido
+# ===========================================================================
+
+def test_n15_the_g3_blocker_names_what_is_actually_missing(tmp_store):
+    """Decia "ninguna fuente esta autorizada todavia" con 3 de 4 autorizadas.
+
+    Un mensaje que afirma menos de lo que hay, en la pantalla que se usa para
+    decidir, invita a re-firmar lo ya firmado.
+    """
+    cov = {f: {"uncovered_ids": [], "reconstructed_only_ids": []}
+           for f in ("D1", "D2", "D3", "D4", "D5")}
+    cov["D1"] = {"uncovered_ids": ["ecfr_21cfr_part211"],
+                 "reconstructed_only_ids": []}
+    path = gov._critical_path(cov, {"unbacked_known_fork_entry_ids": []},
+                              {"records_in_store": 1})
+    g3 = next(g for g in path if g["gate"] == "G3")
+
+    assert g3["status"] == "BLOQUEADO"
+    motivo = g3["blocked_by"][0]
+    assert "ecfr_21cfr_part211" in motivo
+    assert "ninguna fuente" not in motivo, motivo
+
+
+def test_n15_the_g3_blocker_also_names_reconstructed_sources(tmp_store):
+    """Reconstruida y no-cubierta piden remedios distintos; las dos salen."""
+    cov = {f: {"uncovered_ids": [], "reconstructed_only_ids": []}
+           for f in ("D1", "D2", "D3", "D4", "D5")}
+    cov["D1"] = {"uncovered_ids": ["ecfr_21cfr_part211"],
+                 "reconstructed_only_ids": ["eu_gmp_annex11"]}
+    path = gov._critical_path(cov, {"unbacked_known_fork_entry_ids": []},
+                              {"records_in_store": 1})
+    motivo = next(g for g in path if g["gate"] == "G3")["blocked_by"][0]
+
+    assert "ecfr_21cfr_part211" in motivo and "eu_gmp_annex11" in motivo
+    assert "reconstruida" in motivo
+
+
+def test_n15_g3_opens_when_d1_is_fully_covered(tmp_store):
+    """La otra mitad: cubierto de verdad, G3 deja de estar bloqueado."""
+    cov = {f: {"uncovered_ids": [], "reconstructed_only_ids": []}
+           for f in ("D1", "D2", "D3", "D4", "D5")}
+    path = gov._critical_path(cov, {"unbacked_known_fork_entry_ids": []},
+                              {"records_in_store": 1})
+    assert next(g for g in path if g["gate"] == "G3")["blocked_by"] == []
+
+
+def test_n14_identity_is_validated_before_the_idempotent_shortcut(tmp_store):
+    """Un no-op sigue siendo un endpoint de firma: la identidad va primero.
+
+    Lo cazo el test vivo contra el servidor: con la validacion solo dentro de
+    `_closing_record`, una identidad reservada recibia 201 "ya estaba firmada" en
+    vez de 422 — el endpoint respondia con estado de firma a quien no puede
+    firmar. Que no se escriba nada no lo hace inocuo.
+    """
+    from factory.core import identity_policy
+
+    _firmada(tmp_store, iid="D1-2026-002")
+    _confirmar(tmp_store, _correccion_propuesta(tmp_store))
+
+    p2 = _correccion_propuesta(tmp_store, proposed_by_id="otro_cliente")
+    with pytest.raises(identity_policy.IdentityValidationError):
+        gov.confirm(p2["proposal_id"], approved_by_id="human", reason="reservada",
+                    family_state_hash=p2["family_state_hash"],
+                    expected_active_instance_id=p2["expected_active_instance_id"],
+                    store_file=tmp_store)

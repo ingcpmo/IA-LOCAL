@@ -213,6 +213,26 @@ def test_accepting_the_audit_exception_is_disabled_until_prevention_is_done(rend
     assert "Rechazar" in html
 
 
+def test_a_repeated_click_is_not_announced_as_a_new_signature():
+    """Si el servidor no escribio nada, la UI no puede decir "Registrada".
+
+    El servidor es idempotente desde el agujero de `/confirm` (tres firmas del
+    mismo acto, las tres ACTIVE). Un toast de "Registrada X" sobre una escritura
+    que no ocurrio es peor que no avisar: confirma al humano una accion que no
+    paso, y es lo que invita al tercer clic.
+    """
+    js = GOVERNANCE_JS.read_text(encoding="utf-8")
+    fn = js.split("function explicaFirma(", 1)[1].split("\n}", 1)[0]
+    assert "already_signed" in fn
+    assert "Ya estaba firmada" in fn
+    assert "No se registró nada nuevo" in fn
+
+    # Y los dos caminos de firma lo usan: el de las correcciones y el de la
+    # excepcion de auditoria. El segundo arrastraba ya un defecto identico.
+    assert js.count("explicaFirma(") >= 3
+    assert "already_signed" in js.split("govSubmitExcepcion", 1)[1]
+
+
 @needs_node
 def test_the_index_can_actually_open_the_exception_panel(tmp_path_factory):
     """El indice tiene que poder ABRIR el panel, no solo mostrar su tarjeta.

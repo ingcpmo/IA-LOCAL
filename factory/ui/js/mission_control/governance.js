@@ -528,8 +528,23 @@ async function proponerYConfirmar(family, targetIds, sig, extra={}){
           ` La propuesta ${iid} queda registrada y sin confirmar.`);
     return;
   }
-  toast(`Registrada ${conf.data.decision_instance_id}. No se ejecutó ningún efecto.`);
+  toast(explicaFirma(conf.data));
   govRefresh();
+}
+
+/* Un clic repetido NO debe parecer una firma nueva. El servidor es idempotente
+   desde el agujero de /confirm —tres firmas del mismo acto, las tres ACTIVE— y
+   aquí se dice en voz alta: si no se escribió nada, se dice que no se escribió
+   nada y quién lo había firmado ya. Un toast de "Registrada X" sobre una
+   escritura que no ocurrió es peor que no avisar. */
+function explicaFirma(data){
+  if(data?.already_signed){
+    return `Ya estaba firmada: ${data.decision_instance_id}`
+         + (data.signed_by_id ? ` por ${data.signed_by_id}` : '')
+         + (data.signed_at ? ` el ${String(data.signed_at).slice(0,16).replace('T',' ')}` : '')
+         + '. No se registró nada nuevo.';
+  }
+  return `Registrada ${data.decision_instance_id}. No se ejecutó ningún efecto.`;
 }
 
 export async function govSubmitD1Correccion(){
@@ -588,7 +603,8 @@ export async function govSubmitExcepcion(verdict){
 
   const res = await postJSON(url, body);
   if(!res.ok){ toast(explicaError(res.status, res.data)); return; }
-  toast(verdict==='APPROVE'
+  toast(res.data?.already_signed ? explicaFirma(res.data)
+    : verdict==='APPROVE'
     ? 'Excepción aceptada. CHAIN_CONTINUITY pasa a ACCEPTED_WITH_DOCUMENTED_EXCEPTION — nunca a VERIFIED.'
     : 'Excepción rechazada. PART11_COMPLIANCE permanece NOT_DETERMINED: es un final legítimo.');
   govRefresh();
