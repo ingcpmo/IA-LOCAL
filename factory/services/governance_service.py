@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from factory.core import artifact_version_guard as _artifacts
@@ -46,6 +46,34 @@ class GovernanceNotFoundError(LookupError):
 
 class StaleStateError(RuntimeError):
     """409 -- el estado cambió entre el GET y el POST."""
+
+
+class MissingStateTokenError(ValueError):
+    """422 -- el POST no trae ningún token de estado.
+
+    Se separa de `StaleStateError` porque son fallos distintos y colapsarlos
+    engañó a un humano durante toda una sesión: la UI recibía
+    "409 falta state_hash" y el 409 decía "recarga y revisa", cuando recargar
+    no arreglaba nada -- el campo no viajaba. Un campo ausente es un contrato
+    incumplido (422); un campo presente y viejo es un conflicto (409).
+    """
+
+
+# Vida de una propuesta sin confirmar. Pasado el plazo deja de ser firmable:
+# una propuesta de hace semanas describe un estado que su firmante ya no está
+# viendo, y firmarla es firmar a ciegas con apariencia de trámite.
+PROPOSAL_TTL_HOURS = 24
+
+PROPOSAL_PROPOSED = "PROPOSED"
+PROPOSAL_CONFIRMED = "CONFIRMED"
+PROPOSAL_ABANDONED = "ABANDONED"
+PROPOSAL_EXPIRED = "EXPIRED"
+
+# Marca de abandono. Va en `payload` y no en `status` porque el almacén es
+# append-only: el estado de una propuesta NO se edita, se deriva de los
+# registros que la cierran. Cambiar el `status` de la línea original exigiría
+# reescribirla, que es justo lo que Part 11 prohíbe.
+ABANDON_MARKER = "proposal_abandoned"
 
 
 # ---------------------------------------------------------------------------
@@ -89,18 +117,165 @@ def compute_state_hash(*, store_file: Path | None = None) -> str:
     return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
 
 
-def _require_fresh(state_hash: str | None, *, store_file: Path | None = None) -> None:
+def family_state_hash(family: str, *, store_file: Path | None = None) -> str:
+    """Huella de lo que afecta A UNA FAMILIA. Alcance quirúrgico del control.
+
+    `compute_state_hash` resume TODO: el almacén completo, las cinco familias y
+    la cadena de auditoría entera. Con eso, aprobar un pack de D2 -- o cualquier
+    evento de auditoría de cualquier proyecto -- invalidaba una firma de D1 que
+    seguía siendo perfectamente válida. En una fábrica con varias superficies
+    escribiendo, eso convierte el control optimista en una lotería: el firmante
+    pierde por hechos que no le conciernen ni cambian lo que está firmando.
+
+    Aquí entran solo los registros DE la familia, su registry objetivo y el
+    registro de familias. NO entra la cadena de auditoría global: crece con
+    cualquier lectura auditada de cualquier parte del sistema, así que meterla
+    hacía el hash volátil por motivos ajenos a la decisión.
+    """
+    parts: list[str] = [f"family:{family}"]
+
+    propios = [r for r in store.read_all(store_file)
+               if r.get("decision_family") == family]
+    parts.append(hashlib.sha256(
+        json.dumps(propios, sort_keys=True, ensure_ascii=False,
+                   separators=(",", ":")).encode("utf-8")).hexdigest())
+
+    try:
+        parts.append(store.families_registry_hash())
+    except Exception:  # noqa: BLE001 -- despliegue roto: entra como marca
+        parts.append("FAMILIES_UNAVAILABLE")
+
+    try:
+        _ids, registry_hash = store.resolve_all_snapshot(family)
+        parts.append(f"registry:{registry_hash}")
+    except Exception:  # noqa: BLE001 -- familias sin target_registry
+        parts.append("registry:N/A")
+
+    return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
+
+
+def active_instance_of(family: str, *, store_file: Path | None = None) -> str | None:
+    """Instancia vigente y FIRMADA de la familia, o None.
+
+    Es el segundo control y no es redundante con el hash: dice explícitamente
+    QUÉ se está corrigiendo. Un cliente que propone corregir la D1-2026-002 y
+    firma cuando la vigente ya es otra está corrigiendo algo que dejó de existir
+    -- y el mensaje de error puede decirlo con nombres, no con dos hashes que
+    nadie puede comparar a mano.
+    """
+    activas = get_coverage(family, store_file=store_file).get(
+        "confirmed_active_instances") or []
+    return activas[-1] if activas else None
+
+
+def _require_fresh(state_hash: str | None, *, store_file: Path | None = None,
+                   hash_family: str | None = None,
+                   family: str | None = None,
+                   expected_active_instance_id: str | None = None) -> None:
+    """Control optimista. Ausencia => 422; presente y viejo => 409.
+
+    `hash_family` es el ÁMBITO del hash: con familia se compara el de esa
+    familia (recomendado), sin ella el global, que se conserva para los clientes
+    que aún lo mandan. `family` es la familia de la propuesta y solo sirve para
+    el segundo control; son parámetros distintos a propósito, porque un cliente
+    antiguo manda un hash global sobre una propuesta que sí tiene familia y las
+    dos comprobaciones deben poder aplicarse por separado.
+    """
     if state_hash is None:
-        # Se exige explícitamente en vez de asumir: un POST sin `state_hash`
-        # es un cliente que no leyó, no un cliente al día.
-        raise StaleStateError(
-            "falta `state_hash`: hay que leer el estado antes de firmarlo")
-    actual = compute_state_hash(store_file=store_file)
+        # Contrato incumplido, NO conflicto: recargar no añade un campo que el
+        # cliente nunca envió, y decirle "recarga y revisa" lo manda a perseguir
+        # un fantasma. Esto costó una sesión entera de diagnóstico.
+        raise MissingStateTokenError(
+            "falta `state_hash`/`family_state_hash`: el POST de firma debe "
+            "reenviar el token que devolvió /propose. No es un conflicto de "
+            "estado: el campo no viajaba en la peticion.")
+
+    actual = (family_state_hash(hash_family, store_file=store_file) if hash_family
+              else compute_state_hash(store_file=store_file))
     if state_hash != actual:
+        ambito = f"de la familia {hash_family}" if hash_family else "global"
         raise StaleStateError(
-            f"state_hash obsoleto (leido {state_hash[:12]}…, actual {actual[:12]}…): "
-            "el estado cambio entre la lectura y la firma. Recarga y revisa."
+            f"state_hash obsoleto {ambito} (leido {state_hash[:12]}…, actual "
+            f"{actual[:12]}…): el estado cambio entre la lectura y la firma. "
+            "Recarga y revisa."
         )
+
+    if expected_active_instance_id is not None and family is not None:
+        vigente = active_instance_of(family, store_file=store_file)
+        if vigente != expected_active_instance_id:
+            raise StaleStateError(
+                f"la decision vigente de {family} ya no es "
+                f"{expected_active_instance_id!r} sino {vigente!r}: la propuesta "
+                "se construyo sobre una vigencia que cambio. Recarga y revisa.")
+
+
+# ---------------------------------------------------------------------------
+# Ciclo de vida de una propuesta -- DERIVADO, nunca editado (append-only)
+# ---------------------------------------------------------------------------
+
+def _expired(record: dict, *, now: datetime | None = None) -> bool:
+    ahora = now or datetime.now(timezone.utc)
+    try:
+        nacida = datetime.fromisoformat(record["recorded_at"])
+    except (KeyError, ValueError):
+        return False
+    return (ahora - nacida) > timedelta(hours=PROPOSAL_TTL_HOURS)
+
+
+def proposal_state(instance_id: str, *, store_file: Path | None = None,
+                   records: list[dict] | None = None,
+                   now: datetime | None = None) -> str:
+    """Estado de una propuesta, DERIVADO de los registros que la cierran.
+
+    No se almacena: el almacén es append-only y `status` no se puede reescribir.
+    Derivarlo tiene además la propiedad que importa para una auditoría -- el
+    estado es siempre reproducible desde los hechos, no un campo que alguien
+    pudo dejar desactualizado.
+    """
+    recs = records if records is not None else store.read_all(store_file)
+    prop = _find(instance_id, recs)
+    if prop.get("decision_origin") != "agent_proposed":
+        return PROPOSAL_CONFIRMED   # ya nació firmada: no es una propuesta
+
+    cierres = [r for r in recs if r.get("confirms_instance_id") == instance_id]
+    for c in cierres:
+        if (c.get("payload") or {}).get(ABANDON_MARKER):
+            return PROPOSAL_ABANDONED
+    if any(c["decision"] == "APPROVE" for c in cierres):
+        return PROPOSAL_CONFIRMED
+    if cierres:
+        # Rechazada o devuelta: cerrada, y desde luego no firmable.
+        return PROPOSAL_ABANDONED
+    return PROPOSAL_EXPIRED if _expired(prop, now=now) else PROPOSAL_PROPOSED
+
+
+def list_proposals(family: str | None = None, *,
+                   store_file: Path | None = None) -> list[dict]:
+    """Propuestas con su estado derivado. Read-only.
+
+    Existe para que una propuesta huérfana sea VISIBLE como huérfana. Las 46 de
+    D1 aparecían indistinguibles de decisiones en la lista de `active_instances`
+    porque su `status` es ACTIVE -- que en el esquema significa "no superseded",
+    no "vigente como decisión".
+    """
+    recs = store.read_all(store_file)
+    salida = []
+    for r in recs:
+        if r.get("decision_origin") != "agent_proposed":
+            continue
+        if family and r.get("decision_family") != family:
+            continue
+        salida.append({
+            "decision_instance_id": r["decision_instance_id"],
+            "decision_family": r["decision_family"],
+            "decision_type": r["decision_type"],
+            "target_set_hash": r["target_set_hash"],
+            "proposed_by_id": r.get("proposed_by_id"),
+            "recorded_at": r["recorded_at"],
+            "proposal_state": proposal_state(r["decision_instance_id"], records=recs),
+            "grants_coverage": False,
+        })
+    return salida
 
 
 # ---------------------------------------------------------------------------
@@ -195,6 +370,13 @@ def get_state(*, store_file: Path | None = None) -> dict:
         "notice": ("Registrar una decision NO ejecuta sus efectos: no reverifica "
                    "fuentes, no lanza corridas y no promueve ningun estado."),
         "state_hash": compute_state_hash(store_file=store_file),
+        # Por familia, para que un POST pueda reenviar el ámbito CORRECTO. Sin
+        # esto el cliente solo tenía el global y el servidor lo comparaba contra
+        # el de familia: dos ámbitos distintos, 409 inmediato.
+        "family_state_hashes": {f: family_state_hash(f, store_file=store_file)
+                                for f in GOVERNED_FAMILIES},
+        "active_instances": {f: active_instance_of(f, store_file=store_file)
+                             for f in GOVERNED_FAMILIES},
         "read_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -209,6 +391,7 @@ def propose(family: str, *, target_ids, decision: str = "APPROVE",
             supersedes_instance_id: str | None = None,
             amendment_sequence: int = 0,
             state_hash: str | None = None,
+            family_state_hash: str | None = None,
             store_file: Path | None = None) -> dict:
     """Registra una PROPUESTA (`agent_proposed`). No autoriza nada.
 
@@ -239,8 +422,25 @@ def propose(family: str, *, target_ids, decision: str = "APPROVE",
     valida contra un estado que el propio ciclo invalidó.
     """
     _identity.validate_actor(proposed_by_id, field="proposed_by_id")
-    if state_hash is not None:
+    # Los dos nombres tienen ALCANCES distintos y no son intercambiables:
+    # `state_hash` es el global (el que devuelve GET /governance/state) y
+    # `family_state_hash` el de la familia. Interpretar el global como si fuera
+    # de familia produce un 409 inmediato -- pasó al introducir el control por
+    # familia, y el propose empezó a rechazar el hash que la UI acababa de leer.
+    if family_state_hash is not None:
+        _require_fresh(family_state_hash, store_file=store_file, hash_family=family)
+    elif state_hash is not None:
         _require_fresh(state_hash, store_file=store_file)
+
+    # REUTILIZAR antes que acumular. Un doble clic, un reintento tras un 409 o
+    # dos pestañas producían una propuesta NUEVA idéntica cada vez: así se
+    # llegó a 46 propuestas D1 que eran un único acto repetido. Si ya existe una
+    # equivalente y viva del mismo actor, se devuelve ESA.
+    equivalente = _reusable_proposal(
+        family, target_ids=list(target_ids), decision_type=decision_type,
+        proposed_by_id=proposed_by_id, store_file=store_file)
+    if equivalente is not None:
+        return _with_tokens(equivalente, family, store_file=store_file, reused=True)
 
     record = store.build_record(
         decision_family=family,
@@ -257,11 +457,82 @@ def propose(family: str, *, target_ids, decision: str = "APPROVE",
         store_file=store_file,
     )
     written = store.append_record(record, store_file=store_file)
-    # El `state_hash` viaja FUERA del registro almacenado: es estado de sesión
-    # del ciclo de firma, no un hecho de la decisión. Meterlo en el registro lo
-    # volvería un campo que el esquema no declara y que un auditor tendría que
-    # interpretar.
-    return {**written, "state_hash": compute_state_hash(store_file=store_file)}
+    return _with_tokens(written, family, store_file=store_file, reused=False)
+
+
+def _with_tokens(record: dict, family: str, *, store_file: Path | None,
+                 reused: bool) -> dict:
+    """Añade a la respuesta los tokens que `confirm` va a exigir.
+
+    Viajan FUERA del registro almacenado: son estado de sesión del ciclo de
+    firma, no hechos de la decisión, y el esquema declara
+    `additionalProperties: false`.
+
+    Que los devuelva /propose y no un GET posterior es lo que hace el ciclo
+    cerrable: /propose es el acto que cambia el estado, así que es el único que
+    puede entregar un token que describa el estado DESPUÉS de ese cambio.
+    """
+    return {
+        **record,
+        "proposal_id": record["decision_instance_id"],
+        "proposal_hash": record["target_set_hash"],
+        "expected_active_instance_id": active_instance_of(
+            family, store_file=store_file),
+        "family_state_hash": family_state_hash(family, store_file=store_file),
+        # `state_hash` conserva su significado GLOBAL. Devolver aquí el de
+        # familia bajo el nombre viejo haría que un cliente antiguo comparara
+        # dos ámbitos distintos y viera un conflicto donde no lo hay.
+        "state_hash": compute_state_hash(store_file=store_file),
+        "proposal_state": proposal_state(record["decision_instance_id"],
+                                         store_file=store_file),
+        "reused_existing_proposal": reused,
+    }
+
+
+def _reusable_proposal(family: str, *, target_ids: list[str], decision_type: str,
+                       proposed_by_id: str,
+                       store_file: Path | None = None) -> dict | None:
+    """Propuesta viva y equivalente del mismo actor, si existe.
+
+    Equivalente = misma familia, mismo tipo, mismo conjunto objetivo (por
+    `target_set_hash`, no por el orden de la lista) y mismo proponente. Viva =
+    en estado PROPOSED: una EXPIRED, ABANDONED o CONFIRMED no se reutiliza,
+    porque reutilizarlas sería revivir algo que ya se cerró.
+    """
+    objetivo = store.compute_target_set_hash(sorted(set(target_ids)))
+    recs = store.read_all(store_file)
+    vivas = [
+        r for r in recs
+        if r.get("decision_family") == family
+        and r.get("decision_origin") == "agent_proposed"
+        and r.get("decision_type") == decision_type
+        and r.get("target_set_hash") == objetivo
+        and r.get("proposed_by_id") == proposed_by_id
+        and proposal_state(r["decision_instance_id"], records=recs) == PROPOSAL_PROPOSED
+    ]
+    return sorted(vivas, key=lambda r: r["recorded_at"])[-1] if vivas else None
+
+
+def abandon(instance_id: str, *, abandoned_by_id: str,
+            abandoned_by_display_name: str | None = None, reason: str = "",
+            store_file: Path | None = None) -> dict:
+    """Abandona una propuesta de forma gobernada. NO la borra.
+
+    Es la salida limpia para el residuo: una propuesta que nadie va a firmar
+    deja de aparecer como firmable sin que haya que tocar su línea. El registro
+    de abandono es un hecho más, con autor y motivo, y `never_authorizes` no
+    aplica aquí porque un abandono no otorga nada por construcción: DEFER no
+    está en `GRANTING_DECISIONS`.
+    """
+    if not (reason or "").strip():
+        raise store.DecisionValidationError(
+            "abandonar exige motivo: dejar residuo sin explicar es lo que "
+            "obligo a escribir dos anotaciones de registro")
+    return _closing_record(
+        instance_id, decision="DEFER", decision_type="ORIGINAL",
+        by_id=abandoned_by_id, by_name=abandoned_by_display_name,
+        reason=reason, field="returned_by_id", store_file=store_file,
+        payload={ABANDON_MARKER: True})
 
 
 def _find(instance_id: str, records: list[dict]) -> dict:
@@ -273,7 +544,8 @@ def _find(instance_id: str, records: list[dict]) -> dict:
 
 def _closing_record(instance_id: str, *, decision: str, decision_type: str | None,
                     by_id: str, by_name: str | None, reason: str,
-                    field: str, store_file: Path | None) -> dict:
+                    field: str, store_file: Path | None,
+                    payload: dict | None = None) -> dict:
     """Registro humano que cierra una propuesta. NUNCA borra la propuesta.
 
     El almacén es append-only y la cadena es Part 11: rechazar es añadir el
@@ -307,6 +579,16 @@ def _closing_record(instance_id: str, *, decision: str, decision_type: str | Non
             f"{instance_id} ya fue resuelta por "
             f"{already[0]['decision_instance_id']} ({already[0]['decision']})")
 
+    # Una propuesta caducada no se firma. Se abandona o se propone de nuevo:
+    # firmar algo de hace dias es firmar un estado que el firmante ya no ve.
+    # Abandonar sí se permite -- es la salida gobernada del residuo.
+    estado = proposal_state(instance_id, records=records)
+    if estado == PROPOSAL_EXPIRED and not (payload or {}).get(ABANDON_MARKER):
+        raise store.DecisionConflictError(
+            f"{instance_id} esta EXPIRED (mas de {PROPOSAL_TTL_HOURS} h sin "
+            "resolver): vuelve a proponer sobre el estado actual en vez de "
+            "firmar una lectura vieja.")
+
     conserva = decision_type is None
     tipo = proposal["decision_type"] if conserva else decision_type
     record = store.build_record(
@@ -324,15 +606,24 @@ def _closing_record(instance_id: str, *, decision: str, decision_type: str | Non
         amendment_sequence=(proposal.get("amendment_sequence", 0)
                             if conserva else 0),
         reason=reason,
-        payload=proposal.get("payload"),
+        payload={**(proposal.get("payload") or {}), **(payload or {})} or None,
         store_file=store_file,
     )
     return store.append_record(record, store_file=store_file)
 
 
+def _proposal_family(instance_id: str, *, store_file: Path | None) -> str | None:
+    try:
+        return _find(instance_id, store.read_all(store_file)).get("decision_family")
+    except GovernanceNotFoundError:
+        return None
+
+
 def confirm(instance_id: str, *, approved_by_id: str,
             approved_by_display_name: str | None = None, reason: str = "",
             state_hash: str | None = None,
+            family_state_hash: str | None = None,
+            expected_active_instance_id: str | None = None,
             store_file: Path | None = None) -> dict:
     """Confirma una propuesta. AQUI se materializa el snapshot.
 
@@ -340,8 +631,28 @@ def confirm(instance_id: str, *, approved_by_id: str,
     congela en el momento de la firma, no al leerlo. Guardar `"ALL"` como
     comodín abierto y resolverlo más tarde es exactamente lo que dejó a
     Part 211 fuera de una D1 que decía cubrirlo todo.
+
+    El control es de FAMILIA, no global: se compara contra el estado de la
+    familia de la propuesta, así que aprobar un pack de D2 ya no invalida una
+    firma de D1 que sigue siendo válida. `family_state_hash` es el nombre
+    preferido; `state_hash` se acepta como alias para los clientes que aún lo
+    envían y se interpreta con el mismo alcance.
     """
-    _require_fresh(state_hash, store_file=store_file)
+    familia = _proposal_family(instance_id, store_file=store_file)
+    # Se resuelve la familia ANTES de exigir el token para que una propuesta
+    # inexistente dé 404 y no un 422 sobre un campo que da igual.
+    if familia is None:
+        raise GovernanceNotFoundError(f"no existe la decision {instance_id!r}")
+
+    # Cada nombre con SU ámbito. `family_state_hash` es el preferido;
+    # `state_hash` se sigue aceptando con su semántica global de siempre, para
+    # no romper a un cliente que aún lo envíe.
+    _require_fresh(
+        family_state_hash if family_state_hash is not None else state_hash,
+        store_file=store_file,
+        hash_family=familia if family_state_hash is not None else None,
+        family=familia,
+        expected_active_instance_id=expected_active_instance_id)
     return _closing_record(
         instance_id, decision="APPROVE", decision_type=None,   # conserva el de la propuesta
         by_id=approved_by_id, by_name=approved_by_display_name,

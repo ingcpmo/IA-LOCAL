@@ -123,8 +123,22 @@ function coverageBlock(family, c){
       <span class="meta">solo reconstruidas (NO autorizan):</span> ${chips(c.reconstructed_only_ids,'c-warn')}</div>`:''}
     ${(c.revoked_ids||[]).length ? `<div style="margin-top:4px">
       <span class="meta">revocadas:</span> ${chips(c.revoked_ids,'c-fail')}</div>`:''}
-    ${(c.active_instances||[]).length ? `<div class="meta" style="margin-top:4px">
-      decisiones ACTIVE: <span class="mono">${esc((c.active_instances||[]).join(', '))}</span></div>`:''}`;
+    ${(c.confirmed_active_instances||[]).length ? `<div class="meta" style="margin-top:4px">
+      decisiones FIRMADAS y vigentes: <span class="mono">${esc((c.confirmed_active_instances||[]).join(', '))}</span></div>`:`
+      <div class="meta" style="margin-top:4px;color:var(--warn)">
+        ninguna decisión firmada y vigente</div>`}
+    ${(() => {
+      /* Las PROPUESTAS se cuentan aparte y se dicen propuestas. Antes se
+         mostraba `active_instances`, que incluye las no confirmadas porque
+         `status: ACTIVE` en el esquema significa "no superseded" y no "vigente
+         como decisión": 55 propuestas huérfanas de D1 se leían como decisiones
+         ACTIVE. Presentar residuo como gobernanza es peor que no mostrar nada. */
+      const props = (c.active_instances||[]).filter(
+        i => !(c.confirmed_active_instances||[]).includes(i));
+      return props.length ? `<div class="meta" style="margin-top:4px;color:var(--faint)">
+        propuestas sin firmar (NO otorgan cobertura): <b>${props.length}</b>
+        <span class="mono">${esc(props.slice(-3).join(', '))}${props.length>3?' …':''}</span></div>` : '';
+    })()}`;
 }
 
 /* ── índice: seis tarjetas + camino crítico ────────────────────────────── */
@@ -447,7 +461,11 @@ async function postJSON(url, body){
 
 function explicaError(status, data){
   const detalle = typeof data?.detail === 'string' ? data.detail : JSON.stringify(data?.detail ?? '');
-  if(status===422) return 'Rechazado (422): ' + detalle;
+  /* 422 y 409 dicen cosas distintas y la guía tiene que diferenciarlas: un
+     campo ausente NO se arregla recargando, y decir "recarga y revisa" ante un
+     422 manda al humano a perseguir un fantasma. */
+  if(status===422) return 'Rechazado (422): ' + detalle
+       + ' — es un problema de la petición o de la identidad, no del estado: recargar no lo arregla.';
   if(status===409) return 'Conflicto (409): ' + detalle + ' — recarga y revisa antes de firmar.';
   if(status===404) return 'No encontrado (404): ' + detalle;
   return 'Error ' + status + ': ' + detalle;
@@ -469,14 +487,34 @@ async function proponerYConfirmar(family, targetIds, sig, extra={}){
 
   const prop = await postJSON(`/api/v1/layer9/governance/decisions/${family}/propose`, {
     target_ids: targetIds, proposed_by_id: 'mission_control_ui',
-    reason: sig.reason, state_hash: GOV?.state_hash, ...extra,
+    reason: sig.reason,
+    /* El hash de LA FAMILIA, no el global: el servidor compara por familia y
+       mandarle el global es comparar dos ámbitos distintos -> 409 inmediato. */
+    family_state_hash: GOV?.family_state_hashes?.[family],
+    ...extra,
   });
   if(!prop.ok){ toast(explicaError(prop.status, prop.data)); return; }
 
-  const iid = prop.data.decision_instance_id;
+  /* Los tokens SALEN de la respuesta del propose, que es la autoridad: es el
+     acto que cambió el estado, así que es el único que puede describir el
+     estado posterior. Si alguno falta, se aborta ANTES de firmar en vez de
+     mandar `undefined` -- ese envío silencioso produjo un 409 "falta
+     state_hash" que mandó a recargar durante una sesión entera. */
+  const iid = prop.data.proposal_id || prop.data.decision_instance_id;
+  const fh  = prop.data.family_state_hash ?? prop.data.state_hash;
+  if(!iid || !fh){
+    toast('El servidor no devolvió los tokens de firma (proposal_id/'
+        + 'family_state_hash). No se firma a ciegas. Propuesta: ' + (iid||'?'));
+    return;
+  }
+  if(prop.data.reused_existing_proposal){
+    toast(`Se reutiliza la propuesta ${iid} en vez de crear otra.`);
+  }
   const conf = await postJSON(`/api/v1/layer9/governance/decisions/${iid}/confirm`, {
     approved_by_id: sig.id, approved_by_display_name: sig.name || sig.id,
-    reason: sig.reason, state_hash: prop.data.state_hash,
+    reason: sig.reason,
+    family_state_hash: fh,
+    expected_active_instance_id: prop.data.expected_active_instance_id ?? null,
   });
   if(!conf.ok){
     toast(explicaError(conf.status, conf.data) +
@@ -521,18 +559,25 @@ export async function govSubmitExcepcion(verdict){
     state_hash: GOV?.state_hash,
   });
   if(!prop.ok){ toast(explicaError(prop.status, prop.data)); return; }
-  const iid = prop.data.decision_instance_id;
 
-  /* Mismo encadenamiento que en `proponerYConfirmar`: el hash del propose, no
-     el del GET. Este panel arrastraba el defecto idéntico. */
+  /* Mismos tokens autoritativos que en `proponerYConfirmar`: los del propose,
+     nunca los del GET, y se aborta si no llegan. Este panel arrastraba el
+     defecto idéntico. */
+  const iid = prop.data.proposal_id || prop.data.decision_instance_id;
+  const fh  = prop.data.family_state_hash ?? prop.data.state_hash;
+  if(!iid || !fh){
+    toast('El servidor no devolvió los tokens de firma. No se firma a ciegas.');
+    return;
+  }
   const url = verdict==='APPROVE'
     ? `/api/v1/layer9/governance/decisions/${iid}/confirm`
     : `/api/v1/layer9/governance/decisions/${iid}/reject`;
   const body = verdict==='APPROVE'
     ? {approved_by_id:sig.id, approved_by_display_name:sig.name||sig.id,
-       reason:sig.reason, state_hash:prop.data.state_hash}
+       reason:sig.reason, family_state_hash:fh,
+       expected_active_instance_id: prop.data.expected_active_instance_id ?? null}
     : {rejected_by_id:sig.id, rejected_by_display_name:sig.name||sig.id,
-       reason:sig.reason, state_hash:prop.data.state_hash};
+       reason:sig.reason, state_hash:fh};
 
   const res = await postJSON(url, body);
   if(!res.ok){ toast(explicaError(res.status, res.data)); return; }

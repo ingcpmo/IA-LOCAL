@@ -352,15 +352,22 @@ def _exclusive(path: Path):
     Paso en produccion -- D1-2026-017, -018 y -021 estan duplicados, cada par
     con el mismo segundo, hijos de un doble clic.
 
-    El candado va en un fichero aparte y no en el almacen porque el almacen se
-    abre en modo append y se lee en otros sitios sin candado; bloquear el
-    sidecar no cambia como se lee. Con esto el segundo escritor ve la linea del
-    primero y sale con DecisionConflictError, que es un error honesto, en vez
-    de duplicar en silencio.
+    El candado va sobre el PROPIO almacen y no sobre un fichero `.lock` aparte.
+    El sidecar parecia mas limpio y era peor: este almacen lo escriben dos uid
+    distintos -- el contenedor factory-api corre como root (0) y las
+    herramientas del host como 1001 --, asi que el primero en crear el sidecar
+    lo dejaba con su propietario y modo 644 y el otro no podia ni abrirlo. Un
+    candado que produce EACCES no serializa: bloquea. Sobre el almacen no pasa,
+    porque ambos ya tienen que poder escribirlo para hacer su trabajo.
+
+    flock es ADVISORY: no estorba a los lectores sin candado, que es justo lo
+    que hace falta -- `read_all` se llama desde muchos sitios y no debe
+    bloquearse. Con esto el segundo escritor ve la linea del primero y sale con
+    DecisionConflictError, que es un error honesto, en vez de duplicar en
+    silencio.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
-    lock = path.with_suffix(path.suffix + ".lock")
-    with lock.open("a+", encoding="utf-8") as fh:
+    with path.open("a", encoding="utf-8") as fh:
         fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
         try:
             yield

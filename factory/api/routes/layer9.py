@@ -1341,7 +1341,18 @@ class GovernanceConfirmBody(BaseModel):
     approved_by_id: str
     approved_by_display_name: str | None = None
     reason: str = ""
+    # Sigue opcional en el SCHEMA y obligatorio en la LÓGICA, a propósito: si
+    # fuera `required` de Pydantic, FastAPI devolvería un 422 genérico de
+    # validación en vez del mensaje que explica QUÉ token falta y de dónde sale.
     state_hash: str | None = None
+    family_state_hash: str | None = None
+    expected_active_instance_id: str | None = None
+
+
+class GovernanceAbandonBody(BaseModel):
+    abandoned_by_id: str
+    abandoned_by_display_name: str | None = None
+    reason: str = ""
 
 
 class GovernanceRejectBody(BaseModel):
@@ -1366,6 +1377,14 @@ def _governance_error(exc: Exception) -> HTTPException:
 
     if isinstance(exc, _gov.GovernanceNotFoundError):
         return HTTPException(404, str(exc))
+    # El orden importa: MissingStateTokenError es un ValueError y tiene que
+    # comprobarse ANTES que cualquier rama que capture ValueError. Un campo
+    # ausente es 422 (contrato incumplido), no 409 (conflicto de estado) --
+    # devolver 409 con "recarga y revisa" para un campo que nunca viajó mandó a
+    # un humano a recargar durante una sesión entera sin que eso pudiera
+    # arreglarlo.
+    if isinstance(exc, _gov.MissingStateTokenError):
+        return HTTPException(422, str(exc))
     if isinstance(exc, (_gov.StaleStateError, _store.DecisionConflictError)):
         return HTTPException(409, str(exc))
     if isinstance(exc, (_identity.IdentityValidationError, _store.DecisionValidationError)):
@@ -1430,7 +1449,9 @@ def post_governance_confirm(instance_id: str, body: GovernanceConfirmBody):
         return _gov.confirm(
             instance_id, approved_by_id=body.approved_by_id,
             approved_by_display_name=body.approved_by_display_name,
-            reason=body.reason, state_hash=body.state_hash)
+            reason=body.reason, state_hash=body.state_hash,
+            family_state_hash=body.family_state_hash,
+            expected_active_instance_id=body.expected_active_instance_id)
     except Exception as e:
         raise _governance_error(e)
 
@@ -1457,5 +1478,36 @@ def post_governance_reject(instance_id: str, body: GovernanceRejectBody):
             instance_id, rejected_by_id=body.rejected_by_id,
             rejected_by_display_name=body.rejected_by_display_name,
             reason=body.reason, state_hash=body.state_hash)
+    except Exception as e:
+        raise _governance_error(e)
+
+
+@router.get("/governance/proposals")
+def get_governance_proposals(family: str | None = Query(default=None)):
+    """Propuestas con su estado DERIVADO. Solo lectura.
+
+    Existe para que una propuesta huérfana se vea como huérfana: su `status` en
+    el esquema es ACTIVE, que significa "no superseded", no "vigente como
+    decisión". Cada entrada lleva `grants_coverage: false` explícito."""
+    from factory.services import governance_service as _gov
+    try:
+        return {"proposals": _gov.list_proposals(family)}
+    except Exception as e:
+        raise _governance_error(e)
+
+
+@router.post("/governance/decisions/{instance_id}/abandon", status_code=201)
+def post_governance_abandon(instance_id: str, body: GovernanceAbandonBody):
+    """Abandona una propuesta de forma gobernada. NO la borra ni la oculta.
+
+    Sin `state_hash`: abandonar no otorga nada y no depende de que el estado no
+    haya cambiado -- exigir un token para tirar basura solo garantiza que la
+    basura se quede."""
+    from factory.services import governance_service as _gov
+    try:
+        return _gov.abandon(
+            instance_id, abandoned_by_id=body.abandoned_by_id,
+            abandoned_by_display_name=body.abandoned_by_display_name,
+            reason=body.reason)
     except Exception as e:
         raise _governance_error(e)

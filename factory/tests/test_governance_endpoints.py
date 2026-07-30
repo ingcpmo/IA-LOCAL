@@ -281,9 +281,17 @@ def test_u4_confirming_with_a_stale_hash_is_409(tmp_store):
 
 
 def test_u4_a_post_without_state_hash_is_rejected(tmp_store):
-    """Un POST sin `state_hash` es un cliente que no leyo, no uno al dia."""
+    """Un POST sin `state_hash` sigue rechazado, pero con 422 y no con 409.
+
+    G2.1 cambio el CODIGO a proposito: un campo ausente es un contrato
+    incumplido, no un conflicto de estado. Este test esperaba
+    `StaleStateError` (409), y ese 409 llevaba el texto "recarga y revisa" --
+    que mando a un humano a recargar durante una sesion entera para arreglar un
+    campo que su cliente nunca enviaba. Recargar no podia funcionar. La
+    distincion importa mas que la simetria del codigo anterior.
+    """
     p = _propose(tmp_store)
-    with pytest.raises(gov.StaleStateError):
+    with pytest.raises(gov.MissingStateTokenError):
         gov.confirm(p["decision_instance_id"], approved_by_id="Cesar",
                     store_file=tmp_store)
 
