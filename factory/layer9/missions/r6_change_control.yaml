@@ -59,11 +59,11 @@ regulatory_scope:
 - 21 CFR Part 11
 - 21 CFR Part 211
 - ALCOA+
-status: rejected
+status: returned_to_adjustments
 status_note: Código generado en sesión interactiva. Lazo autónomo (B2) se cierra en
   Fase G.
-updated_at: '2026-06-25T19:53:29.492364+00:00'
-returned_by: Cesar
+updated_at: '2026-07-28T22:05:31.680543+00:00'
+returned_by: cesar
 return_reason: devolución a ajustes · vía Mission Control
 rejected_by: Cesar
 rejection_reason: Misión interrumpida sin retomar; liberar slot
