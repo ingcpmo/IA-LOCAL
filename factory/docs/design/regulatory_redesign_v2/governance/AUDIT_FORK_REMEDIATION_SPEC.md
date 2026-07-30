@@ -366,13 +366,42 @@ audit_exception_package:
       date: "2026-06-15T14:21:43+00:00"
       evidence: "19 710 entradas posteriores sin una sola ruptura"
     - measure: "writer_pid / writer_host / writer_identity en cada entrada"
-      status: PENDIENTE          # G7
+      status: IMPLEMENTADA       # G7
+      evidence: >
+        En el cuerpo HASHEADO, no en `data`: una identidad editable sin
+        invalidar el entry_hash no prueba nada. La violación —una entrada sin
+        identidad DESPUÉS del ancla— se mide sobre la cadena real, y el ancla se
+        DERIVA (primera entrada que trae los tres campos), no se declara en un
+        fichero que se pudiera adelantar para esconder entradas.
     - measure: "fork_baseline.json congelado y validado contra excepciones"
-      status: PENDIENTE          # G7
+      status: IMPLEMENTADA       # G1.14 lo congeló, G7 exige que el resolver responda
+      evidence: >
+        `unbacked_known_forks()` consulta al resolver de verdad. Que la función
+        exista no basta: degrada a "todos sin respaldo" si el import falla, y en
+        ese modo no está validando contra nada, solo negando todo.
     - measure: "NEW_FORKS_SINCE_BASELINE > 0 ⇒ FAIL en Gate 0"
-      status: PENDIENTE          # G7
+      status: IMPLEMENTADA       # G1.17
+      evidence: "`_verdict_audit_chain` trata el fork nuevo con `ko`, no con `warn`."
     - measure: "write_event nunca falla en silencio"
-      status: PENDIENTE          # G7
+      status: IMPLEMENTADA       # G7
+      evidence: >
+        Lock con timeout de 5 s y 3 reintentos (`LOCK_NB`): agotados, lanza
+        `AuditLockError` y NO escribe. `LOCK_EX` bloqueante esperaba para
+        siempre — un cuelgue silencioso y un evento perdido en silencio son el
+        mismo defecto. Todo fallo va a stderr y a
+        `factory/logs/audit_write_failures.log`, que NO está encadenado a
+        propósito: encadenar el registro de "no pude encadenar" es circular.
+
+  # El estado de estas cinco medidas se DERIVA (`audit_writer.preventive_measures()`)
+  # y viaja en `GET /governance/state`. Vivió como cinco literales `ok:false` en
+  # `governance.js` para irlos flipando a mano, y de esa lista depende el botón
+  # "Aceptar": un `true` escrito a mano habilitaba una firma regulatoria sobre una
+  # prevención que podía no existir. Cada medida declara además su clase de
+  # evidencia (DERIVED_FROM_CHAIN | SOURCE_INSPECTION), que no son equivalentes.
+  #
+  # Lo que NO se exige: que la cadena ya CONTENGA una entrada sellada. Eso creaba
+  # un abrazo mortal — las entradas nuevas las produce la actividad gobernada, y
+  # la actividad que faltaba era justo la firma que la medida bloquea.
 
   # 5. LO QUE SE PIDE
   requested_of_capa9: >

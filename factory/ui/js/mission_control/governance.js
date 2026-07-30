@@ -322,22 +322,29 @@ function panelD1A(){
 
 /* ── Panel E — Excepción de auditoría ──────────────────────────────────── */
 
-/* Las cinco medidas preventivas de AUDIT_FORK_REMEDIATION_SPEC §7. Solo la
-   primera está implementada; las otras cuatro son G7. `Aceptar` permanece
-   deshabilitado hasta que las cinco estén: aceptar una excepción cuya
-   prevención no está implementada es aceptar que vuelva a pasar. */
-const MEDIDAS = [
-  { ok:true,  txt:'flock + invalidación de caché dentro del lock (8c033fa)',
-    ev:'evidencia: ninguna ruptura en las entradas posteriores' },
-  { ok:false, txt:'writer_pid / writer_host / writer_identity por entrada', ev:'G7' },
-  { ok:false, txt:'fork_baseline.json validado contra excepciones registradas',
-    ev:'G1.14 lo reporta; el gate lo exige en G7' },
-  { ok:false, txt:'NEW_FORKS_SINCE_BASELINE > 0 ⇒ FAIL en Gate 0', ev:'G1.17 / G7' },
-  { ok:false, txt:'write_event nunca falla en silencio', ev:'G7' },
-];
+/* Las cinco medidas preventivas de AUDIT_FORK_REMEDIATION_SPEC §7. `Aceptar`
+   permanece deshabilitado hasta que las cinco estén: aceptar una excepción cuya
+   prevención no está implementada es aceptar que vuelva a pasar.
+
+   El estado lo DERIVA el backend (`audit_writer.preventive_measures()`). Antes
+   vivía aquí como cinco literales `ok:false` para ir flipándolos a mano, y eso
+   convertía el candado del botón en una declaración de intenciones: un `true`
+   escrito a mano habilita una firma regulatoria sobre una prevención que puede
+   no existir. Si el backend no manda la lista, se asume que NO están: degradar
+   hacia "faltan todas" mantiene el botón cerrado. */
+function medidas(){
+  const ms = GOV?.preventive_measures;
+  if(!Array.isArray(ms) || !ms.length){
+    return [{ ok:false, txt:'estado de las medidas preventivas no disponible',
+              ev:'el backend no lo reportó — se asume que faltan' }];
+  }
+  return ms.map(m=>({ ok:!!m.implemented, txt:m.measure||m.id||'',
+                      ev:`${m.evidence_kind||''}: ${m.evidence||''}` }));
+}
 
 function panelExcepcion(){
   const a = GOV.audit;
+  const MEDIDAS = medidas();
   const pendientes = MEDIDAS.filter(m=>!m.ok).length;
   const forks = a.unbacked_known_fork_entry_ids || [];
   return `

@@ -364,6 +364,11 @@ def get_state(*, store_file: Path | None = None) -> dict:
             "new_forks_since_baseline", "new_fork_entry_ids",
             "unbacked_known_fork_entry_ids", "part11_compliant",
             "log_count", "hash_errors", "chain_errors")},
+        # G7: el estado de las 5 medidas preventivas viaja DERIVADO del backend.
+        # Gobierna el boton "Aceptar" del panel de excepcion, y por eso no puede
+        # ser una lista de literales que alguien flipee a mano en el JS.
+        "preventive_measures": _audit.preventive_measures(),
+        "preventive_measures_complete": _audit.preventive_measures_complete(),
         "critical_path": _critical_path(coverage, audit, artifacts),
         # U-5: la leyenda viaja con los datos, no solo en el HTML. Un cliente
         # que solo consuma la API tiene que ver la misma advertencia.

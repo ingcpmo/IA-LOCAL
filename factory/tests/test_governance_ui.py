@@ -92,6 +92,22 @@ FIXTURE_STATE = {
         {"gate": "G7", "status": "BLOQUEADO",
          "blocked_by": ["fork sin excepcion firmada"]},
     ],
+    # G7: el estado de las medidas lo DERIVA el backend y viaja en el estado.
+    # Dos sin implementar a proposito: el fixture tiene que poder ejercitar el
+    # candado del boton, no solo el caso feliz.
+    "preventive_measures": [
+        {"id": "flock_and_cache_invalidation", "measure": "flock + invalidacion",
+         "implemented": True, "evidence_kind": "SOURCE_INSPECTION", "evidence": "8c033fa"},
+        {"id": "writer_identity_guard", "measure": "identidad de escritor",
+         "implemented": True, "evidence_kind": "DERIVED_FROM_CHAIN", "evidence": "0 sin identidad"},
+        {"id": "baseline_validated", "measure": "baseline validado",
+         "implemented": True, "evidence_kind": "DERIVED_FROM_CHAIN", "evidence": "resolver responde"},
+        {"id": "new_forks_fail_gate0", "measure": "fork nuevo = FAIL",
+         "implemented": False, "evidence_kind": "SOURCE_INSPECTION", "evidence": "pendiente"},
+        {"id": "no_silent_write_failure", "measure": "sin fallo silencioso",
+         "implemented": False, "evidence_kind": "SOURCE_INSPECTION", "evidence": "pendiente"},
+    ],
+    "preventive_measures_complete": False,
 }
 
 
@@ -182,11 +198,61 @@ def test_part211_checkbox_is_disabled_with_its_reason(rendered):
 @needs_node
 def test_accepting_the_audit_exception_is_disabled_until_prevention_is_done(rendered):
     """Aceptar una excepcion cuya prevencion no esta implementada es aceptar
-    que vuelva a pasar. Rechazar SI esta disponible: es un final legitimo."""
+    que vuelva a pasar. Rechazar SI esta disponible: es un final legitimo.
+
+    El conteo se DERIVA del fixture. Estaba escrito a mano ("faltan 4 de las
+    5"), o sea afirmaba el mundo de aquel dia en vez de la regla, y se puso rojo
+    en cuanto las medidas se implementaron de verdad -- exactamente el defecto
+    que `ecc7fa6` corrigio en el guard de riesgos.
+    """
     html = rendered["panels"]["excepcion-auditoria"]
+    faltan = sum(1 for m in FIXTURE_STATE["preventive_measures"]
+                 if not m["implemented"])
     assert "disabled" in html
-    assert "faltan 4 de las 5" in html
+    assert f"faltan {faltan} de las 5" in html
     assert "Rechazar" in html
+
+
+@needs_node
+def test_the_accept_button_opens_when_the_backend_says_prevention_is_done(
+        tmp_path_factory):
+    """La otra mitad del invariante: con las cinco medidas, el boton abre.
+
+    Sin esta direccion, el test anterior lo aprobaria una UI que dejara el boton
+    cerrado para siempre -- y un candado que nunca se abre no es un control, es
+    un bloqueo, y ademas dejaria a Cesar sin superficie para decidir.
+    """
+    import copy
+    estado = copy.deepcopy(FIXTURE_STATE)
+    for m in estado["preventive_measures"]:
+        m["implemented"] = True
+    estado["preventive_measures_complete"] = True
+
+    html = _render(tmp_path_factory, estado, "gov_ui_completas")["panels"]["excepcion-auditoria"]
+    assert "de las 5 medidas" not in html
+
+    # El tag del boton "Aceptar", no la pagina entera: buscar `disabled` en todo
+    # el HTML lo encontraria en cualquier otro control y pasaria por accidente.
+    i = html.index("govSubmitExcepcion('APPROVE')")
+    tag = html[html.rindex("<button", 0, i):html.index(">", i)]
+    assert "disabled" not in tag, tag
+
+
+@needs_node
+def test_a_backend_that_reports_no_measures_keeps_the_button_shut(tmp_path_factory):
+    """Fail-closed: sin datos, faltan todas.
+
+    Degradar hacia "estan todas" abriria la firma justo cuando no se sabe nada
+    de la prevencion.
+    """
+    import copy
+    estado = copy.deepcopy(FIXTURE_STATE)
+    estado.pop("preventive_measures")
+    estado.pop("preventive_measures_complete")
+
+    html = _render(tmp_path_factory, estado, "gov_ui_sin_medidas")["panels"]["excepcion-auditoria"]
+    assert "disabled" in html
+    assert "no disponible" in html
 
 
 @needs_node

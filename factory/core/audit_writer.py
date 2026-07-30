@@ -24,6 +24,10 @@ import fcntl
 import hashlib
 import json
 import os
+import pwd
+import socket
+import sys
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,7 +35,29 @@ from pathlib import Path
 AUDIT_FILE = Path(__file__).parent.parent / "audit" / "factory_audit.jsonl"
 FORK_BASELINE_FILE = Path(__file__).parent.parent / "audit" / "fork_baseline.json"
 
+# --- W5 V2 G7 — medidas preventivas §4.2 del AUDIT_FORK_REMEDIATION_SPEC -----
+#
+# Un evento perdido es peor que una excepción: si `write_event` no logra
+# escribir, el fallo tiene que dejar rastro FUERA de la cadena que no pudo
+# tocar. De ahí este fichero, que no está encadenado a propósito — encadenar el
+# registro de "no pude encadenar" es circular.
+AUDIT_WRITE_FAILURES_FILE = Path(__file__).parent.parent / "logs" / "audit_write_failures.log"
+
+# Nunca escribir sin lock. Agotados los reintentos se falla ruidosamente.
+LOCK_TIMEOUT_SECONDS = 5.0
+LOCK_RETRIES = 3
+_LOCK_POLL_SECONDS = 0.05
+
+# Guardia de escritor único: identifica a QUIÉN escribió cada entrada. Van en
+# el cuerpo HASHEADO, no en `data`: una identidad de escritor que se pueda
+# editar sin invalidar el hash no prueba nada.
+WRITER_IDENTITY_FIELDS = ("writer_pid", "writer_host", "writer_identity")
+
 _last_entry_hash: str | None = None
+
+
+class AuditLockError(RuntimeError):
+    """No se pudo tomar el lock exclusivo. No se escribió nada."""
 
 # --- W5 V2 G1.14 — reporte por dimensión ------------------------------------
 #
@@ -216,10 +242,91 @@ def _get_prev_hash() -> str:
     return "GENESIS"
 
 
+def writer_identity() -> dict:
+    """Quién está escribiendo: proceso, host e identidad de SO.
+
+    Las tres juntas, y no una sola, porque los escritores reales de esta cadena
+    tienen identidades de SO DISTINTAS: el host escribe como `ing_cpmo` y el
+    contenedor `factory-api` como `root`, sobre el mismo inodo a través del
+    bind-mount. Con solo el pid no se distinguen dos procesos de contenedores
+    diferentes; con solo el usuario, no se distingue un script ad-hoc del
+    servidor.
+    """
+    try:
+        user = pwd.getpwuid(os.getuid()).pw_name
+    except Exception:  # noqa: BLE001 -- uid sin entrada en passwd (contenedores)
+        user = f"uid:{os.getuid()}"
+    return {
+        "writer_pid": os.getpid(),
+        "writer_host": socket.gethostname(),
+        "writer_identity": f"{user}@uid:{os.getuid()}",
+    }
+
+
+def _report_write_failure(reason: str, detail: str) -> None:
+    """Deja rastro de un fallo de escritura en stderr Y en fichero.
+
+    §4.2: `write_event` nunca debe fallar en silencio. Antes devolvía
+    `{"error": ...}` y muchos llamadores no miran el retorno, así que un evento
+    perdido no dejaba ni una línea en ninguna parte.
+
+    Este reporte es best-effort por construcción y NO propaga: se lo llama
+    desde la ruta de error, y una excepción aquí taparía justo el fallo que se
+    intenta hacer visible. stderr va primero para que quede algo aunque el
+    fichero sea inescribible — que es uno de los modos de fallo posibles.
+    """
+    stamp = datetime.now(timezone.utc).isoformat()
+    line = json.dumps({"timestamp": stamp, "reason": reason, "detail": detail,
+                       **writer_identity()},
+                      separators=(",", ":"), ensure_ascii=False)
+    try:
+        print(f"AUDIT WRITE FAILURE {line}", file=sys.stderr, flush=True)
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        AUDIT_WRITE_FAILURES_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(AUDIT_WRITE_FAILURES_FILE, "a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _acquire_lock(lock_fh, *, timeout: float = LOCK_TIMEOUT_SECONDS,
+                  retries: int = LOCK_RETRIES) -> None:
+    """Lock exclusivo con timeout y reintentos. Nunca escribir sin lock.
+
+    `LOCK_EX` bloqueante esperaba PARA SIEMPRE: un lock huérfano —y hubo uno,
+    creado por root con modo 644 mientras el host escribía como 1001— colgaba
+    al escritor sin decir nada. Un cuelgue silencioso y un evento perdido en
+    silencio son el mismo defecto con dos caras.
+
+    Agotados los reintentos se lanza `AuditLockError` y NO se escribe. Escribir
+    sin lock reintroduciría exactamente la condición que produjo el fork.
+    """
+    last_error: OSError | None = None
+    for _ in range(max(1, retries)):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                fcntl.flock(lock_fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return
+            except OSError as e:  # EACCES / EAGAIN -- lo tiene otro
+                last_error = e
+                time.sleep(_LOCK_POLL_SECONDS)
+    raise AuditLockError(
+        f"lock no adquirido tras {retries} intentos de {timeout}s "
+        f"({last_error}) — no se escribió el evento"
+    )
+
+
 def write_event(event_type: str, project_id: str, data: dict | None = None) -> dict:
     """
     Registra un evento en factory_audit.jsonl.
     Retorna la entrada escrita. Nunca lanza excepción (mismo patrón que app/audit.py).
+
+    "Nunca lanza" se conserva —hay llamadores en rutas de API que dependen de
+    ello— pero desde G7 ya NO significa "en silencio": todo fallo se reporta a
+    stderr y a `audit_write_failures.log` antes de devolver `{"error": ...}`.
     """
     global _last_entry_hash
     if event_type not in VALID_EVENTS:
@@ -230,7 +337,7 @@ def write_event(event_type: str, project_id: str, data: dict | None = None) -> d
         # Exclusive lock para serializar escrituras concurrentes (local + container)
         lock_path = AUDIT_FILE.with_suffix(".lock")
         with open(lock_path, "a") as lock_fh:
-            fcntl.flock(lock_fh, fcntl.LOCK_EX)
+            _acquire_lock(lock_fh)
             try:
                 _last_entry_hash = None  # forzar re-lectura dentro del lock
                 prev_hash = _get_prev_hash()
@@ -242,6 +349,7 @@ def write_event(event_type: str, project_id: str, data: dict | None = None) -> d
                     "project_id": project_id,
                     "data": data or {},
                     "prev_entry_hash": prev_hash,
+                    **writer_identity(),
                 }
 
                 entry_hash = f"sha256:{_compute_entry_hash(entry_body)}"
@@ -257,6 +365,7 @@ def write_event(event_type: str, project_id: str, data: dict | None = None) -> d
         return entry_body
 
     except Exception as e:
+        _report_write_failure(type(e).__name__, f"{event_type}/{project_id}: {e}")
         return {"error": str(e)}
 
 
@@ -537,3 +646,238 @@ def chain_break_entry_ids(audit_file: Path | None = None) -> tuple[str, ...]:
     aparece en esta lista.
     """
     return _walk_chain(audit_file or AUDIT_FILE)["break_ids"]
+
+
+# ---------------------------------------------------------------------------
+# Guardia de escritor único (§4.2, medida 2)
+# ---------------------------------------------------------------------------
+
+def writer_identity_audit(audit_file: Path | None = None) -> dict:
+    """¿Hay alguna entrada escrita FUERA de `write_event()`? Read-only.
+
+    El riesgo residual que cierra esta medida no es el fork —ese ya lo cierra el
+    lock— sino un escritor que no pase por `write_event()` en absoluto: un
+    script ad-hoc, un `echo >>`, una edición manual. Ese escritor no toma el
+    lock, así que ninguna cantidad de locking lo detecta. Lo que sí lo delata es
+    que no sabe poner los tres campos de identidad, y no puede falsificarlos sin
+    invalidar el `entry_hash`.
+
+    **El ancla se DERIVA, no se declara.** Es la primera entrada del fichero que
+    trae los tres campos. Un ancla en un JSON editable a mano permitiría
+    esconder entradas moviéndola hacia delante; una derivada, no: si aparece una
+    entrada sin identidad DESPUÉS de la primera que la trae, sale reportada, y
+    la única forma de mover el ancla es borrar entradas — que rompe la cadena y
+    lo detecta `_walk_chain`.
+
+    Las entradas anteriores al ancla son las 21 000 escritas antes de que
+    existiera la medida. No son violaciones y no se cuentan como tales:
+    reportarlas dejaría el indicador en rojo permanente por historia, y un
+    indicador que nunca puede estar verde deja de leerse.
+    """
+    path = audit_file or AUDIT_FILE
+    if not path.exists():
+        return {"guard_live": False, "anchor_entry_id": None,
+                "anchor_timestamp": None, "entries_after_anchor": 0,
+                "missing_writer_identity_ids": []}
+
+    anchor_id = anchor_ts = None
+    after = 0
+    missing: list[str] = []
+
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            entry = json.loads(raw)
+        except Exception:  # noqa: BLE001 -- ilegible: lo reporta _walk_chain
+            continue
+
+        complete = all(entry.get(f) not in (None, "") for f in WRITER_IDENTITY_FIELDS)
+        if anchor_id is None:
+            if complete:
+                anchor_id = entry.get("entry_id")
+                anchor_ts = entry.get("timestamp")
+                after = 1
+            continue
+
+        after += 1
+        if not complete:
+            missing.append(entry.get("entry_id") or f"<sin entry_id:{entry.get('entry_hash','')}>")
+
+    return {"guard_live": anchor_id is not None,
+            "anchor_entry_id": anchor_id,
+            "anchor_timestamp": anchor_ts,
+            "entries_after_anchor": after,
+            "missing_writer_identity_ids": missing}
+
+
+# ---------------------------------------------------------------------------
+# Estado de las medidas preventivas (§7 del paquete de excepción)
+# ---------------------------------------------------------------------------
+#
+# Se DERIVA. La versión anterior de esta lista vivía como un array de literales
+# `ok:false` en `governance.js`, para que un humano los fuera flipando a mano
+# según creyera. Ese es el mismo defecto que ya apareció en el guard de riesgos
+# (`ecc7fa6`): fotografiar el mundo en vez de medir la regla. Aquí el precio
+# sería peor — el botón "Aceptar" del panel G7 depende de esta lista, así que un
+# `true` escrito a mano habilita una firma regulatoria sobre una prevención que
+# podría no existir.
+#
+# Dos clases de evidencia, etiquetadas y NO equivalentes:
+#   DERIVED_FROM_CHAIN  — medido sobre la cadena real. Es prueba.
+#   SOURCE_INSPECTION   — el código/gate contiene la regla. Prueba que está
+#                         escrita, no que se ejecute; de eso responden los tests
+#                         F-10, F-11 y F-13, que sí la ejecutan.
+
+EVIDENCE_DERIVED = "DERIVED_FROM_CHAIN"
+EVIDENCE_SOURCE = "SOURCE_INSPECTION"
+
+_SELFCHECK_FILE = Path(__file__).parent.parent / "scripts" / "ops" / "factory_selfcheck.sh"
+
+
+def _cache_invalidation_is_inside_the_lock() -> bool:
+    """La línea que cierra la causa raíz, en su sitio y en ese orden.
+
+    No es el `flock` lo que arregla §3.2 —el segundo escritor habría tomado el
+    lock sin problema tres minutos después— sino releer la cabeza DENTRO de él.
+    Fuera del lock, la invalidación no vale nada.
+    """
+    try:
+        src = Path(__file__).read_text(encoding="utf-8")
+    except Exception:  # noqa: BLE001
+        return False
+    body = src.split("def write_event(", 1)[-1].split("\ndef ", 1)[0]
+    try:
+        i_lock = body.index("_acquire_lock(")
+        i_inval = body.index("_last_entry_hash = None")
+        i_read = body.index("_get_prev_hash()")
+    except ValueError:
+        return False
+    return i_lock < i_inval < i_read
+
+
+def _write_event_stamps_identity() -> bool:
+    """`write_event` sella los tres campos en el cuerpo hasheado.
+
+    Esta comprobación existe para no crear un abrazo mortal. La versión anterior
+    exigía que la cadena ya CONTUVIERA una entrada con identidad, y eso se muerde
+    la cola: las entradas nuevas las produce la actividad gobernada, y la
+    actividad que faltaba era justo la firma que esta medida bloquea. Prevención
+    implementada y prevención ya ejercitada no son lo mismo; lo que hay que
+    exigir antes de firmar es la primera.
+
+    La violación —una entrada SIN identidad después del ancla— sigue midiéndose
+    sobre la cadena real, que es donde se puede medir.
+    """
+    try:
+        src = Path(__file__).read_text(encoding="utf-8")
+    except Exception:  # noqa: BLE001
+        return False
+    body = src.split("def write_event(", 1)[-1].split("\ndef ", 1)[0]
+    return "**writer_identity()" in body
+
+
+def _write_failures_are_reported() -> bool:
+    """La ruta de error reporta antes de devolver, y el lock falla en vez de seguir."""
+    try:
+        src = Path(__file__).read_text(encoding="utf-8")
+    except Exception:  # noqa: BLE001
+        return False
+    body = src.split("def write_event(", 1)[-1].split("\ndef ", 1)[0]
+    reports = "_report_write_failure(" in body and "return {\"error\"" in body
+    raises = "raise AuditLockError(" in src
+    return reports and raises
+
+
+def _gate0_fails_on_new_forks() -> bool:
+    """Gate 0 trata un fork NUEVO como FAIL, no como WARN."""
+    try:
+        src = _SELFCHECK_FILE.read_text(encoding="utf-8")
+    except Exception:  # noqa: BLE001
+        return False
+    block = src.split("_verdict_audit_chain()", 1)[-1].split("\n}", 1)[0]
+    return "fork(s) NUEVO(s)" in block and "ko " in block
+
+
+def _baseline_is_validated_against_decisions() -> bool:
+    """El baseline se contrasta contra las excepciones REGISTRADAS.
+
+    Que `unbacked_known_forks()` exista no basta: degrada a "todos sin respaldo"
+    si el resolver no se puede importar, y en ese modo el fichero no está siendo
+    validado contra nada — solo se está negando todo. Se exige que el resolver
+    responda de verdad.
+    """
+    if not load_fork_baseline().get("known_forks"):
+        return False
+    try:
+        from factory.core import decision_scope_resolver as _resolver
+        _resolver.is_authorized("AUDIT_EXCEPTION", "<probe:no-such-entry-id>")
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def preventive_measures(audit_file: Path | None = None) -> list[dict]:
+    """Las 5 medidas de §7 del paquete de excepción, con su estado real.
+
+    Es lo que gobierna el botón "Aceptar" del panel G7: aceptar una excepción
+    cuya prevención no está implementada es aceptar que vuelva a pasar.
+    """
+    wi = writer_identity_audit(audit_file)
+    return [
+        {
+            "id": "flock_and_cache_invalidation",
+            "measure": "flock exclusivo + invalidación de caché dentro del lock",
+            "implemented": _cache_invalidation_is_inside_the_lock(),
+            "evidence_kind": EVIDENCE_SOURCE,
+            "evidence": "commit 8c033fa, 27 min después del fork; F-10 y F-11 lo ejecutan",
+        },
+        {
+            "id": "writer_identity_guard",
+            "measure": "writer_pid / writer_host / writer_identity por entrada",
+            # Sellado (el escritor lo hace) Y sin violaciones (nadie escribió
+            # fuera del canal). NO se exige que la cadena ya traiga una entrada
+            # sellada: eso se muerde la cola, porque las entradas nuevas las
+            # produce la actividad que esta medida bloquea.
+            "implemented": (_write_event_stamps_identity()
+                            and not wi["missing_writer_identity_ids"]),
+            "evidence_kind": EVIDENCE_DERIVED,
+            "evidence": (
+                f"write_event sella los 3 campos; ancla {wi['anchor_entry_id']} "
+                f"({wi['anchor_timestamp']}), {wi['entries_after_anchor']} entradas "
+                f"desde el ancla, {len(wi['missing_writer_identity_ids'])} sin identidad"
+                if wi["guard_live"] else
+                "write_event sella los 3 campos; la cadena aún no tiene ninguna "
+                "entrada sellada, así que no hay violaciones que medir"
+            ),
+        },
+        {
+            "id": "baseline_validated",
+            "measure": "fork_baseline.json validado contra las excepciones registradas",
+            "implemented": _baseline_is_validated_against_decisions(),
+            "evidence_kind": EVIDENCE_DERIVED,
+            "evidence": "unbacked_known_forks() consulta al resolver, que responde",
+        },
+        {
+            "id": "new_forks_fail_gate0",
+            "measure": "NEW_FORKS_SINCE_BASELINE > 0 ⇒ FAIL en Gate 0",
+            "implemented": _gate0_fails_on_new_forks(),
+            "evidence_kind": EVIDENCE_SOURCE,
+            "evidence": "_verdict_audit_chain trata el fork nuevo con ko, no con warn",
+        },
+        {
+            "id": "no_silent_write_failure",
+            "measure": "write_event nunca falla en silencio",
+            "implemented": _write_failures_are_reported(),
+            "evidence_kind": EVIDENCE_SOURCE,
+            "evidence": (
+                "todo fallo va a stderr y a logs/audit_write_failures.log; "
+                "el lock agotado lanza AuditLockError y no escribe (F-13)"
+            ),
+        },
+    ]
+
+
+def preventive_measures_complete(audit_file: Path | None = None) -> bool:
+    return all(m["implemented"] for m in preventive_measures(audit_file))
