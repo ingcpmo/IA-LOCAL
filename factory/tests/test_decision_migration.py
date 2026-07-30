@@ -336,6 +336,79 @@ def test_staleness_is_detectable(tmp_path):
     assert mig.is_stale(out)["stale"] is True
 
 
+def test_a_native_signature_does_not_make_the_store_stale(tmp_path):
+    """Firmar por la UI no es desincronizar. G2.1.
+
+    `is_stale` comparaba el TEXTO COMPLETO del fichero contra la proyeccion, asi
+    que el primer registro nativo la dejaba en rojo PARA SIEMPRE -- y un rojo
+    permanente no puede senalar nada. La guardia se volvia incapaz justo de lo
+    que existe para detectar: una escritura legacy sin re-migrar.
+    """
+    out = tmp_path / "d.jsonl"
+    mig.run(apply=True, out_file=out, emit_audit=False)
+    assert mig.is_stale(out)["stale"] is False
+
+    nativo = store.build_record(
+        decision_family="D1", decision_type="ORIGINAL",
+        selection_mode="EXPLICIT_LIST", resolved_target_ids=["ecfr_21cfr_part11"],
+        decision="APPROVE", decision_origin="human_confirmed",
+        approved_by_id="Cesar", approved_by_display_name="Cesar",
+        decision_instance_id="D1-2026-900", store_file=out)
+    with out.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(nativo, ensure_ascii=False) + "\n")
+
+    st = mig.is_stale(out)
+    assert st["stale"] is False, "una firma nativa no desincroniza nada"
+    assert st["native_records"] == ["D1-2026-900"]
+    # Los dos conteos son DISTINTOS y por eso se reportan por separado: el
+    # mensaje de la guardia comparaba el total contra la proyeccion y por tanto
+    # describia una discrepancia que no era la que medía.
+    assert st["records_in_store"] == st["records_migrated_in_store"] + 1
+
+    # Y sigue detectando lo de verdad: se toca un registro MIGRADO.
+    registros = store.read_all(out)
+    migrado = next(r for r in registros
+                   if r["provenance"] in mig.MIGRATION_PROVENANCES)
+    migrado["reason"] = "manoseado a mano sin re-migrar"
+    out.write_text("".join(
+        json.dumps(r, ensure_ascii=False) + "\n"
+        for r in registros), encoding="utf-8")
+    assert mig.is_stale(out)["stale"] is True
+
+
+def test_adding_a_family_does_not_desync_the_store(tmp_path, monkeypatch):
+    """La REGLA DURA de decision_families.yaml, comprobada. G2.1.
+
+    `families_registry_hash` es una foto del registro de familias al grabar, asi
+    que al recomputar la proyeccion con una familia nueva los 15 registros
+    migrados salian desincronizados de golpe. Eso hacia de "anadir una familia"
+    una operacion que obliga a re-migrar el almacen -- exactamente lo que el
+    fichero de familias promete que no pasa. Se descubrio anadiendo
+    RECORD_ANNOTATION.
+    """
+    out = tmp_path / "d.jsonl"
+    mig.run(apply=True, out_file=out, emit_audit=False)
+    assert mig.is_stale(out)["stale"] is False
+
+    familias = store.load_families()
+    familias["FAMILIA_NUEVA_DE_PRUEBA"] = {
+        "label": "familia inventada por el test",
+        "target_kind": "none", "target_registry": None,
+        "target_registry_id_path": None,
+        "selection_modes": ["EXPLICIT_LIST"], "consumers": [],
+        "requires_human_confirmation": False, "never_authorizes": True,
+    }
+    monkeypatch.setattr(store, "load_families", lambda *a, **k: familias)
+    monkeypatch.setattr(
+        store, "families_registry_hash",
+        lambda *a, **k: "0" * 64)
+
+    st = mig.is_stale(out)
+    assert st["stale"] is False, (
+        "anadir una familia cambia families_registry_hash pero no cambia "
+        "ninguna decision: el almacen no esta desincronizado")
+
+
 def test_the_real_store_is_in_sync_with_the_legacy_stores():
     """Guardia sobre el estado real: si alguien escribe en un almacen legacy sin
     re-migrar, este test lo dice en vez de dejar que el resolver lea un estado
@@ -344,5 +417,8 @@ def test_the_real_store_is_in_sync_with_the_legacy_stores():
         pytest.skip("almacen v2 no migrado en este entorno")
     st = mig.is_stale()
     assert not st["stale"], (
-        f"el almacen v2 esta desincronizado: {st['records_in_store']} registros "
-        f"frente a {st['records_projected']} proyectados. Re-ejecuta la migracion.")
+        f"el almacen v2 esta desincronizado: {st['records_migrated_in_store']} "
+        f"registros migrados en el almacen frente a {st['records_projected']} "
+        f"proyectados. Re-ejecuta la migracion. (Los {len(st['native_records'])} "
+        "registros NATIVOS quedan fuera de la comparacion a proposito: la "
+        "migracion no los produjo.)")

@@ -58,21 +58,66 @@ def native_records(store_file: Path | None = None) -> list[str]:
             if r.get("provenance") not in MIGRATION_PROVENANCES]
 
 
+# Campos que registran CUANDO se grabo el registro, no QUE se decidio. Se
+# excluyen de la comparacion de staleness — nunca de lo que se escribe.
+#
+# `families_registry_hash` es el caso que importa: es una foto del registro de
+# familias en el momento de grabar, asi que anadir una familia cambia el hash
+# recomputado y los 15 registros migrados aparecen desincronizados de golpe.
+# Eso convertiria "anadir una familia" en una operacion que obliga a re-migrar
+# el almacen, en contradiccion directa con la REGLA DURA de
+# decision_families.yaml: anadir una familia no requiere tocar nada mas. La
+# pregunta que responde is_stale() es "escribio alguien en un almacen legacy
+# sin re-migrar", y para esa pregunta este hash es ruido.
+#
+# Va aqui y NO en `serialize()` a proposito: serialize() tambien PRODUCE el
+# fichero durante la migracion, y anular el hash ahi borraria procedencia real
+# del almacen para siempre.
+VOLATILE_ON_COMPARE = ("audit_event_id", "families_registry_hash")
+
+
+def _comparable(records: list[dict]) -> str:
+    """Forma canonica para comparar HECHOS, ignorando artefactos de grabacion."""
+    return serialize([
+        {k: v for k, v in r.items() if k not in VOLATILE_ON_COMPARE}
+        for r in records
+    ])
+
+
 def is_stale(store_file: Path | None = None, **kwargs) -> dict:
-    """Compara el almacen con la proyeccion ACTUAL de los almacenes legacy.
+    """Compara la parte PROYECTADA del almacen con la proyeccion actual.
 
     Existe porque la migracion es un disparo unico y los almacenes legacy
     siguen vivos: una escritura legacy posterior deja el v2 desincronizado y
     nada lo notaba. Read-only.
+
+    G2.1: solo entran en la comparacion los registros con provenance de
+    migracion. Antes se comparaba el TEXTO COMPLETO del fichero contra la
+    proyeccion, asi que cualquier registro NATIVO -- una firma humana por la
+    UI, es decir el proposito entero de v2 -- daba `stale: True` para siempre.
+    La funcion ya calculaba `native_records` y no lo usaba en el veredicto. El
+    efecto era el peor posible para una guardia: roja de forma permanente, y
+    por tanto incapaz de senalar lo unico que existe para detectar. Ignorar los
+    NATIVOS no debilita nada -- la migracion nunca los produjo, asi que
+    compararlos contra su proyeccion era comparar contra algo que no existe.
+
+    Se compara registro a registro y no texto a texto: `serialize()` normaliza
+    el orden de claves y `audit_event_id`, mientras que `append_record` escribe
+    con el orden de insercion. Dos ficheros con los mismos hechos y distinto
+    orden de claves no estan desincronizados.
     """
     target = store_file or store.STORE_FILE
-    projected = serialize(adapter.project_all(**kwargs))
-    actual = target.read_text(encoding="utf-8") if target.is_file() else ""
+    exists = target.is_file()
+    projected = adapter.project_all(**kwargs)
+    actual = store.read_all(target) if exists else []
+    migrated = [r for r in actual
+                if r.get("provenance") in MIGRATION_PROVENANCES]
     return {
-        "store_exists": target.is_file(),
-        "stale": actual != projected,
-        "records_in_store": len(store.read_all(target)) if target.is_file() else 0,
-        "records_projected": len(projected.splitlines()),
+        "store_exists": exists,
+        "stale": _comparable(migrated) != _comparable(projected),
+        "records_in_store": len(actual),
+        "records_migrated_in_store": len(migrated),
+        "records_projected": len(projected),
         "native_records": native_records(target),
     }
 
