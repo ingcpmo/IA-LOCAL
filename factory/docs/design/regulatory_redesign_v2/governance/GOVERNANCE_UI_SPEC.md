@@ -20,6 +20,7 @@ existentes. Backend: `factory-api`, **puerto 9000** (`factory/registry/ports.yam
 | U-6 | Respetar `factory/registry/ports.yaml`. **Backup de `index.html` y `mission_control.html` a `backups/frontend/` antes de cualquier cambio futuro.** |
 | U-7 | Toda acción bloqueada se muestra **deshabilitada con el motivo visible**, nunca oculta. Un botón ausente es un bloqueo inexplicable. |
 | U-8 | Todo valor de gobernanza se muestra con su **procedencia**: `decision_instance_id`, fecha, firmante. Ningún estado aparece sin decir quién lo produjo. |
+| U-9 | **Ninguna prueba automatizada del ciclo de firma usa una identidad inventada contra el backend de producción**, ni siquiera para diagnóstico. Ver §1.2. |
 
 ### 1.1 Control optimista (U-4)
 
@@ -27,6 +28,34 @@ Cada GET devuelve un `state_hash`. Cada POST lo reenvía. Si el estado cambió
 entre medias, **409** con el diff. Sin esto, dos pestañas abiertas producen
 decisiones firmadas sobre datos que ya no existen — precisamente el escenario
 que originó el fork de la cadena, trasladado a la capa humana.
+
+### 1.2 Prohibición de firmas de prueba en producción (U-9)
+
+**Incidente real (2026-07-30):** diagnosticando por qué un panel no
+completaba la firma, el agente reprodujo el ciclo `propose`→`confirm`
+contra el backend REAL con la identidad `claude_probe`, asumiendo que
+`RESERVED_IDENTITIES` la rechazaría por contener "claude". El chequeo hacía
+match exacto, no por prefijo: `D2-2026-003` quedó `human_confirmed`/`ACTIVE`
+con una aprobación fabricada por el propio agente — ver
+`RECORD_ANNOTATION-2026-005`/`-006` en `factory/layer9/decisions/decisions_v2.jsonl`
+y `docs_plan/W5V2_FIX_FIRMA_SILENCIOSA.md`.
+
+**Regla en vigor desde entonces:** ninguna prueba del ciclo de firma —
+manual (curl, script ad-hoc) o automatizada (Playwright) — envía un POST de
+`propose`/`confirm`/`reject` con una identidad real o inventada contra el
+backend de producción. Las superficies permitidas para probar el ciclo
+completo:
+
+- **Tests unitarios/integración Python** contra un `store_file` temporal
+  (`tmp_path`), como ya hace toda la suite de `test_governance_*.py`.
+- **Tests de UI con Playwright** interceptando la red (`page.route()`) para
+  servir fixtures controladas — cero tráfico de escritura llega al backend
+  real (ver `test_governance_ui_stale_state_playwright.py`).
+- **Sondas de diagnóstico contra el backend real**, si son estrictamente
+  necesarias, usan SIEMPRE una identidad de la lista reservada (`human`,
+  `admin`, etc.) en el paso de `/confirm`, para que el servidor la rechace
+  con 422 y no se convierta en una firma — nunca un string "casi reservado"
+  sin verificar primero contra `identity_policy.is_reserved()`.
 
 ---
 
