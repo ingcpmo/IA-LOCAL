@@ -681,16 +681,37 @@ def equivalent_signed_decision(family: str, *, decision_type: str,
     impidiendo la firma real. `_effective_coverage()` (decision_scope_resolver)
     ya sabe distinguir esto restando `revoked_ids`; aquí hacía falta la
     misma resta antes de declarar un candidato vigente.
+
+    SEGUNDO DEFECTO REAL cerrado (mismo día, misma raíz, otra rama): el fix
+    de arriba solo cubre "un candidato de APPROBACION bloqueado por una
+    REVOCATION superada". El caso simétrico seguía roto -- "un candidato de
+    REVOCATION bloqueado por OTRA REVOCATION ya superada por una
+    CORRECTION". Cesar aprobó D2-2026-009 (CORRECTION, `supersedes:
+    D2-2026-005`) reinstaurando cobertura sobre `21_CFR_211.68(b)`; al
+    proponer una REVOCATION nueva (D2-2026-010) sobre ese mismo target y
+    confirmarla, el `status == "ACTIVE"` literal de D2-2026-005 (el
+    registro nunca reescribe su propio campo) seguía haciéndola pasar por
+    "vigente", y como el target YA NO estaba en `revoked_ids` (la
+    CORRECTION lo reinstauró), la resta de revocados no la filtraba --
+    "ya estaba firmada" bloqueaba la revocación real. La resta de
+    `revoked_ids` filtra el caso de una APPROBACION vieja; para una
+    REVOCATION vieja hace falta preguntar si SIGUE siendo la vigente, y
+    eso es exactamente lo que decide `store.project_status()` (la misma
+    función que ya usa el resolver): un registro con `supersedes_instance_id`
+    firmado por un humano deja SUPERSEDED al que supersede, sin importar
+    el tipo de decisión del que lo supersede.
     """
+    registros = store.read_all(store_file)
+    proyectado = store.project_status(registros)
     vigente = None
-    for r in store.read_all(store_file):
+    for r in registros:
         if (r.get("decision_family") == family
                 and r.get("decision_type") == decision_type
                 and r.get("target_set_hash") == target_set_hash
                 and r.get("decision_origin") == "human_confirmed"
                 and r.get("confirms_instance_id")
                 and r.get("decision") in store.GRANTING_DECISIONS
-                and r.get("status") == "ACTIVE"):
+                and proyectado.get(r.get("decision_instance_id")) == "ACTIVE"):
             vigente = r  # la última en orden de inserción
     if vigente is None:
         return None

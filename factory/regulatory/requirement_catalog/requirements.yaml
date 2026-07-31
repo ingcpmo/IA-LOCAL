@@ -1722,7 +1722,7 @@ requirements:
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
-    pack_version: 1.0-draft
+    pack_version: 2.0-draft
     context_before: 'cture, processing, packing, and holding of a drug product. If such equipment is so
       used, it shall be routinely calibrated, inspected, or checked according to a written program designed
       to assure proper performance. Written records of those calibration checks and inspections shall be
@@ -1733,15 +1733,108 @@ requirements:
       or data shall be checked for accuracy. The degree and frequency of input/output verification shall
       be based on the complexity and reliability of the computer or related system. A backup file of data
       entered into th'
-    evidence_pack_status: structure_only_pending_human_interpretation
+    evidence_pack_status: human_drafted_provisional
     pack_lifecycle_status: DRAFT
-    content_review_status: PENDING_HUMAN_INTERPRETATION
+    content_review_status: ACCEPTED_FOR_DRAFTING
     source_verification_status: PENDING_REVERIFICATION
     runtime_eligibility: ENABLED_REVIEW_ONLY
     baseline_eligibility: PROVISIONAL_ONLY
     positive_conclusion_eligibility: PROVISIONAL_ONLY
-    draft_remediation_eligibility: BLOCKED
+    draft_remediation_eligibility: ENABLED_WITH_TRACEABILITY
     clean_candidate_eligibility: BLOCKED
     release_eligibility: BLOCKED
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
+    # NOTA DE ALCANCE (G4, 2026-07-30): el 'label' de este requisito nombra
+    # TRES controles (cambios por personal autorizado, exactitud I/O,
+    # respaldo). La 'citation' primaria solo ancla el primero -- asi estaba
+    # desde la ingesta (2026-07-29). Las otras dos frases viven en el MISMO
+    # paragraph (b) del texto canonico real (verificado hoy via G3 contra
+    # OFFICIAL_ECFR_21CFR_part211_20260701.xml, sha256 coincide) y se anclan
+    # aqui como additional_citations -- mismo mecanismo ya usado por
+    # 21_CFR_11.50_11.70 para requisitos con mas de un fragmento. No se toco
+    # la citation_sha256 de la cita primaria.
+    additional_citations:
+    - citation_id: P211-211.68b-io
+      citation_text: Input to and output from the computer or related system of formulas or other records
+        or data shall be checked for accuracy. The degree and frequency of input/output verification shall
+        be based on the complexity and reliability of the computer or related system.
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: § 211.68, paragraph (b)
+      citation_sha256: 59f279f2fd194e272fbf12813003515d9a31dea6981fe0c5a05bcc1a3ab12afe
+    - citation_id: P211-211.68b-backup
+      citation_text: A backup file of data entered into the computer or related system shall be maintained
+        except where certain data, such as calculations performed in connection with laboratory analysis,
+        are eliminated by computerization or other automated processes. In such instances a written record
+        of the program shall be maintained along with appropriate validation data. Hard copy or alternative
+        systems, such as duplicates, tapes, or microfilm, designed to assure that backup data are exact
+        and complete and that it is secure from alteration, inadvertent erasures, or loss shall be maintained.
+      match_type: exact
+      match_score: 1.0
+      section_page_paragraph: § 211.68, paragraph (b)
+      citation_sha256: e0137ce8c4bd076001d7f4e89327d191b233a311ec686dd5a05912fa51556047
+    governed_interpretation: 'Tres controles independientes bajo el mismo paragraph (b), los tres exigidos
+      -- ninguno sustituye a otro. (1) CONTROL DE CAMBIOS: solo personal autorizado puede instituir cambios
+      en registros maestros de produccion y control (u otros registros); exige un mecanismo TECNICO que
+      restrinja quien puede cambiar, no solo una politica declarada. (2) EXACTITUD DE I/O: los datos de
+      entrada y salida del sistema (formulas, registros, datos) deben verificarse por exactitud; el grado
+      y frecuencia de esa verificacion se basa en la complejidad y confiabilidad del sistema -- es decir,
+      un enfoque proporcional al riesgo, no una frecuencia fija universal. (3) RESPALDO: los datos ingresados
+      deben respaldarse de forma exacta, completa y protegida contra alteracion, borrado accidental o perdida;
+      la unica excepcion es un dato eliminado deliberadamente por el propio proceso automatizado (ej. un
+      calculo intermedio), y en ese caso especifico se exige en su lugar un registro escrito del programa
+      con datos de validacion que lo sustenten -- la excepcion no es "no hace falta respaldar", es "el respaldo
+      se sustituye por otra evidencia equivalente, documentada".'
+    evidence_min_criteria:
+    - 'Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros
+      maestros de produccion y control.'
+    - 'Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente
+      para ese registro.'
+    - 'Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.'
+    - 'Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad
+      del sistema (no declarado sin criterio).'
+    - 'Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.'
+    - 'Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.'
+    - 'Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro
+      escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.'
+    exclusion_criteria:
+    - 'Control de cambios declarado solo como politica/procedimiento sin mecanismo tecnico que lo haga cumplir
+      (ej. "solo el ingeniero de control puede modificar el programa" sin control de acceso real en el sistema).'
+    - 'Exactitud I/O mencionada de forma generica ("el sistema valida los datos") sin describir que se verifica
+      ni la base de la frecuencia/rigor.'
+    - 'Respaldo mencionado como intencion futura ("se realizaran respaldos") sin mecanismo, ubicacion ni
+      proteccion descritos.'
+    - 'Eliminacion de datos por el sistema sin el registro escrito del programa ni datos de validacion que
+      la sustenten -- la excepcion de respaldo no se activa por default.'
+    typical_insufficient_evidence:
+    - '"Los cambios requieren aprobacion" sin describir el mecanismo tecnico que impide un cambio no autorizado.'
+    - '"El sistema verifica los datos" sin especificar que se verifica ni el criterio de frecuencia/rigor.'
+    - '"Los datos se respaldan periodicamente" sin mecanismo, integridad ni proteccion descritos.'
+    weak_keywords:
+    - autorizado
+    - authorized
+    - backup
+    - respaldo
+    - exactitud
+    - accuracy
+    - verificacion
+    - verification
+    - cambios
+    - changes
+    expected_doc_types:
+    - URS
+    - FS
+    - DS
+    - SOP
+    documentary_evidence_expected:
+    - 'Control de cambios: mecanismo de control de acceso a registros maestros de produccion/control descrito
+      a nivel de diseno.'
+    - 'Exactitud I/O: mecanismo y criterio de verificacion de exactitud descritos a nivel de diseno.'
+    - 'Respaldo: mecanismo de respaldo de datos (o programa de validacion para datos eliminados por diseno)
+      descrito a nivel de diseno.'
+    implementation_evidence_expected:
+    - Evidencia real de un cambio efectuado solo por personal con autorizacion vigente (registro de control
+      de cambios).
+    - Evidencia real de una verificacion de exactitud I/O ejecutada.
+    - Evidencia real de un respaldo ejecutado y verificable.

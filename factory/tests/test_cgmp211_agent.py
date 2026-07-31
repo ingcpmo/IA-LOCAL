@@ -29,7 +29,6 @@ import yaml
 
 from factory.engines.gmpai_integrity import chunked_engine as ce
 from factory.engines.gmpai_integrity import ollama_client
-from tests.conftest import PENDING_HUMAN_INTERPRETATION_REQ_IDS
 
 PROMPTS_DIR = Path("factory/engines/gmpai_integrity/prompts")
 PROMPT_PATH = PROMPTS_DIR / "cgmp211_prompts.yaml"
@@ -93,29 +92,46 @@ class TestAgentDeclaration:
         assert load_requirement_terms(REQ)
 
 
-class TestTodayTheAgentIsDeclaredButNotOperative:
-    """Mitad (a): declarado != operativo. Estado real al 2026-07-29."""
+class TestWhenTheEvidencePackLacksCriteria:
+    """Mitad (a): declarado != operativo -- la REGLA, no la foto de un dia.
 
-    def test_its_only_requirement_is_pending_human_interpretation(self):
-        assert REQ in PENDING_HUMAN_INTERPRETATION_REQ_IDS
-        assert not ce._lookup_evidence_min_criteria(REQ)
+    `21_CFR_211.68(b)` tuvo evidence_min_criteria real desde el 2026-07-30
+    (G4). Este bloque prueba el mismo comportamiento que probaba cuando el
+    pack estaba vacio, quitando el campo via mutacion controlada -- asi la
+    prueba no depende de que el catalogo siga o deje de estar interpretado
+    (el proximo requisito sin redactar entra en el mismo caso)."""
 
-    def test_gate_4_blocks_the_only_checkpoint(self, meta):
+    @pytest.fixture()
+    def without_human_criteria(self, monkeypatch):
+        import importlib
+        mod = importlib.import_module(LOADER)
+        original = mod.get_requirement
+
+        def mutated(req_id):
+            entry = dict(original(req_id))
+            if req_id == REQ:
+                entry["evidence_min_criteria"] = []
+            return entry
+
+        monkeypatch.setattr(mod, "get_requirement", mutated)
+        return mod
+
+    def test_gate_4_blocks_the_checkpoint_without_criteria(self, meta, without_human_criteria):
         admitted, blocked = ce.evidence_pack_gate(meta)
         assert admitted == []
         assert [v.req_id for v in blocked] == [REQ]
         assert "evidence_min_criteria" in blocked[0].missing
 
-    def test_nothing_of_the_requirement_reaches_the_prompt(self, meta):
+    def test_nothing_of_the_requirement_reaches_the_prompt(self, meta, without_human_criteria):
         prompt = ce.build_prompt(meta, "documento de prueba")
         assert REQ not in prompt
         assert "Texto normativo canonico" not in prompt
         assert "Criterios minimos de evidencia" not in prompt
 
     def test_run_makes_zero_model_calls_and_never_affirms_non_compliance(
-            self, tmp_path, monkeypatch):
+            self, tmp_path, monkeypatch, without_human_criteria):
         """El desenlace que importa: la corrida termina, no gasta ninguna
-        inferencia, y 211.68(b) sale como NO EVALUADO. Un 'no_cumple' aqui
+        inferencia, y el requisito sale como NO EVALUADO. Un 'no_cumple' aqui
         seria un incumplimiento afirmado sobre un requisito que jamas se le
         mostro al modelo."""
         calls = []
@@ -145,7 +161,10 @@ class TestTodayTheAgentIsDeclaredButNotOperative:
 
 class TestOnlyHumanInterpretationIsMissing:
     """Mitad (b): con criterios redactados, el agente funciona sin tocar
-    codigo. Mutacion controlada -- el catalogo real no se modifica."""
+    codigo. `21_CFR_211.68(b)` ya tiene evidence_min_criteria real desde
+    G4 (2026-07-30) -- esta mutacion los SOBRESCRIBE con un set corto de
+    prueba (sin tocar el catalogo real) para no acoplar este test al
+    contenido interpretativo vigente, que puede crecer sin romper esto."""
 
     CRITERIA = [
         "Los cambios en recetas/setpoints solo pueden instituirse por personal autorizado.",

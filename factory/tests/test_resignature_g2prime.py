@@ -77,8 +77,19 @@ def test_the_four_migrated_decisions_declare_no_scope(migrated):
 
 
 def test_a_decision_without_scope_authorizes_nothing(migrated):
-    """Es lo que impide que "ya las aprobé" se traduzca en autorización."""
-    for family in ("D2", "D3", "D4", "D5"):
+    """Es lo que impide que "ya las aprobé" se traduzca en autorización.
+
+    G4 (2026-07-31): D2 ya NO es un caso vacío. Cesar firmó `D2-2026-009`
+    (CORRECTION real, `human_confirmed`) sobre `21_CFR_211.68(b)` -- esa
+    firma SÍ declara alcance y por tanto SÍ debe autorizar exactamente ese
+    id. La guardia original (D2-2026-001, huérfana de objetivo) sigue
+    `INVALID_PENDING_RESIGNATURE` y sigue sin aportar cobertura -- lo que
+    cambió es que D2 ya no depende solo de ella. D3/D4/D5 siguen sin
+    ninguna firma real: la regla que este test protege sigue vigente ahí."""
+    c_d2 = resolver.coverage_report("D2", store_file=migrated)
+    assert c_d2.covered_ids == ("21_CFR_211.68(b)",), (
+        "D2 deberia autorizar exactamente lo que D2-2026-009 cubre, ni mas ni menos")
+    for family in ("D3", "D4", "D5"):
         c = resolver.coverage_report(family, store_file=migrated)
         assert c.covered_ids == (), f"{family} autoriza sin alcance declarado"
 

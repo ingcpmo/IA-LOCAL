@@ -554,26 +554,52 @@ def test_guard_never_writes_anything(tmp_path, empty_decisions):
 
 
 def test_the_bootstrapped_store_photographs_without_approving():
-    """G4: el almacen YA EXISTE con los 28 registros, y NINGUNO aprueba nada.
+    """G4: el almacen YA EXISTE con los 28 registros del bootstrap, y NINGUNO
+    aprueba nada.
 
     Hasta G4 este test afirmaba que el fichero no existia. Su sustitucion es el
     registro de que el bootstrap se ejecuto, y la invariante que sobrevive es la
     que importa: fotografiar no es aprobar.
+
+    G4a (2026-07-30) anadio un registro NO-bootstrap (redaccion real del pack
+    de 21_CFR_211.68(b), `bootstrap` ausente -- nunca `bootstrap: False`
+    fabricado): el almacen sigue append-only, asi que el total sube a 29 sin
+    que los 28 originales cambien. Se verifican por separado para no perder
+    la invariante original (todo bootstrap es no-aprobado).
+
+    G4 (2026-07-31): Cesar firmo D2-2026-009 (CORRECTION real sobre el pack)
+    -- se registro un 30o record, TAMPOCO bootstrap, con
+    approved_by_decision='D2-2026-009'. Es el primero de los 30 con una
+    decision real detras; los otros 29 (28 bootstrap + el borrador de
+    Claude) siguen sin aprobar nada.
     """
     assert guard.STORE_FILE.exists(), "el almacen deberia existir tras el bootstrap de G4"
     records = guard.read_version_records()
-    assert len(records) == 28, f"se esperaban 28 registros, hay {len(records)}"
-    for r in records:
+    assert len(records) == 30, f"se esperaban 30 registros (28 bootstrap + 2 reales), hay {len(records)}"
+    bootstrap_records = [r for r in records if r.get("bootstrap")]
+    assert len(bootstrap_records) == 28
+    for r in bootstrap_records:
         assert r["approved_by_decision"] is None, (
             f"{r['artifact_id']} salio aprobado del bootstrap")
         assert r["bootstrap"] is True
 
-    # Y el guardia lo refleja: 0 inconsistencias de trazabilidad, 28 avisos de
-    # aprobacion ausente. Ni rojo ni verde -- exactamente el estado real.
+    real_records = [r for r in records if not r.get("bootstrap")]
+    assert [r["artifact_id"] for r in real_records] == ["21_CFR_211.68(b)", "21_CFR_211.68(b)"]
+    assert real_records[0]["approved_by_decision"] is None, (
+        "el borrador de Claude no es una aprobacion humana")
+    assert real_records[1]["approved_by_decision"] == "D2-2026-009", (
+        "el segundo registro real SI tiene detras la firma de Cesar"
+    )
+
+    # Y el guardia lo refleja: 1 inconsistencia de trazabilidad real y
+    # esperada (catalog_version pendiente de G4c, ver
+    # test_the_real_artifact_guard_reports_the_pending_g4c_version_bump),
+    # 27 avisos de aprobacion ausente -- uno por artefacto SIN decision; el
+    # de 21_CFR_211.68(b) ya no esta en la lista de avisos.
     report = guard.guard_report()
-    assert report["status"] == "WARN"
-    assert report["fail_count"] == 0
-    assert report["warn_count"] == 28
+    assert report["status"] == "FAIL"
+    assert report["fail_count"] == 1
+    assert report["warn_count"] == 27
 
 
 def test_the_bootstrap_is_idempotent_on_the_real_store():

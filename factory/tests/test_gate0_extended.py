@@ -238,13 +238,29 @@ def test_warnings_do_not_block_the_gate():
 # Estado real de hoy, extremo a extremo
 # ===========================================================================
 
-def test_the_real_artifact_guard_is_warn_with_zero_fails():
-    """Consistente con lo que el paso 6 reporta hoy: 28 WARN, 0 FAIL."""
+def test_the_real_artifact_guard_reports_the_pending_g4c_version_bump():
+    """G4a (2026-07-30): se redacto el pack de 21_CFR_211.68(b) -- el
+    catalogo cambio de contenido (hash) y `catalog_version` se dejo en 1.0 a
+    proposito (ver docstring de artifact_version_guard.py: bumpearlo ahora,
+    antes de que Cesar revise/termine el contenido, arriesgaria versionar dos
+    veces si el borrador cambia en la revision). Eso es exactamente
+    CONTENT_CHANGED_VERSION_SAME -- 1 FAIL real y esperado, no una
+    regresion, hasta que G4c (bump de catalog_version tras la aprobacion)
+    lo cierre.
+
+    2026-07-31: Cesar firmo D2-2026-009 (CORRECTION, aprobacion real del
+    pack) -- se registro un version_record nuevo con
+    approved_by_decision='D2-2026-009', asi que ese artefacto en particular
+    ya NO figura en warn_count (27, no 28). Sigue siendo el UNICO artefacto
+    con aprobacion real de los 28; el FAIL del catalogo no cambia."""
     from factory.core import artifact_version_guard as guard
     r = guard.guard_report()
-    assert r["status"] == "WARN"
-    assert r["fail_count"] == 0
-    assert r["warn_count"] == 28
+    assert r["status"] == "FAIL"
+    assert r["fail_count"] == 1
+    assert r["warn_count"] == 27
+    fails = [f for f in r["findings"] if f["severity"] == "FAIL"]
+    assert [f["code"] for f in fails] == ["CONTENT_CHANGED_VERSION_SAME"]
+    assert fails[0]["artifact_id"].endswith("requirements.yaml")
 
 
 def test_the_real_chain_dimensions_land_on_warn_not_fail():

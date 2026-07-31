@@ -127,8 +127,13 @@ ALCOA_HUMAN_DRAFTED_REQ_IDS = {
     "ALCOA_ORIGINAL", "ALCOA_ACCURATE", "ALCOA_COMPLETE", "ALCOA_CONSISTENT",
     "ALCOA_ENDURING", "ALCOA_AVAILABLE",
 }
+#: G4 (2026-07-30): 21_CFR_211.68(b) sale de PENDING_HUMAN_INTERPRETATION_REQ_IDS
+#: (conftest.py) con contenido interpretativo redactado -- mismo regimen que
+#: el lote de Fase C, en su propio conjunto por venir de una ingesta posterior.
+CGMP211_HUMAN_DRAFTED_REQ_IDS = {"21_CFR_211.68(b)"}
 HUMAN_DRAFTED_REQ_IDS = (
     CFR11_HUMAN_DRAFTED_REQ_IDS | ANNEX11_HUMAN_DRAFTED_REQ_IDS | ALCOA_HUMAN_DRAFTED_REQ_IDS
+    | CGMP211_HUMAN_DRAFTED_REQ_IDS
 )
 INTERPRETIVE_FIELDS = {
     "evidence_min_criteria", "exclusion_criteria", "weak_keywords",

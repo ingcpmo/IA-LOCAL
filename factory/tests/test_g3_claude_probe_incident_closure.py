@@ -168,3 +168,73 @@ def test_equivalent_signed_decision_ignores_a_revoked_candidate(almacen_del_inci
     assert gov.equivalent_signed_decision(
         "D2", decision_type="ORIGINAL", target_set_hash=target_hash,
         store_file=almacen_del_incidente) is None
+
+
+@pytest.fixture()
+def almacen_tras_la_correccion(almacen_del_incidente):
+    """Continua el fixture del incidente hasta el estado real de hoy: Cesar
+    re-aprobo 21_CFR_211.68(b) con una CORRECTION que supersede la
+    REVOCATION D2-2026-005 (D2-2026-008 propone, D2-2026-009 confirma)."""
+    registros = store.read_all(almacen_del_incidente)
+    nuevos = [
+        _registro("D2", "CORRECTION", [REQ_211_68B], decision_instance_id="D2-2026-008",
+                  origin="agent_proposed", supersedes_instance_id="D2-2026-005",
+                  confirms_instance_id=None),
+        _registro("D2", "CORRECTION", [REQ_211_68B], decision_instance_id="D2-2026-009",
+                  origin="human_confirmed", approved_by_id="cesar",
+                  supersedes_instance_id="D2-2026-005", confirms_instance_id="D2-2026-008"),
+    ]
+    with almacen_del_incidente.open("a", encoding="utf-8") as f:
+        for r in nuevos:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    return almacen_del_incidente
+
+
+def test_a_new_revocation_is_not_blocked_by_an_old_one_already_superseded_by_a_correction(
+        almacen_tras_la_correccion):
+    """SEGUNDO DEFECTO REAL (mismo dia, misma raiz): tras D2-2026-009
+    (CORRECTION que reinstauro cobertura sobre 21_CFR_211.68(b),
+    superdediendo la REVOCATION D2-2026-005), Cesar intento proponer y
+    firmar una REVOCATION nueva (D2-2026-010) sobre el mismo target y el
+    servidor volvio a responder "ya estaba firmada" -- ahora apuntando a
+    D2-2026-005, una REVOCATION que ya no es la vigente (SUPERSEDED por la
+    CORRECTION), pero cuyo campo `status` literal seguia en "ACTIVE" (el
+    almacen es append-only, nunca se reescribe) y cuyo target ya no figuraba
+    en `revoked_ids` (la CORRECTION lo reinstauro), asi que la resta de
+    revocados tampoco la filtraba."""
+    prop = gov.propose(
+        "D2", target_ids=[REQ_211_68B], decision_type="REVOCATION",
+        supersedes_instance_id="D2-2026-009",
+        proposed_by_id="mission_control_ui",
+        reason="revocacion real nueva, no relacionada con el incidente cerrado",
+        store_file=almacen_tras_la_correccion)
+    assert prop["reused_existing_proposal"] is False
+
+    conf = gov.confirm(
+        prop["decision_instance_id"], approved_by_id="cesar",
+        approved_by_display_name="Cesar",
+        reason="revocacion real nueva, no relacionada con el incidente cerrado",
+        family_state_hash=prop["family_state_hash"],
+        expected_active_instance_id=prop["expected_active_instance_id"],
+        store_file=almacen_tras_la_correccion)
+
+    assert conf["already_signed"] is False, (
+        "el defecto real: respondia already_signed apuntando a D2-2026-005, "
+        "una REVOCATION ya superada por la CORRECTION D2-2026-009, "
+        "impidiendo registrar la revocacion nueva")
+    assert conf["approved_by_id"] == "cesar"
+    assert conf["decision_instance_id"] != "D2-2026-005"
+
+    res = resolver.resolve("D2", REQ_211_68B, store_file=almacen_tras_la_correccion)
+    assert res.authorized is False
+    assert res.coverage_basis == resolver.REVOKED
+
+
+def test_equivalent_signed_decision_ignores_a_revocation_already_superseded_by_a_correction(
+        almacen_tras_la_correccion):
+    """Prueba directa de la funcion, mismo patron que el test analogo de
+    arriba para el defecto original."""
+    target_hash = store.compute_target_set_hash([REQ_211_68B])
+    assert gov.equivalent_signed_decision(
+        "D2", decision_type="REVOCATION", target_set_hash=target_hash,
+        store_file=almacen_tras_la_correccion) is None

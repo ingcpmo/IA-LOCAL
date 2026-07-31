@@ -27,9 +27,11 @@ sys.path.insert(0, str(REPO_ROOT))
 #:
 #: Anadir un id a este conjunto es un acto deliberado que debe acompanar a un
 #: alta real de requisito -- nunca la via para silenciar un pack incompleto.
-#: `21_CFR_211.68(b)` entro el 2026-07-29 con la ingesta de Part 211; espera
-#: la redaccion humana de Capa 9.
-PENDING_HUMAN_INTERPRETATION_REQ_IDS = frozenset({"21_CFR_211.68(b)"})
+#: `21_CFR_211.68(b)` entro el 2026-07-29 con la ingesta de Part 211 y salio
+#: el 2026-07-30 (G4): pack_version 2.0-draft, evidence_pack_status
+#: human_drafted_provisional -- el conjunto queda vacio, no se retira el
+#: mecanismo (el proximo requisito sin interpretar entra aqui igual).
+PENDING_HUMAN_INTERPRETATION_REQ_IDS = frozenset()
 
 
 @pytest.fixture()

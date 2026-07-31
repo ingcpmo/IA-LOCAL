@@ -585,12 +585,21 @@ def test_the_two_stores_stayed_independent():
     de G4 existe, y lo que sigue importando es que los dos almacenes tengan
     tamanos y semanticas propias -- que nadie los haya llenado en una sola
     pasada confundiendo migrar con aprobar.
+
+    G4a (2026-07-30) sumo 1 registro real (no-bootstrap) al redactar el pack
+    de 21_CFR_211.68(b): 28 bootstrap + 1 = 29, sin aprobar nada todavia.
+    G4 (2026-07-31): Cesar firmo D2-2026-009 (CORRECTION real, ver
+    test_g3_claude_probe_incident_closure.py) -- se registro un 30o record
+    con approved_by_decision='D2-2026-009' para ESE artefacto especifico.
+    Es la PRIMERA aprobacion real de los 28 artefactos; el resto sigue sin
+    decision que lo respalde.
     """
     from factory.core import artifact_version_guard as guard
 
     assert _store_matches_git_head(store.STORE_FILE), (
         "el almacen de decisiones difiere de HEAD: algun test escribio en el real")
-    assert len(guard.read_version_records()) == 28, "el de versiones cambio de tamano"
-    # Y ninguno de los 28 nombra una decision: el bootstrap no aprueba.
-    assert all(r["approved_by_decision"] is None
-               for r in guard.read_version_records())
+    records = guard.read_version_records()
+    assert len(records) == 30, "el de versiones cambio de tamano"
+    aprobados = [r for r in records if r["approved_by_decision"] is not None]
+    assert [r["approved_by_decision"] for r in aprobados] == ["D2-2026-009"]
+    assert aprobados[0]["artifact_id"] == "21_CFR_211.68(b)"
