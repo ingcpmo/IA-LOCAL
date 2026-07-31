@@ -20,6 +20,9 @@ class TestPrefixVariantsAreReserved:
         "claude_probe", "claude_code_session_g2_1", "Claude Opus 5",
         "CLAUDE_PROBE", "claude", "capa9_bot", "capa8-worker", "layer9x",
         "agente_ficticio",
+        # W5V2_FIX_FIRMA_SILENCIOSA §3.1: variantes explicitas del documento
+        "human_reviewer", "Human-2", "HUMAN_REVIEWER", "admin_test",
+        "Admin-2", "system_bot", "SYSTEM_2",
     ])
     def test_rejected(self, name):
         assert idp.is_reserved(name), f"{name!r} deberia ser reservado"

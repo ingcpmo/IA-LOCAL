@@ -58,7 +58,15 @@ RESERVED_IDENTITIES = frozenset({
 # identifica al mismo no-humano que la palabra exacta -- "claude_probe",
 # "claude_code_session_g2_1" (ya usado como proposed_by_id, nunca como
 # approved_by_id) o "capa9_bot" no dejan de ser agentes por llevar un sufijo.
-RESERVED_PREFIXES = ("claude", "capa8", "capa9", "layer8", "layer9", "agent", "agente")
+#
+# W5V2_FIX_FIRMA_SILENCIOSA §3.1 (2026-07-31): mismo endurecimiento aplicado
+# tambien a "human", "admin" y "system" -- "human_reviewer" o "admin_test"
+# tampoco identifican a nadie, y hasta ahora solo el match exacto los
+# cubria. Riesgo aceptado a propósito: un nombre real que EMPIECE con uno de
+# estos strings ("Administra...", "Systema...") se rechazaria tambien -- la
+# union endurece, no afloja (ver docstring del modulo).
+RESERVED_PREFIXES = ("claude", "capa8", "capa9", "layer8", "layer9", "agent", "agente",
+                     "human", "admin", "system")
 
 
 class IdentityValidationError(ValueError):
