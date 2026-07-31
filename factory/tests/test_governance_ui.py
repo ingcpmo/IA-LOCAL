@@ -486,3 +486,37 @@ def test_the_hostile_payload_is_actually_visible_as_text(hostile_render):
     """
     assert "&lt;script&gt;" in hostile_render["index"] or "&lt;" in hostile_render["index"]
     assert "PAYLOAD" in hostile_render["index"]
+
+
+@needs_node
+def test_pack211_panel_only_offers_revoke_while_the_fabricated_coverage_is_live(
+        tmp_path_factory):
+    """W5V2_FIX_FIRMA_SILENCIOSA §3.3 -- defecto real cerrado el 2026-07-30:
+    el panel seguia ofreciendo "Revocar D2-2026-003" despues de que Cesar YA
+    la habia revocado (D2-2026-005), porque `incidenteRevocable()` solo
+    miraba si D2-2026-003 estaba confirmada, sin mirar si la cobertura
+    seguia vigente. Las dos mitades del invariante, en el mismo estado base
+    que produjo el incidente real."""
+    import copy
+
+    estado_incidente_activo = copy.deepcopy(FIXTURE_STATE)
+    estado_incidente_activo["coverage"]["D2"]["covered_ids"] = ["21_CFR_211.68(b)"]
+    estado_incidente_activo["coverage"]["D2"]["confirmed_active_instances"] = ["D2-2026-003"]
+
+    panel_activo = _render(tmp_path_factory, estado_incidente_activo,
+                           "gov_ui_d2_incidente_activo")["panels"]["pack-211"]
+    assert "INCIDENTE" in panel_activo
+    assert "govSubmitRevokeD2003" in panel_activo
+    assert "govSubmitPack211()\">Registrar aprobación" not in panel_activo
+
+    estado_ya_revocado = copy.deepcopy(FIXTURE_STATE)
+    estado_ya_revocado["coverage"]["D2"]["covered_ids"] = []
+    estado_ya_revocado["coverage"]["D2"]["revoked_ids"] = ["21_CFR_211.68(b)"]
+    estado_ya_revocado["coverage"]["D2"]["confirmed_active_instances"] = [
+        "D2-2026-003", "D2-2026-005"]
+
+    panel_revocado = _render(tmp_path_factory, estado_ya_revocado,
+                             "gov_ui_d2_ya_revocado")["panels"]["pack-211"]
+    assert "INCIDENTE" not in panel_revocado
+    assert "govSubmitRevokeD2003" not in panel_revocado
+    assert "govSubmitPack211()\">Registrar aprobación" in panel_revocado
