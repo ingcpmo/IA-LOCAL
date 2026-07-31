@@ -425,6 +425,9 @@ function panelPack211(){
    superficie, acotada a esta unica instancia, no un mecanismo general de
    revocacion (eso, si hace falta de nuevo, es una generalizacion aparte). */
 const INCIDENTE_D2_003 = 'D2-2026-003';
+// La REVOCATION real que Cesar firmo sobre D2-2026-003 (ver govSubmitPack211:
+// la via gobernada para re-aprobar despues de una revocacion es supersederla).
+const INCIDENTE_D2_003_REVOCATION = 'D2-2026-005';
 
 function incidenteRevocable(coverage){
   /* DEFECTO REAL (2026-07-30): comprobaba solo que D2-2026-003 estuviera
@@ -785,10 +788,30 @@ export async function govSubmitD1A(){
 }
 
 export async function govSubmitPack211(){
-  /* ORIGINAL + EXPLICIT_LIST son los defaults de GovernanceProposeBody: no
-     hay que pasar `extra`, este es el primer D2 real que cubre este id (el
-     unico D2 previo, D2_evidence_packs, quedo huerfano sin objetivo -- G2'). */
-  await proponerYConfirmar('D2', [REQ_211_68B], readSignature('pk211'), {},
+  /* DEFECTO REAL cerrado (W5V2_FIX_FIRMA_SILENCIOSA, 2026-07-31): tras
+     revocar D2-2026-003 (la firma fabricada), Cesar intento la aprobacion
+     real y el servidor la trato como "Ya estaba firmada... por
+     claude_probe" -- corregido en governance_service.equivalent_signed_decision
+     (ya no cuenta un candidato cuyo target fue revocado). Pero ADEMAS,
+     `decision_scope_resolver._effective_coverage` tiene su propia regla
+     dura y DELIBERADA (test_t07_revocation_wins_over_a_later_addendum): una
+     vez que un target fue revocado, ORIGINAL/ADDENDUM nunca lo vuelve a
+     cubrir -- "retirar autorizacion es la operacion segura y domina", a
+     proposito, para que una firma valida no pueda desactivarse por
+     accidente con un simple addendum posterior. Esa regla es correcta y no
+     se toca: la via gobernada para reactivar un target revocado es que la
+     aprobacion nueva SUPERSEDA la REVOCATION misma (CORRECTION), afirmando
+     explicitamente "esa revocacion ya cumplio su proposito, esto la
+     reemplaza" -- nunca ignorarla en silencio.
+     ORIGINAL + EXPLICIT_LIST son los defaults de GovernanceProposeBody: se
+     usan tal cual mientras el target NO este revocado (el primer D2 real
+     que cubre este id; el unico D2 previo, D2_evidence_packs, quedo
+     huerfano sin objetivo -- G2'). */
+  const yaRevocado = (GOV?.coverage?.D2?.revoked_ids || []).includes(REQ_211_68B);
+  const extra = yaRevocado
+    ? {decision_type:'CORRECTION', supersedes_instance_id: INCIDENTE_D2_003_REVOCATION}
+    : {};
+  await proponerYConfirmar('D2', [REQ_211_68B], readSignature('pk211'), extra,
                            {statusPrefix:'pk211', btnId:'pk211-submit-btn'});
 }
 

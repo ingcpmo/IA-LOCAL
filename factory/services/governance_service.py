@@ -669,6 +669,18 @@ def equivalent_signed_decision(family: str, *, decision_type: str,
     ciclo propose→confirm consigo mismo, que es exactamente donde estaba el
     agujero: `_reusable_proposal` ya lo hacía en `/propose` mirando solo
     propuestas, y esto es su mitad simétrica en `/confirm`.
+
+    DEFECTO REAL cerrado (W5V2_FIX_FIRMA_SILENCIOSA, 2026-07-31): `status:
+    ACTIVE` en ESTE registro no significa "no revocado" -- una REVOCATION
+    posterior es OTRO registro y nunca reescribe el `status` del original
+    (el almacén es append-only). Cesar revocó la cobertura fabricada por
+    `claude_probe` (D2-2026-003, ver RECORD_ANNOTATION-2026-005/006) e
+    intentó firmar la aprobación real; el candidato "vigente" seguía siendo
+    D2-2026-003 -- el `status` de su propio registro nunca cambió -- y el
+    corto-circuito devolvía "ya estaba firmada" por la firma fabricada,
+    impidiendo la firma real. `_effective_coverage()` (decision_scope_resolver)
+    ya sabe distinguir esto restando `revoked_ids`; aquí hacía falta la
+    misma resta antes de declarar un candidato vigente.
     """
     vigente = None
     for r in store.read_all(store_file):
@@ -680,6 +692,11 @@ def equivalent_signed_decision(family: str, *, decision_type: str,
                 and r.get("decision") in store.GRANTING_DECISIONS
                 and r.get("status") == "ACTIVE"):
             vigente = r  # la última en orden de inserción
+    if vigente is None:
+        return None
+    revocados = set(_resolver.coverage_report(family, store_file=store_file).revoked_ids)
+    if revocados & set(vigente.get("resolved_target_ids") or ()):
+        return None
     return vigente
 
 
