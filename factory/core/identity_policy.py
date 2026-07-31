@@ -49,6 +49,17 @@ RESERVED_IDENTITIES = frozenset({
     "capa9", "layer8", "layer9", "claude", "qa",
 })
 
+# G3 (2026-07-30): el match EXACTO de arriba dejó pasar "claude_probe" como
+# approved_by_id real -- D2-2026-003 quedó human_confirmed/ACTIVE, firmada
+# por el propio agente, porque "claude_probe" != "claude". Una sonda de
+# diagnóstico ya había usado ese mismo string antes (RECORD_ANNOTATION-2026-003,
+# grupo B) y solo se salvó porque esa vez el confirm mandó "human" a propósito,
+# no "claude_probe". Cualquier variante que EMPIECE por un prefijo reservado
+# identifica al mismo no-humano que la palabra exacta -- "claude_probe",
+# "claude_code_session_g2_1" (ya usado como proposed_by_id, nunca como
+# approved_by_id) o "capa9_bot" no dejan de ser agentes por llevar un sufijo.
+RESERVED_PREFIXES = ("claude", "capa8", "capa9", "layer8", "layer9", "agent", "agente")
+
 
 class IdentityValidationError(ValueError):
     """Identidad genérica, vacía o reservada.
@@ -60,7 +71,10 @@ class IdentityValidationError(ValueError):
 
 
 def is_reserved(name: str | None) -> bool:
-    return (name or "").strip().lower() in RESERVED_IDENTITIES
+    clean = (name or "").strip().lower()
+    if clean in RESERVED_IDENTITIES:
+        return True
+    return any(clean.startswith(p) for p in RESERVED_PREFIXES)
 
 
 def validate_identity(name: str | None, *, field: str = "identidad") -> str:

@@ -41,7 +41,7 @@ const PANELS = [
   { id:'d1a',                gate:'G2', family:'D1', titulo:'D1-A — Adendo de cobertura',
     resumen:'Extiende la cobertura a 21 CFR Part 211, sin tocar la Corrección.' },
   { id:'pack-211',           gate:'G4', family:'D2', titulo:'Revisión del pack 21 CFR 211.68(b)',
-    resumen:'Regla predicado de los 5 requisitos de Part 11. 0 criterios hoy.' },
+    resumen:'Regla predicado cGMP: control de cambios, exactitud I/O y respaldo. Contenido redactado, pendiente de tu aprobación.' },
   { id:'d2a',                gate:'G5', family:'D2', titulo:'D2-A — Aprobación de Evidence Packs',
     resumen:'Criterios interpretativos, pack a pack. Sin "apruebo todos".' },
   { id:'excepcion-auditoria',gate:'G7', family:'AUDIT_EXCEPTION', titulo:'Excepción de auditoría histórica',
@@ -227,6 +227,7 @@ const NO_EJECUTA = `<div class="note" style="margin-top:12px">
 /* ── Panel A — Corrección D1 ───────────────────────────────────────────── */
 
 const PART211 = 'ecfr_21cfr_part211';
+const REQ_211_68B = '21_CFR_211.68(b)';
 
 function panelD1Correccion(){
   const c = GOV.coverage?.D1 || {};
@@ -315,6 +316,99 @@ function panelD1A(){
     <div style="margin-top:12px">
       <button ${(correccionHecha && !cubierto)?'':'disabled'}
               onclick="govSubmitD1A()">Registrar D1-A</button>
+      <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
+    </div>
+  </div>`;
+}
+
+/* ── Panel C — Revisión del pack 21 CFR 211.68(b) (D2) ─────────────────── */
+
+/* D2 prohibe ALL_SNAPSHOT a proposito (decision_families.yaml): cada pack se
+   aprueba por su contenido concreto, nunca "apruebo todos" -- ver G2' (el
+   registro D2_evidence_packs sin ningun objetivo, huerfano de un "apruebo
+   todo" anterior). Este panel firma UN solo requirement_id, no una lista
+   editable: si mañana hace falta aprobar otro pack, es OTRO panel o una
+   generalización deliberada, no un checkbox agregado aquí sin pensar. */
+function panelPack211(){
+  const c = GOV.coverage?.D2 || {};
+  const cubierto = (c.covered_ids||[]).includes(REQ_211_68B);
+  return `
+  <div class="card">
+    <b>Revisión del pack 21 CFR 211.68(b)</b>
+    ${coverageBlock('D2', c)}
+
+    <div style="margin-top:12px"><b>REQUISITO A APROBAR</b></div>
+    <div class="mono" style="margin-top:4px">${esc(REQ_211_68B)}</div>
+    <div class="meta">Controles sobre sistemas computarizados: cambios por personal
+      autorizado, verificación de exactitud de entrada/salida y respaldo de datos
+      (§ 211.68, paragraph (b)).</div>
+    <div class="meta" style="margin-top:6px">Contenido interpretativo redactado por
+      Claude Code (G4a, 2026-07-30): <span class="mono">governed_interpretation</span>,
+      <span class="mono">evidence_min_criteria</span>,
+      <span class="mono">exclusion_criteria</span>,
+      <span class="mono">typical_insufficient_evidence</span>,
+      <span class="mono">weak_keywords</span>,
+      <span class="mono">expected_doc_types</span> — ver
+      <span class="mono">factory/regulatory/requirement_catalog/requirements.yaml</span>.
+      Firmar aquí es aprobar ESE contenido, no una promesa de que existe.</div>
+
+    ${cubierto ? `<div class="meta" style="margin-top:10px;color:var(--pass)">
+      Ya cubierto por una decisión D2 vigente — ver arriba.</div>` : ''}
+    ${incidenteRevocable(c) ? panelIncidenteD2003() : `
+    ${signatureForm('pk211')}
+    ${NO_EJECUTA}
+    <div class="meta" style="margin-top:6px;color:var(--faint)">
+      Registrar NO versiona el catálogo (G4c, aparte) ni habilita liberación:
+      la fuente ecfr_21cfr_part211 sigue PENDING_REVERIFICATION hasta que G3
+      la reverifique de nuevo con este contenido.</div>
+    <div style="margin-top:12px">
+      <button ${cubierto?'disabled':''} onclick="govSubmitPack211()">Registrar aprobación</button>
+      <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
+    </div>`}
+  </div>`;
+}
+
+/* ── Incidente D2-2026-003 (2026-07-30) ─────────────────────────────────
+   Una sonda de diagnostico uso 'claude_probe' como approved_by_id; el match
+   EXACTO de RESERVED_IDENTITIES no lo rechazo ('claude_probe' != 'claude') y
+   el /confirm quedo human_confirmed/ACTIVE de verdad -- ver
+   RECORD_ANNOTATION-2026-005. El hueco de identidad ya esta cerrado
+   (identity_policy.RESERVED_PREFIXES), pero la cobertura que otorgo sigue
+   activa: el almacen es append-only y una anotacion no revoca nada. Solo una
+   REVOCATION firmada por un humano real la retira -- este bloque es ESA
+   superficie, acotada a esta unica instancia, no un mecanismo general de
+   revocacion (eso, si hace falta de nuevo, es una generalizacion aparte). */
+const INCIDENTE_D2_003 = 'D2-2026-003';
+
+function incidenteRevocable(coverage){
+  /* DEFECTO REAL (2026-07-30): comprobaba solo que D2-2026-003 estuviera
+     confirmada, sin mirar si YA fue revocada -- una vez que Cesar firmo la
+     REVOCATION (D2-2026-005), el requisito paso a `revoked_ids` y salio de
+     `covered_ids`, pero este panel seguia mostrando el bloque de incidente e
+     invitando a revocar otra vez. `confirm` es idempotente y respondio "ya
+     estaba firmada", que es correcto -- el bug era que el panel ofrecia la
+     accion de nuevo cuando ya no hacia falta. La condicion real es la
+     cobertura VIGENTE, no la mera existencia del registro erroneo. */
+  return (coverage.covered_ids||[]).includes(REQ_211_68B)
+      && (coverage.confirmed_active_instances||[]).includes(INCIDENTE_D2_003);
+}
+
+function panelIncidenteD2003(){
+  return `
+  <div class="meta" style="margin-top:12px;padding:8px;border:1px solid var(--warn);border-radius:4px">
+    <b style="color:var(--warn)">INCIDENTE — firma fabricada por el agente (2026-07-30)</b>
+    <div class="meta" style="margin-top:6px">
+      <span class="mono">${esc(INCIDENTE_D2_003)}</span> quedó
+      <span class="mono">human_confirmed</span>/<span class="mono">ACTIVE</span> con
+      <span class="mono">approved_by_id: "claude_probe"</span> — una sonda de
+      diagnóstico que debía ser rechazada y no lo fue (ver
+      <span class="mono">RECORD_ANNOTATION-2026-005</span>). Esta cobertura de
+      <span class="mono">${esc(REQ_211_68B)}</span> NO tiene respaldo de una firma
+      humana real.</div>
+    ${signatureForm('pk211rev', {motivoLabel:'MOTIVO DE LA REVOCACIÓN'})}
+    ${NO_EJECUTA}
+    <div style="margin-top:12px">
+      <button onclick="govSubmitRevokeD2003()">Revocar ${esc(INCIDENTE_D2_003)}</button>
       <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
     </div>
   </div>`;
@@ -425,6 +519,7 @@ function paint(){
   if(!p){ el.innerHTML = indexView(); return; }
   if(p.id==='d1-correccion')       el.innerHTML = panelD1Correccion();
   else if(p.id==='d1a')            el.innerHTML = panelD1A();
+  else if(p.id==='pack-211')       el.innerHTML = panelPack211();
   else if(p.id==='excepcion-auditoria') el.innerHTML = panelExcepcion();
   else                             el.innerHTML = panelPendiente(p);
   if(p.id==='d1-correccion') govRecalcHash();
@@ -567,6 +662,23 @@ export async function govSubmitD1Correccion(){
 export async function govSubmitD1A(){
   await proponerYConfirmar('D1', [PART211], readSignature('d1a'),
                            {decision_type:'ADDENDUM', amendment_sequence:1});
+}
+
+export async function govSubmitPack211(){
+  /* ORIGINAL + EXPLICIT_LIST son los defaults de GovernanceProposeBody: no
+     hay que pasar `extra`, este es el primer D2 real que cubre este id (el
+     unico D2 previo, D2_evidence_packs, quedo huerfano sin objetivo -- G2'). */
+  await proponerYConfirmar('D2', [REQ_211_68B], readSignature('pk211'));
+}
+
+export async function govSubmitRevokeD2003(){
+  /* REVOCATION retira `resolved_target_ids` (el requirement_id, no el
+     decision_instance_id) SIN filtrar por `decision` -- revocar es la
+     operacion segura (decision_scope_resolver._effective_coverage). I-6
+     exige supersedes_instance_id apuntando a lo que se revoca. */
+  await proponerYConfirmar('D2', [REQ_211_68B], readSignature('pk211rev'),
+                           {decision_type:'REVOCATION',
+                            supersedes_instance_id: INCIDENTE_D2_003});
 }
 
 export async function govSubmitExcepcion(verdict){

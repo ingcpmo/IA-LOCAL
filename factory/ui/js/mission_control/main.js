@@ -9,7 +9,8 @@ import { submitCreateMission, submitMissionDecision } from './missions.js';
 import { submitRCDecision } from './review.js';
 import { submitW5Decision, submitW5Correction } from './w5_decisions.js';
 import { govOpen, govRecalcHash, govRefresh, govSubmitD1Correccion,
-         govSubmitD1A, govSubmitExcepcion } from './governance.js';
+         govSubmitD1A, govSubmitPack211, govSubmitRevokeD2003,
+         govSubmitExcepcion } from './governance.js';
 import {
   viewHeadlessLogs, submitHeadlessOff, submitModelChange,
   refreshPipeline, refreshPipelineIfConnected,
@@ -34,7 +35,8 @@ import { doCaseSearch, submitRegQuery, promptCaseFetch,
 Object.assign(window, {
   show, connect, refresh, toast, fakeSubmit,
   submitCreateMission, submitMissionDecision, submitRCDecision, submitW5Decision, submitW5Correction,
-  govOpen, govRecalcHash, govRefresh, govSubmitD1Correccion, govSubmitD1A, govSubmitExcepcion,
+  govOpen, govRecalcHash, govRefresh, govSubmitD1Correccion, govSubmitD1A, govSubmitPack211,
+  govSubmitRevokeD2003, govSubmitExcepcion,
   viewHeadlessLogs, submitHeadlessOff, submitModelChange,
   refreshPipeline, refreshPipelineIfConnected,
   openMissionDetail, closeDetail, toggleGrp, toggleEv,
