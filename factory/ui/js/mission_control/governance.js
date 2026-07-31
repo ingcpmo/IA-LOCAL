@@ -35,6 +35,15 @@ const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
    si el usuario no ha recargado, firma sobre lo que vio. */
 let GOV = null;
 
+/* W5V2_FIX_FIRMA_SILENCIOSA (2026-07-31), H1: un toast se desvanece en 2.2s
+   -- si nadie mira la esquina en ese instante exacto, un 409/422 real se lee
+   como "no paso nada". `GOV_STALE` detecta la causa MAS PROBABLE del 409
+   (sesion abierta desde antes de que otra firma o fix cambiara el estado)
+   de forma PROACTIVA, antes de que el clic falle: al recuperar foco la
+   pestaña, se relee el state_hash; si difiere, se bloquea la firma con un
+   motivo explicito en vez de dejar que el POST reviente en silencio. */
+let GOV_STALE = false;
+
 const PANELS = [
   { id:'d1-correccion',      gate:'G2', family:'D1', titulo:'Corrección D1 — Fuentes regulatorias',
     resumen:'Materializa el snapshot que "ALL" nunca materializó.' },
@@ -193,6 +202,40 @@ function indexView(){
   </div>`;
 }
 
+/* ── feedback visible y persistente por rama de respuesta ───────────────
+   W5V2_FIX_FIRMA_SILENCIOSA §2. `toast()` sigue llamandose (redundancia
+   deliberada), pero la fuente de verdad para depurar a distancia es esta
+   linea: no se desvanece sola, lleva timestamp, y sobrevive a que Cesar
+   mire la pantalla un segundo despues del clic en vez de en el instante
+   exacto. */
+function statusLine(prefix){
+  return `<div id="${prefix}-status" class="meta" style="margin-top:8px;min-height:1.4em"></div>`;
+}
+
+function setStatus(prefix, kind, text){
+  const el = document.getElementById(prefix+'-status');
+  const color = kind==='ok' ? 'var(--pass)' : kind==='busy' ? 'var(--faint)'
+              : kind==='warn' ? 'var(--warn)' : 'var(--fail)';
+  const ts = new Date().toTimeString().slice(0,8);
+  if(el) el.innerHTML = `<span style="color:${color}">[${esc(ts)}] ${esc(text)}</span>`;
+  if(kind !== 'busy') toast(text);
+}
+
+/* Estados visibles del boton: habilitado / en vuelo (spinner+disabled) /
+   restaurado. `dataset.origLabel` guarda el texto original UNA sola vez
+   (llamadas repetidas de setBusy(true) no lo pisan con "Enviando…"). */
+function setBusy(btnId, busy, busyLabel){
+  const b = document.getElementById(btnId); if(!b) return;
+  if(busy){
+    if(b.dataset.origLabel === undefined) b.dataset.origLabel = b.textContent;
+    b.disabled = true;
+    b.textContent = busyLabel || 'Enviando…';
+  } else {
+    if(b.dataset.origLabel !== undefined) b.textContent = b.dataset.origLabel;
+    b.disabled = false;
+  }
+}
+
 /* ── formulario de firma, común a los paneles que registran ────────────── */
 
 function signatureForm(prefix, {motivoLabel='MOTIVO'}={}){
@@ -274,9 +317,10 @@ function panelD1Correccion(){
     ${signatureForm('d1c')}
     ${NO_EJECUTA}
     <div style="margin-top:12px">
-      <button onclick="govSubmitD1Correccion()">Registrar corrección</button>
+      <button id="d1c-submit-btn" onclick="govSubmitD1Correccion()">Registrar corrección</button>
       <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
     </div>
+    ${statusLine('d1c')}
   </div>`;
 }
 
@@ -314,10 +358,11 @@ function panelD1A(){
       Registrar NO reverifica: la fuente pasará a
       <span class="mono">AUTHORIZED_PENDING_REVERIFICATION</span>, nunca a VERIFIED.</div>
     <div style="margin-top:12px">
-      <button ${(correccionHecha && !cubierto)?'':'disabled'}
+      <button id="d1a-submit-btn" ${(correccionHecha && !cubierto)?'':'disabled'}
               onclick="govSubmitD1A()">Registrar D1-A</button>
       <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
     </div>
+    ${statusLine('d1a')}
   </div>`;
 }
 
@@ -362,9 +407,10 @@ function panelPack211(){
       la fuente ecfr_21cfr_part211 sigue PENDING_REVERIFICATION hasta que G3
       la reverifique de nuevo con este contenido.</div>
     <div style="margin-top:12px">
-      <button ${cubierto?'disabled':''} onclick="govSubmitPack211()">Registrar aprobación</button>
+      <button id="pk211-submit-btn" ${cubierto?'disabled':''} onclick="govSubmitPack211()">Registrar aprobación</button>
       <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
-    </div>`}
+    </div>
+    ${statusLine('pk211')}`}
   </div>`;
 }
 
@@ -408,9 +454,10 @@ function panelIncidenteD2003(){
     ${signatureForm('pk211rev', {motivoLabel:'MOTIVO DE LA REVOCACIÓN'})}
     ${NO_EJECUTA}
     <div style="margin-top:12px">
-      <button onclick="govSubmitRevokeD2003()">Revocar ${esc(INCIDENTE_D2_003)}</button>
+      <button id="pk211rev-submit-btn" onclick="govSubmitRevokeD2003()">Revocar ${esc(INCIDENTE_D2_003)}</button>
       <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
     </div>
+    ${statusLine('pk211rev')}
   </div>`;
 }
 
@@ -474,14 +521,15 @@ function panelExcepcion(){
 
     ${signatureForm('gexc')}
     <div style="margin-top:12px">
-      <button ${pendientes?'disabled':''} onclick="govSubmitExcepcion('APPROVE')">Aceptar</button>
-      <button onclick="govSubmitExcepcion('REJECT')" style="margin-left:6px">Rechazar</button>
+      <button id="gexc-approve-btn" ${pendientes?'disabled':''} onclick="govSubmitExcepcion('APPROVE')">Aceptar</button>
+      <button id="gexc-reject-btn" onclick="govSubmitExcepcion('REJECT')" style="margin-left:6px">Rechazar</button>
       <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
     </div>
     ${pendientes ? `<div class="meta" style="margin-top:8px;color:var(--warn)">
       "Aceptar" deshabilitado: faltan ${pendientes} de las 5 medidas preventivas.
       Aceptar una excepción cuya prevención no está implementada es aceptar que
       vuelva a pasar. Rechazar sí está disponible: es un final legítimo.</div>`:''}
+    ${statusLine('gexc')}
   </div>`;
 }
 
@@ -513,25 +561,72 @@ export function govOpen(panelId){
   paint();
 }
 
+/* W5V2_FIX_FIRMA_SILENCIOSA §2.5 -- banner PROACTIVO de estado obsoleto,
+   no oculto, con un boton que recarga SIN recargar toda la pagina.
+   Deliberado: nunca se re-firma sola con el hash nuevo (la re-firma tras un
+   409 es siempre un acto humano explicito sobre el estado ya revisado). */
+function staleBanner(){
+  return `<div class="card" style="border:1px solid var(--warn);margin-bottom:10px">
+    <b style="color:var(--warn)">El estado cambió desde que cargaste esta página</b>
+    <div class="meta" style="margin-top:6px">Otra sesión, otra pestaña o una acción
+      reciente escribió en el almacén de decisiones. Firmar sobre un estado viejo
+      produce un 409 (o, si la lectura no coincide con el hash, un conflicto que
+      el servidor rechaza igual). Recarga el estado antes de continuar.</div>
+    <div style="margin-top:10px"><button onclick="govRefresh()">Recargar estado</button></div>
+  </div>`;
+}
+
 function paint(){
   const el = document.getElementById('gov-body'); if(!el || !GOV) return;
   const p = PANELS.find(x=>x.id===PANEL_ABIERTO);
-  if(!p){ el.innerHTML = indexView(); return; }
-  if(p.id==='d1-correccion')       el.innerHTML = panelD1Correccion();
-  else if(p.id==='d1a')            el.innerHTML = panelD1A();
-  else if(p.id==='pack-211')       el.innerHTML = panelPack211();
-  else if(p.id==='excepcion-auditoria') el.innerHTML = panelExcepcion();
-  else                             el.innerHTML = panelPendiente(p);
+  const banner = GOV_STALE ? staleBanner() : '';
+  if(!p){ el.innerHTML = banner + indexView(); return; }
+  let body;
+  if(p.id==='d1-correccion')       body = panelD1Correccion();
+  else if(p.id==='d1a')            body = panelD1A();
+  else if(p.id==='pack-211')       body = panelPack211();
+  else if(p.id==='excepcion-auditoria') body = panelExcepcion();
+  else                             body = panelPendiente(p);
+  el.innerHTML = banner + body;
   if(p.id==='d1-correccion') govRecalcHash();
 }
 
 export function renderGovernance(data){
   GOV = data;
+  GOV_STALE = false;  // toda carga fresca (incluida govRefresh) limpia el aviso
   const h = document.getElementById('gov-state-hash');
   if(h) h.textContent = (data.state_hash||'').slice(0,16) + '…';
   const m = location.hash.match(/^#gobierno\/(.+)$/);
   PANEL_ABIERTO = m ? m[1] : PANEL_ABIERTO;
   paint();
+}
+
+/* Deteccion PROACTIVA de obsolescencia (H1): al recuperar foco o visibilidad
+   la pestaña, releer solo el state_hash (GET, sin escribir nada) y comparar
+   contra el cargado. Nunca declara "obsoleto" por una excepcion de red o un
+   GET fallido -- sin evidencia, no se bloquea la firma. */
+async function checkStaleness(){
+  if(!GOV || !PANEL_ABIERTO || GOV_STALE) return;
+  try {
+    const r = await fetch(API_BASE + '/api/v1/layer9/governance/state', {headers: headers()});
+    if(!r.ok) return;
+    const data = await r.json();
+    if(data.state_hash && GOV.state_hash && data.state_hash !== GOV.state_hash){
+      GOV_STALE = true;
+      paint();
+    }
+  } catch(e) { /* sin conectividad -- no se declara obsoleto sin poder comprobarlo */ }
+}
+
+/* Guardas de entorno: el harness de tests (test_governance_ui.py) monta un
+   DOM minimo sin addEventListener -- no es un navegador real y no debe
+   fallar por eso. */
+if(typeof document !== 'undefined' && typeof document.addEventListener === 'function'){
+  document.addEventListener('visibilitychange',
+    () => { if(document.visibilityState === 'visible') checkStaleness(); });
+}
+if(typeof window !== 'undefined' && typeof window.addEventListener === 'function'){
+  window.addEventListener('focus', checkStaleness);
 }
 
 /* ── target_set_hash en vivo ───────────────────────────────────────────── */
@@ -582,49 +677,72 @@ function explicaError(status, data){
    a las DOS llamadas era el defecto: el propose escribe, así que para cuando
    llegaba el confirm ese hash ya estaba obsoleto por la propia acción del
    usuario, y el 409 era inevitable en todos los casos. Ver G2.1. */
-async function proponerYConfirmar(family, targetIds, sig, extra={}){
-  if(!sig.reason){ toast('El motivo es obligatorio.'); return; }
-  if(!sig.id){ toast('La firma exige un identificador real.'); return; }
-  if(!targetIds.length){ toast('No hay ninguna fuente seleccionada.'); return; }
+async function proponerYConfirmar(family, targetIds, sig, extra={}, ui={}){
+  const { statusPrefix, btnId } = ui;
+  const status = (kind, text) => {
+    if(statusPrefix) setStatus(statusPrefix, kind, text);
+    else if(kind !== 'busy') toast(text);
+  };
 
-  const prop = await postJSON(`/api/v1/layer9/governance/decisions/${family}/propose`, {
-    target_ids: targetIds, proposed_by_id: 'mission_control_ui',
-    reason: sig.reason,
-    /* El hash de LA FAMILIA, no el global: el servidor compara por familia y
-       mandarle el global es comparar dos ámbitos distintos -> 409 inmediato. */
-    family_state_hash: GOV?.family_state_hashes?.[family],
-    ...extra,
-  });
-  if(!prop.ok){ toast(explicaError(prop.status, prop.data)); return; }
-
-  /* Los tokens SALEN de la respuesta del propose, que es la autoridad: es el
-     acto que cambió el estado, así que es el único que puede describir el
-     estado posterior. Si alguno falta, se aborta ANTES de firmar en vez de
-     mandar `undefined` -- ese envío silencioso produjo un 409 "falta
-     state_hash" que mandó a recargar durante una sesión entera. */
-  const iid = prop.data.proposal_id || prop.data.decision_instance_id;
-  const fh  = prop.data.family_state_hash ?? prop.data.state_hash;
-  if(!iid || !fh){
-    toast('El servidor no devolvió los tokens de firma (proposal_id/'
-        + 'family_state_hash). No se firma a ciegas. Propuesta: ' + (iid||'?'));
+  if(!sig.reason){ status('warn', 'El motivo es obligatorio.'); return; }
+  if(!sig.id){ status('warn', 'La firma exige un identificador real.'); return; }
+  if(!targetIds.length){ status('warn', 'No hay ninguna fuente seleccionada.'); return; }
+  if(GOV_STALE){
+    status('warn', 'El estado cambió desde que cargaste esta página. '
+      + 'Pulsa "Recargar estado" arriba antes de firmar.');
     return;
   }
-  if(prop.data.reused_existing_proposal){
-    toast(`Se reutiliza la propuesta ${iid} en vez de crear otra.`);
+
+  if(btnId) setBusy(btnId, true);
+  status('busy', 'Enviando propuesta…');
+  try {
+    const prop = await postJSON(`/api/v1/layer9/governance/decisions/${family}/propose`, {
+      target_ids: targetIds, proposed_by_id: 'mission_control_ui',
+      reason: sig.reason,
+      /* El hash de LA FAMILIA, no el global: el servidor compara por familia y
+         mandarle el global es comparar dos ámbitos distintos -> 409 inmediato. */
+      family_state_hash: GOV?.family_state_hashes?.[family],
+      ...extra,
+    });
+    if(!prop.ok){ status('fail', explicaError(prop.status, prop.data)); return; }
+
+    /* Los tokens SALEN de la respuesta del propose, que es la autoridad: es el
+       acto que cambió el estado, así que es el único que puede describir el
+       estado posterior. Si alguno falta, se aborta ANTES de firmar en vez de
+       mandar `undefined` -- ese envío silencioso produjo un 409 "falta
+       state_hash" que mandó a recargar durante una sesión entera. */
+    const iid = prop.data.proposal_id || prop.data.decision_instance_id;
+    const fh  = prop.data.family_state_hash ?? prop.data.state_hash;
+    if(!iid || !fh){
+      status('fail', 'El servidor no devolvió los tokens de firma (proposal_id/'
+          + 'family_state_hash). No se firma a ciegas. Propuesta: ' + (iid||'?'));
+      return;
+    }
+    if(prop.data.reused_existing_proposal){
+      status('warn', `Se reutiliza la propuesta ${iid} en vez de crear otra.`);
+    }
+    status('busy', 'Confirmando firma…');
+    const conf = await postJSON(`/api/v1/layer9/governance/decisions/${iid}/confirm`, {
+      approved_by_id: sig.id, approved_by_display_name: sig.name || sig.id,
+      reason: sig.reason,
+      family_state_hash: fh,
+      expected_active_instance_id: prop.data.expected_active_instance_id ?? null,
+    });
+    if(!conf.ok){
+      status('fail', explicaError(conf.status, conf.data) +
+            ` La propuesta ${iid} queda registrada y sin confirmar.`);
+      return;
+    }
+    status('ok', explicaFirma(conf.data));
+    govRefresh();
+  } catch(e) {
+    /* Excepcion JS (red caida, timeout, bug) -- nunca solo console.error:
+       sin esto, cualquier fallo entre el mousedown y el primer postJSON es
+       indistinguible de "el clic no hizo nada". */
+    status('fail', 'Error inesperado: ' + (e && e.message ? e.message : String(e)));
+  } finally {
+    if(btnId) setBusy(btnId, false);
   }
-  const conf = await postJSON(`/api/v1/layer9/governance/decisions/${iid}/confirm`, {
-    approved_by_id: sig.id, approved_by_display_name: sig.name || sig.id,
-    reason: sig.reason,
-    family_state_hash: fh,
-    expected_active_instance_id: prop.data.expected_active_instance_id ?? null,
-  });
-  if(!conf.ok){
-    toast(explicaError(conf.status, conf.data) +
-          ` La propuesta ${iid} queda registrada y sin confirmar.`);
-    return;
-  }
-  toast(explicaFirma(conf.data));
-  govRefresh();
 }
 
 /* Un clic repetido NO debe parecer una firma nueva. El servidor es idempotente
@@ -651,24 +769,27 @@ export async function govSubmitD1Correccion(){
   const activas = GOV?.coverage?.D1?.confirmed_active_instances || [];
   const supersede = activas[activas.length - 1];
   if(!supersede){
-    toast('No hay ninguna D1 vigente que corregir. Recarga el estado.');
+    setStatus('d1c','warn','No hay ninguna D1 vigente que corregir. Recarga el estado.');
     return;
   }
   await proponerYConfirmar('D1', ids, readSignature('d1c'),
                            {decision_type:'CORRECTION',
-                            supersedes_instance_id: supersede});
+                            supersedes_instance_id: supersede},
+                           {statusPrefix:'d1c', btnId:'d1c-submit-btn'});
 }
 
 export async function govSubmitD1A(){
   await proponerYConfirmar('D1', [PART211], readSignature('d1a'),
-                           {decision_type:'ADDENDUM', amendment_sequence:1});
+                           {decision_type:'ADDENDUM', amendment_sequence:1},
+                           {statusPrefix:'d1a', btnId:'d1a-submit-btn'});
 }
 
 export async function govSubmitPack211(){
   /* ORIGINAL + EXPLICIT_LIST son los defaults de GovernanceProposeBody: no
      hay que pasar `extra`, este es el primer D2 real que cubre este id (el
      unico D2 previo, D2_evidence_packs, quedo huerfano sin objetivo -- G2'). */
-  await proponerYConfirmar('D2', [REQ_211_68B], readSignature('pk211'));
+  await proponerYConfirmar('D2', [REQ_211_68B], readSignature('pk211'), {},
+                           {statusPrefix:'pk211', btnId:'pk211-submit-btn'});
 }
 
 export async function govSubmitRevokeD2003(){
@@ -678,48 +799,64 @@ export async function govSubmitRevokeD2003(){
      exige supersedes_instance_id apuntando a lo que se revoca. */
   await proponerYConfirmar('D2', [REQ_211_68B], readSignature('pk211rev'),
                            {decision_type:'REVOCATION',
-                            supersedes_instance_id: INCIDENTE_D2_003});
+                            supersedes_instance_id: INCIDENTE_D2_003},
+                           {statusPrefix:'pk211rev', btnId:'pk211rev-submit-btn'});
 }
 
 export async function govSubmitExcepcion(verdict){
   const sig = readSignature('gexc');
-  if(!sig.reason){ toast('El motivo es obligatorio.'); return; }
-  if(!sig.id){ toast('La firma exige un identificador real.'); return; }
+  const btnId = verdict==='APPROVE' ? 'gexc-approve-btn' : 'gexc-reject-btn';
+  if(!sig.reason){ setStatus('gexc','warn','El motivo es obligatorio.'); return; }
+  if(!sig.id){ setStatus('gexc','warn','La firma exige un identificador real.'); return; }
   const forks = GOV?.audit?.unbacked_known_fork_entry_ids || [];
-  if(!forks.length){ toast('No hay ningún fork pendiente de excepción.'); return; }
-
-  const prop = await postJSON('/api/v1/layer9/governance/decisions/AUDIT_EXCEPTION/propose', {
-    target_ids: forks, proposed_by_id:'mission_control_ui', reason: sig.reason,
-    state_hash: GOV?.state_hash,
-  });
-  if(!prop.ok){ toast(explicaError(prop.status, prop.data)); return; }
-
-  /* Mismos tokens autoritativos que en `proponerYConfirmar`: los del propose,
-     nunca los del GET, y se aborta si no llegan. Este panel arrastraba el
-     defecto idéntico. */
-  const iid = prop.data.proposal_id || prop.data.decision_instance_id;
-  const fh  = prop.data.family_state_hash ?? prop.data.state_hash;
-  if(!iid || !fh){
-    toast('El servidor no devolvió los tokens de firma. No se firma a ciegas.');
+  if(!forks.length){ setStatus('gexc','warn','No hay ningún fork pendiente de excepción.'); return; }
+  if(GOV_STALE){
+    setStatus('gexc','warn','El estado cambió desde que cargaste esta página. '
+      + 'Pulsa "Recargar estado" arriba antes de firmar.');
     return;
   }
-  const url = verdict==='APPROVE'
-    ? `/api/v1/layer9/governance/decisions/${iid}/confirm`
-    : `/api/v1/layer9/governance/decisions/${iid}/reject`;
-  const body = verdict==='APPROVE'
-    ? {approved_by_id:sig.id, approved_by_display_name:sig.name||sig.id,
-       reason:sig.reason, family_state_hash:fh,
-       expected_active_instance_id: prop.data.expected_active_instance_id ?? null}
-    : {rejected_by_id:sig.id, rejected_by_display_name:sig.name||sig.id,
-       reason:sig.reason, state_hash:fh};
 
-  const res = await postJSON(url, body);
-  if(!res.ok){ toast(explicaError(res.status, res.data)); return; }
-  toast(res.data?.already_signed ? explicaFirma(res.data)
-    : verdict==='APPROVE'
-    ? 'Excepción aceptada. CHAIN_CONTINUITY pasa a ACCEPTED_WITH_DOCUMENTED_EXCEPTION — nunca a VERIFIED.'
-    : 'Excepción rechazada. PART11_COMPLIANCE permanece NOT_DETERMINED: es un final legítimo.');
-  govRefresh();
+  setBusy(btnId, true);
+  setStatus('gexc','busy','Enviando propuesta…');
+  try {
+    const prop = await postJSON('/api/v1/layer9/governance/decisions/AUDIT_EXCEPTION/propose', {
+      target_ids: forks, proposed_by_id:'mission_control_ui', reason: sig.reason,
+      state_hash: GOV?.state_hash,
+    });
+    if(!prop.ok){ setStatus('gexc','fail', explicaError(prop.status, prop.data)); return; }
+
+    /* Mismos tokens autoritativos que en `proponerYConfirmar`: los del propose,
+       nunca los del GET, y se aborta si no llegan. Este panel arrastraba el
+       defecto idéntico. */
+    const iid = prop.data.proposal_id || prop.data.decision_instance_id;
+    const fh  = prop.data.family_state_hash ?? prop.data.state_hash;
+    if(!iid || !fh){
+      setStatus('gexc','fail','El servidor no devolvió los tokens de firma. No se firma a ciegas.');
+      return;
+    }
+    const url = verdict==='APPROVE'
+      ? `/api/v1/layer9/governance/decisions/${iid}/confirm`
+      : `/api/v1/layer9/governance/decisions/${iid}/reject`;
+    const body = verdict==='APPROVE'
+      ? {approved_by_id:sig.id, approved_by_display_name:sig.name||sig.id,
+         reason:sig.reason, family_state_hash:fh,
+         expected_active_instance_id: prop.data.expected_active_instance_id ?? null}
+      : {rejected_by_id:sig.id, rejected_by_display_name:sig.name||sig.id,
+         reason:sig.reason, state_hash:fh};
+
+    setStatus('gexc','busy', verdict==='APPROVE' ? 'Confirmando aceptación…' : 'Confirmando rechazo…');
+    const res = await postJSON(url, body);
+    if(!res.ok){ setStatus('gexc','fail', explicaError(res.status, res.data)); return; }
+    setStatus('gexc','ok', res.data?.already_signed ? explicaFirma(res.data)
+      : verdict==='APPROVE'
+      ? 'Excepción aceptada. CHAIN_CONTINUITY pasa a ACCEPTED_WITH_DOCUMENTED_EXCEPTION — nunca a VERIFIED.'
+      : 'Excepción rechazada. PART11_COMPLIANCE permanece NOT_DETERMINED: es un final legítimo.');
+    govRefresh();
+  } catch(e) {
+    setStatus('gexc','fail','Error inesperado: ' + (e && e.message ? e.message : String(e)));
+  } finally {
+    setBusy(btnId, false);
+  }
 }
 
 export async function govRefresh(){
