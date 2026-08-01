@@ -572,10 +572,17 @@ def test_the_bootstrapped_store_photographs_without_approving():
     approved_by_decision='D2-2026-009'. Es el primero de los 30 con una
     decision real detras; los otros 29 (28 bootstrap + el borrador de
     Claude) siguen sin aprobar nada.
+
+    G4c (2026-08-01): Cesar firmo ARTIFACT_VERSION-2026-002, y
+    `apply_catalog_version_bump()` aplico el bump real de `catalog_version`
+    (1.0 -> 2.0) -- se registro un 31o record, tampoco bootstrap, con
+    approved_by_decision='ARTIFACT_VERSION-2026-002' para el propio
+    catalogo, distinto del artefacto `21_CFR_211.68(b)` que aprobaron los
+    dos records anteriores.
     """
     assert guard.STORE_FILE.exists(), "el almacen deberia existir tras el bootstrap de G4"
     records = guard.read_version_records()
-    assert len(records) == 30, f"se esperaban 30 registros (28 bootstrap + 2 reales), hay {len(records)}"
+    assert len(records) == 31, f"se esperaban 31 registros (28 bootstrap + 3 reales), hay {len(records)}"
     bootstrap_records = [r for r in records if r.get("bootstrap")]
     assert len(bootstrap_records) == 28
     for r in bootstrap_records:
@@ -584,22 +591,26 @@ def test_the_bootstrapped_store_photographs_without_approving():
         assert r["bootstrap"] is True
 
     real_records = [r for r in records if not r.get("bootstrap")]
-    assert [r["artifact_id"] for r in real_records] == ["21_CFR_211.68(b)", "21_CFR_211.68(b)"]
+    assert [r["artifact_id"] for r in real_records] == [
+        "21_CFR_211.68(b)", "21_CFR_211.68(b)",
+        "factory/regulatory/requirement_catalog/requirements.yaml",
+    ]
     assert real_records[0]["approved_by_decision"] is None, (
         "el borrador de Claude no es una aprobacion humana")
     assert real_records[1]["approved_by_decision"] == "D2-2026-009", (
         "el segundo registro real SI tiene detras la firma de Cesar"
     )
+    assert real_records[2]["approved_by_decision"] == "ARTIFACT_VERSION-2026-002", (
+        "el bump de G4c SI tiene detras la firma de Cesar"
+    )
 
-    # Y el guardia lo refleja: 1 inconsistencia de trazabilidad real y
-    # esperada (catalog_version pendiente de G4c, ver
-    # test_the_real_artifact_guard_reports_the_pending_g4c_version_bump),
-    # 27 avisos de aprobacion ausente -- uno por artefacto SIN decision; el
-    # de 21_CFR_211.68(b) ya no esta en la lista de avisos.
+    # Y el guardia lo refleja: 0 FAIL (G4c cerro CONTENT_CHANGED_VERSION_SAME),
+    # 26 avisos de aprobacion ausente -- uno por artefacto SIN decision; ni
+    # 21_CFR_211.68(b) ni el catalogo estan ya en la lista de avisos.
     report = guard.guard_report()
-    assert report["status"] == "FAIL"
-    assert report["fail_count"] == 1
-    assert report["warn_count"] == 27
+    assert report["status"] == "WARN"
+    assert report["fail_count"] == 0
+    assert report["warn_count"] == 26
 
 
 def test_the_bootstrap_is_idempotent_on_the_real_store():

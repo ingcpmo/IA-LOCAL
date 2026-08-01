@@ -593,13 +593,19 @@ def test_the_two_stores_stayed_independent():
     con approved_by_decision='D2-2026-009' para ESE artefacto especifico.
     Es la PRIMERA aprobacion real de los 28 artefactos; el resto sigue sin
     decision que lo respalde.
+    G4c (2026-08-01): Cesar firmo ARTIFACT_VERSION-2026-002 y se aplico el
+    bump real de `catalog_version` -- se registro un 31o record con
+    approved_by_decision='ARTIFACT_VERSION-2026-002' para el catalogo, la
+    SEGUNDA aprobacion real (de un artefacto distinto al de D2-2026-009).
     """
     from factory.core import artifact_version_guard as guard
 
     assert _store_matches_git_head(store.STORE_FILE), (
         "el almacen de decisiones difiere de HEAD: algun test escribio en el real")
     records = guard.read_version_records()
-    assert len(records) == 30, "el de versiones cambio de tamano"
+    assert len(records) == 31, "el de versiones cambio de tamano"
     aprobados = [r for r in records if r["approved_by_decision"] is not None]
-    assert [r["approved_by_decision"] for r in aprobados] == ["D2-2026-009"]
+    assert [r["approved_by_decision"] for r in aprobados] == [
+        "D2-2026-009", "ARTIFACT_VERSION-2026-002"]
     assert aprobados[0]["artifact_id"] == "21_CFR_211.68(b)"
+    assert aprobados[1]["artifact_id"] == "factory/regulatory/requirement_catalog/requirements.yaml"
