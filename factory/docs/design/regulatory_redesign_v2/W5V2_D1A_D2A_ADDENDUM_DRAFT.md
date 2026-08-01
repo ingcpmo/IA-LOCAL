@@ -95,6 +95,15 @@ posterior con `run_by` real, igual que en las 3 fuentes actuales.
 | Estado inicial | `REGULATORY_SOURCE_UNVERIFIED` |
 | Alcance de ingesta | **Acotado**: subpartes relevantes a sistemas computarizados y registros (localización esperada 211.68 y 211.180). No se ingiere Part 211 completo — evita requisitos sin documento que los pueda satisfacer |
 
+> **Corrección de alcance (G4c, `ARTIFACT_VERSIONING_SPEC.md` §5.4, 2026-07-31):**
+> el alcance quedó decidido y firmado como **21 CFR Part 211 ÚNICAMENTE** —
+> Part 210 (ámbito y definiciones) fue evaluado y excluido porque ningún
+> requisito del catálogo se apoya en él (0 de 20). El `source_id` real usado
+> en producción es `ecfr_21cfr_part211` (no `fda_cfr_210_211`, el nombre de
+> este draft). Se conserva la tabla anterior sin reescribir — es el borrador
+> tal como se propuso — y se deja esta nota en vez de un `sed` que borraría
+> la evidencia de qué se propuso originalmente.
+
 | Campo | EU-GMP-CH4 |
 |---|---|
 | `source_id` | `eu_gmp_ch4` |

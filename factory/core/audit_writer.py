@@ -209,6 +209,11 @@ VALID_EVENTS = {
     "exception_reviewed",
     "package_decision_recorded",
     "document_released",
+    # W5 V2 G4c — único punto de escritura del bump de version_record de un
+    # artefacto gobernado (factory/core/artifact_version_apply.py). Distinto
+    # de layer9_decision_recorded: aquel registra la DECISION (propose/
+    # confirm, sin efecto), este es el efecto real que la decisión autorizó.
+    "artifact_version_applied",
 }
 
 

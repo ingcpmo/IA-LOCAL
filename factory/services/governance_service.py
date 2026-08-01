@@ -37,7 +37,7 @@ from factory.core import decision_scope_resolver as _resolver
 from factory.core import identity_policy as _identity
 from factory.services import decision_store_v2 as store
 
-GOVERNED_FAMILIES = ("D1", "D2", "D3", "D4", "D5")
+GOVERNED_FAMILIES = ("D1", "D2", "D3", "D4", "D5", "ARTIFACT_VERSION")
 
 
 class GovernanceNotFoundError(LookupError):

@@ -50,7 +50,7 @@ const out = {};
 gov.renderGovernance(estado);
 out.index = nodes['gov-body'].innerHTML;
 out.panels = {};
-for (const p of ['d1-correccion','d1a','excepcion-auditoria','pack-211','d2a','d4a']) {
+for (const p of ['d1-correccion','d1a','excepcion-auditoria','pack-211','d2a','d4a','catalog-version']) {
   gov.govOpen(p);
   out.panels[p] = nodes['gov-body'].innerHTML;
 }
@@ -63,7 +63,8 @@ console.log(JSON.stringify(out));
 FIXTURE_STATE = {
     "state_hash": "a" * 64,
     "families": {"D1": {"label": "Fuentes regulatorias"}, "D2": {"label": "Packs"},
-                 "D3": {}, "D4": {}, "D5": {}},
+                 "D3": {}, "D4": {}, "D5": {},
+                 "ARTIFACT_VERSION": {"label": "Aprobacion de una version de artefacto gobernado"}},
     "coverage": {
         "D1": {"registry_ids": ["ecfr_21cfr_part11", "ecfr_21cfr_part211",
                                 "eu_gmp_annex11", "mhra_gxp_di_guidance_2018"],
@@ -78,7 +79,11 @@ FIXTURE_STATE = {
                "reconstructed_only_ids": [], "revoked_ids": [], "active_instances": []},
         "D5": {"registry_ids": [], "covered_ids": [], "uncovered_ids": [],
                "reconstructed_only_ids": [], "revoked_ids": [], "active_instances": []},
+        "ARTIFACT_VERSION": {"registry_ids": [], "covered_ids": [], "uncovered_ids": [],
+               "reconstructed_only_ids": [], "revoked_ids": [], "active_instances": []},
     },
+    "artifacts": {"status": "FAIL", "fail_count": 1, "warn_count": 27,
+                  "artifacts_seen": 30, "records_in_store": 30},
     "audit": {"content_hash_integrity": "VERIFIED",
               "chain_continuity": "BROKEN_HISTORICAL",
               "historical_fork_present": True, "new_forks_since_baseline": 0,
@@ -164,8 +169,13 @@ def hostile_render(tmp_path_factory):
 @needs_node
 def test_the_six_panels_all_render(rendered):
     """Ninguno vacio y ninguno lanza. Un panel que revienta al abrirse deja al
-    humano sin superficie para decidir."""
-    assert len(rendered["panels"]) == 6
+    humano sin superficie para decidir.
+
+    7, no 6: G4c (2026-07-31) agrego el panel 'catalog-version' sobre la
+    familia ARTIFACT_VERSION -- el nombre del test se conserva (GOVERNANCE_UI_SPEC
+    los llama "los seis paneles" como concepto original) en vez de renumerar
+    todo el vocabulario del spec por un panel mas."""
+    assert len(rendered["panels"]) == 7
     for pid, html in rendered["panels"].items():
         assert len(html) > 400, f"panel {pid} practicamente vacio ({len(html)} bytes)"
 

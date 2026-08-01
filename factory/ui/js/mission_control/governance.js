@@ -57,7 +57,11 @@ const PANELS = [
     resumen:'FORK-2026-06-15-001. Aceptar o rechazar, con causa raíz establecida.' },
   { id:'d4a',                gate:'G8', family:'D4', titulo:'D4-A — Presupuesto de corrida',
     resumen:'Límites duros derivados, no escritos a mano.' },
+  { id:'catalog-version',    gate:'G4', family:'ARTIFACT_VERSION', titulo:'Versionado del catálogo (G4c)',
+    resumen:'Autoriza el bump 1.0 → 2.0 del catálogo. Registrar NO lo aplica: ver factory/core/artifact_version_apply.py.' },
 ];
+
+const CATALOG_ARTIFACT_ID = 'factory/regulatory/requirement_catalog/requirements.yaml';
 
 /* ── error explícito, nunca un placeholder ─────────────────────────────── */
 
@@ -464,6 +468,52 @@ function panelIncidenteD2003(){
   </div>`;
 }
 
+/* ── Panel D — Versionado del catálogo (ARTIFACT_VERSION, G4c) ─────────── */
+
+/* Este panel REGISTRA la decisión (propose+confirm), igual que todos los
+   demás -- NUNCA bumpea el archivo. El bump real es un paso posterior y
+   separado (`factory/core/artifact_version_apply.apply_catalog_version_bump`,
+   invocado por un humano/agente bajo su direccion tras esta firma), mismo
+   patrón U-5 que el resto de la vista: registrar no ejecuta. */
+function panelCatalogVersion(){
+  const c = GOV.coverage?.ARTIFACT_VERSION || {};
+  const art = GOV.artifacts || {};
+  const cubierto = (c.covered_ids||[]).includes(CATALOG_ARTIFACT_ID);
+  return `
+  <div class="card">
+    <b>Versionado del catálogo — G4c</b>
+    ${coverageBlock('ARTIFACT_VERSION', c)}
+
+    <div style="margin-top:12px"><b>ARTEFACTO</b></div>
+    <div class="mono" style="margin-top:4px">${esc(CATALOG_ARTIFACT_ID)}</div>
+    <div class="meta" style="margin-top:6px">Estado actual del guardia de versiones:
+      <span class="mono">${esc(art.status||'?')}</span>
+      (${esc(art.fail_count ?? '?')} FAIL, ${esc(art.warn_count ?? '?')} WARN).
+      El FAIL de este artefacto es <span class="mono">CONTENT_CHANGED_VERSION_SAME</span>:
+      el contenido cambió con G4a (criterios de <span class="mono">21_CFR_211.68(b)</span>,
+      aprobados en D2-2026-009) y la versión sigue en <span class="mono">1.0</span>.</div>
+    <div class="meta" style="margin-top:6px">Bump propuesto: <span class="mono">1.0 → 2.0</span>
+      (MAYOR: se aprobó contenido interpretativo nuevo de un requisito existente
+      — ver <span class="mono">ARTIFACT_VERSIONING_SPEC.md §3.2</span>).</div>
+
+    ${cubierto ? `<div class="meta" style="margin-top:10px;color:var(--pass)">
+      Ya existe una decisión ARTIFACT_VERSION vigente para este artefacto — ver arriba.
+      Aplicar el bump (fuera de esta UI) es el paso siguiente.</div>` : ''}
+    ${signatureForm('catv')}
+    ${NO_EJECUTA}
+    <div class="meta" style="margin-top:6px;color:var(--faint)">
+      Registrar NO bumpea <span class="mono">catalog_version</span> ni escribe el
+      <span class="mono">version_record</span>: eso lo hace
+      <span class="mono">artifact_version_apply.apply_catalog_version_bump()</span>,
+      un paso separado que exige esta decisión ya confirmada.</div>
+    <div style="margin-top:12px">
+      <button id="catv-submit-btn" ${cubierto?'disabled':''} onclick="govSubmitCatalogVersion()">Registrar autorización</button>
+      <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
+    </div>
+    ${statusLine('catv')}
+  </div>`;
+}
+
 /* ── Panel E — Excepción de auditoría ──────────────────────────────────── */
 
 /* Las cinco medidas preventivas de AUDIT_FORK_REMEDIATION_SPEC §7. `Aceptar`
@@ -588,6 +638,7 @@ function paint(){
   if(p.id==='d1-correccion')       body = panelD1Correccion();
   else if(p.id==='d1a')            body = panelD1A();
   else if(p.id==='pack-211')       body = panelPack211();
+  else if(p.id==='catalog-version') body = panelCatalogVersion();
   else if(p.id==='excepcion-auditoria') body = panelExcepcion();
   else                             body = panelPendiente(p);
   el.innerHTML = banner + body;
@@ -813,6 +864,11 @@ export async function govSubmitPack211(){
     : {};
   await proponerYConfirmar('D2', [REQ_211_68B], readSignature('pk211'), extra,
                            {statusPrefix:'pk211', btnId:'pk211-submit-btn'});
+}
+
+export async function govSubmitCatalogVersion(){
+  await proponerYConfirmar('ARTIFACT_VERSION', [CATALOG_ARTIFACT_ID], readSignature('catv'), {},
+                           {statusPrefix:'catv', btnId:'catv-submit-btn'});
 }
 
 export async function govSubmitRevokeD2003(){

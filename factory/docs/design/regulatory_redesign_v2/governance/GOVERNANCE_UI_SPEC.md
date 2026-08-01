@@ -62,16 +62,19 @@ completo:
 ## 2. Rutas
 
 ```
-/mission_control.html#gobierno                     índice de los seis paneles
+/mission_control.html#gobierno                     índice de los paneles
 /mission_control.html#gobierno/d1-correccion       A
 /mission_control.html#gobierno/d1a                 B
 /mission_control.html#gobierno/pack-211            C
 /mission_control.html#gobierno/d2a                 D
 /mission_control.html#gobierno/excepcion-auditoria E
 /mission_control.html#gobierno/d4a                 F
+/mission_control.html#gobierno/catalog-version     G
 ```
 
-Índice: seis tarjetas, cada una con su gate (G2…G8), su estado
+Índice: siete tarjetas (el vocabulario "los seis paneles" del resto de este
+documento es el original de G1.16; G4c añadió la G séptima el 2026-07-31 sin
+renumerar las anteriores), cada una con su gate (G2…G8), su estado
 (`BLOQUEADO` / `LISTO` / `REGISTRADA`) y **las precondiciones que faltan**.
 Una tarjeta bloqueada dice por qué en la propia tarjeta.
 
@@ -441,7 +444,43 @@ plan prohíbe.
 
 ---
 
-## 10. Estados de error, comunes a los seis paneles
+## 9b. Panel G — Versionado del catálogo (G4c)
+
+**Ruta:** `#gobierno/catalog-version` · **Gate:** G4 · **Familia:** `ARTIFACT_VERSION`
+
+```
+┌─ Versionado del catálogo — G4c ───────────────────────────────────────┐
+│                                                                        │
+│ ARTEFACTO                                                              │
+│  factory/regulatory/requirement_catalog/requirements.yaml             │
+│                                                                        │
+│ Estado actual del guardia de versiones: FAIL (1 FAIL, 27 WARN)         │
+│ CONTENT_CHANGED_VERSION_SAME: el contenido cambió con G4a (criterios   │
+│ de 21_CFR_211.68(b), aprobados en D2-2026-009) y la versión sigue en   │
+│ 1.0.                                                                   │
+│                                                                        │
+│ Bump propuesto: 1.0 → 2.0 (MAYOR — ver ARTIFACT_VERSIONING_SPEC §3.2)  │
+│                                                                        │
+│ MOTIVO *   [ ......... ]   FIRMA [ id ] [ nombre ]                     │
+│                                                                        │
+│  [ Registrar autorización ]                                           │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+Panel deliberadamente más simple que sus hermanos: registra (propone +
+confirma) la decisión `ARTIFACT_VERSION` que autoriza el bump, exactamente
+como los demás (U-5 — registrar no ejecuta). El bump real del archivo, el
+`version_record` y la copia histórica congelada desde HEAD (§3.4 del spec de
+versionado) son un paso **separado y posterior**,
+`factory.core.artifact_version_apply.apply_catalog_version_bump()`, que exige
+esta decisión ya `human_confirmed` antes de escribir un solo byte. No hay
+formulario de contenido editable aquí: el contenido interpretativo ya se
+redactó y aprobó en el Panel C (D2-2026-009); este panel solo autoriza que
+esa aprobación se refleje en el número de versión del catálogo.
+
+---
+
+## 10. Estados de error, comunes a los paneles
 
 | Código | Cuándo | Qué muestra |
 |---|---|---|

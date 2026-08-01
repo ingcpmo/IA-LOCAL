@@ -177,6 +177,17 @@ CONFIDENCE = SCOPE_LEVEL_PRELIMINARY
 CLAUSE_MAPPING = PENDING_CANONICAL_COPY
 ```
 
+> **Corrección de alcance (G4c, `ARTIFACT_VERSIONING_SPEC.md` §5.4, 2026-07-31):**
+> el alcance quedó decidido y firmado como **21 CFR Part 211 ÚNICAMENTE** —
+> Part 210 (ámbito y definiciones) fue evaluado y excluido: ningún requisito
+> del catálogo se apoya en él (0 de 20). El `source_id` real de producción es
+> `ecfr_21cfr_part211`, no `fda_cfr_210_211`/`FDA-CFR-210-211` de esta ficha
+> preliminar. Se conserva el resto de esta sección sin reescribir (incluidas
+> las referencias a `FDA-CFR-210-211` en las tablas de §3 y siguientes): es la
+> evaluación tal como se propuso el 2026-07-29, y renombrar el identificador
+> en 30 sitios distintos de un documento histórico arriesgaría más
+> inconsistencia de la que resuelve.
+
 **La brecha, medida en el artefacto y no argumentada.** Las 5 entradas de
 Part 11 del catálogo declaran hoy:
 
