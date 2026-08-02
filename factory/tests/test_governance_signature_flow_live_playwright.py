@@ -17,6 +17,20 @@ contra un despliegue, no una unitaria, y no debe volver rojo un entorno limpio.
 NUNCA firma nada: el confirm va con identidad RESERVADA a proposito, asi que el
 servidor lo rechaza con 422. Un 422 de identidad prueba justo lo que hace falta
 -- que el token de estado PASO -- sin producir una firma en nombre de nadie.
+
+OPT-IN OBLIGATORIO (post-incidente 2026-08-02): el propose SI llega al
+servidor vivo a proposito (es lo que este fichero prueba) y deja una
+propuesta real `agent_proposed` en `decisions_v2.jsonl` -- un almacen
+git-trackeado, no un scratch. "propose nunca firma" es cierto para la
+identidad, pero no es cierto que no deje huella: una corrida rutinaria de
+la suite completa (Gate 0, CI) con factory-api vivo por casualidad
+disparaba este fichero sin que nadie lo pidiera, y `decisions_v2.jsonl`
+terminaba con una entrada de prueba real (D1-2026-055, encontrada por
+`test_no_test_in_this_file_wrote_to_the_real_store` en
+test_resignature_g2prime.py). Por eso ahora, ademas de servidor+clave,
+hace falta que un humano ponga expresamente `FACTORY_LIVE_UI_TESTS=1` --
+la prueba de integracion contra el despliegue vivo pasa a ser un acto
+deliberado, no un efecto colateral de "el contenedor estaba arriba".
 """
 import json
 import os
@@ -29,6 +43,7 @@ import pytest
 REPO = Path(__file__).resolve().parents[2]
 BASE = os.environ.get("FACTORY_UI_BASE", "http://localhost:9000")
 IDENTIDAD_RESERVADA = "human"
+_OPT_IN_VAR = "FACTORY_LIVE_UI_TESTS"
 
 
 def _api_key() -> str | None:
@@ -53,8 +68,12 @@ def _servidor_vivo() -> bool:
 
 
 pytestmark = pytest.mark.skipif(
-    not _servidor_vivo() or not _api_key(),
-    reason="requiere factory-api vivo y FACTORY_API_KEY (prueba de integracion)")
+    os.environ.get(_OPT_IN_VAR) != "1" or not _servidor_vivo() or not _api_key(),
+    reason=(
+        f"prueba de integracion contra un despliegue vivo -- deja un propose "
+        f"real en decisions_v2.jsonl. Requiere opt-in explicito ({_OPT_IN_VAR}=1) "
+        "ademas de servidor+clave, para que un run rutinario de la suite nunca "
+        "la dispare por accidente"))
 
 
 @pytest.fixture()
