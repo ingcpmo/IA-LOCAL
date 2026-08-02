@@ -85,6 +85,9 @@ def _imprime_resultados(resultados: list[dict]) -> int:
         elif not r.get("reachable"):
             estado, detalle = "NO ALCANZABLE", str(r.get("error") or "")[:70]
             problemas += 1
+        elif r.get("comparable") is False:
+            estado = "NO COMPARABLE"
+            detalle = str(r.get("note") or "")[:70]
         elif not r.get("content_matches_governed_copy"):
             estado = "CAMBIADA"
             detalle = "el contenido ya NO coincide con la copia canonica local"

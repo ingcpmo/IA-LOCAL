@@ -136,6 +136,30 @@ def test_a_changed_source_is_a_finding_not_a_crash(monkeypatch, capsys):
     assert "1 requieren juicio humano" in salida
 
 
+def test_a_non_comparable_source_is_not_reported_as_changed(monkeypatch, capsys):
+    """`comparable: False` (URL sirve un tipo de artefacto distinto al
+    archivado) no es lo mismo que un cambio real de contenido -- confundirlos
+    fue exactamente la falsa alarma real de la corrida del 2026-07-30 (dos
+    fuentes con URL viva sirviendo HTML contra una copia gobernada .txt/.pdf).
+    No cuenta como "requiere juicio humano" de contenido: ese juicio es sobre
+    apuntar la URL al artefacto correcto, un acto de gobernanza aparte."""
+    monkeypatch.setattr(launcher.checker, "check_all_governed_sources",
+                        lambda nombre, fuentes: [
+                            {"source_id": "ecfr_21cfr_part11", "reachable": True,
+                             "content_matches_governed_copy": None,
+                             "comparable": False, "note": "no comparable: TEXT vs HTML",
+                             "authorized_by_decision": True},
+                            {"source_id": "eu_gmp_annex11", "reachable": True,
+                             "content_matches_governed_copy": True,
+                             "comparable": True, "authorized_by_decision": True},
+                        ])
+    launcher.main(["--run-by", "Cesar Ponce"])
+    salida = capsys.readouterr().out
+    assert "NO COMPARABLE" in salida
+    assert "CAMBIADA" not in salida
+    assert "0 requieren juicio humano" in salida
+
+
 def test_an_unreachable_source_is_distinguished_from_a_changed_one(monkeypatch,
                                                                    capsys):
     """No alcanzable y cambiada piden acciones distintas: una es un problema de
