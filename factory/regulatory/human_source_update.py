@@ -17,9 +17,22 @@ sin juicio humano"). Mismo patrón que `applicability_matrix.yaml.approval`
                                    exige la decisión human_confirmed+approve
                                    Y que la fuente esté ya declarada
                                    REGULATORY_SOURCE_UNVERIFIED por
-                                   `broken_link_report` (fail-closed: nunca
-                                   reescribe una fuente sana sin ese caso
-                                   real que lo justifique)
+                                   `broken_link_report` O
+                                   ARTIFACT_TYPE_MISMATCH por
+                                   `artifact_type_mismatch_report` (fail-closed:
+                                   nunca reescribe una fuente sana sin uno de
+                                   esos dos casos reales que lo justifique)
+
+G3 (2026-08-03): el guard original solo cubría "enlace roto"
+(`broken_link_report`). La primera corrida real de G3 encontró un caso
+distinto -- URL viva (200 OK) pero sirviendo un tipo de artefacto
+equivocado (HTML donde se archivó TXT/PDF) -- que ese reporte declara
+explícitamente fuera de su alcance (`comparable`/
+`content_matches_governed_copy` nunca deciden su status). Se añadió
+`artifact_type_mismatch_report` como reporte HERMANO, no una extensión de
+`broken_link_report`, para no violar esa separación ya declarada; este
+guard acepta el status terminal de CUALQUIERA de los dos, nunca mezcla su
+lógica interna.
 
 `regulatory_currency_status` NUNCA se toca aquí -- el schema lo fija a
 `pending_reverification` por diseño (decisión ya tomada en Fase 1,
@@ -33,6 +46,7 @@ from pathlib import Path
 
 from factory.core.audit_writer import write_event
 from factory.layer9 import decision_log
+from factory.regulatory import artifact_type_mismatch_report
 from factory.regulatory import broken_link_report
 from factory.services import paths as svc_paths
 
@@ -90,10 +104,14 @@ def apply_source_url_update(decision_id: str) -> dict:
     Fail-closed en 2 frentes independientes: (1) exige una decisión
     `human_confirmed`+`approve` ya registrada para `decision_id`, (2)
     exige que la fuente esté ya declarada `REGULATORY_SOURCE_UNVERIFIED`
-    según el historial real de `source_currency_log.jsonl` -- nunca
-    reescribe una fuente sana, ni siquiera con una decisión humana
-    válida, porque §3 del diseño solo justifica este mecanismo para
-    resolver un enlace roto real, no para cambios ad hoc."""
+    (`broken_link_report`) O `ARTIFACT_TYPE_MISMATCH`
+    (`artifact_type_mismatch_report`) según el historial real de
+    `source_currency_log.jsonl` -- nunca reescribe una fuente sana, ni
+    siquiera con una decisión humana válida, porque §3 del diseño solo
+    justifica este mecanismo para resolver uno de esos dos casos reales,
+    no para cambios ad hoc. Los dos reportes se evalúan de forma
+    independiente y con su propia lógica -- este guard solo mira sus
+    status terminales, nunca reimplementa ninguno de los dos aquí."""
     decision = _find_decision(decision_id)
     if decision is None:
         raise HumanSourceUpdateError(f"decision_id {decision_id!r} no encontrada en decisions.jsonl")
@@ -107,10 +125,13 @@ def apply_source_url_update(decision_id: str) -> dict:
     new_values = decision["metadata"]["new_values"]
 
     log_entries = _read_currency_log()
-    status = broken_link_report.evaluate_source(source_id, log_entries)["status"]
-    if status != broken_link_report.STATUS_UNVERIFIED:
+    broken_status = broken_link_report.evaluate_source(source_id, log_entries)["status"]
+    mismatch_status = artifact_type_mismatch_report.evaluate_source(source_id, log_entries)["status"]
+    if (broken_status != broken_link_report.STATUS_UNVERIFIED
+            and mismatch_status != artifact_type_mismatch_report.STATUS_ARTIFACT_TYPE_MISMATCH):
         raise HumanSourceUpdateError(
-            f"source_id={source_id!r} no está REGULATORY_SOURCE_UNVERIFIED (status real={status!r}) "
+            f"source_id={source_id!r} no está REGULATORY_SOURCE_UNVERIFIED ni ARTIFACT_TYPE_MISMATCH "
+            f"(broken_link_report={broken_status!r}, artifact_type_mismatch_report={mismatch_status!r}) "
             "-- human_source_update nunca reescribe una fuente sana"
         )
 

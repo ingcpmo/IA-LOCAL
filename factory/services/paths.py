@@ -63,6 +63,15 @@ SOURCE_CURRENCY_LOG_FILE = FACTORY_ROOT / "regulatory" / "source_currency_log.js
 # TARGET_REGULATORY_ARCHITECTURE.md §2-3).
 BROKEN_LINK_REPORT_FILE = FACTORY_ROOT / "regulatory" / "broken_link_report.jsonl"
 
+# G3 (2026-08-03) -- evaluación de "no comparable" (comparable=False)
+# consecutivo sobre SOURCE_CURRENCY_LOG_FILE. Append-only, hermano de
+# BROKEN_LINK_REPORT_FILE pero deliberadamente SEPARADO: broken_link_report
+# mide solo `reachable` y su propio docstring prohíbe mezclar `comparable`
+# ahí dentro. Este reporte existe para el caso que ese módulo no cubre --
+# URL viva pero tipo de artefacto equivocado -- sin violar esa separación
+# (ver artifact_type_mismatch_report.py y TARGET_REGULATORY_ARCHITECTURE.md §3).
+ARTIFACT_TYPE_MISMATCH_REPORT_FILE = FACTORY_ROOT / "regulatory" / "artifact_type_mismatch_report.jsonl"
+
 MAX_FILE_BYTES = 256 * 1024  # límite de lectura de archivos del visor W3
 
 FILTER_PARTS = frozenset({

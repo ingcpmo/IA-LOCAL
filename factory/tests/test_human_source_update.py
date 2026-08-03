@@ -8,9 +8,11 @@ Garantías fijadas:
   - apply_ es la ÚNICA función con permiso de escritura real
   - apply_ exige decision_origin='human_confirmed'+decision='approve' --
     una propuesta agent_proposed sin confirmar nunca se aplica
-  - apply_ exige que la fuente esté REGULATORY_SOURCE_UNVERIFIED según el
-    historial real de source_currency_log.jsonl -- nunca reescribe una
-    fuente sana, ni con decisión humana válida
+  - apply_ exige que la fuente esté REGULATORY_SOURCE_UNVERIFIED
+    (broken_link_report) O ARTIFACT_TYPE_MISMATCH
+    (artifact_type_mismatch_report) según el historial real de
+    source_currency_log.jsonl -- nunca reescribe una fuente sana, ni con
+    decisión humana válida
   - regulatory_currency_status nunca cambia (se mantiene
     'pending_reverification', invariante del schema de Fase 1)
   - campos no permitidos en new_values se rechazan fail-closed
@@ -23,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
 
+from factory.regulatory import artifact_type_mismatch_report
 from factory.regulatory import broken_link_report
 from factory.regulatory import human_source_update as hsu
 from factory.services import paths as svc_paths
@@ -55,6 +58,17 @@ def _write_unverified_history(currency_log_file, source_id=SOURCE_ID, n=3):
     entries = [
         {"source_id": source_id, "checked_at": f"2026-07-2{i}T00:00:00+00:00", "reachable": False}
         for i in range(n)
+    ]
+    currency_log_file.write_text(
+        "\n".join(json.dumps(e) for e in entries) + "\n", encoding="utf-8"
+    )
+
+
+def _write_artifact_type_mismatch_history(currency_log_file, source_id=SOURCE_ID, n=3):
+    entries = [
+        {"source_id": source_id, "checked_at": f"2026-08-0{i}T00:00:00+00:00",
+         "reachable": True, "comparable": False}
+        for i in range(1, n + 1)
     ]
     currency_log_file.write_text(
         "\n".join(json.dumps(e) for e in entries) + "\n", encoding="utf-8"
@@ -146,6 +160,27 @@ def test_apply_succeeds_for_unverified_source_with_valid_confirmation(registry_e
     assert entry["regulatory_currency_status"] == "pending_reverification"
 
 
+def test_apply_succeeds_for_artifact_type_mismatch_source_with_valid_confirmation(registry_env):
+    """G3: URL viva (reachable=True) pero comparable=False 3 veces seguidas
+    -- ARTIFACT_TYPE_MISMATCH, no un enlace roto -- también habilita apply_."""
+    registry_file, currency_log_file = registry_env
+    _write_artifact_type_mismatch_history(currency_log_file)
+
+    proposal = hsu.propose_source_url_update(
+        SOURCE_ID,
+        {"official_source_url": "https://archive.example.org/norma_archivada.pdf"},
+        rationale="URL viva pero sirve HTML, no el PDF archivado gobernado",
+    )
+    confirmation = hsu.confirm_source_url_update(proposal["decision_id"], confirmed_by="Cesar")
+    result = hsu.apply_source_url_update(confirmation["decision_id"])
+
+    assert result["source_id"] == SOURCE_ID
+    updated = json.loads(registry_file.read_text(encoding="utf-8"))
+    entry = updated["sources"][0]
+    assert entry["official_source_url"] == "https://archive.example.org/norma_archivada.pdf"
+    assert entry["regulatory_currency_status"] == "pending_reverification"
+
+
 def test_apply_rejects_unknown_decision_id(registry_env):
     with pytest.raises(hsu.HumanSourceUpdateError):
         hsu.apply_source_url_update("no-existe")
@@ -173,10 +208,11 @@ REAL_LOG = Path("/home/ing_cpmo/factory/regulatory/source_currency_log.jsonl")
 
 
 def test_real_log_today_has_no_unverified_source_no_real_trigger_case():
-    """Confirma el hallazgo real de la auditoria: hoy ninguna de las 3
+    """Confirma el hallazgo real de la auditoria: hoy ninguna de las 4
     fuentes gobernadas esta REGULATORY_SOURCE_UNVERIFIED -- por eso
-    human_source_update sigue sin un caso real que lo dispare, aunque el
-    mecanismo ya exista y este probado (arriba, con fixtures)."""
+    human_source_update sigue sin un caso real de enlace roto que lo
+    dispare, aunque el mecanismo ya exista y este probado (arriba, con
+    fixtures)."""
     if not REAL_LOG.exists():
         pytest.skip("log real no disponible en este entorno")
     log_entries = [json.loads(l) for l in REAL_LOG.read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -184,3 +220,21 @@ def test_real_log_today_has_no_unverified_source_no_real_trigger_case():
     for source_id in source_ids:
         status = broken_link_report.evaluate_source(source_id, log_entries)["status"]
         assert status != broken_link_report.STATUS_UNVERIFIED, (source_id, status)
+
+
+def test_real_log_today_has_no_artifact_type_mismatch_source_no_real_trigger_case_yet():
+    """G3: la corrida real de Cesar (2026-08-02) ya registro comparable=False
+    para ecfr_21cfr_part11/mhra_gxp_di_guidance_2018 -- el caso real que
+    motiva este mecanismo -- pero solo 1 verificacion con ese campo por
+    fuente todavia (las 3 anteriores son de antes de que el checker
+    calculara `comparable`). insufficient_history/OK hoy, no
+    ARTIFACT_TYPE_MISMATCH: hacen falta min_consecutive_mismatches corridas
+    reales POST-G3 seguidas, no una sola, antes de que este guard se
+    dispare de verdad -- documentado aqui para no reinvestigarlo."""
+    if not REAL_LOG.exists():
+        pytest.skip("log real no disponible en este entorno")
+    log_entries = [json.loads(l) for l in REAL_LOG.read_text(encoding="utf-8").splitlines() if l.strip()]
+    source_ids = sorted({e["source_id"] for e in log_entries})
+    for source_id in source_ids:
+        status = artifact_type_mismatch_report.evaluate_source(source_id, log_entries)["status"]
+        assert status != artifact_type_mismatch_report.STATUS_ARTIFACT_TYPE_MISMATCH, (source_id, status)

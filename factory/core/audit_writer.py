@@ -166,6 +166,9 @@ VALID_EVENTS = {
     # y hash de las fuentes regulatorias gobernadas
     "regulatory_source_currency_checked",
     "regulatory_broken_link_report_generated",
+    # G3 (W5V2_REGULATORY_REDESIGN) — hermano de broken_link_report para
+    # "URL viva pero tipo de artefacto equivocado" (comparable=False)
+    "regulatory_artifact_type_mismatch_report_generated",
     "regulatory_source_url_updated",
     # W5 V2 — alta gobernada de una fuente regulatoria NUEVA
     # (human_source_registration). Distinto de _url_updated: aquel modifica una
