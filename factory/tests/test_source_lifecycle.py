@@ -490,16 +490,22 @@ def test_l08_the_signature_authorizes_without_reverifying():
 
 
 def test_l08_part211_origin_is_amber_and_the_others_are_green():
-    """La diferencia real entre Part 211 y las otras tres se conserva.
+    """La diferencia real entre las fuentes recien ingeridas y las demas se
+    conserva. Aterrizar todas en el mismo estado no puede borrar POR QUE.
 
-    Aterrizar todas en el mismo estado no puede borrar POR QUE. El ambar de
-    Part 211 se resuelve con una reverificacion; el rojo de la cobertura, con
-    una firma. Son remedios distintos.
+    `ecfr_21cfr_part11` se une a `ecfr_21cfr_part211` en ambar desde la
+    re-gobernanza real de G3 (2026-08-03, `human_source_regovernance.py`):
+    el archivo canonico cambio de TEXT a XML, `official_origin_status`
+    vuelve a `FIRST_INGESTION_...` porque no hay hash previo propio con el
+    que comparar el artefacto nuevo -- mismo motivo por el que Part 211
+    quedo ambar al ingerirse. El ambar de ambas se resuelve con una
+    reverificacion; el rojo de la cobertura, con una firma. Son remedios
+    distintos.
     """
     by_id = {d.source_id: d for d in sl.evaluate_registry()}
-    assert by_id["ecfr_21cfr_part211"].official_origin_verification == \
-        sl.ORIGIN_FIRST_INGESTION
-    for sid in ("ecfr_21cfr_part11", "eu_gmp_annex11", "mhra_gxp_di_guidance_2018"):
+    for sid in ("ecfr_21cfr_part211", "ecfr_21cfr_part11"):
+        assert by_id[sid].official_origin_verification == sl.ORIGIN_FIRST_INGESTION
+    for sid in ("eu_gmp_annex11", "mhra_gxp_di_guidance_2018"):
         assert by_id[sid].official_origin_verification == sl.ORIGIN_VERIFIED
 
 

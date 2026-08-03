@@ -78,21 +78,25 @@ documents:
     evidence_sources:
     - release_candidates/·/rc_manifest.json
   data_integrity_assessment:
-    status: needs_human_review
+    status: approved
     generated_at: '2026-07-29T12:46:47Z'
     generated_by: cesar
     content_sha256: df231ba20858a082035ff54b020fe7525f460f6de79a99fdfc8cf6065028fabe
     missing: []
     evidence_sources:
     - audit/factory_audit.jsonl (cadena verificable)
+    approved_by: cesar may
+    approved_at: '2026-08-02T17:02:33Z'
   part11_assessment:
-    status: needs_human_review
+    status: approved
     generated_at: '2026-07-29T12:46:47Z'
     generated_by: cesar
     content_sha256: 55105d0debffe0f616ebd83f1945d857393b761107de2a21fc590fbdd4bdfd78
     missing: []
     evidence_sources:
     - audit/factory_audit.jsonl (cadena verificable)
+    approved_by: cesar may
+    approved_at: '2026-08-02T17:01:41Z'
   alcoa_plus_assessment:
     status: needs_human_review
     generated_at: '2026-07-29T12:46:47Z'

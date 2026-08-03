@@ -5,23 +5,38 @@
   "sources": [
     {
       "source_id": "ecfr_21cfr_part11",
-      "original_path": "/app/factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_ECFR_21CFR_part11.txt",
-      "canonical_path": "factory/regulatory/sources/sha256/e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e/OFFICIAL_ECFR_21CFR_part11.txt",
-      "official_source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11",
-      "official_source_description": "eCFR Title 21 Part 11 -- Electronic Records; Electronic Signatures (texto completo)",
-      "sha256_original": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
-      "sha256_copy": "e41aa1b33dd09397352820b6568b0619d8b61a7f340f550a09553e6fdd82c21e",
+      "original_path": "factory/regulatory/sources/incoming/OFFICIAL_ECFR_21CFR_part11_20260701.xml",
+      "canonical_path": "factory/regulatory/sources/sha256/7fff122daf0a667920b359ce857373b6cf503e36c5b6d96b5537bac925ae9197/OFFICIAL_ECFR_21CFR_part11_20260701.xml",
+      "official_source_url": "https://www.ecfr.gov/api/versioner/v1/full/2026-07-01/title-21.xml?part=11",
+      "official_source_description": "eCFR Title 21 Part 11 -- Electronic Records; Electronic Signatures (snapshot de la API versioner, fecha fijada 2026-07-01, mismo patron gobernado que ecfr_21cfr_part211)",
+      "sha256_original": "7fff122daf0a667920b359ce857373b6cf503e36c5b6d96b5537bac925ae9197",
+      "sha256_copy": "7fff122daf0a667920b359ce857373b6cf503e36c5b6d96b5537bac925ae9197",
       "hashes_match": true,
-      "size_bytes": 16508,
+      "size_bytes": 20474,
       "normative_type": "regulation",
       "jurisdiction": "US",
       "local_integrity_status": "PASS",
-      "official_origin_status": "VERIFIED_AGAINST_PRIOR_KNOWN_HASH_2026-07-06_INGESTION",
+      "official_origin_status": "FIRST_INGESTION_NO_PRIOR_KNOWN_HASH_TO_COMPARE (artefacto nuevo -- XML en vez de TEXT -- sin hash previo propio con el que comparar; es una re-gobernanza de tipo de artefacto, no una verificacion de continuidad del archivo anterior)",
       "regulatory_currency_status": "pending_reverification",
-      "copied_at": "2026-07-17T19:32:45.681367+00:00",
-      "derived_artifacts": [],
-      "version": "NO_DISPONIBLE (eCFR es texto consolidado, sin edición discreta declarada)",
-      "effective_date": "NO_DISPONIBLE (eCFR es texto vivo continuamente actualizado; el header de gobernanza declara 'vigente al 2026-07-01' como fecha de copia, no de vigencia normativa; el cuerpo del texto cita 'effective on or after August 20, 1997' solo en el contexto puntual de la excepcion de firmas en 11.1(c), no como fecha general de todo el Part 11)",
+      "copied_at": "2026-08-03T19:30:04.562251+00:00",
+      "derived_artifacts": [
+        {
+          "extractor": "ecfr_xml",
+          "extractor_version": "1.0",
+          "source_sha256": "7fff122daf0a667920b359ce857373b6cf503e36c5b6d96b5537bac925ae9197",
+          "extraction_params": {
+            "unit": "section",
+            "skipped_tags": [
+              "EDNOTE",
+              "FTNT"
+            ]
+          },
+          "artifact_path": "factory/regulatory/sources/derived/7fff122daf0a667920b359ce857373b6cf503e36c5b6d96b5537bac925ae9197/ecfr_xml_extraction_v1.json",
+          "artifact_sha256": "3dc642988d5aeb70a55fd9e261137a9efb5342d6b637465c9da600df769c5a2b"
+        }
+      ],
+      "version": "NO_DISPONIBLE (eCFR es texto consolidado, sin edicion discreta declarada)",
+      "effective_date": "NO_DISPONIBLE (eCFR es texto vivo continuamente actualizado; el snapshot XML fija la fecha de copia, no de vigencia normativa)",
       "supersedes": null,
       "reverification_due": null
     },

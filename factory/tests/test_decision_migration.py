@@ -16,7 +16,14 @@ from factory.services import decision_legacy_adapter as adapter
 from factory.services import decision_store_v2 as store
 
 PART211 = "ecfr_21cfr_part211"
-THREE_ORIGINALS = {"ecfr_21cfr_part11", "eu_gmp_annex11", "mhra_gxp_di_guidance_2018"}
+PART11 = "ecfr_21cfr_part11"
+# `ecfr_21cfr_part11` salio de este conjunto el 2026-08-03: la re-gobernanza
+# real de G3 (`human_source_regovernance.py`) le dio un `copied_at` nuevo,
+# posterior a la firma D1 (2026-07-29) -- mismo motivo por el que Part 211
+# ya estaba excluido. Las dos fuentes recien copiadas viven ahora en
+# LATER_INGESTED_NOT_COVERED, no en el snapshot reconstruido.
+TWO_ORIGINALS = {"eu_gmp_annex11", "mhra_gxp_di_guidance_2018"}
+LATER_INGESTED_NOT_COVERED = {PART211, PART11}
 
 
 def _legacy_record_count() -> int:
@@ -74,9 +81,14 @@ def test_non_governance_decisions_are_legacy_unmapped_not_forced(migrated):
     URL de MHRA (G3, 2026-08-03), aparecieron 2 decisiones legítimas más de
     una acción no gobernada (`regulatory_source_url_update`), y el conteo
     pasó a 6 por una acción humana/de agente correcta, no por una regresión.
+    Después, el ciclo real propose(x2, la primera propuesta quedó huérfana
+    al reemplazarse por una segunda que sí apuntaba al fichero durable) +
+    confirm de `human_source_regovernance.py` para `ecfr_21cfr_part11`
+    (misma sesión) agregó 3 decisiones más de otra acción no gobernada
+    (`regulatory_source_regovernance`), subiendo el conteo real a 9.
     """
     _, s = migrated
-    assert len(s["legacy_unmapped"]) == 6
+    assert len(s["legacy_unmapped"]) == 9
 
 
 # --- V-2: las entradas no se tocan ------------------------------------------
@@ -119,18 +131,28 @@ def test_v4_part211_is_not_covered_by_d1_after_migration(migrated):
 
 
 def test_v4_the_three_originals_are_reconstructed_not_authorized(migrated):
-    """Tras migrar, NINGUNA fuente queda formalmente cubierta: las tres
-    antiguas solo las respalda un snapshot reconstruido. Es correcto y es el
-    estado que el sistema debía haber reportado desde el principio."""
+    """Tras migrar, NINGUNA fuente queda formalmente cubierta: las dos que
+    siguen con su copia original de 2026-07 solo las respalda un snapshot
+    reconstruido. `ecfr_21cfr_part11` se unió a Part 211 en NOT_COVERED
+    (ver `test_v4_part211_is_not_covered_by_d1_after_migration` y
+    `test_d1_reconstruction_excludes_sources_copied_after_the_signature`)
+    tras su re-gobernanza real de G3 (2026-08-03): su `copied_at` es ahora
+    posterior a la firma D1, así que queda excluido del snapshot igual que
+    Part 211."""
     out, _ = migrated
-    for sid in THREE_ORIGINALS:
+    for sid in TWO_ORIGINALS:
         res = resolver.resolve("D1", sid, store_file=out)
         assert res.authorized is False
         assert res.coverage_basis == resolver.RECONSTRUCTED_PENDING_FORMAL_CORRECTION
 
+    res_part11 = resolver.resolve("D1", PART11, store_file=out)
+    assert res_part11.authorized is False
+    assert res_part11.coverage_basis == resolver.NOT_COVERED
+
     c = resolver.coverage_report("D1", store_file=out)
-    assert set(c.reconstructed_only_ids) == THREE_ORIGINALS
+    assert set(c.reconstructed_only_ids) == TWO_ORIGINALS
     assert c.covered_ids == ()
+    assert PART11 in c.uncovered_ids
 
 
 def test_the_registration_of_part211_WAS_authorized(migrated):
@@ -172,9 +194,10 @@ def test_rollback_is_deleting_one_derived_file(migrated):
 
 def test_d1_reconstruction_excludes_sources_copied_after_the_signature():
     ids, evidence = adapter.reconstruct_d1_snapshot("2026-07-29T00:15:15.595831+00:00")
-    assert set(ids) == THREE_ORIGINALS
+    assert set(ids) == TWO_ORIGINALS
     assert PART211 not in ids
-    assert PART211 in evidence["excluded_as_later"]
+    assert PART11 not in ids
+    assert set(evidence["excluded_as_later"]) >= LATER_INGESTED_NOT_COVERED
     assert evidence["confidence"] == "HIGH"
 
 
@@ -186,7 +209,7 @@ def test_d1_reconstruction_carries_its_evidence_into_the_record(migrated):
     assert d1["selection_mode"] == "ALL_SNAPSHOT"
     # "ALL" nunca queda almacenado como comodín: el conjunto está materializado.
     assert "ALL" not in d1["resolved_target_ids"]
-    assert set(d1["resolved_target_ids"]) == THREE_ORIGINALS
+    assert set(d1["resolved_target_ids"]) == TWO_ORIGINALS
 
 
 def test_legacy_ids_are_preserved_in_the_payload(migrated):

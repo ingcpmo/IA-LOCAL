@@ -25,19 +25,17 @@ requirements:
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
-    context_before: 'll employ procedures and controls designed to ensure the authenticity, integrity,
+    context_before: 'all employ procedures and controls designed to ensure the authenticity, integrity,
       and, when appropriate, the confidentiality of electronic records, and to ensure that the signer
       cannot readily repudiate the signed record as not genuine. Such procedures and controls shall include
       the following:
 
-
       (a) '
     context_after: '
 
-
       (b) The ability to generate accurate and complete copies of records in both human readable and electronic
       form suitable for inspection, review, and copying by the agency. Persons should contact the agency
-      if there are any questions regarding the ability of the agency to perform such review and cop'
+      if there are any questions regarding the ability of the agency to perform such review and copy'
     pack_version: 2.1-draft
     evidence_pack_status: human_drafted_provisional
     source_verification_status: PENDING_REVERIFICATION
@@ -106,22 +104,19 @@ requirements:
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
-    context_before: 'copying by the agency. Persons should contact the agency if there are any questions
+    context_before: 'd copying by the agency. Persons should contact the agency if there are any questions
       regarding the ability of the agency to perform such review and copying of the electronic records.
-
 
       (c) Protection of records to enable their accurate and ready retrieval throughout the records retention
       period.
 
-
       (d) '
     context_after: '
-
 
       (e) Use of secure, computer-generated, time-stamped audit trails to independently record the date
       and time of operator entries and actions that create, modify, or delete electronic records. Record
       changes shall not obscure previously recorded information. Such audit trail documentation shall
-      be re'
+      be ret'
     pack_version: 2.1-draft
     evidence_pack_status: human_drafted_provisional
     source_verification_status: PENDING_REVERIFICATION
@@ -195,24 +190,20 @@ requirements:
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
-    context_before: 'y if there are any questions regarding the ability of the agency to perform such
+    context_before: 'ency if there are any questions regarding the ability of the agency to perform such
       review and copying of the electronic records.
-
 
       (c) Protection of records to enable their accurate and ready retrieval throughout the records retention
       period.
 
-
       (d) Limiting system access to authorized individuals.
-
 
       (e) '
     context_after: ' Record changes shall not obscure previously recorded information. Such audit trail
       documentation shall be retained for a period at least as long as that required for the subject electronic
       records and shall be available for agency review and copying.
 
-
-      (f) Use of operational system checks to enforce'
+      (f) Use of operational system checks to enforce '
     pack_version: 2.1-draft
     evidence_pack_status: human_drafted_provisional
     source_verification_status: PENDING_REVERIFICATION
@@ -289,24 +280,20 @@ requirements:
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
-    context_before: 'n. Such audit trail documentation shall be retained for a period at least as long
+    context_before: 'ion. Such audit trail documentation shall be retained for a period at least as long
       as that required for the subject electronic records and shall be available for agency review and
       copying.
 
-
       (f) Use of operational system checks to enforce permitted sequencing of steps and events, as appropriate.
-
 
       (g) '
     context_after: '
 
-
       (h) Use of device (e.g., terminal) checks to determine, as appropriate, the validity of the source
       of data input or operational instruction.
 
-
       (i) Determination that persons who develop, maintain, or use electronic record/electronic signature
-      systems have the education, training, and experience to '
+      systems have the education, training, and experience to pe'
     pack_version: 2.1-draft
     evidence_pack_status: human_drafted_provisional
     source_verification_status: PENDING_REVERIFICATION
@@ -377,26 +364,20 @@ requirements:
     jurisdiction: US
     binding_status: binding_regulation
     review_status: covered
-    context_before: ' include those identified in § 11.10, as appropriate, and additional measures such
-      as document encryption and use of appropriate digital signature standards to ensure, as necessary
+    context_before: 'all include those identified in § 11.10, as appropriate, and additional measures
+      such as document encryption and use of appropriate digital signature standards to ensure, as necessary
       under the circumstances, record authenticity, integrity, and confidentiality.
-
-
 
       § 11.50 Signature manifestations.
 
-
       (a) '
     context_after: '
-
 
       (b) The items identified in paragraphs (a)(1), (a)(2), and (a)(3) of this section shall be subject
       to the same controls as for electronic records and shall be included as part of any human readable
       form of the electronic record (such as electronic display or printout).
 
-
-
-      § 11.70 Signature/record l'
+      § 11.70 Signature/record link'
     pack_version: 2.1-draft
     evidence_pack_status: human_drafted_provisional
     source_verification_status: PENDING_REVERIFICATION
@@ -1034,8 +1015,8 @@ requirements:
     governed_interpretation: 'Distingue dos casos segun el origen del dato. (1) Accion humana (crear/modificar/eliminar
       manualmente): exige identificacion individual y verificable de la persona -- una cuenta compartida
       o de rol generico no satisface esto, ni siquiera si el sistema registra "que alguien" lo hizo. (2)
-      Dato generado automaticamente por un instrumento/sistema, sin intervencion manual en el momento de
-      la generacion: la atribucion se satisface identificando de forma trazable el instrumento, sistema
+      Dato generado automaticamente por un instrumento/sistema, sin intervencion manual en el momento
+      de la generacion: la atribucion se satisface identificando de forma trazable el instrumento, sistema
       o fuente tecnica especifica que lo genero (identificador de equipo, numero de serie, ID de sistema)
       -- no se exige una persona individual para ese dato en si, aunque la operacion del instrumento (calibracion,
       configuracion, inicio de corrida) siga sujeta al caso (1).'
@@ -1056,8 +1037,8 @@ requirements:
       especifico y trazable.
     typical_insufficient_evidence:
     - Se menciona "usuario" sin confirmar credenciales individuales, para accion humana.
-    - Se menciona "generado por el sistema" sin identificador especifico de instrumento/sistema, para dato
-      autogenerado.
+    - Se menciona "generado por el sistema" sin identificador especifico de instrumento/sistema, para
+      dato autogenerado.
     weak_keywords:
     - usuario
     - user
@@ -1129,9 +1110,10 @@ requirements:
     release_eligibility: BLOCKED
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
-    governed_interpretation: 'Dos atributos distintos -- legibilidad durante todo el ciclo de vida y permanencia
+    governed_interpretation: Dos atributos distintos -- legibilidad durante todo el ciclo de vida y permanencia
       (no se borra/sobrescribe sin rastro). Si el formato es propietario con riesgo real de obsolescencia,
-      exige un criterio de continuidad (no un plan de migracion universal obligatorio si el riesgo es bajo).'
+      exige un criterio de continuidad (no un plan de migracion universal obligatorio si el riesgo es
+      bajo).
     evidence_min_criteria:
     - Legibilidad garantizada durante todo el ciclo de vida.
     - Permanencia (sin sobrescritura silenciosa).
@@ -1206,12 +1188,12 @@ requirements:
     release_eligibility: BLOCKED
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
-    governed_interpretation: 'El registro debe realizarse contemporaneamente con la actividad -- esto no
-      se relaja en el caso del escribiente. La guia reconoce una excepcion legitima y acotada (Section
+    governed_interpretation: 'El registro debe realizarse contemporaneamente con la actividad -- esto
+      no se relaja en el caso del escribiente. La guia reconoce una excepcion legitima y acotada (Section
       5.2: cuando el ejecutor mismo registrar en el momento compromete el producto/actividad): un escribiente
       (segunda persona) registra la actividad EN EL MOMENTO en que ocurre e identifica al ejecutor real
-      -- el registro del escribiente sigue siendo contemporaneo, no retrospectivo. Lo unico que puede ser
-      posterior es la contrafirma/confirmacion del propio ejecutor sobre lo que el escribiente registro,
+      -- el registro del escribiente sigue siendo contemporaneo, no retrospectivo. Lo unico que puede
+      ser posterior es la contrafirma/confirmacion del propio ejecutor sobre lo que el escribiente registro,
       y solo si esa contrafirma tardia esta justificada (motivo real) y gobernada (procedimiento que la
       define, plazo maximo, revision). Una transcripcion tardia del dato mismo (no una contrafirma) nunca
       se acepta solo porque la demora quedo documentada -- documentar la demora es condicion necesaria
@@ -1377,11 +1359,11 @@ requirements:
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
     governed_interpretation: 'Exige un mecanismo VERIFICABLE de exactitud, no solo la afirmacion. La guia
-      (Section 3.1) conecta esto con la responsabilidad organizacional de sostener exactitud "en todas sus
-      formas" (papel y electronico) -- un control que cubra solo el sistema electronico, dejando papel del
-      mismo proceso sin control equivalente, no satisface el requisito integramente. El alcance de "todas
-      sus formas" esta limitado al proceso y alcance evaluados: soportes, procesos o sistemas fuera del
-      alcance evaluado no generan un gap por si solos.'
+      (Section 3.1) conecta esto con la responsabilidad organizacional de sostener exactitud "en todas
+      sus formas" (papel y electronico) -- un control que cubra solo el sistema electronico, dejando papel
+      del mismo proceso sin control equivalente, no satisface el requisito integramente. El alcance de
+      "todas sus formas" esta limitado al proceso y alcance evaluados: soportes, procesos o sistemas fuera
+      del alcance evaluado no generan un gap por si solos.'
     evidence_min_criteria:
     - Mecanismo de verificacion de exactitud descrito.
     - Ese mecanismo cubre todas las formas del dato que pertenezcan al proceso y alcance evaluados.
@@ -1448,12 +1430,12 @@ requirements:
     release_eligibility: BLOCKED
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
-    governed_interpretation: 'Conjunto INTEGRO de datos del proceso evaluado -- incluye reintentos, reprocesamientos,
+    governed_interpretation: Conjunto INTEGRO de datos del proceso evaluado -- incluye reintentos, reprocesamientos,
       exclusiones y datos no favorables cuando formen parte de ese proceso, no solo el resultado final
       aceptado. El tratamiento de resultados OOS (fuera de especificacion) solo se exige cuando OOS sea
-      aplicable al proceso o actividad evaluados (p.ej. un proceso analitico/de laboratorio) -- no se exige
-      una clausula de OOS para procesos donde ese concepto no aplica (p.ej. un registro puramente administrativo
-      sin especificacion tecnica asociada).'
+      aplicable al proceso o actividad evaluados (p.ej. un proceso analitico/de laboratorio) -- no se
+      exige una clausula de OOS para procesos donde ese concepto no aplica (p.ej. un registro puramente
+      administrativo sin especificacion tecnica asociada).
     evidence_min_criteria:
     - Captura de todos los datos relevantes del proceso evaluado, incluidos reintentos/reprocesamientos/exclusiones/desviaciones
       cuando formen parte de ese proceso.
@@ -1536,16 +1518,16 @@ requirements:
     release_eligibility: BLOCKED
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
-    governed_interpretation: 'Auto-consistencia interna real -- secuencia logica/cronologica sin contradicciones
+    governed_interpretation: Auto-consistencia interna real -- secuencia logica/cronologica sin contradicciones
       entre metadatos y datos del mismo proceso. La deteccion de inconsistencias puede realizarse mediante
       controles humanos (revision cruzada, verificacion documental), tecnicos (automatizados) o equivalentes
       gobernados -- no se exige exclusivamente un control automatizado; lo que se exige es que el control,
       cualquiera sea su naturaleza, este gobernado (definido, aplicado de forma consistente, con registro
-      de su ejecucion).'
+      de su ejecucion).
     evidence_min_criteria:
     - Secuencia cronologica consistente (timestamps, numeracion de lotes).
-    - 'Mecanismo que detecte inconsistencias reales -- humano, tecnico/automatizado o equivalente, siempre
-      que este gobernado (definido y con registro de ejecucion).'
+    - Mecanismo que detecte inconsistencias reales -- humano, tecnico/automatizado o equivalente, siempre
+      que este gobernado (definido y con registro de ejecucion).
     exclusion_criteria:
     - Discrepancias entre metadatos y datos del mismo proceso sin deteccion.
     - Ausencia de criterio de consistencia cronologica.
@@ -1607,8 +1589,8 @@ requirements:
     release_eligibility: BLOCKED
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
-    governed_interpretation: 'Cubre el periodo de retencion regulatorio COMPLETO, con reevaluacion de durabilidad
-      definida segun riesgo (no periodicidad literal universal).'
+    governed_interpretation: Cubre el periodo de retencion regulatorio COMPLETO, con reevaluacion de durabilidad
+      definida segun riesgo (no periodicidad literal universal).
     evidence_min_criteria:
     - Medio/formato garantizan durabilidad durante todo el periodo de retencion.
     - Criterio de reevaluacion segun riesgo de obsolescencia/degradacion.
@@ -1679,8 +1661,8 @@ requirements:
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
     governed_interpretation: Recuperacion sin demora indebida, directamente accesible cuando sea solicitado
-      y en forma legible para revision o inspeccion -- no solo existencia del dato en algun medio; no depende
-      de un unico experto o sistema descontinuado sin plan de contingencia.
+      y en forma legible para revision o inspeccion -- no solo existencia del dato en algun medio; no
+      depende de un unico experto o sistema descontinuado sin plan de contingencia.
     evidence_min_criteria:
     - Recuperacion sin demora indebida, directamente accesible cuando sea solicitado y en forma legible
       para revision o inspeccion.
@@ -1706,14 +1688,14 @@ requirements:
     - Evidencia real de una recuperacion ejecutada sin demora indebida, directamente accesible y en forma
       legible.
   21_CFR_211.68(b):
-    label: 'Controles sobre sistemas computarizados: cambios por personal autorizado, verificacion de exactitud
-      de entrada/salida y respaldo de datos'
+    label: 'Controles sobre sistemas computarizados: cambios por personal autorizado, verificacion de
+      exactitud de entrada/salida y respaldo de datos'
     source_id: ecfr_21cfr_part211
     citation:
       citation_id: P211-211.68b
       citation_text: Appropriate controls shall be exercised over computer or related systems to assure
-        that changes in master production and control records or other records are instituted only by authorized
-        personnel.
+        that changes in master production and control records or other records are instituted only by
+        authorized personnel.
       match_type: exact
       match_score: 1.0
       section_page_paragraph: § 211.68, paragraph (b)
@@ -1725,8 +1707,8 @@ requirements:
     pack_version: 2.0-draft
     context_before: 'cture, processing, packing, and holding of a drug product. If such equipment is so
       used, it shall be routinely calibrated, inspected, or checked according to a written program designed
-      to assure proper performance. Written records of those calibration checks and inspections shall be
-      maintained.
+      to assure proper performance. Written records of those calibration checks and inspections shall
+      be maintained.
 
       (b) '
     context_after: ' Input to and output from the computer or related system of formulas or other records
@@ -1745,15 +1727,6 @@ requirements:
     release_eligibility: BLOCKED
     production_eligibility: BLOCKED
     ready_for_regulatory_use: false
-    # NOTA DE ALCANCE (G4, 2026-07-30): el 'label' de este requisito nombra
-    # TRES controles (cambios por personal autorizado, exactitud I/O,
-    # respaldo). La 'citation' primaria solo ancla el primero -- asi estaba
-    # desde la ingesta (2026-07-29). Las otras dos frases viven en el MISMO
-    # paragraph (b) del texto canonico real (verificado hoy via G3 contra
-    # OFFICIAL_ECFR_21CFR_part211_20260701.xml, sha256 coincide) y se anclan
-    # aqui como additional_citations -- mismo mecanismo ya usado por
-    # 21_CFR_11.50_11.70 para requisitos con mas de un fragmento. No se toco
-    # la citation_sha256 de la cita primaria.
     additional_citations:
     - citation_id: P211-211.68b-io
       citation_text: Input to and output from the computer or related system of formulas or other records
@@ -1781,16 +1754,16 @@ requirements:
       entrada y salida del sistema (formulas, registros, datos) deben verificarse por exactitud; el grado
       y frecuencia de esa verificacion se basa en la complejidad y confiabilidad del sistema -- es decir,
       un enfoque proporcional al riesgo, no una frecuencia fija universal. (3) RESPALDO: los datos ingresados
-      deben respaldarse de forma exacta, completa y protegida contra alteracion, borrado accidental o perdida;
-      la unica excepcion es un dato eliminado deliberadamente por el propio proceso automatizado (ej. un
-      calculo intermedio), y en ese caso especifico se exige en su lugar un registro escrito del programa
-      con datos de validacion que lo sustenten -- la excepcion no es "no hace falta respaldar", es "el respaldo
-      se sustituye por otra evidencia equivalente, documentada".'
+      deben respaldarse de forma exacta, completa y protegida contra alteracion, borrado accidental o
+      perdida; la unica excepcion es un dato eliminado deliberadamente por el propio proceso automatizado
+      (ej. un calculo intermedio), y en ese caso especifico se exige en su lugar un registro escrito del
+      programa con datos de validacion que lo sustenten -- la excepcion no es "no hace falta respaldar",
+      es "el respaldo se sustituye por otra evidencia equivalente, documentada".'
     evidence_min_criteria:
     - 'Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros
       maestros de produccion y control.'
-    - 'Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente
-      para ese registro.'
+    - 'Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion
+      vigente para ese registro.'
     - 'Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.'
     - 'Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad
       del sistema (no declarado sin criterio).'
@@ -1799,14 +1772,15 @@ requirements:
     - 'Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro
       escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.'
     exclusion_criteria:
-    - 'Control de cambios declarado solo como politica/procedimiento sin mecanismo tecnico que lo haga cumplir
-      (ej. "solo el ingeniero de control puede modificar el programa" sin control de acceso real en el sistema).'
-    - 'Exactitud I/O mencionada de forma generica ("el sistema valida los datos") sin describir que se verifica
-      ni la base de la frecuencia/rigor.'
-    - 'Respaldo mencionado como intencion futura ("se realizaran respaldos") sin mecanismo, ubicacion ni
-      proteccion descritos.'
-    - 'Eliminacion de datos por el sistema sin el registro escrito del programa ni datos de validacion que
-      la sustenten -- la excepcion de respaldo no se activa por default.'
+    - Control de cambios declarado solo como politica/procedimiento sin mecanismo tecnico que lo haga
+      cumplir (ej. "solo el ingeniero de control puede modificar el programa" sin control de acceso real
+      en el sistema).
+    - Exactitud I/O mencionada de forma generica ("el sistema valida los datos") sin describir que se
+      verifica ni la base de la frecuencia/rigor.
+    - Respaldo mencionado como intencion futura ("se realizaran respaldos") sin mecanismo, ubicacion ni
+      proteccion descritos.
+    - Eliminacion de datos por el sistema sin el registro escrito del programa ni datos de validacion
+      que la sustenten -- la excepcion de respaldo no se activa por default.
     typical_insufficient_evidence:
     - '"Los cambios requieren aprobacion" sin describir el mecanismo tecnico que impide un cambio no autorizado.'
     - '"El sistema verifica los datos" sin especificar que se verifica ni el criterio de frecuencia/rigor.'

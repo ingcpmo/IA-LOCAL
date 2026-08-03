@@ -99,13 +99,15 @@ documents:
     evidence_sources:
     - audit/factory_audit.jsonl (cadena verificable)
   part11_assessment:
-    status: needs_human_review
+    status: approved
     generated_at: '2026-07-16T23:23:00Z'
     generated_by: cesar
     content_sha256: fd95e1442ae97e0fe63b37ccbf7d0b696a12633b74b816176fb4fdad810358e9
     missing: []
     evidence_sources:
     - audit/factory_audit.jsonl (cadena verificable)
+    approved_by: cesar may
+    approved_at: '2026-08-02T17:03:07Z'
   alcoa_plus_assessment:
     status: needs_human_review
     generated_at: '2026-07-16T23:23:00Z'
