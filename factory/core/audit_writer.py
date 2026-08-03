@@ -174,6 +174,11 @@ VALID_EVENTS = {
     # (human_source_registration). Distinto de _url_updated: aquel modifica una
     # fuente existente, este ingiere la copia canónica y crea la entrada.
     "regulatory_source_registered",
+    # G3 (2026-08-03) — re-gobernanza del ARTEFACTO CANONICO de una fuente ya
+    # existente (human_source_regovernance). Distinto de _url_updated (solo
+    # URL/hash-original, canonical_path nunca cambia) y de _registered (fuente
+    # nueva): este cambia el tipo de artefacto de una fuente que ya existe.
+    "regulatory_source_regoverned",
     # W6.5 — propuestas de agente sobre el dossier: el agente propone, el humano decide
     "dossier_agent_proposal_generated",
     "dossier_agent_proposal_failed",
