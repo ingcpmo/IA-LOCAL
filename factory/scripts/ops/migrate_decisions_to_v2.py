@@ -75,13 +75,34 @@ def native_records(store_file: Path | None = None) -> list[str]:
 # del almacen para siempre.
 VOLATILE_ON_COMPARE = ("audit_event_id", "families_registry_hash")
 
+# Solo para registros RECONSTRUCTED_SNAPSHOT (D1 con `approved_source_ids=ALL`):
+# `reconstruct_d1_snapshot()` lee el `copied_at` VIVO de sources/registry.json,
+# no una foto congelada del momento de la migracion. Una re-gobernanza real
+# posterior de una fuente (p.ej. `human_source_regovernance.py` cambiando el
+# `copied_at` de `ecfr_21cfr_part11` el 2026-08-03) mueve retroactivamente el
+# resultado de esa funcion, aunque los almacenes legacy (decisions.jsonl y el
+# otro sistema) — lo unico que is_stale() existe para vigilar segun su propio
+# docstring — no cambiaron ni una linea. Sin esto, CUALQUIER re-gobernanza
+# futura de una fuente cubierta por D1 dejaria el guardia en rojo permanente
+# por un motivo que su propio remedio sugerido (`--apply`) no puede resolver
+# sin descartar los registros NATIVOS. Igual que `families_registry_hash`:
+# ruido para la pregunta que responde is_stale(), nunca para lo que se
+# escribe (`project_all()`/`run()` los siguen calculando y persistiendo tal
+# cual, con evidencia real, en cada migracion real).
+RECONSTRUCTION_VOLATILE_ON_COMPARE = (
+    "resolved_target_ids", "target_set_hash", "reconstruction_evidence",
+)
+
 
 def _comparable(records: list[dict]) -> str:
     """Forma canonica para comparar HECHOS, ignorando artefactos de grabacion."""
-    return serialize([
-        {k: v for k, v in r.items() if k not in VOLATILE_ON_COMPARE}
-        for r in records
-    ])
+    out = []
+    for r in records:
+        strip = set(VOLATILE_ON_COMPARE)
+        if r.get("provenance") == "RECONSTRUCTED_SNAPSHOT":
+            strip |= set(RECONSTRUCTION_VOLATILE_ON_COMPARE)
+        out.append({k: v for k, v in r.items() if k not in strip})
+    return serialize(out)
 
 
 def is_stale(store_file: Path | None = None, **kwargs) -> dict:

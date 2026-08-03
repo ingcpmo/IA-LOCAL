@@ -453,3 +453,58 @@ def test_the_real_store_is_in_sync_with_the_legacy_stores():
         f"proyectados. Re-ejecuta la migracion. (Los {len(st['native_records'])} "
         "registros NATIVOS quedan fuera de la comparacion a proposito: la "
         "migracion no los produjo.)")
+
+
+def test_is_stale_ignores_later_registry_drift_on_reconstructed_snapshots(tmp_path):
+    """Regresion real (2026-08-03): re-gobernar `ecfr_21cfr_part11` (nuevo
+    `copied_at`) dejaba `is_stale()` en rojo permanente sin que ningun
+    almacen legacy hubiera cambiado -- `reconstruct_d1_snapshot()` lee el
+    registry VIVO, y el guardia recomputaba la reconstruccion de D1 contra
+    ese registry en cada llamada. Esta prueba fija el fix: un registry.json
+    mutado DESPUES de migrar no ensucia el guardia (mismo criterio ya
+    aplicado a `families_registry_hash`), sin dejar de detectar una escritura
+    legacy real."""
+    import json
+    import shutil
+
+    # Copias temporales de los TRES insumos reales -- nunca se toca el
+    # almacen real ni el registry real, ni siquiera transitoriamente.
+    out = tmp_path / "decisions_v2.jsonl"
+    registry_copy = tmp_path / "registry.json"
+    legacy_a_copy = tmp_path / "decisions.jsonl"
+    legacy_b_copy = tmp_path / "w5_human_decisions.jsonl"
+    shutil.copy2(adapter.SOURCES_REGISTRY, registry_copy)
+    shutil.copy2(adapter.LEGACY_A_FILE, legacy_a_copy)
+    shutil.copy2(adapter.LEGACY_B_FILE, legacy_b_copy)
+
+    kwargs = dict(legacy_a=legacy_a_copy, legacy_b=legacy_b_copy,
+                  registry_file=registry_copy)
+    mig.run(apply=True, out_file=out, emit_audit=False, **kwargs)
+    st = mig.is_stale(store_file=out, **kwargs)
+    assert not st["stale"]
+
+    # Re-gobernanza simulada: el copied_at de una fuente YA reconstruida en D1
+    # cambia, sin tocar ningun almacen legacy.
+    registry = json.loads(registry_copy.read_text(encoding="utf-8"))
+    for source in registry["sources"]:
+        if source["source_id"] == "eu_gmp_annex11":
+            source["copied_at"] = "2026-08-03T19:30:04.562251+00:00"
+    registry_copy.write_text(json.dumps(registry), encoding="utf-8")
+
+    st_after_drift = mig.is_stale(store_file=out, **kwargs)
+    assert not st_after_drift["stale"], (
+        "un cambio de registry.json posterior a la migracion no debe ensuciar "
+        "el guardia de almacenes legacy")
+
+    # Pero una escritura legacy real (en la COPIA) SI debe seguir detectandose.
+    with legacy_a_copy.open("a", encoding="utf-8") as f:
+        f.write(json.dumps({
+            "decision_id": "test-drift-guard-only", "project_id": "x",
+            "action": "noop", "decision": "approve", "rationale": "test",
+            "decided_by": "test", "decision_origin": "agent_proposed",
+            "recorded_by": "test", "metadata": {},
+            "timestamp": "2026-08-03T23:59:59+00:00",
+        }) + "\n")
+    st_after_real_write = mig.is_stale(store_file=out, **kwargs)
+    assert st_after_real_write["stale"], (
+        "una escritura legacy real SI debe dejar el guardia en rojo")
