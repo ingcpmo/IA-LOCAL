@@ -222,19 +222,28 @@ def test_real_log_today_has_no_unverified_source_no_real_trigger_case():
         assert status != broken_link_report.STATUS_UNVERIFIED, (source_id, status)
 
 
-def test_real_log_today_has_no_artifact_type_mismatch_source_no_real_trigger_case_yet():
-    """G3: la corrida real de Cesar (2026-08-02) ya registro comparable=False
-    para ecfr_21cfr_part11/mhra_gxp_di_guidance_2018 -- el caso real que
-    motiva este mecanismo -- pero solo 1 verificacion con ese campo por
-    fuente todavia (las 3 anteriores son de antes de que el checker
-    calculara `comparable`). insufficient_history/OK hoy, no
-    ARTIFACT_TYPE_MISMATCH: hacen falta min_consecutive_mismatches corridas
-    reales POST-G3 seguidas, no una sola, antes de que este guard se
-    dispare de verdad -- documentado aqui para no reinvestigarlo."""
+def test_real_log_today_reflects_mhra_remediated_and_part11_still_mismatched():
+    """G3: Cesar corrio 2 reverificaciones reales mas (2026-08-03 16:37/16:39)
+    tras la primera (2026-08-02), completando las 3 consecutivas que el
+    guard exige. Con esos datos reales, `mhra_gxp_di_guidance_2018` quedo
+    remediada (`b46fa03` + apply real de `21db47e2-...`, official_source_url
+    apunta ahora al PDF directo, comparable=True en la reverificacion
+    posterior) -- ya NO es ARTIFACT_TYPE_MISMATCH. `ecfr_21cfr_part11` sigue
+    sin remediar: la version anterior de este test asumia "sin trigger real
+    todavia" porque solo habia 1 dato; con las 3 corridas reales confirmadas
+    el trigger SI existe -- afirmar lo contrario seria fotografiar el estado
+    viejo en vez de medir la regla (mismo patron ya corregido varias veces
+    en este roadmap). Bloqueador real restante de G3, no de este mecanismo:
+    resolver `ecfr_21cfr_part11` con el mismo patron propose/confirm/apply."""
     if not REAL_LOG.exists():
         pytest.skip("log real no disponible en este entorno")
     log_entries = [json.loads(l) for l in REAL_LOG.read_text(encoding="utf-8").splitlines() if l.strip()]
     source_ids = sorted({e["source_id"] for e in log_entries})
+    assert "mhra_gxp_di_guidance_2018" in source_ids and "ecfr_21cfr_part11" in source_ids
+
     for source_id in source_ids:
         status = artifact_type_mismatch_report.evaluate_source(source_id, log_entries)["status"]
-        assert status != artifact_type_mismatch_report.STATUS_ARTIFACT_TYPE_MISMATCH, (source_id, status)
+        if source_id == "ecfr_21cfr_part11":
+            assert status == artifact_type_mismatch_report.STATUS_ARTIFACT_TYPE_MISMATCH, (source_id, status)
+        else:
+            assert status != artifact_type_mismatch_report.STATUS_ARTIFACT_TYPE_MISMATCH, (source_id, status)

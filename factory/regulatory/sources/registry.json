@@ -64,7 +64,7 @@
       "source_id": "mhra_gxp_di_guidance_2018",
       "original_path": "/app/factory/workspaces/lab_qc_project/data/regulations/official/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
       "canonical_path": "factory/regulatory/sources/sha256/e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d/OFFICIAL_MHRA_GXP_DI_GUIDANCE_2018.pdf",
-      "official_source_url": "https://www.gov.uk/government/publications/guidance-on-gxp-data-integrity",
+      "official_source_url": "https://assets.publishing.service.gov.uk/media/5aa2b9ede5274a3e391e37f3/MHRA_GxP_data_integrity_guide_March_edited_Final.pdf",
       "official_source_description": "MHRA GXP Data Integrity Guidance and Definitions, Revision 1, March 2018",
       "sha256_original": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",
       "sha256_copy": "e05dda11a93324c47f3f96aa106933d0073d8eb450f09d736ea53b19cf7ebd0d",

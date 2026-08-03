@@ -66,9 +66,17 @@ def test_the_four_targetless_decisions_are_flagged_not_hidden(migrated):
 
 
 def test_non_governance_decisions_are_legacy_unmapped_not_forced(migrated):
-    """Forzarlas a una familia real sería fabricar cobertura."""
+    """Forzarlas a una familia real sería fabricar cobertura.
+
+    El `== 4` que había aquí congelaba el tamaño de un almacén legacy que
+    sigue vivo (mismo patrón ya corregido en `test_v1_no_record_is_lost`):
+    en cuanto `human_source_update.py` propuso y confirmó la corrección de
+    URL de MHRA (G3, 2026-08-03), aparecieron 2 decisiones legítimas más de
+    una acción no gobernada (`regulatory_source_url_update`), y el conteo
+    pasó a 6 por una acción humana/de agente correcta, no por una regresión.
+    """
     _, s = migrated
-    assert len(s["legacy_unmapped"]) == 4
+    assert len(s["legacy_unmapped"]) == 6
 
 
 # --- V-2: las entradas no se tocan ------------------------------------------
