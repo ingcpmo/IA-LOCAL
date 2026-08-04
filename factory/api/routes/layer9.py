@@ -1531,3 +1531,64 @@ def post_governance_abandon(instance_id: str, body: GovernanceAbandonBody):
             reason=body.reason)
     except Exception as e:
         raise _governance_error(e)
+
+
+# ---------------------------------------------------------------------------
+# Panel ARQ 2026-08-04 -- endpoint canónico de propuestas ARTIFACT_VERSION,
+# filtrado por artifact_path, y firma con echo-back byte a byte. Ver
+# factory/services/artifact_version_signing.py (docstring del módulo) sobre
+# por qué es un endpoint separado, no una ampliación de los de arriba.
+# ---------------------------------------------------------------------------
+
+class ArtifactVersionSignBody(BaseModel):
+    proposal_id: str
+    artifact_path: str
+    from_version: str
+    to_version: str
+    artifact_hash_before: str
+    expected_hash_after: str
+    state_hash: str
+    reason: str
+    approved_by_id: str
+    approved_by_display_name: str | None = None
+
+
+@router.get("/governance/artifact-version/proposals")
+def get_artifact_version_proposals(artifact_path: str = Query(...)):
+    """Propuestas ARTIFACT_VERSION de UN artefacto, con su estado de ciclo
+    de vida derivado (PROPOSED/SIGNED/APPLIED/WITHDRAWN) y
+    `payload_complete`. Solo lectura."""
+    from factory.services import artifact_version_signing as _avs
+    try:
+        return {"proposals": _avs.list_artifact_version_proposals(artifact_path)}
+    except Exception as e:
+        raise _governance_error(e)
+
+
+@router.post("/governance/artifact-version/sign", status_code=201)
+def post_artifact_version_sign(body: ArtifactVersionSignBody):
+    """Firma con echo-back: cada campo se compara byte a byte contra la
+    propuesta ALMACENADA antes de confirmar nada. 409 `proposal_mismatch`
+    si el echo-back no coincide (incluida una `state_hash` vieja, que
+    `confirm()` ya distingue con su propio 409); 409 `duplicate` si la
+    propuesta ya se resolvió; 422 identidad inválida."""
+    from factory.services import artifact_version_signing as _avs
+    try:
+        result = _avs.sign_artifact_version_proposal(
+            proposal_id=body.proposal_id, artifact_path=body.artifact_path,
+            from_version=body.from_version, to_version=body.to_version,
+            artifact_hash_before=body.artifact_hash_before,
+            expected_hash_after=body.expected_hash_after,
+            state_hash=body.state_hash, reason=body.reason,
+            approved_by_id=body.approved_by_id,
+            approved_by_display_name=body.approved_by_display_name)
+        return result
+    except _avs.ProposalMismatchError as e:
+        raise HTTPException(409, {"detail": str(e), "reason": "proposal_mismatch"})
+    except _avs.DuplicateSignatureError as e:
+        raise HTTPException(409, {"detail": str(e), "reason": "duplicate"})
+    except Exception as e:
+        err = _governance_error(e)
+        if err.status_code == 409:
+            err.detail = {"detail": err.detail, "reason": "stale_state"}
+        raise err

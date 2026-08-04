@@ -58,7 +58,10 @@ const PANELS = [
   { id:'d4a',                gate:'G8', family:'D4', titulo:'D4-A — Presupuesto de corrida',
     resumen:'Límites duros derivados, no escritos a mano.' },
   { id:'catalog-version',    gate:'G4', family:'ARTIFACT_VERSION', titulo:'Versionado del catálogo (G4c)',
-    resumen:'Autoriza el bump 1.0 → 2.0 del catálogo. Registrar NO lo aplica: ver factory/core/artifact_version_apply.py.' },
+    /* RC-3 (panel ARQ, 2026-08-04): este resumen tenia "1.0 -> 2.0" fijo --
+       la transicion real cambia con el tiempo (hoy es 2.0->2.1) y vive en el
+       endpoint, nunca en un literal del indice. */
+    resumen:'Bump de versión del catálogo (transición vigente en el panel). Registrar NO lo aplica: ver factory/core/artifact_version_apply.py.' },
 ];
 
 const CATALOG_ARTIFACT_ID = 'factory/regulatory/requirement_catalog/requirements.yaml';
@@ -559,6 +562,14 @@ function panelCatalogVersion(){
       <div class="meta">ARTIFACT_PATH = <span class="mono">${esc(valida.payload.artifact_path)}</span></div>
       <div class="meta">ARTIFACT_HASH_BEFORE = <span class="mono">${esc(valida.payload.artifact_hash_before)}</span></div>
       <div class="meta">EXPECTED_HASH_AFTER = <span class="mono">${esc(valida.payload.expected_hash_after)}</span></div>
+      <div class="meta" style="margin-top:6px">STATE_HASH = <span class="mono">${esc((GOV?.family_state_hashes?.ARTIFACT_VERSION||'').slice(0,16))}…</span></div>
+      ${valida.payload.artifact_hash_before === valida.payload.expected_hash_after ? `
+      <div class="meta" style="margin-top:6px;color:var(--faint)">
+        CASO A (§2 del panel ARQ): <span class="mono">catalog_version</span> está
+        excluido del hash canónico del catálogo (<span class="mono">artifact_version_guard.py:83</span>) --
+        bumpear SOLO la etiqueta de versión, sin cambio de contenido, produce
+        legítimamente <span class="mono">ARTIFACT_HASH_BEFORE == EXPECTED_HASH_AFTER</span>.
+        No es un error: es el comportamiento esperado de este tipo de bump.</div>` : ''}
     </div>` : ''}
 
     <div style="margin-top:12px"><b>PROPUESTAS ARTIFACT_VERSION PARA ESTE ARTEFACTO</b>
@@ -785,13 +796,24 @@ async function postJSON(url, body){
 }
 
 function explicaError(status, data){
-  const detalle = typeof data?.detail === 'string' ? data.detail : JSON.stringify(data?.detail ?? '');
+  /* Panel ARQ 2026-08-04: /governance/artifact-version/sign devuelve
+     detail={detail, reason} (reason en {proposal_mismatch, duplicate,
+     stale_state}) -- se desempaqueta antes de mostrarlo, nunca JSON crudo. */
+  const inner = data?.detail;
+  const reason = (inner && typeof inner === 'object') ? inner.reason : null;
+  const detalle = (inner && typeof inner === 'object') ? (inner.detail ?? '')
+                 : (typeof inner === 'string' ? inner : JSON.stringify(inner ?? ''));
+  const porReason = {
+    proposal_mismatch: ' — el panel mostraba una propuesta distinta a la almacenada: recarga antes de firmar.',
+    duplicate: ' — esta propuesta ya fue resuelta (firmada, aplicada o retirada).',
+    stale_state: ' — recarga y revisa antes de firmar.',
+  };
   /* 422 y 409 dicen cosas distintas y la guía tiene que diferenciarlas: un
      campo ausente NO se arregla recargando, y decir "recarga y revisa" ante un
      422 manda al humano a perseguir un fantasma. */
   if(status===422) return 'Rechazado (422): ' + detalle
        + ' — es un problema de la petición o de la identidad, no del estado: recargar no lo arregla.';
-  if(status===409) return 'Conflicto (409): ' + detalle + ' — recarga y revisa antes de firmar.';
+  if(status===409) return 'Conflicto (409): ' + detalle + (porReason[reason] || ' — recarga y revisa antes de firmar.');
   if(status===404) return 'No encontrado (404): ' + detalle;
   return 'Error ' + status + ': ' + detalle;
 }
@@ -940,47 +962,15 @@ export async function govSubmitPack211(){
                            {statusPrefix:'pk211', btnId:'pk211-submit-btn'});
 }
 
-/* Confirma una propuesta YA EXISTENTE (no propone una nueva). Distinto de
-   `proponerYConfirmar`: aquí no hay nada que proponer -- el payload con la
-   transición exacta (from_version/to_version/hashes) ya lo calculó
-   `artifact_version_apply.propose_artifact_version_change()` contra el
-   estado vivo, y proponer de nuevo desde el JS solo reproduciría el defecto
-   original (payload vacío armado a mano en el cliente). */
-async function confirmarPropuestaExistente(family, instanceId, sig, ui={}){
-  const { statusPrefix, btnId } = ui;
-  const status = (kind, text) => {
-    if(statusPrefix) setStatus(statusPrefix, kind, text);
-    else if(kind !== 'busy') toast(text);
-  };
-  if(!sig.reason){ status('warn', 'El motivo es obligatorio.'); return; }
-  if(!sig.id){ status('warn', 'La firma exige un identificador real.'); return; }
-  if(GOV_STALE){
-    status('warn', 'El estado cambió desde que cargaste esta página. '
-      + 'Pulsa "Recargar estado" arriba antes de firmar.');
-    return;
-  }
-  if(btnId) setBusy(btnId, true);
-  status('busy', 'Confirmando firma…');
-  try {
-    const conf = await postJSON(`/api/v1/layer9/governance/decisions/${instanceId}/confirm`, {
-      approved_by_id: sig.id, approved_by_display_name: sig.name || sig.id,
-      reason: sig.reason,
-      family_state_hash: GOV?.family_state_hashes?.[family],
-      expected_active_instance_id: GOV?.active_instances?.[family] ?? null,
-    });
-    if(!conf.ok){
-      status('fail', explicaError(conf.status, conf.data));
-      return;
-    }
-    status('ok', explicaFirma(conf.data));
-    govRefresh();
-  } catch(e) {
-    status('fail', 'Error de red/JS al confirmar: ' + (e && e.message || e));
-  } finally {
-    if(btnId) setBusy(btnId, false);
-  }
-}
 
+/* Panel ARQ 2026-08-04 (§3.3): firma con ECHO-BACK -- el POST reenvía los
+   6 campos que el humano VIO en pantalla (proposal_id/artifact_path/
+   from_version/to_version/ambos hashes) más el state_hash vigente. El
+   backend (/governance/artifact-version/sign) los compara byte a byte
+   contra lo almacenado ANTES de confirmar nada -- nunca "lo mas parecido".
+   Reemplaza a confirmarPropuestaExistente() para este panel: aquella
+   confía en que el cliente mandó el id correcto; esta prueba que el
+   cliente vio EXACTAMENTE lo que existe. */
 export async function govSubmitCatalogVersion(){
   const cs = GOV?.artifacts?.catalog_state;
   const valida = validCatalogVersionProposal(cs);
@@ -989,9 +979,37 @@ export async function govSubmitCatalogVersion(){
       + 'transición vigente (atada al hash/versión vivos) para este artefacto.');
     return;
   }
-  await confirmarPropuestaExistente('ARTIFACT_VERSION', valida.decision_instance_id,
-                                    readSignature('catv'),
-                                    {statusPrefix:'catv', btnId:'catv-submit-btn'});
+  const sig = readSignature('catv');
+  if(!sig.reason){ setStatus('catv','warn','El motivo es obligatorio.'); return; }
+  if(!sig.id){ setStatus('catv','warn','La firma exige un identificador real.'); return; }
+  if(GOV_STALE){
+    setStatus('catv','warn','El estado cambió desde que cargaste esta página. '
+      + 'Pulsa "Recargar estado" arriba antes de firmar.');
+    return;
+  }
+  setBusy('catv-submit-btn', true);
+  setStatus('catv','busy','Firmando (echo-back)…');
+  try {
+    const r = await postJSON('/api/v1/layer9/governance/artifact-version/sign', {
+      proposal_id: valida.decision_instance_id,
+      artifact_path: valida.payload.artifact_path,
+      from_version: valida.payload.from_version,
+      to_version: valida.payload.to_version,
+      artifact_hash_before: valida.payload.artifact_hash_before,
+      expected_hash_after: valida.payload.expected_hash_after,
+      state_hash: GOV?.family_state_hashes?.ARTIFACT_VERSION,
+      reason: sig.reason,
+      approved_by_id: sig.id,
+      approved_by_display_name: sig.name || sig.id,
+    });
+    if(!r.ok){ setStatus('catv','fail', explicaError(r.status, r.data)); return; }
+    setStatus('catv','ok', explicaFirma(r.data));
+    govRefresh();
+  } catch(e) {
+    setStatus('catv','fail', 'Error de red/JS al firmar: ' + (e && e.message || e));
+  } finally {
+    setBusy('catv-submit-btn', false);
+  }
 }
 
 export async function govSubmitRevokeD2003(){

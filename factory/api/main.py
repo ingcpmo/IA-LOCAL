@@ -132,10 +132,27 @@ async def verify_api_key(x_api_key: str = Header(default="")):
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 
+class _NoCacheStaticFiles(StaticFiles):
+    """Panel ARQ 2026-08-04 (RC-5/RC-4): `StaticFiles` sin cabeceras propias
+    deja la política de caché al heurístico del navegador -- exactamente lo
+    que dejó a Cesar viendo un `governance.js` de hace 2 días tras un
+    `docker restart` real del backend. `Cache-Control: no-cache` (no
+    `no-store`) obliga a revalidar con el servidor en cada carga (If-None-
+    Match/ETag, que `StaticFiles` ya calcula) -- un 304 cuando no cambió
+    (rápido, sin re-descarga), pero NUNCA un contenido viejo servido sin
+    preguntar. Alcance: toda la UI de Mission Control, no solo governance.js
+    -- el mismo riesgo aplica a main.js/refresh.js/etc, y no hay build que
+    versione cada import por separado."""
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+        return response
+
+
 # W5: assets estáticos de la UI (css/ + js/ de Mission Control). Solo archivos
 # de presentación — nunca secretos. Mismo nivel de exposición que el HTML que
 # ya se servía en /mission-control.
-app.mount("/ui", StaticFiles(directory=str(Path(__file__).parent.parent / "ui")), name="ui")
+app.mount("/ui", _NoCacheStaticFiles(directory=str(Path(__file__).parent.parent / "ui")), name="ui")
 
 
 @app.get("/", include_in_schema=False)
