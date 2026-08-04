@@ -213,3 +213,103 @@ def test_q07_requalification_run_context_only_valid_against_golden_dataset():
             mqg.STATUS_NOT_QUALIFIED, call_type=mqg.CALL_TYPE_INFERENCE,
             run_context=mqg.RUN_CONTEXT_MODEL_REQUALIFICATION,
             target="factory/workspaces/gmpai_document_validation/data/RW-0005.pdf")
+
+
+# ---------------------------------------------------------------------------
+# G6 §2 -- las 5 precondiciones de recalificacion (Q-08 de la tabla del spec)
+# ---------------------------------------------------------------------------
+
+def test_q08_the_five_real_preconditions_are_all_open_today():
+    """Estado real de hoy: las 5 fallan, por motivos DISTINTOS -- si algun
+    dia una pasa sin que Cesar haya firmado nada, este test lo detecta."""
+    r = mqg.requalification_preconditions()
+    assert r.ready is False
+    assert r.sources_verified is False
+    assert r.pack_211_complete is False
+    assert r.matrix_approved is False
+    assert r.catalog_versioned is False
+    assert r.golden_dataset_approved is False
+    assert len(r.reasons) == 5
+    assert all(isinstance(x, str) and x for x in r.reasons)
+
+
+def test_q08_ready_only_when_the_five_are_true(monkeypatch):
+    """Camino positivo: si las 5 fuentes de verdad reales dicen que TODO esta
+    en orden, `ready` es True -- el agregador no esta encadenado a devolver
+    False siempre por construccion."""
+    import factory.regulatory.model_qualification_gate as mqg_mod
+    from factory.core import decision_scope_resolver as resolver
+    from factory.regulatory import applicability as applicability_mod
+    from factory.regulatory import source_lifecycle
+    from factory.regulatory import evidence_pack_governance as epg
+
+    class _AllVerified:
+        lifecycle_state = source_lifecycle.LOCAL_CANONICAL_COPY_VERIFIED
+        source_id = "x"
+
+    class _Authorized:
+        authorized = True
+        coverage_basis = "HUMAN_CONFIRMED_EXPLICIT"
+
+    class _PackPassed:
+        passed = True
+        failures = ()
+        def failure_codes(self): return ()
+
+    monkeypatch.setattr(source_lifecycle, "evaluate_registry",
+                        lambda: [_AllVerified(), _AllVerified(), _AllVerified(), _AllVerified()])
+    monkeypatch.setattr(resolver, "resolve", lambda *a, **k: _Authorized())
+    monkeypatch.setattr(applicability_mod, "load_matrix", lambda: {"matrix_version": "2.1"})
+    monkeypatch.setattr(epg, "validate_pack", lambda *a, **k: _PackPassed())
+
+    from factory.core import artifact_version_guard as guard
+    monkeypatch.setattr(guard, "guard_report", lambda **k: {"findings": []})
+
+    r = mqg_mod.requalification_preconditions()
+    assert r.ready is True
+    assert r.reasons == []
+
+
+def test_q08_a_single_open_precondition_blocks_readiness(monkeypatch):
+    """Las otras 4 en verde, solo G6 (golden dataset) abierto -- ready sigue
+    False y el motivo senala exactamente esa precondicion."""
+    import factory.regulatory.model_qualification_gate as mqg_mod
+    from factory.core import decision_scope_resolver as resolver
+    from factory.regulatory import applicability as applicability_mod
+    from factory.regulatory import source_lifecycle
+    from factory.regulatory import evidence_pack_governance as epg
+
+    class _AllVerified:
+        lifecycle_state = source_lifecycle.LOCAL_CANONICAL_COPY_VERIFIED
+        source_id = "x"
+
+    class _Authorized:
+        authorized = True
+        coverage_basis = "HUMAN_CONFIRMED_EXPLICIT"
+
+    class _PackPassed:
+        passed = True
+        failures = ()
+        def failure_codes(self): return ()
+
+    monkeypatch.setattr(source_lifecycle, "evaluate_registry",
+                        lambda: [_AllVerified(), _AllVerified(), _AllVerified(), _AllVerified()])
+    monkeypatch.setattr(resolver, "resolve", lambda *a, **k: _Authorized())
+    monkeypatch.setattr(applicability_mod, "load_matrix", lambda: {"matrix_version": "2.1"})
+    monkeypatch.setattr(epg, "validate_pack", lambda *a, **k: _PackPassed())
+
+    from factory.core import artifact_version_guard as guard
+    monkeypatch.setattr(guard, "guard_report", lambda **k: {"findings": [
+        {"artifact": "golden_dataset", "artifact_id": mqg_mod.__dict__.get("GOLDEN_DATASET_TARGET", "x"),
+         "severity": "WARN", "code": "NO_APPROVING_DECISION", "detail": "sin decision"},
+    ]})
+
+    r = mqg_mod.requalification_preconditions()
+    assert r.ready is False
+    assert r.sources_verified is True
+    assert r.pack_211_complete is True
+    assert r.matrix_approved is True
+    assert r.catalog_versioned is True
+    assert r.golden_dataset_approved is False
+    assert len(r.reasons) == 1
+    assert "G6" in r.reasons[0]

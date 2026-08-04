@@ -386,3 +386,91 @@ def require_inference_authorized(status: str, *, call_type: str, run_context: st
 
 class ModelNotQualifiedError(RuntimeError):
     """El modelo/configuracion no esta calificado para el uso solicitado."""
+
+
+# ---------------------------------------------------------------------------
+# G6 §2 -- las 5 precondiciones de recalificacion (orden estricto)
+# ---------------------------------------------------------------------------
+
+REQ_211_68B = "21_CFR_211.68(b)"
+CATALOG_ARTIFACT_ID = "factory/regulatory/requirement_catalog/requirements.yaml"
+
+
+@dataclass
+class RequalificationPreconditions:
+    sources_verified: bool          # G3
+    pack_211_complete: bool         # G4a
+    matrix_approved: bool           # G4b
+    catalog_versioned: bool         # G4c
+    golden_dataset_approved: bool   # G6 (este mismo gate)
+    ready: bool
+    reasons: list[str] = field(default_factory=list)
+
+
+def requalification_preconditions(*, decision_store_file=None) -> RequalificationPreconditions:
+    """§2: la recalificacion SOLO es ejecutable con las 5 en verde, en este
+    orden estricto (G3 -> G4a/G4b/G4c en paralelo -> G6). Calculado, nunca
+    declarado a mano -- mismo criterio que `d2a_ready()` (G5).
+
+    Reutiliza sin duplicar: `source_lifecycle.evaluate_registry()` (G3),
+    `evidence_pack_governance.validate_pack()` (G4a, ya construido para D2-A),
+    el resolver (G4a cobertura D2, G4b matriz), `artifact_version_guard.
+    guard_report()` (G4c catalogo, G6 golden dataset)."""
+    from factory.core import artifact_version_guard as guard
+    from factory.core import decision_scope_resolver as resolver
+    from factory.regulatory import applicability as applicability_mod
+    from factory.regulatory import source_lifecycle
+    from factory.regulatory.evidence_pack_governance import validate_pack
+
+    reasons: list[str] = []
+
+    # G3 -- las 4 fuentes en LOCAL_CANONICAL_COPY_VERIFIED.
+    dims = source_lifecycle.evaluate_registry()
+    not_verified = [d.source_id for d in dims
+                    if d.lifecycle_state != source_lifecycle.LOCAL_CANONICAL_COPY_VERIFIED]
+    sources_verified = not not_verified
+    if not sources_verified:
+        reasons.append(f"G3: fuentes sin LOCAL_CANONICAL_COPY_VERIFIED: {sorted(not_verified)}")
+
+    # G4a -- pack 21_CFR_211.68(b) completo (V1-V10) Y cubierto por D2.
+    pack_report = validate_pack(REQ_211_68B, decision_store_file=decision_store_file)
+    d2 = resolver.resolve("D2", REQ_211_68B, store_file=decision_store_file)
+    pack_211_complete = pack_report.passed and d2.authorized
+    if not pack_report.passed:
+        reasons.append(f"G4a: pack {REQ_211_68B} incompleto: "
+                       f"{sorted(set(pack_report.failure_codes()))}")
+    if not d2.authorized:
+        reasons.append(f"G4a: pack {REQ_211_68B} sin cobertura D2 ({d2.coverage_basis})")
+
+    # G4b -- matriz de aplicabilidad APROBADA para su matrix_version vigente.
+    matrix_version = str(applicability_mod.load_matrix().get("matrix_version"))
+    matrix_scope = resolver.resolve("APPLICABILITY_MATRIX", matrix_version,
+                                    store_file=decision_store_file)
+    matrix_approved = matrix_scope.authorized
+    if not matrix_approved:
+        reasons.append(f"G4b: matrix_version={matrix_version!r} sin decision "
+                       f"APPLICABILITY_MATRIX human_confirmed que lo cubra")
+
+    # G4c -- catalogo versionado (sin CONTENT_CHANGED_VERSION_SAME/similar).
+    report = guard.guard_report(decision_store_file=decision_store_file)
+    catalog_fail = next((f for f in report["findings"]
+                         if f["artifact"] == "catalog" and f["artifact_id"] == CATALOG_ARTIFACT_ID
+                         and f["severity"] == "FAIL"), None)
+    catalog_versioned = catalog_fail is None
+    if catalog_fail is not None:
+        reasons.append(f"G4c: catalogo {catalog_fail['code']}: {catalog_fail['detail']}")
+
+    # G6 -- golden dataset aprobado y versionado (sin FAIL ni WARN de este modulo).
+    golden_finding = next((f for f in report["findings"]
+                          if f["artifact"] == "golden_dataset"), None)
+    golden_dataset_approved = golden_finding is None
+    if golden_finding is not None:
+        reasons.append(f"G6: golden_dataset {golden_finding['code']}: {golden_finding['detail']}")
+
+    ready = all((sources_verified, pack_211_complete, matrix_approved,
+                catalog_versioned, golden_dataset_approved))
+
+    return RequalificationPreconditions(
+        sources_verified=sources_verified, pack_211_complete=pack_211_complete,
+        matrix_approved=matrix_approved, catalog_versioned=catalog_versioned,
+        golden_dataset_approved=golden_dataset_approved, ready=ready, reasons=reasons)
