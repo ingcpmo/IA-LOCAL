@@ -59,15 +59,38 @@ def _isolate_audit(monkeypatch, tmp_path):
     monkeypatch.setattr(aw, "_last_entry_hash", None)
 
 
-def _confirmed_artifact_version_decision(decisions_file, artifact_id, *, iid="ARTIFACT_VERSION-2026-001"):
+def _confirmed_artifact_version_decision(decisions_file, artifact_id, *,
+                                         iid="ARTIFACT_VERSION-2026-001",
+                                         payload=None):
+    """`payload=None` reproduce a propósito el estado real encontrado el
+    2026-08-04 (ARTIFACT_VERSION-2026-001/002/003 con `payload={}`) -- los
+    tests que necesitan una decisión APLICABLE deben pasar un payload real
+    con `_bump_payload()`."""
     record = store.build_record(
         decision_family="ARTIFACT_VERSION", decision_type="ORIGINAL",
         selection_mode="EXPLICIT_LIST", resolved_target_ids=[artifact_id],
         decision="APPROVE", decision_origin="human_confirmed",
         approved_by_id="cesar", approved_by_display_name="Cesar",
-        decision_instance_id=iid, store_file=decisions_file, reason="bump 1.0->2.0")
+        decision_instance_id=iid, store_file=decisions_file, reason="bump 1.0->2.0",
+        payload=payload)
     store.append_record(record, store_file=decisions_file, emit_audit=False)
     return record["decision_instance_id"]
+
+
+def _bump_payload(artifact_id, *, hash_before, from_version, to_version,
+                  hash_after=None):
+    """Payload estructurado real (G4c, hallazgo 2026-08-04) -- `hash_after`
+    por defecto es igual a `hash_before` porque `catalog_version` está
+    excluido del hash canónico (ver `_EXCLUDED`), así que un bump que SOLO
+    cambia la etiqueta de versión no mueve el hash."""
+    return {
+        "artifact_path": artifact_id,
+        "artifact_hash_before": hash_before,
+        "from_version": from_version,
+        "to_version": to_version,
+        "expected_hash_after": hash_after if hash_after is not None else hash_before,
+        "change_reason": "test",
+    }
 
 
 def _proposed_only_decision(decisions_file, artifact_id, *, iid="ARTIFACT_VERSION-2026-002"):
@@ -134,7 +157,10 @@ def test_a_covering_decision_id_from_a_different_family_never_authorizes(repo, d
 
 
 def test_bumping_to_the_version_already_declared_is_a_noop_error(repo, decisions_file):
-    iid = _confirmed_artifact_version_decision(decisions_file, CATALOG_REL)
+    hash_now = guard.canonical_hash_yaml(repo / CATALOG_REL, "catalog")
+    iid = _confirmed_artifact_version_decision(
+        decisions_file, CATALOG_REL,
+        payload=_bump_payload(CATALOG_REL, hash_before=hash_now, from_version="1.0", to_version="1.0"))
     with pytest.raises(apply_mod.ArtifactVersionApplyError, match="nada que aplicar"):
         apply_mod.apply_catalog_version_bump(
             "1.0", decision_instance_id=iid, repo=repo,
@@ -148,7 +174,10 @@ def test_bumping_to_the_version_already_declared_is_a_noop_error(repo, decisions
 
 def test_successful_bump_writes_file_record_and_historical_copy(repo, decisions_file):
     artifact_id = CATALOG_REL
-    iid = _confirmed_artifact_version_decision(decisions_file, artifact_id)
+    hash_now = guard.canonical_hash_yaml(repo / artifact_id, "catalog")
+    iid = _confirmed_artifact_version_decision(
+        decisions_file, artifact_id,
+        payload=_bump_payload(artifact_id, hash_before=hash_now, from_version="1.0", to_version="2.0"))
     versions_store = repo / "factory/registry/artifact_versions.jsonl"
 
     record = apply_mod.apply_catalog_version_bump(
@@ -192,7 +221,12 @@ def test_freezing_declines_honestly_when_the_working_tree_is_dirty(repo, decisio
     catalog = repo / CATALOG_REL
     catalog.write_text(_MINIMAL_CATALOG + "# comentario sin commitear\n", encoding="utf-8")
 
-    iid = _confirmed_artifact_version_decision(decisions_file, CATALOG_REL)
+    # el comentario es sintaxis YAML, no contenido semantico -- yaml.safe_load
+    # lo descarta, asi que el hash canonico NO se mueve pese al cambio en disco.
+    hash_now = guard.canonical_hash_yaml(catalog, "catalog")
+    iid = _confirmed_artifact_version_decision(
+        decisions_file, CATALOG_REL,
+        payload=_bump_payload(CATALOG_REL, hash_before=hash_now, from_version="1.0", to_version="2.0"))
     record = apply_mod.apply_catalog_version_bump(
         "2.0", decision_instance_id=iid, repo=repo,
         decision_store_file=decisions_file,
@@ -314,3 +348,132 @@ def test_first_approval_success_never_touches_the_source_file(repo_with_golden, 
                 if s.artifact_id == GOLDEN_REL)
     findings = guard.check_artifact(state, record, decision_store_file=decisions_file)
     assert not any(f.code == guard.NO_APPROVING_DECISION for f in findings)
+
+
+# ---------------------------------------------------------------------------
+# Checklist del panel ARQ (2026-08-04) -- cierre del hallazgo estructural:
+# una decision ARTIFACT_VERSION confirmada para UNA transicion no puede
+# reutilizarse para aplicar OTRA.
+# ---------------------------------------------------------------------------
+
+def test_old_signature_without_structured_payload_is_rejected(repo, decisions_file):
+    """El caso real encontrado: ARTIFACT_VERSION-2026-002 (payload={}) NO
+    puede usarse para aplicar NINGUN bump -- ni siquiera el que originalmente
+    motivo su firma -- porque no declara la transicion exacta."""
+    iid = _confirmed_artifact_version_decision(decisions_file, CATALOG_REL)  # payload=None, como -002 real
+    with pytest.raises(apply_mod.ArtifactVersionApplyError, match="no declara la transición exacta"):
+        apply_mod.apply_catalog_version_bump(
+            "2.0", decision_instance_id=iid, repo=repo,
+            decision_store_file=decisions_file,
+            versions_store_file=repo / "factory/registry/artifact_versions.jsonl")
+
+
+def test_old_signature_cannot_be_reused_for_a_different_transition(repo, decisions_file):
+    """Una decision confirmada y APLICABLE para 1.0->2.0 no autoriza 2.0->2.1:
+    el decision_id corresponde a otra transicion."""
+    artifact_id = CATALOG_REL
+    hash_now = guard.canonical_hash_yaml(repo / artifact_id, "catalog")
+    iid = _confirmed_artifact_version_decision(
+        decisions_file, artifact_id,
+        payload=_bump_payload(artifact_id, hash_before=hash_now, from_version="1.0", to_version="2.0"))
+    with pytest.raises(apply_mod.ArtifactVersionApplyError, match="corresponde a otra transición"):
+        apply_mod.apply_catalog_version_bump(
+            "2.1", decision_instance_id=iid, repo=repo,
+            decision_store_file=decisions_file,
+            versions_store_file=repo / "factory/registry/artifact_versions.jsonl")
+
+
+def test_hash_mismatch_against_declared_before_is_rejected(repo, decisions_file):
+    """El contenido vivo cambio despues de proponer -- artifact_hash_before
+    ya no describe el archivo real."""
+    artifact_id = CATALOG_REL
+    iid = _confirmed_artifact_version_decision(
+        decisions_file, artifact_id,
+        payload=_bump_payload(artifact_id, hash_before="0" * 64, from_version="1.0", to_version="2.0"))
+    with pytest.raises(apply_mod.ArtifactVersionApplyError, match="el hash vivo .* no coincide"):
+        apply_mod.apply_catalog_version_bump(
+            "2.0", decision_instance_id=iid, repo=repo,
+            decision_store_file=decisions_file,
+            versions_store_file=repo / "factory/registry/artifact_versions.jsonl")
+
+
+def test_version_mismatch_against_declared_from_is_rejected(repo, decisions_file):
+    """La version viva no coincide con from_version declarado -- el estado
+    cambio (p.ej. otro bump ya se aplico) desde que se propuso."""
+    artifact_id = CATALOG_REL
+    hash_now = guard.canonical_hash_yaml(repo / artifact_id, "catalog")
+    iid = _confirmed_artifact_version_decision(
+        decisions_file, artifact_id,
+        payload=_bump_payload(artifact_id, hash_before=hash_now, from_version="1.5", to_version="2.0"))
+    with pytest.raises(apply_mod.ArtifactVersionApplyError, match="la versión viva .* no coincide"):
+        apply_mod.apply_catalog_version_bump(
+            "2.0", decision_instance_id=iid, repo=repo,
+            decision_store_file=decisions_file,
+            versions_store_file=repo / "factory/registry/artifact_versions.jsonl")
+
+
+def test_decision_for_a_different_artifact_path_is_rejected(repo, decisions_file):
+    """La decision SI cubre este artifact_id ante el resolver (mismo
+    target_ids), pero su payload declara OTRO artifact_path -- inconsistencia
+    que se rechaza explicitamente, no se ignora."""
+    artifact_id = CATALOG_REL
+    hash_now = guard.canonical_hash_yaml(repo / artifact_id, "catalog")
+    iid = _confirmed_artifact_version_decision(
+        decisions_file, artifact_id,
+        payload=_bump_payload("factory/regulatory/applicability_matrix.yaml",
+                              hash_before=hash_now, from_version="1.0", to_version="2.0"))
+    with pytest.raises(apply_mod.ArtifactVersionApplyError, match="decisión de otro artefacto"):
+        apply_mod.apply_catalog_version_bump(
+            "2.0", decision_instance_id=iid, repo=repo,
+            decision_store_file=decisions_file,
+            versions_store_file=repo / "factory/registry/artifact_versions.jsonl")
+
+
+def test_exact_transition_via_propose_artifact_version_change_is_accepted(repo, decisions_file):
+    """Camino completo real: propose_artifact_version_change() deriva el
+    payload del estado vivo (nunca lo acepta como parametro), se confirma
+    (mismo patron que -001->-002), y el apply con la transicion EXACTA
+    declarada se acepta limpio."""
+    artifact_id = CATALOG_REL
+    proposal = apply_mod.propose_artifact_version_change(
+        artifact_path=artifact_id, to_version="2.0", change_reason="test real",
+        proposed_by_id="claude_code_session_g3", repo=repo,
+        decision_store_file=decisions_file)
+    assert proposal["decision_origin"] == "agent_proposed"
+    assert proposal["payload"]["from_version"] == "1.0"
+    assert proposal["payload"]["to_version"] == "2.0"
+    assert proposal["payload"]["artifact_hash_before"] == proposal["payload"]["expected_hash_after"]
+
+    from factory.services import governance_service as gov
+    confirmed = gov.confirm(
+        proposal["decision_instance_id"], approved_by_id="cesar",
+        approved_by_display_name="Cesar", store_file=decisions_file,
+        family_state_hash=proposal["family_state_hash"])
+    assert confirmed["payload"] == proposal["payload"]  # la firma queda atada a los MISMOS valores
+
+    record = apply_mod.apply_catalog_version_bump(
+        "2.0", decision_instance_id=confirmed["decision_instance_id"], repo=repo,
+        decision_store_file=decisions_file,
+        versions_store_file=repo / "factory/registry/artifact_versions.jsonl")
+    assert record["version"] == "2.0"
+    assert record["approved_by_decision"] == confirmed["decision_instance_id"]
+
+
+def test_double_apply_of_the_same_decision_is_rejected(repo, decisions_file):
+    """Aplicar la MISMA decision dos veces -- la segunda ya no tiene nada que
+    aplicar, el artefacto ya esta en to_version."""
+    artifact_id = CATALOG_REL
+    hash_now = guard.canonical_hash_yaml(repo / artifact_id, "catalog")
+    iid = _confirmed_artifact_version_decision(
+        decisions_file, artifact_id,
+        payload=_bump_payload(artifact_id, hash_before=hash_now, from_version="1.0", to_version="2.0"))
+    versions_store = repo / "factory/registry/artifact_versions.jsonl"
+
+    apply_mod.apply_catalog_version_bump(
+        "2.0", decision_instance_id=iid, repo=repo,
+        decision_store_file=decisions_file, versions_store_file=versions_store)
+
+    with pytest.raises(apply_mod.ArtifactVersionApplyError, match="nada que aplicar"):
+        apply_mod.apply_catalog_version_bump(
+            "2.0", decision_instance_id=iid, repo=repo,
+            decision_store_file=decisions_file, versions_store_file=versions_store)

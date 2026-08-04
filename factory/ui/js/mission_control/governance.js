@@ -474,11 +474,61 @@ function panelIncidenteD2003(){
    demás -- NUNCA bumpea el archivo. El bump real es un paso posterior y
    separado (`factory/core/artifact_version_apply.apply_catalog_version_bump`,
    invocado por un humano/agente bajo su direccion tras esta firma), mismo
-   patrón U-5 que el resto de la vista: registrar no ejecuta. */
+   patrón U-5 que el resto de la vista: registrar no ejecuta.
+
+   HALLAZGO REAL (panel ARQ, 2026-08-04): este panel describía el estado con
+   texto FIJO en el HTML ("1.0 → 2.0"), congelado desde antes de que ese bump
+   se aplicara de verdad (2026-08-01) -- para cuando el catálogo volvió a
+   cambiar de hash (2026-08-03, regeneración de Part 11), el texto ya mentía.
+   Además, "Registrar autorización" SIEMPRE creaba una propuesta NUEVA con
+   payload vacío (`{}`) -- así se produjeron ARTIFACT_VERSION-2026-001/002/003,
+   ninguna con la transición declarada. Y el panel no filtraba por artefacto:
+   una propuesta de `golden_dataset` (ARTIFACT_VERSION-2026-004) aparecía
+   mezclada bajo "Versionado del catálogo".
+
+   Fix: todo se deriva de `GOV.artifacts.catalog_state` (versión/hash VIVOS,
+   calculados ahora, nunca texto fijo) y `GOV.proposals.ARTIFACT_VERSION`
+   (payload real de cada propuesta). El botón ya NO propone -- CONFIRMA la
+   propuesta válida existente (generada por
+   `artifact_version_apply.propose_artifact_version_change()`, que calcula
+   el payload del estado vivo, nunca lo acepta como parámetro humano). */
+
+function catalogVersionProposals(){
+  const props = GOV?.proposals?.ARTIFACT_VERSION || [];
+  return props.filter(p => (p.resolved_target_ids||[]).includes(CATALOG_ARTIFACT_ID));
+}
+
+function validCatalogVersionProposal(cs){
+  if(!cs || !cs.found) return null;
+  return catalogVersionProposals().find(p =>
+    p.proposal_state === 'PROPOSED' &&
+    p.payload && p.payload.artifact_path === CATALOG_ARTIFACT_ID &&
+    p.payload.from_version === cs.live_version &&
+    p.payload.artifact_hash_before === cs.live_sha256 &&
+    p.payload.to_version && p.payload.expected_hash_after
+  ) || null;
+}
+
 function panelCatalogVersion(){
   const c = GOV.coverage?.ARTIFACT_VERSION || {};
   const art = GOV.artifacts || {};
-  const cubierto = (c.covered_ids||[]).includes(CATALOG_ARTIFACT_ID);
+  const cs = art.catalog_state || {found:false};
+  const propuestas = catalogVersionProposals();  // SOLO las de este artefacto -- nunca golden_dataset
+  const valida = validCatalogVersionProposal(cs);
+  const hashCoincide = cs.found && cs.live_sha256 === cs.last_approved_sha256;
+
+  const filasPropuestas = propuestas.map(p => {
+    const t = p.payload && p.payload.to_version
+      ? `${esc(p.payload.from_version||'?')} → ${esc(p.payload.to_version)}`
+      : '(sin transición declarada -- no aplicable)';
+    const esValida = valida && p.decision_instance_id === valida.decision_instance_id;
+    return `<div class="meta" style="margin-top:4px">
+      <span class="mono">${esc(p.decision_instance_id)}</span>
+      [${esc(p.proposal_state)}] ${t}
+      ${esValida ? ' <b style="color:var(--pass)">← vigente, firmable</b>' : ''}
+    </div>`;
+  }).join('') || '<div class="meta" style="margin-top:4px">Ninguna propuesta para este artefacto.</div>';
+
   return `
   <div class="card">
     <b>Versionado del catálogo — G4c</b>
@@ -486,28 +536,41 @@ function panelCatalogVersion(){
 
     <div style="margin-top:12px"><b>ARTEFACTO</b></div>
     <div class="mono" style="margin-top:4px">${esc(CATALOG_ARTIFACT_ID)}</div>
-    <div class="meta" style="margin-top:6px">Estado actual del guardia de versiones:
-      <span class="mono">${esc(art.status||'?')}</span>
-      (${esc(art.fail_count ?? '?')} FAIL, ${esc(art.warn_count ?? '?')} WARN).
-      El FAIL de este artefacto es <span class="mono">CONTENT_CHANGED_VERSION_SAME</span>:
-      el contenido cambió con G4a (criterios de <span class="mono">21_CFR_211.68(b)</span>,
-      aprobados en D2-2026-009) y la versión sigue en <span class="mono">1.0</span>.</div>
-    <div class="meta" style="margin-top:6px">Bump propuesto: <span class="mono">1.0 → 2.0</span>
-      (MAYOR: se aprobó contenido interpretativo nuevo de un requisito existente
-      — ver <span class="mono">ARTIFACT_VERSIONING_SPEC.md §3.2</span>).</div>
 
-    ${cubierto ? `<div class="meta" style="margin-top:10px;color:var(--pass)">
-      Ya existe una decisión ARTIFACT_VERSION vigente para este artefacto — ver arriba.
-      Aplicar el bump (fuera de esta UI) es el paso siguiente.</div>` : ''}
+    ${cs.found ? `
+    <div class="meta" style="margin-top:6px">Estado VIVO (calculado ahora, no texto fijo):
+      versión <span class="mono">${esc(cs.live_version)}</span>,
+      hash <span class="mono">${esc((cs.live_sha256||'').slice(0,16))}…</span>.</div>
+    <div class="meta" style="margin-top:4px">Última aprobación real:
+      <span class="mono">${esc(cs.approved_by_decision||'ninguna')}</span> →
+      versión <span class="mono">${esc(cs.last_approved_version||'?')}</span>,
+      hash <span class="mono">${esc((cs.last_approved_sha256||'').slice(0,16))}…</span>.
+      ${hashCoincide
+        ? '<span style="color:var(--pass)">El hash vivo coincide con lo último aprobado.</span>'
+        : '<span style="color:var(--warn)">El hash vivo NO coincide con lo último aprobado -- el contenido cambió desde entonces (CONTENT_CHANGED_VERSION_SAME).</span>'}
+    </div>` : `<div class="meta" style="margin-top:6px;color:var(--warn)">No se pudo leer el estado vivo de este artefacto.</div>`}
+
+    <div style="margin-top:12px"><b>PROPUESTAS ARTIFACT_VERSION PARA ESTE ARTEFACTO</b>
+      <span class="meta">(filtradas por <span class="mono">artifact_path</span> --
+      una propuesta de otro artefacto, p.ej. <span class="mono">golden_dataset</span>,
+      nunca aparece aquí)</span></div>
+    ${filasPropuestas}
+
     ${signatureForm('catv')}
     ${NO_EJECUTA}
     <div class="meta" style="margin-top:6px;color:var(--faint)">
       Registrar NO bumpea <span class="mono">catalog_version</span> ni escribe el
       <span class="mono">version_record</span>: eso lo hace
       <span class="mono">artifact_version_apply.apply_catalog_version_bump()</span>,
-      un paso separado que exige esta decisión ya confirmada.</div>
+      un paso separado que exige esta decisión ya confirmada Y que la transición
+      declarada coincida exactamente con el estado vivo en el momento de aplicar.</div>
+    ${!valida ? `<div class="meta" style="margin-top:6px;color:var(--warn)">
+      No hay ninguna propuesta con la transición vigente (atada al hash/versión
+      VIVOS de hoy) -- el botón queda deshabilitado. Generar una nueva con
+      <span class="mono">artifact_version_apply.propose_artifact_version_change()</span>.</div>` : ''}
     <div style="margin-top:12px">
-      <button id="catv-submit-btn" ${cubierto?'disabled':''} onclick="govSubmitCatalogVersion()">Registrar autorización</button>
+      <button id="catv-submit-btn" ${valida?'':'disabled'} onclick="govSubmitCatalogVersion()">
+        ${valida ? `Confirmar ${esc(valida.decision_instance_id)}` : 'Registrar autorización'}</button>
       <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
     </div>
     ${statusLine('catv')}
@@ -866,9 +929,58 @@ export async function govSubmitPack211(){
                            {statusPrefix:'pk211', btnId:'pk211-submit-btn'});
 }
 
+/* Confirma una propuesta YA EXISTENTE (no propone una nueva). Distinto de
+   `proponerYConfirmar`: aquí no hay nada que proponer -- el payload con la
+   transición exacta (from_version/to_version/hashes) ya lo calculó
+   `artifact_version_apply.propose_artifact_version_change()` contra el
+   estado vivo, y proponer de nuevo desde el JS solo reproduciría el defecto
+   original (payload vacío armado a mano en el cliente). */
+async function confirmarPropuestaExistente(family, instanceId, sig, ui={}){
+  const { statusPrefix, btnId } = ui;
+  const status = (kind, text) => {
+    if(statusPrefix) setStatus(statusPrefix, kind, text);
+    else if(kind !== 'busy') toast(text);
+  };
+  if(!sig.reason){ status('warn', 'El motivo es obligatorio.'); return; }
+  if(!sig.id){ status('warn', 'La firma exige un identificador real.'); return; }
+  if(GOV_STALE){
+    status('warn', 'El estado cambió desde que cargaste esta página. '
+      + 'Pulsa "Recargar estado" arriba antes de firmar.');
+    return;
+  }
+  if(btnId) setBusy(btnId, true);
+  status('busy', 'Confirmando firma…');
+  try {
+    const conf = await postJSON(`/api/v1/layer9/governance/decisions/${instanceId}/confirm`, {
+      approved_by_id: sig.id, approved_by_display_name: sig.name || sig.id,
+      reason: sig.reason,
+      family_state_hash: GOV?.family_state_hashes?.[family],
+      expected_active_instance_id: GOV?.active_instances?.[family] ?? null,
+    });
+    if(!conf.ok){
+      status('fail', explicaError(conf.status, conf.data));
+      return;
+    }
+    status('ok', explicaFirma(conf.data));
+    govRefresh();
+  } catch(e) {
+    status('fail', 'Error de red/JS al confirmar: ' + (e && e.message || e));
+  } finally {
+    if(btnId) setBusy(btnId, false);
+  }
+}
+
 export async function govSubmitCatalogVersion(){
-  await proponerYConfirmar('ARTIFACT_VERSION', [CATALOG_ARTIFACT_ID], readSignature('catv'), {},
-                           {statusPrefix:'catv', btnId:'catv-submit-btn'});
+  const cs = GOV?.artifacts?.catalog_state;
+  const valida = validCatalogVersionProposal(cs);
+  if(!valida){
+    setStatus('catv', 'warn', 'No hay ninguna propuesta ARTIFACT_VERSION con la '
+      + 'transición vigente (atada al hash/versión vivos) para este artefacto.');
+    return;
+  }
+  await confirmarPropuestaExistente('ARTIFACT_VERSION', valida.decision_instance_id,
+                                    readSignature('catv'),
+                                    {statusPrefix:'catv', btnId:'catv-submit-btn'});
 }
 
 export async function govSubmitRevokeD2003(){

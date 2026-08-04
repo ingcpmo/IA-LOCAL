@@ -530,3 +530,95 @@ def test_pack211_panel_only_offers_revoke_while_the_fabricated_coverage_is_live(
     assert "INCIDENTE" not in panel_revocado
     assert "govSubmitRevokeD2003" not in panel_revocado
     assert "govSubmitPack211()\">Registrar aprobación" in panel_revocado
+
+
+# ===========================================================================
+# G4c -- panel del catálogo, hallazgo real del panel ARQ (2026-08-04):
+# texto fijo desactualizado + propuestas de OTRO artefacto mezcladas.
+# ===========================================================================
+
+CATALOG_ARTIFACT_ID = "factory/regulatory/requirement_catalog/requirements.yaml"
+GOLDEN_ARTIFACT_ID = "factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py"
+
+
+def _catalog_version_estado(tmp_path_factory=None, **overrides):
+    import copy
+    estado = copy.deepcopy(FIXTURE_STATE)
+    estado["artifacts"]["catalog_state"] = {
+        "artifact_id": CATALOG_ARTIFACT_ID, "found": True,
+        "live_version": "2.0", "live_sha256": "7ae4aaf2" + "0" * 56,
+        "last_approved_version": "2.0", "last_approved_sha256": "dc017efb" + "0" * 56,
+        "approved_by_decision": "ARTIFACT_VERSION-2026-002",
+    }
+    estado["proposals"] = {"ARTIFACT_VERSION": [
+        {  # -001: la propuesta original, ya resuelta -- confirmada por -002
+            "decision_instance_id": "ARTIFACT_VERSION-2026-001",
+            "resolved_target_ids": [CATALOG_ARTIFACT_ID],
+            "payload": {}, "proposal_state": "CONFIRMED"},
+        {  # -003: historica, payload vacio -- ya no aplicable tras el fix
+            "decision_instance_id": "ARTIFACT_VERSION-2026-003",
+            "resolved_target_ids": [CATALOG_ARTIFACT_ID],
+            "payload": {}, "proposal_state": "PROPOSED"},
+        {  # -004: OTRO artefacto -- nunca debe aparecer en este panel
+            "decision_instance_id": "ARTIFACT_VERSION-2026-004",
+            "resolved_target_ids": [GOLDEN_ARTIFACT_ID],
+            "payload": {"artifact_path": GOLDEN_ARTIFACT_ID}, "proposal_state": "PROPOSED"},
+        {  # -005: la transicion EXACTA sobre el estado vivo -- la unica firmable
+            "decision_instance_id": "ARTIFACT_VERSION-2026-005",
+            "resolved_target_ids": [CATALOG_ARTIFACT_ID],
+            "payload": {"artifact_path": CATALOG_ARTIFACT_ID,
+                       "artifact_hash_before": "7ae4aaf2" + "0" * 56,
+                       "from_version": "2.0", "to_version": "2.1",
+                       "expected_hash_after": "7ae4aaf2" + "0" * 56},
+            "proposal_state": "PROPOSED"},
+    ]}
+    for k, v in overrides.items():
+        estado[k] = v
+    return estado
+
+
+def test_catalog_panel_shows_the_live_transition_not_frozen_text(tmp_path_factory):
+    """El estado se lee de `GOV.artifacts.catalog_state` (vivo, calculado),
+    nunca de un texto fijo -- "1.0 → 2.0" no debe aparecer cuando el estado
+    vivo real es 2.0 con hash cambiado."""
+    estado = _catalog_version_estado()
+    panel = _render(tmp_path_factory, estado, "gov_ui_catv_vivo")["panels"]["catalog-version"]
+    assert "1.0 → 2.0" not in panel
+    assert "2.0" in panel
+    assert "7ae4aaf2" in panel
+
+
+def test_catalog_panel_filters_proposals_by_artifact_and_excludes_golden_dataset(tmp_path_factory):
+    """-004 (golden_dataset) NUNCA aparece en el panel del catálogo -- el
+    filtro es por `resolved_target_ids`/`payload.artifact_path`, no "todas
+    las propuestas ARTIFACT_VERSION"."""
+    estado = _catalog_version_estado()
+    panel = _render(tmp_path_factory, estado, "gov_ui_catv_filtrado")["panels"]["catalog-version"]
+    assert "ARTIFACT_VERSION-2026-004" not in panel
+    assert "ARTIFACT_VERSION-2026-001" in panel
+    assert "ARTIFACT_VERSION-2026-003" in panel
+    assert "ARTIFACT_VERSION-2026-005" in panel
+
+
+def test_catalog_panel_enables_signature_only_for_the_valid_proposal(tmp_path_factory):
+    """El boton queda habilitado y atado a -005 (la unica con from_version/
+    hash coincidiendo con el estado vivo) -- nunca a -001/-003 (payload
+    vacio) ni a -004 (otro artefacto)."""
+    estado = _catalog_version_estado()
+    panel = _render(tmp_path_factory, estado, "gov_ui_catv_valida")["panels"]["catalog-version"]
+    assert "Confirmar ARTIFACT_VERSION-2026-005" in panel
+    assert 'id="catv-submit-btn" ' in panel and 'disabled' not in panel.split(
+        'id="catv-submit-btn"')[1].split('>')[0]
+
+
+def test_catalog_panel_disables_signature_when_no_proposal_matches_live_state(tmp_path_factory):
+    """Si NINGUNA propuesta declara la transicion exacta sobre el estado
+    vivo (p.ej. solo quedan -001/-003/-004), el boton se deshabilita -- nunca
+    se ofrece firmar sobre una propuesta que no aplica."""
+    estado = _catalog_version_estado()
+    estado["proposals"]["ARTIFACT_VERSION"] = [
+        p for p in estado["proposals"]["ARTIFACT_VERSION"]
+        if p["decision_instance_id"] != "ARTIFACT_VERSION-2026-005"]
+    panel = _render(tmp_path_factory, estado, "gov_ui_catv_sin_valida")["panels"]["catalog-version"]
+    assert 'id="catv-submit-btn" disabled' in panel
+    assert "No hay ninguna propuesta con la transición vigente" in panel

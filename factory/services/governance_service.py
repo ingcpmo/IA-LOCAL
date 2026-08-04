@@ -270,12 +270,43 @@ def list_proposals(family: str | None = None, *,
             "decision_family": r["decision_family"],
             "decision_type": r["decision_type"],
             "target_set_hash": r["target_set_hash"],
+            # G4c (hallazgo de 2026-08-04): sin estos dos campos, un panel no
+            # puede filtrar propuestas por artefacto ni saber QUÉ transición
+            # declara cada una -- exactamente el bug que mezclaba una
+            # propuesta de `requirements.yaml` con otra de `golden_dataset`
+            # bajo el mismo panel "catálogo".
+            "resolved_target_ids": r.get("resolved_target_ids"),
+            "payload": r.get("payload"),
             "proposed_by_id": r.get("proposed_by_id"),
             "recorded_at": r["recorded_at"],
             "proposal_state": proposal_state(r["decision_instance_id"], records=recs),
             "grants_coverage": False,
         })
     return salida
+
+
+def artifact_state(artifact_id: str, *, versions_store_file: Path | None = None) -> dict:
+    """Estado REAL y actual de un artefacto -- versión/hash vivos y el último
+    `version_record` conocido. Existe para que un panel pueda mostrar la
+    transición verdadera (p.ej. "2.0 → 2.1") en vez de una descripción
+    congelada en el HTML (cierre del hallazgo de 2026-08-04, panel G4c: el
+    texto decía "1.0 → 2.0" mucho después de que ese bump ya se hubiera
+    aplicado, el 2026-08-01)."""
+    current = next((s for s in _artifacts.enumerate_artifacts()
+                    if s.artifact_id == artifact_id), None)
+    if current is None:
+        return {"artifact_id": artifact_id, "found": False}
+    records = _artifacts.read_version_records(versions_store_file)
+    last = _artifacts.latest_record_for(artifact_id, records)
+    return {
+        "artifact_id": artifact_id,
+        "found": True,
+        "live_version": current.version,
+        "live_sha256": current.sha256,
+        "last_approved_version": last.get("version") if last else None,
+        "last_approved_sha256": last.get("sha256") if last else None,
+        "approved_by_decision": last.get("approved_by_decision") if last else None,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -385,7 +416,20 @@ def get_state(*, store_file: Path | None = None) -> dict:
                       "artifacts_seen": artifacts["artifacts_seen"],
                       "records_in_store": artifacts["records_in_store"],
                       "fail_count": artifacts["fail_count"],
-                      "warn_count": artifacts["warn_count"]},
+                      "warn_count": artifacts["warn_count"],
+                      # G4c (hallazgo 2026-08-04): estado real del catálogo,
+                      # para que el panel muestre la transición VIGENTE en
+                      # vez de una descripción fija en el HTML. Alcance
+                      # deliberadamente acotado a este único artefacto -- es
+                      # el único caso real que lo necesita hoy.
+                      "catalog_state": artifact_state(
+                          "factory/regulatory/requirement_catalog/requirements.yaml")},
+        # G4c (hallazgo 2026-08-04): propuestas CON payload, para que un panel
+        # pueda filtrar por artefacto (`payload.artifact_path`/
+        # `resolved_target_ids`) en vez de mezclar todas las propuestas de la
+        # familia bajo un solo panel -- exactamente el bug que mostraba una
+        # propuesta de golden_dataset bajo "Versionado del catálogo".
+        "proposals": {f: list_proposals(f, store_file=store_file) for f in GOVERNED_FAMILIES},
         "audit": {k: audit[k] for k in (
             "content_hash_integrity", "chain_continuity", "historical_fork_present",
             "new_forks_since_baseline", "new_fork_entry_ids",

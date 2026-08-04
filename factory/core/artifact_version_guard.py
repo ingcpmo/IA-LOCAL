@@ -130,6 +130,18 @@ def _sha256_of(obj) -> str:
     return hashlib.sha256(_canonical_json(obj).encode("utf-8")).hexdigest()
 
 
+def canonical_hash_yaml_text(text: str, artifact_class: str) -> str:
+    """Como `canonical_hash_yaml`, pero sobre texto en memoria -- para poder
+    calcular el hash que RESULTARÍA de un cambio antes de escribirlo a
+    disco (G4c, cierre del hallazgo de 2026-08-04: una propuesta de bump
+    necesita declarar `expected_hash_after` de forma verificable, no
+    asumida)."""
+    data = yaml.safe_load(text) or {}
+    for field in _EXCLUDED.get(artifact_class, ()):
+        data.pop(field, None)
+    return _sha256_of(data)
+
+
 def canonical_hash_yaml(path: Path, artifact_class: str) -> str:
     """Hash del contenido semántico de un YAML.
 
@@ -137,10 +149,7 @@ def canonical_hash_yaml(path: Path, artifact_class: str) -> str:
     `sort_keys=True` del volcado descarta el orden que quedara. Lo que
     sobrevive es lo que significa algo.
     """
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    for field in _EXCLUDED.get(artifact_class, ()):
-        data.pop(field, None)
-    return _sha256_of(data)
+    return canonical_hash_yaml_text(path.read_text(encoding="utf-8"), artifact_class)
 
 
 def canonical_hash_pack(pack: dict) -> str:
