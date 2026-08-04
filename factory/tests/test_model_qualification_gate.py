@@ -148,6 +148,19 @@ def test_fingerprint_incluye_el_presupuesto_de_salida():
     assert "num_ctx" in fp and "temperature" in fp
 
 
+def test_fingerprint_incluye_el_hash_del_golden_dataset():
+    """Q-09 (G6, MODEL_REQUALIFICATION_AND_D4A_SPEC.md hallazgo D-1): sin el
+    hash del Golden Dataset en el fingerprint, dos calificaciones con el
+    mismo resto de campos podrian haberse medido contra datasets DISTINTOS
+    -- el patron de referencia mutable invalidaria la medicion sin que nada
+    lo notara. Reutiliza el mismo hash de AST que artifact_version_guard."""
+    from factory.core.artifact_version_guard import GOLDEN_PATH, canonical_hash_golden
+
+    fp = mqg.build_qualification_fingerprint(FakeProvider())
+    assert "golden_dataset_sha256" in fp
+    assert fp["golden_dataset_sha256"] == canonical_hash_golden(GOLDEN_PATH)
+
+
 def test_guardia_de_produccion_siempre_falla_hoy():
     """PRODUCTION_ENABLEMENT sigue BLOCKED y el gate lo hace explicito."""
     with pytest.raises(mqg.ModelNotQualifiedError) as exc:
@@ -161,3 +174,42 @@ def test_registro_persistido_es_json_valido_y_completo():
     assert d["status"] == mqg.STATUS_VALIDATION_ONLY
     assert len(d["metrics"]) == len(mqg.REQUIRED_METRICS)
     assert d["fingerprint"]["model_digest"] == "digest-A"
+
+
+# ---------------------------------------------------------------------------
+# G6 §4.1 -- guardia de inferencia (Q-05/Q-06/Q-07 de
+# MODEL_REQUALIFICATION_AND_D4A_SPEC.md §7)
+# ---------------------------------------------------------------------------
+
+def test_q05_metadata_query_allowed_even_when_invalidated():
+    mqg.require_inference_authorized(
+        mqg.STATUS_NOT_QUALIFIED, call_type=mqg.CALL_TYPE_METADATA,
+        run_context="production")  # no debe lanzar
+
+
+def test_q06_inference_blocked_unless_qualified_or_requalifying():
+    with pytest.raises(mqg.InferenceNotAuthorizedError, match="inferencia bloqueada"):
+        mqg.require_inference_authorized(
+            mqg.STATUS_VALIDATION_ONLY, call_type=mqg.CALL_TYPE_INFERENCE,
+            run_context="production")
+
+
+def test_q06_inference_allowed_when_qualified():
+    mqg.require_inference_authorized(
+        mqg.STATUS_QUALIFIED, call_type=mqg.CALL_TYPE_INFERENCE,
+        run_context="production")  # no debe lanzar
+
+
+def test_q07_requalification_run_context_only_valid_against_golden_dataset():
+    # contra el Golden Dataset: autorizado pese a no estar QUALIFIED.
+    mqg.require_inference_authorized(
+        mqg.STATUS_NOT_QUALIFIED, call_type=mqg.CALL_TYPE_INFERENCE,
+        run_context=mqg.RUN_CONTEXT_MODEL_REQUALIFICATION,
+        target=mqg.GOLDEN_DATASET_TARGET)  # no debe lanzar
+
+    # contra un documento real: NUNCA, ni con run_context=model_requalification.
+    with pytest.raises(mqg.InferenceNotAuthorizedError, match="GOLDEN DATASET"):
+        mqg.require_inference_authorized(
+            mqg.STATUS_NOT_QUALIFIED, call_type=mqg.CALL_TYPE_INFERENCE,
+            run_context=mqg.RUN_CONTEXT_MODEL_REQUALIFICATION,
+            target="factory/workspaces/gmpai_document_validation/data/RW-0005.pdf")

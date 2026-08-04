@@ -7,11 +7,23 @@ igual que `human_source_registration.apply_source_registration` o
 después de que el resolver confirme que existe una decisión `ARTIFACT_VERSION`
 `ACTIVE` y `human_confirmed` que cubra el `artifact_id`.
 
-ALCANCE DELIBERADAMENTE ACOTADO: solo la clase `catalog` (el único caso real
-hoy, `ARTIFACT_VERSIONING_SPEC.md` §3). Generalizar a matrix/pack/prompt/
-golden sin un caso real que lo exija repetiría el error que este roadmap
-lleva corregido varias veces (Fase J de `project_w5_v2_regulatory_redesign`:
-"no se fabrica código sin un caso real que lo valide").
+ALCANCE DE `apply_catalog_version_bump`: solo la clase `catalog` (el único
+caso real de BUMP de contenido hoy, `ARTIFACT_VERSIONING_SPEC.md` §3).
+Generalizar el bump a matrix/pack/prompt/golden sin un caso real que lo
+exija repetiría el error que este roadmap lleva corregido varias veces
+(Fase J de `project_w5_v2_regulatory_redesign`: "no se fabrica código sin un
+caso real que lo valide").
+
+`apply_artifact_first_approval` (G6, `MODEL_REQUALIFICATION_AND_D4A_SPEC.md`
+§3) SÍ es genérica desde el principio: el caso real que la justifica es
+`golden_dataset`, bootstrapeado por G4 con `approved_by_decision=null` desde
+entonces (`NO_APPROVING_DECISION` en `guard_report()`). A diferencia de un
+bump, aquí no hay versión ni contenido nuevos que escribir -- la decisión
+aprueba EXACTAMENTE lo que ya está en disco desde el bootstrap. Generalizarla
+no repite el error de Fase J porque no hay una segunda clase hipotética
+detrás: es la misma operación (adjuntar `approved_by_decision` a un
+version_record sin bump) que cualquier otra clase bootstrapeada necesitaría
+el día que tenga su propio caso real.
 
 ORDEN DELIBERADO (mismo patrón que `apply_source_registration`): se valida
 TODO -- decisión, versión, formato del archivo -- antes de escribir un solo
@@ -168,6 +180,71 @@ def apply_catalog_version_bump(new_version: str, *, decision_instance_id: str,
         "to_version": new_version,
         "approved_by_decision": decision_instance_id,
         "historical_copy": historical_copy,
+    })
+
+    return record
+
+
+def apply_artifact_first_approval(artifact_id: str, *, decision_instance_id: str,
+                                  repo: Path | None = None,
+                                  decision_store_file: Path | None = None,
+                                  versions_store_file: Path | None = None) -> dict:
+    """Adjunta `approved_by_decision` al `version_record` YA BOOTSTRAPPED de
+    un artefacto, sin cambiar version ni contenido -- caso real: G6,
+    `golden_dataset`. Distinto de `apply_catalog_version_bump`: no hay
+    version nueva que escribir, así que no acepta `new_version`. Fail-closed
+    en cada paso, mismo orden que el bump: nada se escribe hasta validar
+    decisión, estado del artefacto y ausencia de drift desde el bootstrap."""
+    base = repo or guard.REPO
+
+    scope = resolver.resolve(guard.DECISION_FAMILY, artifact_id,
+                             store_file=decision_store_file)
+    if not scope.authorized:
+        raise ArtifactVersionApplyError(
+            f"{artifact_id!r} no está autorizado para versionar: {scope.denial_reason}")
+    if decision_instance_id not in scope.covering_instances:
+        raise ArtifactVersionApplyError(
+            f"{decision_instance_id!r} no es una de las decisiones que otorgan "
+            f"cobertura ({scope.covering_instances!r}) -- no se aplica con una "
+            "decisión que no es la que lo autoriza")
+
+    current = next((s for s in guard.enumerate_artifacts(repo=base)
+                    if s.artifact_id == artifact_id), None)
+    if current is None:
+        raise ArtifactVersionApplyError(
+            f"{artifact_id!r} no aparece en enumerate_artifacts() -- ¿archivo ausente?")
+
+    records = guard.read_version_records(versions_store_file)
+    existing = guard.latest_record_for(artifact_id, records)
+    if existing is None:
+        raise ArtifactVersionApplyError(
+            f"{artifact_id!r} no tiene version_record -- requiere bootstrap primero, "
+            "esta función solo aprueba un estado ya fotografiado")
+    if existing.get("sha256") != current.sha256:
+        raise ArtifactVersionApplyError(
+            f"el contenido de {artifact_id!r} cambió desde el bootstrap "
+            f"({existing.get('sha256')} -> {current.sha256}) -- esto ya no es una "
+            "primera aprobación simple, es un cambio de contenido real")
+    if existing.get("approved_by_decision"):
+        raise ArtifactVersionApplyError(
+            f"{artifact_id!r} ya tiene approved_by_decision="
+            f"{existing['approved_by_decision']!r} -- nada que aplicar")
+
+    record = guard.build_version_record(
+        current, previous_version=current.version, previous_sha256=current.sha256,
+        approved_by_decision=decision_instance_id)
+
+    path = versions_store_file or guard.STORE_FILE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    write_event("artifact_version_applied", "factory", {
+        "artifact_id": artifact_id,
+        "from_version": current.version,
+        "to_version": current.version,
+        "approved_by_decision": decision_instance_id,
+        "first_approval": True,
     })
 
     return record

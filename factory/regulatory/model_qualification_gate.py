@@ -132,6 +132,7 @@ def build_qualification_fingerprint(provider=None) -> dict:
 
     `provider` permite calificar un modelo distinto del global sin tocar el
     módulo (mismo patrón que Fase D). None = DEFAULT_PROVIDER."""
+    from factory.core.artifact_version_guard import GOLDEN_PATH, canonical_hash_golden
     from factory.engines.gmpai_integrity import chunked_engine as ce
     from factory.engines.gmpai_integrity import ollama_client
     from factory.engines.gmpai_integrity.model_provider import DEFAULT_PROVIDER
@@ -153,6 +154,13 @@ def build_qualification_fingerprint(provider=None) -> dict:
         "prompt_versions": prompt_versions,
         "schema_version": "checkpoint_llm_response_v1",
         "schema_sha256": schema_sha256("checkpoint_llm_response_v1"),
+        # G6 (MODEL_REQUALIFICATION_AND_D4A_SPEC.md, hallazgo D-1): el Golden
+        # Dataset es el patron de referencia contra el que se mide el modelo
+        # -- sin su hash en el fingerprint, dos calificaciones con el mismo
+        # resto de campos podrian haberse medido contra datasets DISTINTOS.
+        # Reutiliza el mismo hash de AST que ya usa artifact_version_guard,
+        # nunca se reimplementa.
+        "golden_dataset_sha256": canonical_hash_golden(GOLDEN_PATH),
         **catalog_fingerprint(),
         # Configuración de generación: el defecto de 2026-07-28 entró por aquí.
         "num_ctx": ollama_client.NUM_CTX,
@@ -327,6 +335,53 @@ def require_qualified_for_production(provider=None) -> None:
     r = evaluate_model_qualification(provider)
     if r.status != STATUS_QUALIFIED:
         raise ModelNotQualifiedError(f"{r.status}: {r.blocking_reason}")
+
+
+# ---------------------------------------------------------------------------
+# G6 §4.1 -- guardia de inferencia (MODEL_REQUALIFICATION_AND_D4A_SPEC.md)
+# ---------------------------------------------------------------------------
+
+CALL_TYPE_METADATA = "metadata"
+CALL_TYPE_INFERENCE = "inference"
+RUN_CONTEXT_MODEL_REQUALIFICATION = "model_requalification"
+
+#: El unico "target" que `run_context=model_requalification` puede autorizar
+#: -- recalificar es la PRIMERA inferencia autorizada, y va contra el Golden
+#: Dataset, nunca contra un documento real (spec §4, ultimo parrafo).
+GOLDEN_DATASET_TARGET = "factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py"
+
+
+class InferenceNotAuthorizedError(Exception):
+    pass
+
+
+def require_inference_authorized(status: str, *, call_type: str, run_context: str,
+                                 target: str | None = None) -> None:
+    """§4.1: `if not qualified and call_type == INFERENCE and run_context !=
+    'model_requalification': bloqueado`.
+
+    CONSULTA DE METADATA (`GET /api/tags`, `POST /api/show`) esta SIEMPRE
+    permitida -- no genera un solo token, detectar que el modelo cambio no
+    viola la pausa. INFERENCIA real esta bloqueada salvo que el modelo este
+    `QUALIFIED`, con una UNICA excepcion: `run_context=
+    'model_requalification'`, y esa excepcion exige ademas que el `target`
+    sea el propio Golden Dataset -- nunca un documento real, para que
+    recalificar no se convierta en una puerta trasera para analizar Rockwell
+    sin calificacion vigente."""
+    if call_type == CALL_TYPE_METADATA:
+        return
+    if status == STATUS_QUALIFIED:
+        return
+    if run_context == RUN_CONTEXT_MODEL_REQUALIFICATION:
+        if target == GOLDEN_DATASET_TARGET:
+            return
+        raise InferenceNotAuthorizedError(
+            f"run_context={run_context!r} solo autoriza inferencia CONTRA EL "
+            f"GOLDEN DATASET ({GOLDEN_DATASET_TARGET!r}), no target={target!r}")
+    raise InferenceNotAuthorizedError(
+        f"inferencia bloqueada: qualification.status={status!r} "
+        f"(unica excepcion: run_context={RUN_CONTEXT_MODEL_REQUALIFICATION!r} "
+        "contra el Golden Dataset)")
 
 
 class ModelNotQualifiedError(RuntimeError):

@@ -218,3 +218,99 @@ def test_a_second_identical_freeze_reuses_the_same_file(repo, decisions_file):
         repo, artifact_id, previous_version="1.0",
         previous_sha256=guard.canonical_hash_yaml(repo / artifact_id, "catalog"))
     assert dest_again == dest
+
+
+# ---------------------------------------------------------------------------
+# apply_artifact_first_approval -- G6, caso real: golden_dataset bootstrapeado
+# sin approved_by_decision.
+# ---------------------------------------------------------------------------
+
+GOLDEN_REL = "factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py"
+_MINIMAL_GOLDEN = "_ALL_CASES = []\n"
+
+
+@pytest.fixture()
+def repo_with_golden(repo):
+    golden = repo / GOLDEN_REL
+    golden.parent.mkdir(parents=True, exist_ok=True)
+    golden.write_text(_MINIMAL_GOLDEN, encoding="utf-8")
+    return repo
+
+
+def _bootstrap_golden_version_record(repo, versions_store) -> dict:
+    state = next(s for s in guard.enumerate_artifacts(repo=repo)
+                if s.artifact_id == GOLDEN_REL)
+    record = guard.build_version_record(state, bootstrap=True,
+                                        bootstrap_note="foto inicial de prueba")
+    versions_store.parent.mkdir(parents=True, exist_ok=True)
+    with versions_store.open("a", encoding="utf-8") as fh:
+        fh.write(__import__("json").dumps(record) + "\n")
+    return record
+
+
+def test_first_approval_without_a_version_record_is_rejected(repo_with_golden, decisions_file):
+    iid = _confirmed_artifact_version_decision(decisions_file, GOLDEN_REL)
+    with pytest.raises(apply_mod.ArtifactVersionApplyError, match="no tiene version_record"):
+        apply_mod.apply_artifact_first_approval(
+            GOLDEN_REL, decision_instance_id=iid, repo=repo_with_golden,
+            decision_store_file=decisions_file,
+            versions_store_file=repo_with_golden / "factory/registry/artifact_versions.jsonl")
+
+
+def test_first_approval_rejects_content_drift_since_bootstrap(repo_with_golden, decisions_file):
+    versions_store = repo_with_golden / "factory/registry/artifact_versions.jsonl"
+    _bootstrap_golden_version_record(repo_with_golden, versions_store)
+    # el archivo vivo cambia DESPUES del bootstrap con contenido REAL (el hash
+    # es del AST, no del texto -- un comentario no lo moveria) -- ya no es
+    # "primera aprobacion simple", es contenido nuevo.
+    (repo_with_golden / GOLDEN_REL).write_text(_MINIMAL_GOLDEN + "NEW_CASE = 1\n", encoding="utf-8")
+
+    iid = _confirmed_artifact_version_decision(decisions_file, GOLDEN_REL)
+    with pytest.raises(apply_mod.ArtifactVersionApplyError, match="cambió desde el bootstrap"):
+        apply_mod.apply_artifact_first_approval(
+            GOLDEN_REL, decision_instance_id=iid, repo=repo_with_golden,
+            decision_store_file=decisions_file, versions_store_file=versions_store)
+
+
+def test_first_approval_twice_is_rejected(repo_with_golden, decisions_file):
+    versions_store = repo_with_golden / "factory/registry/artifact_versions.jsonl"
+    _bootstrap_golden_version_record(repo_with_golden, versions_store)
+    iid = _confirmed_artifact_version_decision(decisions_file, GOLDEN_REL)
+    apply_mod.apply_artifact_first_approval(
+        GOLDEN_REL, decision_instance_id=iid, repo=repo_with_golden,
+        decision_store_file=decisions_file, versions_store_file=versions_store)
+
+    iid2 = _confirmed_artifact_version_decision(decisions_file, GOLDEN_REL, iid="ARTIFACT_VERSION-2026-003")
+    with pytest.raises(apply_mod.ArtifactVersionApplyError, match="ya tiene approved_by_decision"):
+        apply_mod.apply_artifact_first_approval(
+            GOLDEN_REL, decision_instance_id=iid2, repo=repo_with_golden,
+            decision_store_file=decisions_file, versions_store_file=versions_store)
+
+
+def test_first_approval_success_never_touches_the_source_file(repo_with_golden, decisions_file):
+    versions_store = repo_with_golden / "factory/registry/artifact_versions.jsonl"
+    _bootstrap_golden_version_record(repo_with_golden, versions_store)
+    before = (repo_with_golden / GOLDEN_REL).read_text(encoding="utf-8")
+    before_mtime = (repo_with_golden / GOLDEN_REL).stat().st_mtime
+
+    iid = _confirmed_artifact_version_decision(decisions_file, GOLDEN_REL)
+    record = apply_mod.apply_artifact_first_approval(
+        GOLDEN_REL, decision_instance_id=iid, repo=repo_with_golden,
+        decision_store_file=decisions_file, versions_store_file=versions_store)
+
+    assert record["approved_by_decision"] == iid
+    assert record["artifact_id"] == GOLDEN_REL
+    assert record["version"] is None
+    assert record["previous_version"] is None
+    # el archivo fuente -- a diferencia del bump de catalogo -- NUNCA se toca:
+    # esta operacion aprueba, no versiona contenido nuevo.
+    assert (repo_with_golden / GOLDEN_REL).read_text(encoding="utf-8") == before
+    assert (repo_with_golden / GOLDEN_REL).stat().st_mtime == before_mtime
+
+    lines = versions_store.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 2  # el bootstrap + esta aprobacion, append-only
+
+    state = next(s for s in guard.enumerate_artifacts(repo=repo_with_golden)
+                if s.artifact_id == GOLDEN_REL)
+    findings = guard.check_artifact(state, record, decision_store_file=decisions_file)
+    assert not any(f.code == guard.NO_APPROVING_DECISION for f in findings)
