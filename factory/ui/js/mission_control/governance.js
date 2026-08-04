@@ -550,6 +550,17 @@ function panelCatalogVersion(){
         : '<span style="color:var(--warn)">El hash vivo NO coincide con lo último aprobado -- el contenido cambió desde entonces (CONTENT_CHANGED_VERSION_SAME).</span>'}
     </div>` : `<div class="meta" style="margin-top:6px;color:var(--warn)">No se pudo leer el estado vivo de este artefacto.</div>`}
 
+    ${valida ? `
+    <div style="margin-top:12px;padding:8px;border:1px solid var(--pass)">
+      <b style="color:var(--pass)">PROPUESTA SELECCIONADA PARA FIRMAR</b>
+      <div class="meta" style="margin-top:6px">PROPOSAL_ID = <span class="mono">${esc(valida.decision_instance_id)}</span></div>
+      <div class="meta">FROM_VERSION = <span class="mono">${esc(valida.payload.from_version)}</span></div>
+      <div class="meta">TO_VERSION = <span class="mono">${esc(valida.payload.to_version)}</span></div>
+      <div class="meta">ARTIFACT_PATH = <span class="mono">${esc(valida.payload.artifact_path)}</span></div>
+      <div class="meta">ARTIFACT_HASH_BEFORE = <span class="mono">${esc(valida.payload.artifact_hash_before)}</span></div>
+      <div class="meta">EXPECTED_HASH_AFTER = <span class="mono">${esc(valida.payload.expected_hash_after)}</span></div>
+    </div>` : ''}
+
     <div style="margin-top:12px"><b>PROPUESTAS ARTIFACT_VERSION PARA ESTE ARTEFACTO</b>
       <span class="meta">(filtradas por <span class="mono">artifact_path</span> --
       una propuesta de otro artefacto, p.ej. <span class="mono">golden_dataset</span>,
