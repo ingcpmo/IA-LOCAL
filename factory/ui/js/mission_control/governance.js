@@ -51,7 +51,15 @@ const PANELS = [
     resumen:'Extiende la cobertura a 21 CFR Part 211, sin tocar la Corrección.' },
   { id:'pack-211',           gate:'G4', family:'D2', titulo:'Revisión del pack 21 CFR 211.68(b)',
     resumen:'Regla predicado cGMP: control de cambios, exactitud I/O y respaldo. Contenido redactado, pendiente de tu aprobación.' },
-  { id:'d2a',                gate:'G5', family:'D2', titulo:'D2-A — Aprobación de Evidence Packs',
+  { id:'d2a',                gate:'G5-D2A', family:'D2', titulo:'D2-A — Aprobación de Evidence Packs',
+    /* NUNCA 'G5' a secas aqui, aunque sea el gate topicamente correcto
+       ("D2-A: aprobacion de Evidence Packs"): su bloqueo real de HOY es
+       "packs sin cobertura D2" -- literalmente lo que este panel existe
+       para resolver. Con gate:'G5' el boton "Abrir panel" quedaria
+       deshabilitado por el propio problema que el panel debe arreglar,
+       encerrando a Cesar afuera. Mismo aprendizaje que golden-dataset
+       (commit 3a486ca), version mas sutil: aqui el gate SI describe el
+       panel correctamente y aun asi hay que evitarlo. */
     resumen:'Criterios interpretativos, pack a pack. Sin "apruebo todos".' },
   { id:'excepcion-auditoria',gate:'G7', family:'AUDIT_EXCEPTION', titulo:'Excepción de auditoría histórica',
     resumen:'FORK-2026-06-15-001. Aceptar o rechazar, con causa raíz establecida.' },
@@ -497,6 +505,83 @@ function panelIncidenteD2003(){
   </div>`;
 }
 
+/* ── Panel C-2 — D2-A: aprobación de Evidence Packs (D2, G5) ──────────── */
+
+/* D2A_READY (spec §5.3) se calcula por requisito -- fuente verificada +
+   cobertura D1 + pack completo (V1-V10, incluido V5 ya redefinido a
+   citation.citation_text) + matriz aprobada + catálogo versionado, las
+   cinco a la vez. `GOV.d2a_readiness` ya trae el veredicto Y el contenido
+   del pack (evidence_pack_governance.d2a_ready() vía governance_service),
+   este panel solo lo pinta -- nunca reimplementa ninguna de las cinco
+   reglas.
+
+   Solo "Aprobar" está implementado (decision_type=ADDENDUM sobre D2, mismo
+   mecanismo que ya usa el panel del pack 211) -- "devolver con comentario"
+   y "rechazar" (spec §5.1) exigirían un registro de PROPUESTA por pack que
+   hoy no existe (el contenido vive directo en requirements.yaml, redactado
+   en G4a), declarado NOT_IMPLEMENTED_YET explícito, mismo criterio que
+   otras piezas fuera de alcance de este spec (ver docstring del módulo
+   Python). */
+
+function panelD2A(){
+  const c = GOV.coverage?.D2 || {};
+  const items = GOV?.d2a_readiness || [];
+  const listos = items.filter(i => i.ready);
+
+  const filaChecklist = (i) => `<tr>
+    <td class="mono">${esc(i.requirement_id)}</td>
+    <td>${i.ready ? '<span style="color:var(--pass)">READY</span>' : '<span class="meta">—</span>'}</td>
+    <td class="meta">${esc((i.reasons||[]).join(' · ') || '—')}</td>
+  </tr>`;
+
+  const bloqueListo = (i) => {
+    const prefix = 'd2a_' + i.requirement_id.replace(/[^a-zA-Z0-9]/g, '_');
+    const cubierto = (c.covered_ids||[]).includes(i.requirement_id);
+    return `<div class="card" style="margin-top:10px;padding:8px;border:1px solid var(--pass)">
+      <b>${esc(i.requirement_id)}</b> — ${esc(i.label||'')}
+      <div class="meta" style="margin-top:6px">Fuente: <span class="mono">${esc(i.source_id||'?')}</span></div>
+      <div class="meta" style="margin-top:4px">Cita literal (V5, ya anclada): <span class="mono">${esc(i.citation_text||'?')}</span></div>
+      <div class="meta" style="margin-top:6px"><b>Interpretación gobernada</b></div>
+      <div class="meta">${esc(i.governed_interpretation||'')}</div>
+      <div class="meta" style="margin-top:6px"><b>Criterios mínimos</b></div>
+      <ul class="meta" style="margin:2px 0 0 18px">${(i.evidence_min_criteria||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+      <div class="meta" style="margin-top:6px"><b>Criterios de exclusión</b></div>
+      <ul class="meta" style="margin:2px 0 0 18px">${(i.exclusion_criteria||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+      ${cubierto ? `<div class="meta" style="margin-top:8px;color:var(--pass)">
+        Ya cubierto por una decisión D2 vigente.</div>` : `
+      ${signatureForm('d2a_'+i.requirement_id.replace(/[^a-zA-Z0-9]/g, '_'))}
+      ${NO_EJECUTA}
+      <div style="margin-top:8px">
+        <button id="${prefix}-submit-btn" onclick="govSubmitD2A('${esc(i.requirement_id)}','${esc(prefix)}')">
+          Aprobar ${esc(i.requirement_id)}</button>
+      </div>
+      ${statusLine(prefix)}`}
+    </div>`;
+  };
+
+  return `
+  <div class="card">
+    <b>D2-A — Aprobación de Evidence Packs</b>
+    ${coverageBlock('D2', c)}
+    <div class="meta" style="margin-top:6px;color:var(--faint)">
+      D2_A_READY calculado, nunca declarado a mano (spec §5.3): fuente
+      verificada + cobertura D1 + pack completo (V1-V10) + matriz aprobada +
+      catálogo versionado, las cinco a la vez. Sin "apruebo todos": cada
+      pack se firma por su propio contenido.</div>
+
+    <div style="margin-top:12px"><b>CHECKLIST — LOS ${items.length} REQUISITOS DEL CATÁLOGO</b></div>
+    <table class="tbl" style="width:100%;font-size:11px;margin-top:6px">
+      <thead><tr><th>Requisito</th><th>Estado</th><th>Qué falta</th></tr></thead>
+      <tbody>${items.map(filaChecklist).join('')}</tbody>
+    </table>
+
+    <div style="margin-top:12px"><b>LISTOS PARA APROBAR (${listos.length})</b></div>
+    ${listos.map(bloqueListo).join('') || '<div class="meta" style="margin-top:8px">Ningún requisito D2A_READY hoy.</div>'}
+
+    <div style="margin-top:12px"><button onclick="govOpen('')">Volver al índice</button></div>
+  </div>`;
+}
+
 /* ── Panel D — Versionado del catálogo (ARTIFACT_VERSION, G4c) ─────────── */
 
 /* Este panel REGISTRA la decisión (propose+confirm), igual que todos los
@@ -920,6 +1005,7 @@ function paint(){
   if(p.id==='d1-correccion')       body = panelD1Correccion();
   else if(p.id==='d1a')            body = panelD1A();
   else if(p.id==='pack-211')       body = panelPack211();
+  else if(p.id==='d2a')            body = panelD2A();
   else if(p.id==='catalog-version') body = panelCatalogVersion();
   else if(p.id==='applicability-matrix') body = panelApplicabilityMatrix();
   else if(p.id==='golden-dataset') body = panelGoldenDataset();
@@ -1160,6 +1246,25 @@ export async function govSubmitPack211(){
     : {};
   await proponerYConfirmar('D2', [REQ_211_68B], readSignature('pk211'), extra,
                            {statusPrefix:'pk211', btnId:'pk211-submit-btn'});
+}
+
+export async function govSubmitD2A(requirementId, prefix){
+  /* Mismo criterio que govSubmitPack211(): si este requisito ya fue
+     revocado alguna vez, la via gobernada es CORRECTION superseding la
+     revocacion, nunca un ORIGINAL que la ignore (decision_scope_resolver
+     hace que la revocacion domine a proposito). Generico -- no asume que
+     el unico target revocable sea REQ_211_68B. */
+  const revocados = GOV?.coverage?.D2?.revoked_ids || [];
+  let extra = {};
+  if(revocados.includes(requirementId)){
+    const activas = GOV?.coverage?.D2?.confirmed_active_instances || [];
+    setStatus(prefix, 'warn', `${requirementId} fue revocado antes -- necesita una CORRECTION `
+      + `explicita sobre la revocacion, no soportado desde este panel todavia. `
+      + `Instancias activas de D2: ${activas.join(', ') || '(ninguna)'}.`);
+    return;
+  }
+  await proponerYConfirmar('D2', [requirementId], readSignature(prefix), extra,
+                           {statusPrefix: prefix, btnId: prefix+'-submit-btn'});
 }
 
 

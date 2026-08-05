@@ -35,6 +35,10 @@ from factory.core import artifact_version_guard as _artifacts
 from factory.core import audit_writer as _audit
 from factory.core import decision_scope_resolver as _resolver
 from factory.core import identity_policy as _identity
+from factory.regulatory import evidence_pack_governance as _d2a
+from factory.regulatory.requirement_catalog.requirement_catalog_loader import (
+    load_requirements as _load_requirements,
+)
 from factory.services import decision_store_v2 as store
 
 # RC-7 (2026-08-05): APPLICABILITY_MATRIX faltaba aquí -- `confirm()`/`propose()`
@@ -328,6 +332,49 @@ def artifact_state(artifact_id: str, *, versions_store_file: Path | None = None)
     }
 
 
+def _d2a_readiness_list(*, store_file: Path | None = None) -> list[dict]:
+    """`D2AReadiness` (§5.3) por requisito, con el contenido del pack que un
+    panel necesita para mostrar QUÉ se va a aprobar -- nunca solo el
+    veredicto. Reutiliza `d2a_ready()` sin reimplementar ninguna de sus
+    reglas; este helper solo proyecta el resultado al vocabulario de la API.
+
+    `guard.guard_report()`/`source_lifecycle.evaluate_registry()` se
+    calculan UNA vez aqui y se reenvian a cada `d2a_ready()` -- sin esto,
+    evaluar los 20 requisitos del catalogo tardaba +200s reales (cada
+    llamada los recalculaba 2 veces por su cuenta) e hizo timeout el
+    endpoint /governance/state completo."""
+    from factory.core import artifact_version_guard as _guard
+    from factory.regulatory import source_lifecycle as _sl
+
+    guard_report_cached = _guard.guard_report(decision_store_file=store_file)
+    source_dims_cached = {d.source_id: d for d in _sl.evaluate_registry()}
+
+    catalog = _load_requirements()
+    out = []
+    for rid, entry in catalog["requirements"].items():
+        readiness = _d2a.d2a_ready(rid, decision_store_file=store_file,
+                                   guard_report_cached=guard_report_cached,
+                                   source_dims_cached=source_dims_cached)
+        out.append({
+            "requirement_id": rid,
+            "label": entry.get("label"),
+            "source_id": entry.get("source_id"),
+            "citation_text": (entry.get("citation") or {}).get("citation_text"),
+            "governed_interpretation": entry.get("governed_interpretation"),
+            "evidence_min_criteria": entry.get("evidence_min_criteria"),
+            "exclusion_criteria": entry.get("exclusion_criteria"),
+            "expected_doc_types": entry.get("expected_doc_types"),
+            "ready": readiness.ready,
+            "source_verified": readiness.source_verified,
+            "source_covered": readiness.source_covered,
+            "pack_complete": readiness.pack_complete,
+            "matrix_approved": readiness.matrix_approved,
+            "catalog_versioned": readiness.catalog_versioned,
+            "reasons": list(readiness.reasons),
+        })
+    return sorted(out, key=lambda r: (not r["ready"], r["requirement_id"]))
+
+
 # ---------------------------------------------------------------------------
 # GET -- solo lectura (U-1)
 # ---------------------------------------------------------------------------
@@ -454,6 +501,12 @@ def get_state(*, store_file: Path | None = None) -> dict:
         # familia bajo un solo panel -- exactamente el bug que mostraba una
         # propuesta de golden_dataset bajo "Versionado del catálogo".
         "proposals": {f: list_proposals(f, store_file=store_file) for f in GOVERNED_FAMILIES},
+        # G5 (panel D2-A, RC-7 otra vez): D2A_READY calculado por requisito,
+        # nunca declarado a mano -- reutiliza evidence_pack_governance.
+        # d2a_ready() (§5.3), que ya deriva de source_lifecycle + resolver +
+        # artifact_version_guard. El contenido del pack viaja junto para que
+        # el panel muestre lo que se va a aprobar sin una segunda llamada.
+        "d2a_readiness": _d2a_readiness_list(store_file=store_file),
         "audit": {k: audit[k] for k in (
             "content_hash_integrity", "chain_continuity", "historical_fork_present",
             "new_forks_since_baseline", "new_fork_entry_ids",
