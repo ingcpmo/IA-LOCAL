@@ -25,25 +25,53 @@ ALL_19_REQ_IDS = {
 def test_source_registry_loads_and_validates():
     """Invariante, no conteo. El numero de fuentes cambia cuando Capa 9 aprueba
     un alta (2026-07-29: ecfr_21cfr_part211); lo que NO puede cambiar sin
-    decision es que toda fuente cargue integra y sin declararse vigente. El
-    conjunto exacto se fija a proposito en
-    test_human_source_registration.test_real_registry_has_no_unauthorized_source."""
+    decision es que toda fuente cargue integra. El conjunto exacto se fija a
+    proposito en
+    test_human_source_registration.test_real_registry_has_no_unauthorized_source.
+
+    `regulatory_currency_status` ya NO se fija a un unico valor aqui (ver
+    test_every_verified_current_source_has_a_real_backing_decision): desde
+    SOURCE_CURRENCY (2026-08-05) puede ser 'verified_current' -- pero SOLO
+    via una decision real, nunca por defecto."""
     registry = load_source_registry()
     assert registry["sources"], "el registry nunca queda vacio"
     for entry in registry["sources"]:
-        assert entry["regulatory_currency_status"] == "pending_reverification"
+        assert entry["regulatory_currency_status"] in ("pending_reverification", "verified_current")
         assert entry["hashes_match"] is True
         assert entry["local_integrity_status"] == "PASS"
 
 
-def test_no_source_declares_itself_verified_current():
-    """Control explicito del usuario: ninguna fuente puede presentarse como
-    vigente-verificada en este ciclo."""
+def test_every_verified_current_source_has_a_real_backing_decision():
+    """Control explicito del usuario, ACTUALIZADO (2026-08-05): antes decia
+    "ninguna fuente puede presentarse como vigente-verificada en este
+    ciclo" -- una restriccion absoluta porque no existia NINGUN mecanismo
+    gobernado para declarar vigencia. Ese mecanismo ahora existe
+    (factory.regulatory.source_currency_confirmation, familia
+    SOURCE_CURRENCY): propose deriva la evidencia real del log, confirm
+    exige firma humana, y apply re-verifica al momento de escribir. La
+    restriccion que SI se conserva, y es la que de verdad importa: ninguna
+    fuente puede ser 'verified_current' SIN una decision human_confirmed
+    real que lo respalde -- nunca por defecto, nunca a mano."""
+    from factory.services import decision_store_v2 as store
+
     registry = load_source_registry()
-    for entry in registry["sources"]:
-        assert entry["regulatory_currency_status"] == "pending_reverification"
-        assert "verified_current" not in str(entry.get("regulatory_currency_status", ""))
-        assert "current" != entry["regulatory_currency_status"]
+    verificadas = [e["source_id"] for e in registry["sources"]
+                  if e["regulatory_currency_status"] == "verified_current"]
+    if not verificadas:
+        pytest.skip("ninguna fuente verified_current hoy -- nada que verificar")
+
+    registros = store.read_all()
+    confirmadas = {
+        r["payload"]["source_id"]
+        for r in registros
+        if r.get("decision_family") == "SOURCE_CURRENCY"
+        and r.get("decision_origin") == "human_confirmed"
+        and r.get("decision") == "APPROVE"
+    }
+    for sid in verificadas:
+        assert sid in confirmadas, (
+            f"{sid} es verified_current pero no hay ninguna decision SOURCE_CURRENCY "
+            "human_confirmed que lo respalde -- estado fabricado, no gobernado")
 
 
 def test_requirements_catalog_keeps_all_original_ids():

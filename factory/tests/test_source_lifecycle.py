@@ -435,58 +435,71 @@ def test_l07_integrity_is_recomputed_not_trusted(tmp_path):
 # L-08 -- las cuatro fuentes reales
 # ===========================================================================
 
-def test_l08_no_real_source_is_eligible_for_formal_use():
-    """Ninguna de las cuatro fuentes reales es usable formalmente todavia.
+def test_l08_only_a_real_source_currency_confirmation_grants_formal_use():
+    """Dos de las cuatro fuentes reales SI son usables formalmente hoy --
+    y las otras dos siguen sin serlo, por un motivo real y distinto.
 
-    El test afirmaba que las cuatro estaban en REGISTERED_PENDING_AUTHORIZATION,
-    y su propio docstring anunciaba el cambio: "cambiara en G2, y ese cambio es
-    la prueba de que la Correccion D1 hizo algo". Paso el 2026-07-30 — Cesar
-    firmo la Correccion (D1-2026-049/050) y las tres antiguas pasaron a
-    AUTHORIZED_PENDING_REVERIFICATION.
+    Antes esta asercion decia "ninguna de las cuatro" y su docstring ya
+    anunciaba el patron: "cambiara en G2, y ese cambio es la prueba de que
+    la Correccion D1 hizo algo". Paso otra vez, con la mecanica correcta
+    esta vez: SOURCE_CURRENCY (2026-08-05) es un mecanismo NUEVO y
+    SEPARADO de D1 -- exige evidencia real de re-verificacion
+    (source_currency_log.jsonl, comparable=True/matches=True) MAS el
+    juicio humano explicito de que la norma sigue vigente, no solo la
+    autorizacion generica de D1. Cesar firmo las 4 propuestas
+    (SOURCE_CURRENCY-2026-005..008) y 2 alcanzaron LOCAL_CANONICAL_COPY_
+    VERIFIED de verdad: eu_gmp_annex11 y mhra_gxp_di_guidance_2018.
 
-    Asi que la asercion se mueve a la regla que NO cambia con la firma:
-    autorizar no es reverificar. Firmar mueve la fuente a "autorizada pendiente
-    de reverificacion", NUNCA a VERIFIED, y la elegibilidad para uso formal sigue
-    siendo False en las cuatro. Lo que la firma cambia es de que estado se parte,
-    no si se puede usar.
+    Las otras dos (ecfr_21cfr_part11, ecfr_21cfr_part211) siguen en
+    AUTHORIZED_PENDING_REVERIFICATION pese a tener regulatory_currency=
+    CURRENT -- las bloquea una QUINTA dimension distinta,
+    official_origin_verification=NOT_COMPARABLE_FIRST_INGESTION (campo
+    estatico fijado en su re-gobernanza a XML), que SOURCE_CURRENCY no
+    toca y que solo se resuelve con un nuevo ciclo de re-ingesta real.
     """
     dims = sl.evaluate_registry()
     assert {d.source_id for d in dims} == set(REAL_SOURCE_IDS)
-    for d in dims:
-        assert d.lifecycle_state in (sl.REGISTERED_PENDING_AUTHORIZATION,
-                                     sl.AUTHORIZED_PENDING_REVERIFICATION), \
-            f"{d.source_id}: {d.lifecycle_state}"
-        assert d.formal_use_eligibility is False, (
-            f"{d.source_id} elegible para uso formal sin reverificacion")
+    por_id = {d.source_id: d for d in dims}
+
+    verificadas = {"eu_gmp_annex11", "mhra_gxp_di_guidance_2018"}
+    for sid in verificadas:
+        assert por_id[sid].lifecycle_state == sl.LOCAL_CANONICAL_COPY_VERIFIED, sid
+        assert por_id[sid].formal_use_eligibility is True, (
+            f"{sid} tiene evidencia real de re-verificacion y firma humana -- "
+            "deberia ser elegible")
+
+    for sid in set(REAL_SOURCE_IDS) - verificadas:
+        assert por_id[sid].lifecycle_state == sl.AUTHORIZED_PENDING_REVERIFICATION, sid
+        assert por_id[sid].official_origin_verification == sl.ORIGIN_FIRST_INGESTION, sid
+        assert por_id[sid].formal_use_eligibility is False, (
+            f"{sid} sigue con origen NOT_COMPARABLE_FIRST_INGESTION -- no puede "
+            "ser elegible aunque la vigencia sea CURRENT")
 
 
-def test_l08_the_signature_authorizes_without_reverifying():
-    """Firmar autoriza y NO reverifica — el invariante de U-5.
+def test_l08_d1_authorization_alone_never_grants_verified():
+    """Firmar SOLO D1 (autorizacion generica) nunca reverifica -- el
+    invariante de U-5 que SOURCE_CURRENCY no relaja para nadie.
 
     Es la mitad que faltaba en el test anterior: sin ella, lo aprobaria un
-    sistema en el que firmar no hubiera hecho nada.
-
-    Fijaba ademas Part 211 en REGISTERED_PENDING_AUTHORIZATION "porque le falta
-    el adendo D1-A". Eso duro cuatro horas: Cesar firmo D1-A el 2026-07-30 y
-    Part 211 paso a autorizada, asi que el test se ponia rojo por el exito del
-    sistema. Es MI PROPIO test cayendo en el patron que esta misma sesion venia
-    corrigiendo en otros tres — fotografiar el estado en vez de medir la regla.
-    Ahora se derivan las autorizadas de la cobertura real y se exige lo que no
-    cambia: cubierta <=> autorizada, y ninguna llega a VERIFIED por firmar.
+    sistema en el que firmar D1 solo bastara para llegar a VERIFIED, y
+    eso es exactamente lo que este archivo entero existe para impedir.
+    Las dos fuentes que SI llegaron a LOCAL_CANONICAL_COPY_VERIFIED lo
+    hicieron por una decision SOURCE_CURRENCY real y separada -- este test
+    verifica la mitad negativa: que la mera cobertura D1 (`coverage_basis`
+    de D1) nunca es, por si sola, suficiente.
     """
-    from factory.core import decision_scope_resolver as resolver
-
     por_id = {d.source_id: d for d in sl.evaluate_registry()}
     cubiertas = set(resolver.coverage_report("D1").covered_ids)
     assert cubiertas, "sin ninguna fuente cubierta este test no mide nada"
 
     for sid, dim in por_id.items():
-        esperado = (sl.AUTHORIZED_PENDING_REVERIFICATION if sid in cubiertas
-                    else sl.REGISTERED_PENDING_AUTHORIZATION)
-        assert dim.lifecycle_state == esperado, (
-            f"{sid}: cubierta={sid in cubiertas} pero estado {dim.lifecycle_state}")
-        # Autorizar no es reverificar, ni siquiera para las firmadas.
-        assert dim.formal_use_eligibility is False
+        assert sid in cubiertas, f"{sid}: sin cobertura D1, no debería estar en el registry gobernado"
+        # D1 por si sola nunca alcanza REGISTERED_PENDING_AUTHORIZATION otra
+        # vez (eso seria un retroceso), pero tampoco basta por si sola para
+        # llegar a VERIFIED sin una decision SOURCE_CURRENCY real aparte.
+        assert dim.lifecycle_state in (sl.AUTHORIZED_PENDING_REVERIFICATION,
+                                       sl.LOCAL_CANONICAL_COPY_VERIFIED), \
+            f"{sid}: {dim.lifecycle_state}"
 
 
 def test_l08_part211_origin_is_amber_and_the_others_are_green():

@@ -579,10 +579,22 @@ def test_the_bootstrapped_store_photographs_without_approving():
     approved_by_decision='ARTIFACT_VERSION-2026-002' para el propio
     catalogo, distinto del artefacto `21_CFR_211.68(b)` que aprobaron los
     dos records anteriores.
+
+    G4c otra vez (2026-08-05, panel ARQ desbloqueo de firma): -005 expiro
+    por TTL sin firmar; re-propuesta como -006, firmada por Cesar como
+    -007, y `apply_catalog_version_bump()` aplico el segundo bump real
+    (2.0 -> 2.1) -- 32o record, mismo artefacto del catalogo,
+    approved_by_decision='ARTIFACT_VERSION-2026-007'.
+
+    G6 (2026-08-05, misma sesion): Cesar firmo ARTIFACT_VERSION-2026-008
+    como -009 (primera aprobacion del golden dataset, sin bump de version
+    ni cambio de contenido) y `apply_artifact_first_approval()` escribio el
+    33o record, primero para el artefacto `golden_dataset` con
+    approved_by_decision='ARTIFACT_VERSION-2026-009'.
     """
     assert guard.STORE_FILE.exists(), "el almacen deberia existir tras el bootstrap de G4"
     records = guard.read_version_records()
-    assert len(records) == 31, f"se esperaban 31 registros (28 bootstrap + 3 reales), hay {len(records)}"
+    assert len(records) == 33, f"se esperaban 33 registros (28 bootstrap + 5 reales), hay {len(records)}"
     bootstrap_records = [r for r in records if r.get("bootstrap")]
     assert len(bootstrap_records) == 28
     for r in bootstrap_records:
@@ -594,6 +606,8 @@ def test_the_bootstrapped_store_photographs_without_approving():
     assert [r["artifact_id"] for r in real_records] == [
         "21_CFR_211.68(b)", "21_CFR_211.68(b)",
         "factory/regulatory/requirement_catalog/requirements.yaml",
+        "factory/regulatory/requirement_catalog/requirements.yaml",
+        "factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py",
     ]
     assert real_records[0]["approved_by_decision"] is None, (
         "el borrador de Claude no es una aprobacion humana")
@@ -601,16 +615,22 @@ def test_the_bootstrapped_store_photographs_without_approving():
         "el segundo registro real SI tiene detras la firma de Cesar"
     )
     assert real_records[2]["approved_by_decision"] == "ARTIFACT_VERSION-2026-002", (
-        "el bump de G4c SI tiene detras la firma de Cesar"
+        "el bump de G4c (1.0->2.0) SI tiene detras la firma de Cesar"
+    )
+    assert real_records[3]["approved_by_decision"] == "ARTIFACT_VERSION-2026-007", (
+        "el segundo bump de G4c (2.0->2.1) SI tiene detras la firma de Cesar"
+    )
+    assert real_records[4]["approved_by_decision"] == "ARTIFACT_VERSION-2026-009", (
+        "la primera aprobacion del golden dataset SI tiene detras la firma de Cesar"
     )
 
-    # Y el guardia lo refleja: 0 FAIL (G4c cerro CONTENT_CHANGED_VERSION_SAME),
-    # 26 avisos de aprobacion ausente -- uno por artefacto SIN decision; ni
-    # 21_CFR_211.68(b) ni el catalogo estan ya en la lista de avisos.
+    # Y el guardia lo refleja: 0 FAIL, 25 avisos de aprobacion ausente -- uno
+    # por artefacto SIN decision; ni 21_CFR_211.68(b), ni el catalogo, ni el
+    # golden dataset estan ya en la lista de avisos.
     report = guard.guard_report()
     assert report["status"] == "WARN"
     assert report["fail_count"] == 0
-    assert report["warn_count"] == 26
+    assert report["warn_count"] == 25
 
 
 def test_the_bootstrap_is_idempotent_on_the_real_store():

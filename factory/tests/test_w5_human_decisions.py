@@ -162,21 +162,25 @@ class TestRecordingDoesNotExecuteConsequences:
 
     def test_d1_does_not_change_any_source_to_verified(self, isolated_store):
         """Requisito 6: D1 por sí sola no promueve ninguna fuente a
-        LOCAL_CANONICAL_COPY_VERIFIED."""
+        LOCAL_CANONICAL_COPY_VERIFIED -- ni siquiera toca registry.json.
+
+        Actualizado (2026-08-05, SOURCE_CURRENCY): antes se afirmaba que
+        TODA fuente del registry estaba siempre en 'pending_reverification'
+        -- eso era cierto solo porque no existia ningun mecanismo separado
+        capaz de escribir 'verified_current'. Ese mecanismo ahora existe
+        (factory.regulatory.source_currency_confirmation), y lo que este
+        test realmente protege -- que grabar D1 (esta funcion, este acto)
+        no cambia ni un byte de registry.json -- sigue intacto en el
+        primer assert. Lo que se retira es la aserción de que el archivo
+        JAMAS puede contener 'verified_current': eso ahora depende de una
+        decision SOURCE_CURRENCY real, no de D1."""
         from factory.services import paths
         registry = paths.FACTORY_ROOT / "regulatory" / "sources" / "registry.json"
         before = registry.read_bytes()
         self._record_d1()
-        assert registry.read_bytes() == before
-
-        data = json.loads(registry.read_text(encoding="utf-8"))
-        assert all(s["regulatory_currency_status"] == "pending_reverification"
-                   for s in data["sources"])
-
-        state = w5.get_decisions_state()
-        d1 = next(d for d in state["decisions"] if d["decision_id"] == "D1_regulatory_sources")
-        assert all(s["current_state"] == "pending_reverification"
-                   for s in d1["context"]["sources"])
+        assert registry.read_bytes() == before, (
+            "grabar una decision D1 no puede tocar registry.json -- ese "
+            "archivo solo lo escribe apply_source_currency_confirmation()")
 
     def test_d1_does_not_touch_the_requirement_catalog(self, isolated_store):
         from factory.services import paths

@@ -202,15 +202,39 @@ def test_p05_the_real_pack_211_fails_v5_and_v9_today():
     assert set(r.failure_codes()) == {"V5_NOT_ANCHORED", "V9_SOURCE_NOT_VERIFIED"}
 
 
-def test_p06_the_19_other_real_packs_fail_v5_and_v9_today_never_v1_to_v4_v7_v8_v10():
+def test_p06_the_19_other_real_packs_fail_v5_today_v9_depends_on_real_source_currency():
+    """V5 (parafraseo, no cita literal) sigue sin resolverse para los 19 --
+    bloqueo de diseno que ningun apply toca.
+
+    V9 ya NO es un fallo fijo (actualizado 2026-08-05, SOURCE_CURRENCY): un
+    requisito respaldado por una fuente que alcanzo LOCAL_CANONICAL_COPY_
+    VERIFIED de verdad (eu_gmp_annex11, mhra_gxp_di_guidance_2018 hoy) ya no
+    falla V9. Se deriva del estado REAL de source_lifecycle en vez de
+    fijarlo a mano, para que este test siga midiendo la regla (V9 sigue el
+    lifecycle_state real) y no una fotografia que otra firma real vuelva a
+    romper."""
+    from factory.regulatory import source_lifecycle as sl
+
     others = [rid for rid in ALL_REQUIREMENT_IDS if rid != PART211]
     assert len(others) == 19
+    dims = {d.source_id: d for d in sl.evaluate_registry()}
+
     for rid in others:
         r = validate_pack(rid)
         codes = set(r.failure_codes())
-        assert not r.passed, f"{rid}: se esperaba al menos V5/V9 fallando"
+        source_id = REAL_CATALOG["requirements"][rid].get("source_id")
+        fuente_verificada = (source_id in dims
+                             and dims[source_id].lifecycle_state == sl.LOCAL_CANONICAL_COPY_VERIFIED)
+
+        assert not r.passed, f"{rid}: se esperaba al menos V5 fallando"
         assert "V5_NOT_ANCHORED" in codes, f"{rid}: V5 deberia fallar (paráfrasis, no cita literal)"
-        assert "V9_SOURCE_NOT_VERIFIED" in codes, f"{rid}: V9 deberia fallar (fuente pending_reverification)"
+        if fuente_verificada:
+            assert "V9_SOURCE_NOT_VERIFIED" not in codes, (
+                f"{rid}: su fuente {source_id!r} SI esta LOCAL_CANONICAL_COPY_VERIFIED -- "
+                "V9 no deberia fallar")
+        else:
+            assert "V9_SOURCE_NOT_VERIFIED" in codes, (
+                f"{rid}: su fuente {source_id!r} no esta verificada -- V9 deberia fallar")
         assert codes <= {"V5_NOT_ANCHORED", "V6_UNKNOWN_DOC_TYPE", "V9_SOURCE_NOT_VERIFIED"}, (
             f"{rid}: fallo inesperado fuera de V5/V6/V9: {codes}")
 
@@ -221,16 +245,25 @@ def test_p06_the_19_other_real_packs_fail_v5_and_v9_today_never_v1_to_v4_v7_v8_v
 #         arriba + la suite propia de artifact_version_guard)
 # ---------------------------------------------------------------------------
 
-def test_p08_gate0_would_detect_a_hash_change_without_version_bump():
+def test_p08_the_catalog_wide_fail_this_test_relied_on_is_now_closed():
     """No reimplementa el guard: confirma que `validate_pack` LEE su
-    resultado real. El catalogo COMPLETO ya esta en ese estado hoy
-    (CONTENT_CHANGED_VERSION_SAME, pendiente de ARTIFACT_VERSION-2026-003) --
-    prueba que V8 sabria propagarlo si algun pack individual lo estuviera."""
+    resultado real (V8 delega en artifact_version_guard, cobertura de
+    propagacion propia en test_p01_v8_* + la suite de artifact_version_
+    guard -- este test solo confirmaba el escenario real vigente).
+
+    Actualizado (2026-08-05): el CONTENT_CHANGED_VERSION_SAME del catalogo
+    que este test citaba como evidencia real se cerro con el segundo bump
+    de G4c (ARTIFACT_VERSION-2026-007, 2.0->2.1) -- guard_report() ya no
+    tiene ningun FAIL real hoy. Se afirma la ausencia en vez de fabricar
+    un escenario sintetico: si algun dia vuelve a haber un FAIL real, este
+    test lo notara y hay que decidir si sigue siendo el mismo motivo."""
     from factory.core import artifact_version_guard as guard
     report = guard.guard_report()
-    assert report["status"] == "FAIL"
-    assert any(f["artifact"] == "catalog" and f["code"] == "CONTENT_CHANGED_VERSION_SAME"
-              for f in report["findings"])
+    assert report["status"] != "FAIL"
+    assert report["fail_count"] == 0
+    assert not any(f["artifact"] == "catalog" and f["code"] == "CONTENT_CHANGED_VERSION_SAME"
+                  for f in report["findings"]), (
+        "el catalogo volvio a divergir de su version declarada")
 
 
 # ---------------------------------------------------------------------------
@@ -265,16 +298,22 @@ def test_p09_pack_approval_is_independent_per_requirement(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_p11_all_20_requirements_are_not_d2a_ready_today():
+    """Ninguno de los 20 esta D2A_READY hoy -- pero ya NO por el mismo
+    motivo compartido de entorno que antes.
+
+    Actualizado (2026-08-05): matrix_approved y catalog_versioned pasaron
+    a True GLOBALMENTE con firmas reales (APPLICABILITY_MATRIX-2026-004,
+    ARTIFACT_VERSION-2026-007) -- ya no son "razones de entorno" que
+    bloqueen los 20 por igual. source_verified tambien depende ahora de la
+    fuente real de cada requisito (SOURCE_CURRENCY). Lo unico que SIGUE
+    bloqueando los 20 sin excepcion es pack_complete=False (V5, parafraseo
+    sin cita literal) -- eso es lo que este test verifica que no cambia."""
     assert len(ALL_REQUIREMENT_IDS) == 20
     for rid in ALL_REQUIREMENT_IDS:
         readiness = d2a_ready(rid)
         assert readiness.ready is False, f"{rid}: se esperaba d2a_ready=False hoy"
-        # Los 20 comparten motivo por matriz y catalogo (razones de ENTORNO,
-        # no de contenido propio) -- eso es exactamente lo que el spec §5
-        # distingue del caso 211 (falla ademas por contenido propio).
-        assert readiness.matrix_approved is False
-        assert readiness.catalog_versioned is False
-        assert readiness.source_verified is False
+        assert readiness.pack_complete is False, (
+            f"{rid}: V5 deberia seguir bloqueando pack_complete")
 
 
 def test_p11_reasons_are_never_empty_when_not_ready():

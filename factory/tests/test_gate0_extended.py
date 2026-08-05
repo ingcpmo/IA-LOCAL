@@ -257,15 +257,24 @@ def test_the_real_artifact_guard_reports_the_g4c_version_bump_closed():
     `apply_catalog_version_bump()` aplico el bump real (`catalog_version`
     1.0 -> 2.0), congelando la copia historica desde HEAD. El FAIL
     desaparece (fail_count 0) y el catalogo tampoco figura ya en warn_count
-    (26, no 27) -- queda totalmente resuelto, ni FAIL ni WARN."""
+    (26, no 27) -- queda totalmente resuelto, ni FAIL ni WARN.
+
+    G4c otra vez + G6 (2026-08-05, panel ARQ desbloqueo de firma):
+    ARTIFACT_VERSION-2026-007 aplico el segundo bump real del catalogo
+    (2.0 -> 2.1, mismo artefacto ya resuelto -- warn_count no cambia por
+    esto). ARTIFACT_VERSION-2026-009 aplico la primera aprobacion del
+    golden dataset (`apply_artifact_first_approval()`) -- ese artefacto SI
+    sale de warn_count (25, no 26)."""
     from factory.core import artifact_version_guard as guard
     r = guard.guard_report()
     assert r["status"] == "WARN"
     assert r["fail_count"] == 0
-    assert r["warn_count"] == 26
+    assert r["warn_count"] == 25
     fails = [f for f in r["findings"] if f["severity"] == "FAIL"]
     assert fails == []
     assert not any(f["artifact_id"].endswith("requirements.yaml") for f in r["findings"])
+    assert not any(f["artifact_id"].endswith("semantic_verification_golden_dataset.py")
+                  for f in r["findings"])
 
 
 def test_the_real_chain_dimensions_land_on_warn_not_fail():
