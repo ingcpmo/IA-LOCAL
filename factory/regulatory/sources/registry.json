@@ -17,7 +17,7 @@
       "jurisdiction": "US",
       "local_integrity_status": "PASS",
       "official_origin_status": "FIRST_INGESTION_NO_PRIOR_KNOWN_HASH_TO_COMPARE (artefacto nuevo -- XML en vez de TEXT -- sin hash previo propio con el que comparar; es una re-gobernanza de tipo de artefacto, no una verificacion de continuidad del archivo anterior)",
-      "regulatory_currency_status": "pending_reverification",
+      "regulatory_currency_status": "verified_current",
       "copied_at": "2026-08-03T19:30:04.562251+00:00",
       "derived_artifacts": [
         {
@@ -54,7 +54,7 @@
       "jurisdiction": "EU",
       "local_integrity_status": "PASS",
       "official_origin_status": "VERIFIED_AGAINST_PRIOR_KNOWN_HASH_2026-07-06_INGESTION",
-      "regulatory_currency_status": "pending_reverification",
+      "regulatory_currency_status": "verified_current",
       "copied_at": "2026-07-17T19:32:45.681973+00:00",
       "derived_artifacts": [
         {
@@ -89,7 +89,7 @@
       "jurisdiction": "UK",
       "local_integrity_status": "PASS",
       "official_origin_status": "VERIFIED_AGAINST_PRIOR_KNOWN_HASH_2026-07-06_INGESTION",
-      "regulatory_currency_status": "pending_reverification",
+      "regulatory_currency_status": "verified_current",
       "copied_at": "2026-07-17T19:32:45.689035+00:00",
       "derived_artifacts": [
         {
@@ -124,7 +124,7 @@
       "jurisdiction": "US",
       "local_integrity_status": "PASS",
       "official_origin_status": "FIRST_INGESTION_NO_PRIOR_KNOWN_HASH_TO_COMPARE",
-      "regulatory_currency_status": "pending_reverification",
+      "regulatory_currency_status": "verified_current",
       "copied_at": "2026-07-29T02:25:06.536379+00:00",
       "derived_artifacts": [
         {

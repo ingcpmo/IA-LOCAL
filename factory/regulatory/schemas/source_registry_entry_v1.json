@@ -33,8 +33,8 @@
     "official_origin_status": { "type": "string", "minLength": 3 },
     "regulatory_currency_status": {
       "type": "string",
-      "description": "NUNCA 'verified_current'/'current' en este ciclo -- solo 'pending_reverification' hasta que exista una re-verificacion real contra la fuente oficial en linea.",
-      "enum": ["pending_reverification"]
+      "description": "'pending_reverification' por defecto. Pasa a 'verified_current' UNICAMENTE via factory.regulatory.source_currency_confirmation.apply_source_currency_confirmation() -- el unico punto de escritura, que exige una decision SOURCE_CURRENCY human_confirmed real y re-verifica la evidencia al momento de aplicar. Nunca se escribe a mano ni por ningun otro camino.",
+      "enum": ["pending_reverification", "verified_current"]
     },
     "copied_at": { "type": "string" },
     "version": {
