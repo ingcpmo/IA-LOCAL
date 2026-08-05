@@ -30,6 +30,7 @@ import re
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
@@ -89,8 +90,21 @@ class FamiliesRegistryError(RuntimeError):
 # Registro de familias
 # ---------------------------------------------------------------------------
 
+@lru_cache(maxsize=1)
 def load_families() -> dict:
-    """Familias declaradas. Fail-closed: cualquier inconsistencia lanza."""
+    """Familias declaradas. Fail-closed: cualquier inconsistencia lanza.
+
+    Cacheada (2026-08-05): sin cache, `resolver.resolve()` la releia y
+    reparseaba el YAML en CADA llamada -- ~100ms perdidos por resolve(),
+    invisible con una sola llamada pero catastrofico en bucle (el panel
+    D2-A evaluando 20 requisitos tardaba +200s reales solo por esto).
+    Mismo patron ya usado por `load_requirements()`/`load_source_registry()`
+    en `requirement_catalog_loader.py`: el archivo es config gobernada, se
+    edita solo por accion deliberada, y ese cambio ya exige reiniciar
+    `factory-api` para que el codigo/JS nuevo se sirva (RC-5 de esta misma
+    sesion) -- el proceso vivo nunca necesita ver un cambio del archivo sin
+    reiniciar. `lru_cache` no cachea excepciones: un archivo roto sigue
+    fallando en cada intento, nunca queda enmascarado por un exito previo."""
     if not FAMILIES_FILE.is_file():
         raise FamiliesRegistryError(f"registro de familias no encontrado: {FAMILIES_FILE}")
     try:
@@ -187,7 +201,8 @@ class RecordValidation:
 
 def validate_record(record: dict, *, families: dict | None = None,
                     store_file: Path | None = None,
-                    known_instances: set[str] | None = None) -> RecordValidation:
+                    known_instances: set[str] | None = None,
+                    known_instance_families: dict[str, str] | None = None) -> RecordValidation:
     """Comprueba las invariantes. NO lanza: devuelve el detalle.
 
     El resolver la usa para marcar registros INVALID sin descartarlos en
@@ -197,7 +212,16 @@ def validate_record(record: dict, *, families: dict | None = None,
     no estan en disco -- el caso de la migracion, donde una CORRECTION y la
     decision que supersede se proyectan en la misma pasada. Sin esto, I-6
     marcaria como rota una cadena que en realidad esta completa.
-    """
+
+    `known_instance_families` (2026-08-05): mapa opcional {instance_id:
+    decision_family} para que la comprobacion de familia cruzada de I-6
+    ("no se puede superseder una decision de OTRA familia") tambien
+    funcione en la via rapida de `known_instances`, sin volver a leer el
+    almacen -- `_partition()` (decision_scope_resolver.py) ya tiene TODO
+    el almacen cargado en memoria cuando llama aqui por cada registro; sin
+    este parametro, esa via rapida omitia la comprobacion de familia por
+    completo (defecto real encontrado al optimizar, no solo una
+    micro-mejora de rendimiento)."""
     v: list[str] = []
     fams = families if families is not None else load_families()
 
@@ -251,6 +275,9 @@ def validate_record(record: dict, *, families: dict | None = None,
         elif known_instances is not None:
             if sup_id not in known_instances:
                 v.append(f"I-6: supersedes_instance_id={sup_id!r} no resuelve en el lote")
+            elif (known_instance_families is not None
+                  and known_instance_families.get(sup_id) != family):
+                v.append("I-6: no se puede superseder una decision de OTRA familia")
         elif store_file is not None or STORE_FILE.is_file():
             prev = {r["decision_instance_id"]: r for r in read_all(store_file)}
             target = prev.get(sup_id)

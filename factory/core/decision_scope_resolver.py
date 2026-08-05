@@ -151,12 +151,28 @@ def _load(store_file: Path | None) -> _Loaded:
 
 def _partition(records: list[dict], families: dict, family: str):
     """(validos_de_la_familia, ids_de_invalidos). Un registro invalido NUNCA
-    se descarta en silencio: se reporta."""
+    se descarta en silencio: se reporta.
+
+    `known_instances` (2026-08-05): `records` YA es el almacen completo
+    cargado por `_load()` -- pasarlo a `validate_record()` evita que I-6
+    (verificar que `supersedes_instance_id` resuelve) vuelva a leer el
+    archivo entero DESDE DISCO por cada registro AMENDING (CORRECTION/
+    SUPERSESSION). Sin esto, `resolve()` era cuadratico en el numero de
+    registros -- invisible con el almacen pequeño de las primeras sesiones,
+    catastrofico hoy (137+ registros): un panel que evalua 20 requisitos
+    (40+ resolve() reales) tardaba +200s. `validate_record()` ya soportaba
+    `known_instances` para el caso de migracion; aqui es exactamente el
+    mismo caso, un lote ya cargado en memoria."""
+    known_instance_families = {r["decision_instance_id"]: r.get("decision_family")
+                               for r in records if r.get("decision_instance_id")}
+    known_instances = set(known_instance_families)
     valid, invalid = [], []
     for r in records:
         if r.get("decision_family") != family:
             continue
-        res = store.validate_record(r, families=families, store_file=None)
+        res = store.validate_record(r, families=families, store_file=None,
+                                    known_instances=known_instances,
+                                    known_instance_families=known_instance_families)
         (valid if res.valid else invalid).append(r)
     return valid, [r.get("decision_instance_id", "<sin id>") for r in invalid]
 

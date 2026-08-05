@@ -247,6 +247,7 @@ def test_broken_families_registry_raises_instead_of_denying(tmp_path, monkeypatc
     """Un despliegue roto NO debe ser indistinguible de una denegación
     legítima: es la única excepción que el resolver propaga."""
     monkeypatch.setattr(store, "FAMILIES_FILE", tmp_path / "no_existe.yaml")
+    store.load_families.cache_clear()  # lru_cache: forzar releer el archivo nuevo
     with pytest.raises(resolver.ResolverConfigurationError):
         resolver.resolve("D1", PART211, store_file=tmp_path / "x.jsonl")
 

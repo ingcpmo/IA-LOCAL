@@ -58,6 +58,7 @@ def test_families_registry_rejects_unknown_consumer(tmp_path, monkeypatch):
         "    consumers: [inventado]\n",
         encoding="utf-8")
     monkeypatch.setattr(store, "FAMILIES_FILE", bad)
+    store.load_families.cache_clear()  # lru_cache: forzar releer el archivo nuevo
     with pytest.raises(store.FamiliesRegistryError, match="no declarados"):
         store.load_families()
 
