@@ -140,6 +140,18 @@ families:
     consumers: [audit_reporting, release_gate]
     requires_human_confirmation: true
 
+  SOURCE_CURRENCY:
+    label: "Confirmacion de vigencia regulatoria de una fuente (G3)"
+    target_kind: source_id
+    target_registry: factory/regulatory/sources/registry.json
+    target_registry_id_path: "sources[].source_id"
+    # ALL_SNAPSHOT PROHIBIDO a proposito, mismo criterio que D2: cada fuente
+    # se confirma por su propia evidencia real (source_currency_log.jsonl),
+    # nunca "confirmo todas de una".
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [source_lifecycle_transition]
+    requires_human_confirmation: true
+
   # Anotacion sobre el propio registro. Existe porque el almacen es
   # append-only: cuando un defecto de software deja basura en el registro de
   # registros, la unica forma honesta de explicarla es AÑADIR la explicacion,

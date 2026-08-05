@@ -170,6 +170,9 @@ VALID_EVENTS = {
     # "URL viva pero tipo de artefacto equivocado" (comparable=False)
     "regulatory_artifact_type_mismatch_report_generated",
     "regulatory_source_url_updated",
+    # SOURCE_CURRENCY (2026-08-05) — apply_source_currency_confirmation()
+    # escribe regulatory_currency_status; único evento agregado por decisión.
+    "regulatory_source_currency_confirmed",
     # W5 V2 — alta gobernada de una fuente regulatoria NUEVA
     # (human_source_registration). Distinto de _url_updated: aquel modifica una
     # fuente existente, este ingiere la copia canónica y crea la entrada.

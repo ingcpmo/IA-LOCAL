@@ -44,7 +44,19 @@ from factory.services import decision_store_v2 as store
 # listo. No es la primera vez: es el mismo patrón de "el panel `d2a` existe en
 # el índice pero cae a `panelPendiente()` porque nadie le escribió el cuerpo" --
 # aquí faltaba un nivel más abajo, en los datos que cualquier panel necesitaría.
-GOVERNED_FAMILIES = ("D1", "D2", "D3", "D4", "D5", "ARTIFACT_VERSION", "APPLICABILITY_MATRIX")
+#
+# DEUDA REAL, no resuelta aquí: `factory/registry/decision_families.yaml` se
+# declara a sí mismo como "la fuente única de verdad" de qué familias existen
+# -- "agregar una familia NUNCA requiere tocar una tupla de código" es su
+# propia regla dura. Esta tupla ES esa tupla de código que la regla prohíbe:
+# APPLICABILITY_MATRIX ya estaba correctamente registrada en ese YAML y aun
+# así faltaba aquí, precisamente porque son dos listas mantenidas a mano por
+# separado. Lo correcto sería derivar GOVERNED_FAMILIES de
+# `store.load_families().keys()` en vez de duplicarla; no se hace en este
+# commit por el riesgo de tocar el orden/comportamiento que otros tests
+# puedan asumir -- queda declarado como el refactor pendiente correcto.
+GOVERNED_FAMILIES = ("D1", "D2", "D3", "D4", "D5", "ARTIFACT_VERSION",
+                     "APPLICABILITY_MATRIX", "SOURCE_CURRENCY")
 
 
 class GovernanceNotFoundError(LookupError):
