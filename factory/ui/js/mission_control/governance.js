@@ -70,7 +70,14 @@ const PANELS = [
      servidor: no era un 409 silencioso, era un botón que nunca existió. */
   { id:'applicability-matrix', gate:'G6', family:'APPLICABILITY_MATRIX', titulo:'Matriz de aplicabilidad — versión vigente',
     resumen:'Confirma la versión vigente de la matriz. Precondición de G5 (D2-A) y de la recalificación del modelo.' },
-  { id:'golden-dataset',     gate:'G5', family:'ARTIFACT_VERSION', titulo:'Golden Dataset — primera aprobación (G6)',
+  { id:'golden-dataset',     gate:'G6-GD', family:'ARTIFACT_VERSION', titulo:'Golden Dataset — primera aprobación (G6)',
+    /* NUNCA 'G5' ni 'G6' a secas -- ya son gates REALES del camino critico
+       interno (G5 = D2-A/Evidence Packs, G6 = Matriz de aplicabilidad) y
+       significan algo distinto. Reusar 'G5' aqui (defecto real, 2026-08-05)
+       le pego a este panel el bloqueo AJENO de "packs sin cobertura D2" y
+       goveOpen() nunca dejaba ni abrirlo. Un id que no existe en
+       GOV.critical_path resuelve a {status:'?'} via gateOf() -- nunca
+       BLOQUEADO, nunca hereda un motivo que no es el suyo. */
     resumen:'Otorga la primera cobertura formal al dataset bootstrapeado, sin cambiar su contenido ni versión.' },
 ];
 
