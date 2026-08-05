@@ -558,6 +558,45 @@ def test_n14_a_different_target_set_is_a_different_act(tmp_store):
     assert len(firmadas) == 2
 
 
+def test_n14_same_target_set_different_payload_is_a_different_act(tmp_store):
+    """DEFECTO REAL (2026-08-05, ARTIFACT_VERSION-2026-006): dos bumps de
+    version DISTINTOS del MISMO artefacto comparten target_set_hash a
+    proposito (el artefacto no cambia entre bumps) -- lo unico que distingue
+    el acto es el `payload` (from_version/to_version/hashes). Cesar firmo
+    2.0->2.1 cinco veces seguidas (201 Created las cinco) y el
+    corto-circuito de idempotencia devolvia siempre la firma vieja de
+    1.0->2.0 (2026-08-01) como "vigente" -- su firma real de hoy nunca se
+    escribio. `target_set_hash` solo no basta para esta familia; hace falta
+    tambien comparar el `payload`."""
+    artefacto = ["factory/regulatory/requirement_catalog/requirements.yaml"]
+    bump_1_a_2 = gov.propose(
+        "ARTIFACT_VERSION", target_ids=artefacto, proposed_by_id="mission_control_ui",
+        reason="bump 1.0->2.0",
+        payload={"artifact_path": artefacto[0], "artifact_hash_before": "aaa",
+                 "from_version": "1.0", "to_version": "2.0",
+                 "expected_hash_after": "bbb", "change_reason": "bump 1.0->2.0"},
+        store_file=tmp_store)
+    _confirmar(tmp_store, bump_1_a_2)
+
+    bump_2_a_21 = gov.propose(
+        "ARTIFACT_VERSION", target_ids=artefacto, proposed_by_id="mission_control_ui",
+        reason="bump 2.0->2.1",
+        payload={"artifact_path": artefacto[0], "artifact_hash_before": "bbb",
+                 "from_version": "2.0", "to_version": "2.1",
+                 "expected_hash_after": "bbb", "change_reason": "bump 2.0->2.1"},
+        store_file=tmp_store)
+    res = _confirmar(tmp_store, bump_2_a_21)
+
+    assert res["already_signed"] is False, (
+        "el defecto real: la firma de 2.0->2.1 se tragaba como 'ya firmada' "
+        "apuntando a la firma vieja de 1.0->2.0")
+    assert res["confirms_instance_id"] == bump_2_a_21["proposal_id"]
+    firmadas = [r for r in store.read_all(tmp_store)
+                if r.get("decision_origin") == "human_confirmed"
+                and r.get("decision_family") == "ARTIFACT_VERSION"]
+    assert len(firmadas) == 2, [r["decision_instance_id"] for r in firmadas]
+
+
 def test_n14_a_rejected_act_can_be_attempted_again(tmp_store):
     """Un REJECT no otorga y por tanto no bloquea reintentar el acto.
 

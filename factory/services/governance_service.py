@@ -697,13 +697,34 @@ def _proposal_family(instance_id: str, *, store_file: Path | None) -> str | None
 
 def equivalent_signed_decision(family: str, *, decision_type: str,
                                target_set_hash: str,
+                               payload: dict | None = None,
                                store_file: Path | None = None) -> dict | None:
     """Decisión ya FIRMADA y vigente equivalente a la que se va a firmar.
 
-    Equivalente = misma familia, mismo tipo y mismo conjunto objetivo (por
-    `target_set_hash`, no por el orden de la lista). Vigente = `status ACTIVE`,
-    `human_confirmed` y otorgante (`APPROVE`): un REJECT o una DEFER no impiden
-    volver a intentar el acto, y una superseded ya no es la vigente.
+    Equivalente = misma familia, mismo tipo, mismo conjunto objetivo (por
+    `target_set_hash`, no por el orden de la lista) Y mismo `payload`. Vigente
+    = `status ACTIVE`, `human_confirmed` y otorgante (`APPROVE`): un REJECT o
+    una DEFER no impiden volver a intentar el acto, y una superseded ya no es
+    la vigente.
+
+    TERCER DEFECTO REAL cerrado (2026-08-05, ARTIFACT_VERSION-2026-006): el
+    `payload` NO era parte de "equivalente" -- `target_set_hash` solo ve
+    `resolved_target_ids` (aquí, el `artifact_path`), así que TODA propuesta
+    ARTIFACT_VERSION sobre el mismo artefacto comparte target_set_hash sin
+    importar qué transición declare. Cesar firmó -006 (2.0->2.1) cinco veces
+    seguidas (201 Created las cinco); el corto-circuito de idempotencia
+    encontraba la firma de -002 (1.0->2.0, 2026-08-01) como "vigente" por
+    family+type+target y devolvía `already_signed: true` apuntando a ELLA,
+    sin escribir nunca el `human_confirmed` real de hoy -- la firma de Cesar
+    nunca quedó guardada, y el apply posterior citaba correctamente la
+    decisión equivocada porque nunca hubo otra. Exactamente el patrón que ya
+    advertía `test_n14_a_different_target_set_is_a_different_act`: "silenciar
+    una decisión real es peor que duplicarla" -- solo que aquí el conjunto
+    objetivo era intencionalmente el MISMO (el artefacto no cambia entre
+    bumps) y lo que de verdad distingue el acto es la transición declarada en
+    el `payload`. Comparar `payload` además de target_set_hash resuelve esto
+    sin afectar a D1/D2/... (su `payload` es `{}` siempre, así que dos
+    propuestas del mismo acto siguen comparando igual).
 
     **Solo cuenta si nació de confirmar una propuesta** (`confirms_instance_id`).
     Ese filtro es el que mantiene la regla estrecha, y no está por conveniencia:
@@ -745,6 +766,7 @@ def equivalent_signed_decision(family: str, *, decision_type: str,
     firmado por un humano deja SUPERSEDED al que supersede, sin importar
     el tipo de decisión del que lo supersede.
     """
+    payload = payload or {}
     registros = store.read_all(store_file)
     proyectado = store.project_status(registros)
     vigente = None
@@ -752,6 +774,7 @@ def equivalent_signed_decision(family: str, *, decision_type: str,
         if (r.get("decision_family") == family
                 and r.get("decision_type") == decision_type
                 and r.get("target_set_hash") == target_set_hash
+                and (r.get("payload") or {}) == payload
                 and r.get("decision_origin") == "human_confirmed"
                 and r.get("confirms_instance_id")
                 and r.get("decision") in store.GRANTING_DECISIONS
@@ -828,7 +851,8 @@ def confirm(instance_id: str, *, approved_by_id: str,
     if proposal_state(instance_id, records=registros) == PROPOSAL_PROPOSED:
         ya_firmada = equivalent_signed_decision(
             familia, decision_type=propuesta["decision_type"],
-            target_set_hash=propuesta["target_set_hash"], store_file=store_file)
+            target_set_hash=propuesta["target_set_hash"],
+            payload=propuesta.get("payload"), store_file=store_file)
         if ya_firmada is not None:
             return {**ya_firmada,
                     "already_signed": True,
