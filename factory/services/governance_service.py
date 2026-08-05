@@ -288,8 +288,23 @@ def list_proposals(family: str | None = None, *,
             continue
         if family and r.get("decision_family") != family:
             continue
+        iid = r["decision_instance_id"]
+        estado = proposal_state(iid, records=recs)
+        # Quién firmó y cuándo, para paneles que necesitan mostrar historial
+        # (RC-7 otra vez, versión mansa: un panel sin nada PROPOSED no dice
+        # "ya se firmó, aquí" y se lee como vacío/roto en vez de resuelto).
+        # Solo se busca cuando la propuesta SÍ tiene un cierre -- CONFIRMED
+        # es la única familia de estados con un `confirms_instance_id` real
+        # que apunte de vuelta aquí.
+        signed_by_id = signed_by_display_name = signed_at = None
+        if estado == PROPOSAL_CONFIRMED:
+            cierre = next((c for c in recs if c.get("confirms_instance_id") == iid), None)
+            if cierre is not None:
+                signed_by_id = cierre.get("approved_by_id")
+                signed_by_display_name = cierre.get("approved_by_display_name")
+                signed_at = cierre.get("recorded_at")
         salida.append({
-            "decision_instance_id": r["decision_instance_id"],
+            "decision_instance_id": iid,
             "decision_family": r["decision_family"],
             "decision_type": r["decision_type"],
             "target_set_hash": r["target_set_hash"],
@@ -302,7 +317,10 @@ def list_proposals(family: str | None = None, *,
             "payload": r.get("payload"),
             "proposed_by_id": r.get("proposed_by_id"),
             "recorded_at": r["recorded_at"],
-            "proposal_state": proposal_state(r["decision_instance_id"], records=recs),
+            "proposal_state": estado,
+            "signed_by_id": signed_by_id,
+            "signed_by_display_name": signed_by_display_name,
+            "signed_at": signed_at,
             "grants_coverage": False,
         })
     return salida

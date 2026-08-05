@@ -865,8 +865,21 @@ function sourceCurrencyProposals(){
     .filter(p => p.proposal_state === 'PROPOSED');
 }
 
+/* Hallazgo real (2026-08-05): con las 4 fuentes ya firmadas, el panel
+   solo mostraba "Ninguna propuesta pendiente de firma" -- verdad, pero
+   indistinguible de un panel roto o desactualizado para quien llega
+   despues de firmar todo. `firmadas()` recupera el historial (mismo
+   GOV.proposals.SOURCE_CURRENCY, filtrado por CONFIRMED) para que
+   "ya se hizo, aqui esta la prueba" sea tan visible como "falta firmar". */
+function sourceCurrencyFirmadas(){
+  return (GOV?.proposals?.SOURCE_CURRENCY || [])
+    .filter(p => p.proposal_state === 'CONFIRMED')
+    .sort((a, b) => (a.signed_at||'').localeCompare(b.signed_at||''));
+}
+
 function panelSourceCurrency(){
   const propuestas = sourceCurrencyProposals();
+  const firmadas = sourceCurrencyFirmadas();
 
   const bloques = propuestas.map(p => {
     const sid = (p.resolved_target_ids || [])[0] || '?';
@@ -886,7 +899,20 @@ function panelSourceCurrency(){
       </div>
       ${statusLine(prefix)}
     </div>`;
-  }).join('') || '<div class="meta" style="margin-top:8px">Ninguna propuesta SOURCE_CURRENCY pendiente de firma.</div>';
+  }).join('') || `<div class="meta" style="margin-top:8px;color:var(--pass)">
+    Ninguna propuesta pendiente de firma -- las fuentes de abajo ya están confirmadas.</div>`;
+
+  const historial = firmadas.length ? `
+    <div style="margin-top:16px"><b>YA FIRMADAS (${firmadas.length})</b></div>
+    <table class="tbl" style="width:100%;font-size:11px;margin-top:6px">
+      <thead><tr><th>Fuente</th><th>Propuesta</th><th>Firmado por</th><th>Cuándo</th></tr></thead>
+      <tbody>${firmadas.map(p => `<tr>
+        <td class="mono">${esc((p.resolved_target_ids||[])[0] || '?')}</td>
+        <td class="mono">${esc(p.decision_instance_id)}</td>
+        <td>${esc(p.signed_by_display_name || p.signed_by_id || '?')}</td>
+        <td class="mono">${esc((p.signed_at||'').slice(0,16).replace('T',' '))}</td>
+      </tr>`).join('')}</tbody>
+    </table>` : '';
 
   return `
   <div class="card">
@@ -900,6 +926,7 @@ function panelSourceCurrency(){
       técnica que ya trae la propuesta.</div>
     ${NO_EJECUTA}
     ${bloques}
+    ${historial}
   </div>`;
 }
 
