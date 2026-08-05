@@ -37,7 +37,14 @@ from factory.core import decision_scope_resolver as _resolver
 from factory.core import identity_policy as _identity
 from factory.services import decision_store_v2 as store
 
-GOVERNED_FAMILIES = ("D1", "D2", "D3", "D4", "D5", "ARTIFACT_VERSION")
+# RC-7 (2026-08-05): APPLICABILITY_MATRIX faltaba aquí -- `confirm()`/`propose()`
+# ya la soportaban (son genéricos por familia), pero get_state() nunca exponía
+# `coverage`/`proposals`/`family_state_hashes` de esta familia, así que ningún
+# panel podía construir un POST de firma para ella aunque el backend estuviera
+# listo. No es la primera vez: es el mismo patrón de "el panel `d2a` existe en
+# el índice pero cae a `panelPendiente()` porque nadie le escribió el cuerpo" --
+# aquí faltaba un nivel más abajo, en los datos que cualquier panel necesitaría.
+GOVERNED_FAMILIES = ("D1", "D2", "D3", "D4", "D5", "ARTIFACT_VERSION", "APPLICABILITY_MATRIX")
 
 
 class GovernanceNotFoundError(LookupError):
@@ -423,7 +430,12 @@ def get_state(*, store_file: Path | None = None) -> dict:
                       # deliberadamente acotado a este único artefacto -- es
                       # el único caso real que lo necesita hoy.
                       "catalog_state": artifact_state(
-                          "factory/regulatory/requirement_catalog/requirements.yaml")},
+                          "factory/regulatory/requirement_catalog/requirements.yaml"),
+                      # Mismo patrón que catalog_state, para el panel de la matriz
+                      # de aplicabilidad (RC-7): la versión VIVA del archivo, no un
+                      # literal congelado en el HTML.
+                      "matrix_state": artifact_state(
+                          "factory/regulatory/applicability_matrix.yaml")},
         # G4c (hallazgo 2026-08-04): propuestas CON payload, para que un panel
         # pueda filtrar por artefacto (`payload.artifact_path`/
         # `resolved_target_ids`) en vez de mezclar todas las propuestas de la

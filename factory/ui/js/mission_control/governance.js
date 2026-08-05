@@ -62,7 +62,19 @@ const PANELS = [
        la transicion real cambia con el tiempo (hoy es 2.0->2.1) y vive en el
        endpoint, nunca en un literal del indice. */
     resumen:'Bump de versión del catálogo (transición vigente en el panel). Registrar NO lo aplica: ver factory/core/artifact_version_apply.py.' },
+  /* RC-7 (panel ARQ, 2026-08-05): estos dos NO tenían panel -- caían a
+     panelPendiente() (solo "Volver al índice", sin formulario) porque nadie
+     les escribió el cuerpo. APPLICABILITY_MATRIX tampoco estaba en
+     GOVERNED_FAMILIES del backend, así que ni siquiera había datos que un
+     panel pudiera leer. Cesar firmó varias veces sin que nada llegara al
+     servidor: no era un 409 silencioso, era un botón que nunca existió. */
+  { id:'applicability-matrix', gate:'G6', family:'APPLICABILITY_MATRIX', titulo:'Matriz de aplicabilidad — versión vigente',
+    resumen:'Confirma la versión vigente de la matriz. Precondición de G5 (D2-A) y de la recalificación del modelo.' },
+  { id:'golden-dataset',     gate:'G5', family:'ARTIFACT_VERSION', titulo:'Golden Dataset — primera aprobación (G6)',
+    resumen:'Otorga la primera cobertura formal al dataset bootstrapeado, sin cambiar su contenido ni versión.' },
 ];
+
+const GOLDEN_DATASET_ARTIFACT_ID = 'factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py';
 
 const CATALOG_ARTIFACT_ID = 'factory/regulatory/requirement_catalog/requirements.yaml';
 
@@ -599,6 +611,123 @@ function panelCatalogVersion(){
   </div>`;
 }
 
+/* ── Panel D-2 — Matriz de aplicabilidad (APPLICABILITY_MATRIX, G6) ────── */
+
+/* RC-7 (panel ARQ, 2026-08-05): esta familia nunca tuvo panel -- ni siquiera
+   estaba en GOVERNED_FAMILIES del backend, así que GOV.proposals/coverage/
+   family_state_hashes de APPLICABILITY_MATRIX no existían para ningún
+   cliente. A diferencia de catalog-version, el payload de estas propuestas es
+   SIEMPRE `{}` (no declaran una transición estructurada de 6 campos, son una
+   aprobación de primer grado sobre un `target_id` fijo, la versión de la
+   matriz) -- por eso el botón CONFIRMA directamente el `decision_instance_id`
+   mostrado, sin echo-back, con el endpoint genérico de confirmación (el mismo
+   que ya usan D1/D1-A/excepción). */
+
+function applicabilityMatrixProposals(){
+  return GOV?.proposals?.APPLICABILITY_MATRIX || [];
+}
+
+function validApplicabilityMatrixProposal(ms){
+  if(!ms || !ms.found) return null;
+  return applicabilityMatrixProposals().find(p =>
+    p.proposal_state === 'PROPOSED' &&
+    (p.resolved_target_ids||[]).includes(ms.live_version)
+  ) || null;
+}
+
+function panelApplicabilityMatrix(){
+  const ms = GOV.artifacts?.matrix_state || {found:false};
+  const propuestas = applicabilityMatrixProposals();
+  const valida = validApplicabilityMatrixProposal(ms);
+
+  return `
+  <div class="card">
+    <b>Matriz de aplicabilidad — versión vigente (G6)</b>
+
+    ${ms.found ? `
+    <div class="meta" style="margin-top:6px">Estado VIVO (calculado ahora, no texto fijo):
+      versión <span class="mono">${esc(ms.live_version)}</span>,
+      hash <span class="mono">${esc((ms.live_sha256||'').slice(0,16))}…</span>.</div>
+    <div class="meta" style="margin-top:4px">Última aprobación real:
+      <span class="mono">${esc(ms.approved_by_decision||'ninguna')}</span> →
+      versión <span class="mono">${esc(ms.last_approved_version||'?')}</span>.</div>
+    ` : `<div class="meta" style="margin-top:6px;color:var(--warn)">No se pudo leer el estado vivo de este artefacto.</div>`}
+
+    <div style="margin-top:12px"><b>PROPUESTAS APPLICABILITY_MATRIX</b>
+      <span class="meta">(target = versión de la matriz, no un artifact_path)</span></div>
+    ${propuestas.map(p => `<div class="meta" style="margin-top:4px">
+      <span class="mono">${esc(p.decision_instance_id)}</span>
+      [${esc(p.proposal_state)}] target: <span class="mono">${esc((p.resolved_target_ids||[]).join(', '))}</span>
+      ${valida && p.decision_instance_id===valida.decision_instance_id ? ' <b style="color:var(--pass)">← vigente, firmable</b>' : ''}
+    </div>`).join('') || '<div class="meta" style="margin-top:4px">Ninguna propuesta registrada.</div>'}
+
+    ${signatureForm('matx')}
+    ${NO_EJECUTA}
+    <div style="margin-top:12px">
+      <button id="matx-submit-btn" ${valida?'':'disabled'} onclick="govSubmitApplicabilityMatrix()">
+        ${valida ? `Confirmar ${esc(valida.decision_instance_id)}` : 'Confirmar'}</button>
+      <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
+    </div>
+    ${!valida ? `<div class="meta" style="margin-top:6px;color:var(--warn)">
+      No hay ninguna propuesta PROPOSED atada a la versión vigente
+      (<span class="mono">${esc(ms.live_version||'?')}</span>) -- el botón queda deshabilitado.</div>` : ''}
+    ${statusLine('matx')}
+  </div>`;
+}
+
+/* ── Panel D-3 — Golden Dataset, primera aprobación (ARTIFACT_VERSION, G6) ── */
+
+/* Misma familia que catalog-version pero OTRO artefacto -- filtrado por
+   artifact_path, igual disciplina que evitó mezclar golden_dataset bajo
+   "Versionado del catálogo" el 2026-08-04. Payload también `{}`: es una
+   aprobación de primer grado, no una transición declarada, así que tampoco
+   hace falta echo-back. */
+
+function goldenDatasetProposals(){
+  const props = GOV?.proposals?.ARTIFACT_VERSION || [];
+  return props.filter(p => (p.resolved_target_ids||[]).includes(GOLDEN_DATASET_ARTIFACT_ID));
+}
+
+function validGoldenDatasetProposal(){
+  return goldenDatasetProposals().find(p => p.proposal_state === 'PROPOSED') || null;
+}
+
+function panelGoldenDataset(){
+  const propuestas = goldenDatasetProposals();
+  const valida = validGoldenDatasetProposal();
+
+  return `
+  <div class="card">
+    <b>Golden Dataset — primera aprobación (G6)</b>
+    <div class="meta" style="margin-top:6px">
+      Artefacto <span class="mono">${esc(GOLDEN_DATASET_ARTIFACT_ID)}</span> está
+      bootstrapeado (foto del estado observado, <span class="mono">approved_by_decision: null</span>)
+      -- ninguna decisión humana lo respalda todavía. Confirmar esta propuesta NO
+      cambia el contenido ni la versión del dataset: solo otorga la primera
+      cobertura formal, una de las 5 precondiciones antes de que la
+      recalificación del modelo sea ejecutable.</div>
+
+    <div style="margin-top:12px"><b>PROPUESTAS ARTIFACT_VERSION PARA ESTE ARTEFACTO</b>
+      <span class="meta">(filtradas por artifact_path -- una propuesta del catálogo
+      nunca aparece aquí)</span></div>
+    ${propuestas.map(p => `<div class="meta" style="margin-top:4px">
+      <span class="mono">${esc(p.decision_instance_id)}</span> [${esc(p.proposal_state)}]
+      ${valida && p.decision_instance_id===valida.decision_instance_id ? ' <b style="color:var(--pass)">← vigente, firmable</b>' : ''}
+    </div>`).join('') || '<div class="meta" style="margin-top:4px">Ninguna propuesta registrada.</div>'}
+
+    ${signatureForm('gdset')}
+    ${NO_EJECUTA}
+    <div style="margin-top:12px">
+      <button id="gdset-submit-btn" ${valida?'':'disabled'} onclick="govSubmitGoldenDataset()">
+        ${valida ? `Confirmar ${esc(valida.decision_instance_id)}` : 'Confirmar'}</button>
+      <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
+    </div>
+    ${!valida ? `<div class="meta" style="margin-top:6px;color:var(--warn)">
+      No hay ninguna propuesta PROPOSED para este artefacto -- el botón queda deshabilitado.</div>` : ''}
+    ${statusLine('gdset')}
+  </div>`;
+}
+
 /* ── Panel E — Excepción de auditoría ──────────────────────────────────── */
 
 /* Las cinco medidas preventivas de AUDIT_FORK_REMEDIATION_SPEC §7. `Aceptar`
@@ -724,6 +853,8 @@ function paint(){
   else if(p.id==='d1a')            body = panelD1A();
   else if(p.id==='pack-211')       body = panelPack211();
   else if(p.id==='catalog-version') body = panelCatalogVersion();
+  else if(p.id==='applicability-matrix') body = panelApplicabilityMatrix();
+  else if(p.id==='golden-dataset') body = panelGoldenDataset();
   else if(p.id==='excepcion-auditoria') body = panelExcepcion();
   else                             body = panelPendiente(p);
   el.innerHTML = banner + body;
@@ -1010,6 +1141,61 @@ export async function govSubmitCatalogVersion(){
   } finally {
     setBusy('catv-submit-btn', false);
   }
+}
+
+/* Confirma DIRECTAMENTE una propuesta ya existente y visible en pantalla --
+   sin propose() previo (a diferencia de `proponerYConfirmar`) y sin
+   echo-back (a diferencia de catalog-version): el payload de estas dos
+   familias es siempre `{}`, así que no hay campos que el humano deba ver
+   coincidir byte a byte antes de firmar. Reutilizado por los paneles de
+   matriz de aplicabilidad y golden dataset (RC-7, 2026-08-05). */
+async function confirmarPropuestaExistente(instanceId, family, sig, {statusPrefix, btnId}){
+  if(!sig.reason){ setStatus(statusPrefix,'warn','El motivo es obligatorio.'); return; }
+  if(!sig.id){ setStatus(statusPrefix,'warn','La firma exige un identificador real.'); return; }
+  if(GOV_STALE){
+    setStatus(statusPrefix,'warn','El estado cambió desde que cargaste esta página. '
+      + 'Pulsa "Recargar estado" arriba antes de firmar.');
+    return;
+  }
+  setBusy(btnId, true);
+  setStatus(statusPrefix,'busy','Confirmando…');
+  try {
+    const r = await postJSON(`/api/v1/layer9/governance/decisions/${instanceId}/confirm`, {
+      approved_by_id: sig.id, approved_by_display_name: sig.name || sig.id,
+      reason: sig.reason,
+      family_state_hash: GOV?.family_state_hashes?.[family],
+    });
+    if(!r.ok){ setStatus(statusPrefix,'fail', explicaError(r.status, r.data)); return; }
+    setStatus(statusPrefix,'ok', explicaFirma(r.data));
+    govRefresh();
+  } catch(e) {
+    setStatus(statusPrefix,'fail', 'Error de red/JS al firmar: ' + (e && e.message || e));
+  } finally {
+    setBusy(btnId, false);
+  }
+}
+
+export async function govSubmitApplicabilityMatrix(){
+  const ms = GOV?.artifacts?.matrix_state;
+  const valida = validApplicabilityMatrixProposal(ms);
+  if(!valida){
+    setStatus('matx','warn','No hay ninguna propuesta PROPOSED atada a la versión vigente.');
+    return;
+  }
+  await confirmarPropuestaExistente(valida.decision_instance_id, 'APPLICABILITY_MATRIX',
+                                    readSignature('matx'),
+                                    {statusPrefix:'matx', btnId:'matx-submit-btn'});
+}
+
+export async function govSubmitGoldenDataset(){
+  const valida = validGoldenDatasetProposal();
+  if(!valida){
+    setStatus('gdset','warn','No hay ninguna propuesta PROPOSED para este artefacto.');
+    return;
+  }
+  await confirmarPropuestaExistente(valida.decision_instance_id, 'ARTIFACT_VERSION',
+                                    readSignature('gdset'),
+                                    {statusPrefix:'gdset', btnId:'gdset-submit-btn'});
 }
 
 export async function govSubmitRevokeD2003(){

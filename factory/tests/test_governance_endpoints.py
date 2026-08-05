@@ -103,6 +103,46 @@ def test_u5_the_notice_travels_with_the_data_not_only_in_the_html(tmp_store):
     assert "NO ejecuta" in state["notice"]
 
 
+def test_rc7_applicability_matrix_is_a_governed_family(tmp_store):
+    """DEFECTO REAL (RC-7, 2026-08-05): APPLICABILITY_MATRIX no estaba en
+    GOVERNED_FAMILIES -- confirm()/propose() ya la soportaban (genericos por
+    familia), pero get_state() nunca exponia su coverage/proposals/
+    family_state_hash, asi que ningun panel podia leer nada para construir
+    el POST de firma. Cesar firmo repetidas veces sin que nada llegara al
+    servidor: no era un 409 silencioso, era un boton que nunca pudo
+    existir por falta de datos."""
+    assert "APPLICABILITY_MATRIX" in gov.GOVERNED_FAMILIES
+    state = gov.get_state(store_file=tmp_store)
+    assert "APPLICABILITY_MATRIX" in state["coverage"]
+    assert "APPLICABILITY_MATRIX" in state["proposals"]
+    assert "APPLICABILITY_MATRIX" in state["family_state_hashes"]
+    assert "APPLICABILITY_MATRIX" in state["active_instances"]
+
+
+def test_rc7_applicability_matrix_proposal_is_confirmable_via_generic_endpoint(tmp_store):
+    """El endpoint generico de confirmacion ya sabia tratar cualquier familia
+    -- la prueba de que el gap era solo de datos expuestos, no de logica de
+    firma."""
+    prop = gov.propose(
+        "APPLICABILITY_MATRIX", target_ids=["2.1"], proposed_by_id="mission_control_ui",
+        reason="prueba", store_file=tmp_store)
+    conf = gov.confirm(
+        prop["proposal_id"], approved_by_id="cesar", approved_by_display_name="Cesar",
+        reason="prueba", family_state_hash=prop["family_state_hash"],
+        store_file=tmp_store)
+    assert conf["already_signed"] is False
+    assert conf["confirms_instance_id"] == prop["proposal_id"]
+
+
+def test_rc7_matrix_state_is_exposed_alongside_catalog_state(tmp_store):
+    """Mismo patron que catalog_state (G4c) para que el panel de la matriz
+    lea la version VIVA, nunca un literal congelado en el HTML."""
+    state = gov.get_state(store_file=tmp_store)
+    ms = state["artifacts"]["matrix_state"]
+    assert ms["artifact_id"] == "factory/regulatory/applicability_matrix.yaml"
+    assert ms["found"] is True
+
+
 def test_the_critical_path_says_why_a_gate_is_blocked(tmp_store):
     """U-7: un bloqueo sin motivo es indistinguible de un fallo."""
     state = gov.get_state(store_file=tmp_store)
