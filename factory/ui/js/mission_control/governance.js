@@ -79,6 +79,13 @@ const PANELS = [
        GOV.critical_path resuelve a {status:'?'} via gateOf() -- nunca
        BLOQUEADO, nunca hereda un motivo que no es el suyo. */
     resumen:'Otorga la primera cobertura formal al dataset bootstrapeado, sin cambiar su contenido ni versión.' },
+  { id:'source-currency',   gate:'G3', family:'SOURCE_CURRENCY', titulo:'Vigencia regulatoria de fuentes (G3)',
+    /* Aqui SI es correcto reusar 'G3': su bloqueo real (G2 sin cerrar) es
+       una precondicion legitima de este panel -- source_currency_checker.py
+       ya lo exige antes de salir a la red (§ "COBERTURA DE DECISION ANTES
+       DE LA RED"). No es el mismo error que 'G5'/'G6' en golden-dataset:
+       ahi el bloqueo prestado no tenia relacion real con el panel. */
+    resumen:'Un hash identico no prueba vigencia normativa -- el juicio de que la norma sigue vigente lo declara quien firma, fuente por fuente.' },
 ];
 
 const GOLDEN_DATASET_ARTIFACT_ID = 'factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py';
@@ -757,6 +764,60 @@ function medidas(){
                       ev:`${m.evidence_kind||''}: ${m.evidence||''}` }));
 }
 
+/* ── Panel D-4 — Vigencia regulatoria de fuentes (SOURCE_CURRENCY, G3) ─── */
+
+/* A diferencia de matriz/golden-dataset (un solo target), aqui hay hasta 4
+   fuentes independientes con su propia evidencia y su propia decision --
+   cada bloque es un mini-formulario con su propio prefijo de ids, firmable
+   por separado. `regulatory_judgment_note` del payload es la nota TECNICA
+   que quien propuso (agente) escribio -- describe lo que el checker
+   verifico, nunca afirma vigencia. El MOTIVO que se pide aqui en la firma
+   es el juicio humano real: "reviso esto y sigo considerando que la norma
+   esta vigente", o lo que corresponda. */
+
+function sourceCurrencyProposals(){
+  return (GOV?.proposals?.SOURCE_CURRENCY || [])
+    .filter(p => p.proposal_state === 'PROPOSED');
+}
+
+function panelSourceCurrency(){
+  const propuestas = sourceCurrencyProposals();
+
+  const bloques = propuestas.map(p => {
+    const sid = (p.resolved_target_ids || [])[0] || '?';
+    const prefix = 'sc_' + sid.replace(/[^a-zA-Z0-9]/g, '_');
+    const pl = p.payload || {};
+    return `<div class="card" style="margin-top:10px;padding:8px;border:1px solid var(--warn)">
+      <b>${esc(sid)}</b>
+      <div class="meta" style="margin-top:6px">PROPOSAL_ID = <span class="mono">${esc(p.decision_instance_id)}</span></div>
+      <div class="meta">Verificación revisada: <span class="mono">${esc(pl.reviewed_log_checked_at||'?')}</span></div>
+      <div class="meta">SHA256 observado: <span class="mono">${esc((pl.reviewed_downloaded_sha256||'').slice(0,16))}…</span></div>
+      <div class="meta" style="margin-top:6px;color:var(--faint)">${esc(pl.regulatory_judgment_note||'')}</div>
+      ${signatureForm(prefix, {motivoLabel:'JUICIO DE VIGENCIA (tuyo, no del checker)'})}
+      <div style="margin-top:8px">
+        <button id="${prefix}-submit-btn"
+          onclick="govSubmitSourceCurrency('${esc(p.decision_instance_id)}','${esc(prefix)}')">
+          Confirmar vigencia de ${esc(sid)}</button>
+      </div>
+      ${statusLine(prefix)}
+    </div>`;
+  }).join('') || '<div class="meta" style="margin-top:8px">Ninguna propuesta SOURCE_CURRENCY pendiente de firma.</div>';
+
+  return `
+  <div class="card">
+    <b>Vigencia regulatoria de fuentes — G3</b>
+    <div class="meta" style="margin-top:6px">
+      Cada bloque es una fuente distinta con su propia evidencia real
+      (<span class="mono">source_currency_log.jsonl</span>). Que el hash
+      coincida solo prueba que la URL sigue sirviendo lo mismo que se
+      archivó -- <b>no</b> prueba que la norma siga vigente hoy. Ese juicio
+      es tuyo, y se declara en el motivo de cada firma, no en la nota
+      técnica que ya trae la propuesta.</div>
+    ${NO_EJECUTA}
+    ${bloques}
+  </div>`;
+}
+
 function panelExcepcion(){
   const a = GOV.audit;
   const MEDIDAS = medidas();
@@ -862,6 +923,7 @@ function paint(){
   else if(p.id==='catalog-version') body = panelCatalogVersion();
   else if(p.id==='applicability-matrix') body = panelApplicabilityMatrix();
   else if(p.id==='golden-dataset') body = panelGoldenDataset();
+  else if(p.id==='source-currency') body = panelSourceCurrency();
   else if(p.id==='excepcion-auditoria') body = panelExcepcion();
   else                             body = panelPendiente(p);
   el.innerHTML = banner + body;
@@ -1203,6 +1265,17 @@ export async function govSubmitGoldenDataset(){
   await confirmarPropuestaExistente(valida.decision_instance_id, 'ARTIFACT_VERSION',
                                     readSignature('gdset'),
                                     {statusPrefix:'gdset', btnId:'gdset-submit-btn'});
+}
+
+export async function govSubmitSourceCurrency(decisionInstanceId, prefix){
+  const sig = readSignature(prefix);
+  if(!sig.reason){
+    setStatus(prefix,'warn','El motivo es obligatorio -- aquí es donde declaras tu propio '
+      + 'juicio de vigencia, no una formalidad.');
+    return;
+  }
+  await confirmarPropuestaExistente(decisionInstanceId, 'SOURCE_CURRENCY', sig,
+                                    {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
 }
 
 export async function govSubmitRevokeD2003(){
