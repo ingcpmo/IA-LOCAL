@@ -52,11 +52,13 @@ LIST_FIELDS = (
     "evidence_min_criteria", "exclusion_criteria", "weak_keywords",
     "typical_insufficient_evidence", "expected_doc_types",
 )
-#: Campos anclables al texto canonico (V5). `weak_keywords` y
-#: `expected_doc_types` son vocabulario/enumeracion, no evidencia citada -- no
-#: se anclan (el spec §2.2 solo exige V5 para evidence_min_criteria y
-#: exclusion_criteria).
-ANCHORABLE_FIELDS = ("evidence_min_criteria", "exclusion_criteria")
+#: V5 (Opcion A, decision de Cesar, 2026-08-05): NO se anclan
+#: evidence_min_criteria/exclusion_criteria -- son parafraseo interpretativo
+#: en espanol, nunca pensados como cita textual, y exigir su coincidencia con
+#: la norma en ingles bloqueaba D2A_READY por diseno, sin importar cuanto
+#: avanzara el resto del sistema. Lo que V5 ancla es `citation.citation_text`,
+#: la cita literal real del requisito (Fase C, ya verificada con match_type
+#: exacto/normalizado para los 20 requisitos existentes).
 
 
 def _normalize_for_dedup(text: str) -> str:
@@ -138,9 +140,12 @@ def validate_pack(requirement_id: str, *,
                     "V4_WEAK_KEYWORD_AS_CRITERION", "evidence_min_criteria",
                     f"{crit!r} es tambien un weak_keyword"))
 
-    # V5 -- cada evidence_min_criteria/exclusion_criteria ancla al texto
-    # canonico REAL de la fuente verificada (nunca se inventa: si la fuente
-    # no tiene texto completo disponible, se declara explicito, no se omite).
+    # V5 -- la cita literal del requisito (citation.citation_text) ancla al
+    # texto canonico REAL de la fuente verificada (nunca se inventa: si la
+    # fuente no tiene texto completo disponible, se declara explicito, no se
+    # omite). Opcion A (decision de Cesar, 2026-08-05): ya NO ancla
+    # evidence_min_criteria/exclusion_criteria (ver comentario junto a
+    # LIST_FIELDS arriba).
     source_id = entry.get("source_id")
     source_entry = None
     if source_id:
@@ -154,22 +159,24 @@ def validate_pack(requirement_id: str, *,
             full_text = _load_source_full_text(source_entry)
         except Exception as exc:  # noqa: BLE001 -- se declara el motivo, nunca se omite
             full_text_error = str(exc)
-    for f in ANCHORABLE_FIELDS:
-        if f not in present_list_fields:
-            continue
-        for item in entry[f]:
-            if full_text is None:
-                failures.append(ValidationFailure(
-                    "V5_NOT_ANCHORED", f,
-                    f"{item!r}: sin texto completo de la fuente disponible "
-                    f"({full_text_error or 'fuente no encontrada'})"))
-                continue
-            status, match_type = verify_anchor(str(item), full_text)
-            if status != "PASS":
-                failures.append(ValidationFailure(
-                    "V5_NOT_ANCHORED", f,
-                    f"{item!r} no ancla al texto canonico de {source_id} "
-                    f"(match_type={match_type})"))
+
+    citation_text = (entry.get("citation") or {}).get("citation_text")
+    if not citation_text:
+        failures.append(ValidationFailure(
+            "V5_NOT_ANCHORED", "citation.citation_text",
+            "sin cita literal declarada -- no se puede anclar"))
+    elif full_text is None:
+        failures.append(ValidationFailure(
+            "V5_NOT_ANCHORED", "citation.citation_text",
+            f"sin texto completo de la fuente disponible "
+            f"({full_text_error or 'fuente no encontrada'})"))
+    else:
+        status, match_type = verify_anchor(citation_text, full_text)
+        if status != "PASS":
+            failures.append(ValidationFailure(
+                "V5_NOT_ANCHORED", "citation.citation_text",
+                f"{citation_text!r} no ancla al texto canonico de {source_id} "
+                f"(match_type={match_type})"))
 
     # V6 -- expected_doc_types subconjunto de document_types de la matriz.
     if "expected_doc_types" in present_list_fields:

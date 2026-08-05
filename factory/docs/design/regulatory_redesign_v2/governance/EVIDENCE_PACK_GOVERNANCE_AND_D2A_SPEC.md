@@ -71,8 +71,18 @@ VALIDA    deterministas (sin LLM, sin juicio)
     V2  ningún campo vacío ni con lista de 0 elementos
     V3  sin duplicados dentro de un campo (normalizados: minúsculas, sin acentos, sin puntuación final)
     V4  weak_keywords ∩ evidence_min_criteria = ∅   (un término débil no puede ser un criterio mínimo)
-    V5  cada evidence_min_criteria y cada exclusion_criteria ancla a un
-        offset real del canonical_text de la fuente verificada
+    V5  la cita literal del requisito (citation.citation_text) ancla al
+        texto canónico REAL de la fuente verificada. REDEFINIDO (decisión
+        Opción A, Cesar, 2026-08-05): antes exigía que evidence_min_criteria
+        y exclusion_criteria (paráfrasis interpretativa, nunca pensada como
+        cita textual) anclaran contra la norma -- imposible por diseño,
+        bloqueaba D2A_READY para todo requisito real sin importar el
+        progreso. citation.citation_text SÍ es la cita literal real (Fase C,
+        ya verificada con match_type exacto/normalizado para los 20
+        requisitos) -- es lo que V5 debe anclar. Los criterios
+        interpretativos siguen sin exigir coincidencia textual (no lo son
+        por naturaleza); se evalúan por V1-V4/V6-V7 y por juicio humano en
+        APRUEBA.
     V6  expected_doc_types ⊆ document_types de applicability_matrix.yaml
     V7  ningún criterio es idéntico a un criterio de otro requisito distinto
         (cierra el defecto ya conocido de req_id duplicado que sobrescribía en silencio)

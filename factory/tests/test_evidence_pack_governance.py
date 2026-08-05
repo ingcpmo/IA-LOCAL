@@ -157,11 +157,16 @@ def test_p02_weak_keyword_validado_as_minimum_criterion_is_rejected():
     assert "validado" in failures[0].detail
 
 
-def test_p03_criterion_without_anchor_is_rejected():
+def test_p03_pack_without_a_real_citation_is_rejected():
+    """Actualizado (Opcion A, 2026-08-05): V5 ya no mira exclusion_criteria/
+    evidence_min_criteria (parafraseo, nunca pensados como cita) -- ancla
+    `citation.citation_text`. Un pack sin ese campo (como el fixture
+    minimo, que no declara `citation`) sigue rechazado por V5, pero ahora
+    con el campo real en el hallazgo."""
     pack = _minimal_pack(exclusion_criteria=["Frase inventada que no existe en ningun documento canonico."])
     r = validate_pack("X", requirements=_catalog_with("X", pack),
                       registry=_registry_with_verified_source())
-    v5 = [f for f in r.failures if f.code == "V5_NOT_ANCHORED" and f.field == "exclusion_criteria"]
+    v5 = [f for f in r.failures if f.code == "V5_NOT_ANCHORED" and f.field == "citation.citation_text"]
     assert len(v5) == 1
 
 
@@ -196,23 +201,30 @@ def test_p04_identical_criterion_between_two_requirements_is_rejected():
 # Fase A/C, en vez de cada criterio interpretativo suelto).
 # ---------------------------------------------------------------------------
 
-def test_p05_the_real_pack_211_fails_v5_and_v9_today():
+def test_p05_the_real_pack_211_fails_only_v9_today():
+    """Actualizado (Opcion A, 2026-08-05): la cita literal real de 211.68(b)
+    (`citation.citation_text`, Fase C, ya verificada) SI ancla al texto
+    canonico -- V5 ya no falla. Solo queda V9 (Part 211 sigue
+    NOT_COMPARABLE_FIRST_INGESTION, bloqueo distinto de SOURCE_CURRENCY)."""
     r = validate_pack(PART211)
     assert not r.passed
-    assert set(r.failure_codes()) == {"V5_NOT_ANCHORED", "V9_SOURCE_NOT_VERIFIED"}
+    assert set(r.failure_codes()) == {"V9_SOURCE_NOT_VERIFIED"}
 
 
-def test_p06_the_19_other_real_packs_fail_v5_today_v9_depends_on_real_source_currency():
-    """V5 (parafraseo, no cita literal) sigue sin resolverse para los 19 --
-    bloqueo de diseno que ningun apply toca.
+def test_p06_the_19_other_real_packs_never_fail_v5_v9_depends_on_real_source_currency():
+    """Actualizado dos veces en el mismo dia (2026-08-05):
 
-    V9 ya NO es un fallo fijo (actualizado 2026-08-05, SOURCE_CURRENCY): un
-    requisito respaldado por una fuente que alcanzo LOCAL_CANONICAL_COPY_
-    VERIFIED de verdad (eu_gmp_annex11, mhra_gxp_di_guidance_2018 hoy) ya no
-    falla V9. Se deriva del estado REAL de source_lifecycle en vez de
-    fijarlo a mano, para que este test siga midiendo la regla (V9 sigue el
-    lifecycle_state real) y no una fotografia que otra firma real vuelva a
-    romper."""
+    1a actualizacion: V9 se deriva del lifecycle_state real de cada fuente
+    en vez de fijarse a "siempre falla" (SOURCE_CURRENCY cerro 2 de 4
+    fuentes).
+
+    2a actualizacion (Opcion A -- el motivo real de esta reescritura): V5
+    dejo de mirar evidence_min_criteria/exclusion_criteria y pasa a anclar
+    `citation.citation_text`, la cita literal real de cada requisito
+    (Fase C, ya verificada con match_type exacto/normalizado para los 20).
+    V5 YA NO FALLA para ninguno de los 19 -- se afirma la ausencia en vez
+    de fabricar un valor, para que un futuro requisito con una cita real
+    mal anclada siga siendo detectado."""
     from factory.regulatory import source_lifecycle as sl
 
     others = [rid for rid in ALL_REQUIREMENT_IDS if rid != PART211]
@@ -226,8 +238,8 @@ def test_p06_the_19_other_real_packs_fail_v5_today_v9_depends_on_real_source_cur
         fuente_verificada = (source_id in dims
                              and dims[source_id].lifecycle_state == sl.LOCAL_CANONICAL_COPY_VERIFIED)
 
-        assert not r.passed, f"{rid}: se esperaba al menos V5 fallando"
-        assert "V5_NOT_ANCHORED" in codes, f"{rid}: V5 deberia fallar (paráfrasis, no cita literal)"
+        assert "V5_NOT_ANCHORED" not in codes, (
+            f"{rid}: su citation.citation_text deberia anclar al texto canonico real")
         if fuente_verificada:
             assert "V9_SOURCE_NOT_VERIFIED" not in codes, (
                 f"{rid}: su fuente {source_id!r} SI esta LOCAL_CANONICAL_COPY_VERIFIED -- "
@@ -235,8 +247,8 @@ def test_p06_the_19_other_real_packs_fail_v5_today_v9_depends_on_real_source_cur
         else:
             assert "V9_SOURCE_NOT_VERIFIED" in codes, (
                 f"{rid}: su fuente {source_id!r} no esta verificada -- V9 deberia fallar")
-        assert codes <= {"V5_NOT_ANCHORED", "V6_UNKNOWN_DOC_TYPE", "V9_SOURCE_NOT_VERIFIED"}, (
-            f"{rid}: fallo inesperado fuera de V5/V6/V9: {codes}")
+        assert codes <= {"V6_UNKNOWN_DOC_TYPE", "V9_SOURCE_NOT_VERIFIED"}, (
+            f"{rid}: fallo inesperado fuera de V6/V9: {codes}")
 
 
 # ---------------------------------------------------------------------------
@@ -297,23 +309,27 @@ def test_p09_pack_approval_is_independent_per_requirement(tmp_path):
 # P-11 -- d2a_ready() de los 20 requisitos hoy: los 20 false
 # ---------------------------------------------------------------------------
 
-def test_p11_all_20_requirements_are_not_d2a_ready_today():
-    """Ninguno de los 20 esta D2A_READY hoy -- pero ya NO por el mismo
-    motivo compartido de entorno que antes.
+def test_p11_three_real_requirements_are_finally_d2a_ready():
+    """Tercera actualizacion real del mismo dia (2026-08-05, Opcion A):
+    con V5 redefinido para anclar citation.citation_text (ya verificada
+    para los 20), y matrix_approved/catalog_versioned globales, 3
+    requisitos reales alcanzan D2A_READY=true por primera vez desde que
+    existe este spec: ALCOA_ATTRIBUTABLE, ALCOA_LEGIBLE, ALCOA_ACCURATE
+    (fuente eu_gmp_annex11/mhra, ya LOCAL_CANONICAL_COPY_VERIFIED, y sin
+    V6 -- sus expected_doc_types SI son subconjunto de la matriz).
 
-    Actualizado (2026-08-05): matrix_approved y catalog_versioned pasaron
-    a True GLOBALMENTE con firmas reales (APPLICABILITY_MATRIX-2026-004,
-    ARTIFACT_VERSION-2026-007) -- ya no son "razones de entorno" que
-    bloqueen los 20 por igual. source_verified tambien depende ahora de la
-    fuente real de cada requisito (SOURCE_CURRENCY). Lo unico que SIGUE
-    bloqueando los 20 sin excepcion es pack_complete=False (V5, parafraseo
-    sin cita literal) -- eso es lo que este test verifica que no cambia."""
+    Los otros 17 siguen sin D2A_READY, cada uno por un motivo real
+    derivado (V6 doc type desconocido, V9 fuente sin verificar, o ambos)
+    -- nunca por el mismo motivo compartido de entorno que antes."""
+    listos_reales = {"ALCOA_ATTRIBUTABLE", "ALCOA_LEGIBLE", "ALCOA_ACCURATE"}
     assert len(ALL_REQUIREMENT_IDS) == 20
     for rid in ALL_REQUIREMENT_IDS:
         readiness = d2a_ready(rid)
-        assert readiness.ready is False, f"{rid}: se esperaba d2a_ready=False hoy"
-        assert readiness.pack_complete is False, (
-            f"{rid}: V5 deberia seguir bloqueando pack_complete")
+        if rid in listos_reales:
+            assert readiness.ready is True, f"{rid}: se esperaba d2a_ready=True hoy ({readiness.reasons})"
+            assert readiness.pack_complete is True
+        else:
+            assert readiness.ready is False, f"{rid}: se esperaba d2a_ready=False hoy"
 
 
 def test_p11_reasons_are_never_empty_when_not_ready():
