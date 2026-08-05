@@ -46,10 +46,19 @@
 # aprobación debe marcarse # PROPUESTO de nuevo hasta la siguiente
 # confirmación explícita.
 
-matrix_version: "2.1"
+matrix_version: "2.2"
 # v2.1 (2026-07-29): se agregan las filas de 21_CFR_211.68(b) tras la
 # ingesta de ecfr_21cfr_part211. MC-0001 NO las cubre -- estan marcadas
 # PROPUESTO y requieren una confirmacion humana nueva.
+# v2.2 (2026-08-05, panel D2-A/G5): se agregan a document_types 4 codigos
+# que 16 de los 20 evidence packs reales YA declaraban en su propio
+# expected_doc_types (requirements.yaml) sin que existieran aqui --
+# PROTOCOL, REPORT, RISK_ASSESSMENT, VALIDATION_PLAN. No se agrega ninguna
+# fila de aplicabilidad nueva (esa es una decision de contenido regulatorio
+# aparte, sin resolver todavia): solo se registra el VOCABULARIO de tipos
+# documentales ya en uso real, que V6 (evidence_pack_governance.py) exige
+# como subconjunto de esta lista. Pendiente de confirmacion humana nueva,
+# igual que las filas de 211.68(b) en v2.1.
 approval:            # Checkpoint B confirmado — ver factory/layer9/decisions/decisions.jsonl (MC-0001)
   status: "human_confirmed"
   decision_id: "MC-0001"
@@ -57,7 +66,7 @@ approval:            # Checkpoint B confirmado — ver factory/layer9/decisions/
   approver_role: "project_lead"
   approved_at_utc: "2026-07-17T16:26:33Z"
 
-document_types: [URS, FS, DS, CS, RA, IQ, OQ, PQ, SOP]
+document_types: [URS, FS, DS, CS, RA, IQ, OQ, PQ, SOP, PROTOCOL, REPORT, RISK_ASSESSMENT, VALIDATION_PLAN]
 
 requirements:
   # --- FDA 21 CFR Part 11 ---

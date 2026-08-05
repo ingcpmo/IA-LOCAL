@@ -264,14 +264,23 @@ def test_the_real_artifact_guard_reports_the_g4c_version_bump_closed():
     (2.0 -> 2.1, mismo artefacto ya resuelto -- warn_count no cambia por
     esto). ARTIFACT_VERSION-2026-009 aplico la primera aprobacion del
     golden dataset (`apply_artifact_first_approval()`) -- ese artefacto SI
-    sale de warn_count (25, no 26)."""
+    sale de warn_count (25, no 26).
+
+    G5/D2-A (2026-08-05, mismo dia): la matriz de aplicabilidad cambio de
+    contenido (document_types +4 codigos) y matrix_version paso de 2.1 a
+    2.2 -- el MISMO patron que el catalogo antes de G4c. FAIL vuelve a
+    aparecer (1, no 0): VERSION_CHANGED_WITHOUT_DECISION para
+    applicability_matrix, honesto y esperado hasta que Cesar firme
+    APPLICABILITY_MATRIX-2026-005."""
     from factory.core import artifact_version_guard as guard
     r = guard.guard_report()
-    assert r["status"] == "WARN"
-    assert r["fail_count"] == 0
+    assert r["status"] == "FAIL"
+    assert r["fail_count"] == 1
     assert r["warn_count"] == 25
     fails = [f for f in r["findings"] if f["severity"] == "FAIL"]
-    assert fails == []
+    assert len(fails) == 1
+    assert fails[0]["artifact"] == "applicability_matrix"
+    assert fails[0]["code"] == "VERSION_CHANGED_WITHOUT_DECISION"
     assert not any(f["artifact_id"].endswith("requirements.yaml") for f in r["findings"])
     assert not any(f["artifact_id"].endswith("semantic_verification_golden_dataset.py")
                   for f in r["findings"])

@@ -257,22 +257,30 @@ def test_p06_the_19_other_real_packs_never_fail_v5_v9_depends_on_real_source_cur
 #         arriba + la suite propia de artifact_version_guard)
 # ---------------------------------------------------------------------------
 
-def test_p08_the_catalog_wide_fail_this_test_relied_on_is_now_closed():
+def test_p08_gate0_detects_the_pending_matrix_version_bump():
     """No reimplementa el guard: confirma que `validate_pack` LEE su
     resultado real (V8 delega en artifact_version_guard, cobertura de
     propagacion propia en test_p01_v8_* + la suite de artifact_version_
-    guard -- este test solo confirmaba el escenario real vigente).
+    guard -- este test solo confirma el escenario real vigente).
 
-    Actualizado (2026-08-05): el CONTENT_CHANGED_VERSION_SAME del catalogo
-    que este test citaba como evidencia real se cerro con el segundo bump
-    de G4c (ARTIFACT_VERSION-2026-007, 2.0->2.1) -- guard_report() ya no
-    tiene ningun FAIL real hoy. Se afirma la ausencia en vez de fabricar
-    un escenario sintetico: si algun dia vuelve a haber un FAIL real, este
-    test lo notara y hay que decidir si sigue siendo el mismo motivo."""
+    Segunda actualizacion del mismo dia (2026-08-05): el
+    CONTENT_CHANGED_VERSION_SAME del catalogo que este test citaba antes
+    se cerro con ARTIFACT_VERSION-2026-007 -- pero la matriz de
+    aplicabilidad ahora esta en el MISMO tipo de estado transitorio: su
+    version paso de 2.1 a 2.2 (document_types +4 codigos ya en uso real)
+    y la decision que la autoriza (APPLICABILITY_MATRIX-2026-005) sigue
+    PROPOSED, sin firma humana todavia. VERSION_CHANGED_WITHOUT_DECISION
+    es exactamente el mismo tipo de FAIL honesto que el catalogo tuvo
+    ANTES de G4c -- no una regresion, la prueba de que el guard sigue
+    detectando un bump real pendiente de autorizar."""
     from factory.core import artifact_version_guard as guard
     report = guard.guard_report()
-    assert report["status"] != "FAIL"
-    assert report["fail_count"] == 0
+    assert report["status"] == "FAIL"
+    assert report["fail_count"] == 1
+    assert any(f["artifact"] == "applicability_matrix"
+              and f["code"] == "VERSION_CHANGED_WITHOUT_DECISION"
+              for f in report["findings"]), (
+        "la matriz deberia seguir marcada como bump pendiente de autorizar")
     assert not any(f["artifact"] == "catalog" and f["code"] == "CONTENT_CHANGED_VERSION_SAME"
                   for f in report["findings"]), (
         "el catalogo volvio a divergir de su version declarada")
@@ -309,27 +317,40 @@ def test_p09_pack_approval_is_independent_per_requirement(tmp_path):
 # P-11 -- d2a_ready() de los 20 requisitos hoy: los 20 false
 # ---------------------------------------------------------------------------
 
-def test_p11_three_real_requirements_are_finally_d2a_ready():
-    """Tercera actualizacion real del mismo dia (2026-08-05, Opcion A):
-    con V5 redefinido para anclar citation.citation_text (ya verificada
-    para los 20), y matrix_approved/catalog_versioned globales, 3
-    requisitos reales alcanzan D2A_READY=true por primera vez desde que
-    existe este spec: ALCOA_ATTRIBUTABLE, ALCOA_LEGIBLE, ALCOA_ACCURATE
-    (fuente eu_gmp_annex11/mhra, ya LOCAL_CANONICAL_COPY_VERIFIED, y sin
-    V6 -- sus expected_doc_types SI son subconjunto de la matriz).
+def test_p11_fourteen_packs_are_content_complete_but_none_ready_pending_matrix_signature():
+    """Cuarta actualizacion real del mismo dia (2026-08-05):
 
-    Los otros 17 siguen sin D2A_READY, cada uno por un motivo real
-    derivado (V6 doc type desconocido, V9 fuente sin verificar, o ambos)
-    -- nunca por el mismo motivo compartido de entorno que antes."""
-    listos_reales = {"ALCOA_ATTRIBUTABLE", "ALCOA_LEGIBLE", "ALCOA_ACCURATE"}
+    1a-3a (V5 Opcion A + matrix/catalogo globales): 3 requisitos llegaron a
+    D2A_READY=true por primera vez.
+
+    4a (este cambio, V6/G5): la matriz gano los 4 codigos de document_types
+    que faltaban -- pack_complete pasa a True para 14 de los 20 (los 6
+    restantes siguen bloqueados solo por V9, fuente sin verificar). PERO
+    matrix_version paso de 2.1 a 2.2 en el mismo cambio, y esa nueva
+    version NO tiene decision humana todavia (APPLICABILITY_MATRIX-2026-005
+    sigue PROPOSED) -- matrix_approved cae a False para TODOS, incluidos
+    los 3 que ya estaban D2A_READY. Cero requisitos son D2A_READY hoy,
+    honestamente, hasta que Cesar firme -005 -- exactamente el mismo patron
+    transitorio que el catalogo antes de G4c (ver test_p08 de este mismo
+    archivo)."""
+    completos_reales = {
+        "ANNEX11_4", "ANNEX11_7.1", "ANNEX11_9", "ANNEX11_12", "ANNEX11_17",
+        "ALCOA_ATTRIBUTABLE", "ALCOA_LEGIBLE", "ALCOA_CONTEMPORANEOUS",
+        "ALCOA_ORIGINAL", "ALCOA_ACCURATE", "ALCOA_COMPLETE", "ALCOA_CONSISTENT",
+        "ALCOA_ENDURING", "ALCOA_AVAILABLE",
+    }
     assert len(ALL_REQUIREMENT_IDS) == 20
+    assert len(completos_reales) == 14
     for rid in ALL_REQUIREMENT_IDS:
         readiness = d2a_ready(rid)
-        if rid in listos_reales:
-            assert readiness.ready is True, f"{rid}: se esperaba d2a_ready=True hoy ({readiness.reasons})"
-            assert readiness.pack_complete is True
+        assert readiness.ready is False, (
+            f"{rid}: se esperaba d2a_ready=False hoy (matriz 2.2 pendiente de firma) "
+            f"({readiness.reasons})")
+        assert readiness.matrix_approved is False
+        if rid in completos_reales:
+            assert readiness.pack_complete is True, f"{rid}: se esperaba pack_complete=True"
         else:
-            assert readiness.ready is False, f"{rid}: se esperaba d2a_ready=False hoy"
+            assert readiness.pack_complete is False, f"{rid}: se esperaba pack_complete=False"
 
 
 def test_p11_reasons_are_never_empty_when_not_ready():

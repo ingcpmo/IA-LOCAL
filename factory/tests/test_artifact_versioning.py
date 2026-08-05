@@ -624,12 +624,15 @@ def test_the_bootstrapped_store_photographs_without_approving():
         "la primera aprobacion del golden dataset SI tiene detras la firma de Cesar"
     )
 
-    # Y el guardia lo refleja: 0 FAIL, 25 avisos de aprobacion ausente -- uno
-    # por artefacto SIN decision; ni 21_CFR_211.68(b), ni el catalogo, ni el
-    # golden dataset estan ya en la lista de avisos.
+    # G5/D2-A (2026-08-05, mismo dia): la matriz cambio de version (2.1->2.2,
+    # +4 document_types) sin decision humana todavia -- 1 FAIL real y
+    # esperado (VERSION_CHANGED_WITHOUT_DECISION), mismo patron que el
+    # catalogo tuvo antes de G4c. 25 avisos de aprobacion ausente, sin
+    # cambio: ni 21_CFR_211.68(b), ni el catalogo, ni el golden dataset
+    # estan en la lista de avisos.
     report = guard.guard_report()
-    assert report["status"] == "WARN"
-    assert report["fail_count"] == 0
+    assert report["status"] == "FAIL"
+    assert report["fail_count"] == 1
     assert report["warn_count"] == 25
 
 

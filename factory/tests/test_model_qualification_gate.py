@@ -220,20 +220,23 @@ def test_q07_requalification_run_context_only_valid_against_golden_dataset():
 # ---------------------------------------------------------------------------
 
 def test_q08_two_real_preconditions_remain_open_today():
-    """Estado real de hoy (actualizado 2026-08-05): 3 de las 5 ya cerraron
-    con firmas reales de Cesar -- G4b (APPLICABILITY_MATRIX-2026-004), G4c
+    """Estado real de hoy, segunda actualizacion (2026-08-05): G4c
     (ARTIFACT_VERSION-2026-007, bump del catalogo) y G6 (ARTIFACT_VERSION-
-    2026-009, primera aprobacion del golden dataset). Quedan 2 abiertas,
-    por motivos DISTINTOS -- si alguna pasa sin que Cesar haya firmado
-    nada, este test lo detecta."""
+    2026-009, primera aprobacion del golden dataset) siguen cerrados con
+    firmas reales de Cesar. G4b (matriz) REABRIO: la matriz cambio de
+    version otra vez (2.1->2.2, panel D2-A/G5, +4 document_types) y esa
+    nueva version todavia no tiene su propia decision humana
+    (APPLICABILITY_MATRIX-2026-005 sigue PROPOSED) -- mismo patron exacto
+    que ya paso una vez con el catalogo antes de G4c. Si alguna precondicion
+    pasa sin que Cesar haya firmado nada, este test lo detecta."""
     r = mqg.requalification_preconditions()
     assert r.ready is False
     assert r.sources_verified is False
     assert r.pack_211_complete is False
-    assert r.matrix_approved is True
+    assert r.matrix_approved is False
     assert r.catalog_versioned is True
     assert r.golden_dataset_approved is True
-    assert len(r.reasons) == 2
+    assert len(r.reasons) == 3
     assert all(isinstance(x, str) and x for x in r.reasons)
 
 
