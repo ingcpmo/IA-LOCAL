@@ -1,19 +1,21 @@
 {
   "status": "QUALIFIED_FOR_VALIDATION_ONLY",
-  "evaluated_at": "2026-07-28T13:32:46+00:00",
+  "evaluated_at": "2026-08-07T17:58:21+00:00",
   "fingerprint": {
     "model_name": "qwen2.5:7b-instruct-q4_K_M",
     "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
     "prompt_versions": {
       "alcoa_prompts.yaml": "1.1.0",
       "annex11_prompts.yaml": "1.1.0",
+      "cgmp211_prompts.yaml": "1.0.0",
       "part11_prompts.yaml": "1.1.0",
       "traceability_prompts.yaml": "1.0.0"
     },
     "schema_version": "checkpoint_llm_response_v1",
     "schema_sha256": "00ccc255e3b6397f42ab2ff0bbe516eb487f90a8a4530603d631f92f8c40a8bf",
-    "catalog_version": "1.0",
-    "catalog_sha256": "6486405abecd729d85e32ec4a9af03cd13ad144162ebcb300ee9d25016202b8d",
+    "golden_dataset_sha256": "c28379accaa8fc43c52ce5f3c35b0bdc4e1e53cb46c0db98fc0a3103846ba279",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
     "num_ctx": 16384,
     "temperature": 0.0,
     "chunk_max_chars": 6000,
@@ -24,7 +26,31 @@
       "json_overhead": 120
     }
   },
-  "previous_fingerprint": null,
+  "previous_fingerprint": {
+    "model_name": "qwen2.5:7b-instruct-q4_K_M",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "prompt_versions": {
+      "alcoa_prompts.yaml": "1.1.0",
+      "annex11_prompts.yaml": "1.1.0",
+      "cgmp211_prompts.yaml": "1.0.0",
+      "part11_prompts.yaml": "1.1.0",
+      "traceability_prompts.yaml": "1.0.0"
+    },
+    "schema_version": "checkpoint_llm_response_v1",
+    "schema_sha256": "00ccc255e3b6397f42ab2ff0bbe516eb487f90a8a4530603d631f92f8c40a8bf",
+    "golden_dataset_sha256": "c28379accaa8fc43c52ce5f3c35b0bdc4e1e53cb46c0db98fc0a3103846ba279",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "num_ctx": 16384,
+    "temperature": 0.0,
+    "chunk_max_chars": 6000,
+    "chunk_overlap_chars": 500,
+    "output_token_budget_formula": {
+      "tokens_per_criterion": 130,
+      "tokens_per_checkpoint": 60,
+      "json_overhead": 120
+    }
+  },
   "metrics": [
     {
       "name": "schema_valid_rate",
@@ -32,7 +58,7 @@
       "threshold": 1.0,
       "measured": true,
       "passed": true,
-      "basis": "14 casos del Golden Dataset (schema/contrato de salida)"
+      "basis": "17 casos del Golden Dataset (schema/contrato de salida)"
     },
     {
       "name": "citation_anchor_precision",
@@ -40,7 +66,7 @@
       "threshold": 1.0,
       "measured": true,
       "passed": true,
-      "basis": "3 casos: evidence_from_wrong_document, invented_citation, nonexistent_clause"
+      "basis": "6 casos: evidence_from_wrong_document, invented_citation, invented_part211_section_rejected, nonexistent_clause, predicate_rule_quote_not_in_document, predicate_rule_resolves_in_catalog"
     },
     {
       "name": "semantic_precision",
@@ -96,7 +122,7 @@
       "threshold": 0.0,
       "measured": true,
       "passed": true,
-      "basis": "3 casos: evidence_from_wrong_document, invented_citation, nonexistent_clause"
+      "basis": "6 casos: evidence_from_wrong_document, invented_citation, invented_part211_section_rejected, nonexistent_clause, predicate_rule_quote_not_in_document, predicate_rule_resolves_in_catalog"
     },
     {
       "name": "latency_p50",
@@ -132,8 +158,8 @@
     }
   ],
   "golden_dataset": {
-    "total": 14,
-    "passed": 14,
+    "total": 17,
+    "passed": 17,
     "failed": 0,
     "failed_case_ids": []
   },
