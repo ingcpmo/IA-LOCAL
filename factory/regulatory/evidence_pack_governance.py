@@ -88,9 +88,20 @@ class PackValidationReport:
 def validate_pack(requirement_id: str, *,
                   requirements: dict | None = None,
                   registry: dict | None = None,
-                  decision_store_file: Path | None = None) -> PackValidationReport:
+                  decision_store_file: Path | None = None,
+                  guard_report_cached: dict | None = None,
+                  source_dims_cached: dict | None = None) -> PackValidationReport:
     """V1-V10 del spec §2.2. Nunca lanza salvo `requirement_id` inexistente
-    -- un pack invalido es un resultado (`passed=False`), no una excepcion."""
+    -- un pack invalido es un resultado (`passed=False`), no una excepcion.
+
+    `guard_report_cached`/`source_dims_cached`: opcionales, para que un
+    llamador que evalua MUCHOS requisitos en la misma peticion (p.ej.
+    `d2a_ready()` en bucle desde `governance_service._d2a_readiness_list()`,
+    G5) pueda calcular `guard.guard_report()`/`source_lifecycle.
+    evaluate_registry()` UNA sola vez y reusarlos -- cada uno cuesta ~1s
+    real (recorre el almacen de versiones / hace verificaciones de fuente),
+    y evaluar los 20 requisitos sin compartirlos tardaba +200s. Sin pasarlos
+    (uso normal, un solo requisito), se calculan igual que siempre."""
     catalog = requirements or load_requirements()
     entry = catalog["requirements"][requirement_id]  # KeyError real si no existe -- fail-loud a proposito
     failures: list[ValidationFailure] = []
@@ -208,7 +219,7 @@ def validate_pack(requirement_id: str, *,
     # V8 -- hash del pack: delegado en artifact_version_guard, que ya calcula
     # `canonical_hash_pack()` por requirement_id y lo compara contra su
     # version_record -- no se reimplementa el hash aqui.
-    report = guard.guard_report(decision_store_file=decision_store_file)
+    report = guard_report_cached or guard.guard_report(decision_store_file=decision_store_file)
     pack_finding = next(
         (f for f in report["findings"]
          if f["artifact"] == "evidence_pack" and f["artifact_id"] == requirement_id
@@ -220,7 +231,7 @@ def validate_pack(requirement_id: str, *,
 
     # V9 -- la fuente del pack esta en LOCAL_CANONICAL_COPY_VERIFIED.
     if source_id:
-        dims = {d.source_id: d for d in source_lifecycle.evaluate_registry()}
+        dims = source_dims_cached or {d.source_id: d for d in source_lifecycle.evaluate_registry()}
         state = dims.get(source_id)
         if state is None or state.lifecycle_state != source_lifecycle.LOCAL_CANONICAL_COPY_VERIFIED:
             failures.append(ValidationFailure(
@@ -253,10 +264,11 @@ class D2AReadiness:
     reasons: tuple[str, ...] = field(default_factory=tuple)
 
 
-def _catalog_versioned(*, decision_store_file: Path | None = None) -> bool:
+def _catalog_versioned(*, decision_store_file: Path | None = None,
+                       guard_report_cached: dict | None = None) -> bool:
     """`version_guard(catalog).consistent` (spec §5): ninguna inconsistencia
     FAIL registrada para el artefacto `catalog` completo."""
-    report = guard.guard_report(decision_store_file=decision_store_file)
+    report = guard_report_cached or guard.guard_report(decision_store_file=decision_store_file)
     return not any(
         f["artifact"] == "catalog" and f["artifact_id"] == CATALOG_ARTIFACT_ID
         and f["severity"] == "FAIL"
@@ -264,13 +276,20 @@ def _catalog_versioned(*, decision_store_file: Path | None = None) -> bool:
 
 
 def d2a_ready(requirement_id: str, *,
-             decision_store_file: Path | None = None) -> D2AReadiness:
-    """`D2_A_READY` calculado (spec §5) -- nunca declarado a mano."""
+             decision_store_file: Path | None = None,
+             guard_report_cached: dict | None = None,
+             source_dims_cached: dict | None = None) -> D2AReadiness:
+    """`D2_A_READY` calculado (spec §5) -- nunca declarado a mano.
+
+    `guard_report_cached`/`source_dims_cached`: ver docstring de
+    `validate_pack()` -- mismo motivo, evitar recalcular guard_report()/
+    evaluate_registry() (cada uno ~1s real) 2 veces POR requisito cuando un
+    llamador evalua los 20 en la misma peticion."""
     catalog = load_requirements()
     entry = catalog["requirements"][requirement_id]
     source_id = entry["source_id"]
 
-    dims = {d.source_id: d for d in source_lifecycle.evaluate_registry()}
+    dims = source_dims_cached or {d.source_id: d for d in source_lifecycle.evaluate_registry()}
     state = dims.get(source_id)
     source_verified = (state is not None
                       and state.lifecycle_state == source_lifecycle.LOCAL_CANONICAL_COPY_VERIFIED)
@@ -279,14 +298,17 @@ def d2a_ready(requirement_id: str, *,
     source_covered = eligibility.source_decision_authorized
 
     pack_report = validate_pack(requirement_id, requirements=catalog,
-                               decision_store_file=decision_store_file)
+                               decision_store_file=decision_store_file,
+                               guard_report_cached=guard_report_cached,
+                               source_dims_cached=dims)
     pack_complete = pack_report.passed
 
     matrix_version = str(applicability_mod.load_matrix().get("matrix_version"))
     matrix_approved = resolver.resolve(
         "APPLICABILITY_MATRIX", matrix_version, store_file=decision_store_file).authorized
 
-    catalog_versioned = _catalog_versioned(decision_store_file=decision_store_file)
+    catalog_versioned = _catalog_versioned(decision_store_file=decision_store_file,
+                                           guard_report_cached=guard_report_cached)
 
     ready = all((source_verified, source_covered, pack_complete,
                 matrix_approved, catalog_versioned))

@@ -421,6 +421,14 @@ def _critical_path(coverage: dict, audit: dict, artifacts: dict) -> list[dict]:
     d1_reconstructed = coverage.get("D1", {}).get("reconstructed_only_ids", [])
     d2_uncovered = coverage.get("D2", {}).get("uncovered_ids", [])
     forks_sin_aceptar = audit.get("unbacked_known_fork_entry_ids", [])
+    # G6 (hallazgo 2026-08-05): `guard_report()` ya detecta FAILs reales del
+    # guard de version -- ignorarlos aqui es exactamente el mismo error que
+    # G4 ya habia cerrado para el catalogo. `applicability_matrix` es una
+    # CLASE de artefacto (`artifact_version_guard.enumerate_artifacts`), asi
+    # que un FAIL sobre ella siempre trae `artifact_id` consigo.
+    matrix_fail_findings = [f for f in artifacts.get("findings", [])
+                            if f.get("artifact") == "applicability_matrix"
+                            and f.get("severity") == "FAIL"]
 
     def gate(gid, label, done, blocked_by):
         return {"gate": gid, "label": label,
@@ -428,7 +436,7 @@ def _critical_path(coverage: dict, audit: dict, artifacts: dict) -> list[dict]:
                 "blocked_by": blocked_by}
 
     g2_done = not d1_uncovered and not d1_reconstructed
-    return [
+    gates: list[dict] = [
         gate("G1", "Modelo, resolver y enforcement", True, []),
         gate("G2", "Correccion D1 + D1-A", g2_done,
              [] if not g2_done else []),
@@ -450,7 +458,8 @@ def _critical_path(coverage: dict, audit: dict, artifacts: dict) -> list[dict]:
         gate("G5", "D2-A: aprobacion de Evidence Packs", False,
              ["G3: la vigencia de las fuentes no esta verificada"] if not g2_done
              else (["packs sin cobertura D2"] if d2_uncovered else [])),
-        gate("G6", "Matriz de aplicabilidad", False, []),
+        gate("G6", "Matriz de aplicabilidad", False,
+             [f["detail"] for f in matrix_fail_findings]),
         # G7 se CIERRA cuando no queda ningun fork sin respaldo, y esta LISTO
         # cuando la prevencion esta completa: lo unico que falta entonces es la
         # decision humana que el panel existe para registrar.
@@ -470,9 +479,17 @@ def _critical_path(coverage: dict, audit: dict, artifacts: dict) -> list[dict]:
              [] if _audit.preventive_measures_complete() else
              ["medidas preventivas de §7 incompletas: aceptar una excepcion sin "
               "prevencion es aceptar que vuelva a pasar"]),
-        gate("G8", "Retirada de los escritores legacy", False,
-             ["G2-G7 abiertos"]),
     ]
+    # G8 (hallazgo 2026-08-05): `blocked_by` estaba fijo a un literal no vacio
+    # -- "BLOQUEADO" para siempre, incluso si G2-G7 cerraran de verdad. Se
+    # deriva del `status` YA CALCULADO de G2-G7: BLOQUEADO es la unica senal
+    # real de precondicion incumplida en este modelo (LISTO significa "sin
+    # bloqueo conocido", igual que en G2/G3/G5 -- ver comentario de G7 arriba).
+    abiertos = [g["gate"] for g in gates[1:] if g["status"] == "BLOQUEADO"]
+    gates.append(gate(
+        "G8", "Retirada de los escritores legacy", False,
+        [f"{', '.join(abiertos)} bloqueado(s)"] if abiertos else []))
+    return gates
 
 
 def get_state(*, store_file: Path | None = None) -> dict:
