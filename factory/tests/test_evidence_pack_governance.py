@@ -317,40 +317,37 @@ def test_p09_pack_approval_is_independent_per_requirement(tmp_path):
 # P-11 -- d2a_ready() de los 20 requisitos hoy: los 20 false
 # ---------------------------------------------------------------------------
 
-def test_p11_fourteen_packs_are_content_complete_but_none_ready_pending_matrix_signature():
-    """Cuarta actualizacion real del mismo dia (2026-08-05):
-
-    1a-3a (V5 Opcion A + matrix/catalogo globales): 3 requisitos llegaron a
-    D2A_READY=true por primera vez.
-
-    4a (este cambio, V6/G5): la matriz gano los 4 codigos de document_types
-    que faltaban -- pack_complete pasa a True para 14 de los 20 (los 6
-    restantes siguen bloqueados solo por V9, fuente sin verificar). PERO
-    matrix_version paso de 2.1 a 2.2 en el mismo cambio, y esa nueva
-    version NO tiene decision humana todavia (APPLICABILITY_MATRIX-2026-005
-    sigue PROPOSED) -- matrix_approved cae a False para TODOS, incluidos
-    los 3 que ya estaban D2A_READY. Cero requisitos son D2A_READY hoy,
-    honestamente, hasta que Cesar firme -005 -- exactamente el mismo patron
-    transitorio que el catalogo antes de G4c (ver test_p08 de este mismo
-    archivo)."""
-    completos_reales = {
+def test_p11_fourteen_packs_are_ready_after_matrix_and_d2_signed():
+    """Quinta actualizacion real (sesion ARQ, 2026-08-07): Cesar firmo
+    `APPLICABILITY_MATRIX-2026-006` (matriz 2.2, 2026-08-05T20:40:30Z) y las
+    14 decisiones D2 (`D2-2026-025..053`, 2026-08-05T21:10-21:18Z) de los
+    requisitos que ya pasaban V1-V10. Con matrix_approved=True + D2 cubierto
+    + pack_complete=True, esos 14 llegan a D2A_READY=true de verdad -- ya no
+    es el estado transitorio "matriz pendiente de firma" que este test
+    documentaba antes. Los 6 restantes (5 clausulas de Part 11 +
+    `21_CFR_211.68(b)`) siguen bloqueados por V9 (fuente en
+    `AUTHORIZED_PENDING_REVERIFICATION`), no por la matriz ni por D2."""
+    listos_reales = {
         "ANNEX11_4", "ANNEX11_7.1", "ANNEX11_9", "ANNEX11_12", "ANNEX11_17",
         "ALCOA_ATTRIBUTABLE", "ALCOA_LEGIBLE", "ALCOA_CONTEMPORANEOUS",
         "ALCOA_ORIGINAL", "ALCOA_ACCURATE", "ALCOA_COMPLETE", "ALCOA_CONSISTENT",
         "ALCOA_ENDURING", "ALCOA_AVAILABLE",
     }
     assert len(ALL_REQUIREMENT_IDS) == 20
-    assert len(completos_reales) == 14
+    assert len(listos_reales) == 14
     for rid in ALL_REQUIREMENT_IDS:
         readiness = d2a_ready(rid)
-        assert readiness.ready is False, (
-            f"{rid}: se esperaba d2a_ready=False hoy (matriz 2.2 pendiente de firma) "
+        assert readiness.matrix_approved is True, (
+            f"{rid}: matriz 2.2 ya esta firmada (APPLICABILITY_MATRIX-2026-006) "
             f"({readiness.reasons})")
-        assert readiness.matrix_approved is False
-        if rid in completos_reales:
+        if rid in listos_reales:
             assert readiness.pack_complete is True, f"{rid}: se esperaba pack_complete=True"
+            assert readiness.ready is True, (
+                f"{rid}: se esperaba d2a_ready=True ({readiness.reasons})")
         else:
-            assert readiness.pack_complete is False, f"{rid}: se esperaba pack_complete=False"
+            assert readiness.ready is False, (
+                f"{rid}: se esperaba d2a_ready=False (bloqueado por V9, fuente sin "
+                f"reverificar) ({readiness.reasons})")
 
 
 def test_p11_reasons_are_never_empty_when_not_ready():

@@ -637,15 +637,26 @@ def test_the_two_stores_stayed_independent():
     bump real de `catalog_version` -- se registro un 31o record con
     approved_by_decision='ARTIFACT_VERSION-2026-002' para el catalogo, la
     SEGUNDA aprobacion real (de un artefacto distinto al de D2-2026-009).
+    G4c re-propuesta (2026-08-05): -002 expiro por TTL sin aplicarse contra
+    el estado vivo (seguia en 2.0); Cesar firmo ARTIFACT_VERSION-2026-007
+    (2.0->2.1, misma transicion, payload recalculado del estado vivo) -- 32o
+    record, TERCERA aprobacion real, mismo artefacto que -002.
+    G6 (2026-08-05): Cesar firmo ARTIFACT_VERSION-2026-009 para el Golden
+    Dataset (`apply_artifact_first_approval`, bootstrap con
+    approved_by_decision=null pasa a tener decision real) -- 33o record,
+    CUARTA aprobacion real, artefacto nuevo.
     """
     from factory.core import artifact_version_guard as guard
 
     assert _store_matches_git_head(store.STORE_FILE), (
         "el almacen de decisiones difiere de HEAD: algun test escribio en el real")
     records = guard.read_version_records()
-    assert len(records) == 31, "el de versiones cambio de tamano"
+    assert len(records) == 33, "el de versiones cambio de tamano"
     aprobados = [r for r in records if r["approved_by_decision"] is not None]
     assert [r["approved_by_decision"] for r in aprobados] == [
-        "D2-2026-009", "ARTIFACT_VERSION-2026-002"]
+        "D2-2026-009", "ARTIFACT_VERSION-2026-002",
+        "ARTIFACT_VERSION-2026-007", "ARTIFACT_VERSION-2026-009"]
     assert aprobados[0]["artifact_id"] == "21_CFR_211.68(b)"
     assert aprobados[1]["artifact_id"] == "factory/regulatory/requirement_catalog/requirements.yaml"
+    assert aprobados[2]["artifact_id"] == "factory/regulatory/requirement_catalog/requirements.yaml"
+    assert aprobados[3]["artifact_id"] == "factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py"

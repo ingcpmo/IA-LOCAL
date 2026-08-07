@@ -272,22 +272,25 @@ def test_the_index_still_disables_panels_blocked_by_a_real_precondition(
         tmp_path_factory):
     """La otra mitad: un gate con precondicion real SI queda cerrado.
 
-    G5 depende de que G3 verifique la vigencia de las fuentes — eso no lo
-    resuelve firmar en el panel de G5, y abrirlo invitaria a decidir sobre un
-    estado que todavia no existe. Sin esta direccion, el test anterior lo
-    aprobaria una UI que abriera todos los paneles siempre.
+    Ya no se usa el panel 'd2a' para este caso: commit 3a486ca/RC (2026-08-05)
+    lo desacoplo a proposito de G5 (`gate:'G5-D2A'`, un id que nunca aparece
+    en critical_path) precisamente porque el bloqueo real de G5
+    ("packs sin cobertura D2") es lo que ESE panel existe para resolver --
+    atarlo a G5 encerraria a Cesar fuera del panel que arregla G5 (ver
+    comentario en PANELS, governance.js). Se usa 'd4a' (gate real 'G8') en su
+    lugar, que si sigue el patron normal panel<->gate.
 
-    El estado se construye aqui: el fixture no declara G5 en su camino critico, y
+    El estado se construye aqui: el fixture no declara G8 en su camino critico, y
     un gate ausente no es un gate bloqueado.
     """
     import copy
     estado = copy.deepcopy(FIXTURE_STATE)
     estado["critical_path"].append(
-        {"gate": "G5", "status": "BLOQUEADO",
-         "blocked_by": ["G3: la vigencia de las fuentes no esta verificada"]})
+        {"gate": "G8", "status": "BLOQUEADO",
+         "blocked_by": ["G5, G6 bloqueado(s)"]})
 
-    index = _render(tmp_path_factory, estado, "gov_ui_g5_bloqueado")["index"]
-    i = index.index("govOpen('d2a')")
+    index = _render(tmp_path_factory, estado, "gov_ui_g8_bloqueado")["index"]
+    i = index.index("govOpen('d4a')")
     tag = index[index.rindex("<button", 0, i):index.index(">", i)]
     assert "disabled" in tag, tag
 
