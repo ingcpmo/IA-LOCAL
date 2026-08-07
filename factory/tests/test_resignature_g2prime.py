@@ -90,9 +90,13 @@ def test_a_decision_without_scope_authorizes_nothing(migrated):
     primera vez. La guardia original (D2-2026-001, huérfana de objetivo)
     sigue `INVALID_PENDING_RESIGNATURE` y sigue sin aportar cobertura -- lo
     que cambió es que D2 ya no depende solo de ella. D3/D5 siguen sin
-    ninguna firma real; D4 tiene una propuesta real (`D4-2026-002`, D4-A)
-    pero SOLO `agent_proposed`, sin confirmar todavía -- la regla que este
-    test protege (proponer no es autorizar) sigue vigente en los tres."""
+    ninguna firma real. D4 SÍ gana cobertura real por primera vez
+    (2026-08-07): Cesar firmó `D4-2026-003`, confirmando `D4-2026-002`
+    (D4-A, presupuesto de corrida) sobre los 5 documentos del plan --
+    corrige el defecto histórico de `D4-2026-001` (huérfano de objetivo,
+    igual que D2-2026-001, sigue `INVALID_PENDING_RESIGNATURE` sin aportar
+    nada). Proponer solo (D4-2026-002 antes de confirmarse) nunca autorizó
+    nada -- la regla que este test protege sigue vigente en D3/D5."""
     c_d2 = resolver.coverage_report("D2", store_file=migrated)
     assert c_d2.covered_ids == (
         "21_CFR_11.10(a)", "21_CFR_11.10(d)", "21_CFR_11.10(e)",
@@ -104,7 +108,11 @@ def test_a_decision_without_scope_authorizes_nothing(migrated):
         "ANNEX11_7.1", "ANNEX11_9"), (
         "D2 deberia autorizar exactamente lo que las 20 firmas D2 reales "
         "cubren, ni mas ni menos")
-    for family in ("D3", "D4", "D5"):
+    c_d4 = resolver.coverage_report("D4", store_file=migrated)
+    assert c_d4.covered_ids == (
+        "RW-0005", "RW-0006", "RW-0011", "RW-0012", "RW-0014"), (
+        "D4 deberia autorizar exactamente los 5 documentos que D4-2026-003 cubre")
+    for family in ("D3", "D5"):
         c = resolver.coverage_report(family, store_file=migrated)
         assert c.covered_ids == (), f"{family} autoriza sin alcance declarado"
 
