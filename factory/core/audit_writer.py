@@ -188,6 +188,9 @@ VALID_EVENTS = {
     # con el mismo origen ya gobernado. Distinto de _source_currency_confirmed
     # (ese declara vigencia normativa; este declara procedencia del archivo).
     "regulatory_source_origin_verified",
+    # W5V2-ARQ (2026-08-07) -- apply_corpus_authorization() registra el
+    # go/no-go de corrida atado al run_fingerprint exacto (plan Bloque 6).
+    "corpus_authorization_applied",
     # W6.5 — propuestas de agente sobre el dossier: el agente propone, el humano decide
     "dossier_agent_proposal_generated",
     "dossier_agent_proposal_failed",

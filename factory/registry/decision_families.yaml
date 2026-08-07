@@ -28,6 +28,7 @@ known_consumers:
   - source_registration_apply
   - evidence_pack_eligibility
   - corpus_planner
+  - corpus_runner
   - run_driver
   - formal_baseline
   - release_gate
@@ -89,6 +90,24 @@ families:
     consumers: [corpus_planner, run_driver]
     requires_human_confirmation: true
     legacy_w5_decision_id: D4_corpus_execution
+
+  CORPUS_AUTHORIZATION:
+    label: "Autorizacion de corpus -- go/no-go atado a fingerprint (plan Bloque 6)"
+    target_kind: run_scope
+    # Igual que D4: el objetivo es un plan de corrida, no un id que viva en
+    # un registry.
+    target_registry: null
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [corpus_runner]
+    requires_human_confirmation: true
+    # Distinta de D4 (presupuesto/limites duros): D4 dice CUANTO cuesta;
+    # esta dice SI se ejecuta, atada al fingerprint EXACTO de configuracion
+    # (catalog_sha256, prompt_versions, model_digest, golden_dataset_sha256)
+    # -- spec MODEL_REQUALIFICATION_AND_D4A_SPEC.md Sec 6: "toda corrida
+    # queda atada a un run_fingerprint que incluye catalog_sha256". Un
+    # cambio de cualquier campo del fingerprint tras esta firma invalida la
+    # autorizacion -- no se hereda, igual que la calificacion del modelo.
 
   D5:
     label: "Regeneracion de paquetes QA"

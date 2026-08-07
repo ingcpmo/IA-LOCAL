@@ -119,6 +119,15 @@ const PANELS = [
        libre como source-currency: un hash coincidente ya prueba el hecho
        por si mismo, no requiere interpretacion regulatoria. */
     resumen:'Promueve el ámbar FIRST_INGESTION a VERIFIED_AGAINST_PRIOR_KNOWN_HASH cuando una segunda reingesta real coincidió con el origen oficial ya gobernado.' },
+  { id:'corpus-authorization', gate:'G8', family:'CORPUS_AUTHORIZATION',
+    titulo:'Autorización de corpus — go/no-go (plan Bloque 6)',
+    /* Distinta de D4-A: D4 dice CUANTO cuesta: esta dice SI se ejecuta,
+       atada al run_fingerprint exacto (catalogo/prompts/modelo/golden
+       dataset). NUNCA lanza ninguna corrida -- el runner real es una
+       pieza de infraestructura aparte, todavia no construida a proposito
+       (plan Bloque 6: "en ESTA corrida, llegar hasta dejar todo listo
+       para la autorizacion"). */
+    resumen:'Go/no-go atado al fingerprint exacto de configuración. Firmar esto NO lanza ninguna corrida — el runner es una pieza aparte, aún no construida.' },
 ];
 
 const GOLDEN_DATASET_ARTIFACT_ID = 'factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py';
@@ -1224,6 +1233,73 @@ function panelD4A(){
   </div>`;
 }
 
+/* ── Panel — Autorización de corpus (CORPUS_AUTHORIZATION, G8, plan
+   Bloque 6) ── go/no-go atado al run_fingerprint exacto. Mismo patrón que
+   d4a: propuesta real ya creada por Capa 8, este panel solo confirma. */
+
+function corpusAuthorizationProposals(){
+  return (GOV?.proposals?.CORPUS_AUTHORIZATION || []).filter(p => p.proposal_state === 'PROPOSED');
+}
+
+function panelCorpusAuthorization(){
+  const propuestas = corpusAuthorizationProposals();
+
+  const bloque = (p) => {
+    const pl = p.payload || {};
+    const fp = pl.run_fingerprint || {};
+    const prefix = 'cauth_' + p.decision_instance_id.replace(/[^a-zA-Z0-9]/g, '_');
+    return `<div class="card" style="margin-top:10px;padding:8px;border:1px solid var(--warn)">
+      <b>${esc(p.decision_instance_id)}</b>
+      <div class="meta" style="margin-top:6px">DOCUMENTOS: <span class="mono">${esc((pl.document_ids||[]).join(', '))}</span></div>
+      <div class="meta">PRESUPUESTO (D4): <span class="mono">${esc(pl.d4_decision_instance_id)}</span></div>
+
+      <div class="meta" style="margin-top:8px;${pl.qualification_status_at_proposal==='QUALIFIED'?'color:var(--pass)':'color:var(--warn)'}">
+        ESTADO DE CALIFICACIÓN DEL MODELO al proponer:
+        <span class="mono">${esc(pl.qualification_status_at_proposal)}</span>
+        ${pl.qualification_status_at_proposal!=='QUALIFIED' ? `
+        <div style="margin-top:4px">Esta firma NO afirma que el modelo esté calificado --
+        solo autoriza presupuesto/alcance. La inferencia real seguirá bloqueada
+        (salvo recalificación) hasta que el modelo pase a QUALIFIED por separado.</div>` : ''}
+      </div>
+
+      <div style="margin-top:10px"><b>RUN_FINGERPRINT</b> <span class="meta">(cualquier cambio desde aquí invalida esta autorización)</span></div>
+      <div class="meta" style="margin-top:4px">catalog_sha256: <span class="mono">${esc((fp.catalog_sha256||'').slice(0,16))}…</span></div>
+      <div class="meta">catalog_version: <span class="mono">${esc(fp.catalog_version)}</span></div>
+      <div class="meta">golden_dataset_sha256: <span class="mono">${esc((fp.golden_dataset_sha256||'').slice(0,16))}…</span></div>
+      <div class="meta">model_name / model_digest: <span class="mono">${esc(fp.model_name)} / ${esc((fp.model_digest||'').slice(0,16))}…</span></div>
+      <div class="meta">num_ctx / temperature: <span class="mono">${esc(fp.num_ctx)} / ${esc(fp.temperature)}</span></div>
+
+      <div class="meta" style="margin-top:10px">${esc(p.reason||'')}</div>
+
+      ${signatureForm(prefix)}
+      ${NO_EJECUTA}
+      <div class="meta" style="margin-top:6px;color:var(--faint)">
+        Confirmar esto NO lanza ninguna corrida real -- el runner gobernado
+        (batches, checkpoints per_document, resume por fingerprint, topes
+        duros de D4-A) es una pieza de infraestructura aparte, todavía no
+        construida a propósito.</div>
+      <div style="margin-top:8px">
+        <button id="${prefix}-submit-btn" onclick="govSubmitCorpusAuthorization('${esc(p.decision_instance_id)}','${esc(prefix)}')">
+          Confirmar ${esc(p.decision_instance_id)}</button>
+      </div>
+      ${statusLine(prefix)}
+    </div>`;
+  };
+
+  return `
+  <div class="card">
+    <b>Autorización de corpus — go/no-go (G8)</b>
+    <div class="meta" style="margin-top:6px">
+      Distinta de D4-A (presupuesto): esta decisión ata la autorización al
+      <span class="mono">run_fingerprint</span> EXACTO de configuración
+      (catálogo, prompts, modelo, golden dataset) -- un cambio de
+      cualquiera de esos campos desde la firma invalida la autorización,
+      no se hereda.</div>
+    ${propuestas.map(bloque).join('') || '<div class="meta" style="margin-top:8px;color:var(--pass)">Ninguna propuesta pendiente de firma.</div>'}
+    <div style="margin-top:12px"><button onclick="govOpen('')">Volver al índice</button></div>
+  </div>`;
+}
+
 function panelExcepcion(){
   const a = GOV.audit;
   const MEDIDAS = medidas();
@@ -1335,6 +1411,7 @@ function paint(){
   else if(p.id==='source-origin-verification') body = panelSourceOriginVerification();
   else if(p.id==='excepcion-auditoria') body = panelExcepcion();
   else if(p.id==='d4a')            body = panelD4A();
+  else if(p.id==='corpus-authorization') body = panelCorpusAuthorization();
   else                             body = panelPendiente(p);
   el.innerHTML = banner + body;
   if(p.id==='d1-correccion') govRecalcHash();
@@ -1763,6 +1840,14 @@ export async function govSubmitD4A(decisionInstanceId, prefix){
   if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
   if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
   await confirmarPropuestaExistente(decisionInstanceId, 'D4', sig,
+                                    {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
+}
+
+export async function govSubmitCorpusAuthorization(decisionInstanceId, prefix){
+  const sig = readSignature(prefix);
+  if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
+  if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
+  await confirmarPropuestaExistente(decisionInstanceId, 'CORPUS_AUTHORIZATION', sig,
                                     {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
 }
 
