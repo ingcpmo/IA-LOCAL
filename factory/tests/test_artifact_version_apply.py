@@ -459,6 +459,167 @@ def test_exact_transition_via_propose_artifact_version_change_is_accepted(repo, 
     assert record["approved_by_decision"] == confirmed["decision_instance_id"]
 
 
+# ---------------------------------------------------------------------------
+# propose/apply_regularization_for_applied_change -- caso real: G6,
+# applicability_matrix.yaml paso de 2.1 a 2.2 (commit 84a7a58) sin pasar por
+# ningun flujo gobernado, porque en ese momento no existia uno para esta
+# clase de artefacto. El "antes" viene del bootstrap YA registrado, nunca se
+# reconstruye de la nada.
+# ---------------------------------------------------------------------------
+
+MATRIX_REL = "factory/regulatory/applicability_matrix.yaml"
+_MATRIX_V1 = 'matrix_version: "2.1"\ndocument_types: [URS, FS]\n'
+_MATRIX_V2 = 'matrix_version: "2.2"\ndocument_types: [URS, FS, PROTOCOL]\n'
+
+
+@pytest.fixture()
+def repo_with_matrix(repo):
+    matrix = repo / MATRIX_REL
+    matrix.parent.mkdir(parents=True, exist_ok=True)
+    matrix.write_text(_MATRIX_V1, encoding="utf-8")
+    return repo
+
+
+def _bootstrap_matrix_version_record(repo, versions_store) -> dict:
+    state = next(s for s in guard.enumerate_artifacts(repo=repo)
+                if s.artifact_id == MATRIX_REL)
+    record = guard.build_version_record(state, bootstrap=True,
+                                        bootstrap_note="foto inicial de prueba")
+    versions_store.parent.mkdir(parents=True, exist_ok=True)
+    with versions_store.open("a", encoding="utf-8") as fh:
+        fh.write(__import__("json").dumps(record) + "\n")
+    return record
+
+
+def test_regularization_proposal_without_a_prior_version_record_is_rejected(
+        repo_with_matrix, decisions_file):
+    with pytest.raises(apply_mod.ArtifactVersionProposalError, match="ningún version_record previo"):
+        apply_mod.propose_regularization_for_applied_change(
+            artifact_path=MATRIX_REL, change_reason="test", proposed_by_id="claude",
+            repo=repo_with_matrix, decision_store_file=decisions_file,
+            versions_store_file=repo_with_matrix / "factory/registry/artifact_versions.jsonl")
+
+
+def test_regularization_proposal_derives_before_from_bootstrap_and_after_from_live_state(
+        repo_with_matrix, decisions_file):
+    versions_store = repo_with_matrix / "factory/registry/artifact_versions.jsonl"
+    bootstrap = _bootstrap_matrix_version_record(repo_with_matrix, versions_store)
+    # el cambio YA esta en disco, como el caso real (84a7a58)
+    (repo_with_matrix / MATRIX_REL).write_text(_MATRIX_V2, encoding="utf-8")
+
+    proposal = apply_mod.propose_regularization_for_applied_change(
+        artifact_path=MATRIX_REL, change_reason="regularizacion V6 (enlaza APPLICABILITY_MATRIX-2026-006)",
+        proposed_by_id="claude_code_session_arq", repo=repo_with_matrix,
+        decision_store_file=decisions_file, versions_store_file=versions_store)
+
+    assert proposal["decision_origin"] == "agent_proposed"
+    assert proposal["payload"]["from_version"] == bootstrap["version"] == "2.1"
+    assert proposal["payload"]["artifact_hash_before"] == bootstrap["sha256"]
+    live = next(s for s in guard.enumerate_artifacts(repo=repo_with_matrix)
+               if s.artifact_id == MATRIX_REL)
+    assert proposal["payload"]["to_version"] == live.version == "2.2"
+    assert proposal["payload"]["expected_hash_after"] == live.sha256
+
+
+def test_regularization_proposal_with_no_real_change_is_rejected(repo_with_matrix, decisions_file):
+    versions_store = repo_with_matrix / "factory/registry/artifact_versions.jsonl"
+    _bootstrap_matrix_version_record(repo_with_matrix, versions_store)
+    with pytest.raises(apply_mod.ArtifactVersionProposalError, match="nada que regularizar"):
+        apply_mod.propose_regularization_for_applied_change(
+            artifact_path=MATRIX_REL, change_reason="test", proposed_by_id="claude",
+            repo=repo_with_matrix, decision_store_file=decisions_file,
+            versions_store_file=versions_store)
+
+
+def test_regularization_apply_never_touches_the_artifact_file(repo_with_matrix, decisions_file):
+    versions_store = repo_with_matrix / "factory/registry/artifact_versions.jsonl"
+    _bootstrap_matrix_version_record(repo_with_matrix, versions_store)
+    (repo_with_matrix / MATRIX_REL).write_text(_MATRIX_V2, encoding="utf-8")
+    before = (repo_with_matrix / MATRIX_REL).read_text(encoding="utf-8")
+
+    proposal = apply_mod.propose_regularization_for_applied_change(
+        artifact_path=MATRIX_REL, change_reason="test", proposed_by_id="claude",
+        repo=repo_with_matrix, decision_store_file=decisions_file,
+        versions_store_file=versions_store)
+    from factory.services import governance_service as gov
+    confirmed = gov.confirm(
+        proposal["decision_instance_id"], approved_by_id="cesar",
+        approved_by_display_name="Cesar", store_file=decisions_file,
+        family_state_hash=proposal["family_state_hash"])
+
+    record = apply_mod.apply_regularization_for_applied_change(
+        MATRIX_REL, decision_instance_id=confirmed["decision_instance_id"],
+        repo=repo_with_matrix, decision_store_file=decisions_file,
+        versions_store_file=versions_store)
+
+    assert (repo_with_matrix / MATRIX_REL).read_text(encoding="utf-8") == before
+    assert record["version"] == "2.2"
+    assert record["previous_version"] == "2.1"
+    assert record["approved_by_decision"] == confirmed["decision_instance_id"]
+
+    lines = versions_store.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 2  # bootstrap + esta regularizacion, append-only
+
+    state = next(s for s in guard.enumerate_artifacts(repo=repo_with_matrix)
+                if s.artifact_id == MATRIX_REL)
+    findings = guard.check_artifact(state, record, decision_store_file=decisions_file)
+    codes = {f.code for f in findings}
+    assert guard.VERSION_CHANGED_WITHOUT_DECISION not in codes
+
+
+def test_regularization_apply_rejects_when_live_state_drifted_since_proposal(
+        repo_with_matrix, decisions_file):
+    versions_store = repo_with_matrix / "factory/registry/artifact_versions.jsonl"
+    _bootstrap_matrix_version_record(repo_with_matrix, versions_store)
+    (repo_with_matrix / MATRIX_REL).write_text(_MATRIX_V2, encoding="utf-8")
+
+    proposal = apply_mod.propose_regularization_for_applied_change(
+        artifact_path=MATRIX_REL, change_reason="test", proposed_by_id="claude",
+        repo=repo_with_matrix, decision_store_file=decisions_file,
+        versions_store_file=versions_store)
+    from factory.services import governance_service as gov
+    confirmed = gov.confirm(
+        proposal["decision_instance_id"], approved_by_id="cesar",
+        approved_by_display_name="Cesar", store_file=decisions_file,
+        family_state_hash=proposal["family_state_hash"])
+
+    # el archivo sigue cambiando DESPUES de la firma
+    (repo_with_matrix / MATRIX_REL).write_text(
+        _MATRIX_V2 + "extra: field\n", encoding="utf-8")
+
+    with pytest.raises(apply_mod.ArtifactVersionApplyError, match="ya no coincide"):
+        apply_mod.apply_regularization_for_applied_change(
+            MATRIX_REL, decision_instance_id=confirmed["decision_instance_id"],
+            repo=repo_with_matrix, decision_store_file=decisions_file,
+            versions_store_file=versions_store)
+
+
+def test_regularization_apply_twice_is_rejected(repo_with_matrix, decisions_file):
+    versions_store = repo_with_matrix / "factory/registry/artifact_versions.jsonl"
+    _bootstrap_matrix_version_record(repo_with_matrix, versions_store)
+    (repo_with_matrix / MATRIX_REL).write_text(_MATRIX_V2, encoding="utf-8")
+
+    proposal = apply_mod.propose_regularization_for_applied_change(
+        artifact_path=MATRIX_REL, change_reason="test", proposed_by_id="claude",
+        repo=repo_with_matrix, decision_store_file=decisions_file,
+        versions_store_file=versions_store)
+    from factory.services import governance_service as gov
+    confirmed = gov.confirm(
+        proposal["decision_instance_id"], approved_by_id="cesar",
+        approved_by_display_name="Cesar", store_file=decisions_file,
+        family_state_hash=proposal["family_state_hash"])
+    apply_mod.apply_regularization_for_applied_change(
+        MATRIX_REL, decision_instance_id=confirmed["decision_instance_id"],
+        repo=repo_with_matrix, decision_store_file=decisions_file,
+        versions_store_file=versions_store)
+
+    with pytest.raises(apply_mod.ArtifactVersionApplyError, match="ya tiene approved_by_decision"):
+        apply_mod.apply_regularization_for_applied_change(
+            MATRIX_REL, decision_instance_id=confirmed["decision_instance_id"],
+            repo=repo_with_matrix, decision_store_file=decisions_file,
+            versions_store_file=versions_store)
+
+
 def test_double_apply_of_the_same_decision_is_rejected(repo, decisions_file):
     """Aplicar la MISMA decision dos veces -- la segunda ya no tiene nada que
     aplicar, el artefacto ya esta en to_version."""

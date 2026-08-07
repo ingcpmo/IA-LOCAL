@@ -11,6 +11,7 @@ import { submitW5Decision, submitW5Correction } from './w5_decisions.js';
 import { govOpen, govRecalcHash, govRefresh, govSubmitD1Correccion,
          govSubmitD1A, govSubmitPack211, govSubmitRevokeD2003,
          govSubmitExcepcion, govSubmitCatalogVersion,
+         govSubmitMatrixVersionRegularizacion,
          govSubmitApplicabilityMatrix, govSubmitGoldenDataset,
          govSubmitSourceCurrency, govSubmitD2A } from './governance.js';
 import {
@@ -39,6 +40,7 @@ Object.assign(window, {
   submitCreateMission, submitMissionDecision, submitRCDecision, submitW5Decision, submitW5Correction,
   govOpen, govRecalcHash, govRefresh, govSubmitD1Correccion, govSubmitD1A, govSubmitPack211,
   govSubmitRevokeD2003, govSubmitExcepcion, govSubmitCatalogVersion,
+  govSubmitMatrixVersionRegularizacion,
   govSubmitApplicabilityMatrix, govSubmitGoldenDataset, govSubmitSourceCurrency, govSubmitD2A,
   viewHeadlessLogs, submitHeadlessOff, submitModelChange,
   refreshPipeline, refreshPipelineIfConnected,

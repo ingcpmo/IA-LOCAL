@@ -94,11 +94,26 @@ const PANELS = [
        DE LA RED"). No es el mismo error que 'G5'/'G6' en golden-dataset:
        ahi el bloqueo prestado no tenia relacion real con el panel. */
     resumen:'Un hash identico no prueba vigencia normativa -- el juicio de que la norma sigue vigente lo declara quien firma, fuente por fuente.' },
+  { id:'matrix-version-regularizacion', gate:'G6-MVR', family:'ARTIFACT_VERSION',
+    titulo:'Matriz de aplicabilidad — regularización de versión (G6)',
+    /* Mismo motivo que golden-dataset para el gate ficticio: 'G6' a secas
+       es el bloqueo REAL de "versión 2.1->2.2 sin decisión ACTIVE que la
+       apruebe" -- justo lo que este panel existe para resolver. Con
+       gate:'G6' el boton quedaria deshabilitado por el propio problema
+       que hay que arreglar. Distinto del panel 'applicability-matrix'
+       (familia APPLICABILITY_MATRIX, aprueba el CONTENIDO de una version):
+       este es ARTIFACT_VERSION, la MISMA invariante hash<->version<->decision
+       que ya protege al catalogo (G4c) -- aqui aplicada, por primera vez, a
+       un cambio que ya esta en disco (commit 84a7a58, V6) sin decision
+       previa. */
+    resumen:'Regulariza 2.1→2.2 (V6, document_types) enlazando APPLICABILITY_MATRIX-2026-006 como fundamento humano. No reescribe el archivo: ya está correcto.' },
 ];
 
 const GOLDEN_DATASET_ARTIFACT_ID = 'factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py';
 
 const CATALOG_ARTIFACT_ID = 'factory/regulatory/requirement_catalog/requirements.yaml';
+
+const MATRIX_ARTIFACT_ID = 'factory/regulatory/applicability_matrix.yaml';
 
 /* ── error explícito, nunca un placeholder ─────────────────────────────── */
 
@@ -710,6 +725,114 @@ function panelCatalogVersion(){
   </div>`;
 }
 
+/* ── Panel — Matriz de aplicabilidad, regularización ARTIFACT_VERSION ────
+   Plan W5V2_ARQ_RETOMAR_Y_FINALIZAR.md Bloque 2: applicability_matrix.yaml
+   pasó de 2.1 a 2.2 (commit 84a7a58, V6) sin decisión ARTIFACT_VERSION que
+   lo cubra -- FAIL real de artifact_version_guard.check_artifact(), no
+   simulado. Mismo mecanismo de echo-back que catalog-version (endpoint
+   genérico /governance/artifact-version/{proposals,sign}, ya parametrizado
+   por artifact_path -- no hubo que tocar el backend de firma), pero
+   PROPUESTO con artifact_version_apply.propose_regularization_for_applied_change()
+   en vez de propose_artifact_version_change(): el cambio YA está en disco,
+   el 'antes' viene del bootstrap ya registrado (versions.jsonl), no de una
+   simulación de un cambio futuro. Aplicar (escribir el version_record) es
+   artifact_version_apply.apply_regularization_for_applied_change() -- un
+   paso separado y posterior, igual que el catálogo, y NUNCA reescribe el
+   YAML (ya está correcto). */
+
+function matrixVersionProposals(){
+  const props = GOV?.proposals?.ARTIFACT_VERSION || [];
+  return props.filter(p => (p.resolved_target_ids||[]).includes(MATRIX_ARTIFACT_ID));
+}
+
+function validMatrixVersionProposal(ms){
+  if(!ms || !ms.found) return null;
+  return matrixVersionProposals().find(p =>
+    p.proposal_state === 'PROPOSED' &&
+    p.payload && p.payload.artifact_path === MATRIX_ARTIFACT_ID &&
+    p.payload.from_version && p.payload.artifact_hash_before &&
+    p.payload.to_version === ms.live_version &&
+    p.payload.expected_hash_after === ms.live_sha256
+  ) || null;
+}
+
+function panelMatrixVersionRegularizacion(){
+  const c = GOV.coverage?.ARTIFACT_VERSION || {};
+  const art = GOV.artifacts || {};
+  const ms = art.matrix_state || {found:false};
+  const propuestas = matrixVersionProposals();
+  const valida = validMatrixVersionProposal(ms);
+
+  const filasPropuestas = propuestas.map(p => {
+    const t = p.payload && p.payload.to_version
+      ? `${esc(p.payload.from_version||'?')} → ${esc(p.payload.to_version)}`
+      : '(sin transición declarada -- no aplicable)';
+    const esValida = valida && p.decision_instance_id === valida.decision_instance_id;
+    return `<div class="meta" style="margin-top:4px">
+      <span class="mono">${esc(p.decision_instance_id)}</span>
+      [${esc(p.proposal_state)}] ${t}
+      ${esValida ? ' <b style="color:var(--pass)">← vigente, firmable</b>' : ''}
+    </div>`;
+  }).join('') || '<div class="meta" style="margin-top:4px">Ninguna propuesta para este artefacto.</div>';
+
+  return `
+  <div class="card">
+    <b>Matriz de aplicabilidad — regularización de versión (G6)</b>
+    ${coverageBlock('ARTIFACT_VERSION', c)}
+
+    <div style="margin-top:12px"><b>ARTEFACTO</b></div>
+    <div class="mono" style="margin-top:4px">${esc(MATRIX_ARTIFACT_ID)}</div>
+
+    ${ms.found ? `
+    <div class="meta" style="margin-top:6px">Estado VIVO (calculado ahora, no texto fijo):
+      versión <span class="mono">${esc(ms.live_version)}</span>,
+      hash <span class="mono">${esc((ms.live_sha256||'').slice(0,16))}…</span>.</div>
+    <div class="meta" style="margin-top:4px;color:var(--faint)">
+      El contenido de 2.2 ya está en disco (V6, expected_doc_types) y ya fue
+      revisado por vos bajo la familia <span class="mono">APPLICABILITY_MATRIX</span>
+      (<span class="mono">APPLICABILITY_MATRIX-2026-006</span>). Esta firma es
+      DISTINTA: cubre la invariante hash⟺versión⟺decisión de
+      <span class="mono">ARTIFACT_VERSION</span> (la misma que ya protege al
+      catálogo), no vuelve a aprobar el contenido.</div>` : `<div class="meta" style="margin-top:6px;color:var(--warn)">No se pudo leer el estado vivo de este artefacto.</div>`}
+
+    ${valida ? `
+    <div style="margin-top:12px;padding:8px;border:1px solid var(--pass)">
+      <b style="color:var(--pass)">PROPUESTA SELECCIONADA PARA FIRMAR</b>
+      <div class="meta" style="margin-top:6px">PROPOSAL_ID = <span class="mono">${esc(valida.decision_instance_id)}</span></div>
+      <div class="meta">FROM_VERSION = <span class="mono">${esc(valida.payload.from_version)}</span></div>
+      <div class="meta">TO_VERSION = <span class="mono">${esc(valida.payload.to_version)}</span></div>
+      <div class="meta">ARTIFACT_PATH = <span class="mono">${esc(valida.payload.artifact_path)}</span></div>
+      <div class="meta">ARTIFACT_HASH_BEFORE = <span class="mono">${esc(valida.payload.artifact_hash_before)}</span></div>
+      <div class="meta">EXPECTED_HASH_AFTER = <span class="mono">${esc(valida.payload.expected_hash_after)}</span></div>
+      <div class="meta">CHANGE_REASON = <span class="mono">${esc(valida.payload.change_reason)}</span></div>
+      <div class="meta" style="margin-top:6px">STATE_HASH = <span class="mono">${esc((GOV?.family_state_hashes?.ARTIFACT_VERSION||'').slice(0,16))}…</span></div>
+    </div>` : ''}
+
+    <div style="margin-top:12px"><b>PROPUESTAS ARTIFACT_VERSION PARA ESTE ARTEFACTO</b>
+      <span class="meta">(filtradas por <span class="mono">artifact_path</span> --
+      una propuesta del catálogo o del golden dataset nunca aparece aquí)</span></div>
+    ${filasPropuestas}
+
+    ${signatureForm('mxv')}
+    ${NO_EJECUTA}
+    <div class="meta" style="margin-top:6px;color:var(--faint)">
+      Registrar NO escribe el <span class="mono">version_record</span>: eso lo hace
+      <span class="mono">artifact_version_apply.apply_regularization_for_applied_change()</span>,
+      un paso separado que exige esta decisión ya confirmada. El archivo
+      <span class="mono">applicability_matrix.yaml</span> nunca se reescribe --
+      ya está en el estado que esta decisión aprueba.</div>
+    ${!valida ? `<div class="meta" style="margin-top:6px;color:var(--warn)">
+      No hay ninguna propuesta con la transición vigente (atada al hash/versión
+      VIVOS de hoy) -- el botón queda deshabilitado.</div>` : ''}
+    <div style="margin-top:12px">
+      <button id="mxv-submit-btn" ${valida?'':'disabled'} onclick="govSubmitMatrixVersionRegularizacion()">
+        ${valida ? `Confirmar ${esc(valida.decision_instance_id)}` : 'Registrar autorización'}</button>
+      <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
+    </div>
+    ${statusLine('mxv')}
+  </div>`;
+}
+
 /* ── Panel D-2 — Matriz de aplicabilidad (APPLICABILITY_MATRIX, G6) ────── */
 
 /* RC-7 (panel ARQ, 2026-08-05): esta familia nunca tuvo panel -- ni siquiera
@@ -1034,6 +1157,7 @@ function paint(){
   else if(p.id==='pack-211')       body = panelPack211();
   else if(p.id==='d2a')            body = panelD2A();
   else if(p.id==='catalog-version') body = panelCatalogVersion();
+  else if(p.id==='matrix-version-regularizacion') body = panelMatrixVersionRegularizacion();
   else if(p.id==='applicability-matrix') body = panelApplicabilityMatrix();
   else if(p.id==='golden-dataset') body = panelGoldenDataset();
   else if(p.id==='source-currency') body = panelSourceCurrency();
@@ -1341,6 +1465,50 @@ export async function govSubmitCatalogVersion(){
     setStatus('catv','fail', 'Error de red/JS al firmar: ' + (e && e.message || e));
   } finally {
     setBusy('catv-submit-btn', false);
+  }
+}
+
+/* Misma firma con echo-back que govSubmitCatalogVersion(), mismo endpoint
+   generico (parametrizado por artifact_path, no hubo que tocarlo) --
+   MATRIX_ARTIFACT_ID en vez de CATALOG_ARTIFACT_ID. */
+export async function govSubmitMatrixVersionRegularizacion(){
+  const ms = GOV?.artifacts?.matrix_state;
+  const valida = validMatrixVersionProposal(ms);
+  if(!valida){
+    setStatus('mxv', 'warn', 'No hay ninguna propuesta ARTIFACT_VERSION con la '
+      + 'transición vigente (atada al hash/versión vivos) para este artefacto.');
+    return;
+  }
+  const sig = readSignature('mxv');
+  if(!sig.reason){ setStatus('mxv','warn','El motivo es obligatorio.'); return; }
+  if(!sig.id){ setStatus('mxv','warn','La firma exige un identificador real.'); return; }
+  if(GOV_STALE){
+    setStatus('mxv','warn','El estado cambió desde que cargaste esta página. '
+      + 'Pulsa "Recargar estado" arriba antes de firmar.');
+    return;
+  }
+  setBusy('mxv-submit-btn', true);
+  setStatus('mxv','busy','Firmando (echo-back)…');
+  try {
+    const r = await postJSON('/api/v1/layer9/governance/artifact-version/sign', {
+      proposal_id: valida.decision_instance_id,
+      artifact_path: valida.payload.artifact_path,
+      from_version: valida.payload.from_version,
+      to_version: valida.payload.to_version,
+      artifact_hash_before: valida.payload.artifact_hash_before,
+      expected_hash_after: valida.payload.expected_hash_after,
+      state_hash: GOV?.family_state_hashes?.ARTIFACT_VERSION,
+      reason: sig.reason,
+      approved_by_id: sig.id,
+      approved_by_display_name: sig.name || sig.id,
+    });
+    if(!r.ok){ setStatus('mxv','fail', explicaError(r.status, r.data)); return; }
+    setStatus('mxv','ok', explicaFirma(r.data));
+    govRefresh();
+  } catch(e) {
+    setStatus('mxv','fail', 'Error de red/JS al firmar: ' + (e && e.message || e));
+  } finally {
+    setBusy('mxv-submit-btn', false);
   }
 }
 

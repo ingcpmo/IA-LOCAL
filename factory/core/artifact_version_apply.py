@@ -391,3 +391,147 @@ def apply_artifact_first_approval(artifact_id: str, *, decision_instance_id: str
     })
 
     return record
+
+
+# ---------------------------------------------------------------------------
+# Regularización — el cambio ya está en disco/commiteado, la decisión llega
+# después (plan W5V2_ARQ_RETOMAR_Y_FINALIZAR.md, Bloque 2.2)
+# ---------------------------------------------------------------------------
+#
+# Distinta de `propose_artifact_version_change`/`apply_catalog_version_bump`
+# (que simulan un cambio FUTURO antes de escribirlo) y de
+# `apply_artifact_first_approval` (que exige que el hash NO haya cambiado
+# desde el bootstrap). Caso real: `applicability_matrix.yaml` pasó de 2.1 a
+# 2.2 (commit `84a7a58`, V6 -- vocabulario de document_types) sin pasar por
+# ningún flujo gobernado porque en ese momento no existía uno para esta
+# clase. El "antes" no se reconstruye de la nada: viene del último
+# `version_record` YA registrado (aquí, el bootstrap de 2.1), nunca de git
+# ni de un valor aceptado como parámetro humano.
+
+def propose_regularization_for_applied_change(*, artifact_path: str,
+                                               change_reason: str,
+                                               proposed_by_id: str,
+                                               repo: Path | None = None,
+                                               decision_store_file: Path | None = None,
+                                               versions_store_file: Path | None = None) -> dict:
+    """Propone (`agent_proposed`) una decisión `ARTIFACT_VERSION` que cubra
+    una transición que YA ocurrió en disco. `from_version`/`artifact_hash_before`
+    se toman del último `version_record` registrado (nunca reconstruidos);
+    `to_version`/`expected_hash_after` del estado VIVO medido ahora. Mismos
+    6 campos obligatorios que `propose_artifact_version_change` -- la
+    decisión resultante se aplica con `apply_regularization_for_applied_change`,
+    no con `apply_catalog_version_bump` (que reescribiría un archivo que ya
+    está correcto)."""
+    base = repo or guard.REPO
+
+    current = next((s for s in guard.enumerate_artifacts(repo=base)
+                    if s.artifact_id == artifact_path), None)
+    if current is None:
+        raise ArtifactVersionProposalError(
+            f"{artifact_path!r} no aparece en enumerate_artifacts() -- ¿archivo ausente?")
+
+    records = guard.read_version_records(versions_store_file)
+    existing = guard.latest_record_for(artifact_path, records)
+    if existing is None:
+        raise ArtifactVersionProposalError(
+            f"{artifact_path!r} no tiene ningún version_record previo -- una "
+            "regularización necesita un 'antes' ya registrado (p.ej. un "
+            "bootstrap), nunca se reconstruye de la nada")
+    if existing.get("sha256") == current.sha256 and existing.get("version") == current.version:
+        raise ArtifactVersionProposalError(
+            f"{artifact_path!r} no cambió desde el último version_record -- "
+            "nada que regularizar")
+
+    payload = {
+        "artifact_path": artifact_path,
+        "artifact_hash_before": existing.get("sha256"),
+        "from_version": existing.get("version"),
+        "to_version": current.version,
+        "expected_hash_after": current.sha256,
+        "change_reason": change_reason,
+    }
+
+    from factory.services import governance_service as gov
+    return gov.propose(
+        "ARTIFACT_VERSION", target_ids=[artifact_path], decision_type="ORIGINAL",
+        selection_mode="EXPLICIT_LIST", proposed_by_id=proposed_by_id,
+        reason=change_reason, payload=payload, store_file=decision_store_file)
+
+
+def apply_regularization_for_applied_change(artifact_path: str, *,
+                                             decision_instance_id: str,
+                                             repo: Path | None = None,
+                                             decision_store_file: Path | None = None,
+                                             versions_store_file: Path | None = None) -> dict:
+    """Registra el `version_record` de una regularización ya propuesta y
+    confirmada. NUNCA toca el archivo del artefacto -- ya está en el estado
+    aprobado, escribirlo de nuevo sería una operación sin sentido y con
+    riesgo real de corromper contenido correcto. Mismos checks fail-closed
+    que `apply_catalog_version_bump`, sin el paso de escritura del YAML."""
+    base = repo or guard.REPO
+
+    scope = resolver.resolve(guard.DECISION_FAMILY, artifact_path,
+                             store_file=decision_store_file)
+    if not scope.authorized:
+        raise ArtifactVersionApplyError(
+            f"{artifact_path!r} no está autorizado para versionar: {scope.denial_reason}")
+    if decision_instance_id not in scope.covering_instances:
+        raise ArtifactVersionApplyError(
+            f"{decision_instance_id!r} no es una de las decisiones que otorgan "
+            f"cobertura ({scope.covering_instances!r}) -- no se aplica con una "
+            "decisión que no es la que lo autoriza")
+
+    decision = next((r for r in store.read_all(decision_store_file)
+                     if r.get("decision_instance_id") == decision_instance_id), None)
+    if decision is None:
+        raise ArtifactVersionApplyError(
+            f"{decision_instance_id!r} no se encuentra en el almacén de decisiones")
+    payload = decision.get("payload") or {}
+    missing = [f for f in REQUIRED_PROPOSAL_PAYLOAD_FIELDS if f not in payload]
+    if missing:
+        raise ArtifactVersionApplyError(
+            f"{decision_instance_id!r} no declara la transición exacta que autoriza "
+            f"(faltan en payload: {missing})")
+    if payload["artifact_path"] != artifact_path:
+        raise ArtifactVersionApplyError(
+            f"{decision_instance_id!r} autoriza artifact_path="
+            f"{payload['artifact_path']!r}, no {artifact_path!r} -- decisión de otro "
+            "artefacto")
+
+    current = next((s for s in guard.enumerate_artifacts(repo=base)
+                    if s.artifact_id == artifact_path), None)
+    if current is None:
+        raise ArtifactVersionApplyError(
+            f"{artifact_path!r} no aparece en enumerate_artifacts() -- ¿archivo ausente?")
+    if current.version != payload["to_version"] or current.sha256 != payload["expected_hash_after"]:
+        raise ArtifactVersionApplyError(
+            f"el estado vivo (version={current.version!r}, sha256={current.sha256}) "
+            "ya no coincide con lo que la decisión declaró -- el archivo cambió desde "
+            "que se propuso, re-proponer sobre el estado actual")
+
+    records = guard.read_version_records(versions_store_file)
+    existing = guard.latest_record_for(artifact_path, records)
+    if existing is not None and existing.get("approved_by_decision"):
+        raise ArtifactVersionApplyError(
+            f"{artifact_path!r} ya tiene approved_by_decision="
+            f"{existing['approved_by_decision']!r} -- nada que aplicar")
+
+    record = guard.build_version_record(
+        current, previous_version=payload["from_version"],
+        previous_sha256=payload["artifact_hash_before"],
+        approved_by_decision=decision_instance_id)
+
+    path = versions_store_file or guard.STORE_FILE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    write_event("artifact_version_applied", "factory", {
+        "artifact_id": artifact_path,
+        "from_version": payload["from_version"],
+        "to_version": payload["to_version"],
+        "approved_by_decision": decision_instance_id,
+        "regularization": True,
+    })
+
+    return record
