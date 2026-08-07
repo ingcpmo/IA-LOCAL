@@ -233,6 +233,33 @@ def _load_previous() -> dict | None:
         return None
 
 
+def _load_runtime_calibration_metrics(fingerprint: dict) -> dict[str, tuple[float, str]]:
+    """Métricas de rendimiento medidas por una corrida real de
+    `model_requalification_calibration.run_runtime_calibration()`, SOLO si
+    su `fingerprint` coincide EXACTAMENTE con el de esta evaluación -- una
+    calibración medida contra una configuración distinta (otro modelo,
+    otro num_ctx, otro catálogo) no es evidencia válida para esta, mismo
+    criterio que `QUALIFICATION_INVALIDATED` para el resto del gate.
+
+    Import diferido (no al tope del módulo): `model_requalification_calibration`
+    importa este módulo para llamar a `evaluate_model_qualification()` y
+    `require_inference_authorized()` antes de medir -- un import de nivel de
+    módulo en ambos sentidos sería un ciclo real."""
+    from factory.regulatory.model_requalification_calibration import load_calibration_record
+
+    record = load_calibration_record()
+    if record is None or record.get("fingerprint") != fingerprint:
+        return {}
+    basis = (f"corrida real de calibracion {record.get('run_id')!r} "
+             f"({record.get('n_calls')} llamadas, {record.get('measured_at')})")
+    out = {}
+    for name in RUNTIME_ONLY_METRICS:
+        valor = record.get("metrics", {}).get(name)
+        if valor is not None:
+            out[name] = (valor, basis)
+    return out
+
+
 def evaluate_model_qualification(provider=None, *, persist: bool = False) -> QualificationResult:
     """Ejecuta el gate completo. `persist=True` graba el registro de
     calificación (solo se debería hacer desde una calificación real,
@@ -241,16 +268,28 @@ def evaluate_model_qualification(provider=None, *, persist: bool = False) -> Qua
     resumen = summarize(results)
     derivadas = _metrics_from_golden(results)
     fingerprint = build_qualification_fingerprint(provider)
+    calibradas = _load_runtime_calibration_metrics(fingerprint)
 
     metricas: list[MetricResult] = []
     for name in REQUIRED_METRICS:
         umbral = THRESHOLDS.get(name)
         if name in RUNTIME_ONLY_METRICS:
-            metricas.append(MetricResult(
-                name=name, value=None, threshold=None, measured=False, passed=None,
-                basis="NOT_MEASURED: requiere una corrida real de inferencia; el Golden "
-                      "Dataset es determinista y no la produce. Nunca se sustituye por 0.",
-            ))
+            if name in calibradas:
+                valor, basis = calibradas[name]
+                # Sin umbral definido todavia (D4-A/G6 no fijan uno para
+                # rendimiento -- son insumo del presupuesto de corpus, no un
+                # criterio pasa/no-pasa): measured=True, passed=True. El
+                # gating real de estas 4 metricas es "medida o no", no un
+                # valor contra umbral -- eso es lo que decide QUALIFIED vs
+                # QUALIFIED_FOR_VALIDATION_ONLY mas abajo (sin_medir).
+                metricas.append(MetricResult(name=name, value=valor, threshold=None,
+                                             measured=True, passed=True, basis=basis))
+            else:
+                metricas.append(MetricResult(
+                    name=name, value=None, threshold=None, measured=False, passed=None,
+                    basis="NOT_MEASURED: requiere una corrida real de inferencia; el Golden "
+                          "Dataset es determinista y no la produce. Nunca se sustituye por 0.",
+                ))
             continue
         if name not in derivadas:
             metricas.append(MetricResult(
