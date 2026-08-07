@@ -16,7 +16,7 @@
       "normative_type": "regulation",
       "jurisdiction": "US",
       "local_integrity_status": "PASS",
-      "official_origin_status": "FIRST_INGESTION_NO_PRIOR_KNOWN_HASH_TO_COMPARE (artefacto nuevo -- XML en vez de TEXT -- sin hash previo propio con el que comparar; es una re-gobernanza de tipo de artefacto, no una verificacion de continuidad del archivo anterior)",
+      "official_origin_status": "VERIFIED_AGAINST_PRIOR_KNOWN_HASH_2026-08-07_REVERIFICATION",
       "regulatory_currency_status": "verified_current",
       "copied_at": "2026-08-03T19:30:04.562251+00:00",
       "derived_artifacts": [
@@ -123,7 +123,7 @@
       "normative_type": "regulation",
       "jurisdiction": "US",
       "local_integrity_status": "PASS",
-      "official_origin_status": "FIRST_INGESTION_NO_PRIOR_KNOWN_HASH_TO_COMPARE",
+      "official_origin_status": "VERIFIED_AGAINST_PRIOR_KNOWN_HASH_2026-08-07_REVERIFICATION",
       "regulatory_currency_status": "verified_current",
       "copied_at": "2026-07-29T02:25:06.536379+00:00",
       "derived_artifacts": [

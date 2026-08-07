@@ -435,45 +435,33 @@ def test_l07_integrity_is_recomputed_not_trusted(tmp_path):
 # L-08 -- las cuatro fuentes reales
 # ===========================================================================
 
-def test_l08_only_a_real_source_currency_confirmation_grants_formal_use():
-    """Dos de las cuatro fuentes reales SI son usables formalmente hoy --
-    y las otras dos siguen sin serlo, por un motivo real y distinto.
+def test_l08_all_four_reached_formal_use_after_currency_and_origin_confirmed():
+    """Las cuatro fuentes reales SI son usables formalmente hoy.
 
-    Antes esta asercion decia "ninguna de las cuatro" y su docstring ya
-    anunciaba el patron: "cambiara en G2, y ese cambio es la prueba de que
-    la Correccion D1 hizo algo". Paso otra vez, con la mecanica correcta
-    esta vez: SOURCE_CURRENCY (2026-08-05) es un mecanismo NUEVO y
-    SEPARADO de D1 -- exige evidencia real de re-verificacion
-    (source_currency_log.jsonl, comparable=True/matches=True) MAS el
-    juicio humano explicito de que la norma sigue vigente, no solo la
-    autorizacion generica de D1. Cesar firmo las 4 propuestas
-    (SOURCE_CURRENCY-2026-005..008) y 2 alcanzaron LOCAL_CANONICAL_COPY_
-    VERIFIED de verdad: eu_gmp_annex11 y mhra_gxp_di_guidance_2018.
-
-    Las otras dos (ecfr_21cfr_part11, ecfr_21cfr_part211) siguen en
-    AUTHORIZED_PENDING_REVERIFICATION pese a tener regulatory_currency=
-    CURRENT -- las bloquea una QUINTA dimension distinta,
-    official_origin_verification=NOT_COMPARABLE_FIRST_INGESTION (campo
-    estatico fijado en su re-gobernanza a XML), que SOURCE_CURRENCY no
-    toca y que solo se resuelve con un nuevo ciclo de re-ingesta real.
+    Antes esta asercion decia "ninguna de las cuatro", luego "dos de
+    cuatro" -- el docstring original ya anunciaba el patron: "cambiara en
+    G2, y ese cambio es la prueba de que la Correccion D1 hizo algo". Paso
+    una tercera vez, con la ultima pieza que faltaba: SOURCE_CURRENCY
+    (2026-08-05, Cesar firmo SOURCE_CURRENCY-2026-005..008) cubrio la
+    vigencia normativa de las 4; SOURCE_ORIGIN_VERIFICATION (2026-08-07,
+    DEC-B, `source_origin_verification.py`) cubrio la QUINTA dimension
+    distinta que solo bloqueaba a ecfr_21cfr_part11/ecfr_21cfr_part211 --
+    official_origin_verification, que SOURCE_CURRENCY nunca toca y que
+    solo se resuelve con una segunda observacion real de origen
+    (Cesar firmo SOURCE_ORIGIN_VERIFICATION-2026-003/004). Con ambas
+    dimensiones en verde para las 4, las 4 llegan a LOCAL_CANONICAL_COPY_
+    VERIFIED de verdad.
     """
     dims = sl.evaluate_registry()
     assert {d.source_id for d in dims} == set(REAL_SOURCE_IDS)
     por_id = {d.source_id: d for d in dims}
 
-    verificadas = {"eu_gmp_annex11", "mhra_gxp_di_guidance_2018"}
-    for sid in verificadas:
+    for sid in REAL_SOURCE_IDS:
         assert por_id[sid].lifecycle_state == sl.LOCAL_CANONICAL_COPY_VERIFIED, sid
+        assert por_id[sid].official_origin_verification == sl.ORIGIN_VERIFIED, sid
         assert por_id[sid].formal_use_eligibility is True, (
-            f"{sid} tiene evidencia real de re-verificacion y firma humana -- "
-            "deberia ser elegible")
-
-    for sid in set(REAL_SOURCE_IDS) - verificadas:
-        assert por_id[sid].lifecycle_state == sl.AUTHORIZED_PENDING_REVERIFICATION, sid
-        assert por_id[sid].official_origin_verification == sl.ORIGIN_FIRST_INGESTION, sid
-        assert por_id[sid].formal_use_eligibility is False, (
-            f"{sid} sigue con origen NOT_COMPARABLE_FIRST_INGESTION -- no puede "
-            "ser elegible aunque la vigencia sea CURRENT")
+            f"{sid} tiene evidencia real de re-verificacion de vigencia y de origen, "
+            "mas firma humana de ambas -- deberia ser elegible")
 
 
 def test_l08_d1_authorization_alone_never_grants_verified():
@@ -502,24 +490,25 @@ def test_l08_d1_authorization_alone_never_grants_verified():
             f"{sid}: {dim.lifecycle_state}"
 
 
-def test_l08_part211_origin_is_amber_and_the_others_are_green():
-    """La diferencia real entre las fuentes recien ingeridas y las demas se
-    conserva. Aterrizar todas en el mismo estado no puede borrar POR QUE.
+def test_l08_all_four_origins_are_green():
+    """La diferencia real entre las fuentes recien ingeridas y las demas
+    existio y se documento aqui mientras duro -- este test es su cierre,
+    no su borrado.
 
-    `ecfr_21cfr_part11` se une a `ecfr_21cfr_part211` en ambar desde la
+    `ecfr_21cfr_part11` se unio a `ecfr_21cfr_part211` en ambar desde la
     re-gobernanza real de G3 (2026-08-03, `human_source_regovernance.py`):
     el archivo canonico cambio de TEXT a XML, `official_origin_status`
-    vuelve a `FIRST_INGESTION_...` porque no hay hash previo propio con el
-    que comparar el artefacto nuevo -- mismo motivo por el que Part 211
-    quedo ambar al ingerirse. El ambar de ambas se resuelve con una
-    reverificacion; el rojo de la cobertura, con una firma. Son remedios
-    distintos.
-    """
+    volvio a `FIRST_INGESTION_...` porque no habia hash previo propio con
+    el que comparar el artefacto nuevo -- mismo motivo por el que Part 211
+    quedo ambar al ingerirse. El ambar de ambas se resolvio (2026-08-07,
+    DEC-B) con una segunda observacion real de origen
+    (`source_origin_verification.py`, `SOURCE_ORIGIN_VERIFICATION-2026-003/
+    004`, Cesar) -- no con el paso del tiempo solo, sino con la evidencia
+    real ya recolectada por `reverify_governed_sources.py` mas la firma
+    humana que faltaba."""
     by_id = {d.source_id: d for d in sl.evaluate_registry()}
-    for sid in ("ecfr_21cfr_part211", "ecfr_21cfr_part11"):
-        assert by_id[sid].official_origin_verification == sl.ORIGIN_FIRST_INGESTION
-    for sid in ("eu_gmp_annex11", "mhra_gxp_di_guidance_2018"):
-        assert by_id[sid].official_origin_verification == sl.ORIGIN_VERIFIED
+    for sid in REAL_SOURCE_IDS:
+        assert by_id[sid].official_origin_verification == sl.ORIGIN_VERIFIED, sid
 
 
 def test_l08_all_four_have_intact_local_copies():

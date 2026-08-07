@@ -128,7 +128,18 @@ def test_p01_v8_hash_version_mismatch():
 
 
 def test_p01_v9_source_not_verified():
-    r = validate_pack(PART211)  # ecfr_21cfr_part211: pending_reverification real
+    """Ya no hay ningun pack REAL que falle V9 (2026-08-07: las 4 fuentes
+    gobernadas llegaron a VERIFIED_AGAINST_PRIOR_KNOWN_HASH tras el cierre
+    de G3 -- ver `source_origin_verification.py`, DEC-B). V9 sigue siendo
+    una regla real; se prueba con una fuente sintetica sin verificar, mismo
+    patron que V10 (test_p01_v10_source_not_covered_by_d1)."""
+    # V9 lee source_lifecycle.evaluate_registry() sobre el REGISTRY REAL
+    # (nunca el `registry=` sintetico de este helper -- eso es a proposito,
+    # ver docstring de _registry_with_verified_source): un source_id que no
+    # existe en el registry real siempre da lifecycle_state=DESCONOCIDO.
+    pack = _minimal_pack(source_id="a_source_never_verified")
+    r = validate_pack("X", requirements=_catalog_with("X", pack),
+                      registry=_registry_with_verified_source("a_source_never_verified"))
     assert "V9_SOURCE_NOT_VERIFIED" in r.failure_codes()
 
 
@@ -201,14 +212,18 @@ def test_p04_identical_criterion_between_two_requirements_is_rejected():
 # Fase A/C, en vez de cada criterio interpretativo suelto).
 # ---------------------------------------------------------------------------
 
-def test_p05_the_real_pack_211_fails_only_v9_today():
-    """Actualizado (Opcion A, 2026-08-05): la cita literal real de 211.68(b)
-    (`citation.citation_text`, Fase C, ya verificada) SI ancla al texto
-    canonico -- V5 ya no falla. Solo queda V9 (Part 211 sigue
-    NOT_COMPARABLE_FIRST_INGESTION, bloqueo distinto de SOURCE_CURRENCY)."""
+def test_p05_the_real_pack_211_passes_v1_through_v10_today():
+    """Segunda actualizacion (2026-08-07, DEC-B): la segunda observacion
+    real de origen de `ecfr_21cfr_part211` (`source_origin_verification.py`,
+    `SOURCE_ORIGIN_VERIFICATION-2026-004`) promovio la fuente a
+    `VERIFIED_AGAINST_PRIOR_KNOWN_HASH` -- V9 ya no falla para este pack.
+    Junto con V5 (ya cerrado, Opcion A 2026-08-05), el pack de 211.68(b)
+    pasa V1..V10 completo por primera vez. `d2a_ready()` puede seguir
+    bloqueado por otra dimension (matriz/D2) -- eso lo cubre P-11, no este
+    test."""
     r = validate_pack(PART211)
-    assert not r.passed
-    assert set(r.failure_codes()) == {"V9_SOURCE_NOT_VERIFIED"}
+    assert r.passed
+    assert r.failure_codes() == ()
 
 
 def test_p06_the_19_other_real_packs_never_fail_v5_v9_depends_on_real_source_currency():
@@ -313,41 +328,41 @@ def test_p09_pack_approval_is_independent_per_requirement(tmp_path):
 # P-11 -- d2a_ready() de los 20 requisitos hoy: los 20 false
 # ---------------------------------------------------------------------------
 
-def test_p11_fourteen_packs_are_ready_after_matrix_and_d2_signed():
-    """Quinta actualizacion real (sesion ARQ, 2026-08-07): Cesar firmo
+def test_p11_all_twenty_packs_are_ready_after_matrix_signed_and_origin_verified():
+    """Quinta actualizacion (sesion ARQ, 2026-08-07): Cesar firmo
     `APPLICABILITY_MATRIX-2026-006` (matriz 2.2, 2026-08-05T20:40:30Z) y las
     14 decisiones D2 (`D2-2026-025..053`, 2026-08-05T21:10-21:18Z) de los
     requisitos que ya pasaban V1-V10. Con matrix_approved=True + D2 cubierto
-    + pack_complete=True, esos 14 llegan a D2A_READY=true de verdad -- ya no
-    es el estado transitorio "matriz pendiente de firma" que este test
-    documentaba antes. Los 6 restantes (5 clausulas de Part 11 +
-    `21_CFR_211.68(b)`) siguen bloqueados por V9 (fuente en
-    `AUTHORIZED_PENDING_REVERIFICATION`), no por la matriz ni por D2."""
-    listos_reales = {
-        "ANNEX11_4", "ANNEX11_7.1", "ANNEX11_9", "ANNEX11_12", "ANNEX11_17",
-        "ALCOA_ATTRIBUTABLE", "ALCOA_LEGIBLE", "ALCOA_CONTEMPORANEOUS",
-        "ALCOA_ORIGINAL", "ALCOA_ACCURATE", "ALCOA_COMPLETE", "ALCOA_CONSISTENT",
-        "ALCOA_ENDURING", "ALCOA_AVAILABLE",
-    }
+    + pack_complete=True, esos 14 llegan a D2A_READY=true de verdad.
+
+    Sexta actualizacion, mismo dia (DEC-B): la segunda observacion real de
+    origen (`source_origin_verification.py`) promovio
+    `ecfr_21cfr_part11`/`ecfr_21cfr_part211` a
+    `VERIFIED_AGAINST_PRIOR_KNOWN_HASH` -- V9 ya no bloquea a nadie. Los 6
+    restantes (5 clausulas de Part 11 + `21_CFR_211.68(b)`) ya pasan V1-V10
+    completo. `d2a_ready()` mide V1-V10+matriz, NUNCA cobertura D2 (esa la
+    mide `governance_service` G5 aparte, ver `coverage.D2.uncovered_ids`) --
+    por eso los 20 llegan a `ready=True` aqui aunque 5 de ellos SIGAN sin
+    D2 confirmado (propuesto como D2-2026-054..058, sin firmar todavia)."""
     assert len(ALL_REQUIREMENT_IDS) == 20
-    assert len(listos_reales) == 14
     for rid in ALL_REQUIREMENT_IDS:
         readiness = d2a_ready(rid)
         assert readiness.matrix_approved is True, (
             f"{rid}: matriz 2.2 ya esta firmada (APPLICABILITY_MATRIX-2026-006) "
             f"({readiness.reasons})")
-        if rid in listos_reales:
-            assert readiness.pack_complete is True, f"{rid}: se esperaba pack_complete=True"
-            assert readiness.ready is True, (
-                f"{rid}: se esperaba d2a_ready=True ({readiness.reasons})")
-        else:
-            assert readiness.ready is False, (
-                f"{rid}: se esperaba d2a_ready=False (bloqueado por V9, fuente sin "
-                f"reverificar) ({readiness.reasons})")
+        assert readiness.pack_complete is True, f"{rid}: se esperaba pack_complete=True ({readiness.reasons})"
+        assert readiness.ready is True, (
+            f"{rid}: se esperaba d2a_ready=True ({readiness.reasons})")
 
 
-def test_p11_reasons_are_never_empty_when_not_ready():
-    readiness = d2a_ready(PART211)
+def test_p11_reasons_are_never_empty_when_not_ready(tmp_path):
+    """PART211 ya no sirve de ejemplo de 'no ready' (2026-08-07: pasa V1-V10
+    completo, ver test_p11_all_twenty_packs_are_ready_...). Se fuerza el
+    caso con un almacen de decisiones vacio -- D1 sin cobertura, mismo
+    patron que test_p01_v10_source_not_covered_by_d1."""
+    empty_store = tmp_path / "decisions_v2.jsonl"
+    empty_store.write_text("", encoding="utf-8")
+    readiness = d2a_ready(PART211, decision_store_file=empty_store)
     assert readiness.ready is False
     assert len(readiness.reasons) >= 1
     assert all(isinstance(r, str) and r for r in readiness.reasons)
