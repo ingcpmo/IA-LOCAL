@@ -107,6 +107,18 @@ const PANELS = [
        un cambio que ya esta en disco (commit 84a7a58, V6) sin decision
        previa. */
     resumen:'Regulariza 2.1→2.2 (V6, document_types) enlazando APPLICABILITY_MATRIX-2026-006 como fundamento humano. No reescribe el archivo: ya está correcto.' },
+  { id:'source-origin-verification', gate:'G3', family:'SOURCE_ORIGIN_VERIFICATION',
+    titulo:'Segunda observación de origen (G3, DEC-B)',
+    /* Igual que source-currency, 'G3' es correcto reusar: el bloqueo real
+       (G2 sin cerrar) es una precondicion legitima. Familia DISTINTA de
+       SOURCE_CURRENCY -- esa declara vigencia normativa (un hash identico
+       no prueba que la norma siga vigente); esta declara procedencia del
+       archivo (que existe una segunda observacion real contra el mismo
+       origen oficial, el dato que source_lifecycle.py exige para dejar de
+       ser NOT_COMPARABLE_FIRST_INGESTION). No tiene campo de juicio humano
+       libre como source-currency: un hash coincidente ya prueba el hecho
+       por si mismo, no requiere interpretacion regulatoria. */
+    resumen:'Promueve el ámbar FIRST_INGESTION a VERIFIED_AGAINST_PRIOR_KNOWN_HASH cuando una segunda reingesta real coincidió con el origen oficial ya gobernado.' },
 ];
 
 const GOLDEN_DATASET_ARTIFACT_ID = 'factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py';
@@ -1053,6 +1065,84 @@ function panelSourceCurrency(){
   </div>`;
 }
 
+/* ── Panel — Segunda observación de origen (SOURCE_ORIGIN_VERIFICATION, G3,
+   DEC-B) ── plan W5V2_ARQ_RETOMAR_Y_FINALIZAR.md Bloque 1. Mismo par de
+   helpers (proposals/firmadas) y misma estructura de panel que
+   source-currency -- diferencia real: sin campo de juicio humano libre
+   (el hash coincidente ya prueba procedencia por si mismo), y el resumen
+   deja explícito el ANTES/DESPUÉS del official_origin_status. */
+
+function sourceOriginVerificationProposals(){
+  return (GOV?.proposals?.SOURCE_ORIGIN_VERIFICATION || [])
+    .filter(p => p.proposal_state === 'PROPOSED');
+}
+
+function sourceOriginVerificationFirmadas(){
+  return (GOV?.proposals?.SOURCE_ORIGIN_VERIFICATION || [])
+    .filter(p => p.proposal_state === 'CONFIRMED')
+    .sort((a, b) => (a.signed_at||'').localeCompare(b.signed_at||''));
+}
+
+function panelSourceOriginVerification(){
+  const propuestas = sourceOriginVerificationProposals();
+  const firmadas = sourceOriginVerificationFirmadas();
+
+  const bloques = propuestas.map(p => {
+    const sid = (p.resolved_target_ids || [])[0] || '?';
+    const prefix = 'sov_' + sid.replace(/[^a-zA-Z0-9]/g, '_');
+    const pl = p.payload || {};
+    return `<div class="card" style="margin-top:10px;padding:8px;border:1px solid var(--warn)">
+      <b>${esc(sid)}</b>
+      <div class="meta" style="margin-top:6px">PROPOSAL_ID = <span class="mono">${esc(p.decision_instance_id)}</span></div>
+      <div class="meta">Verificación revisada: <span class="mono">${esc(pl.reviewed_log_checked_at||'?')}</span></div>
+      <div class="meta">SHA256 observado: <span class="mono">${esc((pl.reviewed_downloaded_sha256||'').slice(0,16))}…</span></div>
+      <div class="meta" style="margin-top:6px">ANTES: <span class="mono">${esc(pl.prior_official_origin_status||'?')}</span></div>
+      <div class="meta">DESPUÉS: <span class="mono">VERIFIED_AGAINST_PRIOR_KNOWN_HASH_&lt;fecha&gt;_REVERIFICATION</span>
+        <span class="meta" style="color:var(--faint)"> (fecha real del día en que se aplique)</span></div>
+      ${signatureForm(prefix, {motivoLabel:'MOTIVO DE LA FIRMA'})}
+      <div style="margin-top:8px">
+        <button id="${prefix}-submit-btn"
+          onclick="govSubmitSourceOriginVerification('${esc(p.decision_instance_id)}','${esc(prefix)}')">
+          Confirmar segunda observación de ${esc(sid)}</button>
+      </div>
+      ${statusLine(prefix)}
+    </div>`;
+  }).join('') || `<div class="meta" style="margin-top:8px;color:var(--pass)">
+    Ninguna propuesta pendiente de firma -- las fuentes de abajo ya están confirmadas,
+    o todavía no hay una segunda observación real que proponer.</div>`;
+
+  const historial = firmadas.length ? `
+    <div style="margin-top:16px"><b>YA FIRMADAS (${firmadas.length})</b></div>
+    <table class="tbl" style="width:100%;font-size:11px;margin-top:6px">
+      <thead><tr><th>Fuente</th><th>Propuesta</th><th>Firmado por</th><th>Cuándo</th></tr></thead>
+      <tbody>${firmadas.map(p => `<tr>
+        <td class="mono">${esc((p.resolved_target_ids||[])[0] || '?')}</td>
+        <td class="mono">${esc(p.decision_instance_id)}</td>
+        <td>${esc(p.signed_by_display_name || p.signed_by_id || '?')}</td>
+        <td class="mono">${esc((p.signed_at||'').slice(0,16).replace('T',' '))}</td>
+      </tr>`).join('')}</tbody>
+    </table>` : '';
+
+  return `
+  <div class="card">
+    <b>Segunda observación de origen — G3, DEC-B</b>
+    <div class="meta" style="margin-top:6px">
+      <span class="mono">source_lifecycle.py</span> deja una fuente en ámbar
+      (<span class="mono">FIRST_INGESTION_NO_PRIOR_KNOWN_HASH</span>) hasta que
+      exista una segunda comparación real en el tiempo contra el mismo origen
+      oficial. Cada bloque es una fuente con evidencia real ya recolectada
+      (<span class="mono">source_currency_log.jsonl</span>, generada por
+      <span class="mono">reverify_governed_sources.py</span>) esperando que
+      confirmes que esa segunda observación es la que autoriza promover el
+      estado -- distinto de "vigencia regulatoria" (panel de arriba): aquí
+      no se declara si la norma sigue aplicando, solo que el archivo
+      gobernado coincide con una segunda descarga real del mismo origen.</div>
+    ${NO_EJECUTA}
+    ${bloques}
+    ${historial}
+  </div>`;
+}
+
 function panelExcepcion(){
   const a = GOV.audit;
   const MEDIDAS = medidas();
@@ -1161,6 +1251,7 @@ function paint(){
   else if(p.id==='applicability-matrix') body = panelApplicabilityMatrix();
   else if(p.id==='golden-dataset') body = panelGoldenDataset();
   else if(p.id==='source-currency') body = panelSourceCurrency();
+  else if(p.id==='source-origin-verification') body = panelSourceOriginVerification();
   else if(p.id==='excepcion-auditoria') body = panelExcepcion();
   else                             body = panelPendiente(p);
   el.innerHTML = banner + body;
@@ -1575,6 +1666,13 @@ export async function govSubmitSourceCurrency(decisionInstanceId, prefix){
     return;
   }
   await confirmarPropuestaExistente(decisionInstanceId, 'SOURCE_CURRENCY', sig,
+                                    {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
+}
+
+export async function govSubmitSourceOriginVerification(decisionInstanceId, prefix){
+  const sig = readSignature(prefix);
+  if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
+  await confirmarPropuestaExistente(decisionInstanceId, 'SOURCE_ORIGIN_VERIFICATION', sig,
                                     {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
 }
 

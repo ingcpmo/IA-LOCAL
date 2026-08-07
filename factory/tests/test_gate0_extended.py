@@ -238,7 +238,7 @@ def test_warnings_do_not_block_the_gate():
 # Estado real de hoy, extremo a extremo
 # ===========================================================================
 
-def test_the_real_artifact_guard_reports_the_g4c_version_bump_closed():
+def test_the_real_artifact_guard_reports_the_g6_matrix_regularization_closed():
     """G4a (2026-07-30): se redacto el pack de 21_CFR_211.68(b) -- el
     catalogo cambio de contenido (hash) y `catalog_version` se dejo en 1.0 a
     proposito (ver docstring de artifact_version_guard.py: bumpearlo ahora,
@@ -271,16 +271,24 @@ def test_the_real_artifact_guard_reports_the_g4c_version_bump_closed():
     2.2 -- el MISMO patron que el catalogo antes de G4c. FAIL vuelve a
     aparecer (1, no 0): VERSION_CHANGED_WITHOUT_DECISION para
     applicability_matrix, honesto y esperado hasta que Cesar firme
-    APPLICABILITY_MATRIX-2026-005."""
+    APPLICABILITY_MATRIX-2026-005.
+
+    G6-MVR (2026-08-07, plan W5V2_ARQ_RETOMAR_Y_FINALIZAR.md Bloque 2.2):
+    Cesar firmo ARTIFACT_VERSION-2026-011, regularizando la transicion
+    2.1->2.2 (el cambio YA estaba en disco, sin decision ARTIFACT_VERSION
+    que lo cubriera) enlazando APPLICABILITY_MATRIX-2026-006 (aprobacion de
+    contenido ya firmada) como fundamento humano.
+    `apply_regularization_for_applied_change()` escribio el version_record.
+    El FAIL desaparece de nuevo (fail_count 0) y la matriz sale de
+    warn_count (24, no 25)."""
     from factory.core import artifact_version_guard as guard
     r = guard.guard_report()
-    assert r["status"] == "FAIL"
-    assert r["fail_count"] == 1
-    assert r["warn_count"] == 25
+    assert r["status"] == "WARN"
+    assert r["fail_count"] == 0
+    assert r["warn_count"] == 24
     fails = [f for f in r["findings"] if f["severity"] == "FAIL"]
-    assert len(fails) == 1
-    assert fails[0]["artifact"] == "applicability_matrix"
-    assert fails[0]["code"] == "VERSION_CHANGED_WITHOUT_DECISION"
+    assert len(fails) == 0
+    assert not any(f["artifact"] == "applicability_matrix" for f in r["findings"])
     assert not any(f["artifact_id"].endswith("requirements.yaml") for f in r["findings"])
     assert not any(f["artifact_id"].endswith("semantic_verification_golden_dataset.py")
                   for f in r["findings"])

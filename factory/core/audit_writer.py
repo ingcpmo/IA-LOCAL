@@ -182,6 +182,12 @@ VALID_EVENTS = {
     # URL/hash-original, canonical_path nunca cambia) y de _registered (fuente
     # nueva): este cambia el tipo de artefacto de una fuente que ya existe.
     "regulatory_source_regoverned",
+    # W5V2-ARQ (2026-08-07) — apply_source_origin_verification() promueve
+    # official_origin_status FIRST_INGESTION -> VERIFIED_AGAINST_PRIOR_KNOWN_HASH
+    # sobre una segunda reingesta real (source_currency_log.jsonl) que coincide
+    # con el mismo origen ya gobernado. Distinto de _source_currency_confirmed
+    # (ese declara vigencia normativa; este declara procedencia del archivo).
+    "regulatory_source_origin_verified",
     # W6.5 — propuestas de agente sobre el dossier: el agente propone, el humano decide
     "dossier_agent_proposal_generated",
     "dossier_agent_proposal_failed",

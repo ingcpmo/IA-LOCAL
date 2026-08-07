@@ -591,10 +591,16 @@ def test_the_bootstrapped_store_photographs_without_approving():
     ni cambio de contenido) y `apply_artifact_first_approval()` escribio el
     33o record, primero para el artefacto `golden_dataset` con
     approved_by_decision='ARTIFACT_VERSION-2026-009'.
+
+    G6 regularizacion (2026-08-07, plan W5V2_ARQ_RETOMAR_Y_FINALIZAR.md
+    Bloque 2.2): Cesar firmo ARTIFACT_VERSION-2026-011, regularizando la
+    transicion 2.1->2.2 de applicability_matrix.yaml que ya estaba en disco
+    sin decision -- `apply_regularization_for_applied_change()` escribio el
+    34o record, con approved_by_decision='ARTIFACT_VERSION-2026-011'.
     """
     assert guard.STORE_FILE.exists(), "el almacen deberia existir tras el bootstrap de G4"
     records = guard.read_version_records()
-    assert len(records) == 33, f"se esperaban 33 registros (28 bootstrap + 5 reales), hay {len(records)}"
+    assert len(records) == 34, f"se esperaban 34 registros (28 bootstrap + 6 reales), hay {len(records)}"
     bootstrap_records = [r for r in records if r.get("bootstrap")]
     assert len(bootstrap_records) == 28
     for r in bootstrap_records:
@@ -608,6 +614,7 @@ def test_the_bootstrapped_store_photographs_without_approving():
         "factory/regulatory/requirement_catalog/requirements.yaml",
         "factory/regulatory/requirement_catalog/requirements.yaml",
         "factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py",
+        "factory/regulatory/applicability_matrix.yaml",
     ]
     assert real_records[0]["approved_by_decision"] is None, (
         "el borrador de Claude no es una aprobacion humana")
@@ -623,17 +630,18 @@ def test_the_bootstrapped_store_photographs_without_approving():
     assert real_records[4]["approved_by_decision"] == "ARTIFACT_VERSION-2026-009", (
         "la primera aprobacion del golden dataset SI tiene detras la firma de Cesar"
     )
+    assert real_records[5]["approved_by_decision"] == "ARTIFACT_VERSION-2026-011", (
+        "la regularizacion de la matriz (2.1->2.2) SI tiene detras la firma de Cesar"
+    )
 
-    # G5/D2-A (2026-08-05, mismo dia): la matriz cambio de version (2.1->2.2,
-    # +4 document_types) sin decision humana todavia -- 1 FAIL real y
-    # esperado (VERSION_CHANGED_WITHOUT_DECISION), mismo patron que el
-    # catalogo tuvo antes de G4c. 25 avisos de aprobacion ausente, sin
-    # cambio: ni 21_CFR_211.68(b), ni el catalogo, ni el golden dataset
-    # estan en la lista de avisos.
+    # G6-MVR (2026-08-07): la regularizacion cerro el FAIL de la matriz --
+    # fail_count vuelve a 0, y la matriz sale de warn_count (24, no 25):
+    # ni 21_CFR_211.68(b), ni el catalogo, ni el golden dataset, ni la
+    # matriz estan en la lista de avisos.
     report = guard.guard_report()
-    assert report["status"] == "FAIL"
-    assert report["fail_count"] == 1
-    assert report["warn_count"] == 25
+    assert report["status"] == "WARN"
+    assert report["fail_count"] == 0
+    assert report["warn_count"] == 24
 
 
 def test_the_bootstrap_is_idempotent_on_the_real_store():

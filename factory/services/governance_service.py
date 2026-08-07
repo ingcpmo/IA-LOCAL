@@ -60,7 +60,8 @@ from factory.services import decision_store_v2 as store
 # commit por el riesgo de tocar el orden/comportamiento que otros tests
 # puedan asumir -- queda declarado como el refactor pendiente correcto.
 GOVERNED_FAMILIES = ("D1", "D2", "D3", "D4", "D5", "ARTIFACT_VERSION",
-                     "APPLICABILITY_MATRIX", "SOURCE_CURRENCY")
+                     "APPLICABILITY_MATRIX", "SOURCE_CURRENCY",
+                     "SOURCE_ORIGIN_VERIFICATION")
 
 
 class GovernanceNotFoundError(LookupError):

@@ -152,6 +152,22 @@ families:
     consumers: [source_lifecycle_transition]
     requires_human_confirmation: true
 
+  SOURCE_ORIGIN_VERIFICATION:
+    label: "Confirmacion de que una segunda reingesta real coincide con el origen (G3)"
+    target_kind: source_id
+    target_registry: factory/regulatory/sources/registry.json
+    target_registry_id_path: "sources[].source_id"
+    # Distinta de SOURCE_CURRENCY: esa declara VIGENCIA NORMATIVA (juicio
+    # regulatorio sobre si la norma sigue aplicando hoy); esta declara
+    # PROCEDENCIA DEL ARCHIVO (que existe un segundo punto de comparacion
+    # real en el tiempo contra el mismo origen oficial, el dato que
+    # source_lifecycle.py exige para dejar de ser NOT_COMPARABLE_FIRST_INGESTION).
+    # Mismo criterio ALL_SNAPSHOT prohibido: cada fuente por su propia
+    # evidencia real de source_currency_log.jsonl.
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [source_lifecycle_transition]
+    requires_human_confirmation: true
+
   # Anotacion sobre el propio registro. Existe porque el almacen es
   # append-only: cuando un defecto de software deja basura en el registro de
   # registros, la unica forma honesta de explicarla es AÑADIR la explicacion,

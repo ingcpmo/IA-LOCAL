@@ -645,18 +645,27 @@ def test_the_two_stores_stayed_independent():
     Dataset (`apply_artifact_first_approval`, bootstrap con
     approved_by_decision=null pasa a tener decision real) -- 33o record,
     CUARTA aprobacion real, artefacto nuevo.
+    G6 regularizacion (2026-08-07, plan W5V2_ARQ_RETOMAR_Y_FINALIZAR.md
+    Bloque 2.2): Cesar firmo ARTIFACT_VERSION-2026-011, regularizando la
+    transicion 2.1->2.2 de applicability_matrix.yaml que ya estaba en disco
+    (commit 84a7a58, V6) sin decision ARTIFACT_VERSION que la cubriera --
+    `apply_regularization_for_applied_change()` registro un 34o record,
+    QUINTA aprobacion real, mismo artefacto que -002/-007 pero version
+    distinta.
     """
     from factory.core import artifact_version_guard as guard
 
     assert _store_matches_git_head(store.STORE_FILE), (
         "el almacen de decisiones difiere de HEAD: algun test escribio en el real")
     records = guard.read_version_records()
-    assert len(records) == 33, "el de versiones cambio de tamano"
+    assert len(records) == 34, "el de versiones cambio de tamano"
     aprobados = [r for r in records if r["approved_by_decision"] is not None]
     assert [r["approved_by_decision"] for r in aprobados] == [
         "D2-2026-009", "ARTIFACT_VERSION-2026-002",
-        "ARTIFACT_VERSION-2026-007", "ARTIFACT_VERSION-2026-009"]
+        "ARTIFACT_VERSION-2026-007", "ARTIFACT_VERSION-2026-009",
+        "ARTIFACT_VERSION-2026-011"]
     assert aprobados[0]["artifact_id"] == "21_CFR_211.68(b)"
     assert aprobados[1]["artifact_id"] == "factory/regulatory/requirement_catalog/requirements.yaml"
     assert aprobados[2]["artifact_id"] == "factory/regulatory/requirement_catalog/requirements.yaml"
     assert aprobados[3]["artifact_id"] == "factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py"
+    assert aprobados[4]["artifact_id"] == "factory/regulatory/applicability_matrix.yaml"

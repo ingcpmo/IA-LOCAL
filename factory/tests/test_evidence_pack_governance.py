@@ -257,30 +257,26 @@ def test_p06_the_19_other_real_packs_never_fail_v5_v9_depends_on_real_source_cur
 #         arriba + la suite propia de artifact_version_guard)
 # ---------------------------------------------------------------------------
 
-def test_p08_gate0_detects_the_pending_matrix_version_bump():
+def test_p08_gate0_no_longer_detects_a_pending_matrix_version_bump():
     """No reimplementa el guard: confirma que `validate_pack` LEE su
     resultado real (V8 delega en artifact_version_guard, cobertura de
     propagacion propia en test_p01_v8_* + la suite de artifact_version_
     guard -- este test solo confirma el escenario real vigente).
 
-    Segunda actualizacion del mismo dia (2026-08-05): el
-    CONTENT_CHANGED_VERSION_SAME del catalogo que este test citaba antes
-    se cerro con ARTIFACT_VERSION-2026-007 -- pero la matriz de
-    aplicabilidad ahora esta en el MISMO tipo de estado transitorio: su
-    version paso de 2.1 a 2.2 (document_types +4 codigos ya en uso real)
-    y la decision que la autoriza (APPLICABILITY_MATRIX-2026-005) sigue
-    PROPOSED, sin firma humana todavia. VERSION_CHANGED_WITHOUT_DECISION
-    es exactamente el mismo tipo de FAIL honesto que el catalogo tuvo
-    ANTES de G4c -- no una regresion, la prueba de que el guard sigue
-    detectando un bump real pendiente de autorizar."""
+    Tercera actualizacion (2026-08-07, plan W5V2_ARQ_RETOMAR_Y_FINALIZAR.md
+    Bloque 2.2): el VERSION_CHANGED_WITHOUT_DECISION de la matriz (2.1->2.2)
+    que este test citaba antes se cerro con la regularizacion
+    ARTIFACT_VERSION-2026-011 (`apply_regularization_for_applied_change()`,
+    enlaza APPLICABILITY_MATRIX-2026-006 como fundamento humano) -- mismo
+    cierre que tuvo el catalogo con G4c. El guard ya no reporta ningun FAIL
+    real."""
     from factory.core import artifact_version_guard as guard
     report = guard.guard_report()
-    assert report["status"] == "FAIL"
-    assert report["fail_count"] == 1
-    assert any(f["artifact"] == "applicability_matrix"
-              and f["code"] == "VERSION_CHANGED_WITHOUT_DECISION"
-              for f in report["findings"]), (
-        "la matriz deberia seguir marcada como bump pendiente de autorizar")
+    assert report["fail_count"] == 0
+    assert not any(f["artifact"] == "applicability_matrix"
+                  and f["code"] == "VERSION_CHANGED_WITHOUT_DECISION"
+                  for f in report["findings"]), (
+        "la matriz ya no deberia figurar como bump pendiente de autorizar")
     assert not any(f["artifact"] == "catalog" and f["code"] == "CONTENT_CHANGED_VERSION_SAME"
                   for f in report["findings"]), (
         "el catalogo volvio a divergir de su version declarada")
