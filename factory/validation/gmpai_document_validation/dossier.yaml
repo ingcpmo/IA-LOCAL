@@ -1,12 +1,12 @@
 meta:
   version: 1
-  generated_at: '2026-07-29T12:46:47Z'
-  generated_by: cesar
+  generated_at: '2026-08-04T02:03:26Z'
+  generated_by: CESAR
 documents:
   intended_use:
     status: needs_human_review
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: 03e42cec24282d238411a853157be016538760e2905b76f15957b858d44d3fcb
     missing: []
     evidence_sources:
@@ -15,8 +15,8 @@ documents:
     - misión · regulatory_scope
   gxp_impact_assessment:
     status: needs_human_review
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: 2252131d00ba31725dca9269aaf230b1df12d9680ee6edfa4523813330042854
     missing: []
     evidence_sources:
@@ -24,16 +24,16 @@ documents:
     - misión · regulatory_scope
   system_risk_assessment:
     status: needs_human_review
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: a335a92e357e11e860b0d6af9f5afd2c6b0dfcf156a546b9b7c4d564744e0090
     missing: []
     evidence_sources:
     - designs/·/agent_design_proposal.yaml
   supplier_ai_model_assessment:
     status: needs_human_review
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: fd957663a4206701e5a73af9b87171e3356cc12cfbdf8fb7269ea8eaf5aea034
     missing: []
     evidence_sources:
@@ -41,8 +41,8 @@ documents:
     - release_candidates/·/rc_manifest.json
   urs:
     status: draft
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: 59286880f95f5165225b47295d95c650946066edbf361d40f062bf728ae7202c
     missing: []
     evidence_sources:
@@ -52,8 +52,8 @@ documents:
     - misión · regulatory_scope
   frs:
     status: missing_evidence
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: d539b91b50d3e13ecbc361b2ab7f5cdba1922d05210b65ba9f55811f0555d73e
     missing:
     - catalog
@@ -61,8 +61,8 @@ documents:
     - designs/·/agent_design_proposal.yaml
   design_spec:
     status: draft
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: 1948403686d5abd57251335bb7521cf19801d2d0eb340f905fdf34127dc780b6
     missing: []
     evidence_sources:
@@ -70,8 +70,8 @@ documents:
     - designs/·/agent_design_proposal.yaml
   configuration_spec:
     status: missing_evidence
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: bd1a74ca7eb539038eb862849b487588c5182cc4a1c661890b40418d4f19df84
     missing:
     - deployment
@@ -79,44 +79,54 @@ documents:
     - release_candidates/·/rc_manifest.json
   data_integrity_assessment:
     status: approved
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
-    content_sha256: df231ba20858a082035ff54b020fe7525f460f6de79a99fdfc8cf6065028fabe
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
+    content_sha256: f7b3274c1dfe8b199905e3712dd3d7b84d2ef5f8988d8456e87712c452509ee4
     missing: []
     evidence_sources:
     - audit/factory_audit.jsonl (cadena verificable)
-    approved_by: cesar may
-    approved_at: '2026-08-02T17:02:33Z'
+    invalidated_approval:
+      approved_by: cesar may
+      approved_at: '2026-08-02T17:02:33Z'
+      reason: contenido regenerado difiere del aprobado (SHA-256)
+    approved_by: cesar
+    approved_at: '2026-08-04T03:46:53Z'
   part11_assessment:
     status: approved
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
-    content_sha256: 55105d0debffe0f616ebd83f1945d857393b761107de2a21fc590fbdd4bdfd78
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
+    content_sha256: 2c459c267aded7ae51979743a82f8d6e93c1038d13b06e312556984a9ab1ba1c
     missing: []
     evidence_sources:
     - audit/factory_audit.jsonl (cadena verificable)
-    approved_by: cesar may
-    approved_at: '2026-08-02T17:01:41Z'
+    invalidated_approval:
+      approved_by: cesar may
+      approved_at: '2026-08-02T17:01:41Z'
+      reason: contenido regenerado difiere del aprobado (SHA-256)
+    approved_by: cesar
+    approved_at: '2026-08-04T03:47:23Z'
   alcoa_plus_assessment:
-    status: needs_human_review
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
-    content_sha256: b5d387f5618e9268eb4c5d723e9c63d3ea42ffef5c46159d668438bed2a4299d
+    status: approved
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
+    content_sha256: 5433c9402e316b6c59d2fcbf7ae29622c2afae14cb36f34ddce7192acc44fad9
     missing: []
     evidence_sources:
     - audit/factory_audit.jsonl (cadena verificable)
+    approved_by: cesar
+    approved_at: '2026-08-04T03:47:39Z'
   traceability_matrix:
     status: missing_evidence
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: fc2a6b6f3a7bda7c64530f0367ef17531ea08c3d0a479896a376b4eb3f803360
     missing:
     - catalog
     evidence_sources: []
   test_strategy:
     status: missing_evidence
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: 48f65db1224856941e8adcb5bbf65a04ef7ea25740ec5dc80ab818b2d4b53632
     missing:
     - catalog
@@ -125,8 +135,8 @@ documents:
     - workspace · test_report.json
   iq:
     status: missing_evidence
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: 6f487a29aa1af39441f7aafc06c50a73fbe1bc2071ec7cd60689c78e63032b0e
     missing:
     - deployment
@@ -134,24 +144,24 @@ documents:
     - release_candidates/·/rc_manifest.json
   oq:
     status: missing_evidence
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: dd2867825a34ef6e3bfa2c96057dd205743f01277597d6aa33187793106fcb24
     missing:
     - runs
     evidence_sources: []
   pq:
     status: missing_evidence
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: 8a6f85e162486b68a9b4ea8087c509b5b858cd18fe46365946489e77da5a185f
     missing:
     - __pq_production_data__
     evidence_sources: []
   validation_summary_report:
     status: needs_human_review
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: 5e9e38b1f1a628a9a02a76a2693a4ded95fbe90d989040da2ea52448d02f20ef
     missing: []
     evidence_sources:
@@ -160,40 +170,40 @@ documents:
     - workspace · test_report.json
   sop_suggested:
     status: needs_human_review
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: 12d2fc18a5228d65e8d76201a2167a96b7e7e48b9fa442b44051d9c9175bc1ff
     missing: []
     evidence_sources:
     - capacidades observables del sistema — propuesta, no SOP
   change_control:
     status: draft
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
-    content_sha256: c489410b95e3c7348b75508e7d5a421cdeda7436868aa847b98f98481bc552f9
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
+    content_sha256: afd1396730408a904b0d30879547e6c15b62a1ca208f852ca31e6f193dd8b2f3
     missing: []
     evidence_sources:
     - audit/factory_audit.jsonl (cadena verificable)
   periodic_review:
     status: missing_evidence
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: 9ea3789f1191cd3894982c87afa1fe4ee541d44ae25e92a8c65a4ffa9754eeae
     missing:
     - __periodic_review_done__
     evidence_sources: []
   incident_deviation_handling:
     status: missing_evidence
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: ba6a1e33efe0d0cefc25362942f38d961584e8ba763f92a46ff55e7175b9c65e
     missing:
     - __incident_records__
     evidence_sources: []
   retirement_plan:
     status: missing_evidence
-    generated_at: '2026-07-29T12:46:47Z'
-    generated_by: cesar
+    generated_at: '2026-08-04T02:03:26Z'
+    generated_by: CESAR
     content_sha256: b4f284b07204f3e2d5915eebec24191971a50c6feb98bded189c4e26838351e2
     missing:
     - deployment

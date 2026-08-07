@@ -40,10 +40,10 @@ profiles:
       credenciales de acceso a paneles/HMI en vez de LIMS. Mision de origen:
       gmpai_document_validation (validacion documental Rockwell/SCADA).
     rag_collection: ot_part11_reference
-    corpus_pending:
-      - "21 CFR Part 11 texto completo (PDF oficial FDA) — no disponible en la fabrica, solo se citan numeros de clausula publicos (11.10, 11.50, 11.70)"
     corpus_available:
-      - "Identificadores de clausula 21 CFR 11.10(a)/(d)/(e)/(g), 11.50, 11.70 — numeracion publica, sin texto normativo reproducido"
+      - "21 CFR Part 11 texto oficial completo (XML eCFR, source_id ecfr_21cfr_part11, sha256 7fff122d..., ingerido 2026-08-03) — texto normativo real, no solo numeracion"
+    corpus_pending:
+      - "FDA guidance interpretativa sobre Part 11 (Scope and Application, 2003) — no disponible en la fabrica"
     test_questions:
       - question: "Un panel PLC permite login con una cuenta generica 'operator' compartida por todo el turno. ¿Que clausula de Part 11 aplica y que riesgo representa?"
         expected_keywords: ["11.10(d)", "access", "individual", "authorized", "shared account"]

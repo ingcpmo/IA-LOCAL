@@ -28,7 +28,7 @@ documents:
       generated_at: '2026-07-16T23:40:02Z'
       path: agent_proposals/intended_use/v01.json
   gxp_impact_assessment:
-    status: needs_human_review
+    status: agent_proposed
     generated_at: '2026-07-16T23:23:00Z'
     generated_by: cesar
     content_sha256: a163c27c6a9039ad39613bbaece2ef2e5e58035a89c8a8e34a08bf30da6bb174
@@ -36,14 +36,44 @@ documents:
     evidence_sources:
     - layer9/missions/c8_alcoa_validator.yaml
     - misión · regulatory_scope
+    agent_proposal:
+      version: 1
+      status: agent_proposed
+      agent: qa_oos_profile
+      supporting: []
+      confidence: baja
+      corpus_sufficiency: partial
+      claims:
+        supported: 1
+        partially_supported: 1
+        unsupported: 0
+        unverifiable: 3
+      generated_at: '2026-08-05T13:04:21Z'
+      path: agent_proposals/gxp_impact_assessment/v01.json
   system_risk_assessment:
-    status: needs_human_review
+    status: agent_proposed
     generated_at: '2026-07-16T23:23:00Z'
     generated_by: cesar
     content_sha256: 8b198dfcb0e5b77500355f947d07097becab0a064e3458f74c78d23a43eb2d5a
     missing: []
     evidence_sources:
     - designs/·/agent_design_proposal.yaml
+    agent_proposal:
+      version: 1
+      status: agent_proposed
+      agent: qa_oos_profile
+      supporting:
+      - integrity_lims_profile
+      - hplc_data_review_agent
+      confidence: baja
+      corpus_sufficiency: partial
+      claims:
+        supported: 0
+        partially_supported: 1
+        unsupported: 0
+        unverifiable: 8
+      generated_at: '2026-08-05T15:02:23Z'
+      path: agent_proposals/system_risk_assessment/v01.json
   supplier_ai_model_assessment:
     status: missing_evidence
     generated_at: '2026-07-16T23:23:00Z'
@@ -91,13 +121,15 @@ documents:
     - deployment
     evidence_sources: []
   data_integrity_assessment:
-    status: needs_human_review
+    status: approved
     generated_at: '2026-07-16T23:23:00Z'
     generated_by: cesar
     content_sha256: 0b8c7bcba812245f0d0f637c81dc2e704246ead25006f4e072da815997f02447
     missing: []
     evidence_sources:
     - audit/factory_audit.jsonl (cadena verificable)
+    approved_by: cesar
+    approved_at: '2026-08-04T03:48:15Z'
   part11_assessment:
     status: approved
     generated_at: '2026-07-16T23:23:00Z'
@@ -109,13 +141,15 @@ documents:
     approved_by: cesar may
     approved_at: '2026-08-02T17:03:07Z'
   alcoa_plus_assessment:
-    status: needs_human_review
+    status: approved
     generated_at: '2026-07-16T23:23:00Z'
     generated_by: cesar
     content_sha256: f9c3422ae4b9cae3bcc845e72c47b8fcfd1b5807cb5628c6f06c885021f053fe
     missing: []
     evidence_sources:
     - audit/factory_audit.jsonl (cadena verificable)
+    approved_by: cesar
+    approved_at: '2026-08-04T03:48:06Z'
   traceability_matrix:
     status: missing_evidence
     generated_at: '2026-07-16T23:23:00Z'
