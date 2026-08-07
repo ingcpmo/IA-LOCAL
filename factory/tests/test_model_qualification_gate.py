@@ -219,28 +219,28 @@ def test_q07_requalification_run_context_only_valid_against_golden_dataset():
 # G6 §2 -- las 5 precondiciones de recalificacion (Q-08 de la tabla del spec)
 # ---------------------------------------------------------------------------
 
-def test_q08_two_real_preconditions_remain_open_today():
-    """Estado real de hoy, tercera actualizacion (sesion ARQ, 2026-08-07):
-    G4c (ARTIFACT_VERSION-2026-007, bump del catalogo) y G6 (ARTIFACT_VERSION-
-    2026-009, primera aprobacion del golden dataset) siguen cerrados con
-    firmas reales de Cesar. G4b (matriz) tambien CERRO: Cesar firmo
-    `APPLICABILITY_MATRIX-2026-006` (matriz 2.2, 2026-08-05T20:40:30Z) --
-    matrix_approved vuelve a True, mismo patron que ya paso una vez con el
-    catalogo antes de G4c. Quedan exactamente 2 precondiciones abiertas: G3
-    (2/4 fuentes sin `LOCAL_CANONICAL_COPY_VERIFIED`) y G4a (pack
-    `21_CFR_211.68(b)` incompleto por V9, fuente sin reverificar -- NO por
-    falta de criterios, que ya tiene 7 redactados y D2-aprobados desde
-    `db493a0`). Si alguna precondicion pasa sin que Cesar haya firmado nada,
+def test_q08_all_five_preconditions_are_closed_today():
+    """Estado real de hoy, cuarta actualizacion (sesion ARQ, 2026-08-07):
+    las 2 ultimas precondiciones abiertas cerraron en la misma sesion.
+    G3: `source_origin_verification.py` (DEC-B) promovio
+    `ecfr_21cfr_part11`/`ecfr_21cfr_part211` a
+    `VERIFIED_AGAINST_PRIOR_KNOWN_HASH` (Cesar confirmo
+    SOURCE_ORIGIN_VERIFICATION-2026-003/004) -- las 4 fuentes llegan a
+    `LOCAL_CANONICAL_COPY_VERIFIED`. G4a: con las fuentes verificadas, V9
+    deja de bloquear el pack `21_CFR_211.68(b)` (los 7 criterios y su D2
+    ya estaban aprobados desde `db493a0`, lo unico que faltaba era el
+    origen de la fuente) -- `pack_211_complete` pasa a True. Las 5
+    precondiciones estan cerradas por primera vez: `ready=True`. Si
+    cualquiera de las 5 vuelve a False sin que un cambio real lo explique,
     este test lo detecta."""
     r = mqg.requalification_preconditions()
-    assert r.ready is False
-    assert r.sources_verified is False
-    assert r.pack_211_complete is False
+    assert r.ready is True
+    assert r.sources_verified is True
+    assert r.pack_211_complete is True
     assert r.matrix_approved is True
     assert r.catalog_versioned is True
     assert r.golden_dataset_approved is True
-    assert len(r.reasons) == 2
-    assert all(isinstance(x, str) and x for x in r.reasons)
+    assert r.reasons == []
 
 
 def test_q08_ready_only_when_the_five_are_true(monkeypatch):

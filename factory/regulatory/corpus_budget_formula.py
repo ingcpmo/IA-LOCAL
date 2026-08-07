@@ -22,6 +22,8 @@ explícita, a la espera de que la recalificación (G6 §4) mida
 `latency_p50`/`latency_p95` reales y lo sustituya."""
 from __future__ import annotations
 
+import math
+
 from factory.engines.gmpai_integrity.chunked_engine import output_token_budget
 
 #: Medido en UNA corrida real (eu_annex11_agent sobre FS_v1.2, 2026-07-28:
@@ -66,3 +68,84 @@ def budget_and_time_for_agent_on_document(*, n_checkpoints: int, n_criteria: int
     calls = calls_for_document(chunks, 1)
     minutes = estimated_minutes(calls, budget, min_per_1k_tokens=min_per_1k_tokens)
     return budget, minutes
+
+
+# ---------------------------------------------------------------------------
+# D4-A -- spec §5.3, sobre el plan de corridas vigente
+# (`factory/docs/W5V2_PLAN_CORRIDAS_CORPUS.md`) y R(d,a) real
+# (`corpus_plan.resolve_document_agent_plan`, ya no la tabla calibratoria
+# de §5.4 -- esa describe un catalogo historico distinto, Part11 tenia 4
+# checkpoints ahi y 21_CFR_211.68(b) no aportaba ningun criterio).
+# ---------------------------------------------------------------------------
+
+CHECKPOINT_MODE = "per_document"
+RESUME_FINGERPRINT_REQUIRED = True
+
+#: Los 5 documentos con chunks reales ya medidos (unico dato honesto hoy --
+#: ver docstring del modulo: "NUNCA se inventan cifras para los otros
+#: documentos"). Ampliar esta lista exige medir chunks reales de un
+#: documento nuevo primero, nunca estimarlos por caracteres.
+CORPUS_PLAN_DOCUMENTS = (
+    ("RW-0005", "FS", 27),
+    ("RW-0006", "URS", 9),
+    ("RW-0014", "DS", 8),
+    ("RW-0011", "DS", 7),
+    ("RW-0012", "DS", 7),
+)
+
+
+def compute_d4a(*, documents=CORPUS_PLAN_DOCUMENTS,
+                min_per_1k_tokens: float = MIN_PER_1K_TOKENS,
+                agent_plan_resolver=None) -> dict:
+    """D4-A completo (spec §5.3) sobre R(d,a) real de HOY.
+
+    `estimated_runtime_min == estimated_runtime_likely == estimated_runtime_max`
+    a propósito: el spec pide tres valores derivados de `p50_medido`/
+    `p95_medido`, pero hoy solo existe UN punto de dato real
+    (`MIN_PER_1K_TOKENS`, una corrida, un agente, un documento -- mismo
+    aviso de fragilidad que su propio docstring). Fabricar una dispersión
+    con multiplicadores inventados sería inventar precisión que no existe;
+    los tres campos quedan honestamente iguales hasta que la recalificación
+    (G6 §4) mida `latency_p50`/`latency_p95` reales. `hard_stop_wall_time`
+    SÍ aplica el margen del 30% que el spec define explícitamente sobre
+    `estimated_runtime_max`, independiente de si ese valor tiene dispersión
+    medida."""
+    from factory.regulatory.corpus_plan import resolve_document_agent_plan
+
+    resolver = agent_plan_resolver or resolve_document_agent_plan
+    total_calls = 0
+    total_minutes = 0.0
+    breakdown = []
+    for doc_id, doc_type, chunks in documents:
+        plan = resolver(doc_type)
+        for agent_id, bucket in plan.items():
+            budget, minutes = budget_and_time_for_agent_on_document(
+                n_checkpoints=bucket["n_checkpoints"], n_criteria=bucket["n_criteria"],
+                chunks=chunks, min_per_1k_tokens=min_per_1k_tokens)
+            calls = calls_for_document(chunks, 1)
+            total_calls += calls
+            total_minutes += minutes
+            breakdown.append({
+                "document_id": doc_id, "document_type": doc_type, "agent_id": agent_id,
+                "n_checkpoints": bucket["n_checkpoints"], "n_criteria": bucket["n_criteria"],
+                "budget_tokens": budget, "calls": calls,
+                "estimated_minutes": round(minutes, 1),
+            })
+
+    estimated_runtime_hours = round(total_minutes / 60, 2)
+    hard_stop_wall_time_hours = round(estimated_runtime_hours * 1.30, 2)
+
+    return {
+        "document_ids": [d[0] for d in documents],
+        "max_calls": total_calls,
+        "estimated_runtime_min_hours": estimated_runtime_hours,
+        "estimated_runtime_likely_hours": estimated_runtime_hours,
+        "estimated_runtime_max_hours": estimated_runtime_hours,
+        "runtime_dispersion_measured": False,
+        "hard_stop_calls": math.ceil(total_calls * 1.25),
+        "hard_stop_wall_time_hours": hard_stop_wall_time_hours,
+        "checkpoint_mode": CHECKPOINT_MODE,
+        "resume_fingerprint_required": RESUME_FINGERPRINT_REQUIRED,
+        "min_per_1k_tokens_used": min_per_1k_tokens,
+        "breakdown": breakdown,
+    }

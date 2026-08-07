@@ -15,7 +15,7 @@ import pytest
 
 from factory.regulatory.corpus_budget_formula import (
     MIN_PER_1K_TOKENS, budget_and_time_for_agent_on_document,
-    calls_for_document, estimated_minutes,
+    calls_for_document, compute_d4a, estimated_minutes,
 )
 
 # Los tres agentes reales de RW-0005 (58 pags, 27 chunks tras filtrado),
@@ -98,3 +98,62 @@ def test_min_per_1k_tokens_is_the_documented_fragile_constant():
     exactamente el riesgo que el spec senala -- este test la fija como
     literal para que un cambio silencioso se note en el diff, no en produccion."""
     assert MIN_PER_1K_TOKENS == 5.8
+
+
+# ---------------------------------------------------------------------------
+# D4-A completo -- compute_d4a(), sobre R(d,a) real (corpus_plan.py) y el
+# plan de corridas vigente (5 documentos con chunks reales medidos).
+# ---------------------------------------------------------------------------
+
+def test_d4a_reproduces_the_two_calibrated_agents_inside_rw_0005():
+    """No reimplementa nada: compute_d4a() usa resolve_document_agent_plan()
+    + budget_and_time_for_agent_on_document(), ambos ya probados por
+    separado. Este test confirma que, DENTRO del total, el desglose de
+    RW-0005 sigue conteniendo exactamente los dos contratos ya calibrados
+    contra corridas reales (eu_annex11 5cp/20crit, alcoa_plus 9cp/25crit)."""
+    d4a = compute_d4a()
+    rw0005 = [b for b in d4a["breakdown"] if b["document_id"] == "RW-0005"]
+    annex11 = next(b for b in rw0005 if b["agent_id"] == "eu_annex11_agent")
+    alcoa = next(b for b in rw0005 if b["agent_id"] == "alcoa_plus_agent")
+    assert annex11["n_checkpoints"] == 5 and annex11["n_criteria"] == 20
+    assert annex11["budget_tokens"] == 3072
+    assert alcoa["n_checkpoints"] == 9 and alcoa["n_criteria"] == 25
+    assert alcoa["budget_tokens"] == 4096
+
+
+def test_d4a_max_calls_is_the_sum_of_all_agent_document_calls():
+    d4a = compute_d4a()
+    assert d4a["max_calls"] == sum(b["calls"] for b in d4a["breakdown"])
+    assert d4a["max_calls"] > 0
+
+
+def test_d4a_hard_stops_are_always_strictly_above_the_estimate():
+    """Q-12 del spec: hard_stop_calls > max_calls y hard_stop_wall_time >
+    estimated_runtime_max, siempre."""
+    d4a = compute_d4a()
+    assert d4a["hard_stop_calls"] > d4a["max_calls"]
+    assert d4a["hard_stop_wall_time_hours"] > d4a["estimated_runtime_max_hours"]
+
+
+def test_d4a_never_fabricates_dispersion_it_has_not_measured():
+    """Un solo dato real (MIN_PER_1K_TOKENS) no es una distribucion --
+    min/likely/max quedan honestamente iguales, con la bandera explicita,
+    en vez de simular p50/p95 con multiplicadores inventados."""
+    d4a = compute_d4a()
+    assert d4a["estimated_runtime_min_hours"] == d4a["estimated_runtime_likely_hours"] == d4a["estimated_runtime_max_hours"]
+    assert d4a["runtime_dispersion_measured"] is False
+
+
+def test_d4a_declares_the_fixed_checkpoint_fields():
+    d4a = compute_d4a()
+    assert d4a["checkpoint_mode"] == "per_document"
+    assert d4a["resume_fingerprint_required"] is True
+
+
+def test_d4a_declares_which_runs_it_authorizes():
+    """El defecto historico de D4_corpus_execution (2026-07-29): se firmo
+    APPROVE sin resolved_target_ids, un 'si' sin objeto (spec §5.1). Este
+    campo es lo que la propuesta real usa como target_ids -- debe declarar
+    los 5 documentos, nunca quedar vacio."""
+    d4a = compute_d4a()
+    assert d4a["document_ids"] == ["RW-0005", "RW-0006", "RW-0014", "RW-0011", "RW-0012"]

@@ -84,19 +84,26 @@ def test_a_decision_without_scope_authorizes_nothing(migrated):
     firma SÍ declara alcance y por tanto SÍ debe autorizar exactamente ese
     id. G5 (2026-08-05): Cesar firmó ademas las 14 propuestas D2 de los
     requisitos que ya pasaban V1-V10 (`D2-2026-025..053`) -- D2 pasa a cubrir
-    15/20. La guardia original (D2-2026-001, huérfana de objetivo) sigue
-    `INVALID_PENDING_RESIGNATURE` y sigue sin aportar cobertura -- lo que
-    cambió es que D2 ya no depende solo de ella. D3/D4/D5 siguen sin
-    ninguna firma real: la regla que este test protege sigue vigente ahí."""
+    15/20. G5 cierre (2026-08-07, sesion ARQ): con G3 cerrado (DEC-B,
+    `source_origin_verification.py`) los 5 requisitos restantes pasan V9 y
+    Cesar firma las ultimas 5 D2 (`D2-2026-054..058`) -- D2 cubre 20/20 por
+    primera vez. La guardia original (D2-2026-001, huérfana de objetivo)
+    sigue `INVALID_PENDING_RESIGNATURE` y sigue sin aportar cobertura -- lo
+    que cambió es que D2 ya no depende solo de ella. D3/D5 siguen sin
+    ninguna firma real; D4 tiene una propuesta real (`D4-2026-002`, D4-A)
+    pero SOLO `agent_proposed`, sin confirmar todavía -- la regla que este
+    test protege (proponer no es autorizar) sigue vigente en los tres."""
     c_d2 = resolver.coverage_report("D2", store_file=migrated)
     assert c_d2.covered_ids == (
-        "21_CFR_211.68(b)", "ALCOA_ACCURATE", "ALCOA_ATTRIBUTABLE",
+        "21_CFR_11.10(a)", "21_CFR_11.10(d)", "21_CFR_11.10(e)",
+        "21_CFR_11.10(g)", "21_CFR_11.50_11.70", "21_CFR_211.68(b)",
+        "ALCOA_ACCURATE", "ALCOA_ATTRIBUTABLE",
         "ALCOA_AVAILABLE", "ALCOA_COMPLETE", "ALCOA_CONSISTENT",
         "ALCOA_CONTEMPORANEOUS", "ALCOA_ENDURING", "ALCOA_LEGIBLE",
         "ALCOA_ORIGINAL", "ANNEX11_12", "ANNEX11_17", "ANNEX11_4",
         "ANNEX11_7.1", "ANNEX11_9"), (
-        "D2 deberia autorizar exactamente lo que D2-2026-009 + las 14 D2 "
-        "firmadas de G5 cubren, ni mas ni menos")
+        "D2 deberia autorizar exactamente lo que las 20 firmas D2 reales "
+        "cubren, ni mas ni menos")
     for family in ("D3", "D4", "D5"):
         c = resolver.coverage_report(family, store_file=migrated)
         assert c.covered_ids == (), f"{family} autoriza sin alcance declarado"

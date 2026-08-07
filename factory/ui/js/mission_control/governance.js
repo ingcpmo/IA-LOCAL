@@ -1143,6 +1143,87 @@ function panelSourceOriginVerification(){
   </div>`;
 }
 
+/* ── Panel — D4-A, presupuesto de corrida (G8) ──────────────────────────
+   Plan W5V2_ARQ_RETOMAR_Y_FINALIZAR.md Bloque 3.3. Defecto historico que
+   este panel cierra: D4_corpus_execution (2026-07-29) se firmo APPROVE
+   SIN resolved_target_ids -- "un si sin objeto" (spec
+   MODEL_REQUALIFICATION_AND_D4A_SPEC.md §5.1). La propuesta real
+   (D4-2026-002) SI declara document_ids explicitos -- el panel los
+   muestra para que quede claro que corridas autoriza esta firma. */
+
+function d4aProposals(){
+  return (GOV?.proposals?.D4 || []).filter(p => p.proposal_state === 'PROPOSED');
+}
+
+function panelD4A(){
+  const propuestas = d4aProposals();
+
+  const bloque = (p) => {
+    const pl = p.payload || {};
+    const prefix = 'd4a_' + p.decision_instance_id.replace(/[^a-zA-Z0-9]/g, '_');
+    const desglose = (pl.breakdown_summary || []).map(b => `<tr>
+      <td class="mono">${esc(b.document_id)}</td>
+      <td class="mono">${esc(b.document_type)}</td>
+      <td class="mono">${esc(b.agent_id)}</td>
+      <td class="mono">${esc(b.calls)}</td>
+      <td class="mono">${esc(b.estimated_minutes)}</td>
+    </tr>`).join('');
+    return `<div class="card" style="margin-top:10px;padding:8px;border:1px solid var(--warn)">
+      <b>${esc(p.decision_instance_id)}</b>
+      <div class="meta" style="margin-top:6px">DOCUMENTOS QUE AUTORIZA (${(pl.document_ids||[]).length}):
+        <span class="mono">${esc((pl.document_ids||[]).join(', '))}</span></div>
+
+      <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px">
+        <div class="meta">MAX_CALLS: <span class="mono">${esc(pl.max_calls)}</span></div>
+        <div class="meta">HARD_STOP_CALLS: <span class="mono">${esc(pl.hard_stop_calls)}</span></div>
+        <div class="meta">RUNTIME (min/likely/max, h): <span class="mono">${esc(pl.estimated_runtime_min_hours)} / ${esc(pl.estimated_runtime_likely_hours)} / ${esc(pl.estimated_runtime_max_hours)}</span></div>
+        <div class="meta">HARD_STOP_WALL_TIME (h): <span class="mono">${esc(pl.hard_stop_wall_time_hours)}</span></div>
+        <div class="meta">CHECKPOINT_MODE: <span class="mono">${esc(pl.checkpoint_mode)}</span></div>
+        <div class="meta">RESUME_FINGERPRINT_REQUIRED: <span class="mono">${esc(pl.resume_fingerprint_required)}</span></div>
+      </div>
+
+      ${pl.runtime_dispersion_measured === false ? `<div class="meta" style="margin-top:8px;color:var(--warn)">
+        Min/likely/max quedan iguales a propósito: <span class="mono">min_per_1k_tokens=${esc(pl.min_per_1k_tokens_used)}</span>
+        viene de UNA sola corrida real (eu_annex11 sobre RW-0005) -- no hay p50/p95
+        medidos todavía para simular una dispersión real. Sustituir cuando la
+        recalificación (G6 §4) mida latencias reales.</div>` : ''}
+
+      <div class="meta" style="margin-top:10px">${esc(p.reason||'')}</div>
+
+      <div style="margin-top:10px"><b>DESGLOSE POR DOCUMENTO/AGENTE (${(pl.breakdown_summary||[]).length})</b></div>
+      <table class="tbl" style="width:100%;font-size:11px;margin-top:6px">
+        <thead><tr><th>Documento</th><th>Tipo</th><th>Agente</th><th>Llamadas</th><th>Minutos est.</th></tr></thead>
+        <tbody>${desglose}</tbody>
+      </table>
+
+      ${signatureForm(prefix)}
+      ${NO_EJECUTA}
+      <div class="meta" style="margin-top:6px;color:var(--faint)">
+        Firmar D4-A autoriza el PRESUPUESTO, no lanza ninguna corrida --
+        la autorización de corpus (decisión separada, con fingerprint) es
+        un paso posterior distinto, ver plan Bloque 6.</div>
+      <div style="margin-top:8px">
+        <button id="${prefix}-submit-btn" onclick="govSubmitD4A('${esc(p.decision_instance_id)}','${esc(prefix)}')">
+          Confirmar ${esc(p.decision_instance_id)}</button>
+      </div>
+      ${statusLine(prefix)}
+    </div>`;
+  };
+
+  return `
+  <div class="card">
+    <b>D4-A — Presupuesto de corrida (G8)</b>
+    <div class="meta" style="margin-top:6px">
+      Límites duros derivados de R(d,a) real (cobertura D2 + fuentes VERIFIED
+      de hoy), nunca escritos a mano. Calculado sobre el catálogo de HOY --
+      distinto de la tabla calibratoria histórica del spec (esa describe un
+      catálogo con Part 11 en 4 checkpoints y <span class="mono">21_CFR_211.68(b)</span>
+      en 0 criterios).</div>
+    ${propuestas.map(bloque).join('') || '<div class="meta" style="margin-top:8px;color:var(--pass)">Ninguna propuesta D4 pendiente de firma.</div>'}
+    <div style="margin-top:12px"><button onclick="govOpen('')">Volver al índice</button></div>
+  </div>`;
+}
+
 function panelExcepcion(){
   const a = GOV.audit;
   const MEDIDAS = medidas();
@@ -1253,6 +1334,7 @@ function paint(){
   else if(p.id==='source-currency') body = panelSourceCurrency();
   else if(p.id==='source-origin-verification') body = panelSourceOriginVerification();
   else if(p.id==='excepcion-auditoria') body = panelExcepcion();
+  else if(p.id==='d4a')            body = panelD4A();
   else                             body = panelPendiente(p);
   el.innerHTML = banner + body;
   if(p.id==='d1-correccion') govRecalcHash();
@@ -1673,6 +1755,14 @@ export async function govSubmitSourceOriginVerification(decisionInstanceId, pref
   const sig = readSignature(prefix);
   if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
   await confirmarPropuestaExistente(decisionInstanceId, 'SOURCE_ORIGIN_VERIFICATION', sig,
+                                    {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
+}
+
+export async function govSubmitD4A(decisionInstanceId, prefix){
+  const sig = readSignature(prefix);
+  if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
+  if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
+  await confirmarPropuestaExistente(decisionInstanceId, 'D4', sig,
                                     {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
 }
 

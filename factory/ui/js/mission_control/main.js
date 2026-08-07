@@ -14,7 +14,7 @@ import { govOpen, govRecalcHash, govRefresh, govSubmitD1Correccion,
          govSubmitMatrixVersionRegularizacion,
          govSubmitApplicabilityMatrix, govSubmitGoldenDataset,
          govSubmitSourceCurrency, govSubmitSourceOriginVerification,
-         govSubmitD2A } from './governance.js';
+         govSubmitD2A, govSubmitD4A } from './governance.js';
 import {
   viewHeadlessLogs, submitHeadlessOff, submitModelChange,
   refreshPipeline, refreshPipelineIfConnected,
@@ -43,7 +43,7 @@ Object.assign(window, {
   govSubmitRevokeD2003, govSubmitExcepcion, govSubmitCatalogVersion,
   govSubmitMatrixVersionRegularizacion,
   govSubmitApplicabilityMatrix, govSubmitGoldenDataset, govSubmitSourceCurrency,
-  govSubmitSourceOriginVerification, govSubmitD2A,
+  govSubmitSourceOriginVerification, govSubmitD2A, govSubmitD4A,
   viewHeadlessLogs, submitHeadlessOff, submitModelChange,
   refreshPipeline, refreshPipelineIfConnected,
   openMissionDetail, closeDetail, toggleGrp, toggleEv,
