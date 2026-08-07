@@ -191,6 +191,13 @@ VALID_EVENTS = {
     # W5V2-ARQ (2026-08-07) -- apply_corpus_authorization() registra el
     # go/no-go de corrida atado al run_fingerprint exacto (plan Bloque 6).
     "corpus_authorization_applied",
+    # W5V2-ARQ (2026-08-07) -- corpus_runner.run_corpus_batch(): resumen de
+    # UN lote de la corrida real del corpus (documento x agente), incluida
+    # la razon de parada (corpus completo / hard stop / fallo tecnico).
+    # Cada llamada individual a Ollama YA queda en su propio evento via
+    # evaluate_chunked()'s _write_audit_event() -- este es el resumen de
+    # nivel de lote, no una duplicacion de esa cadena.
+    "corpus_run_batch_completed",
     # W6.5 — propuestas de agente sobre el dossier: el agente propone, el humano decide
     "dossier_agent_proposal_generated",
     "dossier_agent_proposal_failed",
