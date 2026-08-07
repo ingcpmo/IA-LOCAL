@@ -1,6 +1,6 @@
 {
-  "status": "QUALIFIED_FOR_VALIDATION_ONLY",
-  "evaluated_at": "2026-08-07T17:58:21+00:00",
+  "status": "QUALIFIED",
+  "evaluated_at": "2026-08-07T21:36:24+00:00",
   "fingerprint": {
     "model_name": "qwen2.5:7b-instruct-q4_K_M",
     "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
@@ -126,35 +126,35 @@
     },
     {
       "name": "latency_p50",
-      "value": null,
+      "value": 1656.587146363001,
       "threshold": null,
-      "measured": false,
-      "passed": null,
-      "basis": "NOT_MEASURED: requiere una corrida real de inferencia; el Golden Dataset es determinista y no la produce. Nunca se sustituye por 0."
+      "measured": true,
+      "passed": true,
+      "basis": "corrida real de calibracion 'chunked-746d6d88041c' (2 llamadas, 2026-08-07T20:57:35+00:00)"
     },
     {
       "name": "latency_p95",
-      "value": null,
+      "value": 1902.0345378181019,
       "threshold": null,
-      "measured": false,
-      "passed": null,
-      "basis": "NOT_MEASURED: requiere una corrida real de inferencia; el Golden Dataset es determinista y no la produce. Nunca se sustituye por 0."
+      "measured": true,
+      "passed": true,
+      "basis": "corrida real de calibracion 'chunked-746d6d88041c' (2 llamadas, 2026-08-07T20:57:35+00:00)"
     },
     {
       "name": "tokens_per_task",
-      "value": null,
+      "value": 3134.5,
       "threshold": null,
-      "measured": false,
-      "passed": null,
-      "basis": "NOT_MEASURED: requiere una corrida real de inferencia; el Golden Dataset es determinista y no la produce. Nunca se sustituye por 0."
+      "measured": true,
+      "passed": true,
+      "basis": "corrida real de calibracion 'chunked-746d6d88041c' (2 llamadas, 2026-08-07T20:57:35+00:00)"
     },
     {
       "name": "retry_rate",
-      "value": null,
+      "value": 0.0,
       "threshold": null,
-      "measured": false,
-      "passed": null,
-      "basis": "NOT_MEASURED: requiere una corrida real de inferencia; el Golden Dataset es determinista y no la produce. Nunca se sustituye por 0."
+      "measured": true,
+      "passed": true,
+      "basis": "corrida real de calibracion 'chunked-746d6d88041c' (2 llamadas, 2026-08-07T20:57:35+00:00)"
     }
   ],
   "golden_dataset": {
@@ -164,12 +164,7 @@
     "failed_case_ids": []
   },
   "failed_metrics": [],
-  "unmeasured_metrics": [
-    "latency_p50",
-    "latency_p95",
-    "tokens_per_task",
-    "retry_rate"
-  ],
+  "unmeasured_metrics": [],
   "priority_verdicts": [
     {
       "priority": "cero_citas_inventadas",
@@ -222,8 +217,8 @@
         "tokens_per_task",
         "retry_rate"
       ],
-      "verdict": "NOT_MEASURED"
+      "verdict": "PASS"
     }
   ],
-  "blocking_reason": "4 de 13 metricas sin medir (latency_p50, latency_p95, tokens_per_task, retry_rate): habilita run_context='validation', NUNCA produccion. Para QUALIFIED hace falta una corrida real de inferencia que mida latencia, tokens y reintentos."
+  "blocking_reason": null
 }
