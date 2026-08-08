@@ -96,35 +96,46 @@ CORPUS_PLAN_DOCUMENTS = (
 
 def compute_d4a(*, documents=CORPUS_PLAN_DOCUMENTS,
                 min_per_1k_tokens: float = MIN_PER_1K_TOKENS,
+                p50_measured: float | None = None,
+                p95_measured: float | None = None,
                 agent_plan_resolver=None) -> dict:
     """D4-A completo (spec §5.3) sobre R(d,a) real de HOY.
 
-    `estimated_runtime_min == estimated_runtime_likely == estimated_runtime_max`
-    a propósito: el spec pide tres valores derivados de `p50_medido`/
-    `p95_medido`, pero hoy solo existe UN punto de dato real
-    (`MIN_PER_1K_TOKENS`, una corrida, un agente, un documento -- mismo
-    aviso de fragilidad que su propio docstring). Fabricar una dispersión
-    con multiplicadores inventados sería inventar precisión que no existe;
-    los tres campos quedan honestamente iguales hasta que la recalificación
-    (G6 §4) mida `latency_p50`/`latency_p95` reales. `hard_stop_wall_time`
-    SÍ aplica el margen del 30% que el spec define explícitamente sobre
-    `estimated_runtime_max`, independiente de si ese valor tiene dispersión
-    medida."""
+    Comportamiento por defecto (sin `p50_measured`/`p95_measured`):
+    `estimated_runtime_min == likely == max`, a propósito -- con un único
+    punto de dato (`MIN_PER_1K_TOKENS`) fabricar una dispersión sería
+    inventar precisión que no existe (`runtime_dispersion_measured=False`).
+
+    Con `p50_measured`/`p95_measured` (2026-08-07, tras la recalificación
+    real G6 §4 que por fin midió `latency_p50`/`latency_p95` reales, en vez
+    de UN dato): aplica EXACTAMENTE la fórmula ya declarada en el bloque
+    parametrizado del spec (§5.3) -- `estimated_runtime_min` con
+    `p50_measured × 0.85`, `_likely` con `p50_measured`, `_max` con
+    `p95_measured`. `estimated_minutes(calls, budget)` es LINEAL en
+    `min_per_1k_tokens`, así que min/max se derivan por razón directa del
+    total `_likely` sin recorrer R(d,a) tres veces.
+
+    `hard_stop_wall_time` SIEMPRE aplica el margen del 30% que el spec
+    define explícitamente sobre `estimated_runtime_max`, tenga o no
+    dispersión medida."""
     from factory.regulatory.corpus_plan import resolve_document_agent_plan
 
     resolver = agent_plan_resolver or resolve_document_agent_plan
+    dispersion_measured = p50_measured is not None and p95_measured is not None
+    likely_rate = p50_measured if dispersion_measured else min_per_1k_tokens
+
     total_calls = 0
-    total_minutes = 0.0
+    total_minutes_likely = 0.0
     breakdown = []
     for doc_id, doc_type, chunks in documents:
         plan = resolver(doc_type)
         for agent_id, bucket in plan.items():
             budget, minutes = budget_and_time_for_agent_on_document(
                 n_checkpoints=bucket["n_checkpoints"], n_criteria=bucket["n_criteria"],
-                chunks=chunks, min_per_1k_tokens=min_per_1k_tokens)
+                chunks=chunks, min_per_1k_tokens=likely_rate)
             calls = calls_for_document(chunks, 1)
             total_calls += calls
-            total_minutes += minutes
+            total_minutes_likely += minutes
             breakdown.append({
                 "document_id": doc_id, "document_type": doc_type, "agent_id": agent_id,
                 "n_checkpoints": bucket["n_checkpoints"], "n_criteria": bucket["n_criteria"],
@@ -132,20 +143,30 @@ def compute_d4a(*, documents=CORPUS_PLAN_DOCUMENTS,
                 "estimated_minutes": round(minutes, 1),
             })
 
-    estimated_runtime_hours = round(total_minutes / 60, 2)
-    hard_stop_wall_time_hours = round(estimated_runtime_hours * 1.30, 2)
+    likely_hours = round(total_minutes_likely / 60, 2)
+    if dispersion_measured:
+        min_hours = round(likely_hours * 0.85, 2)
+        max_hours = round(likely_hours * (p95_measured / p50_measured), 2)
+    else:
+        min_hours = max_hours = likely_hours
+    hard_stop_wall_time_hours = round(max_hours * 1.30, 2)
 
-    return {
+    result = {
         "document_ids": [d[0] for d in documents],
         "max_calls": total_calls,
-        "estimated_runtime_min_hours": estimated_runtime_hours,
-        "estimated_runtime_likely_hours": estimated_runtime_hours,
-        "estimated_runtime_max_hours": estimated_runtime_hours,
-        "runtime_dispersion_measured": False,
+        "estimated_runtime_min_hours": min_hours,
+        "estimated_runtime_likely_hours": likely_hours,
+        "estimated_runtime_max_hours": max_hours,
+        "runtime_dispersion_measured": dispersion_measured,
         "hard_stop_calls": math.ceil(total_calls * 1.25),
         "hard_stop_wall_time_hours": hard_stop_wall_time_hours,
         "checkpoint_mode": CHECKPOINT_MODE,
         "resume_fingerprint_required": RESUME_FINGERPRINT_REQUIRED,
-        "min_per_1k_tokens_used": min_per_1k_tokens,
         "breakdown": breakdown,
     }
+    if dispersion_measured:
+        result["p50_measured"] = p50_measured
+        result["p95_measured"] = p95_measured
+    else:
+        result["min_per_1k_tokens_used"] = min_per_1k_tokens
+    return result

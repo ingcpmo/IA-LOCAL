@@ -150,6 +150,40 @@ def test_d4a_declares_the_fixed_checkpoint_fields():
     assert d4a["resume_fingerprint_required"] is True
 
 
+def test_d4a_con_dispersion_medida_aplica_la_formula_del_spec():
+    """§5.3 del spec: min = p50x0.85, likely = p50, max = p95. Verificado
+    con el par real medido en la recalibracion 2026-08-07 (calibration
+    per-call: 10.01 y 7.55 min/1k tok -> p50=8.78, p95=9.89)."""
+    baseline = compute_d4a()
+    dispersed = compute_d4a(p50_measured=8.78, p95_measured=9.89)
+
+    assert dispersed["runtime_dispersion_measured"] is True
+    assert dispersed["p50_measured"] == 8.78
+    assert dispersed["p95_measured"] == 9.89
+    assert "min_per_1k_tokens_used" not in dispersed
+
+    # "likely" con dispersion medida (rate=p50) debe coincidir con el
+    # calculo directo al mismo rate por la ruta sin dispersion -- misma
+    # R(d,a), mismos chunks, solo cambia la tasa min/1k tokens.
+    expected_likely = compute_d4a(min_per_1k_tokens=8.78)["estimated_runtime_likely_hours"]
+    assert dispersed["estimated_runtime_likely_hours"] == expected_likely
+    assert dispersed["estimated_runtime_likely_hours"] > baseline["estimated_runtime_likely_hours"]
+    assert dispersed["estimated_runtime_min_hours"] == round(dispersed["estimated_runtime_likely_hours"] * 0.85, 2)
+    assert dispersed["estimated_runtime_max_hours"] == round(
+        dispersed["estimated_runtime_likely_hours"] * (9.89 / 8.78), 2)
+    assert dispersed["max_calls"] == baseline["max_calls"]
+    assert dispersed["hard_stop_wall_time_hours"] == round(dispersed["estimated_runtime_max_hours"] * 1.30, 2)
+
+
+def test_d4a_sin_dispersion_medida_mantiene_el_comportamiento_historico():
+    """El default (sin p50_measured/p95_measured) no cambia -- mismo
+    invariante que ya protegia test_d4a_never_fabricates_dispersion..."""
+    d4a = compute_d4a()
+    assert d4a["runtime_dispersion_measured"] is False
+    assert d4a["min_per_1k_tokens_used"] == MIN_PER_1K_TOKENS
+    assert "p50_measured" not in d4a and "p95_measured" not in d4a
+
+
 def test_d4a_declares_which_runs_it_authorizes():
     """El defecto historico de D4_corpus_execution (2026-07-29): se firmo
     APPROVE sin resolved_target_ids, un 'si' sin objeto (spec §5.1). Este
