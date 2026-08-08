@@ -67,6 +67,50 @@ def test_low_fuzzy_citation_is_rejected_citation_not_found():
     assert result.checks["citation_match_type"] == "not_found"
 
 
+def test_bullet_glyph_mismatch_normalizes_to_a_real_match():
+    """W5V2_REMEDIACION_RECALL_MODELO.md, hallazgo del experimento H2
+    (2026-08-08, RW-0005 p.45): el documento fuente usa el glifo de vineta
+    Wingdings del PDF (zona de uso privado) para una lista de 9 items; el
+    modelo cita la MISMA lista, palabra por palabra, pero reformateada con
+    guiones ASCII "- ". Antes del fix caia a `not_found` (score ~0.80,
+    por debajo del umbral fuzzy 0.93) pese a ser contenido identico -- solo
+    el marcador de vineta difiere."""
+    bullet = ""  # glifo Wingdings real extraido por pypdf de este PDF
+    chunk = dict(CHUNK, text=(
+        "El registro de auditoria contendra la siguiente informacion: \n"
+        f"{bullet} fecha y hora del cambio \n"
+        f"{bullet} valor original \n"
+        f"{bullet} valor posterior al cambio \n"
+        f"{bullet} identificador del usuario que realizo el cambio"
+    ))
+    out = _base_output(evidence_quote=(
+        "El registro de auditoria contendra la siguiente informacion: \n"
+        "- fecha y hora del cambio\n"
+        "- valor original\n"
+        "- valor posterior al cambio\n"
+        "- identificador del usuario que realizo el cambio"
+    ))
+    result = verify_llm_output(out, chunk, KNOWN_REQS, AUDIT_TERMS)
+    assert result.checks["citation_match_type"] == "normalized"
+    assert result.status == "verified"
+
+
+def test_bullet_marker_strip_never_eats_a_hyphenated_word_wrapped_at_line_start():
+    """El marcador de vineta solo se elimina si va seguido de espacio -- una
+    palabra compuesta con guion que quedo al inicio de renglon por el salto
+    de linea del PDF (sin espacio despues del primer guion) NUNCA debe
+    tratarse como vineta: eso SI seria comerse contenido real."""
+    from factory.regulatory.evidence_verifier import _strip_bullet_markers
+    # Sin espacio despues del guion -- salto de renglon de una palabra
+    # compuesta, NUNCA una vineta: debe quedar intacto.
+    hyphenated = "state\n-of-the-art segun el fabricante"
+    assert _strip_bullet_markers(hyphenated) == hyphenated
+    # Con espacio despues del guion -- vineta real: se elimina.
+    bulleted = "informacion:\n- fecha y hora del cambio"
+    assert "- fecha" not in _strip_bullet_markers(bulleted)
+    assert "fecha y hora del cambio" in _strip_bullet_markers(bulleted)
+
+
 def test_real_but_irrelevant_quote_is_review_required_not_rejected():
     """Caso tipo C1/C3 (citas trasladadas): la cita SI existe literalmente
     en el chunk pero no habla del requisito evaluado -- debe quedar en

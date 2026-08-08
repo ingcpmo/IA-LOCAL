@@ -83,9 +83,38 @@ def _strip_page_furniture(text: str) -> str:
     return _PAGE_FURNITURE_RE.sub(" ", text or "")
 
 
+# W5V2_REMEDIACION_RECALL_MODELO.md, hallazgo del experimento H2
+# (2026-08-08): una cita real y correcta del modelo (RW-0005 p.45, tabla de
+# campos del Audit Trail de cambio de umbral) quedaba `not_found` (score
+# 0.80, por debajo del umbral fuzzy 0.93) por UN SOLO artefacto de
+# extraccion de PDF, ninguna alteracion de contenido: el documento fuente
+# usa un glifo de vineta de la fuente Wingdings/Symbol del PDF (zona de uso
+# privado del PDF) para cada item de una lista; el modelo, al citar,
+# reformatea la misma lista con un guion ASCII "- " -- contenido identico,
+# marcador de vineta distinto. Con 9 items de lista, 9 caracteres distintos
+# bastan para tirar el ratio de SequenceMatcher por debajo de 0.93 sin que
+# una sola palabra del contenido haya cambiado.
+# Fix, MISMO principio que el fix W5.6 de arriba (remocion deterministica de
+# RUIDO DE FORMATO, nunca de contenido, nunca relaja el umbral fuzzy ni
+# acepta cita semanticamente similar): elimina el marcador de vineta al
+# INICIO de cada linea -- sea un glifo de vineta unicode/PDF conocido, o un
+# guion/asterisco ASCII seguido de espacio. La exigencia de espacio despues
+# del marcador es deliberada: protege una palabra compuesta con guion que
+# quedo al inicio de linea por el salto de renglon del PDF, que nunca tiene
+# espacio inmediatamente despues del primer guion.
+_BULLET_MARKER_RE = re.compile(
+    r"(?m)^[ \t]*[•▪●‣∙◦○\-\*]\s+"
+)
+
+
+def _strip_bullet_markers(text: str) -> str:
+    return _BULLET_MARKER_RE.sub(" ", text or "")
+
+
 def _normalize(text: str) -> str:
     text = unicodedata.normalize("NFKC", text or "").lower()
     text = _strip_page_furniture(text)
+    text = _strip_bullet_markers(text)
     text = re.sub(r"[\s ]+", " ", text)
     text = re.sub(r"[‐-―]", "-", text)
     text = re.sub(r"[‘’“”]", "'", text)
