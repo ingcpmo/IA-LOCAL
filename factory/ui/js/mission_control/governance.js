@@ -128,6 +128,15 @@ const PANELS = [
        (plan Bloque 6: "en ESTA corrida, llegar hasta dejar todo listo
        para la autorizacion"). */
     resumen:'Go/no-go atado al fingerprint exacto de configuración. Firmar esto NO lanza ninguna corrida — el runner es una pieza aparte, aún no construida.' },
+  { id:'pilot-execution', gate:'PILOT', family:'PILOT_EXECUTION',
+    titulo:'Piloto de diagnóstico — alcance acotado (pre-corpus)',
+    /* gate:'PILOT' es deliberadamente un id que no existe en G1..G8: no hay
+       precondicion real que este panel deba heredar (mismo patron que
+       golden-dataset/G6-GD), asi que gateOf() resuelve a {status:'?'} y el
+       boton nunca queda bloqueado por un gate ajeno. Encontrado 2026-08-08
+       (mismo defecto de RC-7) ANTES de que Cesar terminara de intentar
+       firmar PILOT_EXECUTION-2026-003 sin panel que lo mostrara. */
+    resumen:'Alcance EXPLICITO (documento/agente/requisito) y tope duro de llamadas. NUNCA autoriza CORPUS_AUTHORIZATION ni D4 -- familia separada, ninguna otra la lee.' },
 ];
 
 const GOLDEN_DATASET_ARTIFACT_ID = 'factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py';
@@ -1300,6 +1309,82 @@ function panelCorpusAuthorization(){
   </div>`;
 }
 
+/* ── Panel — Piloto de diagnóstico (PILOT_EXECUTION, plan
+   W5V2_PILOTO_DIAGNOSTICO_PRECORPUS.md / W5V2_REMEDIACION_RECALL_MODELO.md)
+   ── autoriza SOLO un alcance acotado y explícito, con tope duro de
+   llamadas, para diagnosticar el pipeline antes de comprometer el corpus
+   formal. Mismo patrón que d4a/corpus-authorization: propuesta real ya
+   creada por Capa 8 (agent_proposed), este panel solo confirma. */
+
+function pilotExecutionProposals(){
+  return (GOV?.proposals?.PILOT_EXECUTION || []).filter(p => p.proposal_state === 'PROPOSED');
+}
+
+function panelPilotExecution(){
+  const propuestas = pilotExecutionProposals();
+
+  const bloque = (p) => {
+    const pl = p.payload || {};
+    const scope = pl.scope || [];
+    const prefix = 'pilexec_' + p.decision_instance_id.replace(/[^a-zA-Z0-9]/g, '_');
+    const filas = scope.map(u => `<tr>
+      <td class="mono">${esc(u.document_id)}</td>
+      <td class="mono">${esc(u.agent_id)}</td>
+      <td class="mono">${esc(u.requirement_id)}</td>
+      <td class="mono">${esc((u.page_indices||[]).join(', '))}</td>
+      <td class="mono">${esc(u.purpose)}</td>
+      <td class="meta">${esc(u.selection_reason)}</td>
+    </tr>`).join('');
+    return `<div class="card" style="margin-top:10px;padding:8px;border:1px solid var(--warn)">
+      <b>${esc(p.decision_instance_id)}</b>
+
+      <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px">
+        <div class="meta">TOPE DURO DE LLAMADAS: <span class="mono">${esc(pl.max_calls)}</span></div>
+        <div class="meta">UNIDADES EN EL ALCANCE: <span class="mono">${scope.length}</span></div>
+        <div class="meta">AUTORIZA CORPUS_AUTHORIZATION: <span class="mono" style="color:var(--fail)">${esc(String(pl.authorizes_corpus))}</span></div>
+        <div class="meta">AUTORIZA BASELINE FORMAL: <span class="mono" style="color:var(--fail)">${esc(String(pl.authorizes_baseline))}</span></div>
+      </div>
+
+      <div class="meta" style="margin-top:8px;color:var(--warn)">
+        Familia SEPARADA de CORPUS_AUTHORIZATION/D4 -- ninguna otra familia
+        consulta PILOT_EXECUTION, así que firmar esto no puede, ni por
+        accidente, satisfacer la cobertura que el corpus formal exige.</div>
+
+      <div class="meta" style="margin-top:10px">${esc(p.reason||'')}</div>
+
+      <div style="margin-top:10px"><b>ALCANCE EXPLÍCITO (${scope.length})</b></div>
+      <table class="tbl" style="width:100%;font-size:11px;margin-top:6px">
+        <thead><tr><th>Documento</th><th>Agente</th><th>Requisito</th><th>Página(s)</th><th>Propósito</th><th>Motivo de selección</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+
+      ${signatureForm(prefix)}
+      ${NO_EJECUTA}
+      <div class="meta" style="margin-top:6px;color:var(--faint)">
+        Confirmar esto NO lanza ninguna llamada real a Ollama -- el runner
+        del piloto es una pieza aparte que se invoca por separado, siempre
+        con este tope duro de llamadas como techo.</div>
+      <div style="margin-top:8px">
+        <button id="${prefix}-submit-btn" onclick="govSubmitPilotExecution('${esc(p.decision_instance_id)}','${esc(prefix)}')">
+          Confirmar ${esc(p.decision_instance_id)}</button>
+      </div>
+      ${statusLine(prefix)}
+    </div>`;
+  };
+
+  return `
+  <div class="card">
+    <b>Piloto de diagnóstico — alcance acotado (pre-corpus)</b>
+    <div class="meta" style="margin-top:6px">
+      Ligera y separada de D4/CORPUS_AUTHORIZATION a propósito: existe para
+      diagnosticar el pipeline (representatividad, recall) ANTES de
+      comprometer una corrida formal de 80-94h. Nunca promueve
+      FORMAL_BASELINE_READY.</div>
+    ${propuestas.map(bloque).join('') || '<div class="meta" style="margin-top:8px;color:var(--pass)">Ninguna propuesta de piloto pendiente de firma.</div>'}
+    <div style="margin-top:12px"><button onclick="govOpen('')">Volver al índice</button></div>
+  </div>`;
+}
+
 function panelExcepcion(){
   const a = GOV.audit;
   const MEDIDAS = medidas();
@@ -1412,6 +1497,7 @@ function paint(){
   else if(p.id==='excepcion-auditoria') body = panelExcepcion();
   else if(p.id==='d4a')            body = panelD4A();
   else if(p.id==='corpus-authorization') body = panelCorpusAuthorization();
+  else if(p.id==='pilot-execution')      body = panelPilotExecution();
   else                             body = panelPendiente(p);
   el.innerHTML = banner + body;
   if(p.id==='d1-correccion') govRecalcHash();
@@ -1848,6 +1934,14 @@ export async function govSubmitCorpusAuthorization(decisionInstanceId, prefix){
   if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
   if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
   await confirmarPropuestaExistente(decisionInstanceId, 'CORPUS_AUTHORIZATION', sig,
+                                    {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
+}
+
+export async function govSubmitPilotExecution(decisionInstanceId, prefix){
+  const sig = readSignature(prefix);
+  if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
+  if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
+  await confirmarPropuestaExistente(decisionInstanceId, 'PILOT_EXECUTION', sig,
                                     {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
 }
 

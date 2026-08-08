@@ -119,6 +119,20 @@ def test_rc7_applicability_matrix_is_a_governed_family(tmp_store):
     assert "APPLICABILITY_MATRIX" in state["active_instances"]
 
 
+def test_pilot_execution_is_a_governed_family(tmp_store):
+    """Mismo defecto que RC-7 (test de arriba), encontrado 2026-08-08 antes
+    de que produjera el mismo incidente: Cesar intento firmar
+    PILOT_EXECUTION-2026-003 en el panel de Mission Control y no habia panel
+    que leer -- ni siquiera se llego a construir uno, porque get_state() no
+    exponia nada de esta familia para que un panel lo pudiera consumir."""
+    assert "PILOT_EXECUTION" in gov.GOVERNED_FAMILIES
+    state = gov.get_state(store_file=tmp_store)
+    assert "PILOT_EXECUTION" in state["coverage"]
+    assert "PILOT_EXECUTION" in state["proposals"]
+    assert "PILOT_EXECUTION" in state["family_state_hashes"]
+    assert "PILOT_EXECUTION" in state["active_instances"]
+
+
 def test_rc7_applicability_matrix_proposal_is_confirmable_via_generic_endpoint(tmp_store):
     """El endpoint generico de confirmacion ya sabia tratar cualquier familia
     -- la prueba de que el gap era solo de datos expuestos, no de logica de

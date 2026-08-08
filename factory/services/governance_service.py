@@ -59,9 +59,15 @@ from factory.services import decision_store_v2 as store
 # `store.load_families().keys()` en vez de duplicarla; no se hace en este
 # commit por el riesgo de tocar el orden/comportamiento que otros tests
 # puedan asumir -- queda declarado como el refactor pendiente correcto.
+# PILOT_EXECUTION (2026-08-08): mismo defecto de RC-7, encontrado antes de
+# que produjera el mismo incidente -- Cesar intento firmar
+# PILOT_EXECUTION-2026-003 en el panel y no habia ningun dato que un panel
+# pudiera leer (ni siquiera se llego a construir el panel: se detecto aqui
+# primero). Agregada ANTES de escribir el panel de UI, no despues.
 GOVERNED_FAMILIES = ("D1", "D2", "D3", "D4", "D5", "ARTIFACT_VERSION",
                      "APPLICABILITY_MATRIX", "SOURCE_CURRENCY",
-                     "SOURCE_ORIGIN_VERIFICATION", "CORPUS_AUTHORIZATION")
+                     "SOURCE_ORIGIN_VERIFICATION", "CORPUS_AUTHORIZATION",
+                     "PILOT_EXECUTION")
 
 
 class GovernanceNotFoundError(LookupError):

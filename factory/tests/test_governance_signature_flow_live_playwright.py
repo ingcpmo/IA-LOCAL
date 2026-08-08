@@ -221,3 +221,58 @@ def test_n11_reads_do_not_write_to_the_real_store(pagina):
 
     despues = subprocess.run(["git", "-C", str(REPO), "diff", "--quiet", "HEAD", "--", rel])
     assert despues.returncode == 0, "leer la UI escribio en el almacen real"
+
+
+def test_pilot_execution_panel_exists_and_wires_to_the_live_server(pagina):
+    """RC-7 otra vez (2026-08-08): antes de esto, PILOT_EXECUTION no tenia
+    panel Y no estaba en GOVERNED_FAMILIES -- un boton que no podia existir
+    ni con datos. Este test prueba las dos capas contra el servidor vivo:
+    el panel RENDERIZA la propuesta real PILOT_EXECUTION-2026-003 (prueba
+    que get_state() ya expone la familia) y el click en el boton de
+    confirmar SALE por la red y llega al backend (prueba que el panel esta
+    cableado). Identidad reservada -> 422, nunca una firma real."""
+    pg, errores = pagina
+
+    # `refresh(v)` (llamado por el fixture) solo repinta datos -- NO agrega
+    # la clase `.view.on` que hace visible la seccion (eso es trabajo de
+    # `show(v)`, disparado normalmente por el click de navegacion). Sin esto
+    # el boton real existe en el DOM pero con bounding box 0x0, y un
+    # pg.click() real (a diferencia de invocar la funcion JS directo) falla
+    # por "elemento no visible" -- no es un fallo de la firma, es que la
+    # pestana de Gobernanza nunca se abrio.
+    pg.evaluate("window.show && window.show('gobierno')")
+    pg.evaluate("window.govOpen && window.govOpen('pilot-execution')")
+    pg.wait_for_timeout(1500)
+
+    texto = pg.inner_text("#gov-body")
+    if "PILOT_EXECUTION-2026-003" not in texto:
+        pytest.skip("PILOT_EXECUTION-2026-003 ya no esta PROPOSED en este entorno "
+                     "(fue confirmada o abandonada) -- este test solo cubre el "
+                     "caso con una propuesta viva pendiente")
+
+    respuestas = []
+    pg.on("response", lambda r: respuestas.append((r.url, r.status))
+          if "/governance/decisions/" in r.url else None)
+
+    pg.evaluate("""() => {
+        const set=(s,v)=>{const e=document.querySelector(s); if(e) e.value=v;};
+        const idField = document.querySelector('[id^="pilexec_"][id$="-id"]');
+        const prefix = idField ? idField.id.replace('-id','') : null;
+        if(prefix){
+          set('#'+prefix+'-id', 'human');
+          set('#'+prefix+'-name', 'PRUEBA AUTOMATICA -- NO ES UNA FIRMA');
+          set('#'+prefix+'-reason', 'prueba de integracion -- no es una firma');
+        }
+    }""")
+    # Click real sobre el boton, que ya trae el decision_instance_id/prefix
+    # cableados en su propio onclick -- no una llamada sintetica con
+    # argumentos adivinados.
+    pg.click('[id^="pilexec_"][id$="-submit-btn"]')
+    pg.wait_for_timeout(3000)
+
+    confirm_status = [s for u, s in respuestas if u.endswith("/confirm")]
+    assert confirm_status, ("el click no genero ningun POST de confirm -- "
+                             "el boton existe pero no esta cableado a la red")
+    assert confirm_status[0] == 422, (
+        f"se esperaba 422 por identidad reservada; llego {confirm_status[0]}.")
+    assert not errores, f"la pagina lanzo errores JS: {errores[:5]}"
