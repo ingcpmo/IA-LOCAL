@@ -37,6 +37,7 @@ known_consumers:
   - model_qualification_gate
   - audit_reporting
   - package_regeneration
+  - pilot_runner
 
 families:
 
@@ -108,6 +109,24 @@ families:
     # queda atada a un run_fingerprint que incluye catalog_sha256". Un
     # cambio de cualquier campo del fingerprint tras esta firma invalida la
     # autorizacion -- no se hereda, igual que la calificacion del modelo.
+
+  PILOT_EXECUTION:
+    label: "Autorizacion LIGERA de un piloto de diagnostico pre-corpus -- nunca autoriza el corpus formal ni promueve el baseline"
+    target_kind: run_scope
+    # Igual que D4/CORPUS_AUTHORIZATION: el objetivo es un plan de corrida
+    # acotado (documentos+agentes+requisitos del piloto), no un id que viva
+    # en un registry.
+    target_registry: null
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [pilot_runner]
+    requires_human_confirmation: true
+    # Distinta de D4/CORPUS_AUTHORIZATION a proposito: esta familia NUNCA
+    # cubre CORPUS_AUTHORIZATION ni D4 (el resolver de esas dos familias no
+    # las consulta), asi que firmar un PILOT_EXECUTION no puede, ni por
+    # accidente, satisfacer la cobertura que exige la corrida formal --
+    # ver PLAN_PILOTO_DIAGNOSTICO_PRECORPUS.md Sec 2 y
+    # test_pilot_isolation.py.
 
   D5:
     label: "Regeneracion de paquetes QA"

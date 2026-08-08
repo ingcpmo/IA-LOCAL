@@ -54,7 +54,9 @@ from factory.regulatory import corpus_authorization as ca
 from factory.regulatory import model_qualification_gate as mqg
 from factory.regulatory.corpus_budget_formula import CORPUS_PLAN_DOCUMENTS, compute_d4a
 from factory.regulatory.corpus_plan import AGENT_PROMPT_FILES, PROMPTS_DIR, resolve_document_agent_plan
+from factory.regulatory.pilot_execution import DECISION_FAMILY as PILOT_DECISION_FAMILY
 from factory.regulatory.requirement_catalog.citation_locator import sha256_file
+from factory.services import decision_store_v2 as decision_store
 
 ALLOWLIST_PATH = Path(__file__).parent / "scope" / "source_baseline_allowlist.yaml"
 #: Raíz declarada por el propio inventario de Fase A
@@ -65,12 +67,25 @@ GMPAI_ROOT = Path("/home/ing_cpmo/GMPAI")
 DEFAULT_CHECKPOINT_DIR = Path(__file__).parent / "corpus_run" / "checkpoints"
 DEFAULT_MANIFEST_DIR = Path(__file__).parent / "corpus_run" / "manifests"
 
+#: Aislamiento físico del piloto (plan `W5V2_PILOTO_DIAGNOSTICO_PRECORPUS.md`
+#: §2): rutas DISTINTAS de las de la corrida formal, nunca compartidas --
+#: para que un resume/manifest formal no pueda, ni por accidente, leer nada
+#: escrito por un piloto (ver test_pilot_isolation.py).
+PILOT_CHECKPOINT_DIR = Path(__file__).parent / "pilot_run" / "checkpoints"
+PILOT_MANIFEST_DIR = Path(__file__).parent / "pilot_run" / "manifests"
+PILOT_OUTPUT_DIR = Path(__file__).parents[1] / "generated_documents" / "pilot"
+
 #: Etiqueta real y fechada de esta corrida (no un número de versión de
 #: agente formal -- no existe un registro de versiones de agente todavía,
 #: ver hallazgo de `model_requalification_calibration.py`). Estable a
 #: propósito entre invocaciones: cambiarla invalidaría el `run_fingerprint`
 #: de resume de TODAS las unidades ya empezadas.
 CORPUS_RUN_AGENT_VERSION = "v1-corpus-2026-08"
+
+#: Etiqueta distinta a `CORPUS_RUN_AGENT_VERSION` a propósito -- un `run_id`
+#: de piloto nunca debe poder confundirse por prefijo con uno de la corrida
+#: formal (plan §2: "fingerprint propio: prefijo pilot-<fecha>-").
+PILOT_RUN_AGENT_VERSION = "v1-pilot-2026-08"
 
 _PROMPT_PATH_BY_AGENT = {agent_id: PROMPTS_DIR / filename for filename, agent_id in AGENT_PROMPT_FILES}
 
@@ -161,6 +176,156 @@ def plan_corpus_units(documents=CORPUS_PLAN_DOCUMENTS) -> list[CorpusRunUnit]:
                 prompt_path=_PROMPT_PATH_BY_AGENT[agent_id], expected_calls=chunks,
             ))
     return units
+
+
+@dataclass
+class PilotSampleUnit:
+    """Una llamada real del Piloto 1 (§3.1): NO un (documento, agente)
+    completo como `CorpusRunUnit` -- un extracto CORTO y real (páginas
+    concretas, elegidas a mano tras leer el PDF, nunca el documento entero)
+    para que cubrir 4 agentes en 8-12 llamadas reales sea posible. El costo
+    de una `CorpusRunUnit` completa (mínimo 7 chunks reales) haría
+    imposible ese presupuesto."""
+    document_id: str
+    document_type: str
+    agent_id: str
+    requirement_id: str
+    page_indices: tuple[int, ...]  # 0-based, reales, dentro de las páginas del PDF
+    selection_reason: str
+
+
+def _check_pilot_execution(document_ids: list[str], *,
+                           decision_store_file: Path | None = None) -> dict:
+    """Fail-closed igual que `_check_corpus_authorization`, pero contra la
+    familia SEPARADA `PILOT_EXECUTION` -- nunca `CORPUS_AUTHORIZATION`/`D4`.
+    Devuelve el payload de la decisión vigente (trae `max_calls`, el tope
+    duro real de ESTE piloto)."""
+    instances = set()
+    for doc_id in document_ids:
+        scope = resolver.resolve(PILOT_DECISION_FAMILY, doc_id, store_file=decision_store_file)
+        if not scope.authorized:
+            raise CorpusRunNotAuthorizedError(
+                f"{doc_id!r} sin PILOT_EXECUTION vigente: {scope.denial_reason}")
+        instances.update(scope.covering_instances)
+    if len(instances) != 1:
+        raise CorpusRunNotAuthorizedError(
+            "las unidades del piloto no comparten una única PILOT_EXECUTION vigente "
+            f"({instances!r})")
+    instance_id = instances.pop()
+    decision = next((r for r in decision_store.read_all(decision_store_file)
+                     if r.get("decision_instance_id") == instance_id), None)
+    if decision is None:
+        raise CorpusRunNotAuthorizedError(f"{instance_id!r} no se encuentra en el almacén")
+    return decision.get("payload") or {}
+
+
+def _extract_pilot_excerpt(path: Path, page_indices: tuple[int, ...]) -> list[str]:
+    """Solo las páginas reales pedidas -- nunca el documento completo. Cada
+    página se procesa como una unidad propia de `per_unit_text` (mismo
+    contrato que `_default_extractor`), así que `evaluate_chunked` la trata
+    como un extracto corto real, no como el corpus formal."""
+    import pypdf
+
+    reader = pypdf.PdfReader(str(path))
+    n_pages = len(reader.pages)
+    out_of_range = [i for i in page_indices if i < 0 or i >= n_pages]
+    if out_of_range:
+        raise CorpusDocumentDriftError(
+            f"{path}: page_indices fuera de rango {out_of_range!r} (el PDF tiene {n_pages} páginas)")
+    return [(reader.pages[i].extract_text() or "") for i in page_indices]
+
+
+def run_pilot_sample_batch(units: list[PilotSampleUnit], *,
+                           provider: ModelProvider | None = None,
+                           checkpoint_dir: Path = PILOT_CHECKPOINT_DIR,
+                           manifest_dir: Path = PILOT_MANIFEST_DIR,
+                           decision_store_file: Path | None = None,
+                           persist_manifest: bool = True) -> CorpusRunSummary:
+    """Piloto 1 (representatividad, §3 del plan): ejecuta la lista EXPLÍCITA
+    de `PilotSampleUnit` -- nunca `plan_corpus_units()`/barrido completo.
+    `run_context='pilot'` en cada llamada real; el tope duro de llamadas
+    viene de la decisión `PILOT_EXECUTION` vigente (`payload['max_calls']`),
+    NUNCA de `compute_d4a()` (ese presupuesto es de la corrida formal).
+    Checkpoints/manifests en `PILOT_CHECKPOINT_DIR`/`PILOT_MANIFEST_DIR`
+    (nunca los de producción) -- misma garantía de aislamiento físico que
+    documenta `test_pilot_isolation.py`."""
+    provider = provider or DEFAULT_PROVIDER
+    if not units:
+        return CorpusRunSummary(stop_reason="NO_UNITS")
+
+    document_ids = sorted({u.document_id for u in units})
+    pilot_payload = _check_pilot_execution(document_ids, decision_store_file=decision_store_file)
+    max_calls = pilot_payload.get("max_calls")
+    if not isinstance(max_calls, int) or max_calls <= 0:
+        raise CorpusRunNotAuthorizedError(
+            f"PILOT_EXECUTION vigente sin max_calls válido: {max_calls!r}")
+
+    status = mqg.evaluate_model_qualification(provider).status
+    mqg.require_inference_authorized(status, call_type=mqg.CALL_TYPE_INFERENCE, run_context="pilot")
+
+    checkpoint_store = ce.CheckpointStore(checkpoint_dir)
+    excerpt_cache: dict[tuple[str, tuple[int, ...]], list[str]] = {}
+
+    summary = CorpusRunSummary()
+    for unit in units:
+        expected_calls = len(unit.page_indices)
+        if summary.total_calls_made + expected_calls > max_calls:
+            summary.units.append(UnitOutcome(
+                document_id=unit.document_id, agent_id=unit.agent_id,
+                status="NOT_STARTED_HARD_STOP"))
+            summary.stop_reason = "HARD_STOP_CALLS"
+            break
+
+        path, doc_sha256 = _resolve_document_path(unit.document_id)
+        cache_key = (unit.document_id, unit.page_indices)
+        if cache_key not in excerpt_cache:
+            excerpt_cache[cache_key] = _extract_pilot_excerpt(path, unit.page_indices)
+
+        t0 = time.monotonic()
+        try:
+            result = ce.evaluate_chunked(
+                _PROMPT_PATH_BY_AGENT[unit.agent_id], agent_id=unit.agent_id,
+                agent_version=PILOT_RUN_AGENT_VERSION,
+                per_unit_text=excerpt_cache[cache_key],
+                sistema="pilot_run_sample", documento=unit.document_id,
+                version="v1", archivo=str(path), document_sha256=doc_sha256,
+                run_context="pilot", checkpoint_store=checkpoint_store,
+                use_verified_pipeline=True, document_type=unit.document_type,
+                retry_technical_failures=True, provider=provider,
+            )
+        except Exception as e:  # noqa: BLE001 -- nunca se traga: se registra y se relanza
+            wall = time.monotonic() - t0
+            summary.units.append(UnitOutcome(
+                document_id=unit.document_id, agent_id=unit.agent_id, status="FAILED",
+                wall_seconds=wall, error=f"{type(e).__name__}: {e}"))
+            summary.total_wall_seconds += wall
+            summary.stop_reason = "TECHNICAL_FAILURE"
+            if persist_manifest:
+                summary.manifest_path = _persist_manifest(summary, manifest_dir)
+            _write_batch_event(summary, document_ids, run_context="pilot")
+            raise
+
+        wall = time.monotonic() - t0
+        preflight = result["preflight_metadata"]
+        resumed_at_start = preflight.get("resumed_chunk_count", 0)
+        retried = len(preflight.get("retried_chunk_indices") or [])
+        new_calls = (len(result["chunk_executions"]) - resumed_at_start) + retried
+        reused_without_new_call = resumed_at_start - retried
+        n_failures = len(result.get("technical_execution_failures") or [])
+
+        summary.units.append(UnitOutcome(
+            document_id=unit.document_id, agent_id=unit.agent_id, status="COMPLETED",
+            run_id=result["run_id"], calls_made_this_invocation=new_calls,
+            resumed_chunk_count=reused_without_new_call, technical_execution_failures=n_failures,
+            wall_seconds=wall,
+        ))
+        summary.total_calls_made += new_calls
+        summary.total_wall_seconds += wall
+
+    if persist_manifest:
+        summary.manifest_path = _persist_manifest(summary, manifest_dir)
+    _write_batch_event(summary, document_ids, run_context="pilot")
+    return summary
 
 
 def _default_extractor(path: Path) -> list[str]:
@@ -311,9 +476,11 @@ def _persist_manifest(summary: CorpusRunSummary, manifest_dir: Path) -> str:
     return str(path)
 
 
-def _write_batch_event(summary: CorpusRunSummary, document_ids: list[str]) -> None:
+def _write_batch_event(summary: CorpusRunSummary, document_ids: list[str], *,
+                       run_context: str = "production") -> None:
     write_event("corpus_run_batch_completed", "regulatory_intel", {
         "document_ids": document_ids,
+        "run_context": run_context,
         "stop_reason": summary.stop_reason,
         "total_calls_made": summary.total_calls_made,
         "total_wall_seconds": round(summary.total_wall_seconds, 1),

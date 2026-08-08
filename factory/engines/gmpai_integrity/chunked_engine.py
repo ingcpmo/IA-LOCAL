@@ -804,14 +804,24 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     Ollama si el proceso se interrumpe).
 
     run_context (W5 Ciclo 1 v2, Fase 4 Bloque 4.1 / Fase 5.0 W5.3):
-    OBLIGATORIO, sin default -- 'production' | 'validation'. Corrección de
-    Fase 5.0: el default anterior ('production') permitía que un caller
-    descuidado etiquetara silenciosamente un run como productivo. Ahora
-    omitirlo es un TypeError de Python (parámetro keyword-only sin default),
-    no un ValueError en runtime -- falla en la firma de la función, antes
-    de ejecutar una sola línea. Se registra en el evento de auditoría de
-    este run -- UNA sola cadena de auditoría (Part 11), nunca fragmentada;
-    los reportes filtran en lectura vía GET /missions/{project_id}/audit?context=.
+    OBLIGATORIO, sin default -- 'production' | 'validation' | 'pilot'.
+    Corrección de Fase 5.0: el default anterior ('production') permitía que
+    un caller descuidado etiquetara silenciosamente un run como productivo.
+    Ahora omitirlo es un TypeError de Python (parámetro keyword-only sin
+    default), no un ValueError en runtime -- falla en la firma de la
+    función, antes de ejecutar una sola línea. Se registra en el evento de
+    auditoría de este run -- UNA sola cadena de auditoría (Part 11), nunca
+    fragmentada; los reportes filtran en lectura vía
+    GET /missions/{project_id}/audit?context=.
+
+    'pilot' (W5 V2 PILOTO_DIAGNOSTICO_PRECORPUS, 2026-08-08): mismo motor
+    real, para un run de diagnóstico aislado que NUNCA cuenta para D4-A ni
+    para CORPUS_AUTHORIZATION -- esa exclusión se garantiza fuera de esta
+    función (checkpoint_dir/manifest_dir propios y la familia de decisión
+    separada PILOT_EXECUTION en el caller, ver corpus_runner.py), nunca
+    filtrando aquí por valor de string. Se comporta como 'production' en
+    todo lo demás (persistencia de evidencia de validación: NOT_APPLICABLE,
+    igual que 'production' -- ver _persist_validation_evidence).
 
     use_verified_pipeline (Fase 3, document_remediation_evolution, default
     False -- cero cambio de comportamiento para todo llamador existente):
@@ -849,8 +859,9 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     None usa DEFAULT_PROVIDER (OllamaProvider, mismo cliente Ollama de
     siempre). Este motor NUNCA importa ollama_client directamente -- toda
     llamada al modelo pasa por esta interfaz (ver model_provider.py)."""
-    if run_context not in ("production", "validation"):
-        raise ValueError(f"run_context invalido: {run_context!r} (debe ser 'production' o 'validation')")
+    if run_context not in ("production", "validation", "pilot"):
+        raise ValueError(
+            f"run_context invalido: {run_context!r} (debe ser 'production', 'validation' o 'pilot')")
     if use_verified_pipeline and not document_type:
         raise ValueError("use_verified_pipeline=True exige document_type (obligatorio, sin default)")
     provider = provider or DEFAULT_PROVIDER
