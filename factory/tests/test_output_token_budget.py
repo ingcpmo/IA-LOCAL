@@ -356,3 +356,32 @@ class TestFailureCauseClassification:
         execution = result["chunk_executions"][0]
         assert len(execution["raw_response"]) == ce._RAW_PERSIST_MAX_CHARS
         assert execution["raw_response_truncated_in_log"] is True
+
+    def test_full_raw_response_recoverable_beyond_the_checkpoint_cap(self, tmp_path):
+        """W5V2_REMEDIACION_RECALL_MODELO.md 1.2: el cap de 8192 caracteres
+        en el checkpoint impidio auditar el razonamiento real de una llamada
+        del Piloto 1 (2026-08-08). Con checkpoint_store, la respuesta
+        COMPLETA debe poder recuperarse mas alla del extracto truncado."""
+        full_text = "y" * 40000
+        provider = _BaseProvider([{"response": full_text, "done_reason": "stop"}])
+        store = ce.CheckpointStore(tmp_path)
+        result = _run(PART11, provider, ["contenido"], "h" * 64, checkpoint_store=store)
+        execution = result["chunk_executions"][0]
+
+        assert execution["raw_response_truncated_in_log"] is True
+        assert execution["raw_response_full_path"] is not None
+        assert execution["raw_response_full_sha256"] == (
+            __import__("hashlib").sha256(full_text.encode("utf-8")).hexdigest()
+        )
+
+        recovered = store.load_raw_response(execution["raw_response_full_path"])
+        assert recovered == full_text
+
+    def test_no_full_raw_persisted_without_a_checkpoint_store(self):
+        """Sin checkpoint_store no hay donde persistir el archivo aparte --
+        se degrada al extracto de siempre, nunca a un error."""
+        provider = _BaseProvider([{"response": "x" * 40000, "done_reason": "stop"}])
+        result = _run(PART11, provider, ["contenido"], "i" * 64)
+        execution = result["chunk_executions"][0]
+        assert execution["raw_response_full_path"] is None
+        assert execution["raw_response_full_sha256"] is None

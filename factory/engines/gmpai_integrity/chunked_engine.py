@@ -37,6 +37,8 @@ fuente.
 
 from __future__ import annotations
 
+import gzip
+import hashlib
 import json
 import re
 import time
@@ -379,6 +381,14 @@ _FAILURE_DETAIL = {
     ),
 }
 
+# Extracto inline en el checkpoint (para que el JSON del checkpoint siga
+# siendo manejable de leer/diffear a mano). NUNCA es la unica copia cuando
+# hay checkpoint_store: la respuesta completa se persiste aparte via
+# CheckpointStore.save_raw_response (gzip, referenciada por
+# raw_response_full_path/raw_response_full_sha256) -- ver
+# W5V2_REMEDIACION_RECALL_MODELO.md 1.2. Antes de esa correccion (2026-08-08)
+# este cap era la unica copia y una llamada real del Piloto 1 quedo
+# inauditable mas alla de los primeros 8192 caracteres.
 _RAW_PERSIST_MAX_CHARS = 8192
 
 
@@ -734,6 +744,36 @@ class CheckpointStore:
         tmp = p.with_suffix(".tmp")
         tmp.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
         tmp.replace(p)
+
+    def save_raw_response(self, run_id: str, task_id: str, raw_response_text: str) -> dict:
+        """Persiste la respuesta CRUDA completa del modelo (sin el recorte de
+        `_RAW_PERSIST_MAX_CHARS` que vive en el checkpoint) en un archivo
+        aparte, gzip, uno por llamada. Existe porque un run regulatorio debe
+        poder auditar el razonamiento completo del modelo post-hoc -- el
+        checkpoint solo conserva un extracto para que el JSON del checkpoint
+        siga siendo manejable, nunca para ocultar lo que el modelo dijo (ver
+        W5V2_REMEDIACION_RECALL_MODELO.md 1.2). Devuelve la ruta relativa al
+        checkpoint_dir y el SHA-256 del texto completo (sin comprimir), para
+        que el checkpoint pueda referenciarlo y para poder verificar
+        integridad al leerlo de vuelta."""
+        raw_dir = self.checkpoint_dir / "raw_responses" / run_id
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        path = raw_dir / f"{task_id}.txt.gz"
+        payload = raw_response_text.encode("utf-8")
+        with gzip.open(path, "wb") as f:
+            f.write(payload)
+        return {
+            "path": str(path.relative_to(self.checkpoint_dir)),
+            "sha256": hashlib.sha256(payload).hexdigest(),
+            "chars": len(raw_response_text),
+        }
+
+    def load_raw_response(self, relative_path: str) -> str:
+        """Contraparte de save_raw_response: lee y descomprime el raw
+        completo a partir de la ruta relativa guardada en el checkpoint."""
+        path = self.checkpoint_dir / relative_path
+        with gzip.open(path, "rb") as f:
+            return f.read().decode("utf-8")
 
     def find_resumable(self, document_sha256: str, agent_id: str, expected_fingerprint: dict,
                        *, include_completed_with_failures: bool = False) -> tuple[dict | None, dict | None]:
@@ -1171,6 +1211,19 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     verified_records_by_req[req_id].append(
                         rejected_record(f"vrec-{task_id}-{req_id}", req_reason))
 
+        # El extracto de _RAW_PERSIST_MAX_CHARS que vive en el checkpoint no
+        # es la unica copia de la respuesta: cuando hay checkpoint_store, el
+        # texto COMPLETO se persiste aparte (gzip, referenciado por hash) --
+        # ver W5V2_REMEDIACION_RECALL_MODELO.md 1.2 / CheckpointStore.
+        # save_raw_response. El cap del checkpoint mismo impidio auditar el
+        # razonamiento real de una corrida de piloto (2026-08-08); nunca mas
+        # debe ser la unica copia.
+        raw_response_full_ref = (
+            checkpoint_store.save_raw_response(run_id, task_id, raw_response_text)
+            if (checkpoint_store is not None and raw_response_text)
+            else None
+        )
+
         execution = {
             "run_id": run_id, "task_id": task_id, "chunk_index": chunk["chunk_index"],
             "page_start": chunk["page_start"], "page_end": chunk["page_end"],
@@ -1192,6 +1245,8 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             # auditar que dijo el modelo en un run regulatorio.
             "raw_response": raw_response_text[:_RAW_PERSIST_MAX_CHARS],
             "raw_response_truncated_in_log": len(raw_response_text) > _RAW_PERSIST_MAX_CHARS,
+            "raw_response_full_path": raw_response_full_ref["path"] if raw_response_full_ref else None,
+            "raw_response_full_sha256": raw_response_full_ref["sha256"] if raw_response_full_ref else None,
             "_by_req_candidates": by_req_candidates,
         }
 
