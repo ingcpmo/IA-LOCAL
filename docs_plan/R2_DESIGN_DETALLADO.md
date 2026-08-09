@@ -31,39 +31,73 @@ análisis. R2 crea su propia infraestructura de recuperación, separada.
 
 ## Investigación previa (evita reinventar, evita copiar un patrón con defecto conocido)
 
-`knowledge/retriever.py` (base gmp-api) es el único código Chroma
-existente en el repo, y tiene un defecto real para nuestro caso: extrae
-el PDF completo con `pypdf` concatenando TODAS las páginas antes de
-chunkear (`_extract_text`), así que **pierde el número de página** — el
-metadata de cada chunk solo guarda `{source, chunk, directory}`, nunca
-`page_start`/`page_end`. R2 necesita mapeo chunk→página real (todo el
-resto del sistema, desde `evidence_verifier` hasta `absence_consolidator`,
-opera sobre rangos de página) — así que R2 **no reutiliza
-`_extract_text`/`_split_text` de `knowledge/retriever.py`**, reutiliza en
-su lugar `chunked_engine.build_page_chunks()` (ya tiene chunking
-page-aware, ya probado, ya en producción) para construir los chunks a
-indexar, y solo toma de `knowledge/retriever.py` el patrón de **cliente**
-Chroma (`PersistentClient`, `hnsw:space: cosine`).
+`knowledge/retriever.py` (base gmp-api) es el único código de
+recuperación semántica existente en el repo (usa ChromaDB), y tiene un
+defecto real para nuestro caso: extrae el PDF completo con `pypdf`
+concatenando TODAS las páginas antes de chunkear (`_extract_text`), así
+que **pierde el número de página** — el metadata de cada chunk solo
+guarda `{source, chunk, directory}`, nunca `page_start`/`page_end`. R2
+necesita mapeo chunk→página real (todo el resto del sistema, desde
+`evidence_verifier` hasta `absence_consolidator`, opera sobre rangos de
+página) — así que R2 **no reutiliza `_extract_text`/`_split_text` de
+`knowledge/retriever.py`** en ningún escenario, reutiliza en su lugar
+`chunked_engine.build_page_chunks()` (ya tiene chunking page-aware, ya
+probado, ya en producción) para construir los chunks a indexar.
 
-**Dependencia nueva para `factory/`**: no existe ningún cliente ChromaDB
-en la capa `factory/` hoy (solo en soluciones cliente bajo
-`workspaces/`/`deployments/`, capa de producto, no de plataforma). Añadir
-`chromadb` como dependencia de `factory/` es una decisión de plataforma
-nueva — señalada aquí explícitamente para que Cesar la vea antes de
-autorizar la ejecución, no asumida en silencio. Alternativa sin
-dependencia nueva evaluada y descartada por ahora: TF-IDF/BM25 puro
-(stdlib o `scikit-learn`, ya usado en otras partes del repo) — más simple
-pero peor recall semántico que embeddings; queda anotada como opción B si
-Cesar prefiere no traer ChromaDB a la plataforma.
+**Decisión de Cesar (2026-08-09): TF-IDF/BM25, sin dependencia nueva de
+chromadb.** Evaluado además qué tan "sin dependencia nueva" debía ser
+la alternativa — corrección de un error de esta misma nota: la versión
+anterior afirmaba que `scikit-learn` "ya se usa en otras partes del
+repo"; verificado y es **falso** — `scikit-learn` está en el venv solo
+como dependencia transitiva de `sentence-transformers`, nunca declarado
+en `factory/requirements.txt` ni importado por ningún código de
+`factory/`. Decisión final (Cesar, confirmada): **BM25 implementado a
+mano con la librería estándar** (`re`, `collections.Counter`, `math`) —
+cero paquetes nuevos, ni siquiera `rank_bm25`/`scikit-learn`. Coincide
+literalmente con "sin dependencia nueva", no solo "sin chromadb".
 
 ## Diseño del módulo
 
 ```
 factory/regulatory/retrieval/
-├── indexer.py       # construye/actualiza la coleccion Chroma de un documento
-├── query_builder.py # construye la query desde el Evidence Pack (ver abajo)
-└── retriever.py      # top-k determinista, mapeo a pagina, sin LLM
+├── bm25.py           # BM25 puro, stdlib (tokenizacion, IDF, scoring) -- sin dependencias nuevas
+├── indexer.py        # construye/actualiza el indice BM25 de un documento
+├── query_builder.py  # construye la query desde el Evidence Pack (ver abajo)
+└── retriever.py       # top-k determinista, mapeo a pagina, sin LLM
 ```
+
+### `bm25.py` — Okapi BM25 sin dependencias
+
+Tokenización simple (`re.findall(r"[A-Za-zÁÉÍÓÚáéíóúñÑ]+", text.lower())`,
+mismo patrón de extracción de palabras que ya usa
+`chunked_engine._is_topically_relevant`/`_LABEL_STOPWORDS` — reutilizar
+el patrón, no una regex nueva inventada). Por documento (colección de
+chunks): `collections.Counter` de términos por chunk, longitud de cada
+chunk en tokens, longitud promedio de chunk. IDF real por término (fórmula
+Okapi estándar, `k1=1.5`, `b=0.75` — valores de referencia de la
+literatura, no calibrados a mano, anotado explícitamente para que una
+futura sesión no los confunda con un ajuste fino ya hecho):
+
+```python
+def idf(term: str, chunks: list[dict]) -> float:
+    n_docs = len(chunks)
+    n_containing = sum(1 for c in chunks if term in c["term_counts"])
+    return math.log((n_docs - n_containing + 0.5) / (n_containing + 0.5) + 1)
+
+def bm25_score(query_terms: list[str], chunk: dict, corpus_idf: dict,
+               avg_chunk_len: float, k1: float = 1.5, b: float = 0.75) -> float:
+    score = 0.0
+    dl = chunk["token_count"]
+    for term in query_terms:
+        f = chunk["term_counts"].get(term, 0)
+        if f == 0:
+            continue
+        score += corpus_idf.get(term, 0.0) * (f * (k1 + 1)) / (f + k1 * (1 - b + b * dl / avg_chunk_len))
+    return score
+```
+
+Sin llamada a LLM, sin librería externa — determinista, mismo input
+siempre produce el mismo score.
 
 ### `indexer.py` — indexación del documento objetivo
 
@@ -72,14 +106,16 @@ factory/regulatory/retrieval/
   chunking que ya usa el pipeline de juicio, para que un pasaje
   recuperado sea directamente comparable/reutilizable por
   `evaluate_chunked()` después.
-- Una colección Chroma **por documento** (`document_sha256` como parte
-  del nombre de colección — nunca mezclar documentos distintos en una
-  sola colección, evita que un requirement_id de un documento recupere
-  contenido de otro por accidente).
-- Metadata por chunk: `{document_sha256, chunk_index, page_start, page_end,
-  has_overlap_prefix}` — suficiente para que el consumidor reconstruya
-  la ubicación real sin volver a tocar el PDF.
-- Reindexación: si el documento ya tiene colección con el mismo
+- Un índice BM25 **por documento** (`document_sha256` como clave —
+  nunca mezclar documentos distintos en un mismo índice, evita que un
+  requirement_id de un documento recupere contenido de otro por
+  accidente). Estructura simple, serializable a JSON:
+  `{document_sha256, avg_chunk_len, chunks: [{chunk_index, page_start,
+  page_end, has_overlap_prefix, text, term_counts, token_count}]}`.
+- Persistencia: JSON en disco (mismo patrón que otros artefactos de
+  `factory/regulatory/`, no requiere infraestructura nueva — sin
+  servidor, sin cliente, sin proceso adicional, a diferencia de Chroma).
+- Reindexación: si el documento ya tiene índice con el mismo
   `document_sha256`, no reindexar (idempotente, determinista).
 
 ### `query_builder.py` — construcción de la query desde el Evidence Pack (regla dura)
@@ -116,17 +152,17 @@ input siempre produce la misma query.
 ```python
 def retrieve_top_k(document_sha256: str, req_id: str, k: int = 5) -> list[dict]:
     """Retorna hasta k chunks candidatos: {chunk_index, page_start,
-    page_end, text, distance}. NUNCA llama a un LLM. NUNCA decide si un
+    page_end, text, bm25_score}. NUNCA llama a un LLM. NUNCA decide si un
     candidato es evidencia valida -- eso sigue siendo trabajo exclusivo
     de evaluate_chunked()/verify_llm_output/absence_consolidator, R2 no
     los toca ni los antecede en autoridad, solo en orden de presentacion."""
 ```
 
-`query()` de Chroma (`include=["documents","metadatas","distances"]`,
-`n_results=k`) sobre la colección del documento — mismo patrón de
-`knowledge/retriever.py:159-163`, sin filtros de metadata adicionales por
-ahora (el filtro real es "una colección por documento", ya aplicado al
-indexar).
+Carga el índice JSON del documento (`indexer.py`), tokeniza la query
+(mismo tokenizador que `bm25.py`), calcula `bm25_score` de cada chunk
+contra la query, ordena descendente, retorna los `k` primeros. Sin
+filtros adicionales por ahora (el filtro real es "un índice por
+documento", ya aplicado al indexar).
 
 ## Qué NO cambia (reafirmado, para que no haya ambigüedad al ejecutar)
 
@@ -177,13 +213,12 @@ PDF real (mismo texto que ya usa `evaluate_chunked()` hoy).
 
 ## Pendiente de decisión de Cesar antes de implementar
 
-1. ¿Autorizar `chromadb` como dependencia nueva de `factory/` (plataforma,
-   no solo cliente), o preferir la alternativa B (TF-IDF/BM25 sin
-   dependencia nueva)?
+1. ~~¿Autorizar `chromadb`...?~~ — **RESUELTO 2026-08-09**: TF-IDF/BM25,
+   stdlib puro, sin dependencia nueva (ver arriba).
 2. Confirmar `k` (propuesto: 5, mismo orden de magnitud que
    `knowledge/retriever.py` usa hoy con `n_results=2`, ajustado al alza
    porque aquí no hay un LLM conversacional filtrando después).
-3. Autorizar la implementación real (indexer/query_builder/retriever +
-   tests) como corrida separada, con la medición de recuperación pura
-   sobre RW-0005/RW-0011 (documentos de los 7 positivos) como su
-   entregable — sin tocar el juicio LLM todavía.
+3. Autorizar la implementación real (`bm25.py`/indexer/query_builder/
+   retriever + tests) como corrida separada, con la medición de
+   recuperación pura sobre RW-0005/RW-0011 (documentos de los 7
+   positivos) como su entregable — sin tocar el juicio LLM todavía.
