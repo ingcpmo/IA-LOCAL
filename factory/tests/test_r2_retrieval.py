@@ -95,11 +95,22 @@ class TestPurRetrievalMetricAgainstFixture7P2N:
         rank = self._rank_of_page(_RW_0005, "21_CFR_11.10(g)", 40)
         assert rank is not None and 5 < rank <= 10
 
-    def test_p3_annex11_12_not_in_top10(self):
-        """Registrado tal cual, sin maquillar: P3 no aparece ni en el
-        top-10 con la query actual (citation_text+evidence_min_criteria+
-        requirement_terms de ANNEX11_12)."""
-        rank = self._rank_of_page(_RW_0005, "ANNEX11_12", 45)
+    def test_p3_annex11_17_not_in_top10(self):
+        """req_id corregido (2026-08-09, autorizado por Cesar): P3 era
+        ANNEX11_12 (seguridad física/lógica) en el fixture original --
+        error de etiquetado real, el pasaje (p.45, "UR3.3.6 Data
+        retention... archivado en ubicación alterna") corresponde a
+        ANNEX11_17 (archivo y retención), confirmado contra el
+        citation_text real del catálogo. Con el req_id YA corregido,
+        P3 SIGUE sin aparecer en el top-10 (rank 12) -- confirma la
+        causa secundaria investigada (docs_plan/R2_DESIGN_DETALLADO.md):
+        un espacio espurio de extracción de PDF parte "retention" en
+        "retentio"+"n" (term_counts["retention"]==0 en el chunk real),
+        más dilución porque el chunk mezcla la sección de retención con
+        Historian/Audit Trail/Critical Data Records. Registrado tal
+        cual, sin maquillar -- corregir el etiquetado no alcanza para
+        que este positivo se recupere bien."""
+        rank = self._rank_of_page(_RW_0005, "ANNEX11_17", 45)
         assert rank is not None and rank > 10
 
     def test_p4_alcoa_attributable_rank_in_top5(self):
@@ -129,7 +140,7 @@ class TestPurRetrievalMetricAgainstFixture7P2N:
         positives = [
             (_RW_0005, "21_CFR_11.10(e)", 46),
             (_RW_0005, "21_CFR_11.10(g)", 40),
-            (_RW_0005, "ANNEX11_12", 45),
+            (_RW_0005, "ANNEX11_17", 45),
             (_RW_0011, "ALCOA_ATTRIBUTABLE", 13),
             (_RW_0005, "ALCOA_CONTEMPORANEOUS", 46),
             (_RW_0011, "21_CFR_211.68(b)", 13),

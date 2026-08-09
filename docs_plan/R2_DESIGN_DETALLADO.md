@@ -19,11 +19,17 @@ documentos de los 7 positivos del fixture: RW-0005, RW-0011, RW-0012),
 |---|---|---|---|---|---|---|
 | P1 | RW-0005 | `21_CFR_11.10(e)` | 46 | 1 | ✅ | ✅ |
 | P2 | RW-0005 | `21_CFR_11.10(g)` | 40 | 6 | ❌ | ✅ |
-| P3 | RW-0005 | `ANNEX11_12` | 45 | 20 | ❌ | ❌ |
+| P3 | RW-0005 | `ANNEX11_12` [†] | 45 | 20 | ❌ | ❌ |
 | P4 | RW-0011 | `ALCOA_ATTRIBUTABLE` | 13 | 2 | ✅ | ✅ |
 | P5 | RW-0005 | `ALCOA_CONTEMPORANEOUS` | 46 | 9 | ❌ | ✅ |
 | P6 | RW-0011 | `21_CFR_211.68(b)` | 13 | 2 | ✅ | ✅ |
 | P7 | RW-0012 | `21_CFR_211.68(b)` | 14 | 2 | ✅ | ✅ |
+
+[†] `ANNEX11_12` era el `req_id` original del fixture, con un error de
+etiquetado real (ver "Investigación de P3" abajo). Corregido a
+`ANNEX11_17`; re-medido en la sección "Corrección de P3 y re-medición" —
+el rank cambia (12 en vez de 20) pero sigue fuera del top-10, y
+`retrieval_recall_at_5/10` no cambian.
 
 ```
 retrieval_recall_at_5  = 4/7
@@ -327,22 +333,37 @@ PDF real (mismo texto que ya usa `evaluate_chunked()` hoy).
    (`factory/regulatory/retrieval/{bm25,indexer,query_builder,retriever}.py`,
    `factory/tests/test_r2_retrieval.py`, 13 tests). Resultado real arriba.
 
+## Corrección de P3 y re-medición (2026-08-09, autorizada por Cesar)
+
+`req_id` de P3 corregido en `W5V2_RECALL_FIXTURE_SET_DRAFT.md`:
+`ANNEX11_12` → `ANNEX11_17` (agente y página sin cambios). Re-medido con
+la query correcta: **P3 sigue sin aparecer en el top-10 (rank 12 de
+29)** — confirma que la Capa 2 (artefacto de extracción de PDF que
+parte "retention" en dos tokens, más dilución del chunk con
+Historian/Audit Trail/Critical Data Records) es una causa real e
+independiente del etiquetado, no un efecto secundario de la Capa 1.
+Corregir el `req_id` mejora la gobernanza del fixture (ahora refleja la
+realidad) pero **no cambia** los números medidos:
+
+```
+retrieval_recall_at_5  = 4/7   (sin cambios)
+retrieval_recall_at_10 = 6/7   (sin cambios, P3 sigue siendo el único
+                                 positivo fuera incluso a k=10)
+```
+
+Tests actualizados: `test_r2_retrieval.py::test_p3_annex11_17_not_in_top10`
+(antes `test_p3_annex11_12_not_in_top10`), rank 12 confirmado con el
+`req_id` correcto.
+
 ## Pendiente de decisión de Cesar (siguiente paso)
 
-1. ~~Investigar por qué P3 no aparece ni en el top-10~~ — **INVESTIGADO**
-   (ver sección arriba): error de etiquetado del fixture set (`req_id`
-   debería ser `ANNEX11_17`, no `ANNEX11_12`) + artefacto de extracción
-   de PDF (espacio espurio en "retention"). Ninguno corregido todavía.
-2. ¿Autorizar corregir el `req_id` de P3 en
-   `W5V2_RECALL_FIXTURE_SET_DRAFT.md` (`ANNEX11_12` → `ANNEX11_17`)?
-   Es contenido gobernado — requiere aprobación explícita antes de
-   tocarlo, igual que cualquier otro artefacto de esa clase.
-3. `retrieval_recall_at_5=4/7` (medido con el error de etiquetado
-   todavía presente) — ¿es suficiente para pasar a la fase de JUICIO tal
-   cual, o Cesar prefiere corregir P3 primero y re-medir?
-4. La fase de JUICIO (LLM sobre los top-k) sigue sin autorizar —
+1. `retrieval_recall_at_5=4/7` (ahora medido con el `req_id` de P3 ya
+   corregido, mismo resultado) — ¿alcanza para pasar a la fase de
+   JUICIO, o Cesar quiere investigar/corregir la causa técnica de P3
+   (artefacto de extracción de PDF) antes de avanzar?
+2. La fase de JUICIO (LLM sobre los top-k) sigue sin autorizar —
    requiere su propia `PILOT_EXECUTION` firmada, no cubierta por esta
    corrida.
-5. Si más adelante el gate `≥6/7` no se alcanza con BM25 puro en la
+3. Si más adelante el gate `≥6/7` no se alcanza con BM25 puro en la
    fase de juicio: evaluar retomar la alternativa de embeddings
    semánticos (diferida, no reabierta en esta corrida).

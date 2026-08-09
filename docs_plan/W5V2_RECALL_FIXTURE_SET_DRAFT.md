@@ -10,6 +10,16 @@ documentado por lectura directa del PDF — ver abajo. Los 9 fixtures (7
 positivos + 2 negativos) están completos; el fixture set queda listo para
 tu revisión/aprobación.
 
+Actualización 2026-08-09 (corrección, autorizada por Cesar): `req_id`
+de P3 corregido de `ANNEX11_12` a `ANNEX11_17`. Encontrado durante la
+investigación de R2 (`docs_plan/R2_DESIGN_DETALLADO.md` sección
+"Investigación de P3"): el pasaje real de P3 (p.44, "UR3.3.6 Data
+retention... archivado en ubicación alterna") es de archivo/retención de
+datos, no de seguridad física/lógica — coincide con el `citation_text`
+real de `ANNEX11_17` ("Data may be archived..."), no con el de
+`ANNEX11_12` ("Physical and/or logical controls..."). El agente
+(`eu_annex11_agent`) y la página no cambian.
+
 ## Positivos (7) — de las llamadas reales del Piloto 1
 
 Todos verificados a mano por lectura directa del PDF (ver
@@ -21,7 +31,7 @@ debe anclar.
 |---|---|---|---|---|---|
 | P1 | RW-0005 | fda_part11_agent | 21_CFR_11.10(e) | 45 | "Audit trail records shall be archived... Logins, logouts, and login attempts must be recorded" |
 | P2 | RW-0005 | fda_part11_agent | 21_CFR_11.10(g) | 39 | Sección 4 Security / F09.00 Physical Security, control de acceso al operador |
-| P3 | RW-0005 | eu_annex11_agent | ANNEX11_12 | 44 | UR3.3.6 Data retention — 1 año, archivado en ubicación alterna |
+| P3 | RW-0005 | eu_annex11_agent | ANNEX11_17 | 44 | UR3.3.6 Data retention — 1 año, archivado en ubicación alterna |
 | P4 | RW-0011 | alcoa_plus_agent | ALCOA_ATTRIBUTABLE | 12 | Acción de calibración atada a credenciales del operador |
 | P5 | RW-0005 | alcoa_plus_agent | ALCOA_CONTEMPORANEOUS | 45 | Mismo pasaje de audit trail (P1), envío a base de datos con timestamp |
 | P6 | RW-0011 | fda_cgmp_211_agent | 21_CFR_211.68(b) | 12 | Mismo pasaje de credenciales/calibración (P4) |

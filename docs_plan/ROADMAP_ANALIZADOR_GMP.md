@@ -619,26 +619,31 @@ Detalle completo, tabla por caso y lectura honesta (P5 sigue siendo el
 punto ciego — BM25 es léxico, igual que la vieja heurística, mismo
 problema que R1.6/R1.7 ya documentó): `docs_plan/R2_DESIGN_DETALLADO.md`.
 
-**Investigación de P3 — causa raíz encontrada (2026-08-09), no
-corregida**: **no es un defecto de BM25**. Causa principal: el fixture
-set tiene el `requirement_id` de P3 mal etiquetado (`ANNEX11_12`,
-seguridad física/lógica) cuando el pasaje real (p.45, "UR3.3.6 Data
-retention... archivado en ubicación alterna") corresponde a
-`ANNEX11_17` (archivo y retención) — confirmado contra el
-`citation_text` real del catálogo y el texto real de la página. Causa
-secundaria, incluso con el `req_id` corregido a mano: un espacio
-espurio de extracción de PDF parte "retention" en "retentio"+"n"
+**Investigación de P3 — causa raíz encontrada y CORREGIDA (2026-08-09,
+autorizado por Cesar)**: **no era un defecto de BM25**. Causa principal:
+el fixture set tenía el `requirement_id` de P3 mal etiquetado
+(`ANNEX11_12`, seguridad física/lógica) cuando el pasaje real (p.45,
+"UR3.3.6 Data retention... archivado en ubicación alterna") corresponde
+a `ANNEX11_17` (archivo y retención) — confirmado contra el
+`citation_text` real del catálogo y el texto real de la página.
+**Corregido en `W5V2_RECALL_FIXTURE_SET_DRAFT.md`** (`ANNEX11_12` →
+`ANNEX11_17`, agente y página sin cambios).
+
+**Re-medido con la query correcta: P3 sigue sin aparecer en el top-10
+(rank 12 de 29, mejoró de 20 a 12 pero no cruza el umbral)** — confirma
+la causa secundaria, independiente del etiquetado: un espacio espurio de
+extracción de PDF parte "retention" en "retentio"+"n"
 (`term_counts["retention"]==0` en el chunk real), más dilución porque el
 chunk mezcla la sección de retención con Historian/Audit Trail/Critical
-Data Records. Ninguna corrección aplicada — el fixture set es contenido
-gobernado, requiere aprobación explícita de Cesar antes de tocarlo.
-Detalle completo: `docs_plan/R2_DESIGN_DETALLADO.md`.
+Data Records. **Los números medidos NO cambian**:
+`retrieval_recall_at_5=4/7`, `retrieval_recall_at_10=6/7` (P3 sigue
+siendo el único positivo fuera incluso a k=10). Detalle completo:
+`docs_plan/R2_DESIGN_DETALLADO.md`.
 
-**Pendiente de decisión de Cesar**: (1) ¿autorizar corregir el `req_id`
-de P3 en `W5V2_RECALL_FIXTURE_SET_DRAFT.md`? (2) si `4/7`@top-5 (medido
-con el error todavía presente) alcanza para pasar a la fase de JUICIO
-(con `PILOT_EXECUTION` nueva, todavía sin firmar), o si conviene
-corregir P3 primero y re-medir.
+**Pendiente de decisión de Cesar**: si `4/7`@top-5 alcanza para pasar a
+la fase de JUICIO (con `PILOT_EXECUTION` nueva, todavía sin firmar), o
+si Cesar quiere investigar/corregir la causa técnica de P3 (artefacto de
+extracción de PDF) antes de avanzar.
 
 **Objetivo:** invertir la arquitectura de búsqueda. La lección de los
 pilotos (`docs_plan/W5V2_RECALL_EXPERIMENTS_RESULTADOS.md`, H1-H4): el
