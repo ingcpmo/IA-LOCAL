@@ -114,6 +114,41 @@ def test_annex11_4_reference_list_still_never_observed_through_verified_pipeline
                                     "SUPPORTING_EVIDENCE_UNDER_REVIEW")
 
 
+def test_n2_table_of_contents_mention_still_never_reaches_positive_conclusion(monkeypatch):
+    """N2 del fixture set (docs_plan/W5V2_RECALL_FIXTURE_SET_DRAFT.md):
+    pagina 3 (0-based) de RW-0005 real, tabla de contenidos --
+    'F12.00: Audit Trail .............................................. 45'.
+    Mencion superficial de la palabra clave exacta del requisito, en un
+    contexto (indice) que no aporta evidencia sustantiva ninguna.
+
+    Nota importante (no cubierta por detect_reference_list_context, que
+    solo detecta listas de referencias '[N]' entre corchetes -- un patron
+    estructural DISTINTO del de una tabla de contenidos con guiones de
+    punto): el escenario realista (el modelo no reporta criterion_
+    assessments para una mencion tan debil, mismo patron que P5 real en
+    R1.5 cuando la evidencia es insuficiente) queda protegido por D
+    (NOT_ASSESSABLE sin criterion_assessments -> _apply_preconditions
+    nunca promueve a una conclusion positiva). Esto NO es nuevo de R1.6/
+    R1.7 -- ya era asi antes (el label 'Audit trail seguro con timestamp'
+    tambien contiene 'audit'/'trail' literalmente, asi que incluso
+    _is_topically_relevant original habria dejado pasar esta cita)."""
+    toc_doc = (
+        "5 Data .......................................................................... 45\n"
+        "F11.00: Databases and Historical Logging ........................ 45\n"
+        "F12.00: Audit Trail .............................................................. 45\n"
+        "F13.00: Long-Term Archiving and Data Retrieval .............. 47\n"
+        "F14.00: Backup and recovery ............................................ 47\n"
+        + "Relleno de pagina sin relacion. " * 60
+    )
+    result = _run_single_checkpoint(
+        monkeypatch, PART11_PROMPT_PATH, "fda_part11_agent", "21_CFR_11.10(e)",
+        "cumple_parcialmente", "F12.00: Audit Trail .............................................................. 45",
+        [toc_doc],
+    )
+    c = result["verified_conclusions"]["21_CFR_11.10(e)"]
+    assert c["conclusion"] not in ("DOCUMENTED_AND_SUPPORTED", "PROVISIONALLY_DOCUMENTED")
+
+
 def test_wrong_topic_same_language_flagged_not_silently_verified(monkeypatch):
     """Version verificada de test_topically_irrelevant_citation_is_rejected
     (que sigue probando el pipeline legacy sin cambios). Por el pipeline

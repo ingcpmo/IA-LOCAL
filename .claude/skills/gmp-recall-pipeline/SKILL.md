@@ -208,18 +208,14 @@ append-only, Part 11).
   real (score 1.0). El hallazgo de que el checkpoint final igual lo
   reportaba como no observado se separó como R1.6 (no era un defecto de
   la productización).
-- **R1.6** (agregado 2026-08-09): defecto de idioma en
-  `_is_topically_relevant()` — investigado, corrección real aplicada
-  (labels bilingües). Se resuelve junto con R1.7, no cierra por separado.
-- **R1.7** (agregado 2026-08-09, autorizado por Cesar): pre-filtro de
+- **R1.6+R1.7**: **CLOSED** (commit `761d875`, 2026-08-09). Defecto de
+  idioma en `_is_topically_relevant()` corregido; pre-filtro de
   rechazo-duro del pipeline verificado convertido en señal-suave,
   reutilizando `verify_llm_output` V5 + `absence_consolidator` (ambos ya
-  probados, sin tocar ningún umbral). P5 llega a `chunks_observed=1`,
-  `conclusion=SUPPORTING_EVIDENCE_UNDER_REVIEW` (confirmado con replay
-  offline de la respuesta real). ANNEX11_4 sigue en `chunks_observed=0`
-  por el mecanismo estructural correcto. **Pendiente de aprobación de
-  Cesar para commitear** — implementado y con no-regresión confirmada,
-  pero sin commit todavía. **R2 sigue en espera** hasta cierre formal.
+  probados, sin tocar ningún umbral). P5 confirmado
+  `chunks_observed=1`/`conclusion=SUPPORTING_EVIDENCE_UNDER_REVIEW`.
+  ANNEX11_4 y el segundo negativo (N2, tabla de contenidos) confirmados
+  sin llegar a conclusión positiva.
 - **R2**: recuperación determinista de evidencia — bloqueada por
   R1.6/R1.7.
 - **R3-R5**: sin empezar, dependen de que R2 alcance ≥6/7 (gate

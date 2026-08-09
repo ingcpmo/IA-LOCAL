@@ -524,9 +524,13 @@ Gate 0: ver resultado en el checkpoint de cierre de esta corrida.
 sin tocar. Validaciones A/B/D sin tocar. `evidence_min_criteria` sin
 tocar.
 
-**Estado**: implementado y con no-regresión confirmada; pendiente de
-mostrar diff completo + aprobación explícita de Cesar antes de
-commitear. R2 sigue **en espera** hasta cierre formal de R1.6/R1.7.
+**Estado**: **CLOSED** (commit `761d875`, 2026-08-09). P5 confirmado
+`SUPPORTING_EVIDENCE_UNDER_REVIEW` (chunks_observed=1, nunca aprobación
+silenciosa), ANNEX11_4 confirmado rechazado (chunks_observed=0) por el
+mecanismo estructural correcto, N2 (segundo negativo, tabla de
+contenidos) confirmado sin llegar a conclusión positiva en el escenario
+realista — ver R1.8 para el hallazgo adversarial relacionado (gap
+preexistente de D, no de R1.6/R1.7).
 
 ---
 
