@@ -3,6 +3,35 @@
 # Destino: docs_plan/W5V2_REMEDIACION_RECALL_MODELO.md
 # Ejecutar: cd /home/ing_cpmo && claude
 #
+# ──────────────────────────────────────────────────────────────────────
+# STATUS: ON_HOLD / PLAN DIFERIDO — 2026-08-09
+# Autorizado por: Cesar (ARQ_REENFOQUE_ANALIZADOR_GMP, Parte A.2)
+# Condición de reactivación: si R2 del roadmap del analizador
+# (docs_plan/ROADMAP_ANALIZADOR_GMP.md) no alcanza el criterio de recall
+# (≥6/7 positivos anclados), este plan se reactiva.
+#
+# Clasificación de los experimentos restantes de este plan:
+#   - MarkItDown / H7 → mejora auxiliar posterior de entrada documental
+#     (diferido, reactivable si R2 muestra que el ruido de entrada sigue
+#     pesando).
+#   - H5 (modelo alternativo) → experimento posterior de modelo
+#     alternativo (diferido, reactivable si R2 no resuelve el recall).
+#   - H6 (no-determinismo) → caracterización posterior de no-determinismo
+#     (diferido, transversal a cualquier configuración ganadora futura).
+#
+# CONSERVADO EXPLÍCITAMENTE (no está pausado — es patrimonio del camino
+# principal, en uso por el roadmap del analizador):
+#   - Configuración H2+H4 (1 requirement/llamada + schema mínimo),
+#     formalizada con hash de prompt_version.
+#   - Fix de viñetas de evidence_verifier (factory/regulatory/
+#     evidence_verifier.py, _strip_bullet_markers) — ya en producción.
+#   - Fixture set de recall 7P+2N (docs_plan/W5V2_RECALL_FIXTURE_SET_DRAFT.md)
+#     — es el instrumento de medición del analizador, no un experimento.
+#   - Prohibición central de la Sección 0 de este documento (nunca aflojar
+#     A/C/D para inflar métricas) — sigue vigente para todo el proyecto.
+#   - Mecanismo de ejecución en background para diagnósticos aislados.
+# ──────────────────────────────────────────────────────────────────────
+#
 # AUTORIDAD: Capa 9 = Cesar. Claude Code = Capa 8.
 # CONTEXTO: Piloto 1 confirmó — pipeline correcto (extracción, chunking,
 # fail-closed, control negativo ANNEX11_4 OK) pero recall 0/7 sobre
