@@ -1,0 +1,167 @@
+---
+name: gmp-recall-pipeline
+description: Conocimiento operativo del pipeline de evaluación LLM del Analizador Documental GMP (chunked_engine → Ollama → evidence_verifier), la configuración evaluation_profile H2H4 que productiza el recall medido, el fixture set de recall como único instrumento de medición, y la prohibición central de nunca aflojar los validadores para inflar métricas. USAR SIEMPRE que la tarea toque recall, chunked_engine, corpus_runner, evidence_verifier, fixture set, evaluation_profile, PILOT_EXECUTION, o el roadmap del analizador GMP (docs_plan/ROADMAP_ANALIZADOR_GMP.md).
+---
+
+# GMP recall pipeline — conocimiento operativo
+
+## Qué es esto
+
+El pipeline de evaluación LLM que usa el Analizador Documental GMP para
+juzgar si un documento cumple un requisito regulatorio. Vive en `factory`
+(:9000) — separado de `gmp-api` (:8000, producto base de consulta
+conversacional). Nunca se cruzan: el analizador no toca `gmp-api`, y
+`gmp-api` no tiene ninguna de estas piezas.
+
+## Dónde vive cada pieza (rutas reales)
+
+| Pieza | Ruta |
+|---|---|
+| Motor de evaluación por chunks | `factory/engines/gmpai_integrity/chunked_engine.py` |
+| Cliente Ollama (timeouts reales, ~1200s+ piso) | `factory/engines/gmpai_integrity/ollama_client.py` |
+| Verificador determinista de citas ancladas (validación A) | `factory/regulatory/evidence_verifier.py` |
+| Catálogo de requisitos (Evidence Pack) | `factory/regulatory/requirement_catalog/requirements.yaml` |
+| Orquestación de corridas piloto | `factory/regulatory/corpus_runner.py` |
+| Fixture set de recall (instrumento único de medición) | `docs_plan/W5V2_RECALL_FIXTURE_SET_DRAFT.md` |
+| Resultados de experimentos H1-H4 | `docs_plan/W5V2_RECALL_EXPERIMENTS_RESULTADOS.md` |
+| Plan de remediación (ON_HOLD) | `docs_plan/W5V2_REMEDIACION_RECALL_MODELO.md` |
+| Roadmap del analizador (R0-R5) | `docs_plan/ROADMAP_ANALIZADOR_GMP.md` |
+| Spec del contrato de R1 | `docs_plan/R1_SPEC_CONTRATO_ANALIZADOR.md` |
+| Productización de H2+H4 (R1.5) | `docs_plan/R1_5_PRODUCTIZACION_H2H4.md` |
+
+## La lección estructural (por qué existe este skill)
+
+El 2026-08-09, el smoke E2E de R1 corrió por el flujo real de producción
+y el caso P5 (que SÍ había anclado en un experimento) **no ancló**. Causa:
+la configuración H2+H4 (la única que midió recall >0 en `W5V2_RECALL_
+EXPERIMENTS_RESULTADOS.md`) vivía solo en scripts de diagnóstico aislados
+(`h2_experiment.py`/`h4_experiment.py`, scratchpad de sesión, nunca
+versionados) — nunca se llevó al motor real. **Nadie lo había notado**
+porque los experimentos corrieron fuera de `corpus_runner`.
+
+**Regla derivada, sin excepción**: ninguna configuración "ganadora"
+medida en un script ad hoc se asume heredada por producción. Toda config
+que mejora una métrica real se **productiza y se revalida por el flujo
+real** (el mismo camino que usará en producción) antes de construir
+cualquier cosa encima. Medir en un script y suponer que el motor real
+hace lo mismo es exactamente el defecto que causó este hallazgo.
+
+## evaluation_profile — qué es, cómo se invoca
+
+`chunked_engine.evaluate_chunked(..., evaluation_profile="BASELINE"|"H2H4",
+target_requirement_ids=[...])` y `corpus_runner.run_pilot_sample_batch(...,
+evaluation_profile="H2H4")` (usa `PilotSampleUnit.requirement_id`
+automáticamente).
+
+- **BASELINE** (default, sin cambios): todos los checkpoints admitidos del
+  agente en una sola llamada por chunk. Midió **0/7** de recall.
+- **H2H4**: filtra `meta["checkpoints"]` a `target_requirement_ids` ANTES
+  de `evidence_pack_gate`/`build_prompt`/`output_token_budget`/
+  `build_run_fingerprint` — reutiliza el prompt/schema GOBERNADO real sin
+  tocarlo (reproduce fielmente H2, la parte que realmente subió el recall
+  a **2/7**). El perfil se registra en `run_fingerprint`/
+  `preflight_metadata`; cambiar de perfil invalida cualquier cache de
+  checkpoint por diseño.
+
+**Nota honesta de alcance, no confundir**: esta implementación **no**
+reproduce el schema mínimo de H4 al pie de la letra — eso vive en el
+`common_contract` gobernado de cada prompt YAML
+(`factory/engines/gmpai_integrity/prompts/*.yaml`), y cambiarlo es
+contenido gobernado (prompt_version nuevo, aprobación de Cesar), no
+código. Según `W5V2_RECALL_EXPERIMENTS_RESULTADOS.md`, la ganancia de
+recall de H4 sobre H2 fue **cero** ("mismos dos casos que H2: P1 y P5 —
+exactamente igual") — solo velocidad (2.4x). Por eso `evaluation_profile`
+reproduce el recall real medido aunque no reproduzca el schema mínimo:
+filtrar a 1 requirement ya reduce `output_token_budget()` automáticamente
+(escala con `n_checkpoints` y `n_criteria`, ambos menores), así que se
+obtiene la mayor parte de la velocidad de H4 sin tocar contenido
+gobernado.
+
+**Nunca invocar la config ganadora por script ad hoc otra vez.** Si un
+experimento futuro (H5/H6/H7 u otro) mejora el recall, el mismo principio
+aplica: productizar como perfil configurable, revalidar por flujo real,
+antes de construir nada encima.
+
+## El fixture set 7P+2N — único instrumento de medición
+
+`docs_plan/W5V2_RECALL_FIXTURE_SET_DRAFT.md`. 7 positivos verificados a
+mano (documento, página real, requirement_id, pasaje exacto a anclar) + 2
+negativos (`ANNEX11_4` en lista de referencias; tabla de contenidos con
+mención superficial). **Criterio de éxito de cualquier configuración**:
+
+```
+recall >= 6/7 positivos con cita anclada válida (validación A en verde)
+AND 2/2 negativos rechazados
+AND schema_valid_rate = 100%
+AND latencia por llamada registrada
+```
+
+Todo experimento de recall se mide contra ESTE set. Ningún otro conjunto
+de casos sustituye esta medición.
+
+## Prohibición central (sin excepción, de cualquier iniciativa futura)
+
+El problema de recall es del MODELO, nunca de la estrictez del
+verificador. Prohibido:
+- relajar la exigencia de cita anclada (validación A);
+- aceptar checkpoints con `evidencia_exacta` vacía;
+- bajar umbrales de C/D ni eliminar criterios de los Evidence Packs;
+- convertir `NOT_ASSESSABLE` en `observed` por interpretación;
+- subir `temperature` "para que encuentre más".
+
+`ANNEX11_4` (GAMP5 en lista de referencias numeradas) es el **test
+negativo obligatorio**: cualquier cambio que suba recall debe demostrar
+simultáneamente que ese caso sigue rechazado. El verificador que descartó
+los falsos "cumple_parcialmente sin cita" es la parte del sistema que
+FUNCIONÓ — se queda intacto siempre.
+
+## Gobernanza: PILOT_EXECUTION
+
+Cualquier llamada real a Ollama en contexto de diagnóstico/piloto exige
+`PILOT_EXECUTION` firmada (`human_confirmed`) — familia de decisión
+SEPARADA de `CORPUS_AUTHORIZATION`/`D4`, nunca la satisface. Ver
+`factory/regulatory/pilot_execution.py`.
+
+**Selección determinista (2026-08-09, `corpus_runner.
+_select_pilot_execution_instance`)**: si más de una `PILOT_EXECUTION`
+vigente cubre el mismo lote de documentos, el resolver elige — nunca
+falla cerrado por ambigüedad benigna, ni tampoco requiere que Capa 8
+proponga una autorización nueva (eso solo aumentaría el conflicto). Regla
+de selección: vigente ∧ cubre todos los documentos del lote ∧
+`max_calls>0` ∧ `decision_date` más reciente (desempate estable).
+
+**Nunca proponer una `PILOT_EXECUTION` nueva si ya existe una vigente con
+presupuesto** — usar la que el resolver seleccione. Proponer una nueva sin
+necesidad es lo que generó el conflicto real de gobernanza documentado en
+`ROADMAP_ANALIZADOR_GMP.md` (`-002`/`-004`/`-006`/`-007`/`-008`, varias
+siguen como registros permanentes sin poder retirarse — el almacén es
+append-only, Part 11).
+
+## Estado del roadmap R0-R5 y dependencias
+
+- **R0**: CLOSED (verdad documental).
+- **R1**: CLOSED (2026-08-09) — spec aprobada + smoke E2E ensambló de
+  punta a punta (el criterio de cierre nunca fue "el smoke ancla
+  evidencia").
+- **R1.5** (agregado 2026-08-09, no estaba en el roadmap original):
+  productización de `evaluation_profile=H2H4` — EN CURSO. **R2 no arranca
+  hasta que R1.5 cierre con un caso ancланdo por el flujo real** —
+  construir recuperación determinista (R2) sobre un juicio que sigue en
+  baseline (0/7) heredaría el mismo techo de recall.
+- **R2**: recuperación determinista de evidencia — bloqueada por R1.5.
+- **R3-R5**: sin empezar, dependen de que R2 alcance ≥6/7 (gate
+  bloqueante).
+
+## Qué está diferido (y su condición de reactivación)
+
+- **H5** (modelo alternativo) / **H6** (caracterización de
+  no-determinismo a temperature=0.0, hallazgo ya documentado) — se
+  reactivan si R2 no alcanza ≥6/7.
+- **H7** (MarkItDown, entrada documental más limpia) — se reactiva si R2
+  muestra que el ruido de entrada sigue pesando.
+- **Corpus formal W5** (232 llamadas, `D4-2026-004` propuesta sin
+  confirmar) — se retoma cuando el analizador esté consolidado (R5
+  cerrado) y Cesar decida.
+- **Limpieza superseding formal de `PILOT_EXECUTION-2026-002/-007/-008`**
+  — ya no urgente (el resolver no se bloquea por ellas), pendiente de
+  decisión de Cesar sin fecha.

@@ -10,6 +10,7 @@ aprobación explícita de Cesar sobre spec (R1) o autorización de llamadas
 PRODUCTION_ENABLEMENT = BLOCKED
 REGULATORY_COMPLIANCE = NOT_DETERMINED
 CORPUS_READY = false
+R1_STATUS = CLOSED (2026-08-09, cerrado por Cesar) — bloqueo de gobernanza resuelto (selección determinista en corpus_runner.py), smoke E2E corrido con resultado real negativo (no ancló), cadena completa ensambló. Ver sección R1 "Cierre" y R1.5 "Productización de H2+H4" (siguiente prioridad)
 ```
 
 ## Riesgo central (portada)
@@ -118,6 +119,280 @@ elegido a mano.
 
 **Firma Cesar:** aprueba la spec del contrato y el resultado del smoke.
 
+### Estado de ejecución del smoke — 2026-08-09: BLOQUEADO (hallazgo de gobernanza, no de código)
+
+Spec aprobada (`docs_plan/R1_SPEC_CONTRATO_ANALIZADOR.md`). Se intentó el
+smoke E2E (§ criterio 2) sobre el caso P5 del fixture set (`RW-0005` /
+`alcoa_plus_agent` / `ALCOA_CONTEMPORANEOUS` / página 45), vía el mecanismo
+real de producción `factory/regulatory/corpus_runner.run_pilot_sample_batch`
+— **cero llamadas a Ollama llegaron a hacerse.**
+
+**Secuencia real de lo ocurrido:**
+
+1. Se propuso y confirmó `PILOT_EXECUTION-2026-005`/`-006` (1 llamada,
+   alcance acotado a P5), firmada con identidad `Cesar May` tras
+   confirmación explícita en chat — mecanismo correcto, igual patrón que
+   H1-H4.
+2. Al invocar `run_pilot_sample_batch`, `decision_scope_resolver.resolve()`
+   rechazó la corrida: **`PILOT_EXECUTION-2026-002`** (Piloto 1 original,
+   `human_confirmed`) y **`PILOT_EXECUTION-2026-004`** (autorización de
+   H1-H4, `human_confirmed`) están **ambas `ACTIVE`** y **ambas cubren
+   `RW-0005`** — el resolver exige una única instancia vigente por
+   documento y falló cerrado (`CorpusRunNotAuthorizedError`), sumando mi
+   `-006` como tercera capa de la misma ambigüedad.
+3. Investigado: `-002` nunca se cerró/superseded cuando `-004` la
+   reemplazó. Nadie lo había notado porque los scripts de H1-H4
+   (`h1_experiment.py`...`h4_experiment.py`) corrieron **fuera** de
+   `corpus_runner` (ad hoc, según sus propios docs en
+   `docs_plan/W5V2_RECALL_EXPERIMENTS_RESULTADOS.md`) — es la **primera vez
+   que este resolver se ejerce de verdad** contra el estado real de
+   `factory/layer9/decisions/decisions_v2.jsonl`.
+4. Se intentó retirar `-005`/`-006` (redundantes, `-004` ya autorizaba
+   exactamente esta misma unidad con presupuesto disponible) vía
+   `governance_service.abandon()` — **rechazado**: `abandon()` solo opera
+   sobre propuestas sin resolver, y `-005` ya había sido resuelta por `-006`
+   (`DecisionConflictError`). El almacén es append-only por diseño Part 11;
+   no existe una vía de "deshacer" una decisión `human_confirmed`, solo una
+   decisión superseding nueva — acto de gobernanza que no le corresponde
+   tomar a Capa 8 por su cuenta.
+5. Por instrucción explícita de Cesar: no se tocaron `-002` ni `-004`. `-005`
+   y `-006` quedan como registros permanentes en `decisions_v2.jsonl` (no
+   otorgan nada que `-004` no otorgara ya).
+
+**Resultado:** smoke E2E **no ejecutado**, `max_calls=1` de `-006` sigue
+sin consumir, cero llamadas de inferencia realizadas. El criterio de cierre
+2 de R1 sigue pendiente.
+
+**Hallazgo de gobernanza (independiente de este roadmap, preexistente):**
+`PILOT_EXECUTION-2026-002` debió cerrarse (rechazo/superseding formal)
+cuando `-004` la reemplazó como autorización vigente para el trabajo sobre
+`RW-0005`/`RW-0011`/`RW-0012`. Mientras seis instancias de `PILOT_EXECUTION`
+sigan `ACTIVE` sobre los mismos documentos (`001`-`006`, de las cuales
+`002`/`004`/`006` son `human_confirmed`), **cualquier caller real que pase
+por `corpus_runner` sobre esos documentos fallará cerrado igual que este
+smoke** — no es un problema exclusivo de R1, bloquea también cualquier
+futura corrida piloto sobre `RW-0005`/`RW-0011`/`RW-0012` hasta que se
+resuelva.
+
+**Pendiente de decisión de Cesar (fuera de esta sesión):** emitir la
+decisión superseding que deje una única `PILOT_EXECUTION` vigente sobre
+`RW-0005` (candidata natural: conservar `-004`, cerrar `-002` y `-006` con
+motivo explícito). Hasta entonces, el smoke de cierre de R1 permanece
+`BLOCKED` y R1 no puede declararse cerrado.
+
+### Intento de corrección — 2026-08-09: EMPEORÓ el conflicto, no lo resolvió
+
+Con aprobación explícita de Cesar en chat, se intentó cerrar
+`PILOT_EXECUTION-2026-002` vía `governance_service.propose()` +
+`confirm()` con `decision_type='CORRECTION'`,
+`supersedes_instance_id='PILOT_EXECUTION-2026-002'`, `decision='REJECT'`
+(intención: retirar `-002` **sin** otorgar cobertura nueva, ya que
+`-004` ya cubre lo mismo). Resultado: `PILOT_EXECUTION-2026-007`
+(propuesta) → `PILOT_EXECUTION-2026-008` (confirmación, `Cesar May`,
+2026-08-09T03:44:40Z).
+
+**Defecto de comprensión detectado DESPUÉS de firmar, no antes:**
+`governance_service.confirm()` escribe **siempre** `decision="APPROVE"`
+en el registro de confirmación (`_closing_record(instance_id,
+decision="APPROVE", decision_type=None, ...)` —
+`factory/services/governance_service.py` líneas ~975-983), sin importar
+qué `decision` llevaba la propuesta. El `decision='REJECT'` puesto en
+`-007` se descartó silenciosamente al confirmar; `-008` quedó con
+`decision=APPROVE`, `decision_type=CORRECTION`, sobre los mismos
+`target_ids` que `-002` (`RW-0005`, `RW-0011`, `RW-0012`).
+
+Efecto verificado con `decision_scope_resolver.resolve()` en vivo, antes
+y después:
+
+| Documento | Antes | Después de `-008` |
+|---|---|---|
+| `RW-0005` | `-002`, `-004`, `-006` (3 instancias) | `-004`, `-006`, **`-008`** (3 instancias) |
+| `RW-0011` / `RW-0012` | `-002`, `-004` | `-004`, **`-008`** |
+
+`-008` sí cerró `-002` (`status` proyectado pasa a `SUPERSEDED`, vía
+`project_status()` — eso funciona como se esperaba), pero al confirmarse
+se convirtió él mismo en una **tercera fuente de cobertura activa** sobre
+`RW-0005`. El conflicto no se redujo: se movió de `-002` a `-008`. `RW-0011`
+y `RW-0012` pasaron de 2 instancias cubridoras a 2 instancias distintas
+(mismo conteo, contenido distinto) — sin mejora tampoco ahí.
+
+**Por qué se detuvo ahí:** no se intentó una segunda corrección para cerrar
+`-008` (ni se tocó `-006`). Repetir el mismo mecanismo produciría el mismo
+resultado (`-00N` reemplazando a `-008` como tercera fuente) — no es un
+error de ejecución sino un límite del **modelo de datos**: en este sistema,
+`CORRECTION` no tiene una forma de "retirar sin volver a otorgar cobertura
+sobre el mismo target_set", porque `confirm()` fuerza `decision=APPROVE`
+en toda confirmación. Las dos herramientas que sí retiran sin otorgar
+(`reject()` sobre una propuesta sin resolver, o `REVOCATION` sobre un
+`target_id` completo) no encajan: `reject()` ya no aplica sobre `-005`
+(resuelta por `-006`), y `REVOCATION` retiraría también la cobertura
+legítima de `-004` para esos documentos (domina sobre todo el `target_id`,
+no sobre una instancia específica).
+
+**`PILOT_EXECUTION-2026-007`/`-008` quedan como registros permanentes**
+(append-only, Part 11 — no se pueden borrar ni deshacer). No otorgan nada
+que no estuviera ya cubierto por `-004`, pero tampoco reducen la
+ambigüedad que bloquea el smoke.
+
+**Hallazgo escalado (además del de arriba):** esto ya no es solo una
+decisión de gobernanza pendiente de firma — es una pregunta de **diseño**
+sobre `factory/core/decision_scope_resolver.py` /
+`factory/services/governance_service.py` /
+`factory/regulatory/corpus_runner._check_pilot_execution`: el modelo actual
+no tiene un mecanismo limpio para retirar una instancia `human_confirmed`
+redundante sin generar una nueva instancia otorgante equivalente. Resolver
+esto probablemente requiere una de:
+(a) una forma de CORRECTION/SUPERSESSION que pueda confirmarse con
+`decision` distinto de `APPROVE` cuando la intención es cerrar sin
+reemplazar;
+(b) que `_check_pilot_execution` (o el resolver) tolere múltiples
+instancias vigentes sobre el mismo documento y elija de forma determinista
+(p. ej. la más reciente, o la de mayor `max_calls` restante) en vez de
+fallar cerrado por ambigüedad;
+(c) una limpieza manual fuera de banda del almacén de decisiones (fuera de
+alcance de Capa 8 sin instrucción explícita).
+
+Ninguna se implementa aquí — queda para que Cesar decida el camino. El
+smoke de R1 y cualquier corrida sobre `RW-0005`/`RW-0011`/`RW-0012` vía
+`corpus_runner` siguen `BLOCKED`.
+
+**Actualización 2026-08-09 (más tarde, misma fecha):** el bloqueo se
+resolvió por diseño — ver `docs_plan/ARQ_RESOLVER_BLOQUEO_R1.md` y la
+implementación real en `factory/regulatory/corpus_runner.py`
+(`_select_pilot_execution_instance`, opción (b) de la lista de arriba).
+El punto (c) de este hallazgo (limpieza superseding formal de
+`PILOT_EXECUTION-2026-002/-007/-008`) sigue sin ejecutarse — ya no es
+urgente porque el resolver no se bloquea más por ella, sigue siendo
+decisión pendiente de Cesar sin fecha.
+
+### Cierre de R1 — 2026-08-09 (decisión de Cesar)
+
+**R1 = CLOSED.** Cerrado explícitamente por Cesar tras revisar el
+resultado real del smoke (chat, 2026-08-09), no por alcanzar un
+resultado positivo — el criterio de cierre de R1 nunca fue "el smoke
+ancla evidencia", fue "la cadena localización→juicio→informe→cola humana
+ensambla y produce artefactos trazables", y eso se cumplió.
+
+Resumen ejecutivo (detalle completo en `docs_plan/ARQ_RESOLVER_BLOQUEO_R1.md`
+y en la carpeta del smoke, ver R1.5 más abajo):
+- Bloqueo de gobernanza resuelto mediante selección determinista
+  (`corpus_runner._select_pilot_execution_instance`), sin escribir
+  decisiones nuevas — 6 tests nuevos, Gate 0 verde (2244 passed, 4 failed
+  pre-existentes y no relacionados — guardas de `git diff HEAD` sobre
+  `decisions_v2.jsonl`, ya modificado por las firmas de gobernanza
+  aprobadas por Cesar en la sesión anterior).
+- Smoke E2E real ejecutado (1 llamada, run_id `chunked-2ef3d38d2538`,
+  1660.8s): caso P5 (`ALCOA_CONTEMPORANEOUS` sobre `RW-0005`) resultó
+  `sin_evidencia_localizada` — **no ancló**, sin maquillar.
+- Causa del resultado negativo: no fue un fallo del smoke ni del
+  resolver — fue la confirmación de que la configuración H2+H4 (la única
+  que había medido 2/7 de recall en los experimentos, incluido ese mismo
+  caso P5) **nunca se incorporó** a `run_pilot_sample_batch`/
+  `chunked_engine`, que sigue corriendo la configuración baseline
+  (0/7 medido). Ver R1.5 abajo — es la siguiente prioridad, por decisión
+  de Cesar.
+- Artefactos generados (informe de hallazgos, borrador/sin-cambios,
+  trazabilidad, cola de revisión humana): ver R1.5 §"Dónde queda todo
+  documentado".
+
+---
+
+## R1.5 — Productización de la configuración H2+H4 (siguiente prioridad, por decisión de Cesar 2026-08-09)
+
+**No estaba en el roadmap original — se agrega aquí porque el cierre de
+R1 lo reveló como bloqueante real, más urgente que empezar R2.**
+
+**Por qué es más urgente que R2:** R2 (recuperación determinista) mejora
+QUÉ pasajes le llegan al modelo para juzgar, pero la fase de JUICIO en sí
+—la llamada real a `chunked_engine`/Ollama— sigue corriendo hoy en la
+configuración que midió **0/7** de recall (`W5V2_RECALL_EXPERIMENTS_
+RESULTADOS.md`, baseline), no en H2+H4 (**2/7**, la única configuración
+que superó el baseline en cualquier experimento). Construir R2 encima del
+juicio sin productizar primero heredaría el mismo techo de recall en la
+fase de juicio, aunque la recuperación mejore — el smoke de R1 lo
+demostró en vivo: P5, el caso que SÍ ancló en H2+H4, no ancló corriendo
+por el camino de producción real porque ese camino sigue en baseline.
+
+**Objetivo:** llevar la configuración H2+H4 (1 requirement_id por
+llamada + schema de salida mínimo — ver `docs_plan/
+W5V2_RECALL_EXPERIMENTS_RESULTADOS.md` §H2/§H4) desde los scripts de
+diagnóstico aislados (`h2_experiment.py`/`h4_experiment.py`, scratchpad
+de sesión, nunca versionados) a `factory/engines/gmpai_integrity/
+chunked_engine.py` / `factory/regulatory/corpus_runner.py`, como
+configuración real y por defecto de `run_pilot_sample_batch` (y,
+eventualmente, `run_corpus_batch`).
+
+**Componentes reutilizados:** `chunked_engine.evaluate_chunked()` (el
+contrato de chunk/checkpoint no cambia, solo el empaquetado
+requirement/llamada); `evidence_verifier.py` (validación A sin cambios);
+`_PROMPT_PATH_BY_AGENT`/`AGENT_PROMPT_FILES` (catálogo de prompts, mismo
+patrón, ahora por requirement_id en vez de por agente completo).
+
+**Componentes nuevos:** modo de empaquetado 1-requirement/llamada dentro
+de `evaluate_chunked` (o una función hermana que lo envuelva sin romper
+el contrato de llamadores existentes — decisión de diseño detallada,
+pendiente); schema de salida mínimo (H4) como variante configurable, no
+hardcodeada.
+
+**Tests:** repetir contra el fixture set 7P+2N (`W5V2_RECALL_FIXTURE_SET_
+DRAFT.md`) para confirmar que la productización reproduce el 2/7 ya
+medido en el script de diagnóstico — antes de tocar nada de R2. Regresión
+sobre los llamadores existentes de `evaluate_chunked` (no deben cambiar
+de comportamiento si no piden explícitamente el modo H2+H4).
+
+**Criterio de aceptación MEDIBLE:** `run_pilot_sample_batch` sobre el
+mismo caso P5 (RW-0005/alcoa_plus_agent/ALCOA_CONTEMPORANEOUS/p.45), con
+la configuración productizada, ancla la cita — reproduce en producción lo
+que hoy solo existe en un script de diagnóstico.
+
+**Riesgos:** cambiar el empaquetado de llamadas cambia el fingerprint del
+prompt/schema — invalida cachés de checkpoints previos por diseño (mismo
+principio que cualquier cambio de `prompt_version`/schema documentado en
+`W5V2_REMEDIACION_RECALL_MODELO.md` §4.3); recalcular D4-A con el nuevo
+ritmo de llamadas (más llamadas, cada una más corta — H2 midió 60 min
+para 9 fixtures vs ~2h10m del baseline).
+
+**Dependencias:** ninguna sobre R2 — al contrario, R2 depende de esto.
+
+**Firma Cesar:** aprueba la productización y el nuevo resultado del
+smoke (reintento de R1 con la config productizada, opcional, para cerrar
+el ciclo con un resultado positivo real).
+
+### Impacto en D4-A (nota, no ejecutado — 2026-08-09)
+
+El perfil `H2H4` cambia el ritmo de llamadas frente al baseline: más
+llamadas (1 por requirement_id en vez de 1 por agente completo), cada una
+más corta. Medido en los experimentos: H2 tomó 60 min para 9 fixtures
+(~6.7 min/llamada) vs. ~2h10m del baseline (9 fixtures) para el mismo
+lote — y H4 sobre H2 fue 2.4x más rápido aún (24.6 min/9 fixtures). **Sin
+recalcular ni proponer nada aquí**: cuando se retome cualquier corrida
+presupuestada (`D4-2026-004`, propuesta sin confirmar — ver sección
+"Reenfoque..." en `project_w5_v2_regulatory_redesign.md`), `compute_d4a()`
+debe recalcularse con el ritmo real medido del perfil `H2H4` en el
+Bloque 3 (la validación por flujo real de R1.5), no con el ritmo del
+baseline que sostiene `D4-2026-003`/`D4-2026-004` actuales. Queda como
+nota para no perder de vista, no como acción de esta corrida.
+
+### Dónde queda todo documentado (para descarga/análisis)
+
+| Qué | Ruta |
+|---|---|
+| Este roadmap (estado, cierre de R1, R1.5) | `docs_plan/ROADMAP_ANALIZADOR_GMP.md` (este archivo) |
+| Instrucciones de la corrida que resolvió el bloqueo y corrió el smoke (referenciada, **no respaldada en disco todavía** — deuda de documentación, ver `project_w5_v2_regulatory_redesign.md` sección "Reenfoque...") | `docs_plan/ARQ_RESOLVER_BLOQUEO_R1.md` |
+| Instrucciones de la productización de H2+H4 (R1.5) — **sí guardada** | `docs_plan/R1_5_PRODUCTIZACION_H2H4.md` |
+| Spec del contrato de R1 (aprobada) | `docs_plan/R1_SPEC_CONTRATO_ANALIZADOR.md` |
+| Código real de la selección determinista | `factory/regulatory/corpus_runner.py` (`_select_pilot_execution_instance`, `_pilot_execution_budget`) |
+| Código real de `evaluation_profile` (R1.5) | `factory/engines/gmpai_integrity/chunked_engine.py` (`evaluate_chunked`, `build_run_fingerprint`), `factory/regulatory/corpus_runner.py` (`run_pilot_sample_batch`) |
+| Tests de la selección determinista | `factory/tests/test_pilot_execution_selection.py` |
+| Tests de `evaluation_profile` | `factory/tests/test_evaluation_profile_h2h4.py` |
+| Skill operativo del pipeline de recall | `.claude/skills/gmp-recall-pipeline/SKILL.md` |
+| Resultados de los experimentos H1-H4 (base de R1.5) | `docs_plan/W5V2_RECALL_EXPERIMENTS_RESULTADOS.md` |
+| Plan de remediación de recall (ON_HOLD, contiene H5/H6/H7 diferidos) | `docs_plan/W5V2_REMEDIACION_RECALL_MODELO.md` |
+| **Artefactos reales del smoke de R1** (informe de hallazgos, borrador/sin-cambios, trazabilidad, checkpoint/manifest/raw_response) | `factory/regulatory/pilot_run/r1_smoke_chunked-2ef3d38d2538/` |
+| Empaquetado descargable de la carpeta anterior | `/tmp/claude-1001/-home-ing-cpmo/549de419-b424-4cee-b5f2-9b8f3895a865/scratchpad/r1_smoke_chunked-2ef3d38d2538.tar.gz` |
+| Entrada en cola de revisión humana | `factory/layer9/review_queue.jsonl`, rc_id `r1-smoke-chunked-2ef3d38d2538` |
+| Evento de auditoría de la corrida | `factory/audit/factory_audit.jsonl`, entry_id `80796d46-223b-42c9-992b-355616c03bcd` |
+
 ---
 
 ## R2 — Localización de evidencia por recuperación determinista (la apuesta)
@@ -180,8 +455,11 @@ documentadas. **R3-R5 no arrancan** sobre un detector que fabrica brechas.
 falsos negativos (documento indexado con chunking distinto al que ancló
 en H2/H4) — mitigado midiendo recuperación y recall del LLM por separado.
 
-**Dependencias:** R1 aprobado (contrato del producto define qué
-`requirement_id`s entran en el smoke de R2).
+**Dependencias:** R1 cerrado (contrato del producto define qué
+`requirement_id`s entran en el smoke de R2) **y R1.5 productizado**
+(agregado 2026-08-09 — sin H2+H4 en producción, R2 mediría recuperación
+sobre un juicio que todavía usa la configuración baseline de 0/7, no la
+de 2/7 que motivó la apuesta de R2).
 
 **Firma Cesar:** autoriza `PILOT_EXECUTION-2026-00X` antes de la primera
 llamada de medición; decide sobre el gate si R2 no alcanza 6/7.

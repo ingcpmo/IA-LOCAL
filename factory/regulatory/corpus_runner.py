@@ -134,6 +134,13 @@ class CorpusRunSummary:
     total_calls_made: int = 0
     total_wall_seconds: float = 0.0
     manifest_path: str | None = None
+    # Selección determinista entre múltiples PILOT_EXECUTION vigentes que
+    # cubren el mismo lote (ver `_select_pilot_execution_instance`) -- None
+    # para corridas de corpus formal (`run_corpus_batch`, familia distinta).
+    selected_pilot_instance_id: str | None = None
+    co_covering_pilot_instances: list = field(default_factory=list)
+    pilot_selection_rule: str | None = None
+    evaluation_profile: str = "BASELINE"
 
 
 def _load_allowlist_entry(document_id: str) -> dict:
@@ -194,29 +201,99 @@ class PilotSampleUnit:
     selection_reason: str
 
 
-def _check_pilot_execution(document_ids: list[str], *,
-                           decision_store_file: Path | None = None) -> dict:
-    """Fail-closed igual que `_check_corpus_authorization`, pero contra la
-    familia SEPARADA `PILOT_EXECUTION` -- nunca `CORPUS_AUTHORIZATION`/`D4`.
-    Devuelve el payload de la decisión vigente (trae `max_calls`, el tope
-    duro real de ESTE piloto)."""
-    instances = set()
+def _pilot_execution_budget(record: dict) -> int:
+    """`max_calls` del payload si es un entero > 0; 0 en cualquier otro caso
+    (payload vacío, ausente, o no-entero) -- nunca negativo, nunca None
+    tratado como "ilimitado". Instancias como `-008` (CORRECTION cuyo
+    payload quedó `{}` porque solo cerraba `-002`, ver
+    `docs_plan/ROADMAP_ANALIZADOR_GMP.md` sección "Intento de corrección")
+    quedan con presupuesto 0 -- cubren el target_id por diseño de
+    `_effective_coverage`, pero no son un piloto ejecutable por sí mismas."""
+    max_calls = (record.get("payload") or {}).get("max_calls")
+    return max_calls if isinstance(max_calls, int) and max_calls > 0 else 0
+
+
+def _select_pilot_execution_instance(document_ids: list[str], *,
+                                     decision_store_file: Path | None = None) -> dict:
+    """Selección DETERMINISTA entre múltiples `PILOT_EXECUTION`
+    `human_confirmed`/`ACTIVE` que cubren el MISMO lote de documentos --
+    reemplaza el fallo cerrado por ambigüedad (`len(instances) != 1`) que
+    bloqueó el smoke de R1 el 2026-08-09 (`ROADMAP_ANALIZADOR_GMP.md`,
+    sección "Estado de ejecución del smoke"). NUNCA otorga cobertura nueva:
+    solo elige, de entre lo que un humano ya confirmó, cuál instancia rige
+    ESTA corrida -- ninguna decisión nueva se escribe en el store.
+
+    Regla de selección (fijada y testeada, `test_pilot_execution_selection.py`):
+    1. vigente: `covering_instances` de `resolver.resolve()` por documento
+       (ya excluye `SUPERSEDED`/`REVOKED` -- eso lo calcula
+       `decision_scope_resolver._effective_coverage`/`project_status`, no
+       se reimplementa aquí);
+    2. común: la instancia debe cubrir TODOS los documentos del lote (mismo
+       criterio que el código anterior, solo que por intersección en vez de
+       exigir que la unión tenga tamaño 1);
+    3. con presupuesto: `_pilot_execution_budget(record) > 0`;
+    4. desempate estable: `decision_date` más reciente entre las que
+       cumplen 1-3 -- la confirmación humana más nueva es la lectura más
+       actual de la intención de Cesar sobre este lote.
+
+    Si NINGUNA instancia común tiene presupuesto > 0: sigue fallando
+    cerrado (no hay autorización utilizable, eso es correcto) con un
+    mensaje que lista cada candidata y su `max_calls`, nunca un fallo
+    mudo."""
+    cobertura_por_doc: dict[str, set[str]] = {}
     for doc_id in document_ids:
         scope = resolver.resolve(PILOT_DECISION_FAMILY, doc_id, store_file=decision_store_file)
         if not scope.authorized:
             raise CorpusRunNotAuthorizedError(
                 f"{doc_id!r} sin PILOT_EXECUTION vigente: {scope.denial_reason}")
-        instances.update(scope.covering_instances)
-    if len(instances) != 1:
+        cobertura_por_doc[doc_id] = set(scope.covering_instances)
+
+    comun = set.intersection(*cobertura_por_doc.values()) if cobertura_por_doc else set()
+    if not comun:
         raise CorpusRunNotAuthorizedError(
-            "las unidades del piloto no comparten una única PILOT_EXECUTION vigente "
-            f"({instances!r})")
-    instance_id = instances.pop()
-    decision = next((r for r in decision_store.read_all(decision_store_file)
-                     if r.get("decision_instance_id") == instance_id), None)
-    if decision is None:
-        raise CorpusRunNotAuthorizedError(f"{instance_id!r} no se encuentra en el almacén")
-    return decision.get("payload") or {}
+            "las unidades del piloto no comparten NINGUNA PILOT_EXECUTION vigente en común "
+            f"(cobertura por documento: {cobertura_por_doc!r})")
+
+    registros = decision_store.read_all(decision_store_file)
+    por_id = {r["decision_instance_id"]: r for r in registros
+             if r.get("decision_instance_id") in comun}
+    faltantes = comun - set(por_id)
+    if faltantes:
+        raise CorpusRunNotAuthorizedError(
+            f"instancia(s) {sorted(faltantes)!r} resueltas por el resolver pero ausentes del almacén")
+
+    con_presupuesto = [iid for iid in comun if _pilot_execution_budget(por_id[iid]) > 0]
+    if not con_presupuesto:
+        detalle = ", ".join(
+            f"{iid} (max_calls={(por_id[iid].get('payload') or {}).get('max_calls')!r})"
+            for iid in sorted(comun))
+        raise CorpusRunNotAuthorizedError(
+            f"{len(comun)} instancia(s) PILOT_EXECUTION vigentes cubren el lote pero ninguna "
+            f"tiene presupuesto utilizable: {detalle}")
+
+    seleccionada = max(con_presupuesto, key=lambda iid: por_id[iid].get("decision_date", ""))
+    co_cubridoras = sorted(iid for iid in con_presupuesto if iid != seleccionada)
+
+    return {
+        "selected_instance_id": seleccionada,
+        "co_covering_instances": co_cubridoras,
+        "selection_rule_applied":
+            "vigente ∧ cubre TODOS los documentos del lote ∧ presupuesto>0 ∧ "
+            "decision_date más reciente (desempate estable)",
+        "payload": por_id[seleccionada].get("payload") or {},
+    }
+
+
+def _check_pilot_execution(document_ids: list[str], *,
+                           decision_store_file: Path | None = None) -> dict:
+    """Compatibilidad hacia atrás: mismo contrato de retorno que antes
+    (el payload de la instancia vigente, con `max_calls`), ahora resuelto
+    vía `_select_pilot_execution_instance` en vez de exigir unicidad
+    estricta. Los llamadores que necesiten la selección completa (para
+    auditoría/trazabilidad) deben usar `_select_pilot_execution_instance`
+    directamente -- `run_pilot_sample_batch` lo hace."""
+    return _select_pilot_execution_instance(
+        document_ids, decision_store_file=decision_store_file)["payload"]
 
 
 def _extract_pilot_excerpt(path: Path, page_indices: tuple[int, ...]) -> list[str]:
@@ -240,7 +317,8 @@ def run_pilot_sample_batch(units: list[PilotSampleUnit], *,
                            checkpoint_dir: Path = PILOT_CHECKPOINT_DIR,
                            manifest_dir: Path = PILOT_MANIFEST_DIR,
                            decision_store_file: Path | None = None,
-                           persist_manifest: bool = True) -> CorpusRunSummary:
+                           persist_manifest: bool = True,
+                           evaluation_profile: str = "BASELINE") -> CorpusRunSummary:
     """Piloto 1 (representatividad, §3 del plan): ejecuta la lista EXPLÍCITA
     de `PilotSampleUnit` -- nunca `plan_corpus_units()`/barrido completo.
     `run_context='pilot'` en cada llamada real; el tope duro de llamadas
@@ -248,14 +326,27 @@ def run_pilot_sample_batch(units: list[PilotSampleUnit], *,
     NUNCA de `compute_d4a()` (ese presupuesto es de la corrida formal).
     Checkpoints/manifests en `PILOT_CHECKPOINT_DIR`/`PILOT_MANIFEST_DIR`
     (nunca los de producción) -- misma garantía de aislamiento físico que
-    documenta `test_pilot_isolation.py`."""
+    documenta `test_pilot_isolation.py`.
+
+    evaluation_profile (R1.5, 2026-08-09, default 'BASELINE' -- cero cambio
+    de comportamiento para todo llamador existente): 'H2H4' pasa
+    `evaluation_profile='H2H4', target_requirement_ids=[unit.requirement_id]`
+    a `chunked_engine.evaluate_chunked()` por cada unidad -- productiza la
+    config que midió 2/7 de recall (vs. 0/7 del baseline) llevándola del
+    script de diagnóstico al flujo real. `unit.requirement_id` (ya existía
+    en `PilotSampleUnit`, antes solo documental) pasa a ser el filtro real
+    de checkpoints cuando se pide este perfil. El conteo de llamadas
+    (`expected_calls = len(unit.page_indices)`) NO cambia: al filtrar a UN
+    solo requirement_id por unidad, cada página sigue siendo exactamente 1
+    llamada real, igual que BASELINE -- el hard-stop de `max_calls` sigue
+    siendo correcto sin tocarlo."""
     provider = provider or DEFAULT_PROVIDER
     if not units:
         return CorpusRunSummary(stop_reason="NO_UNITS")
 
     document_ids = sorted({u.document_id for u in units})
-    pilot_payload = _check_pilot_execution(document_ids, decision_store_file=decision_store_file)
-    max_calls = pilot_payload.get("max_calls")
+    selection = _select_pilot_execution_instance(document_ids, decision_store_file=decision_store_file)
+    max_calls = selection["payload"].get("max_calls")
     if not isinstance(max_calls, int) or max_calls <= 0:
         raise CorpusRunNotAuthorizedError(
             f"PILOT_EXECUTION vigente sin max_calls válido: {max_calls!r}")
@@ -266,7 +357,12 @@ def run_pilot_sample_batch(units: list[PilotSampleUnit], *,
     checkpoint_store = ce.CheckpointStore(checkpoint_dir)
     excerpt_cache: dict[tuple[str, tuple[int, ...]], list[str]] = {}
 
-    summary = CorpusRunSummary()
+    summary = CorpusRunSummary(
+        selected_pilot_instance_id=selection["selected_instance_id"],
+        co_covering_pilot_instances=selection["co_covering_instances"],
+        pilot_selection_rule=selection["selection_rule_applied"],
+        evaluation_profile=evaluation_profile,
+    )
     for unit in units:
         expected_calls = len(unit.page_indices)
         if summary.total_calls_made + expected_calls > max_calls:
@@ -292,6 +388,8 @@ def run_pilot_sample_batch(units: list[PilotSampleUnit], *,
                 run_context="pilot", checkpoint_store=checkpoint_store,
                 use_verified_pipeline=True, document_type=unit.document_type,
                 retry_technical_failures=True, provider=provider,
+                evaluation_profile=evaluation_profile,
+                target_requirement_ids=[unit.requirement_id] if evaluation_profile == "H2H4" else None,
             )
         except Exception as e:  # noqa: BLE001 -- nunca se traga: se registra y se relanza
             wall = time.monotonic() - t0
@@ -487,4 +585,11 @@ def _write_batch_event(summary: CorpusRunSummary, document_ids: list[str], *,
         "units_completed": sum(1 for u in summary.units if u.status == "COMPLETED"),
         "units_failed": sum(1 for u in summary.units if u.status == "FAILED"),
         "manifest_path": summary.manifest_path,
+        # Solo presente para run_context="pilot" con >1 PILOT_EXECUTION vigente
+        # en el lote (ver _select_pilot_execution_instance) -- registro de
+        # LECTURA en el log del run, nunca una decisión nueva en decisions_v2.
+        "selected_pilot_instance_id": summary.selected_pilot_instance_id,
+        "co_covering_pilot_instances": summary.co_covering_pilot_instances,
+        "pilot_selection_rule": summary.pilot_selection_rule,
+        "evaluation_profile": summary.evaluation_profile,
     })

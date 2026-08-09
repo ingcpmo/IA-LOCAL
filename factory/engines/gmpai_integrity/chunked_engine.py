@@ -652,7 +652,9 @@ def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS
 
 
 def build_run_fingerprint(meta: dict, *, model_digest: str, document_sha256: str, agent_version: str,
-                          use_verified_pipeline: bool) -> dict:
+                          use_verified_pipeline: bool,
+                          evaluation_profile: str = "BASELINE",
+                          target_requirement_ids: tuple[str, ...] | None = None) -> dict:
     """W5 V2 Fase F (invalidacion de checkpoint, 2026-07-25). Combina todo
     lo que, si cambia, vuelve un checkpoint viejo no confiable para
     reanudar: contrato del prompt (prompt_version/schema_version), modelo,
@@ -666,7 +668,19 @@ def build_run_fingerprint(meta: dict, *, model_digest: str, document_sha256: str
     no trae los registros verificados de sus chunks; reanudarlo con el flag
     activo produciria una cobertura parcial presentada como completa. Es
     keyword-only y SIN default a proposito: omitirlo es un TypeError, no un
-    fingerprint silenciosamente incompleto."""
+    fingerprint silenciosamente incompleto.
+
+    evaluation_profile/target_requirement_ids (R1.5, 2026-08-09, defaults
+    BASELINE/None -- cero cambio de comportamiento para todo llamador
+    existente): un checkpoint de perfil H2H4 (1 requirement_id/llamada,
+    ver evaluate_chunked()) NUNCA debe poder reanudarse como si fuera un
+    checkpoint BASELINE del mismo agente/documento -- el prompt real que
+    vio el modelo es distinto (subconjunto de checkpoints), aunque
+    prompt_version/schema_version del YAML no cambien (el filtrado es en
+    tiempo de ejecucion, no en el archivo gobernado). Sin esto, resumir un
+    run BASELINE con perfil H2H4 (o viceversa) mezclaria chunk_executions
+    de dos contratos de prompt distintos -- el mismo defecto que este
+    fingerprint ya existe para impedir en las demas dimensiones."""
     from factory.regulatory.requirement_catalog.requirement_catalog_loader import catalog_fingerprint
     cat = catalog_fingerprint()
     return {
@@ -678,6 +692,8 @@ def build_run_fingerprint(meta: dict, *, model_digest: str, document_sha256: str
         "catalog_version": cat["catalog_version"],
         "catalog_sha256": cat["catalog_sha256"],
         "use_verified_pipeline": bool(use_verified_pipeline),
+        "evaluation_profile": evaluation_profile,
+        "target_requirement_ids": sorted(target_requirement_ids) if target_requirement_ids else None,
     }
 
 
@@ -833,7 +849,9 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                       use_verified_pipeline: bool = False,
                       document_type: str | None = None,
                       retry_technical_failures: bool = False,
-                      provider: ModelProvider | None = None) -> dict:
+                      provider: ModelProvider | None = None,
+                      evaluation_profile: str = "BASELINE",
+                      target_requirement_ids: "list[str] | tuple[str, ...] | None" = None) -> dict:
     """Procesa TODO el documento (todas las páginas reales) en chunks
     acotados, con metadata de runtime completa por chunk, checkpoints de
     reanudación opcionales, y consolida un Finding final por checkpoint.
@@ -880,6 +898,46 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     el descarte queda en preflight_metadata. Antes de esta fecha la
     combinacion era un ValueError.
 
+    evaluation_profile/target_requirement_ids (R1.5, 2026-08-09, defaults
+    'BASELINE'/None -- cero cambio de comportamiento para todo llamador
+    existente): BASELINE es el contrato de siempre, sin tocar -- todos los
+    checkpoints admitidos del agente evaluados en UNA sola llamada por
+    chunk (config que midio 0/7 de recall en el fixture set, ver
+    docs_plan/W5V2_RECALL_EXPERIMENTS_RESULTADOS.md).
+
+    H2H4 productiza la configuracion H2 (desempaquetado: UN solo
+    requirement_id por llamada) que midio 2/7 -- la unica que supero el
+    baseline en cualquier experimento -- llevandola del script de
+    diagnostico aislado (h2_experiment.py/h4_experiment.py, scratchpad,
+    nunca versionados) al motor real. Exige target_requirement_ids no
+    vacio: filtra meta['checkpoints'] a ESOS req_id ANTES de
+    evidence_pack_gate/build_prompt/output_token_budget/
+    build_run_fingerprint -- ningun otro punto de la funcion cambia, asi
+    que evidence_pack_gate, build_prompt (el mismo common_contract/schema
+    GOBERNADO, sin editar), _extract_json, _validate_checkpoint_schema y
+    la validacion A real (evidence_verifier via verified_pipeline_adapter,
+    cuando use_verified_pipeline=True) se reutilizan sin cambios -- es
+    literalmente el mismo prompt que vería un checkpoint BASELINE, con
+    menos checkpoints en la lista.
+
+    Nota honesta de alcance (no reproduce H4 al pie de la letra): la
+    minimizacion del SCHEMA de salida (H4 -- eliminar criterion_text/
+    evidence_location/justification/limitations del JSON pedido) vive en
+    el common_contract GOBERNADO de cada prompt YAML
+    (factory/engines/gmpai_integrity/prompts/*.yaml), no en esta funcion
+    -- cambiarlo es un cambio de CONTENIDO gobernado (prompt_version
+    nuevo, aprobacion de Cesar), fuera de alcance de esta corrida de
+    codigo minimo. El filtrado a 1 requirement_id YA reduce
+    output_token_budget()/num_predict automaticamente (escala con
+    n_checkpoints Y n_criteria, ambos ya filtrados a 1 requirement), asi
+    que se obtiene la mayor parte de la ganancia de velocidad de H4 sin
+    tocar el schema -- pero la ganancia de RECALL medida (2/7, identica
+    con o sin H4 segun W5V2_RECALL_EXPERIMENTS_RESULTADOS.md: 'mismos dos
+    casos que H2: P1 y P5 -- exactamente igual') es enteramente atribuible
+    a H2 (el desempaquetado), no al schema minimo. Por eso este perfil
+    reproduce fielmente el recall medido aunque no reproduzca el schema
+    minimo de H4 al pie de la letra.
+
     retry_technical_failures (2026-07-28, default False -- cero cambio de
     comportamiento para todo llamador existente): al reanudar, reejecuta los
     chunks que quedaron con technical_execution_failure en vez de saltarlos.
@@ -904,8 +962,30 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             f"run_context invalido: {run_context!r} (debe ser 'production', 'validation' o 'pilot')")
     if use_verified_pipeline and not document_type:
         raise ValueError("use_verified_pipeline=True exige document_type (obligatorio, sin default)")
+    if evaluation_profile not in ("BASELINE", "H2H4"):
+        raise ValueError(
+            f"evaluation_profile invalido: {evaluation_profile!r} (debe ser 'BASELINE' o 'H2H4')")
     provider = provider or DEFAULT_PROVIDER
     meta = load_prompt_meta(prompt_path)
+
+    # R1.5 -- perfil H2H4: filtra ANTES de evidence_pack_gate/build_prompt/
+    # output_token_budget/build_run_fingerprint, para que ese subconjunto de
+    # checkpoints sea la UNICA vista del prompt que el resto de la funcion
+    # conoce -- ningun otro punto de evaluate_chunked necesita saber que el
+    # perfil existe.
+    if evaluation_profile == "H2H4":
+        if not target_requirement_ids:
+            raise ValueError("evaluation_profile='H2H4' exige target_requirement_ids no vacio")
+        target_requirement_ids = tuple(target_requirement_ids)
+        filtered_checkpoints = [cp for cp in meta["checkpoints"] if cp["req_id"] in target_requirement_ids]
+        found = {cp["req_id"] for cp in filtered_checkpoints}
+        missing = set(target_requirement_ids) - found
+        if missing:
+            raise ValueError(
+                f"target_requirement_ids {sorted(missing)!r} no existen en el prompt real de {agent_id!r}")
+        meta = {**meta, "checkpoints": filtered_checkpoints}
+    else:
+        target_requirement_ids = None
     # Captura de metadata de reproducibilidad ANTES de la primera inferencia
     # (fix TE-02 / requisito de preflight): modelo, model_digest, version de
     # Ollama, agent_version, prompt_version, verifier_version, documento,
@@ -919,6 +999,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     run_fingerprint = build_run_fingerprint(
         meta, model_digest=model_digest, document_sha256=document_sha256, agent_version=agent_version,
         use_verified_pipeline=use_verified_pipeline,
+        evaluation_profile=evaluation_profile, target_requirement_ids=target_requirement_ids,
     )
 
     chunks = build_page_chunks(per_unit_text)
@@ -976,6 +1057,8 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         "prompt_version": meta["prompt_version"], "verifier_version": meta["verifier_version"],
         "documento": documento, "document_sha256": document_sha256, "run_id": run_id,
         "run_fingerprint": run_fingerprint,
+        "evaluation_profile": evaluation_profile,
+        "target_requirement_ids": list(target_requirement_ids) if target_requirement_ids else None,
         # W5 V2 Fase F: nunca en silencio -- si un checkpoint previo existia
         # pero su fingerprint no coincidia, queda explicito aqui que se
         # descarto y la corrida empezo de cero (no se resumio nada).
