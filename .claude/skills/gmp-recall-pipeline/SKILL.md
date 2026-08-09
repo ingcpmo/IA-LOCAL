@@ -216,6 +216,13 @@ append-only, Part 11).
   `chunks_observed=1`/`conclusion=SUPPORTING_EVIDENCE_UNDER_REVIEW`.
   ANNEX11_4 y el segundo negativo (N2, tabla de contenidos) confirmados
   sin llegar a conclusión positiva.
+- **R1.8** (2026-08-09): despacha `SUPPORTING_EVIDENCE_UNDER_REVIEW`
+  a `factory/layer9/human_review_queue.py` (mismo almacén que los Release
+  Candidates) — cerraba el hueco de R1.7 donde esa conclusión quedaba
+  consultable pero nadie la despachaba a un humano. **COMMITEADO**
+  (`bc1d8b0`, 2026-08-09). `factory/tests/conftest.py` gana un fixture
+  autouse (`isolated_review_queue`) para que ningún test contamine la
+  cola real.
 - **R2**: recuperación determinista de evidencia — bloqueada por
   R1.6/R1.7.
 - **R3-R5**: sin empezar, dependen de que R2 alcance ≥6/7 (gate

@@ -532,6 +532,69 @@ contenidos) confirmado sin llegar a conclusión positiva en el escenario
 realista — ver R1.8 para el hallazgo adversarial relacionado (gap
 preexistente de D, no de R1.6/R1.7).
 
+## R1.8 — Despacho de SUPPORTING_EVIDENCE_UNDER_REVIEW a revisión humana (2026-08-09)
+
+Hallazgo abierto que R1.7 dejó documentado: la conclusión quedaba en
+`result["verified_conclusions"]` como campo consultable, pero nada la
+despachaba activamente a un humano — un fallo silencioso de nueva especie
+(la evidencia no se pierde, pero muere en un campo que nadie mira).
+
+**Diseño e implementación**: `chunked_engine.evaluate_chunked()` encola
+toda conclusión `SUPPORTING_EVIDENCE_UNDER_REVIEW` en la cola de revisión
+humana YA EXISTENTE (`factory/layer9/human_review_queue.py`,
+`review_queue.jsonl`) — función nueva `enqueue_finding_for_review()`,
+mismo almacén append-only, mismo locking, mismo patrón de evento de
+auditoría que ya usan los Release Candidates (`enqueue()`). Item
+sintético (`finding-{run_id}-{requirement_id}`) distinguido con
+`entry_type="finding_review"` para no mezclarse con RCs reales. El
+encolado ocurre en el camino de escritura del run (dentro de
+`evaluate_chunked()`, no en un GET), y un fallo de encolado nunca tumba
+el run — se registra en `governed_exceptions`, nunca se traga en
+silencio. Nunca cambia la conclusión ni la promueve.
+
+**Alcance deliberadamente acotado**: solo `SUPPORTING_EVIDENCE_UNDER_REVIEW`
+(siempre trae evidencia observada real, flag `OBSERVED_ONLY_UNVERIFIED`).
+`EVALUATION_INCOMPLETE` queda fuera — cubre motivos heterogéneos (D no
+evaluado, requisito duplicado, excepción de consolidación) que no
+siempre implican evidencia esperando revisión, y ya tienen su propio
+registro en `governed_exceptions`.
+
+**Aislamiento de test agregado** (hallazgo colateral real, necesario
+para no romper gobernanza): se descubrió que `evaluate_chunked()` YA
+escribía al audit log real (`factory/audit/factory_audit.jsonl`, 36k+
+líneas) en CUALQUIER test de la suite que lo ejercitara, sin aislar —
+preexistente, no introducido por R1.6/R1.7/R1.8, fuera de este alcance
+para corregir en el audit log, pero se evitó repetir el mismo problema
+con la cola de revisión: `factory/tests/conftest.py` gana un fixture
+`autouse=True` (`isolated_review_queue`) que redirige
+`REVIEW_QUEUE_FILE` a un temporal para TODA la suite.
+
+Tests nuevos: `factory/tests/test_r1_8_review_queue_dispatch.py` (3
+tests: P5 real genera exactamente una entrada con todos los campos;
+ANNEX11_4 no genera ninguna; el caso wrong-topic también se despacha).
+Test N2 agregado a `test_r1_7_soft_relevance_verified_pipeline.py`
+(escenario realista, sin `criterion_assessments` — seguro, confirmado).
+
+**Hallazgo adversarial encontrado, preexistente, NO introducido ni
+corregido por esta corrida (fuera de alcance — territorio del validador
+D)**: si el modelo alucinara `criterion_assessments` consistentes (todos
+`MET`, citando la misma línea de tabla de contenidos como
+`evidence_quote` para los 9 criterios), la conclusión llegaría a
+`PROVISIONALLY_DOCUMENTED` — un falso positivo real. Confirmado que este
+gap ya existía ANTES de R1.6/R1.7 (el label "Audit trail seguro con
+timestamp" ya contenía "audit"/"trail" literalmente, así que incluso
+`_is_topically_relevant` original habría dejado pasar esta cita). No es
+un escenario observado empíricamente (el P5 real SÍ auto-reportó
+`NOT_MET`/`NOT_ASSESSABLE` cuando la evidencia era débil) — es un límite
+teórico del contrato de `criterion_assessments`/`verify_sufficiency` que
+no verifica si `evidence_quote` se repite idéntico entre criterios
+distintos. Registrado como hallazgo abierto, dueño: futura corrida sobre
+`semantic_evidence_verification.verify_sufficiency`, requiere su propia
+autorización.
+
+**Estado**: **COMMITEADO** (commit `bc1d8b0`, 2026-08-09). Tests verdes,
+sin fallos atribuibles.
+
 ---
 
 ## R2 — Localización de evidencia por recuperación determinista (la apuesta)
