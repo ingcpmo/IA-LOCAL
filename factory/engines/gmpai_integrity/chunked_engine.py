@@ -602,10 +602,41 @@ def _is_topically_relevant(evidencia: str, label: str) -> bool:
     llamada adicional al LLM): al menos una palabra significativa (>=4
     caracteres, fuera de stopwords) del label del checkpoint debe aparecer
     en la cita. Ante ausencia de label o de palabras significativas, no
-    bloquea (True)."""
+    bloquea (True).
+
+    Fix R1.6 (2026-08-09, docs_plan/R1_6_VALIDADOR_RELEVANCIA_IDIOMA.md):
+    algunos labels (familia ALCOA, alcoa_prompts.yaml) siguen el patron
+    bilingue "Termino en ingles — glosa en espanol" (ej. "Contemporaneous
+    — registrado en el momento"). El codigo anterior descartaba la mitad
+    ANTERIOR al guion largo (`label.split("—", 1)[-1]`) y se quedaba solo
+    con la glosa en espanol -- para un documento fuente en ingles (caso
+    real RW-0005/Rockwell), ninguna palabra espanola puede aparecer nunca
+    en una cita literal en ingles, asi que el termino en ingles ya
+    presente en el propio label (contenido gobernado, no una fuente
+    externa nueva) se descartaba exactamente cuando mas hacia falta. Se
+    usan AMBAS mitades del label ahora -- nunca se resta vocabulario,
+    solo se deja de tirar a la basura la parte que ya estaba ahi.
+
+    Nota de alcance, verificada, no maquillada (ver R1_6, seccion
+    'alcance del defecto'): esta correccion resuelve el caso general
+    donde el termino de anclaje SI aparece literal en el label bilingue
+    (p.ej. futuros documentos ALCOA en ingles que reutilicen la palabra
+    "Contemporaneous"/"Attributable"/etc. del propio label). NO resuelve
+    el caso P5 especifico (evidencia parafraseada por el modelo que no
+    repite NINGUNA palabra clave gobernada, ni en ingles ni en espanol) --
+    ese es un defecto de diseno mas profundo (esta heuristica de
+    coincidencia literal es demasiado estricta para 'cumple_parcialmente'
+    inferido/parafraseado) y su correccion requiere una decision separada
+    de Cesar, no autorizada en este alcance (ver R1_6_VALIDADOR_
+    RELEVANCIA_IDIOMA.md seccion 3: cualquier fuente de comparacion nueva
+    -- p.ej. requirement_terms.yaml como aceptacion alternativa -- se
+    evaluo y se descarto: rompe test_topically_irrelevant_citation_is_
+    rejected, un caso real y monolingue de cita anclada pero fuera de
+    tema, que debe seguir rechazado)."""
     if not label:
         return True
-    desc = label.split("—", 1)[-1] if "—" in label else label
+    parts = label.split("—") if "—" in label else [label]
+    desc = " ".join(parts)
     words = [w.lower() for w in re.findall(r"[A-Za-zÁÉÍÓÚáéíóúñÑ]+", desc) if len(w) >= 4]
     words = [w for w in words if w not in _LABEL_STOPWORDS]
     if not words:
@@ -1215,7 +1246,10 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 valid_candidate = anchored if requires_anchor else True
                 # Fix 2026-07-16: anclaje literal no basta para cumple/
                 # cumple_parcialmente — la cita debe ademas ser tematicamente
-                # relevante al checkpoint (ver _is_topically_relevant).
+                # relevante al checkpoint (ver _is_topically_relevant). Este
+                # gate (legacy, result["findings"]) se queda igual: no tiene
+                # ningun consumidor downstream capaz de manejar una senal
+                # suave -- ver R1.7 mas abajo para el pipeline verificado.
                 topically_relevant = (
                     _is_topically_relevant(evidencia, cp_label_by_req.get(req_id, ""))
                     if (requires_anchor and evidencia) else True
@@ -1229,12 +1263,38 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 # (nunca aportaron un Finding propio) pero que SÍ cuentan para
                 # que coverage_complete de absence_consolidator sea real, no
                 # inventado.
+                #
+                # R1.7 (2026-08-09, docs_plan/R1_6_VALIDADOR_RELEVANCIA_IDIOMA.md):
+                # el pipeline verificado (el que usa corpus_runner/produccion)
+                # deja de usar _is_topically_relevant -- es un pre-filtro propio,
+                # mas crudo que la validacion C real y ya probada del sistema
+                # (semantic_evidence_verification.verify_semantic_relevance /
+                # detect_reference_list_context, language-agnostic via
+                # requirement_terms.yaml, que ademas NUNCA rechaza duro por
+                # relevancia lexica -- solo marca NOT_VERIFIABLE/review_required).
+                # build_finding_record() -> verify_llm_output() ya calcula esa
+                # misma relevancia lexica (V5, sin tocar aqui) y la traduce a
+                # status='review_required' cuando es debil; absence_consolidator
+                # ya sabe tratar ese status de forma segura (SUPPORTING_EVIDENCE_
+                # UNDER_REVIEW, nunca lo promueve a una conclusion positiva
+                # confirmada) -- pero esa maquinaria nunca llegaba a ejecutarse
+                # de verdad porque este pre-filtro ya blanqueaba la evidencia
+                # antes. Se mantiene UNICAMENTE el componente estructural y
+                # deterministico de la validacion C real (deteccion de listas de
+                # referencias numeradas, el mecanismo que de verdad rechaza
+                # ANNEX11_4 -- antes se rechazaba por coincidencia accidental de
+                # idioma, no por esto). `sev` ya esta importado mas arriba en
+                # esta funcion.
+                valid_candidate_verified = (
+                    anchored and not sev.detect_reference_list_context(evidencia, chunk["text"])
+                    if requires_anchor else True
+                )
                 if use_verified_pipeline and req_id in verified_records_by_req:
                     from factory.regulatory.verified_pipeline_adapter import build_finding_record
                     v_candidate = {
                         "page_start": chunk["page_start"], "page_end": chunk["page_end"],
-                        "estado": estado if valid_candidate else "evidencia_insuficiente",
-                        "evidencia_exacta": evidencia if valid_candidate else "",
+                        "estado": estado if valid_candidate_verified else "evidencia_insuficiente",
+                        "evidencia_exacta": evidencia if valid_candidate_verified else "",
                     }
                     verified_records_by_req[req_id].append(build_finding_record(
                         f"vrec-{task_id}-{req_id}", v_candidate, req_id, chunk,

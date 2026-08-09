@@ -395,6 +395,141 @@ nota para no perder de vista, no como acción de esta corrida.
 
 ---
 
+## R1.5 — CLOSED (decisión de Cesar, 2026-08-09)
+
+La productización de `evaluation_profile=H2H4` funciona y quedó probada
+(10/10 tests, plumbing correcto por flujo real, P5 ancló de verdad con
+cita verificada a score 1.0 vía `evidence_verifier.match_citation`).
+Commiteado en `484d103`. El hallazgo de que el checkpoint final igual
+reportaba `not_observed_in_chunk` pese al anclaje genuino se separa como
+R1.6 (abajo) — no era un defecto de la productización.
+
+## R1.6 — Defecto de validador de relevancia (mismatch de idioma) — investigado y PARCIALMENTE corregido, sin cerrar (2026-08-09)
+
+Instrucciones completas: `docs_plan/R1_6_VALIDADOR_RELEVANCIA_IDIOMA.md`.
+R2 permanece **EN ESPERA** — no arranca hasta que R1.6 cierre (P5 llegue a
+`observed` de punta a punta con los negativos intactos).
+
+**Defecto confirmado**: `chunked_engine._is_topically_relevant()`
+(línea ~595) es un pre-filtro propio de esta pieza, distinto y más crudo
+que la validación C real y ya probada del sistema
+(`semantic_evidence_verification.verify_semantic_relevance()` /
+`detect_reference_list_context()` + `evidence_verifier.relevance_score()`,
+que SÍ es language-agnostic vía `requirement_terms.yaml` y degrada a
+`review_required` en vez de rechazar duro). El pre-filtro compara palabras
+significativas del `label` del checkpoint contra la cita — y varios
+labels (familia ALCOA, `alcoa_prompts.yaml`) siguen el patrón bilingüe
+"Término inglés — glosa en español" (ej. `"Contemporaneous — registrado
+en el momento"`). El código original hacía `label.split("—", 1)[-1]`,
+quedándose SOLO con la glosa en español y descartando el término inglés
+que ya estaba en el propio label gobernado.
+
+**Alcance del defecto (verificado, no puntual de P5)**: de los 20
+checkpoints reales (`part11`+`annex11`+`alcoa`+`cgmp211`), 9 (familia
+ALCOA) usan el patrón bilingüe con guion largo; los 11 restantes tienen
+label puramente en español, sin ningún término inglés embebido en
+absoluto. Los 14 documentos de la allowlist Rockwell son ingleses. Es
+decir: el pre-filtro nunca podía aceptar una cita genuina en inglés para
+NINGUNO de los 20 checkpoints salvo que la cita repitiera, letra por
+letra, la glosa en español — estructuralmente casi imposible contra
+prosa técnica en inglés.
+
+**Corrección aplicada (segura, acotada, ver
+`R1_6_VALIDADOR_RELEVANCIA_IDIOMA.md` sección 3 para el análisis
+completo de por qué NO es una relajación)**: se dejan de descartar las
+palabras en inglés de un label bilingüe — se usan ambas mitades. Cero
+fuentes de comparación nuevas (se evaluó agregar `requirement_terms.yaml`
+como fuente alternativa y se descartó: rompe
+`test_topically_irrelevant_citation_is_rejected`, un caso real y
+monolingüe de cita anclada pero fuera de tema que debe seguir
+rechazado). Tests nuevos: `factory/tests/test_r1_6_topically_relevant_language.py`
+(7 tests, incluida N1/ANNEX11_4 con datos reales y la cita real
+persistida de P5). Suite completa + Gate 0 sin fallos atribuibles al
+cambio (los únicos fallos son el mismo patrón ya conocido de
+`chunked_engine.py`/`decisions_v2.jsonl` sin commitear, que desaparece al
+commitear).
+
+**P5 NO llega a `observed` incluso después de este fix — verificado
+explícitamente, no maquillado**: la evidencia real que citó el modelo
+para P5 (persistida en
+`factory/regulatory/pilot_run/r1_5_h2h4_chunked-596f70cc4520/`) no repite
+NINGUNA palabra gobernada, ni en inglés ("Contemporaneous", ahora
+disponible tras el fix) ni en español ("registrado"/"momento"). El
+defecto de idioma era real y se corrigió, pero no es la única causa: la
+heurística de coincidencia léxica LITERAL es, en sí misma, demasiado
+estricta para validar un `cumple_parcialmente` que el modelo infiere de
+forma parafraseada — el mismo patrón que el sistema ya resuelve en otro
+lugar (`verify_llm_output` V5) degradando a `review_required` en vez de
+rechazar duro, pero que el pre-filtro de `chunked_engine.py` nunca
+adoptó. Corregir esto de raíz (mover el pre-filtro de rechazo-duro a
+señal-suave, reutilizando `verify_semantic_relevance`) es un cambio de
+diseño más grande, no autorizado en el alcance de esta corrida —
+**decisión nueva pendiente de Cesar**.
+
+**Estado**: R1.6 investigado, con una corrección real y segura aplicada.
+El rediseño mayor queda como R1.7 (abajo) — R1.6 en sí no cierra
+independientemente, se resuelve junto con R1.7.
+
+## R1.7 — Rediseño del pre-filtro de relevancia del pipeline verificado (autorizado por Cesar, 2026-08-09)
+
+Plan completo: `.claude/plans/sharded-riding-turing.md`. Cesar autorizó
+el rediseño mayor que R1.6 dejó pendiente: convertir el pre-filtro de
+rechazo-duro (`_is_topically_relevant`) en señal-suave para el pipeline
+VERIFICADO (el que usa `corpus_runner`/producción), reutilizando
+maquinaria ya probada del sistema en vez de inventar lógica nueva.
+
+**Diseño aplicado**: el pipeline verificado deja de usar
+`_is_topically_relevant` (queda intacto para el pipeline legacy, que no
+tiene consumidor downstream capaz de manejar una señal suave). En su
+lugar usa solo `semantic_evidence_verification.detect_reference_list_context()`
+(el único componente determinista y ya probado de la validación C real,
+golden dataset case 1) como rechazo duro adicional al anclaje literal.
+La relevancia léxica deja de bloquear antes de tiempo y fluye tal cual a
+`evidence_verifier.verify_llm_output()` (V5, sin tocar ningún umbral),
+que ya la traduce a `status='review_required'` cuando es débil —
+`absence_consolidator.py` ya sabe tratar eso de forma segura
+(`SUPPORTING_EVIDENCE_UNDER_REVIEW`, nunca promovido a una conclusión
+positiva confirmada como `DOCUMENTED_AND_SUPPORTED`).
+
+**Verificado con datos reales, sin gastar ninguna llamada nueva al
+modelo (replay offline de la respuesta ya persistida de P5,
+`chunked-596f70cc4520`)**:
+- **P5**: `chunks_observed` pasa de 0 a **1**. `conclusion =
+  "SUPPORTING_EVIDENCE_UNDER_REVIEW"` (nunca `DOCUMENTED_AND_SUPPORTED`
+  ni `PROVISIONALLY_DOCUMENTED` — la relevancia léxica es débil, queda
+  flageada para revisión humana, no aprobada en silencio).
+  `review_flags` incluye `OBSERVED_ONLY_UNVERIFIED`. Esto es lo que "P5
+  llega a observed" significa en la práctica: visible y trazable, con
+  bandera de revisión humana explícita — consistente con "sin
+  declaración de cumplimiento final" (`CLAUDE.md`).
+- **ANNEX11_4** (negativo real, GAMP5 en lista de referencias), por el
+  pipeline verificado (no solo el golden dataset sintético):
+  `chunks_observed = 0`, nunca ninguna conclusión positiva. Mismo
+  resultado de siempre, ahora por el mecanismo estructural correcto.
+- **Caso construido de control** (cita real, ancla, pero de otro tema,
+  mismo idioma — equivalente verificado de
+  `test_topically_irrelevant_citation_is_rejected`): tampoco se vuelve
+  `verified` silenciosamente — cae en el mismo
+  `SUPPORTING_EVIDENCE_UNDER_REVIEW` que P5 (misma naturaleza de señal
+  débil), nunca una conclusión positiva confirmada.
+
+Tests nuevos: `factory/tests/test_r1_7_soft_relevance_verified_pipeline.py`
+(3 tests, incluido el replay real de P5). Regresión dirigida (129 tests:
+`test_gmpai_chunked_engine.py`, `test_r1_6_*`, `test_verified_pipeline.py`,
+`test_evaluation_profile_h2h4.py`, `test_pilot_execution_selection.py`,
+golden dataset, `test_corpus_runner.py`) verde. Suite completa +
+Gate 0: ver resultado en el checkpoint de cierre de esta corrida.
+
+**Alcance**: solo el pipeline verificado. `RELEVANCE_THRESHOLD` (0.15)
+sin tocar. Validaciones A/B/D sin tocar. `evidence_min_criteria` sin
+tocar.
+
+**Estado**: implementado y con no-regresión confirmada; pendiente de
+mostrar diff completo + aprobación explícita de Cesar antes de
+commitear. R2 sigue **en espera** hasta cierre formal de R1.6/R1.7.
+
+---
+
 ## R2 — Localización de evidencia por recuperación determinista (la apuesta)
 
 **Objetivo:** invertir la arquitectura de búsqueda. La lección de los

@@ -99,6 +99,65 @@ AND latencia por llamada registrada
 Todo experimento de recall se mide contra ESTE set. Ningún otro conjunto
 de casos sustituye esta medición.
 
+## Ojo con confundir "rechazo por idioma" con "fallo de recall del modelo" (R1.6, 2026-08-09)
+
+Antes de concluir que el modelo no encontró evidencia (recall bajo),
+verificar si el rechazo real viene de un GATE posterior, no del modelo.
+Hallazgo real: `chunked_engine._is_topically_relevant()` (línea ~595) es
+un pre-filtro de relevancia PROPIO de `evaluate_chunked()`, distinto y
+más crudo que la validación C real del sistema
+(`semantic_evidence_verification.verify_semantic_relevance()`, que usa
+`requirement_terms.yaml` — language-agnostic — y degrada a
+`review_required` en vez de rechazar duro). Compara palabras del `label`
+del checkpoint contra la cita citada; varios labels (familia ALCOA) usan
+el patrón bilingüe `"Término inglés — glosa en español"` y el código
+original descartaba la mitad en inglés (`label.split("—", 1)[-1]`) —
+contra un documento fuente en inglés (todo Rockwell lo es), ninguna
+palabra española puede aparecer nunca en una cita literal inglesa, así
+que el gate rechazaba evidencia genuina y anclada (score 1.0 de
+`match_citation`) SIN que el modelo hubiera fallado en nada. Fix aplicado
+en R1.6: usar ambas mitades del label bilingüe (nunca se resta
+vocabulario). **Persiste un límite más profundo, sin corregir**: la
+coincidencia léxica LITERAL sigue siendo demasiado estricta para un
+`cumple_parcialmente` parafraseado por el modelo (caso real: P5 sigue sin
+llegar a `observed` incluso tras el fix, porque su cita real no repite
+NINGUNA palabra gobernada) — decisión pendiente de Cesar sobre si
+convertir este pre-filtro en señal suave (como ya hace `verify_llm_output`
+V5) en vez de rechazo duro. Detalle completo:
+`docs_plan/R1_6_VALIDADOR_RELEVANCIA_IDIOMA.md`,
+`docs_plan/ROADMAP_ANALIZADOR_GMP.md` sección R1.6.
+
+**R1.7 (autorizado y aplicado, 2026-08-09)**: el pre-filtro de
+rechazo-duro se convirtió en señal-suave, PERO SOLO para el pipeline
+verificado (el legacy sigue igual, no tiene consumidor downstream capaz
+de manejarla). Ahora el pipeline verificado solo rechaza duro por
+`semantic_evidence_verification.detect_reference_list_context()`
+(estructural, ya probado por el golden dataset); la relevancia léxica ya
+no bloquea antes de tiempo — fluye a `verify_llm_output` V5 (sin tocar
+ningún umbral) y de ahí a `absence_consolidator`, que ya sabe convertirla
+en `SUPPORTING_EVIDENCE_UNDER_REVIEW` sin promoverla nunca a una
+conclusión positiva confirmada. **Resultado real, confirmado con la
+respuesta ya persistida del modelo (replay offline, cero llamadas
+nuevas)**: P5 pasa de `chunks_observed=0` a `chunks_observed=1`,
+`conclusion="SUPPORTING_EVIDENCE_UNDER_REVIEW"` — visible y trazable,
+flageada para revisión humana, nunca aprobada en silencio. **No confundir
+esto con "R1.7 no resolvió nada"**: el objetivo nunca fue que P5 llegara
+a una aprobación automática (eso violaría "sin declaración de
+cumplimiento final", `CLAUDE.md`) — el objetivo era que dejara de
+perderse silenciosamente, y eso sí se logró y se verificó. Detalle:
+`docs_plan/ROADMAP_ANALIZADOR_GMP.md` sección R1.7,
+`.claude/plans/sharded-riding-turing.md`.
+
+**Regla derivada**: antes de atribuir un `not_observed_in_chunk` a
+"el modelo no encontró la evidencia", revisar si algún gate posterior a
+la respuesta del modelo (hoy: `detect_reference_list_context` en el
+pipeline verificado, `_is_topically_relevant` en el legacy) descartó una
+cita que SÍ ancló — y si una `SUPPORTING_EVIDENCE_UNDER_REVIEW` con
+`chunks_observed>0` no es lo mismo que "no encontró nada": es evidencia
+real esperando confirmación humana, no una ausencia. La medición 2/7 de
+H1-H4 quedó potencialmente sesgada a la baja por el pre-filtro previo a
+R1.7 — no re-medida todavía (alcance de R2, que sigue en espera).
+
 ## Prohibición central (sin excepción, de cualquier iniciativa futura)
 
 El problema de recall es del MODELO, nunca de la estrictez del
@@ -144,11 +203,25 @@ append-only, Part 11).
   punta a punta (el criterio de cierre nunca fue "el smoke ancla
   evidencia").
 - **R1.5** (agregado 2026-08-09, no estaba en el roadmap original):
-  productización de `evaluation_profile=H2H4` — EN CURSO. **R2 no arranca
-  hasta que R1.5 cierre con un caso ancланdo por el flujo real** —
-  construir recuperación determinista (R2) sobre un juicio que sigue en
-  baseline (0/7) heredaría el mismo techo de recall.
-- **R2**: recuperación determinista de evidencia — bloqueada por R1.5.
+  productización de `evaluation_profile=H2H4` — **CLOSED** (commit
+  `484d103`). Funciona y está probada; P5 ancló de verdad por el flujo
+  real (score 1.0). El hallazgo de que el checkpoint final igual lo
+  reportaba como no observado se separó como R1.6 (no era un defecto de
+  la productización).
+- **R1.6** (agregado 2026-08-09): defecto de idioma en
+  `_is_topically_relevant()` — investigado, corrección real aplicada
+  (labels bilingües). Se resuelve junto con R1.7, no cierra por separado.
+- **R1.7** (agregado 2026-08-09, autorizado por Cesar): pre-filtro de
+  rechazo-duro del pipeline verificado convertido en señal-suave,
+  reutilizando `verify_llm_output` V5 + `absence_consolidator` (ambos ya
+  probados, sin tocar ningún umbral). P5 llega a `chunks_observed=1`,
+  `conclusion=SUPPORTING_EVIDENCE_UNDER_REVIEW` (confirmado con replay
+  offline de la respuesta real). ANNEX11_4 sigue en `chunks_observed=0`
+  por el mecanismo estructural correcto. **Pendiente de aprobación de
+  Cesar para commitear** — implementado y con no-regresión confirmada,
+  pero sin commit todavía. **R2 sigue en espera** hasta cierre formal.
+- **R2**: recuperación determinista de evidencia — bloqueada por
+  R1.6/R1.7.
 - **R3-R5**: sin empezar, dependen de que R2 alcance ≥6/7 (gate
   bloqueante).
 
