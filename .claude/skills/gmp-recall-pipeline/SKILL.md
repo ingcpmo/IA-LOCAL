@@ -223,8 +223,12 @@ append-only, Part 11).
   (`bc1d8b0`, 2026-08-09). `factory/tests/conftest.py` gana un fixture
   autouse (`isolated_review_queue`) para que ningún test contamine la
   cola real.
-- **R2**: recuperación determinista de evidencia — bloqueada por
-  R1.6/R1.7.
+- **R2**: preparación en curso — diseño detallado completo
+  (`docs_plan/R2_DESIGN_DETALLADO.md`), NO implementado. Pendiente de que
+  Cesar decida sobre traer `chromadb` como dependencia nueva de
+  `factory/` (o usar TF-IDF/BM25 sin dependencia nueva) antes de
+  autorizar la implementación real. La fase de juicio LLM sigue
+  bloqueada sin `PILOT_EXECUTION` nueva firmada.
 - **R3-R5**: sin empezar, dependen de que R2 alcance ≥6/7 (gate
   bloqueante).
 

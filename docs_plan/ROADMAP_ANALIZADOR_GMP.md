@@ -599,6 +599,19 @@ sin fallos atribuibles.
 
 ## R2 — Localización de evidencia por recuperación determinista (la apuesta)
 
+**PREPARACIÓN EN CURSO (2026-08-09)**: diseño detallado completo en
+`docs_plan/R2_DESIGN_DETALLADO.md` — módulo
+`factory/regulatory/retrieval/` (indexer/query_builder/retriever),
+reutiliza `chunked_engine.build_page_chunks()` (no el chunking de
+`knowledge/retriever.py`, que pierde el número de página), query
+construida desde `citation_text`+`evidence_min_criteria`+
+`requirement_terms.yaml` (nunca `weak_keywords` solas), métrica de
+recuperación pura (cero LLM) contra el fixture 7P+2N. **NO implementado
+todavía** — pendiente de que Cesar decida sobre la dependencia nueva
+(`chromadb` en `factory/`, o alternativa TF-IDF/BM25 sin dependencia
+nueva) antes de autorizar la implementación real. La fase de JUICIO (LLM
+sobre los top-k) sigue bloqueada sin `PILOT_EXECUTION` nueva firmada.
+
 **Objetivo:** invertir la arquitectura de búsqueda. La lección de los
 pilotos (`docs_plan/W5V2_RECALL_EXPERIMENTS_RESULTADOS.md`, H1-H4): el
 modelo juzga aceptablemente pasajes bien delimitados que tiene delante
