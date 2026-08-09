@@ -43,20 +43,73 @@ evaluador (humano o modelo) reconocería como relevante no repite el
 vocabulario gobernado (`citation_text`/`evidence_min_criteria`/
 `requirement_terms.yaml`) de forma literal — y BM25, igual que la vieja
 heurística `_is_topically_relevant`, es un método **léxico**, no
-semántico. `P3` tampoco entra ni en el top-10 (sin investigar la causa
-específica en esta corrida — anotado como hallazgo abierto). Esto **no
-invalida R2**: `retrieval_recall_at_5=4/7` ya mejora sobre el punto de
-partida (el juicio ve 5 candidatos en vez de las 29 páginas completas
-del documento en orden secuencial), y `k=10` sube a 6/7 — pero confirma
-que BM25 por sí solo probablemente no alcanza el criterio de éxito
-(`≥6/7` en la fase de JUICIO, que es un umbral distinto y posterior) sin
-que el juicio LLM aporte lo que la recuperación léxica no puede: entender
-que una evidencia parafraseada es relevante aunque no comparta
-vocabulario literal. Nota para una decisión futura de Cesar, no una
-propuesta de esta corrida: si el gate `≥6/7` de R2 no se alcanza con
-BM25 puro, la alternativa de embeddings semánticos (H5/`chromadb`,
-diferida en R1.6) volvería a ser relevante — se deja anotado, no se
-reabre esa decisión aquí.
+semántico. `P3` tampoco entra ni en el top-10 — investigado en detalle
+(ver sección siguiente): la causa principal **no es un defecto de
+BM25**, es un error de etiquetado en el fixture set. Esto **no invalida
+R2**: `retrieval_recall_at_5=4/7` ya mejora sobre el punto de partida
+(el juicio ve 5 candidatos en vez de las 29 páginas completas del
+documento en orden secuencial), y `k=10` sube a 6/7 — pero confirma que
+BM25 por sí solo probablemente no alcanza el criterio de éxito (`≥6/7`
+en la fase de JUICIO, que es un umbral distinto y posterior) sin que el
+juicio LLM aporte lo que la recuperación léxica no puede: entender que
+una evidencia parafraseada es relevante aunque no comparta vocabulario
+literal. Nota para una decisión futura de Cesar, no una propuesta de
+esta corrida: si el gate `≥6/7` de R2 no se alcanza con BM25 puro, la
+alternativa de embeddings semánticos (H5/`chromadb`, diferida en R1.6)
+volvería a ser relevante — se deja anotado, no se reabre esa decisión
+aquí.
+
+## Investigación de P3 (2026-08-09, post-medición) — causa raíz encontrada, con dos capas
+
+**Capa 1 (causa principal): el fixture set tiene el `requirement_id` de
+P3 mal etiquetado.** El fixture describe el pasaje de P3 como *"UR3.3.6
+Data retention — 1 año, archivado en ubicación alterna"*, pero le asigna
+`ANNEX11_12`. Verificado contra el catálogo real
+(`requirement_catalog_loader.get_requirement`):
+
+- `ANNEX11_12` (`citation_text`): *"Physical and/or logical controls
+  should be in place to restrict access to computerised system to
+  authorised persons..."* — control de acceso físico/lógico, **tema
+  distinto**.
+- `ANNEX11_17` (`citation_text`): *"Data may be archived. This data
+  should be checked for accessibility, readability and integrity..."*
+  — coincide con el pasaje real de P3.
+
+Confirmado leyendo la página 45 real (1-indexada) de RW-0005: contiene
+literalmente *"UR3.3.6 Data retention time... retaining 1 year of
+historical data locally before it is archived in an alternate location
+for safe keeping"* — es la sección de retención de datos, no de
+seguridad física/lógica. La query construida para P3 buscaba llaves,
+tarjetas, biometría, firewalls — un tema ajeno al de la página. Ningún
+método de recuperación, léxico o semántico, iba a encontrar esa página
+con esa query. **No se corrigió el fixture set en esta corrida** — es
+un artefacto gobernado (`W5V2_RECALL_FIXTURE_SET_DRAFT.md`), corregirlo
+requiere aprobación explícita de Cesar, igual que cualquier otro cambio
+a contenido gobernado.
+
+**Capa 2 (causa secundaria): incluso con el `req_id` corregido a mano
+(`ANNEX11_17`), la página sigue sin entrar al top-10 (rank 12 de 29)**.
+Investigado por qué:
+
+1. **Artefacto de extracción del PDF**: el texto extraído dice
+   literalmente `"UR3.3.6 Data retentio n time"` — un espacio espurio
+   (kerning/fuente del PDF real) parte la palabra "retention" en
+   `"retentio"` + `"n"`. Confirmado con el conteo real de términos del
+   chunk: `term_counts["retention"] == 0`, pese a que la página sí habla
+   de retención — el token completo nunca se forma.
+2. **Dilución por chunk mixto**: el chunk que cubre las páginas 45-46
+   (736 tokens) mezcla la sección de retención con Historian, Audit
+   Trail y Critical Data Records en el mismo bloque de
+   `build_page_chunks()` — el conteo de términos relevantes
+   (`term_counts["archived"] == 3`) queda diluido frente a chunks más
+   homogéneos temáticamente, que puntúan más alto en BM25.
+
+**Conclusión**: el punto ciego de P3 es una combinación de (a) un error
+de etiquetado preexistente en el fixture set, no introducido por R2, y
+(b) BM25 sin stemming siendo sensible a un artefacto de extracción de
+PDF que también preexistía. Ninguno de los dos es un defecto de diseño
+de R2 en sí — son hallazgos de datos/gobernanza, registrados para
+decisión de Cesar, no corregidos aquí sin autorización.
 
 ## Por qué R2 (recordatorio del problema)
 
@@ -276,12 +329,20 @@ PDF real (mismo texto que ya usa `evaluate_chunked()` hoy).
 
 ## Pendiente de decisión de Cesar (siguiente paso)
 
-1. `retrieval_recall_at_5=4/7` — ¿es suficiente para pasar a la fase de
-   JUICIO (con `PILOT_EXECUTION` nueva) tal cual, o Cesar quiere primero
-   investigar por qué P3 no aparece ni en el top-10 antes de avanzar?
-2. La fase de JUICIO (LLM sobre los top-k) sigue sin autorizar —
+1. ~~Investigar por qué P3 no aparece ni en el top-10~~ — **INVESTIGADO**
+   (ver sección arriba): error de etiquetado del fixture set (`req_id`
+   debería ser `ANNEX11_17`, no `ANNEX11_12`) + artefacto de extracción
+   de PDF (espacio espurio en "retention"). Ninguno corregido todavía.
+2. ¿Autorizar corregir el `req_id` de P3 en
+   `W5V2_RECALL_FIXTURE_SET_DRAFT.md` (`ANNEX11_12` → `ANNEX11_17`)?
+   Es contenido gobernado — requiere aprobación explícita antes de
+   tocarlo, igual que cualquier otro artefacto de esa clase.
+3. `retrieval_recall_at_5=4/7` (medido con el error de etiquetado
+   todavía presente) — ¿es suficiente para pasar a la fase de JUICIO tal
+   cual, o Cesar prefiere corregir P3 primero y re-medir?
+4. La fase de JUICIO (LLM sobre los top-k) sigue sin autorizar —
    requiere su propia `PILOT_EXECUTION` firmada, no cubierta por esta
    corrida.
-3. Si más adelante el gate `≥6/7` no se alcanza con BM25 puro en la
+5. Si más adelante el gate `≥6/7` no se alcanza con BM25 puro en la
    fase de juicio: evaluar retomar la alternativa de embeddings
    semánticos (diferida, no reabierta en esta corrida).
