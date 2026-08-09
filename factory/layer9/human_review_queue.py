@@ -71,6 +71,61 @@ def enqueue(rc_id: str, project_id: str, summary: dict) -> dict:
     return entry
 
 
+def enqueue_finding_for_review(*, run_id: str, requirement_id: str, document_id: str,
+                                page: int | None, evidence_quote: str, conclusion: str,
+                                review_flags: list[str], agent_id: str) -> dict:
+    """R1.8 (2026-08-09, docs_plan/R1_CIERRE_Y_PREP_R2.md): despacha un
+    finding con conclusion SUPPORTING_EVIDENCE_UNDER_REVIEW a la MISMA cola
+    de revisión humana que ya usan los Release Candidates -- mismo almacén
+    append-only, mismo locking, mismo evento de auditoría por escritura.
+
+    No es un Release Candidate real; usa un item_id sintético
+    ('finding-{run_id}-{requirement_id}') en el campo 'rc_id' para
+    reutilizar list_pending()/mark_reviewed() sin reescribirlos -- ambos
+    solo requieren ese campo + 'status', son agnósticos al tipo de
+    contenido. 'entry_type' distingue esta clase de entrada de un RC real
+    para cualquier consumidor (UI, reporte) que necesite filtrar.
+
+    Nunca cambia la conclusion ni la promueve -- es solo la notificación
+    de que hay evidencia observada, anclada, que necesita confirmación
+    humana (CLAUDE.md: sin declaración de cumplimiento por el sistema)."""
+    item_id = f"finding-{run_id}-{requirement_id}"
+    entry = {
+        "rc_id": item_id,
+        "entry_type": "finding_review",
+        "project_id": document_id,
+        "enqueued_at": _ts(),
+        "status": "pending",
+        "summary": {
+            "run_id": run_id,
+            "requirement_id": requirement_id,
+            "document_id": document_id,
+            "page": page,
+            "evidence_quote": evidence_quote,
+            "conclusion": conclusion,
+            "review_flags": review_flags,
+            "agent_id": agent_id,
+        },
+    }
+    REVIEW_QUEUE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = REVIEW_QUEUE_FILE.with_suffix(".lock")
+    with open(lock_path, "a") as lock_fh:
+        fcntl.flock(lock_fh, fcntl.LOCK_EX)
+        try:
+            with open(REVIEW_QUEUE_FILE, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        finally:
+            fcntl.flock(lock_fh, fcntl.LOCK_UN)
+
+    write_event("finding_enqueued_for_review", document_id, {
+        "rc_id": item_id,
+        "requirement_id": requirement_id,
+        "run_id": run_id,
+        "conclusion": conclusion,
+    })
+    return entry
+
+
 def list_pending() -> list[dict]:
     """Retorna los RCs con status='pending'."""
     return [e for e in _read_all() if e.get("status") == "pending"]

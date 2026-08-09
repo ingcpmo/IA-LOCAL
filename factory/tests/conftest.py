@@ -102,3 +102,22 @@ def isolated_workspaces(tmp_path, monkeypatch, isolated_audit):
     monkeypatch.setattr(cr, "WORKSPACES_BASE", ws_base)
     monkeypatch.setattr(cr, "RUNTIME_CONFIG", runtime_cfg)
     yield ws_base, runtime_cfg
+
+
+@pytest.fixture(autouse=True)
+def isolated_review_queue(tmp_path, monkeypatch):
+    """R1.8 (2026-08-09): chunked_engine.evaluate_chunked() puede encolar
+    findings SUPPORTING_EVIDENCE_UNDER_REVIEW en factory/layer9/
+    review_queue.jsonl (real, gobernanza) durante CUALQUIER test que
+    ejercite el pipeline verificado -- no solo los tests de
+    human_review_queue explicitos. Autouse (no opt-in) para que ningun
+    test, presente o futuro, contamine la cola real con hallazgos
+    sinteticos. test_rc_approval_idempotency.py ya redirige
+    REVIEW_QUEUE_FILE por su cuenta (isolated_rc); este fixture no
+    interfiere -- el ultimo monkeypatch aplicado gana, ambos apuntan a
+    tmp_path."""
+    import factory.layer9.human_review_queue as hrq
+
+    queue_file = tmp_path / "review_queue_test.jsonl"
+    monkeypatch.setattr(hrq, "REVIEW_QUEUE_FILE", queue_file)
+    yield queue_file

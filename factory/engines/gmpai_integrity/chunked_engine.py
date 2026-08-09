@@ -1742,6 +1742,24 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 "chunks_review_pending": conclusion.chunks_review_pending,
                 "review_flags": list(conclusion.review_flags),
             }
+            # R1.8 (2026-08-09, docs_plan/R1_CIERRE_Y_PREP_R2.md): hallazgo
+            # abierto de R1.7 -- SUPPORTING_EVIDENCE_UNDER_REVIEW llegaba
+            # hasta aqui como campo consultable, pero nada lo despachaba a
+            # un humano. Se encola en el camino de ESCRITURA del run (aqui,
+            # no en un GET), en la misma cola que ya usan los Release
+            # Candidates. Nunca cambia `conclusion` ni la promueve -- solo
+            # la hace visible y accionable. Alcance deliberadamente acotado
+            # a SUPPORTING_EVIDENCE_UNDER_REVIEW (siempre trae evidencia
+            # observada real, marcada por absence_consolidator con
+            # OBSERVED_ONLY_UNVERIFIED) -- EVALUATION_INCOMPLETE queda
+            # fuera: cubre motivos heterogeneos (D no evaluado, requisito
+            # duplicado, excepcion de consolidacion) que no siempre
+            # implican evidencia real esperando revision, y ya tienen su
+            # propio registro en governed_exceptions.
+            if conclusion.conclusion == "SUPPORTING_EVIDENCE_UNDER_REVIEW":
+                _dispatch_review_finding(run_id, req_id, documento, agent_id,
+                                          verified_records_by_req.get(req_id, []),
+                                          list(conclusion.review_flags), governed_exceptions)
 
     result = {
         "run_id": run_id,
@@ -1830,6 +1848,38 @@ def _persist_validation_evidence(result: dict, chunk_executions: list[dict], run
             "validation_evidence_error": f"{type(e).__name__}: {e}",
             "golden_dataset_eligible": False,
         }
+
+
+def _dispatch_review_finding(run_id: str, req_id: str, documento: str, agent_id: str,
+                              records: list[dict], review_flags: list[str],
+                              governed_exceptions: list[dict]) -> None:
+    """R1.8: encola el primer registro verificado 'observed' del requisito
+    en la cola de revision humana (factory/layer9/human_review_queue.py).
+    Ante fallo de encolado (I/O, lock): NUNCA tumba el run completo (un
+    despacho fallido es un problema de notificacion, no invalida la
+    conclusion ya calculada) PERO tampoco se traga el error en silencio --
+    se registra en governed_exceptions (mismo patron que el resto de esta
+    funcion), visible en el resultado final."""
+    observed = next(
+        (r for r in records if (r.get("llm_output") or {}).get("chunk_observation") == "observed"),
+        None,
+    )
+    if observed is None:
+        return
+    try:
+        from factory.layer9.human_review_queue import enqueue_finding_for_review
+        enqueue_finding_for_review(
+            run_id=run_id, requirement_id=req_id, document_id=documento,
+            page=observed["llm_output"].get("evidence_page"),
+            evidence_quote=observed["llm_output"].get("evidence_quote", ""),
+            conclusion="SUPPORTING_EVIDENCE_UNDER_REVIEW",
+            review_flags=review_flags, agent_id=agent_id,
+        )
+    except Exception as exc:  # noqa: BLE001 -- ver docstring: no bloqueante, pero registrado
+        governed_exceptions.append({
+            "req_id": req_id, "stage": "review_queue_dispatch",
+            "exception": type(exc).__name__, "detail": str(exc),
+        })
 
 
 def _write_audit_event(result: dict) -> None:
