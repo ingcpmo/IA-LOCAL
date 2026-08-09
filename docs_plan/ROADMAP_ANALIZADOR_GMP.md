@@ -599,20 +599,29 @@ sin fallos atribuibles.
 
 ## R2 — Localización de evidencia por recuperación determinista (la apuesta)
 
-**PREPARACIÓN EN CURSO (2026-08-09)**: diseño detallado completo en
-`docs_plan/R2_DESIGN_DETALLADO.md` — módulo
-`factory/regulatory/retrieval/` (bm25/indexer/query_builder/retriever),
-reutiliza `chunked_engine.build_page_chunks()` (no el chunking de
-`knowledge/retriever.py`, que pierde el número de página), query
+**IMPLEMENTADO Y MEDIDO (2026-08-09)**: diseño completo en
+`docs_plan/R2_DESIGN_DETALLADO.md`, código real en
+`factory/regulatory/retrieval/` (`bm25.py`/`indexer.py`/
+`query_builder.py`/`retriever.py`, BM25 Okapi stdlib puro, cero
+dependencias nuevas — decisión de Cesar), 13 tests
+(`factory/tests/test_r2_retrieval.py`). Reutiliza
+`chunked_engine.build_page_chunks()` (no el chunking de
+`knowledge/retriever.py`, que pierde el número de página). Query
 construida desde `citation_text`+`evidence_min_criteria`+
-`requirement_terms.yaml` (nunca `weak_keywords` solas), métrica de
-recuperación pura (cero LLM) contra el fixture 7P+2N. **Decisión de
-dependencia RESUELTA (Cesar, 2026-08-09)**: BM25 (Okapi) implementado a
-mano con la librería estándar (`re`/`collections.Counter`/`math`) — cero
-paquetes nuevos, se descartó `chromadb` y también `scikit-learn`/
-`rank_bm25`. **NO implementado todavía** — pendiente de autorizar la
-implementación real. La fase de JUICIO (LLM sobre los top-k) sigue
-bloqueada sin `PILOT_EXECUTION` nueva firmada.
+`requirement_terms.yaml` (nunca `weak_keywords` solas).
+
+**Resultado real de la medición de recuperación pura (cero LLM), contra
+el corpus real (RW-0005/RW-0011/RW-0012), verificado con tests, no
+estimado**: `retrieval_recall_at_5 = 4/7` (P1/P4/P6/P7 sí; P2/P3/P5 no),
+`retrieval_recall_at_10 = 6/7` (solo P3 sigue fuera). Ambos negativos
+(N1/ANNEX11_4, N2/tabla de contenidos) correctamente fuera del top-5.
+Detalle completo, tabla por caso y lectura honesta (P5 sigue siendo el
+punto ciego — BM25 es léxico, igual que la vieja heurística, mismo
+problema que R1.6/R1.7 ya documentó): `docs_plan/R2_DESIGN_DETALLADO.md`.
+
+**Pendiente de decisión de Cesar**: si `4/7`@top-5 alcanza para pasar a
+la fase de JUICIO (con `PILOT_EXECUTION` nueva, todavía sin firmar) o si
+conviene investigar primero por qué P3 no aparece ni en el top-10.
 
 **Objetivo:** invertir la arquitectura de búsqueda. La lección de los
 pilotos (`docs_plan/W5V2_RECALL_EXPERIMENTS_RESULTADOS.md`, H1-H4): el

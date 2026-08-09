@@ -223,12 +223,16 @@ append-only, Part 11).
   (`bc1d8b0`, 2026-08-09). `factory/tests/conftest.py` gana un fixture
   autouse (`isolated_review_queue`) para que ningún test contamine la
   cola real.
-- **R2**: preparación en curso — diseño detallado completo
-  (`docs_plan/R2_DESIGN_DETALLADO.md`), NO implementado. Dependencia
-  RESUELTA (Cesar, 2026-08-09): BM25 (Okapi) a mano con stdlib, sin
-  `chromadb` ni ningún paquete nuevo. Pendiente de autorizar la
-  implementación real. La fase de juicio LLM sigue bloqueada sin
-  `PILOT_EXECUTION` nueva firmada.
+- **R2**: **IMPLEMENTADO Y MEDIDO** (2026-08-09) —
+  `factory/regulatory/retrieval/` (BM25 Okapi, stdlib puro, sin
+  `chromadb` ni ningún paquete nuevo). `retrieval_recall_at_5 = 4/7`
+  sobre el fixture real (medido, no estimado), `retrieval_recall_at_10 =
+  6/7`. Ambos negativos correctamente fuera del top-5. **P5 sigue sin
+  aparecer en el top-5** — BM25 es léxico igual que la vieja heurística
+  `_is_topically_relevant`, mismo punto ciego que R1.6/R1.7 ya
+  documentó (evidencia parafraseada, sin vocabulario gobernado literal).
+  Detalle: `docs_plan/R2_DESIGN_DETALLADO.md`. La fase de JUICIO LLM
+  sigue bloqueada sin `PILOT_EXECUTION` nueva firmada.
 - **R3-R5**: sin empezar, dependen de que R2 alcance ≥6/7 (gate
   bloqueante).
 

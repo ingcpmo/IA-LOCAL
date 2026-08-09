@@ -1,10 +1,62 @@
 # R2 — Diseño detallado: recuperación determinista de evidencia
 
-**Fecha:** 2026-08-09. **Estado:** SOLO DISEÑO. No implementado, no ejecutado.
+**Fecha:** 2026-08-09. **Estado:** IMPLEMENTADO (`factory/regulatory/retrieval/`)
+Y MEDIDO contra el fixture real. Autorizado por Cesar tras resolver la
+dependencia (BM25 stdlib, sin `chromadb`).
 **Alcance autorizado:** `docs_plan/R1_CIERRE_Y_PREP_R2.md` sección 4 —
 diseño + medición de recuperación pura (cero LLM). La fase de JUICIO
-(recall real con LLM sobre los top-k) queda fuera, requiere
+(recall real con LLM sobre los top-k) sigue fuera, requiere
 `PILOT_EXECUTION` nueva firmada por Cesar.
+
+## Resultado real de la medición de recuperación pura (2026-08-09, cero llamadas LLM)
+
+Corrido contra el corpus real (`GMPAI/source/Rockwell/`, mismos 3
+documentos de los 7 positivos del fixture: RW-0005, RW-0011, RW-0012),
+`k=5` (propuesto) y `k=10` para contexto. Verificado con tests reales
+(`factory/tests/test_r2_retrieval.py`), no estimado.
+
+| # | documento | requirement_id | página real (1-idx) | rank del chunk que la cubre | en top-5 | en top-10 |
+|---|---|---|---|---|---|---|
+| P1 | RW-0005 | `21_CFR_11.10(e)` | 46 | 1 | ✅ | ✅ |
+| P2 | RW-0005 | `21_CFR_11.10(g)` | 40 | 6 | ❌ | ✅ |
+| P3 | RW-0005 | `ANNEX11_12` | 45 | 20 | ❌ | ❌ |
+| P4 | RW-0011 | `ALCOA_ATTRIBUTABLE` | 13 | 2 | ✅ | ✅ |
+| P5 | RW-0005 | `ALCOA_CONTEMPORANEOUS` | 46 | 9 | ❌ | ✅ |
+| P6 | RW-0011 | `21_CFR_211.68(b)` | 13 | 2 | ✅ | ✅ |
+| P7 | RW-0012 | `21_CFR_211.68(b)` | 14 | 2 | ✅ | ✅ |
+
+```
+retrieval_recall_at_5  = 4/7
+retrieval_recall_at_10 = 6/7
+```
+
+Negativos: **N1** (GAMP5 en lista de referencias numeradas, p.2 real de
+RW-0005) rank 8 — fuera del top-5. **N2** (mención en tabla de
+contenidos, p.4 real de RW-0005) rank 15 — fuera del top-5. Ambos
+negativos se comportan correctamente: BM25 no los prioriza para sus
+respectivos `requirement_id`.
+
+**Lectura honesta, no maquillada**: P5 (el caso central de R1.6/R1.7)
+NO entra en el top-5 — mismo punto ciego, medido de forma independiente.
+La causa es la misma que ya se documentó ahí: la evidencia real que un
+evaluador (humano o modelo) reconocería como relevante no repite el
+vocabulario gobernado (`citation_text`/`evidence_min_criteria`/
+`requirement_terms.yaml`) de forma literal — y BM25, igual que la vieja
+heurística `_is_topically_relevant`, es un método **léxico**, no
+semántico. `P3` tampoco entra ni en el top-10 (sin investigar la causa
+específica en esta corrida — anotado como hallazgo abierto). Esto **no
+invalida R2**: `retrieval_recall_at_5=4/7` ya mejora sobre el punto de
+partida (el juicio ve 5 candidatos en vez de las 29 páginas completas
+del documento en orden secuencial), y `k=10` sube a 6/7 — pero confirma
+que BM25 por sí solo probablemente no alcanza el criterio de éxito
+(`≥6/7` en la fase de JUICIO, que es un umbral distinto y posterior) sin
+que el juicio LLM aporte lo que la recuperación léxica no puede: entender
+que una evidencia parafraseada es relevante aunque no comparta
+vocabulario literal. Nota para una decisión futura de Cesar, no una
+propuesta de esta corrida: si el gate `≥6/7` de R2 no se alcanza con
+BM25 puro, la alternativa de embeddings semánticos (H5/`chromadb`,
+diferida en R1.6) volvería a ser relevante — se deja anotado, no se
+reabre esa decisión aquí.
 
 ## Por qué R2 (recordatorio del problema)
 
@@ -211,14 +263,25 @@ PDF real (mismo texto que ya usa `evaluate_chunked()` hoy).
   intenta ese atajo).
 - Idempotencia de indexación: mismo `document_sha256` no reindexa.
 
-## Pendiente de decisión de Cesar antes de implementar
+## Estado de las decisiones (actualizado 2026-08-09)
 
-1. ~~¿Autorizar `chromadb`...?~~ — **RESUELTO 2026-08-09**: TF-IDF/BM25,
-   stdlib puro, sin dependencia nueva (ver arriba).
-2. Confirmar `k` (propuesto: 5, mismo orden de magnitud que
-   `knowledge/retriever.py` usa hoy con `n_results=2`, ajustado al alza
-   porque aquí no hay un LLM conversacional filtrando después).
-3. Autorizar la implementación real (`bm25.py`/indexer/query_builder/
-   retriever + tests) como corrida separada, con la medición de
-   recuperación pura sobre RW-0005/RW-0011 (documentos de los 7
-   positivos) como su entregable — sin tocar el juicio LLM todavía.
+1. ~~¿Autorizar `chromadb`...?~~ — **RESUELTO**: TF-IDF/BM25, stdlib
+   puro, sin dependencia nueva.
+2. ~~Confirmar `k`~~ — **usado k=5 como propuesto** para el reporte
+   principal (`retrieval_recall_at_5`); `k=10` corrido en paralelo solo
+   como contexto adicional, no reemplaza el criterio.
+3. ~~Autorizar la implementación real~~ — **IMPLEMENTADO Y MEDIDO**
+   (`factory/regulatory/retrieval/{bm25,indexer,query_builder,retriever}.py`,
+   `factory/tests/test_r2_retrieval.py`, 13 tests). Resultado real arriba.
+
+## Pendiente de decisión de Cesar (siguiente paso)
+
+1. `retrieval_recall_at_5=4/7` — ¿es suficiente para pasar a la fase de
+   JUICIO (con `PILOT_EXECUTION` nueva) tal cual, o Cesar quiere primero
+   investigar por qué P3 no aparece ni en el top-10 antes de avanzar?
+2. La fase de JUICIO (LLM sobre los top-k) sigue sin autorizar —
+   requiere su propia `PILOT_EXECUTION` firmada, no cubierta por esta
+   corrida.
+3. Si más adelante el gate `≥6/7` no se alcanza con BM25 puro en la
+   fase de juicio: evaluar retomar la alternativa de embeddings
+   semánticos (diferida, no reabierta en esta corrida).

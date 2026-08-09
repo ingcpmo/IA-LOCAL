@@ -37,6 +37,10 @@ remediation_packages/**/state.json
 # Checkpoints de motores (p.ej. engines/gmpai_integrity/.checkpoints_autoclave_urs/)
 **/.checkpoints_*/
 
+# R2: índice BM25 por documento (regenerable desde el PDF real, sha256 en
+# el nombre de archivo -- mismo criterio que los checkpoints de arriba)
+regulatory/retrieval_index/
+
 # Config local de Claude Code dentro de deployments
 deployments/*/.claude/
 
