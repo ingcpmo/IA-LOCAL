@@ -279,7 +279,22 @@ def verify_sufficiency(
         detail = {"contract_violations": violations}
         return "NOT_ASSESSABLE", f"contrato de criterion_assessments violado: {len(violations)} problema(s)", detail
 
-    real_criteria = set(ordered_real_criteria)
+    confirmed_met, confirmed_not_met, confirmed_not_assessable_individual, discarded_unanchored = (
+        _classify_criteria_for_chunk(criterion_assessments, source_text)
+    )
+    return _finalize_sufficiency(ordered_real_criteria, confirmed_met, confirmed_not_met,
+                                  confirmed_not_assessable_individual, discarded_unanchored)
+
+
+def _classify_criteria_for_chunk(
+    criterion_assessments: list, source_text: str,
+) -> tuple[set, set, set, list]:
+    """Clasifica los criterios de UN chunk ya validado a nivel de contrato
+    (ver _find_contract_violations, corrida ANTES de llamar esto). Extraido
+    de verify_sufficiency() (R2.1 Opcion C, 2026-08-10) para que el mismo
+    criterio de anclaje se reutilice tanto para un solo chunk
+    (verify_sufficiency) como para agregar varios (verify_sufficiency_aggregated)
+    -- nunca reimplementado dos veces."""
     confirmed_met: set = set()
     confirmed_not_met: set = set()
     confirmed_not_assessable_individual: set = set()
@@ -299,6 +314,18 @@ def verify_sufficiency(
             else:
                 confirmed_met.add(text)
 
+    return confirmed_met, confirmed_not_met, confirmed_not_assessable_individual, discarded_unanchored
+
+
+def _finalize_sufficiency(
+    ordered_real_criteria: list, confirmed_met: set, confirmed_not_met: set,
+    confirmed_not_assessable_individual: set, discarded_unanchored: list,
+) -> tuple[str, str, dict]:
+    """Reglas finales de decision, identicas a las que verify_sufficiency()
+    ya aplicaba para un solo chunk (R2.1 Opcion C: extraidas sin cambiar su
+    logica, para que un solo chunk y varios chunks agregados usen
+    exactamente el mismo criterio de cierre)."""
+    real_criteria = set(ordered_real_criteria)
     covered = confirmed_met | confirmed_not_met | confirmed_not_assessable_individual | set(discarded_unanchored)
     missing = sorted(real_criteria - covered)
     detail = {
@@ -316,6 +343,102 @@ def verify_sufficiency(
     if not confirmed_met:
         return "NOT_MET", "ningun criterio minimo confirmado con anclaje real", detail
     return "PARTIALLY_MET", f"{len(confirmed_met)}/{len(real_criteria)} criterios confirmados", detail
+
+
+def verify_sufficiency_aggregated(
+    requirement_id: str, per_chunk: list[tuple[list | None, str]],
+) -> tuple[str, str, dict]:
+    """R2.1 Opcion C (2026-08-10, docs_plan/R2_1_C_DISENO_AGREGACION_D.md):
+    version agregada de verify_sufficiency() -- mismo contrato de retorno
+    (d_sufficiency, d_reason, detail), pero el input es la evidencia de
+    TODOS los chunks de una misma unidad (documento + requirement_id), no
+    uno solo. verify_sufficiency() (un solo chunk) queda intacta y sigue
+    siendo el camino usado internamente aqui, chunk por chunk, antes de
+    combinar -- nunca se reimplementa el anclaje ni la validacion de
+    contrato.
+
+    `per_chunk`: lista de (criterion_assessments, chunk_source_text), un
+    par por cada chunk real que la unidad evaluo (incluidos los que no
+    aportaron evidencia -- se excluyen naturalmente al combinar, nunca se
+    filtran a mano antes de llamar esto).
+
+    Reglas de combinacion (nuevas, explicitas, nunca aflojan el criterio
+    de anclaje de cada chunk individual):
+    - Un chunk cuyo criterion_assessments viola el contrato
+      (_find_contract_violations) se EXCLUYE de la agregacion -- no
+      invalida a los demas chunks. Si TODOS los chunks violan contrato (o
+      no hay chunks), cae a NOT_ASSESSABLE explicito.
+    - Un criterio queda confirmado MET si ALGUN chunk lo ancla
+      (verify_anchor PASS contra el texto de ESE chunk).
+    - CONTRADICCION (dura, nunca resuelta en silencio): un criterio con
+      MET anclado en un chunk Y NOT_MET en otro se mueve a un set
+      `contradicted` -- fuerza NOT_ASSESSABLE con
+      d_reason='contradiccion real entre chunks en al menos un criterio'
+      y el detalle de que criterios contradijeron. Mismo principio que
+      la deteccion de contradiccion ya existente a nivel de
+      estado/checkpoint (chunked_engine.py).
+    - Sin contradiccion: mismas reglas finales de _finalize_sufficiency
+      (missing -> NOT_ASSESSABLE; incertidumbre en algun criterio ->
+      NOT_ASSESSABLE; todos MET -> MET; ninguno MET -> NOT_MET; mezcla ->
+      PARTIALLY_MET)."""
+    from factory.regulatory.requirement_catalog.requirement_catalog_loader import (
+        CatalogValidationError, get_requirement,
+    )
+    try:
+        entry = get_requirement(requirement_id)
+    except CatalogValidationError:
+        return "NOT_ASSESSABLE", f"requirement_id desconocido en el catalogo: {requirement_id!r}", {}
+
+    ordered_real_criteria = list(entry.get("evidence_min_criteria") or [])
+    if not ordered_real_criteria:
+        return "NOT_ASSESSABLE", f"{requirement_id} no tiene evidence_min_criteria en el catalogo", {}
+
+    all_met: set = set()
+    all_not_met: set = set()
+    all_not_assessable: set = set()
+    all_discarded_unanchored: list = []
+    excluded_chunks_contract_violations: list = []
+    valid_chunk_count = 0
+
+    for criterion_assessments, source_text in per_chunk:
+        if criterion_assessments is None:
+            continue
+        violations = _find_contract_violations(criterion_assessments, ordered_real_criteria)
+        if violations:
+            excluded_chunks_contract_violations.append(violations)
+            continue
+        valid_chunk_count += 1
+        met, not_met, not_assessable, discarded = _classify_criteria_for_chunk(
+            criterion_assessments, source_text)
+        all_met |= met
+        all_not_met |= not_met
+        all_not_assessable |= not_assessable
+        all_discarded_unanchored.extend(discarded)
+
+    if valid_chunk_count == 0:
+        detail = {"excluded_chunks_contract_violations": excluded_chunks_contract_violations}
+        return ("NOT_ASSESSABLE",
+                "ningun chunk de la unidad tuvo criterion_assessments validos para agregar", detail)
+
+    contradicted = sorted(all_met & all_not_met)
+    if contradicted:
+        detail = {"contradicted": contradicted, "met": sorted(all_met), "not_met": sorted(all_not_met)}
+        return ("NOT_ASSESSABLE",
+                f"contradiccion real entre chunks en {len(contradicted)} criterio(s): "
+                "MET anclado en un chunk y NOT_MET en otro -- nunca resuelto en silencio",
+                detail)
+
+    # Un criterio NOT_ASSESSABLE/no-anclado en UN chunk no debe contar como
+    # incierto si OTRO chunk ya lo confirmo (MET anclado o NOT_MET real) --
+    # sin esta resta, la union ingenua de "not_assessable" de todos los
+    # chunks incluiria criterios ya resueltos en otro lado, anulando el
+    # proposito mismo de agregar.
+    resolved = all_met | all_not_met
+    final_not_assessable = all_not_assessable - resolved
+    final_discarded_unanchored = [c for c in all_discarded_unanchored if c not in resolved]
+
+    return _finalize_sufficiency(ordered_real_criteria, all_met, all_not_met,
+                                  final_not_assessable, final_discarded_unanchored)
 
 
 def verify_evidence_abcd(

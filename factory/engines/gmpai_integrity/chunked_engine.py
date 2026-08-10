@@ -1152,6 +1152,16 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
 
     by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
     cp_label_by_req = {cp["req_id"]: cp["label"] for cp in meta["checkpoints"]}
+    # R2.1 Opcion C (docs_plan/R2_1_C_DISENO_AGREGACION_D.md, 2026-08-10):
+    # criterion_assessments crudos de CADA chunk que respondio para un
+    # req_id, sin filtrar por estado/anclaje -- alimenta
+    # sev.verify_sufficiency_aggregated() al cerrar cada requisito, para
+    # que D combine criterios confirmados en DISTINTOS chunks en vez de
+    # depender de un solo chunk "ganador" (ver best = candidates[0] mas
+    # abajo). Vive fuera de by_req a proposito: by_req solo lleva
+    # candidatos con evidencia positiva anclada, pero un chunk sin
+    # evidencia positiva puede igual haber clasificado criterios reales.
+    criterion_assessments_by_req: dict[str, list[tuple]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
 
     verified_records_by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
     # Reanudacion verificada (2026-07-27): restaurar los registros verificados
@@ -1178,6 +1188,9 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         for cand in ce.get("_by_req_candidates", []):
             cand["candidate"].setdefault("has_evidence", True)
             by_req.setdefault(cand["req_id"], []).append(cand["candidate"])
+        for item in ce.get("_criterion_assessments_for_d", []):
+            criterion_assessments_by_req.setdefault(item["req_id"], []).append(
+                (item["criterion_assessments"], item["chunk_text"]))
 
     # Plan de ejecucion: primero los chunks a REEMPLAZAR (reintento dirigido
     # de fallos tecnicos, 2026-07-28), luego los que faltan por ejecutar. Un
@@ -1260,6 +1273,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         finished_at = datetime.now(timezone.utc).isoformat()
 
         by_req_candidates = []
+        criterion_assessments_for_d_this_chunk = []
         responded_req_ids: set = set()
         if chunk_result and isinstance(chunk_result.get("checkpoints"), list):
             for entry in chunk_result["checkpoints"]:
@@ -1267,6 +1281,17 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     continue
                 req_id = entry["req_id"]
                 responded_req_ids.add(req_id)
+                # R2.1 Opcion C: se captura ANTES de cualquier `continue` de
+                # estado (evidencia_insuficiente incluido) -- un chunk sin
+                # evidencia positiva para la cita principal puede igual
+                # haber clasificado criterios reales, y esa clasificacion
+                # cuenta para la agregacion de D del requisito.
+                criterion_assessments_by_req.setdefault(req_id, []).append(
+                    (entry.get("criterion_assessments"), chunk["text"]))
+                criterion_assessments_for_d_this_chunk.append({
+                    "req_id": req_id, "criterion_assessments": entry.get("criterion_assessments"),
+                    "chunk_text": chunk["text"],
+                })
                 estado = entry.get("estado") if entry.get("estado") in _VALID_ESTADOS else "evidencia_insuficiente"
                 evidencia = str(entry.get("evidencia_exacta") or "")
                 anchored = _is_anchored(evidencia, chunk["text"]) if evidencia else False
@@ -1359,6 +1384,17 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 candidate["d_detail"] = abcd.d_detail
                 candidate["substantive_evidence_accepted"] = abcd.substantive_evidence_accepted
                 candidate["operational_result"] = abcd.operational_result
+                # R2.1 Opcion C: A/B/C crudos del candidato, para poder
+                # recombinar con el D AGREGADO del requisito (ver
+                # verify_sufficiency_aggregated mas abajo) sin re-evaluar
+                # anclaje/fuente/relevancia semantica -- esos tres siguen
+                # siendo propiedades legitimas de ESTE chunk/cita, nunca se
+                # agregan entre chunks.
+                candidate["a_anchor"] = abcd.a_anchor
+                candidate["a_match_type"] = abcd.a_match_type
+                candidate["b_source"] = abcd.b_source
+                candidate["c_semantic"] = abcd.c_semantic
+                candidate["c_flags"] = abcd.c_flags
 
                 by_req.setdefault(req_id, []).append(candidate)
                 by_req_candidates.append({"req_id": req_id, "candidate": candidate})
@@ -1419,6 +1455,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             "raw_response_full_path": raw_response_full_ref["path"] if raw_response_full_ref else None,
             "raw_response_full_sha256": raw_response_full_ref["sha256"] if raw_response_full_ref else None,
             "_by_req_candidates": by_req_candidates,
+            "_criterion_assessments_for_d": criterion_assessments_for_d_this_chunk,
         }
 
         if replace_at is None:
@@ -1629,12 +1666,41 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         if not_observed:
             brecha += (f" ({len(not_observed)} seccion(es) adicionales no trataron este checkpoint — "
                        "not_observed_in_chunk, no cuentan como evidencia en contra.)")
+
+        # R2.1 Opcion C (docs_plan/R2_1_C_DISENO_AGREGACION_D.md,
+        # 2026-08-10): D ya no viene del candidato "ganador" en aislado --
+        # se agrega entre TODOS los chunks que respondieron para este
+        # requisito (criterion_assessments_by_req), reutilizando
+        # verify_sufficiency() chunk por chunk sin cambiar su logica. A/B/C
+        # siguen siendo del candidato ganador (cita/anclaje/relevancia son
+        # propiedades de ESA cita, no se agregan). Si `best` viene de un
+        # checkpoint reanudado de antes de esta fase (sin a_anchor/
+        # b_source/c_semantic guardados), d_sufficiency/etc. quedan None
+        # explicito -- nunca inventado -- igual que el comportamiento
+        # previo para candidatos historicos.
+        if "a_anchor" in best:
+            agg_d_status, agg_d_reason, agg_d_detail = sev.verify_sufficiency_aggregated(
+                req_id, criterion_assessments_by_req.get(req_id, []),
+            )
+            abcd_aggregated = sev.ABCDResult(
+                a_anchor=best["a_anchor"], a_match_type=best.get("a_match_type", ""),
+                b_source=best["b_source"], c_semantic=best["c_semantic"], c_flags=best.get("c_flags", []),
+                d_sufficiency=agg_d_status, d_reason=agg_d_reason, d_detail=agg_d_detail,
+            )
+            d_sufficiency = abcd_aggregated.d_sufficiency
+            substantive_evidence_accepted = abcd_aggregated.substantive_evidence_accepted
+            operational_result = abcd_aggregated.operational_result
+        else:
+            d_sufficiency = best.get("d_sufficiency")
+            substantive_evidence_accepted = best.get("substantive_evidence_accepted")
+            operational_result = best.get("operational_result")
+
         # W5 V2 Fase F (cableado de D a decision): un estado positivo cuya
         # evidencia sustantiva no fue aceptada (D != MET, incl. None por
         # checkpoint reanudado pre-fase) queda NOT_SUPPORTED -- nunca se
         # presenta como sustentado (revision_humana_requerida ya es True).
         substantive_support = _compute_substantive_support(
-            best["estado"], best.get("substantive_evidence_accepted"),
+            best["estado"], substantive_evidence_accepted,
         )
         findings.append(Finding(
             sistema=sistema, documento=documento, version=version, archivo=archivo,
@@ -1646,13 +1712,13 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             confianza="media", agente_responsable=agent_id, revision_humana_requerida=True,
             agent_version=agent_version, prompt_version=meta["prompt_version"],
             model=model_name, verifier_version=meta["verifier_version"],
-            # W5 V2 Fase F (ampliacion D): propagados desde el candidate
-            # ganador -- ausentes (None) si el candidate viene de un
+            # W5 V2 Fase F (ampliacion D): D agregado entre chunks (R2.1
+            # Opcion C) -- ausentes (None) si el candidate viene de un
             # checkpoint reanudado de un run anterior a esta fase (formato
             # viejo, sin estos campos) -- nunca inventados.
-            d_sufficiency=best.get("d_sufficiency"),
-            substantive_evidence_accepted=best.get("substantive_evidence_accepted"),
-            operational_result=best.get("operational_result"),
+            d_sufficiency=d_sufficiency,
+            substantive_evidence_accepted=substantive_evidence_accepted,
+            operational_result=operational_result,
             substantive_support=substantive_support,
         ))
         finding_by_req[req_id] = findings[-1]
@@ -1799,7 +1865,10 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         "archivo": archivo,
         "total_pages": len(per_unit_text),
         "chunks_total": len(chunks),
-        "chunk_executions": [{k: v for k, v in ce.items() if k != "_by_req_candidates"} for ce in chunk_executions],
+        "chunk_executions": [
+            {k: v for k, v in ce.items() if k not in ("_by_req_candidates", "_criterion_assessments_for_d")}
+            for ce in chunk_executions
+        ],
         "contradictions": contradictions,
         "findings": [f.to_dict() for f in findings],
         "model": model_name,

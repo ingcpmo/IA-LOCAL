@@ -658,6 +658,116 @@ def test_verified_pipeline_real_anchored_citation_is_provisionally_documented(mo
     assert finding["substantive_support"] == "SUPPORTED"
 
 
+# ── R2.1 Opcion C (docs_plan/R2_1_C_DISENO_AGREGACION_D.md, 2026-08-10):
+# D agregado entre chunks, end-to-end via evaluate_chunked() real, no solo
+# la funcion aislada (ya cubierta en test_semantic_evidence_verification.py).
+
+def _d_assessments_subset(met_indices: set[int]) -> list:
+    """criterion_assessments para 21_CFR_11.10(d) donde SOLO los indices en
+    met_indices (1-based) quedan MET (anclados con el texto real del
+    criterio); el resto NOT_ASSESSABLE -- simula un chunk que solo cubre
+    una parte de los criterios reales."""
+    return [
+        {"criterion_index": i + 1, "criterion_text": text,
+         "status": "MET" if (i + 1) in met_indices else "NOT_ASSESSABLE",
+         "evidence_quote": text if (i + 1) in met_indices else "",
+         "evidence_location": "pag X" if (i + 1) in met_indices else "",
+         "justification": "test", "limitations": ""}
+        for i, text in enumerate(_D_CRITERIA_11_10_D)
+    ]
+
+
+def test_verified_pipeline_d_aggregates_criteria_scattered_across_chunks(monkeypatch):
+    """El caso central que motiva la Opcion C: ningun chunk individual real
+    cubre los 5 criterios de 21_CFR_11.10(d), pero entre dos paginas SI --
+    D debe agregar y llegar a MET (antes de este fix, habria quedado
+    NOT_ASSESSABLE porque solo el 'mejor' chunk individual contaba)."""
+    page1_criteria = _D_CRITERIA_11_10_D[:3]
+    page2_criteria = _D_CRITERIA_11_10_D[3:]
+    page1 = f"Introduccion. {_ANCHORED_QUOTE} " + " ".join(page1_criteria) + " Relleno. " * 500
+    page2 = "Seccion siguiente del mismo documento. " + " ".join(page2_criteria) + " Relleno. " * 500
+    pages = [page1, page2]
+
+    responses = [
+        _all_insufficient({"21_CFR_11.10(d)": {
+            "req_id": "21_CFR_11.10(d)", "estado": "cumple",
+            "evidencia_exacta": _ANCHORED_QUOTE, "brecha": "n/a", "recomendacion": "n/a",
+            "criterion_assessments": _d_assessments_subset({1, 2, 3}),
+        }}),
+        _all_insufficient({"21_CFR_11.10(d)": {
+            "req_id": "21_CFR_11.10(d)", "estado": "evidencia_insuficiente",
+            "evidencia_exacta": "", "brecha": "n/a", "recomendacion": "n/a",
+            "criterion_assessments": _d_assessments_subset({4, 5}),
+        }}),
+    ]
+    call_count = {"n": 0}
+
+    def _fake_generate(*a, **k):
+        idx = call_count["n"]
+        call_count["n"] += 1
+        return _ollama_response(responses[idx])
+
+    monkeypatch.setattr(ollama_client, "generate", _fake_generate)
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+    assert len(result["chunk_executions"]) == 2
+
+    finding = next(f for f in result["findings"]
+                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
+    assert finding["d_sufficiency"] == "MET", finding
+    assert finding["substantive_support"] == "SUPPORTED"
+
+
+def test_verified_pipeline_d_contradiction_across_chunks_stays_not_assessable(monkeypatch):
+    """Riesgo explicito del diseno: un criterio MET anclado en un chunk y
+    NOT_MET en otro es una contradiccion real -- D agregado degrada a
+    NOT_ASSESSABLE, nunca se resuelve en silencio a favor de un lado."""
+    page1 = f"Introduccion. {_ANCHORED_QUOTE} " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500
+    page2 = "Seccion contradictoria del mismo documento. " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500
+    pages = [page1, page2]
+
+    contradicted_index = 2  # 1-based
+    assessments_chunk1 = _d_assessments_subset({1, 2, 3, 4, 5})
+    assessments_chunk2 = _d_assessments_subset({1, 3, 4, 5})
+    assessments_chunk2[contradicted_index - 1]["status"] = "NOT_MET"
+    assessments_chunk2[contradicted_index - 1]["evidence_quote"] = ""
+    assessments_chunk2[contradicted_index - 1]["evidence_location"] = ""
+
+    responses = [
+        _all_insufficient({"21_CFR_11.10(d)": {
+            "req_id": "21_CFR_11.10(d)", "estado": "cumple",
+            "evidencia_exacta": _ANCHORED_QUOTE, "brecha": "n/a", "recomendacion": "n/a",
+            "criterion_assessments": assessments_chunk1,
+        }}),
+        _all_insufficient({"21_CFR_11.10(d)": {
+            "req_id": "21_CFR_11.10(d)", "estado": "no_cumple",
+            "evidencia_exacta": "", "brecha": "criterio no cumplido", "recomendacion": "n/a",
+            "criterion_assessments": assessments_chunk2,
+        }}),
+    ]
+    call_count = {"n": 0}
+
+    def _fake_generate(*a, **k):
+        idx = call_count["n"]
+        call_count["n"] += 1
+        return _ollama_response(responses[idx])
+
+    monkeypatch.setattr(ollama_client, "generate", _fake_generate)
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+
+    finding = next(f for f in result["findings"]
+                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
+    assert finding["d_sufficiency"] == "NOT_ASSESSABLE", finding
+    assert finding["substantive_support"] != "SUPPORTED"
+
+
 # ── W5 V2 Fase F: cierre del hueco de verified_conclusions (2026-07-25) ────
 # absence_consolidator decide sobre chunk records y NO conoce D. Sin este
 # cableado, una cita positiva anclada concluia DOCUMENTED_AND_SUPPORTED

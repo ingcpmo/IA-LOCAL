@@ -264,6 +264,148 @@ class TestVerifySufficiency:
         assert status == "NOT_ASSESSABLE"
 
 
+class TestVerifySufficiencyAggregated:
+    """R2.1 Opcion C (docs_plan/R2_1_C_DISENO_AGREGACION_D.md, 2026-08-10):
+    agrega criterion_assessments de VARIOS chunks de una misma unidad antes
+    de decidir D -- verify_sufficiency() (un solo chunk) no cambia su
+    comportamiento (ver TestVerifySufficiency arriba, sigue en verde sin
+    tocarla)."""
+
+    def test_single_chunk_matches_verify_sufficiency_exactly(self):
+        """Con un solo chunk, el resultado agregado debe ser identico al de
+        verify_sufficiency() -- la agregacion de 1 elemento es un no-op."""
+        doc = " ".join(_ACCESS_CRITERIA)
+        assessments = _all_met()
+        single_status, single_reason, single_detail = sev.verify_sufficiency(
+            "21_CFR_11.10(d)", assessments, doc)
+        agg_status, agg_reason, agg_detail = sev.verify_sufficiency_aggregated(
+            "21_CFR_11.10(d)", [(assessments, doc)])
+        assert agg_status == single_status == "MET"
+        assert agg_detail["met"] == single_detail["met"]
+
+    def test_criteria_scattered_across_two_chunks_combine_to_met(self):
+        """El caso central que motiva la Opcion C: ningun chunk individual
+        cubre los 5 criterios, pero entre los dos SI -- P1 en la corrida
+        real solo tuvo un chunk relevante (por eso no se rescata, ver test
+        de abajo); este test prueba que el mecanismo funciona cuando SI hay
+        cobertura distribuida real."""
+        chunk_a_criteria = _ACCESS_CRITERIA[:3]
+        chunk_b_criteria = _ACCESS_CRITERIA[3:]
+        chunk_a_text = " ".join(chunk_a_criteria)
+        chunk_b_text = " ".join(chunk_b_criteria)
+
+        assessments_a = (
+            [_assessment(i + 1, c, "MET", quote=c, location="pag 1") for i, c in enumerate(chunk_a_criteria)]
+            + [_assessment(i + 4, c, "NOT_ASSESSABLE") for i, c in enumerate(chunk_b_criteria)]
+        )
+        assessments_b = (
+            [_assessment(i + 1, c, "NOT_ASSESSABLE") for i, c in enumerate(chunk_a_criteria)]
+            + [_assessment(i + 4, c, "MET", quote=c, location="pag 5") for i, c in enumerate(chunk_b_criteria)]
+        )
+        status, reason, detail = sev.verify_sufficiency_aggregated(
+            "21_CFR_11.10(d)",
+            [(assessments_a, chunk_a_text), (assessments_b, chunk_b_text)],
+        )
+        assert status == "MET", detail
+        assert set(detail["met"]) == set(_ACCESS_CRITERIA)
+
+    def test_p1_real_case_not_rescued_other_chunks_have_nothing_to_add(self):
+        """Caso real de P1 (docs_plan/R2_1_C_DISENO_AGREGACION_D.md sec.4):
+        el chunk 1 confirmo 2 MET/2 NOT_MET/5 NOT_ASSESSABLE de 9 criterios
+        de 21_CFR_11.10(e); los otros 4 chunks reales de esa unidad no
+        mencionaban el audit trail en absoluto (criterion_assessments todo
+        NOT_ASSESSABLE). Honesto: agregar NO rescata este caso especifico --
+        no hay otro chunk con informacion nueva que aportar."""
+        from factory.regulatory.requirement_catalog.requirement_catalog_loader import get_requirement
+
+        criteria = get_requirement("21_CFR_11.10(e)")["evidence_min_criteria"]
+        assert len(criteria) == 9
+
+        chunk1_text = "UR3.3.1 ... Date and time stamps ... fields listed"
+        chunk1_assessments = [
+            _assessment(1, criteria[0], "NOT_MET"),
+            _assessment(2, criteria[1], "MET", quote="Date and time stamps", location="pag 46"),
+            _assessment(3, criteria[2], "MET", quote="fields listed", location="pag 46"),
+            _assessment(4, criteria[3], "NOT_MET"),
+        ] + [_assessment(i + 5, c, "NOT_ASSESSABLE") for i, c in enumerate(criteria[4:])]
+
+        unrelated_text = "Alarm Limit Modification (page 1 of 2) Security Code Assignments"
+        unrelated_assessments = [_assessment(i + 1, c, "NOT_ASSESSABLE") for i, c in enumerate(criteria)]
+
+        status, reason, detail = sev.verify_sufficiency_aggregated(
+            "21_CFR_11.10(e)",
+            [(chunk1_assessments, chunk1_text)]
+            + [(unrelated_assessments, unrelated_text) for _ in range(4)],
+        )
+        assert status == "NOT_ASSESSABLE", detail
+        assert len(detail["not_assessable_individual"]) == 5
+
+    def test_contradiction_across_chunks_never_resolved_silently(self):
+        """Riesgo explicito del diseno (sec.3.1): un criterio MET anclado en
+        un chunk y NOT_MET en otro es una contradiccion real -- degrada a
+        NOT_ASSESSABLE con motivo explicito, nunca se resuelve a favor de
+        ningun lado en silencio."""
+        crit = _ACCESS_CRITERIA[0]
+        rest = _ACCESS_CRITERIA[1:]
+        chunk_a_text = " ".join(_ACCESS_CRITERIA)  # ancla crit y rest por igual
+
+        assessments_a = [_assessment(1, crit, "MET", quote=crit, location="pag 1")] + [
+            _assessment(i + 2, c, "MET", quote=c, location="pag 1") for i, c in enumerate(rest)
+        ]
+        # Mismo texto fuente para ambos chunks (chunk_a_text) para aislar la
+        # contradiccion al criterio en disputa -- solo el status difiere.
+        assessments_b = [_assessment(1, crit, "NOT_MET")] + [
+            _assessment(i + 2, c, "MET", quote=c, location="pag 1") for i, c in enumerate(rest)
+        ]
+        status, reason, detail = sev.verify_sufficiency_aggregated(
+            "21_CFR_11.10(d)",
+            [(assessments_a, chunk_a_text), (assessments_b, chunk_a_text)],
+        )
+        assert status == "NOT_ASSESSABLE"
+        assert crit in detail["contradicted"]
+        assert "contradiccion" in reason
+
+    def test_chunk_with_contract_violation_excluded_not_poisoning_others(self):
+        """Un chunk con criterion_index invalido se excluye de la
+        agregacion -- no invalida a los demas chunks validos de la misma
+        unidad (a diferencia de verify_sufficiency() de un solo chunk,
+        donde SI invalida todo porque no hay otro chunk con que
+        combinar)."""
+        good_text = " ".join(_ACCESS_CRITERIA)
+        good_assessments = _all_met()
+        bad_assessments = [_assessment(99, "criterio inventado", "MET", quote="x", location="pag 1")]
+
+        status, reason, detail = sev.verify_sufficiency_aggregated(
+            "21_CFR_11.10(d)",
+            [(bad_assessments, "texto irrelevante"), (good_assessments, good_text)],
+        )
+        assert status == "MET", detail
+        assert set(detail["met"]) == set(_ACCESS_CRITERIA)
+
+    def test_all_chunks_with_contract_violations_falls_not_assessable(self):
+        bad_assessments = [_assessment(99, "criterio inventado", "MET", quote="x", location="pag 1")]
+        status, reason, detail = sev.verify_sufficiency_aggregated(
+            "21_CFR_11.10(d)", [(bad_assessments, "texto irrelevante")],
+        )
+        assert status == "NOT_ASSESSABLE"
+        assert detail["excluded_chunks_contract_violations"]
+
+    def test_none_criteria_chunks_are_skipped(self):
+        """Chunks sin criterion_assessments (None -- p.ej. un chunk cuyo
+        estado fue evidencia_insuficiente sin array) se saltan, no rompen
+        la agregacion de los demas."""
+        good_text = " ".join(_ACCESS_CRITERIA)
+        status, reason, detail = sev.verify_sufficiency_aggregated(
+            "21_CFR_11.10(d)", [(None, "irrelevante"), (_all_met(), good_text)],
+        )
+        assert status == "MET"
+
+    def test_unknown_requirement_id_not_assessable(self):
+        status, reason, detail = sev.verify_sufficiency_aggregated(
+            "REQ_INEXISTENTE", [(_all_met(), "texto")])
+        assert status == "NOT_ASSESSABLE"
+
+
 class TestVerifyEvidenceABCD:
 
     def test_annex11_4_like_false_positive_never_accepted(self):
