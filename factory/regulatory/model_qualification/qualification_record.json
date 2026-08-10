@@ -1,14 +1,14 @@
 {
   "status": "QUALIFIED",
-  "evaluated_at": "2026-08-07T21:36:24+00:00",
+  "evaluated_at": "2026-08-10T12:50:15+00:00",
   "fingerprint": {
     "model_name": "qwen2.5:7b-instruct-q4_K_M",
     "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
     "prompt_versions": {
-      "alcoa_prompts.yaml": "1.1.0",
-      "annex11_prompts.yaml": "1.1.0",
+      "alcoa_prompts.yaml": "1.1.1",
+      "annex11_prompts.yaml": "1.1.1",
       "cgmp211_prompts.yaml": "1.0.0",
-      "part11_prompts.yaml": "1.1.0",
+      "part11_prompts.yaml": "1.1.1",
       "traceability_prompts.yaml": "1.0.0"
     },
     "schema_version": "checkpoint_llm_response_v1",
@@ -30,10 +30,10 @@
     "model_name": "qwen2.5:7b-instruct-q4_K_M",
     "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
     "prompt_versions": {
-      "alcoa_prompts.yaml": "1.1.0",
-      "annex11_prompts.yaml": "1.1.0",
+      "alcoa_prompts.yaml": "1.1.1",
+      "annex11_prompts.yaml": "1.1.1",
       "cgmp211_prompts.yaml": "1.0.0",
-      "part11_prompts.yaml": "1.1.0",
+      "part11_prompts.yaml": "1.1.1",
       "traceability_prompts.yaml": "1.0.0"
     },
     "schema_version": "checkpoint_llm_response_v1",
@@ -126,27 +126,27 @@
     },
     {
       "name": "latency_p50",
-      "value": 1656.587146363001,
+      "value": 1645.7642519905057,
       "threshold": null,
       "measured": true,
       "passed": true,
-      "basis": "corrida real de calibracion 'chunked-746d6d88041c' (2 llamadas, 2026-08-07T20:57:35+00:00)"
+      "basis": "corrida real de calibracion 'chunked-77b0d8302c4d' (2 llamadas, 2026-08-10T12:49:40+00:00)"
     },
     {
       "name": "latency_p95",
-      "value": 1902.0345378181019,
+      "value": 1802.906110359551,
       "threshold": null,
       "measured": true,
       "passed": true,
-      "basis": "corrida real de calibracion 'chunked-746d6d88041c' (2 llamadas, 2026-08-07T20:57:35+00:00)"
+      "basis": "corrida real de calibracion 'chunked-77b0d8302c4d' (2 llamadas, 2026-08-10T12:49:40+00:00)"
     },
     {
       "name": "tokens_per_task",
-      "value": 3134.5,
+      "value": 3277,
       "threshold": null,
       "measured": true,
       "passed": true,
-      "basis": "corrida real de calibracion 'chunked-746d6d88041c' (2 llamadas, 2026-08-07T20:57:35+00:00)"
+      "basis": "corrida real de calibracion 'chunked-77b0d8302c4d' (2 llamadas, 2026-08-10T12:49:40+00:00)"
     },
     {
       "name": "retry_rate",
@@ -154,7 +154,7 @@
       "threshold": null,
       "measured": true,
       "passed": true,
-      "basis": "corrida real de calibracion 'chunked-746d6d88041c' (2 llamadas, 2026-08-07T20:57:35+00:00)"
+      "basis": "corrida real de calibracion 'chunked-77b0d8302c4d' (2 llamadas, 2026-08-10T12:49:40+00:00)"
     }
   ],
   "golden_dataset": {

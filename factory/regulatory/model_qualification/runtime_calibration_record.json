@@ -1,15 +1,15 @@
 {
-  "measured_at": "2026-08-07T20:57:35+00:00",
+  "measured_at": "2026-08-10T12:49:40+00:00",
   "run_context": "model_requalification",
   "target": "factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py",
   "fingerprint": {
     "model_name": "qwen2.5:7b-instruct-q4_K_M",
     "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
     "prompt_versions": {
-      "alcoa_prompts.yaml": "1.1.0",
-      "annex11_prompts.yaml": "1.1.0",
+      "alcoa_prompts.yaml": "1.1.1",
+      "annex11_prompts.yaml": "1.1.1",
       "cgmp211_prompts.yaml": "1.0.0",
-      "part11_prompts.yaml": "1.1.0",
+      "part11_prompts.yaml": "1.1.1",
       "traceability_prompts.yaml": "1.0.0"
     },
     "schema_version": "checkpoint_llm_response_v1",
@@ -29,34 +29,36 @@
   },
   "n_calls": 2,
   "metrics": {
-    "latency_p50": 1656.587146363001,
-    "latency_p95": 1902.0345378181019,
-    "tokens_per_task": 3134.5,
+    "latency_p50": 1645.7642519905057,
+    "latency_p95": 1802.906110359551,
+    "tokens_per_task": 3277,
     "retry_rate": 0.0
   },
   "raw_calls": [
     {
-      "wall_clock_ms": 1929306.470202002,
-      "prompt_eval_count": 4309,
-      "eval_count": 3213,
+      "wall_clock_ms": 1820366.3168450003,
+      "prompt_eval_count": 4407,
+      "eval_count": 3238,
       "done_reason": "stop"
     },
     {
-      "wall_clock_ms": 1383867.822524,
-      "prompt_eval_count": 4309,
-      "eval_count": 3056,
+      "wall_clock_ms": 1471162.1871360112,
+      "prompt_eval_count": 4404,
+      "eval_count": 3316,
       "done_reason": "stop"
     }
   ],
   "run_fingerprint": {
-    "prompt_version": "1.1.0",
+    "prompt_version": "1.1.1",
     "schema_version": "checkpoint_llm_response_v1",
     "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
     "document_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
     "agent_version": "v-calibration",
     "catalog_version": "2.1",
     "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
-    "use_verified_pipeline": false
+    "use_verified_pipeline": false,
+    "evaluation_profile": "BASELINE",
+    "target_requirement_ids": null
   },
-  "run_id": "chunked-746d6d88041c"
+  "run_id": "chunked-77b0d8302c4d"
 }
