@@ -576,6 +576,34 @@ def _positive_conclusion_eligibility(req_id: str) -> str:
     return entry.get("positive_conclusion_eligibility") or "BLOCKED"
 
 
+# R2.1 Causa 1 (docs_plan/R2_1_CORRECCION_JUDGMENT_RECALL.md sec.2,
+# 2026-08-10): artefacto real de kerning de pypdf que parte la ULTIMA
+# letra de una palabra en un token propio ("whenever" -> "wheneve r",
+# "retention" -> "retentio n" -- ambos casos reales, RW-0005 p.45-46,
+# ya documentados en evidence_verifier.py W5.6). Mismo principio que
+# _strip_bullet_markers: remocion deterministica de RUIDO DE FORMATO
+# antes de cualquier comparacion, nunca alteracion de contenido. NUNCA
+# fusiona dos palabras legitimamente separadas por un espacio real:
+# el sufijo debe ser EXACTAMENTE una letra minuscula, y las dos unicas
+# palabras reales de una sola letra en ingles ("a", "I") quedan
+# excluidas explicitamente -- ningun otro token de una letra existe en
+# prosa inglesa real, asi que la exclusion es exhaustiva, no una lista
+# parcial. Etiquetas de una letra reales del corpus (p.ej. "Labeler B",
+# grado/clase) aparecen siempre en MAYUSCULA, fuera del alcance de este
+# patron (solo minusculas).
+_KERNING_SPLIT_RE = re.compile(r"\b([a-z]{3,})[ \t]([a-z])\b(?!\.)")
+_REAL_ONE_LETTER_WORDS = {"a", "i"}
+
+
+def _join_kerning_split_words(text: str) -> str:
+    def _join(m: "re.Match") -> str:
+        prefix, suffix = m.group(1), m.group(2)
+        if suffix in _REAL_ONE_LETTER_WORDS:
+            return m.group(0)
+        return prefix + suffix
+    return _KERNING_SPLIT_RE.sub(_join, text or "")
+
+
 def _normalize(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip().lower()
 
@@ -673,7 +701,7 @@ def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS
         current_text = ""
 
     for i, page_text in enumerate(per_unit_text, start=1):
-        page_text = page_text or ""
+        page_text = _join_kerning_split_words(page_text or "")
         if current_text and len(current_text) + len(page_text) > max_chars:
             _flush()
         current_pages.append(i)

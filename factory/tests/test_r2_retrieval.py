@@ -14,9 +14,13 @@ asumidos del diseño original): retrieval_recall_at_5 = 4/7 sobre los 7
 positivos del fixture (P1, P4, P6, P7 sí; P2, P3, P5 no -- P5 es
 justamente el caso que R1.6/R1.7 ya mostró que el modelo cita de forma
 parafraseada, sin vocabulario gobernado literal, así que BM25 -- también
-léxico -- tiene el mismo punto ciego). retrieval_recall_at_10 = 6/7.
-Ambos negativos del fixture (N1/ANNEX11_4, N2/tabla de contenidos)
-confirmados FUERA del top-5."""
+léxico -- tiene el mismo punto ciego). retrieval_recall_at_10 = 7/7
+(actualizado 2026-08-10, R2.1 Causa 1: la normalización de kerning en
+chunked_engine.build_page_chunks() -- ver docs_plan/R2_1_CORRECCION_JUDGMENT_RECALL.md
+sec.2 -- restaura el token "retention" en el chunk real de P3, subiendo
+su rank de 12 a 9; entra al top-10 por primera vez). Ambos negativos del
+fixture (N1/ANNEX11_4, N2/tabla de contenidos) confirmados FUERA del
+top-5."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -95,23 +99,30 @@ class TestPurRetrievalMetricAgainstFixture7P2N:
         rank = self._rank_of_page(_RW_0005, "21_CFR_11.10(g)", 40)
         assert rank is not None and 5 < rank <= 10
 
-    def test_p3_annex11_17_not_in_top10(self):
+    def test_p3_annex11_17_not_in_top5_but_in_top10_after_kerning_fix(self):
         """req_id corregido (2026-08-09, autorizado por Cesar): P3 era
         ANNEX11_12 (seguridad física/lógica) en el fixture original --
         error de etiquetado real, el pasaje (p.45, "UR3.3.6 Data
         retention... archivado en ubicación alterna") corresponde a
         ANNEX11_17 (archivo y retención), confirmado contra el
-        citation_text real del catálogo. Con el req_id YA corregido,
-        P3 SIGUE sin aparecer en el top-10 (rank 12) -- confirma la
-        causa secundaria investigada (docs_plan/R2_DESIGN_DETALLADO.md):
-        un espacio espurio de extracción de PDF parte "retention" en
-        "retentio"+"n" (term_counts["retention"]==0 en el chunk real),
-        más dilución porque el chunk mezcla la sección de retención con
-        Historian/Audit Trail/Critical Data Records. Registrado tal
-        cual, sin maquillar -- corregir el etiquetado no alcanza para
-        que este positivo se recupere bien."""
+        citation_text real del catálogo.
+
+        Historial del rank (mismo caso real, RW-0005 p.45, sin cambiar
+        de req_id ni de query):
+          - rank 20: req_id todavía mal etiquetado (ANNEX11_12).
+          - rank 12: req_id ya corregido, kerning SIN normalizar --
+            "retentio"+"n" partido, term_counts["retention"]==0.
+          - rank 9 (este test): kerning normalizado
+            (docs_plan/R2_1_CORRECCION_JUDGMENT_RECALL.md sec.2,
+            chunked_engine._join_kerning_split_words() dentro de
+            build_page_chunks()) -- "retention" ya se cuenta como
+            token real, el chunk entra al top-10 por primera vez.
+        Sigue sin entrar al top-5: la dilución del chunk (mezcla
+        retención con Historian/Audit Trail/Critical Data Records) es
+        una causa real e independiente, no resuelta por este fix --
+        registrado tal cual, sin maquillar."""
         rank = self._rank_of_page(_RW_0005, "ANNEX11_17", 45)
-        assert rank is not None and rank > 10
+        assert rank is not None and 5 < rank <= 10
 
     def test_p4_alcoa_attributable_rank_in_top5(self):
         rank = self._rank_of_page(_RW_0011, "ALCOA_ATTRIBUTABLE", 13)
@@ -151,6 +162,29 @@ class TestPurRetrievalMetricAgainstFixture7P2N:
             if (r := self._rank_of_page(doc, req, page)) is not None and r <= 5
         )
         assert hits == 4
+
+    def test_retrieval_recall_at_10_is_7_of_7_after_kerning_fix(self):
+        """R2.1 Causa 1 (docs_plan/R2_1_CORRECCION_JUDGMENT_RECALL.md
+        sec.2, 2026-08-10): antes del fix de kerning, P3 quedaba fuera
+        del top-10 (rank 12) y este número era 6/7. Con el fix, P3 entra
+        al top-10 (rank 9) -- los 7 positivos del fixture ya están
+        cubiertos a k=10. Fijado como su propio test, mismo criterio que
+        test_retrieval_recall_at_5_is_4_of_7: cualquier cambio futuro al
+        chunking/query/BM25 debe declarar conscientemente si esto baja."""
+        positives = [
+            (_RW_0005, "21_CFR_11.10(e)", 46),
+            (_RW_0005, "21_CFR_11.10(g)", 40),
+            (_RW_0005, "ANNEX11_17", 45),
+            (_RW_0011, "ALCOA_ATTRIBUTABLE", 13),
+            (_RW_0005, "ALCOA_CONTEMPORANEOUS", 46),
+            (_RW_0011, "21_CFR_211.68(b)", 13),
+            (_RW_0012, "21_CFR_211.68(b)", 14),
+        ]
+        hits = sum(
+            1 for doc, req, page in positives
+            if (r := self._rank_of_page(doc, req, page)) is not None and r <= 10
+        )
+        assert hits == 7
 
     def test_negative_n1_annex11_4_reference_list_not_in_top5(self):
         """GAMP5 citado en la lista de Reference Documents (página 2,

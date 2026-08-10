@@ -556,16 +556,115 @@ ayudó al modelo a reconocer evidencia técnica/tabular parafraseada.
   `query_builder.build_retrieval_query`, que depende solo de `req_id`) —
   reportado como hallazgo, sin propuesta de solución todavía.
 
+## R2.1 — Fix de Causa 1: normalización de kerning (2026-08-10, `docs_plan/R2_1_CORRECCION_JUDGMENT_RECALL.md` sec.2)
+
+**Diseño**: nueva `chunked_engine._join_kerning_split_words()`, aplicada
+dentro de `build_page_chunks()` a cada `page_text` — mismo principio que
+`evidence_verifier._strip_bullet_markers` (remoción determinista de
+ruido de formato, nunca de contenido). `_is_anchored()` **no cambia su
+lógica de exactitud** (sigue siendo substring exacto tras normalizar
+espacios) — solo compara ahora contra texto ya limpio. Único punto de
+cambio compartido por `evaluate_chunked()` (juicio) e `indexer.py`
+(indexación BM25, vía su propia llamada a `build_page_chunks`) — ningún
+archivo de `retrieve_top_k`/`bm25.py`/`query_builder.py`/`indexer.py`
+se tocó (R2.1 sec.1.3).
+
+Patrón: un sufijo de **exactamente una letra minúscula** separado por un
+espacio real del resto de la palabra se fusiona, salvo que esa letra sea
+"a" o "i" (las únicas palabras reales de una sola letra en inglés —
+exclusión exhaustiva, no una lista parcial). Cubre ambos artefactos
+reales conocidos ("wheneve r"→"whenever", "retentio n"→"retention") sin
+heurística de diccionario.
+
+**Tabla ANTES/DESPUÉS (verificado, no estimado)**:
+
+| Caso | Antes del fix | Después del fix |
+|---|---|---|
+| P1 — `_is_anchored(cita_913_chars, chunk)` | `False` | `True` |
+| P3 — rank BM25 en RW-0005 (`ANNEX11_17`, p.45) | 12 (fuera del top-10) | 9 (dentro del top-10) |
+| N1 — `ANNEX11_4` (lista de referencias) | rechazado por `detect_reference_list_context` | sigue rechazado (test bloqueante) |
+| `retrieval_recall_at_5` | 4/7 | 4/7 (sin cambio) |
+| `retrieval_recall_at_10` | 6/7 | **7/7** |
+
+Rank de P3 confirmado con A/B controlado (mismo índice, mismo query,
+solo `_join_kerning_split_words` activada/desactivada) — no una
+fluctuación del entorno. Los 3 índices reales (RW-0005/0011/0012) se
+reconstruyeron (`indexer.build_index(force=True)`, dato regenerable,
+gitignored — ningún archivo de código de `indexer.py` se tocó) para
+confirmar el número contra el corpus real.
+
+**Tests** (`factory/tests/test_gmpai_chunked_engine.py`,
+`factory/tests/test_r2_retrieval.py`): reproducen el caso real de P1
+(cita exacta de `raw_responses/chunked-965e5cf6ee5d/task-b737fdf292e3.txt.gz`)
+y P3 sobre el corpus real; test negativo explícito de que dos palabras
+reales separadas nunca se fusionan (`"a"`/`"i"` excluidas, más 3 frases
+reales de control); test bloqueante de que ANNEX11_4 sigue rechazado.
+Suite completa sin regresión (ver reporte de Gate 0 de esta corrida).
+
+**Aún no hecho** (fuera del alcance de Causa 1): re-medir
+`judgment_recall` con llamadas LLM reales (P1 debería pasar a
+`observed` ahora que ancla) — eso es §4 de la orden R2.1, posterior a
+Causa 2 (§3) y a la aprobación de este fix.
+
+## R2.1 — Fix de Causa 2: contrato del prompt (2026-08-10, `docs_plan/R2_1_CORRECCION_JUDGMENT_RECALL.md` sec.3)
+
+**Causa raíz encontrada** (leyendo el `raw_response` real del chunk de P2
+que falló — `raw_responses/chunked-c353d90f9e9c/task-4e4b715a7b34.txt.gz`):
+el `common_contract` de los 3 prompts gobernados (texto idéntico en
+`part11_prompts.yaml`/`annex11_prompts.yaml`/`alcoa_prompts.yaml`, solo
+cambia el encabezado y la regla 4 específica del agente) tiene una
+asimetría real. La **regla 6** exige explícitamente `evidence_quote`/
+`evidence_location` no vacíos para `status=MET` en
+`criterion_assessments` ("si no puedes aportar ambos, usa
+NOT_ASSESSABLE"). La **regla 2**, que gobierna `estado`/`evidencia_exacta`
+a nivel de todo el checkpoint, nunca tenía esa misma exigencia — solo
+"ante duda, usa cumple_parcialmente o evidencia_insuficiente", sin atar
+`evidencia_exacta` al valor de `estado`. El ejemplo de schema de la regla
+7 incluso muestra `"evidencia_exacta": "<cita literal o cadena vacia si
+no hay>"` sin condicionarlo.
+
+En el chunk real de P2, el modelo aprovechó exactamente ese hueco:
+`estado: cumple_parcialmente`, `evidencia_exacta: ""`, con las 3
+`criterion_assessments` en `NOT_MET` y una `brecha` que describe lo que
+falta — una respuesta internamente coherente como análisis de vacío,
+pero con un `estado` de nivel superior mal etiquetado como positivo.
+
+**Fix**: se agregó a la regla 2, en los 3 prompts, el mismo requisito
+explícito que ya tenía la regla 6 ("cumple"/"cumple_parcialmente" exigen
+`evidencia_exacta` no vacía; si no hay cita literal, usar
+`evidencia_insuficiente`). No se tocó el validador (`_is_anchored`/gate
+de anclaje ya trataba correctamente una cita vacía como no anclada) — el
+hueco estaba solo en el contrato que el modelo recibe, no en el código.
+
+| Prompt | `prompt_version` antes | después | `common_contract_sha256` |
+|---|---|---|---|
+| `part11_prompts.yaml` | `1.1.0` | `1.1.1` | `89be46ca22981d6bb751405f9e4282451e7542ad1c7a2f0d360ec41572bc1667` |
+| `annex11_prompts.yaml` | `1.1.0` | `1.1.1` | `aeb93e954bc89c5f61bccd343a00fb454f9c86c9bc38cb83bfbdd1876b9f1b32` |
+| `alcoa_prompts.yaml` | `1.1.0` | `1.1.1` | `f2f76fecbb40744d41d98b6e24c4f83fd0989c9358e07edbbe0cf42e8af9829c` |
+
+Bump de `prompt_version` + changelog en los 3 archivos (contenido
+gobernado, cambio de texto exige ambos) — cambia el `run_fingerprint`
+(`build_run_fingerprint` incluye `prompt_version`), así que ningún
+checkpoint viejo bajo el contrato 1.1.0 podrá reanudarse silenciosamente
+bajo 1.1.1, comportamiento correcto y ya probado
+(`test_checkpoint_fingerprint_invalidation.py`, verde).
+
+**Deliberadamente no medido en esta sección** (R2.1 sec.3.3): el efecto
+real del fix (¿el modelo ahora responde `evidencia_insuficiente` en vez
+de un positivo sin cita?) solo se valida con una llamada LLM real en la
+re-medición de §4 — no se simula ni se asume aquí.
+
 ## Pendiente de decisión de Cesar (siguiente paso)
 
-1. **Causa 1** (`_is_anchored` frágil ante artefactos de kerning del
-   PDF): ¿endurecer el anclaje para tolerar una palabra rota aislada
-   (p.ej. permitir cierto grado de fuzzy-match en vez de substring
-   exacto), con el riesgo real de aflojar un validador que hoy protege
-   contra evidencia inventada — decisión sensible, nunca implícita?
-2. **Causa 2** (positivo sin cita): ¿investigar el prompt real de ese
-   chunk para entender por qué el modelo omitió la cita, antes de decidir
-   si amerita una corrección?
+1. ~~**Causa 1** (`_is_anchored` frágil ante artefactos de kerning del
+   PDF)~~ — **CORREGIDA** (arriba): se normalizó el ruido de extracción
+   antes del anclaje, sin aflojar `_is_anchored`.
+2. ~~**Causa 2** (positivo sin cita)~~ — **CORREGIDA** (arriba): la regla
+   2 del contrato ahora exige `evidencia_exacta` no vacía para todo
+   estado positivo, en los 3 prompts gobernados. Pendiente en ambas: 
+   aprobar el commit y decidir si autorizar §4 (re-medición con llamadas
+   LLM reales) — presupuesto de `PILOT_EXECUTION-2026-004` a confirmar
+   (consumió 50/60 en el batch anterior).
 3. **Causa 3** (mayoría de los casos, el modelo no reconoce evidencia
    técnica/tabular incluso con candidate pool curado): confirma que R2
    (BM25 + candidate pool más chico) **no resuelve** el techo de recall
@@ -574,10 +673,11 @@ ayudó al modelo a reconocer evidencia técnica/tabular parafraseada.
    el recall, la alternativa de embeddings semánticos (diferida, no
    reabierta aquí) o un cambio de modelo vuelven a ser las opciones
    reales sobre la mesa.
-4. Decidir si `factory/regulatory/retrieval/judgment.py` +
-   `factory/tests/test_r2_judgment.py` (sin commitear) se commitean tal
-   cual (como medición diagnóstica ya completa, con su resultado real
-   documentado), se corrigen primero (Causa 1/2), o se descartan.
-5. `retrieval_recall_at_5=4/7` (recuperación pura, sin cambios) sigue
-   siendo válido como métrica de recuperación — las tres causas nuevas
-   están en la fase de juicio, no en `retrieve_top_k`.
+4. `factory/regulatory/retrieval/judgment.py` +
+   `factory/tests/test_r2_judgment.py` ya commiteados (`dddfbb2`, medición
+   diagnóstica completa) — los fixes de Causa 1 (`chunked_engine.py`) y
+   Causa 2 (los 3 prompts YAML) + sus tests siguen sin commitear,
+   pendientes de aprobación.
+5. `retrieval_recall_at_5=4/7` sin cambios; `retrieval_recall_at_10`
+   subió a **7/7** tras el fix de Causa 1 (arriba) — ambos siguen siendo
+   válidos como métrica de recuperación pura.

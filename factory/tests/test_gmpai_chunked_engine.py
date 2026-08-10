@@ -918,3 +918,164 @@ def test_applicability_rule_approved_true_when_matrix_is_approved(monkeypatch):
     monkeypatch.setattr(absence_consolidator, "apply_conclusion_preconditions", _spy)
     _run_verified_pipeline_with_positive_citation(monkeypatch, _d_assessments(["MET"] * 5))
     assert seen and all(v is True for v in seen)
+
+
+# ===========================================================================
+# R2.1 Causa 1 (docs_plan/R2_1_CORRECCION_JUDGMENT_RECALL.md sec.2,
+# 2026-08-10): normalizacion de kerning espurio ANTES del anclaje, dentro
+# de build_page_chunks() -- no se afloja _is_anchored, se limpia el ruido
+# de extraccion que ya rechazaba una cita real de la fase de juicio de R2
+# (P1, judgment_recall=0/6 diagnosticado en docs_plan/R2_DESIGN_DETALLADO.md).
+# ===========================================================================
+
+# Texto real (pypdf 4.3.1, RW-0005 p.45-46), reutilizado tal cual de
+# test_evidence_verifier_v2.CHUNK20_TEXT -- mismo caso real, no un
+# fixture sintetico nuevo.
+from factory.tests.test_evidence_verifier_v2 import CHUNK20_QUOTE, CHUNK20_TEXT  # noqa: E402
+
+# Candidato real rank-1 devuelto por retriever.retrieve_top_k(RW-0005,
+# '21_CFR_11.10(e)', k=5) -- capturado 2026-08-10 contra el corpus real,
+# NO el mismo string que CHUNK20_TEXT (ese es el caso real de P5/
+# ALCOA_CONTEMPORANEOUS, con membrete de pagina de por medio -- P1 no
+# cruza el membrete, asi que su cita real termina antes de llegar ahi).
+P1_CHUNK_TEXT = (
+    'ller B \nSerialization B \nVial Syringe Labeler  B \nParts Washer / Sterilizer  B \n'
+    'Clean Steam Generator B \nWaste Lift and Neutralization  B \nWater for Injection  B \n'
+    'Weigh / Dispense B \nAlarm Details B \nAlarm Limit Modification (page 1 of 2) E \n'
+    'Alarm Limit Modification2 (page 2 of 2) E \n3Table 4-2: Security Code Assignments for '
+    'Graphic Displays \n \n2 Screen access is defined by the first code (least rest rictive), '
+    'additional codes indicate objects on screen are \nsubject to additional restrictions \n '
+    'Project: Mark Cuban Cost Plus Drug Company, PBC – \n MCCPDC - SCADA and PCS MISC. PLC '
+    'System \n \nFunctional Specification for the MCCPDC - SCADA and PCS MISC. PLC System  \n \n \n'
+    'ID code: 215115305 -FS (V1.2) Page 45 of 58 \n© 2022 Rockwell Automation, Inc. All Rights '
+    'Reserved / Author: Buol, Scott \n5 Data \nF11.00: Databases and Historical Logging \n'
+    'This function implements the following user requirement(s)  \nUR3.3.6 Data retentio n time '
+    'on the system \n1. The system shall have provision for retaining 1 year of historical data '
+    'locally before it is \narchived in an alternate location for safe keeping.   \nUR5.4.7 '
+    '[URS-PCS-SR-041] The PLC system shall co mmunicate with a plant historian (collect and '
+    '\ntransfer data).   \n F11.01: Process Historian \nThis system contains the Rockwell '
+    'FactoryTalk Historian SE software and server which \nsatisfies the requirement to collect '
+    'and transfer data. \n F11.02: Critical Data Records \nThis system maintains the following '
+    'critical runtime data records: \n FactoryTalk View SE alarm log and activity log data '
+    'are stored in the corresponding \ndatabases as analog, digital and string values.     \n '
+    'Analog, digital and string device tags that are transferred from the PLC to the '
+    '\nFactoryTalk View SE system. \nF12.00: Audit Trail \nThis function implements the following '
+    'user requirement(s)  \nUR3.3.1 Every time a critical alarm threshold is modified and audit '
+    'trail record shall be generated.  The \nrecord shall contain the following fields  \n1. Date '
+    'and time stamps of the change \n2. Original threshold value \n3. Threshold value after '
+    'change \n4. User ID of the individual who has changed the threshold value (performer) \n5. '
+    'Full name of the individual who has changed the threshold value (performer) \n6. Meaning of '
+    'signature (performer) \n7. User ID of the individual who has approved the change (approver) '
+    '\n8. Full name of the individual who has approved the change (approver) \n9. Meaning of '
+    'signature (approver).  \nUR3.3.2 Every time a critical alarm condition occurs an audit trail '
+    'record shall be generated with the \nfollowing fields  \n1. Alarm date and time stamps  \n2. '
+    'Alarm tag 3. Alarm value \n4. Alarm description \n5. A similar record shall be generated '
+    'wheneve r a critical alarm condition returns to normal \ncondition.  \n'
+)
+
+# Cita real emitida por el modelo (raw_response persistido,
+# factory/regulatory/pilot_run/checkpoints/raw_responses/chunked-965e5cf6ee5d/
+# task-b737fdf292e3.txt.gz, corrida real del batch de R2 diagnosticado en
+# docs_plan/R2_DESIGN_DETALLADO.md) -- termina en "...normal condition.",
+# nunca cruza el salto de pagina/membrete que sigue despues en el chunk.
+P1_QUOTE = (
+    "UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be "
+    "generated. The record shall contain the following fields 1. Date and time stamps of the "
+    "change 2. Original threshold value 3. Threshold value after change 4. User ID of the "
+    "individual who has changed the threshold value (performer) 5. Full name of the individual "
+    "who has changed the threshold value (performer) 6. Meaning of signature (performer) 7. User "
+    "ID of the individual who has approved the change (approver) 8. Full name of the individual "
+    "who has approved the change (approver) 9. Meaning of signature (approver). UR3.3.2 Every "
+    "time a critical alarm condition occurs an audit trail record shall be generated with the "
+    "following fields 1. Alarm date and time stamps 2. Alarm tag 3. Alarm value 4. Alarm "
+    "description 5. A similar record shall be generated whenever a critical alarm condition "
+    "returns to normal condition."
+)
+
+
+def test_join_kerning_split_words_fixes_real_p1_artifact():
+    """'wheneve r' -> 'whenever' (unico artefacto real de kerning en este
+    chunk) -- reproduce exactamente el caso que R2.1 diagnostico como
+    Causa 1 de judgment_recall=0/6."""
+    assert "wheneve r" in CHUNK20_TEXT
+    fixed = ce._join_kerning_split_words(CHUNK20_TEXT)
+    assert "wheneve r" not in fixed
+    assert "whenever a critical alarm condition returns" in fixed
+
+
+def test_join_kerning_split_words_fixes_real_p3_artifact():
+    """'retentio n' -> 'retention' -- mismo artefacto, caso real de P3
+    (docs_plan/R2_DESIGN_DETALLADO.md, 'Investigacion de P3')."""
+    text = "UR3.3.6 Data retentio n time on the system"
+    fixed = ce._join_kerning_split_words(text)
+    assert "retentio n" not in fixed
+    assert "retention time" in fixed
+
+
+def test_join_kerning_split_words_never_merges_real_separate_words():
+    """Riesgo inverso explicito de la orden R2.1 (sec.2.2): dos palabras
+    reales separadas por un espacio real NUNCA se fusionan. 'a'/'i' son
+    las UNICAS palabras reales de una sola letra en ingles -- exclusion
+    exhaustiva, no una lista parcial a completar despues."""
+    cases = [
+        "I will go there",
+        "a cat sat on a mat",
+        "as a rule of thumb",
+        "one item per line, a description follows",
+    ]
+    for text in cases:
+        assert ce._join_kerning_split_words(text) == text, f"fusiono indebidamente: {text!r}"
+
+
+def test_join_kerning_split_words_does_not_touch_uppercase_grade_labels():
+    """Etiquetas reales de una letra del corpus Rockwell ('Labeler  B',
+    grado/clase) son siempre MAYUSCULA -- fuera del alcance del patron
+    (solo minusculas), no deben alterarse."""
+    text = "Vial Syringe Labeler  B \nAlarm Details B"
+    assert ce._join_kerning_split_words(text) == text
+
+
+def test_build_page_chunks_applies_kerning_fix_to_every_page():
+    """build_page_chunks es el punto compartido por evaluate_chunked() (fase
+    de juicio) Y por indexer.py (indexacion BM25, via su propia llamada a
+    esta misma funcion) -- limpiar aqui beneficia a ambos sin tocar
+    indexer.py/bm25.py/query_builder.py/retriever.py (R2.1 sec.1.3)."""
+    chunks = ce.build_page_chunks([P1_CHUNK_TEXT], max_chars=10000)
+    assert all("wheneve r" not in c["text"] for c in chunks)
+    assert any("whenever a critical alarm condition returns" in c["text"] for c in chunks)
+
+
+def test_is_anchored_accepts_real_p1_citation_after_kerning_fix():
+    """Regresion directa del hallazgo de R2.1 (docs_plan/R2_DESIGN_DETALLADO.md,
+    Causa 1): la cita real de 913 caracteres que el modelo emitio para P1
+    (RW-0005, 21_CFR_11.10(e), corrida real de la fase de juicio de R2)
+    daba _is_anchored=False solo por el artefacto de kerning "wheneve r"
+    -- tras el fix, ancla. chunk['text'] pasa por build_page_chunks(),
+    mismo camino real que evaluate_chunked()."""
+    chunks = ce.build_page_chunks([P1_CHUNK_TEXT], max_chars=10000)
+    assert ce._is_anchored(P1_QUOTE, chunks[0]["text"]) is True
+
+
+def test_is_anchored_still_rejects_p1_citation_without_kerning_fix():
+    """Contraparte de control: sobre el texto CRUDO (sin pasar por
+    build_page_chunks, kerning intacto), la misma cita real sigue
+    rechazada -- confirma que el fix, no una casualidad del fixture, es
+    lo que cambia el resultado."""
+    assert ce._is_anchored(P1_QUOTE, P1_CHUNK_TEXT) is False
+
+
+def test_annex11_4_reference_list_still_rejected_after_kerning_fix():
+    """Test bloqueante explicito de la orden R2.1 (sec.2.4): el fix de
+    kerning NUNCA debe hacer pasar el falso positivo ya conocido de
+    ANNEX11_4 (GAMP5 citado dentro de una lista de referencias numeradas
+    '[N]') -- ese rechazo es de detect_reference_list_context, un
+    mecanismo distinto, y debe seguir intacto."""
+    from factory.regulatory import semantic_evidence_verification as sev
+
+    source = (
+        "REFERENCES [6] ISPE Baseline Guide [7] ISA-88 [8] Good Automated "
+        "Manufacturing Practice, GAMP5 [9] 21 CFR Part 11 [10] EU Annex 11"
+    )
+    quote = "Good Automated Manufacturing Practice, GAMP5"
+    fixed = ce._join_kerning_split_words(source)
+    assert sev.detect_reference_list_context(quote, fixed) is True

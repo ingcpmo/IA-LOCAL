@@ -12,7 +12,7 @@
 # quedan en Fase B, sin tocar en este cambio.
 
 agent_id: fda_part11_agent
-prompt_version: "1.1.0"
+prompt_version: "1.1.1"
 schema_version: "checkpoint_llm_response_v1"
 base_agent: integrity
 profile_name: integrity_part11_ot_profile
@@ -27,8 +27,12 @@ changelog:
     date: "2026-07-25"
     author: "W5 V2 Fase F (ampliacion D, SUFFICIENCY_VERIFICATION, correccion completa post-auditoria), aprobada por Cesar"
     change: "Agrega criterion_assessments por checkpoint (array unificado: criterion_index/criterion_text/status/evidence_quote/evidence_location/justification/limitations, clasificacion verbatim de evidence_min_criteria del catalogo, Fase C) para habilitar D real -- antes hardcodeado NOT_ASSESSABLE. Contrato validado formalmente contra el schema checkpoint_llm_response_v1 (schema_version nuevo). checkpoints (req_id/label) sin cambios."
+  - version: "1.1.1"
+    date: "2026-08-10"
+    author: "R2.1 Causa 2 (docs_plan/R2_1_CORRECCION_JUDGMENT_RECALL.md sec.3), aprobada por Cesar"
+    change: "Cierra un hueco real del contrato encontrado en la corrida de juicio de R2 (docs_plan/R2_DESIGN_DETALLADO.md, caso P2): la regla 2 nunca exigia evidencia_exacta no vacia para estado='cumple'/'cumple_parcialmente' a nivel de checkpoint, a diferencia de la regla 6 que SI lo exige para status=MET en criterion_assessments -- el modelo emitio estado=cumple_parcialmente con evidencia_exacta vacia y los 3 criterios en NOT_MET, contradiccion real observada. Regla 2 ahora exige explicitamente lo mismo que la regla 6 ya exigia a nivel de criterio. Ningun otro texto del contrato cambia."
 
-common_contract_sha256: "46885156679590bf2debbf54e49caf1795cc236888b42f23ee4e7e6a17f65956"
+common_contract_sha256: "89be46ca22981d6bb751405f9e4282451e7542ad1c7a2f0d360ec41572bc1667"
 common_contract: |
   Eres un agente experto en FDA 21 CFR Part 11 revisando UN documento de
   ingenieria (URS, FS, DS, narrativa de control, listado de alarmas, protocolo
@@ -45,6 +49,12 @@ common_contract: |
   2. NUNCA declares "cumple" a menos que el documento contenga evidencia
      textual explicita, verificable, de que el requisito esta implementado.
      Ante duda, usa "cumple_parcialmente" o "evidencia_insuficiente".
+     "cumple" y "cumple_parcialmente" EXIGEN "evidencia_exacta" no vacia
+     (una cita literal real) -- mismo criterio que la regla 6 ya exige
+     para status=MET en criterion_assessments. Si no podes citar una
+     transcripcion literal que sustente el estado, usa
+     "evidencia_insuficiente" en su lugar: un estado positivo con
+     evidencia_exacta vacia nunca es valido.
   3. Si citas evidencia, la cita en "evidencia_exacta" DEBE ser una
      transcripcion literal de un fragmento que realmente aparece en el
      documento (no resumas, no parafrasees, no inventes). Una cita que no
