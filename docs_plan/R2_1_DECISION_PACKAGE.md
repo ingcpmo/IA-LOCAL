@@ -245,6 +245,31 @@ corrida** por instrucción explícita de la orden.
   que hoy — necesitaría el experimento de dilución (§2.2) para
   desempatar antes de comprometerse a un rumbo.
 
+## DECISIÓN DE CESAR (2026-08-10): OPCIÓN A — continuar con el modelo actual
+
+Confirmado en chat. Estado de los 3 requisitos que la Opción A exige
+(§5, abajo):
+
+1. **Resolver el bloqueador estructural real (§1.3)** — **CERRADO**:
+   Opción C (`docs_plan/R2_1_C_DISENO_AGREGACION_D.md`, commit
+   `b808899`) implementó `verify_sufficiency_aggregated()`, D ya no
+   depende de un solo chunk "ganador". Panel de gobernanza para las 3
+   firmas de prompt (`commit 52f502f`) construido, validado y firmado
+   por Cesar (`commit 735f24c`) — `artifact_version_guard` en `WARN`,
+   `fail_count=0`.
+2. **Re-medición dimensionada del §4** — **PROPUESTA, sin firmar**:
+   `PILOT_EXECUTION-2026-009` (`agent_proposed`, `max_calls=25`,
+   P2 k=10 + P4/P5/P7 k=5 cada uno) creada en `decisions_v2.jsonl` —
+   pendiente de tu firma real por el panel "Piloto de diagnóstico" de
+   la consola (mismo panel ya usado para `-004`). Corre con D ya
+   agregado entre chunks (Opción C), así que esta medición no estará
+   contaminada por el bloqueador estructural que afectó a la corrida
+   original.
+3. **Aceptar que la evidencia tabular real queda como "sin evidencia
+   localizada → revisión humana"** — aceptado implícitamente al elegir
+   A; no requiere ninguna acción técnica adicional, es un criterio de
+   producto.
+
 ## 5. Opciones para Cesar (sin recomendación sesgada)
 
 ### OPCIÓN A — Continuar con el modelo actual
