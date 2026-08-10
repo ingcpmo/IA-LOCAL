@@ -654,30 +654,94 @@ real del fix (¿el modelo ahora responde `evidencia_insuficiente` en vez
 de un positivo sin cita?) solo se valida con una llamada LLM real en la
 re-medición de §4 — no se simula ni se asume aquí.
 
+## R2.1 §4 — Re-medición real (2026-08-10, 10 llamadas LLM reales, dentro del remanente de `PILOT_EXECUTION-2026-004`)
+
+**Precondición encontrada y resuelta antes de poder correr esto**: el
+bump de `prompt_version` de Causa 2 cambió el fingerprint de
+calificación del modelo (`build_qualification_fingerprint()` incluye
+`prompt_versions` de los 3 YAML gobernados) — el gate pasó
+correctamente a `QUALIFICATION_INVALIDATED`, bloqueando toda inferencia.
+Recalificado con `model_requalification_calibration.run_runtime_calibration()`
+(2 llamadas reales contra el Golden Dataset sintético, nunca contra
+Rockwell — camino ya autorizado por diseño del gate, separado del
+presupuesto de `PILOT_EXECUTION`, aprobado por Cesar antes de gastarlas).
+Las 5 precondiciones de recalificación (G3/G4a/G4b/G4c/G6) ya estaban en
+verde. Resultado: `QUALIFIED`, `retry_rate=0.0`, `latency_p50≈1646s`.
+
+**Presupuesto real confirmado antes de la primera llamada**: el batch
+original de la fase de juicio consumió 50/60 de `PILOT_EXECUTION-2026-004`
+(evento `r2_judgment_batch_completed`, `factory_audit.jsonl`) —
+remanente real 10. Costo de re-medir las 4 unidades candidatas (P1=5,
+P2=10, P6=5, P7=5) = 25, no alcanza. Decisión de Cesar: re-medir P1
+(Causa 1) + P6 (control Causa 3), 5+5=10, exacto el remanente — sin
+pedir una `PILOT_EXECUTION` nueva.
+
+**Resultado real** (`run_judgment_batch`, background, ~94 min):
+
+| Unidad | requirement_id | Documento | `chunk_observation` (chunk 1, rank-1 real) | `conclusion` final |
+|---|---|---|---|---|
+| P1 (Causa 1) | `21_CFR_11.10(e)` | RW-0005 | **`observed`** (antes: `not_observed_in_chunk`) | `EVALUATION_INCOMPLETE` |
+| P6 (control Causa 3) | `21_CFR_211.68(b)` | RW-0011 | `not_observed_in_chunk` (sin cambio) | `PROVISIONAL_GAP` |
+
+`total_calls_made=10`, cuadra exacto con lo autorizado. Checkpoint real
+de P1 (`chunked-ff6bd88a4987`): el chunk rank-1 (páginas 45-46, el
+mismo candidato de la corrida original) ahora ancla la misma cita real
+de 913 caracteres — confirmación directa, de punta a punta, de que el
+fix de Causa 1 rescata evidencia real que antes se perdía.
+
+**Lectura honesta, sin maquillar**:
+- **Causa 1 confirmada resuelta**: P1 pasó de `not_observed_in_chunk`
+  en las 5 llamadas a `observed` en la llamada correcta (chunk rank-1),
+  con la misma cita real anclando ahora que el kerning está limpio. No
+  es una casualidad de fixture — mismo mecanismo reproducido con una
+  llamada LLM real, no solo con `_is_anchored` en aislado.
+- La `conclusion` final de P1 queda `EVALUATION_INCOMPLETE`, no un
+  positivo consolidado — **no contradice lo anterior**: es el estado
+  esperado del gate ABCD cuando D (criterios de suficiencia) sigue sin
+  interpretación humana (`evidence_min_criteria`, pendiente desde Fase C
+  de W5 V2, documentado en `project_w5_v2_regulatory_redesign.md`) — el
+  chunk-level `observed` es lo que Causa 1 podía arreglar; la conclusión
+  de gobernanza de nivel documento depende de una decisión humana
+  separada, fuera de alcance de R2.1.
+- **Causa 3 sigue confirmada como límite real**: P6 (evidencia tabular
+  de RW-0011, ya en el top-5 de la recuperación pura) sigue
+  `not_observed_in_chunk` tras corregir Causa 1 y Causa 2 — el modelo
+  genuinamente no reconoce esa evidencia, no es ruido de pipeline.
+- **Resultado mixto, no una sola conclusión** (solo 2 de 6 unidades
+  re-medidas, presupuesto no alcanzó para las 4): apoya parcialmente
+  ambos escenarios — ESCENARIO A para evidencia con artefactos de
+  extracción corregibles (P1), ESCENARIO B para evidencia
+  tabular/densa (P6). P2 (Causa 2) y P7 (segundo control de Causa 3)
+  quedan sin re-medir — su corrección/confirmación requeriría
+  presupuesto adicional (`PILOT_EXECUTION` nueva, no propuesta aquí).
+
 ## Pendiente de decisión de Cesar (siguiente paso)
 
 1. ~~**Causa 1** (`_is_anchored` frágil ante artefactos de kerning del
-   PDF)~~ — **CORREGIDA** (arriba): se normalizó el ruido de extracción
-   antes del anclaje, sin aflojar `_is_anchored`.
-2. ~~**Causa 2** (positivo sin cita)~~ — **CORREGIDA** (arriba): la regla
-   2 del contrato ahora exige `evidencia_exacta` no vacía para todo
-   estado positivo, en los 3 prompts gobernados. Pendiente en ambas: 
-   aprobar el commit y decidir si autorizar §4 (re-medición con llamadas
-   LLM reales) — presupuesto de `PILOT_EXECUTION-2026-004` a confirmar
-   (consumió 50/60 en el batch anterior).
-3. **Causa 3** (mayoría de los casos, el modelo no reconoce evidencia
-   técnica/tabular incluso con candidate pool curado): confirma que R2
-   (BM25 + candidate pool más chico) **no resuelve** el techo de recall
-   del modelo — cierra, con evidencia real, la hipótesis de diseño
-   original de la fase de juicio de R2. Si Cesar quiere seguir atacando
-   el recall, la alternativa de embeddings semánticos (diferida, no
-   reabierta aquí) o un cambio de modelo vuelven a ser las opciones
-   reales sobre la mesa.
-4. `factory/regulatory/retrieval/judgment.py` +
-   `factory/tests/test_r2_judgment.py` ya commiteados (`dddfbb2`, medición
-   diagnóstica completa) — los fixes de Causa 1 (`chunked_engine.py`) y
-   Causa 2 (los 3 prompts YAML) + sus tests siguen sin commitear,
-   pendientes de aprobación.
-5. `retrieval_recall_at_5=4/7` sin cambios; `retrieval_recall_at_10`
-   subió a **7/7** tras el fix de Causa 1 (arriba) — ambos siguen siendo
-   válidos como métrica de recuperación pura.
+   PDF)~~ — **CORREGIDA y CONFIRMADA con llamada LLM real** (arriba):
+   P1 pasó de `not_observed` a `observed`.
+2. ~~**Causa 2** (positivo sin cita)~~ — **CORREGIDA** (contrato de
+   prompt); efecto real sobre P2 **sin confirmar todavía** (presupuesto
+   no alcanzó para re-medirla en esta corrida).
+3. **Causa 3** (límite real del modelo con evidencia tabular/densa) —
+   **reconfirmada** con P6 tras extracción limpia y modelo recalificado:
+   no es un defecto de pipeline. Cierra, con evidencia real de una
+   llamada LLM (no solo de `_is_anchored` en aislado), la hipótesis de
+   diseño original de la fase de juicio de R2 para este tipo de
+   contenido. Sigue siendo la pregunta abierta del roadmap: ¿embeddings
+   semánticos, cambio de modelo, o alcance reducido del analizador?
+4. Estado de commits: `judgment.py`+tests (`dddfbb2`) y los fixes de
+   Causa 1/2 — código + los 3 prompts YAML (`d42d919`) — ya commiteados.
+   El resultado de esta re-medición real (§4, arriba) está documentado
+   pero **sin commitear todavía**.
+5. Si Cesar quiere completar la medición (P2 + P7): requiere una
+   `PILOT_EXECUTION` nueva con tope calculado —
+   `PILOT_EXECUTION-2026-004` agotó su presupuesto (60/60).
+6. `retrieval_recall_at_5=4/7` sin cambios; `retrieval_recall_at_10=7/7`
+   (ya commiteado, Causa 1) — ambos siguen siendo válidos como métrica
+   de recuperación pura, sin relación con esta re-medición de juicio.
+7. `RAQ_REENFOQUE_DECISION` (R2.1 §5, escenario A vs. B) — con datos
+   parciales, ambos escenarios tienen evidencia real a favor según el
+   tipo de evidencia (extracción vs. tabular) — no hay una única
+   respuesta binaria todavía; decisión de Cesar sobre cómo pesar esto
+   para el roadmap del Analizador GMP.
