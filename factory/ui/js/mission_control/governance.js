@@ -137,6 +137,18 @@ const PANELS = [
        (mismo defecto de RC-7) ANTES de que Cesar terminara de intentar
        firmar PILOT_EXECUTION-2026-003 sin panel que lo mostrara. */
     resumen:'Alcance EXPLICITO (documento/agente/requisito) y tope duro de llamadas. NUNCA autoriza CORPUS_AUTHORIZATION ni D4 -- familia separada, ninguna otra la lee.' },
+  { id:'prompt-version-regularizacion', gate:'G-PV', family:'ARTIFACT_VERSION',
+    titulo:'Prompts gobernados — regularización de versión (R2.1 Causa 2)',
+    /* Mismo patron que matrix-version-regularizacion (RC-7/G6-MVR): un
+       cambio que YA esta en disco (bump 1.1.0->1.1.1 de los 3 prompts,
+       commit d42d919, contenido ya aprobado por Cesar en chat al aprobar
+       ese commit) sin decision ARTIFACT_VERSION que cubra la invariante
+       hash<->version<->decision -- encontrado por el guard (fail_count=3)
+       durante el Gate 0 de R2.1 Opcion C, 2026-08-10. gate:'G-PV' es
+       deliberadamente un id fuera de G1..G8 (mismo motivo que 'PILOT'):
+       no hay precondicion real que heredar, el boton nunca queda
+       bloqueado por un gate ajeno. */
+    resumen:'3 prompts (part11/annex11/alcoa), cada uno 1.1.0→1.1.1 sin decisión ACTIVE que lo cubra. No reescribe ningún YAML: ya están en el estado que esta firma aprueba.' },
 ];
 
 const GOLDEN_DATASET_ARTIFACT_ID = 'factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py';
@@ -144,6 +156,20 @@ const GOLDEN_DATASET_ARTIFACT_ID = 'factory/regulatory/golden_dataset/semantic_v
 const CATALOG_ARTIFACT_ID = 'factory/regulatory/requirement_catalog/requirements.yaml';
 
 const MATRIX_ARTIFACT_ID = 'factory/regulatory/applicability_matrix.yaml';
+
+/* R2.1 Opción C (2026-08-10): lista explícita y acotada, igual que en
+   governance_service.py -- agregar un 4º prompt gobernado a esta
+   regularización es una decisión propia, no un efecto automático. */
+const PROMPT_ARTIFACT_IDS = [
+  'factory/engines/gmpai_integrity/prompts/part11_prompts.yaml',
+  'factory/engines/gmpai_integrity/prompts/annex11_prompts.yaml',
+  'factory/engines/gmpai_integrity/prompts/alcoa_prompts.yaml',
+];
+const PROMPT_STATUS_PREFIX = { // prefijo corto para cada form de firma (pp1/pp2/pp3)
+  'factory/engines/gmpai_integrity/prompts/part11_prompts.yaml': 'pp1',
+  'factory/engines/gmpai_integrity/prompts/annex11_prompts.yaml': 'pp2',
+  'factory/engines/gmpai_integrity/prompts/alcoa_prompts.yaml': 'pp3',
+};
 
 /* ── error explícito, nunca un placeholder ─────────────────────────────── */
 
@@ -863,6 +889,143 @@ function panelMatrixVersionRegularizacion(){
   </div>`;
 }
 
+/* ── Panel — Prompts gobernados, regularización de versión (R2.1 Causa 2) ── */
+
+function promptVersionProposals(artifactId){
+  const props = GOV?.proposals?.ARTIFACT_VERSION || [];
+  return props.filter(p => (p.resolved_target_ids||[]).includes(artifactId));
+}
+
+function validPromptVersionProposal(artifactId, ps){
+  if(!ps || !ps.found) return null;
+  return promptVersionProposals(artifactId).find(p =>
+    p.proposal_state === 'PROPOSED' &&
+    p.payload && p.payload.artifact_path === artifactId &&
+    p.payload.from_version && p.payload.artifact_hash_before &&
+    p.payload.to_version === ps.live_version &&
+    p.payload.expected_hash_after === ps.live_sha256
+  ) || null;
+}
+
+function panelPromptVersionRegularizacion(){
+  const c = GOV.coverage?.ARTIFACT_VERSION || {};
+  const promptStates = GOV.artifacts?.prompt_states || {};
+
+  const secciones = PROMPT_ARTIFACT_IDS.map(artifactId => {
+    const prefix = PROMPT_STATUS_PREFIX[artifactId];
+    const ps = promptStates[artifactId] || {found:false};
+    const propuestas = promptVersionProposals(artifactId);
+    const valida = validPromptVersionProposal(artifactId, ps);
+
+    const filasPropuestas = propuestas.map(p => {
+      const t = p.payload && p.payload.to_version
+        ? `${esc(p.payload.from_version||'?')} → ${esc(p.payload.to_version)}`
+        : '(sin transición declarada -- no aplicable)';
+      const esValida = valida && p.decision_instance_id === valida.decision_instance_id;
+      return `<div class="meta" style="margin-top:4px">
+        <span class="mono">${esc(p.decision_instance_id)}</span>
+        [${esc(p.proposal_state)}] ${t}
+        ${esValida ? ' <b style="color:var(--pass)">← vigente, firmable</b>' : ''}
+      </div>`;
+    }).join('') || '<div class="meta" style="margin-top:4px">Ninguna propuesta para este artefacto.</div>';
+
+    return `
+    <div class="card" style="margin-top:10px">
+      <b class="mono">${esc(artifactId)}</b>
+      ${ps.found ? `
+      <div class="meta" style="margin-top:6px">Estado VIVO: versión
+        <span class="mono">${esc(ps.live_version)}</span>, hash
+        <span class="mono">${esc((ps.live_sha256||'').slice(0,16))}…</span>.</div>` : `
+      <div class="meta" style="margin-top:6px;color:var(--warn)">No se pudo leer el estado vivo de este artefacto.</div>`}
+
+      ${valida ? `
+      <div style="margin-top:10px;padding:8px;border:1px solid var(--pass)">
+        <b style="color:var(--pass)">PROPUESTA SELECCIONADA PARA FIRMAR</b>
+        <div class="meta" style="margin-top:6px">PROPOSAL_ID = <span class="mono">${esc(valida.decision_instance_id)}</span></div>
+        <div class="meta">FROM_VERSION = <span class="mono">${esc(valida.payload.from_version)}</span></div>
+        <div class="meta">TO_VERSION = <span class="mono">${esc(valida.payload.to_version)}</span></div>
+        <div class="meta">ARTIFACT_HASH_BEFORE = <span class="mono">${esc(valida.payload.artifact_hash_before)}</span></div>
+        <div class="meta">EXPECTED_HASH_AFTER = <span class="mono">${esc(valida.payload.expected_hash_after)}</span></div>
+        <div class="meta">CHANGE_REASON = <span class="mono">${esc(valida.payload.change_reason)}</span></div>
+      </div>` : ''}
+
+      <div style="margin-top:10px"><b>PROPUESTAS PARA ESTE ARTEFACTO</b></div>
+      ${filasPropuestas}
+
+      ${signatureForm(prefix)}
+      ${!valida ? `<div class="meta" style="margin-top:6px;color:var(--warn)">
+        No hay ninguna propuesta con la transición vigente (atada al hash/versión
+        VIVOS de hoy) -- el botón queda deshabilitado.</div>` : ''}
+      <div style="margin-top:10px">
+        <button id="${prefix}-submit-btn" ${valida?'':'disabled'}
+          onclick="govSubmitPromptVersionRegularizacion('${esc(artifactId)}')">
+          ${valida ? `Confirmar ${esc(valida.decision_instance_id)}` : 'Registrar autorización'}</button>
+      </div>
+      ${statusLine(prefix)}
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="card">
+    <b>Prompts gobernados — regularización de versión (R2.1 Causa 2)</b>
+    ${coverageBlock('ARTIFACT_VERSION', c)}
+    <div class="meta" style="margin-top:6px">
+      El bump 1.1.0→1.1.1 de los 3 prompts ya está en disco (commit
+      <span class="mono">d42d919</span>, contenido ya aprobado por Cesar al
+      aprobar ese commit) -- esta firma cubre la invariante
+      hash⟺versión⟺decisión de <span class="mono">ARTIFACT_VERSION</span>
+      (la misma que ya protege al catálogo y a la matriz), no vuelve a
+      aprobar el contenido del prompt. Registrar NO reescribe ningún YAML:
+      eso lo hace <span class="mono">artifact_version_apply.apply_regularization_for_applied_change()</span>,
+      un paso separado que exige esta decisión ya confirmada.</div>
+    ${NO_EJECUTA}
+    ${secciones}
+    <div style="margin-top:12px"><button onclick="govOpen('')">Volver al índice</button></div>
+  </div>`;
+}
+
+export async function govSubmitPromptVersionRegularizacion(artifactId){
+  const ps = GOV?.artifacts?.prompt_states?.[artifactId];
+  const valida = validPromptVersionProposal(artifactId, ps);
+  const prefix = PROMPT_STATUS_PREFIX[artifactId];
+  if(!valida){
+    setStatus(prefix, 'warn', 'No hay ninguna propuesta ARTIFACT_VERSION con la '
+      + 'transición vigente (atada al hash/versión vivos) para este artefacto.');
+    return;
+  }
+  const sig = readSignature(prefix);
+  if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
+  if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
+  if(GOV_STALE){
+    setStatus(prefix,'warn','El estado cambió desde que cargaste esta página. '
+      + 'Pulsa "Recargar estado" arriba antes de firmar.');
+    return;
+  }
+  setBusy(prefix+'-submit-btn', true);
+  setStatus(prefix,'busy','Firmando (echo-back)…');
+  try {
+    const r = await postJSON('/api/v1/layer9/governance/artifact-version/sign', {
+      proposal_id: valida.decision_instance_id,
+      artifact_path: valida.payload.artifact_path,
+      from_version: valida.payload.from_version,
+      to_version: valida.payload.to_version,
+      artifact_hash_before: valida.payload.artifact_hash_before,
+      expected_hash_after: valida.payload.expected_hash_after,
+      state_hash: GOV?.family_state_hashes?.ARTIFACT_VERSION,
+      reason: sig.reason,
+      approved_by_id: sig.id,
+      approved_by_display_name: sig.name || sig.id,
+    });
+    if(!r.ok){ setStatus(prefix,'fail', explicaError(r.status, r.data)); return; }
+    setStatus(prefix,'ok', explicaFirma(r.data));
+    govRefresh();
+  } catch(e) {
+    setStatus(prefix,'fail', 'Error de red/JS al firmar: ' + (e && e.message || e));
+  } finally {
+    setBusy(prefix+'-submit-btn', false);
+  }
+}
+
 /* ── Panel D-2 — Matriz de aplicabilidad (APPLICABILITY_MATRIX, G6) ────── */
 
 /* RC-7 (panel ARQ, 2026-08-05): esta familia nunca tuvo panel -- ni siquiera
@@ -1498,6 +1661,7 @@ function paint(){
   else if(p.id==='d4a')            body = panelD4A();
   else if(p.id==='corpus-authorization') body = panelCorpusAuthorization();
   else if(p.id==='pilot-execution')      body = panelPilotExecution();
+  else if(p.id==='prompt-version-regularizacion') body = panelPromptVersionRegularizacion();
   else                             body = panelPendiente(p);
   el.innerHTML = banner + body;
   if(p.id==='d1-correccion') govRecalcHash();

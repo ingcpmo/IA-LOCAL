@@ -69,6 +69,18 @@ GOVERNED_FAMILIES = ("D1", "D2", "D3", "D4", "D5", "ARTIFACT_VERSION",
                      "SOURCE_ORIGIN_VERIFICATION", "CORPUS_AUTHORIZATION",
                      "PILOT_EXECUTION")
 
+# R2.1 Opción C (2026-08-10): los 3 prompts gobernados cuyo bump de
+# prompt_version (Causa 2, commit d42d919) quedó sin decisión ARTIFACT_VERSION
+# asociada -- panel de regularización, mismo patrón que catalog_state/
+# matrix_state. Lista explícita y acotada, no derivada de un glob: agregar un
+# 4º prompt gobernado a esta regularización es una decisión propia, no un
+# efecto automático de que exista un archivo nuevo.
+PROMPT_ARTIFACT_IDS = (
+    "factory/engines/gmpai_integrity/prompts/part11_prompts.yaml",
+    "factory/engines/gmpai_integrity/prompts/annex11_prompts.yaml",
+    "factory/engines/gmpai_integrity/prompts/alcoa_prompts.yaml",
+)
+
 
 class GovernanceNotFoundError(LookupError):
     """404 -- la propuesta o la decisión previa no existe."""
@@ -536,7 +548,17 @@ def get_state(*, store_file: Path | None = None) -> dict:
                       # de aplicabilidad (RC-7): la versión VIVA del archivo, no un
                       # literal congelado en el HTML.
                       "matrix_state": artifact_state(
-                          "factory/regulatory/applicability_matrix.yaml")},
+                          "factory/regulatory/applicability_matrix.yaml"),
+                      # R2.1 Opción C (2026-08-10): mismo patrón, para el panel de
+                      # regularización de los 3 prompts gobernados cuyo bump de
+                      # prompt_version (Causa 2, commit d42d919) quedó sin decisión
+                      # ARTIFACT_VERSION asociada -- el guard reporta FAIL hasta que
+                      # se firme. Alcance acotado a estos 3 (los únicos con
+                      # propuesta de regularización real hoy), mismo criterio que
+                      # catalog_state/matrix_state.
+                      "prompt_states": {
+                          p: artifact_state(p) for p in PROMPT_ARTIFACT_IDS
+                      }},
         # G4c (hallazgo 2026-08-04): propuestas CON payload, para que un panel
         # pueda filtrar por artefacto (`payload.artifact_path`/
         # `resolved_target_ids`) en vez de mezclar todas las propuestas de la
