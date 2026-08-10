@@ -355,15 +355,229 @@ Tests actualizados: `test_r2_retrieval.py::test_p3_annex11_17_not_in_top10`
 (antes `test_p3_annex11_12_not_in_top10`), rank 12 confirmado con el
 `req_id` correcto.
 
+## Resultado real de la fase de JUICIO (ejecutada en background, 2026-08-10)
+
+**Estado de implementación al momento de esta corrida**: `factory/regulatory/retrieval/judgment.py`
++ `factory/tests/test_r2_judgment.py` existen en el árbol de trabajo pero
+**no están commiteados** (`git status`: `??` sin trackear). Se documenta
+el resultado real igual, tal como se encontró, sin esperar al commit —
+regla de "leer antes de escribir" aplicada a la evidencia ya generada.
+
+**Fuente de la evidencia**: `factory/audit/factory_audit.jsonl`, evento
+`r2_judgment_batch_completed` (`entry_id 7d184c28-e2c2-4102-88f4-5f60d794306c`),
+cruzado con los 8 checkpoints reales en `factory/regulatory/pilot_run/checkpoints/`
+que ese evento referencia (uno por unidad).
+
+```
+timestamp:                2026-08-10T05:25:50 UTC
+document_ids:              [RW-0005, RW-0011, RW-0012]
+stop_reason:                BATCH_COMPLETE
+total_calls_made:           50
+total_wall_seconds:         21626.4  (~6h 00m)
+units_completed:            8
+units_failed:                0
+selected_pilot_instance_id: PILOT_EXECUTION-2026-004
+```
+
+Resultado por unidad (checkpoint real, `chunk_observation` de cada chunk
+juzgado):
+
+| Unidad | Agente | Documento | requirement_id | Chunks juzgados | Resultado |
+|---|---|---|---|---|---|
+| P1 | fda_part11_agent | RW-0005 | `21_CFR_11.10(e)` | 5 | `not_observed_in_chunk` en las 5 |
+| P1 (repetido) | fda_part11_agent | RW-0005 | `21_CFR_11.10(e)` | 5 | `not_observed_in_chunk` en las 5 |
+| P2 | fda_part11_agent | RW-0005 | `21_CFR_11.10(g)` | 10 | `not_observed_in_chunk` en las 10 |
+| P4 | alcoa_plus_agent | RW-0011 | `ALCOA_ATTRIBUTABLE` | 5 | `not_observed_in_chunk` en las 5 |
+| P5 | alcoa_plus_agent | RW-0005 | `ALCOA_CONTEMPORANEOUS` | 10 | `not_observed_in_chunk` en las 10 |
+| P6 | fda_cgmp_211_agent | RW-0011 | `21_CFR_211.68(b)` | 5 | `not_observed_in_chunk` en las 5 |
+| P7 | fda_cgmp_211_agent | RW-0012 | `21_CFR_211.68(b)` | 5 | `not_observed_in_chunk` en las 5 |
+| N1 | eu_annex11_agent | RW-0005 | `ANNEX11_4` (negativo) | 5 | `not_observed_in_chunk` en las 5 (correcto) |
+
+Suma de llamadas por unidad = 5+5+10+5+10+5+5+5 = 50, cuadra exactamente
+con `total_calls_made` del evento de auditoría.
+
+### Por qué P3 no se ejecutó en este batch
+
+**P3 fue excluido del diseño del batch antes de gastar ninguna llamada
+real** — no es un fallo de la corrida, es una decisión de diseño
+documentada en `.claude/plans/sharded-riding-turing.md` (sección
+"Hallazgos de la investigación", punto 4), tomada porque no había nada
+real que medir para P3 con este mecanismo:
+
+- La fase de juicio le da al modelo **solo** los chunks que
+  `retriever.retrieve_top_k(document_sha256, req_id, k)` devuelve — nunca
+  el documento completo. Si la página real de un positivo no entra al
+  candidate pool, el modelo JAMÁS la ve, y el resultado (`not_observed`)
+  estaría garantizado por construcción, no por una limitación real del
+  juicio del modelo — medirlo así sería fabricar un dato, no diagnosticar
+  nada.
+- Ya estaba confirmado (sección "Corrección de P3 y re-medición" arriba,
+  commit `1633216`) que la página real de P3 (p.45, `ANNEX11_17`) **no
+  entra ni siquiera al top-10** de BM25 (rank 12 de 29) — ni con `k=5` ni
+  con el `k=10` usado para P2/P5 en este mismo batch. Subir `k` más allá
+  de 10 para forzar la inclusión de P3 habría disparado el costo de
+  llamadas muy por encima del presupuesto disponible (`PILOT_EXECUTION-2026-004`,
+  `max_calls=60`) sin garantía de que valiera la pena, y el diseño del
+  batch (30 llamadas para P1/P4/P6/P7/N1/N2 a k=5 + 20 para P2/P5 a k=10
+  = 50) ya usaba casi todo el margen (10 de 60).
+- Causa raíz de por qué P3 no entra al top-10 en primer lugar (ya
+  investigada y documentada arriba, sección "Investigación de P3"): un
+  artefacto de extracción de PDF parte "retention" en `"retentio n"`
+  (mismo tipo de artefacto de kerning que después resultó ser también la
+  Causa 1 del diagnóstico de judgment_recall, más abajo) más dilución del
+  chunk que mezcla la sección de retención con Historian/Audit
+  Trail/Critical Data Records — ninguna de las dos causas es algo que el
+  juicio LLM pueda resolver si nunca ve el chunk.
+
+**Consecuencia**: `judgment_recall` se mide sobre 6 positivos (P1, P2,
+P4, P5, P6, P7), no sobre los 7 originales del fixture — P3 queda
+pendiente de una decisión previa (¿corregir la causa técnica de
+extracción/dilución, o subir `k` gastando más presupuesto?) antes de que
+tenga sentido incluirlo en cualquier medición de juicio futura.
+
+```
+judgment_recall (P1,P2,P4,P5,P6,P7) = 0/6
+```
+
+**Lectura honesta, sin maquillar**: las 6 unidades positivas del batch
+dieron `not_observed_in_chunk` en el 100% de los chunks juzgados,
+incluidas P1/P4/P6/P7 — que sí habían entrado al top-5 de la recuperación
+pura (medición anterior, cero LLM). El único resultado correcto es el
+negativo N1 (correctamente no observado). Esto es **peor que el baseline
+de documento completo (2/7, H1-H4)**: reducir el candidate pool a los
+chunks top-k de BM25 no mejoró el recall del juicio LLM, lo llevó a cero
+en esta corrida — contradice la hipótesis de diseño de R2 (que un pool
+más chico y enfocado ayudaría al juicio del modelo a encontrar evidencia
+que sí está presente).
+
+**No investigado en esta corrida** (registrado como pendiente, no
+asumido): por qué P1 aparece dos veces en el batch con el mismo
+`document_id`/`requirement_id` (dos `JudgmentUnit` distintos con el mismo
+target); si el resultado 0/6 se debe a un problema del prompt/formato de
+`per_unit_text` cuando recibe chunks ya recortados por BM25 en vez de
+páginas completas (`JudgmentUnit` vs `PilotSampleUnit`, ver docstring de
+`judgment.py`), a un defecto en cómo `evaluate_chunked` interpreta
+`target_requirement_ids` con este tipo de entrada, o a otra causa
+distinta. No se investiga ni se corrige nada de esto sin indicación
+explícita — se deja documentado como el hallazgo real de esta corrida.
+
+## Diagnóstico de judgment_recall=0/6 (2026-08-10) — tres causas raíz distintas, ninguna corregida
+
+Investigado leyendo las respuestas crudas reales del modelo
+(`factory/regulatory/pilot_run/checkpoints/raw_responses/chunked-*/task-*.txt.gz`,
+nunca inventadas) y reproduciendo `retriever.retrieve_top_k()` +
+`chunked_engine._is_anchored()` a mano contra el corpus real, sin
+mockear nada. El 0/6 **no tiene una sola causa** — son tres mecanismos
+distintos, cada uno con su propio caso real que lo evidencia.
+
+### Causa 1 (confirmada, reproducible) — `_is_anchored` rechaza una cita real por un artefacto de extracción de PDF
+
+Unidad P1 (`21_CFR_11.10(e)`, RW-0005, candidato rank-1 recuperado =
+páginas 45-46): el modelo **sí encontró la evidencia real**
+(`estado: cumple_parcialmente`, cita literal de 913 caracteres citando
+UR3.3.1/UR3.3.2 completos, checkpoint `chunked-965e5cf6ee5d`, task
+`b737fdf292e3`). La cita se rechazó igual (`chunk_observation` final =
+`not_observed_in_chunk`) porque el texto fuente real, extraído del PDF,
+contiene el artefacto de kerning `"wheneve r"` (espacio espurio que
+parte "whenever" en dos) — el modelo cita la palabra correcta
+("whenever"), `_is_anchored()` exige coincidencia literal exacta (tras
+normalizar espacios) de la CITA COMPLETA contra el chunk, y esa única
+palabra rota invalida el match completo (`in` sobre strings largos es
+todo-o-nada, no tolera una palabra distinta en medio). Reproducido a
+mano:
+
+```python
+from factory.regulatory.retrieval import retriever
+from factory.regulatory.corpus_runner import _resolve_document_path
+from factory.engines.gmpai_integrity.chunked_engine import _is_anchored, build_page_chunks
+
+path, sha = _resolve_document_path('RW-0005')
+cands = retriever.retrieve_top_k(sha, '21_CFR_11.10(e)', k=5)
+chunks = build_page_chunks([c['text'] for c in cands])
+_is_anchored(evidencia_real_citada_por_el_modelo, chunks[0]['text'])  # -> False
+```
+
+Mismo patrón exacto ya documentado para P3 (`"retentio n"` partiendo
+"retention", ver "Investigación de P3" arriba) — no es un defecto nuevo
+de R2, es una fragilidad preexistente de `_is_anchored` (substring
+literal tras normalizar espacios) que ya afectaba al baseline, pero se
+vuelve más visible aquí porque las citas evaluadas son largas (varias
+frases) y basta que UN artefacto de kerning caiga en medio de la cita
+para invalidar el match completo.
+
+**Nota adicional encontrada, no atribuible a R2 pero relevante para
+futuras corridas**: la unidad "N2" del batch (mismo `req_id`/documento
+que P1, pensada como negativo de tabla de contenidos) recibió **el mismo
+candidate pool que P1** (checkpoint `chunked-933350a6d3a3`, misma cita de
+913 caracteres, mismo rechazo por anchoring) — `retrieve_top_k` depende
+solo de `(document_sha256, req_id)`, nunca de qué caso de fixture se está
+probando, así que P1 y N2, tal como están construidas hoy, no midieron
+nada independiente entre sí en este batch.
+
+### Causa 2 (confirmada) — el modelo afirma un estado positivo sin aportar cita
+
+Unidad P2 (`21_CFR_11.10(g)`, RW-0005, k=10, checkpoint
+`chunked-c353d90f9e9c`): en uno de los 10 chunks el modelo devolvió
+`estado: cumple_parcialmente` pero `evidencia_exacta` **vacía**. El gate
+de anclaje (`anchored = _is_anchored(evidencia, ...) if evidencia else
+False`) trata correctamente una cita vacía como no anclada — el
+comportamiento del gate es correcto, el problema es que el modelo violó
+el contrato del prompt (afirmar cumplimiento sin evidencia citable). No
+se investigó en este diagnóstico qué parte del prompt/formato lo originó
+— queda como hallazgo, no como causa resuelta.
+
+### Causa 3 (mayoría de los casos) — el modelo genuinamente no reconoce la evidencia en los candidatos que sí la contienen
+
+Unidades P4, P5, P6, P7 y N1 (correcto): **todos** los chunks de estas
+unidades — incluidos los que, según `retrieval_recall_at_5` (medición de
+recuperación pura, arriba), sí contienen la página real (P4 rank 2, P6
+rank 2, P7 rank 2) — recibieron `estado: evidencia_insuficiente` sin
+ninguna cita, en el 100% de los chunks evaluados. Verificado a mano para
+P6/P7 (`21_CFR_211.68(b)`, RW-0011): el candidato rank-2 real (páginas
+12-14, `retriever.retrieve_top_k(sha, '21_CFR_211.68(b)', k=5)`) es
+contenido denso de tablas de I/O (nombres de señales, tags,
+descripciones técnicas) — la evidencia real que un evaluador humano
+reconocería queda diluida entre mucho ruido tabular, mismo patrón de
+dilución ya documentado para P3. Esto **no es un defecto de
+`judgment.py` ni de la recuperación BM25** — es el mismo límite de
+recall del modelo ya medido en H1-H4 (2/7), ahora confirmado
+independientemente con un candidate pool más chico: reducir el pool no
+ayudó al modelo a reconocer evidencia técnica/tabular parafraseada.
+
+### Qué no se investigó en este diagnóstico (pendiente, si Cesar lo pide)
+
+- Por qué el modelo omite la cita en un estado positivo (Causa 2) — no se
+  leyó el prompt completo enviado en ese chunk específico para descartar
+  un problema de formato/truncamiento del prompt.
+- Si Causa 1 (fragilidad de `_is_anchored`) también explica parte del
+  techo 2/7 del baseline original (H1-H4) — no se re-analizaron esas
+  corridas viejas.
+- Por qué P1 y "N2" comparten candidate pool (limitación de diseño de
+  `query_builder.build_retrieval_query`, que depende solo de `req_id`) —
+  reportado como hallazgo, sin propuesta de solución todavía.
+
 ## Pendiente de decisión de Cesar (siguiente paso)
 
-1. `retrieval_recall_at_5=4/7` (ahora medido con el `req_id` de P3 ya
-   corregido, mismo resultado) — ¿alcanza para pasar a la fase de
-   JUICIO, o Cesar quiere investigar/corregir la causa técnica de P3
-   (artefacto de extracción de PDF) antes de avanzar?
-2. La fase de JUICIO (LLM sobre los top-k) sigue sin autorizar —
-   requiere su propia `PILOT_EXECUTION` firmada, no cubierta por esta
-   corrida.
-3. Si más adelante el gate `≥6/7` no se alcanza con BM25 puro en la
-   fase de juicio: evaluar retomar la alternativa de embeddings
-   semánticos (diferida, no reabierta en esta corrida).
+1. **Causa 1** (`_is_anchored` frágil ante artefactos de kerning del
+   PDF): ¿endurecer el anclaje para tolerar una palabra rota aislada
+   (p.ej. permitir cierto grado de fuzzy-match en vez de substring
+   exacto), con el riesgo real de aflojar un validador que hoy protege
+   contra evidencia inventada — decisión sensible, nunca implícita?
+2. **Causa 2** (positivo sin cita): ¿investigar el prompt real de ese
+   chunk para entender por qué el modelo omitió la cita, antes de decidir
+   si amerita una corrección?
+3. **Causa 3** (mayoría de los casos, el modelo no reconoce evidencia
+   técnica/tabular incluso con candidate pool curado): confirma que R2
+   (BM25 + candidate pool más chico) **no resuelve** el techo de recall
+   del modelo — cierra, con evidencia real, la hipótesis de diseño
+   original de la fase de juicio de R2. Si Cesar quiere seguir atacando
+   el recall, la alternativa de embeddings semánticos (diferida, no
+   reabierta aquí) o un cambio de modelo vuelven a ser las opciones
+   reales sobre la mesa.
+4. Decidir si `factory/regulatory/retrieval/judgment.py` +
+   `factory/tests/test_r2_judgment.py` (sin commitear) se commitean tal
+   cual (como medición diagnóstica ya completa, con su resultado real
+   documentado), se corrigen primero (Causa 1/2), o se descartan.
+5. `retrieval_recall_at_5=4/7` (recuperación pura, sin cambios) sigue
+   siendo válido como métrica de recuperación — las tres causas nuevas
+   están en la fase de juicio, no en `retrieve_top_k`.
