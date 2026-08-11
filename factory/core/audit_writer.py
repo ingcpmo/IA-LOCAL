@@ -241,6 +241,18 @@ VALID_EVENTS = {
     # de layer9_decision_recorded: aquel registra la DECISION (propose/
     # confirm, sin efecto), este es el efecto real que la decisión autorizó.
     "artifact_version_applied",
+    # R1.8 (2026-08-09) — despacho de un finding SUPPORTING_EVIDENCE_UNDER_REVIEW
+    # a la cola de revisión humana (factory/layer9/human_review_queue.py::
+    # enqueue_finding_for_review). Hallazgo real: este evento faltaba aquí
+    # desde que R1.8 se commiteó (bc1d8b0) -- cada despacho fallaba su
+    # escritura de auditoría en silencio (capturada como governed_exceptions,
+    # nunca crasheaba el run, pero el evento nunca quedaba en la cadena).
+    "finding_enqueued_for_review",
+    # R2 (2026-08-09) — resumen de un lote de la fase de JUICIO
+    # (factory/regulatory/retrieval/judgment.py::run_judgment_batch): mismo
+    # nivel que corpus_run_batch_completed, pero sobre candidatos recuperados
+    # por BM25 en vez de páginas re-extraídas del PDF.
+    "r2_judgment_batch_completed",
 }
 
 

@@ -83,6 +83,13 @@ def test_p5_real_replay_produces_exactly_one_queue_entry(monkeypatch, isolated_r
     assert entry["summary"]["evidence_quote"] == evidencia_real
     assert "OBSERVED_ONLY_UNVERIFIED" in entry["summary"]["review_flags"]
     assert entry["summary"]["conclusion"] == "SUPPORTING_EVIDENCE_UNDER_REVIEW"
+    # Regresión (hallazgo real, 2026-08-09): "finding_enqueued_for_review"
+    # faltaba en audit_writer.VALID_EVENTS -- el despacho a la cola SÍ
+    # escribía la entrada real, pero su evento de auditoría fallaba en
+    # silencio (capturado aquí, en governed_exceptions). Corregido en
+    # audit_writer.py; este assert evita que un evento nuevo futuro
+    # reintroduzca el mismo patrón sin que ningún test lo note.
+    assert result["governed_exceptions"] == []
 
 
 def test_negative_annex11_4_generates_no_queue_entry(monkeypatch, isolated_review_queue):
@@ -120,3 +127,4 @@ def test_wrong_topic_case_also_dispatched_to_queue(monkeypatch, isolated_review_
     pending = hrq.list_pending()
     assert len(pending) == 1
     assert pending[0]["summary"]["requirement_id"] == "21_CFR_11.10(d)"
+    assert result["governed_exceptions"] == []
