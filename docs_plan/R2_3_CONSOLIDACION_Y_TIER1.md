@@ -306,6 +306,40 @@ real no resuelto (punto 1) es acotado y conocido, no una sorpresa.
 como parte de la adopción) o mantener BM25 solo en `judgment.py` por
 ahora.
 
+### D1 — FIRMADO por Cesar (2026-08-11). Punto 1 resuelto, commiteado.
+
+`build_fusion_candidate_pool()` re-cableado: la llamada de embedding de
+la CONSULTA ahora pasa por `embed_runner.run_embed_batch()` (mismo
+hard-stop de presupuesto real que ya protegía la indexación de chunks)
+en vez de `embed_index.embed_query()` directo -- nueva firma
+`(document_id, document_sha256, req_id, *, k=5, calls_already_used=0)`
+(se necesitan los dos identificadores: `run_embed_batch` gobierna por
+`document_id`, `retriever`/`embed_index` indexan por `document_sha256`).
+Si `run_embed_batch` para en `HARD_STOP_CALLS` o cualquier otro
+`stop_reason` distinto de `BATCH_COMPLETE`, `build_fusion_candidate_pool`
+falla explícito (`FusionCandidatePoolError`) -- nunca sigue con un vector
+inventado. 5 tests (embeddings/`run_embed_batch` mockeados -- prueban la
+LÓGICA de esta función, no vuelven a probar la gobernanza de
+`EMBED_EXECUTION` en sí, ya probada en producción real por -012).
+
+**Punto 2 (indexación de documentos nuevos) queda tal cual estaba
+señalado** -- no es un defecto, es el comportamiento correcto: cualquier
+documento nuevo en modo JUICIO necesita su propia `EMBED_EXECUTION`
+antes. Con 1/60 de remanente en `-002`, la primera corrida real de
+producción sobre CUALQUIER documento (nuevo o de los 3 ya indexados,
+para una consulta más allá de las 9 ya cubiertas) necesita una
+`EMBED_EXECUTION` nueva primero.
+
+**Código commiteado** (`judgment_candidate_pool.py` +
+`test_r2_3_d1_fusion_candidate_pool.py`) -- ver commit al pie de este
+documento. `judgment.py` sigue construyendo `JudgmentUnit.candidate_
+chunks` explícitamente por ahora: adoptarlo como *constructor por
+defecto* en el call-site real de producción, y la re-medición de juicio
+dimensionada que eso habilitaría, quedan para una corrida separada
+(fuera de alcance de "cero llamadas de juicio LLM" de R2.3) -- este
+paquete deja el código listo, probado, sin gastar el 1/60 de remanente
+real ni ningún presupuesto de juicio.
+
 ---
 
 ### D2 — RESULTADO: especificación del producto Tier-1, con SOLO capacidades medidas
