@@ -712,9 +712,46 @@ de 2/7 que motivó la apuesta de R2).
 **Firma Cesar:** autoriza `PILOT_EXECUTION-2026-00X` antes de la primera
 llamada de medición; decide sobre el gate si R2 no alcanza 6/7.
 
+### R2 — CERRADO (2026-08-11): GATE BLOQUEANTE NO ALCANZADO, declarado sin eufemismos
+
+Camino completo recorrido (`docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md` +
+`docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md`): P7 corrido (`PILOT_EXECUTION-
+2026-010`, confirmada por Cesar) completa la muestra a 6/6 medibles —
+**1/6 observed**. Criterio pre-fijado por Cesar ("≤3/6-7 observed ⇒
+Opción B domina") **CUMPLIDO**: `1 ≤ 3`. La premisa de que el techo 2/7
+era "mayormente ruido de pipeline" (Opción A) queda **REFUTADA** por el
+propio criterio de Cesar — con kerning, contrato de prompt y agregación
+D ya corregidos, el recall de juicio no subió (2/7 → 1/6, mismo rango).
+
+Palanca adicional probada, no contemplada en el diseño original de este
+roadmap: **capa semántica local** (embeddings + fusión RRF con BM25,
+`docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md` §4) — RESOLVIÓ recuperación
+(`retrieval_recall_at_5` de 4/7 a 7/7, medido) pero la re-medición de
+juicio con el pool de fusión PERFECTO (`PILOT_EXECUTION-2026-012`, P2/P5
+con el chunk correcto al frente) confirmó **0/2** — el juicio NO mejoró.
+Tres vías independientes (BM25 solo, fusión con pool perfecto, criterio
+pre-fijado de Cesar sobre la muestra completa) confirman el mismo límite:
+es el modelo de 7B sobre paráfrasis, no ninguna etapa de recuperación.
+
+**R3-R5 tal como estaban diseñados en este roadmap (dependientes de
+`R2 ≥ 6/7`) NO se activan** — ver nota al inicio de R3 abajo.
+
 ---
 
 ## R3 — Generador de informe de hallazgos
+
+**NOTA DE REDEFINICIÓN (2026-08-11)**: el gate bloqueante de R2 arriba
+(`≥6/7` de recall de JUICIO) **no se cumplió** — 1/6 medido, confirmado
+por tres vías independientes. R3 tal como está especificado abajo
+("ensamblar el informe final... a partir de los registros ya verificados
+por R2") **no arranca sobre la base original**. El rumbo propuesto en su
+lugar es el producto **Tier-1 asistido** (D2,
+`docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md` §5) — SOLO capacidades
+medidas (confirmación automática de eco léxico anclado, rechazo de
+falsos positivos, candidatos de recuperación semántica al revisor, todo
+lo demás a revisión humana con cobertura declarada) — **pendiente de
+firma de Cesar**. La especificación original de R3 abajo se conserva sin
+editar como historia del diseño original, no como plan vigente.
 
 **Objetivo:** ensamblar el informe final de forma determinista a partir de
 los registros ya verificados por R2 — el LLM no decide qué entra al
@@ -870,3 +907,15 @@ etc. — fuera de este roadmap).
 
 Todos referenciados y clasificados en la cabecera ON_HOLD de
 `docs_plan/W5V2_REMEDIACION_RECALL_MODELO.md`.
+
+**Actualización (2026-08-11, cierre del arco R2)**: los tres diferidos de
+arriba quedan **intactos, sin cambios de estado** — R2 cerró con el
+gate de juicio NO alcanzado (ver nota en la sección R2), así que la
+condición de reactivación de H5/H6/H7 ("si el juicio sigue siendo el
+cuello de botella") **ya se cumplió**, confirmada con datos, no
+hipotética. H5 (modelo alternativo/GPU) y proveedor externo quedan
+dimensionados como D3 en
+`docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md` §5 (costos reales, sin
+ejecutar nada) — reactivarlos formalmente sigue siendo decisión de
+Cesar, no automática. Corpus formal W5 sigue esperando R5, que a su vez
+espera la decisión D2 (Tier-1) redefinida en R3 arriba.

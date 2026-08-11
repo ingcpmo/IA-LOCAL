@@ -28,6 +28,11 @@ conversacional). Nunca se cruzan: el analizador no toca `gmp-api`, y
 | Roadmap del analizador (R0-R5) | `docs_plan/ROADMAP_ANALIZADOR_GMP.md` |
 | Spec del contrato de R1 | `docs_plan/R1_SPEC_CONTRATO_ANALIZADOR.md` |
 | Productización de H2+H4 (R1.5) | `docs_plan/R1_5_PRODUCTIZACION_H2H4.md` |
+| Recuperación determinista (BM25) | `factory/regulatory/retrieval/{bm25,indexer,query_builder,retriever}.py` |
+| Capa semántica (embeddings + fusión RRF) | `factory/regulatory/retrieval/{embed,embed_index,embed_runner,fusion}.py` + `embed_execution.py` |
+| Fase de JUICIO (candidate pool → LLM) | `factory/regulatory/retrieval/judgment.py` |
+| Cierre de medición R2.2 (P7, blindaje §2, capa semántica medida) | `docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md` |
+| Consolidación R2.3 (re-etiquetado, fixtures replay, D1/D2/D3) | `docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md` |
 
 ## La lección estructural (por qué existe este skill)
 
@@ -223,18 +228,66 @@ append-only, Part 11).
   (`bc1d8b0`, 2026-08-09). `factory/tests/conftest.py` gana un fixture
   autouse (`isolated_review_queue`) para que ningún test contamine la
   cola real.
-- **R2**: **IMPLEMENTADO Y MEDIDO** (2026-08-09) —
-  `factory/regulatory/retrieval/` (BM25 Okapi, stdlib puro, sin
-  `chromadb` ni ningún paquete nuevo). `retrieval_recall_at_5 = 4/7`
-  sobre el fixture real (medido, no estimado), `retrieval_recall_at_10 =
-  6/7`. Ambos negativos correctamente fuera del top-5. **P5 sigue sin
-  aparecer en el top-5** — BM25 es léxico igual que la vieja heurística
-  `_is_topically_relevant`, mismo punto ciego que R1.6/R1.7 ya
-  documentó (evidencia parafraseada, sin vocabulario gobernado literal).
-  Detalle: `docs_plan/R2_DESIGN_DETALLADO.md`. La fase de JUICIO LLM
-  sigue bloqueada sin `PILOT_EXECUTION` nueva firmada.
-- **R3-R5**: sin empezar, dependen de que R2 alcance ≥6/7 (gate
-  bloqueante).
+- **R2**: **CERRADO** (2026-08-11, `docs_plan/R2_2_CIERRE_Y_CAPA_
+  SEMANTICA.md` + `docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md`). El gate
+  bloqueante (≥6/7 recall de JUICIO) **NO se alcanzó** — declarado sin
+  eufemismos: muestra completa 6/6 medibles, **1/6 observed**. Criterio
+  pre-fijado por Cesar ("≤3/6-7 observed ⇒ Opción B domina") **CUMPLIDO**.
+  Camino recorrido completo, en orden: BM25 solo (`retrieval_recall_at_5
+  = 4/7`) → capa semántica local (embeddings `nomic-embed-text` + fusión
+  RRF con BM25, `retrieval_recall_at_5 = 7/7`, RESUELVE recuperación) →
+  re-medición de juicio con el pool de fusión PERFECTO
+  (`PILOT_EXECUTION-2026-012`, P2 y P5 con el chunk correcto al frente)
+  → **0/2, el juicio NO mejoró**. Ver "La lección final del arco" abajo.
+- **R3-R5**: dependían de que R2 alcanzara ≥6/7 de juicio — ese gate no
+  se cumplió, así que R3-R5 tal como estaban diseñados **no se activan**.
+  Se redefinen bajo el rumbo Tier-1 (D2, `docs_plan/R2_3_CONSOLIDACION_
+  Y_TIER1.md` §5) SI Cesar lo firma — un producto que solo automatiza lo
+  medido (eco léxico + rechazo de falsos positivos + recuperación
+  semántica al revisor) y manda el resto a revisión humana con
+  cobertura declarada, nunca detección automática de paráfrasis.
+
+## La capa semántica (R2.2 §4 / R2.3 §5 D1) — qué es y qué NO resuelve
+
+- **Qué es**: embeddings locales vía Ollama (`nomic-embed-text:latest`,
+  CPU-friendly, familia de gobernanza propia `EMBED_EXECUTION` — NUNCA
+  descuenta de `PILOT_EXECUTION`, nunca autoriza corpus/baseline),
+  fusionados con BM25 vía Reciprocal Rank Fusion (RRF, `factory/
+  regulatory/retrieval/fusion.py`, determinista, sin dependencia nueva).
+  Código: `factory/regulatory/retrieval/{embed,embed_index,embed_runner,
+  fusion}.py` + `factory/regulatory/embed_execution.py`.
+- **Hallazgo de instrumento real**: `nomic-embed-text` tiene
+  `context_length=2048` TOKENS reales (`ollama show`,
+  `model_info["nomic-bert.context_length"]`) — no negociable vía
+  `options.num_ctx` (es límite del modelo, no del buffer). Chunks
+  pensados para el LLM de juicio (ventana mucho mayor) lo exceden —
+  `embed.py::embed_text()` reintenta truncando el prompt a la mitad
+  (determinista, hasta 4 veces) si el error es específicamente de
+  contexto.
+- **Qué SÍ resuelve, medido**: `retrieval_recall_at_5` de BM25 solo
+  (4/7) a fusión (7/7) — los 2 casos de paráfrasis del fixture (P2, P5)
+  entran al top-5 semántico donde BM25 solo no los ponía.
+  Negativos 2/2 fuera del top-5 en los tres métodos. Mapeo a página
+  intacto (mismos `chunk_index` que el índice BM25, nunca un
+  re-chunking paralelo).
+  - **Qué NO resuelve, medido**: el juicio del 7B sobre esa evidencia.
+    `PILOT_EXECUTION-2026-012` re-midió P2/P5 con el pool de fusión
+    PERFECTO (la evidencia correcta al frente, rank 2 de 5) y **el
+    resultado siguió `not_observed`, 0/2**. Recuperación y juicio son
+    **mitades independientes del muro** — medirlas juntas (como asumía
+    el diseño original de R2, "si mejora la recuperación, mejora el
+    recall medido") fue el error de diseño que este arco corrigió.
+
+## La lección final del arco R2 (2026-08-11)
+
+Tres vías de medición INDEPENDIENTES confirmaron el mismo límite: (1)
+BM25 solo (léxico, 4/7); (2) fusión semántica con pool perfecto para
+P2/P5 (recuperación resuelta, juicio 0/2); (3) el criterio pre-fijado de
+Cesar aplicado a la muestra completa (1/6 ≤ 3/6 ⇒ B domina). Ninguna
+mejora de PIPELINE (kerning, contrato, agregación D, fusión semántica)
+movió el recall de juicio fuera del rango 1-2/7 medido desde H1-H4. El
+techo es del modelo de 7B sobre evidencia parafraseada, no de ninguna
+etapa de recuperación o extracción — confirmado, no ya hipótesis.
 
 ## Qué está diferido (y su condición de reactivación)
 
