@@ -529,7 +529,14 @@ commit): `factory/regulatory/embed_execution.py`,
 modo juicio) + sus tests. Commits separados por causa raíz, según se
 apruebe.
 
-## 6. ENTREGA
+## 6. ENTREGA (PLANTILLA ORIGINAL — SUPERSEDED por "§6. ENTREGA — bloque real" arriba)
+
+R2.3 §1 (2026-08-11): esta sección es la plantilla de placeholders tal
+como Cesar la escribió en la orden original de R2.2 — nunca llenada,
+preservada sin editar (regla del proyecto: la orden original no se
+reescribe, se supersede con trazabilidad). El bloque que cuenta,
+con los valores reales, es "## 6. ENTREGA — bloque real" más arriba en
+este mismo documento. No usar los placeholders de abajo para nada.
 
 Diffs sin commit hasta aprobación; commits separados por causa raíz.
 
