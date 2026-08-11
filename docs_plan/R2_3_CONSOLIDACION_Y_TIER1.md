@@ -397,6 +397,38 @@ Rumbo del producto: Tier-1 asistido, alcance (a)-(f) de la tabla arriba,
 Implementación (informe asistido + empaquetado end-to-end) **pendiente
 de planificarse como corrida siguiente**, fuera de alcance de R2.3.
 
+### D2 — Tier-1 v1 IMPLEMENTADO (2026-08-11, plan `.claude/plans/wise-bubbling-toucan.md`)
+
+Commits `8b1f63f` (blindaje de baseline: `DOCUMENTATION_GAP`/
+`PROVISIONAL_GAP` también van a la cola R1.8 como red de seguridad,
+mismo criterio que R2.2 §2, sin cambiar la conclusión) y `4dd81ed`
+(`factory/regulatory/tier1_report.py`: orquestador + renderer). Dos
+hallazgos de la exploración corrigieron el alcance de la spec original
+(confirmados con Cesar antes de implementar): el bucket "rechazo
+automático de falsos positivos" no existe como estado independiente en
+el código (fusionado a revisión humana, 2 buckets reales:
+`CONFIRMED`/`NEEDS_HUMAN_REVIEW`); el modo baseline ahora también
+blindado, no solo el modo juicio.
+
+Gate 0 completo corrido para esta corrida encontró y corrigió una
+regresión real, no relacionada al alcance de Tier-1 en sí: el guardián
+de identidad reservada agregado en R2.3 §4 (`human_review_queue.
+mark_reviewed`) definía su propia lista en vez de delegar a
+`factory/core/identity_policy.py` (regla W5 V2 G1.15, "una sola lista en
+toda la fábrica") -- corregido, commit `d8cf761`.
+
+**Fuera de esta corrida, sin tocar**: ejecutar Tier-1 contra un
+documento real, persistencia del informe a disco, UI/endpoint HTTP.
+
+**Nota fuera de alcance, hallada durante Gate 0**: el almacén real
+`factory/layer9/decisions/decisions_v2.jsonl` tiene una entrada sin
+commitear (`D1-2026-056`, `decision_family=D1` -- familia no relacionada
+al "D1" de esta corrida, target regulatorio ecfr/eu_gmp/mhra,
+`proposed_by_id=mission_control_ui`, `2026-08-11T03:27:23Z`) -- actividad
+real vía la UI de gobernanza en vivo, concurrente a esta sesión. No se
+tocó (no es de esta corrida) -- señalado para que Cesar decida si
+commitear o revertir.
+
 **Pendiente de firma de Cesar**: adoptar D2 como rumbo del producto (o
 no) -- sin comprometer todavía la corrida de implementación.
 
