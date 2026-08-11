@@ -253,6 +253,15 @@ VALID_EVENTS = {
     # nivel que corpus_run_batch_completed, pero sobre candidatos recuperados
     # por BM25 en vez de páginas re-extraídas del PDF.
     "r2_judgment_batch_completed",
+    # R2.2 §4.3 (2026-08-10) — resumen de un lote de embeddings
+    # (factory/regulatory/retrieval/embed_runner.py::run_embed_batch), familia
+    # de gobernanza separada (EMBED_EXECUTION, nunca PILOT_EXECUTION): mismo
+    # nivel que r2_judgment_batch_completed, pero sobre vectores deterministas,
+    # cero juicio LLM. Hallazgo real: faltaba aquí -- la primera corrida real
+    # completó todos los embeddings (persistidos) pero crasheó en este último
+    # paso, perdiendo los query_vectors ya calculados (nunca devueltos al
+    # llamador porque la excepción interrumpió el return).
+    "r2_embed_batch_completed",
 }
 
 
