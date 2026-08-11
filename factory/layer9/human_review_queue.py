@@ -71,9 +71,20 @@ def enqueue(rc_id: str, project_id: str, summary: dict) -> dict:
     return entry
 
 
+_CANDIDATES_HONESTY_NOTE = (
+    "Estos candidatos son RECUPERACION (BM25 + embeddings semanticos, "
+    "fusionados por RRF), NO evidencia validada -- ningun candidato tiene "
+    "anclaje A/B/C/D. La medicion 7/7 en recall_at_5 es del fixture de "
+    "referencia (docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md §4.4); en un "
+    "documento nuevo la recuperacion NO garantiza que la evidencia real "
+    "este dentro de este top-k. Revisa los pasajes, no los asumas correctos."
+)
+
+
 def enqueue_finding_for_review(*, run_id: str, requirement_id: str, document_id: str,
                                 page: int | None, evidence_quote: str, conclusion: str,
-                                review_flags: list[str], agent_id: str) -> dict:
+                                review_flags: list[str], agent_id: str,
+                                candidates: list[dict] | None = None) -> dict:
     """R1.8 (2026-08-09, docs_plan/R1_CIERRE_Y_PREP_R2.md): despacha un
     finding con conclusion SUPPORTING_EVIDENCE_UNDER_REVIEW a la MISMA cola
     de revisión humana que ya usan los Release Candidates -- mismo almacén
@@ -88,24 +99,37 @@ def enqueue_finding_for_review(*, run_id: str, requirement_id: str, document_id:
 
     Nunca cambia la conclusion ni la promueve -- es solo la notificación
     de que hay evidencia observada, anclada, que necesita confirmación
-    humana (CLAUDE.md: sin declaración de cumplimiento por el sistema)."""
+    humana (CLAUDE.md: sin declaración de cumplimiento por el sistema).
+
+    candidates (R2.3 §4, 2026-08-11, docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md):
+    opcional -- lista de dicts {chunk_index, page_start, page_end, bm25_rank,
+    embedding_rank, fusion_rank, excerpt} del modo JUICIO (candidate pool de
+    fusión semántica). '[]' (nunca None) cuando no aplica, para que ningún
+    consumidor tenga que chequear presencia de la clave. Cuando hay
+    candidatos, `summary["candidates_honesty_note"]` se adjunta SIEMPRE --
+    son recuperación, no evidencia validada (§4.2)."""
     item_id = f"finding-{run_id}-{requirement_id}"
+    summary = {
+        "run_id": run_id,
+        "requirement_id": requirement_id,
+        "document_id": document_id,
+        "page": page,
+        "evidence_quote": evidence_quote,
+        "conclusion": conclusion,
+        "review_flags": review_flags,
+        "agent_id": agent_id,
+        "candidates": candidates or [],
+    }
+    if candidates:
+        summary["candidates_honesty_note"] = _CANDIDATES_HONESTY_NOTE
     entry = {
+        "schema_version": "finding_review_v2",
         "rc_id": item_id,
         "entry_type": "finding_review",
         "project_id": document_id,
         "enqueued_at": _ts(),
         "status": "pending",
-        "summary": {
-            "run_id": run_id,
-            "requirement_id": requirement_id,
-            "document_id": document_id,
-            "page": page,
-            "evidence_quote": evidence_quote,
-            "conclusion": conclusion,
-            "review_flags": review_flags,
-            "agent_id": agent_id,
-        },
+        "summary": summary,
     }
     REVIEW_QUEUE_FILE.parent.mkdir(parents=True, exist_ok=True)
     lock_path = REVIEW_QUEUE_FILE.with_suffix(".lock")
@@ -142,8 +166,28 @@ def get_queue_summary() -> dict:
     return summary
 
 
-def mark_reviewed(rc_id: str, decision: str, reviewer: str) -> dict:
-    """Actualiza el estado de un RC en la cola."""
+_RESERVED_REVIEWERS = {"human", "agent", "layer8", "system", "capa8", "capa9"}
+
+
+def mark_reviewed(rc_id: str, decision: str, reviewer: str, *,
+                   confirmed_page: int | None = None,
+                   confirmed_quote: str | None = None) -> dict:
+    """Actualiza el estado de un RC en la cola. `reviewer` no puede ser un
+    valor reservado (mismo principio que release_candidate_builder.
+    confirm_rc: evita que un agente se auto-apruebe una decisión que por
+    diseño requiere humano).
+
+    confirmed_page/confirmed_quote (R2.3 §4.3, 2026-08-11): opcionales --
+    cuando un humano confirma evidencia real señalada entre los
+    `candidates` de una entrada de modo JUICIO (§4), el registro guarda la
+    página+cita que el humano señaló. Persistido en la MISMA entrada
+    (`human_confirmed_evidence`), un solo evento de auditoría igual que
+    cualquier otra revisión -- esto alimenta al futuro Golden Dataset con
+    positivos nuevos verificados por un humano real, no por el modelo."""
+    if reviewer.lower().strip() in _RESERVED_REVIEWERS:
+        raise ValueError(
+            f"reviewer='{reviewer}' es reservado. Usa el nombre real del revisor.")
+
     entries = _read_all()
     updated = False
     for e in entries:
@@ -151,6 +195,11 @@ def mark_reviewed(rc_id: str, decision: str, reviewer: str) -> dict:
             e["status"] = decision
             e["reviewer"] = reviewer
             e["reviewed_at"] = _ts()
+            if confirmed_quote is not None:
+                e["human_confirmed_evidence"] = {
+                    "page": confirmed_page, "quote": confirmed_quote,
+                    "confirmed_by": reviewer, "confirmed_at": e["reviewed_at"],
+                }
             updated = True
             project_id = e.get("project_id", "unknown")
             break
@@ -160,9 +209,12 @@ def mark_reviewed(rc_id: str, decision: str, reviewer: str) -> dict:
 
     _rewrite(entries)
 
-    write_event("rc_reviewed", project_id, {
+    event_data = {
         "rc_id": rc_id,
         "decision": decision,
         "reviewer": reviewer,
-    })
+    }
+    if confirmed_quote is not None:
+        event_data["human_confirmed_evidence"] = True
+    write_event("rc_reviewed", project_id, event_data)
     return {"rc_id": rc_id, "decision": decision, "reviewer": reviewer}

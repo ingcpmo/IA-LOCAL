@@ -911,10 +911,22 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                       provider: ModelProvider | None = None,
                       evaluation_profile: str = "BASELINE",
                       target_requirement_ids: "list[str] | tuple[str, ...] | None" = None,
-                      full_document_coverage: bool = True) -> dict:
+                      full_document_coverage: bool = True,
+                      candidate_metadata: "list[dict] | None" = None) -> dict:
     """Procesa TODO el documento (todas las páginas reales) en chunks
     acotados, con metadata de runtime completa por chunk, checkpoints de
     reanudación opcionales, y consolida un Finding final por checkpoint.
+
+    candidate_metadata (R2.3 §4, 2026-08-11, docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md):
+    opcional, mismo largo/orden que `per_unit_text` -- metadata de
+    recuperación (`chunk_index`, `page_start`, `page_end`, `bm25_rank`,
+    `embedding_rank`, `fusion_rank`) que `judgment.py` ya tiene (viene
+    directo de `fusion.rrf_fuse()`) pero que `build_page_chunks()` pierde
+    al re-numerar internamente "página 1..N" sintéticas. Solo se usa para
+    enriquecer el despacho a la cola de revisión humana en modo JUICIO
+    (`_dispatch_partial_coverage_review`) -- nunca influye en el juicio ni
+    en la consolidación. `None` (default) preserva el comportamiento
+    anterior para todo llamador que no lo pase.
 
     full_document_coverage (R2.2 §2, 2026-08-10, docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md):
     default True -- cero cambio de comportamiento para todo llamador
@@ -1896,7 +1908,8 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                   and "ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE" in conclusion.review_flags):
                 _dispatch_partial_coverage_review(
                     run_id, req_id, documento, agent_id, len(per_unit_text),
-                    conclusion.chunks_evaluated, list(conclusion.review_flags), governed_exceptions)
+                    conclusion.chunks_evaluated, list(conclusion.review_flags), governed_exceptions,
+                    per_unit_text=per_unit_text, candidate_metadata=candidate_metadata)
 
     result = {
         "run_id": run_id,
@@ -2022,10 +2035,27 @@ def _dispatch_review_finding(run_id: str, req_id: str, documento: str, agent_id:
         })
 
 
+_CANDIDATE_EXCERPT_MAX_CHARS = 400
+
+
+def _sanitize_excerpt(text: str) -> str:
+    """R2.3 §4.1: extracto ACOTADO para la cola de revision humana -- nunca
+    el chunk completo (eso vive en el checkpoint, no en la cola). Colapsa
+    espacios/saltos de linea (ruido de extraccion de PDF, no informacion) y
+    trunca con elipsis explicita -- nunca silenciosa (un "..." dice que se
+    corto; un corte sin marca podria leerse como el texto completo)."""
+    collapsed = " ".join(text.split())
+    if len(collapsed) <= _CANDIDATE_EXCERPT_MAX_CHARS:
+        return collapsed
+    return collapsed[:_CANDIDATE_EXCERPT_MAX_CHARS] + "... [truncado]"
+
+
 def _dispatch_partial_coverage_review(run_id: str, req_id: str, documento: str, agent_id: str,
                                        candidates_seen: int, chunks_evaluated: int,
                                        review_flags: list[str],
-                                       governed_exceptions: list[dict]) -> None:
+                                       governed_exceptions: list[dict], *,
+                                       per_unit_text: list[str] | None = None,
+                                       candidate_metadata: "list[dict] | None" = None) -> None:
     """R2.2 §2 (2026-08-10): encola en la MISMA cola de revision humana
     (R1.8, factory/layer9/human_review_queue.py) el techo negativo del
     modo JUICIO (EVALUATION_INCOMPLETE/ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE)
@@ -2035,7 +2065,27 @@ def _dispatch_partial_coverage_review(run_id: str, req_id: str, documento: str, 
     de esos aportaron un registro valido) en vez de una cita/pagina, que
     aqui no existen -- no hay evidencia observada que citar. Mismo
     principio de no-bloqueo que _dispatch_review_finding: un fallo de
-    encolado nunca tumba el run, se registra en governed_exceptions."""
+    encolado nunca tumba el run, se registra en governed_exceptions.
+
+    R2.3 §4 (2026-08-11): si `candidate_metadata` viene provisto (modo
+    JUICIO con pool de fusion, judgment.py), adjunta los top-k candidatos
+    reales -- pagina, rank por metodo, extracto sanitizado -- para que el
+    revisor humano reciba "revisa estos N pasajes en estas paginas", no
+    "busca en todo el documento". `candidates` va vacio (nunca None) si no
+    hay metadata -- consumidores no necesitan chequear presencia de la
+    clave, solo su longitud."""
+    candidates = []
+    if candidate_metadata and per_unit_text:
+        for meta, text in zip(candidate_metadata, per_unit_text):
+            candidates.append({
+                "chunk_index": meta.get("chunk_index"),
+                "page_start": meta.get("page_start"),
+                "page_end": meta.get("page_end"),
+                "bm25_rank": meta.get("bm25_rank"),
+                "embedding_rank": meta.get("embedding_rank"),
+                "fusion_rank": meta.get("fusion_rank"),
+                "excerpt": _sanitize_excerpt(text),
+            })
     try:
         from factory.layer9.human_review_queue import enqueue_finding_for_review
         enqueue_finding_for_review(
@@ -2048,6 +2098,7 @@ def _dispatch_partial_coverage_review(run_id: str, req_id: str, documento: str, 
                 f"PARTIAL_COVERAGE_CHUNKS_EVALUATED={chunks_evaluated}",
             ],
             agent_id=agent_id,
+            candidates=candidates,
         )
     except Exception as exc:  # noqa: BLE001 -- ver docstring: no bloqueante, pero registrado
         governed_exceptions.append({

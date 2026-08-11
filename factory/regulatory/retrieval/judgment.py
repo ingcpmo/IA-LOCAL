@@ -49,12 +49,19 @@ class JudgmentUnit:
     """Una llamada real de la fase de juicio de R2: el candidate pool que
     `retriever.retrieve_top_k(document_sha256, requirement_id, k)` ya
     devolvió para un (documento, requisito) -- nunca páginas re-extraídas
-    del PDF, nunca el documento completo."""
+    del PDF, nunca el documento completo.
+
+    candidate_chunks: tal cual los devuelve `retriever.retrieve_top_k()`
+    (BM25 solo) o `fusion.rrf_fuse()` (R2.3 §4 -- fusión BM25+embeddings,
+    ver docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md). Cuando viene de
+    `rrf_fuse()`, cada dict ya trae `bm25_rank`/`embedding_rank` -- se
+    reenvían tal cual a la cola de revisión humana (§4.1) para que el
+    revisor vea por qué método cada candidato entró al pool."""
     document_id: str
     document_type: str
     agent_id: str
     requirement_id: str
-    candidate_chunks: list[dict]  # tal cual los devuelve retrieve_top_k
+    candidate_chunks: list[dict]  # tal cual los devuelve retrieve_top_k / rrf_fuse
     selection_reason: str = ""
 
 
@@ -146,6 +153,16 @@ def run_judgment_batch(units: list[JudgmentUnit], *,
 
         path, doc_sha256 = _resolve_document_path(unit.document_id)
         per_unit_text = [c["text"] for c in unit.candidate_chunks]
+        # R2.3 §4 (2026-08-11): fusion_rank es la posicion real del
+        # candidato en ESTE pool (1-indexado) -- rrf_fuse() ya lo ordena por
+        # rrf_score descendente, pero no expone un "rank" propio (solo el
+        # score crudo, que no le dice nada a un humano). bm25_rank/
+        # embedding_rank se reenvian tal cual si el candidato vino de
+        # rrf_fuse(); quedan None para pools BM25-solo (retrieve_top_k).
+        candidate_metadata = [
+            {**c, "fusion_rank": i}
+            for i, c in enumerate(unit.candidate_chunks, start=1)
+        ]
 
         t0 = time.monotonic()
         try:
@@ -159,6 +176,7 @@ def run_judgment_batch(units: list[JudgmentUnit], *,
                 use_verified_pipeline=True, document_type=unit.document_type,
                 retry_technical_failures=True, provider=provider,
                 evaluation_profile="H2H4", target_requirement_ids=[unit.requirement_id],
+                candidate_metadata=candidate_metadata,
                 # R2.2 §2 (2026-08-10, docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md):
                 # per_unit_text aqui es SIEMPRE un candidate pool top-k de
                 # BM25 (unit.candidate_chunks), nunca el documento completo
