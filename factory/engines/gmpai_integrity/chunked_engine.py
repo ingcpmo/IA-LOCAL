@@ -1910,6 +1910,26 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     run_id, req_id, documento, agent_id, len(per_unit_text),
                     conclusion.chunks_evaluated, list(conclusion.review_flags), governed_exceptions,
                     per_unit_text=per_unit_text, candidate_metadata=candidate_metadata)
+            # Tier-1 (2026-08-11, docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md §5
+            # D2, .claude/plans/wise-bubbling-toucan.md): el modo BASELINE
+            # (full_document_coverage=True) SÍ vio el documento completo --
+            # coverage_complete=True es real, no violado -- así que
+            # DOCUMENTATION_GAP/PROVISIONAL_GAP siguen siendo conclusiones
+            # VÁLIDAS aquí (a diferencia del modo JUICIO arriba, esto no
+            # corrige un bug). Se despachan de todas formas a la MISMA cola
+            # R1.8, como red de seguridad adicional: este arco confirmó
+            # (PILOT_EXECUTION-2026-012, P2/P5 con el chunk correcto al
+            # frente) que el 7B puede fallar en reconocer evidencia
+            # parafraseada incluso viéndola directamente -- un gap de
+            # baseline puede ser ese mismo límite, no ausencia real. La
+            # conclusión NUNCA cambia (sigue siendo DOCUMENTATION_GAP/
+            # PROVISIONAL_GAP, cobertura completa real) -- solo se hace
+            # visible y accionable para un humano, mismo principio de
+            # no-bloqueo que los despachos de arriba.
+            elif full_document_coverage and conclusion.conclusion in ("DOCUMENTATION_GAP", "PROVISIONAL_GAP"):
+                _dispatch_baseline_gap_review(
+                    run_id, req_id, documento, agent_id, conclusion.conclusion,
+                    list(conclusion.review_flags), governed_exceptions)
 
     result = {
         "run_id": run_id,
@@ -2099,6 +2119,33 @@ def _dispatch_partial_coverage_review(run_id: str, req_id: str, documento: str, 
             ],
             agent_id=agent_id,
             candidates=candidates,
+        )
+    except Exception as exc:  # noqa: BLE001 -- ver docstring: no bloqueante, pero registrado
+        governed_exceptions.append({
+            "req_id": req_id, "stage": "review_queue_dispatch",
+            "exception": type(exc).__name__, "detail": str(exc),
+        })
+
+
+def _dispatch_baseline_gap_review(run_id: str, req_id: str, documento: str, agent_id: str,
+                                   conclusion_value: str, review_flags: list[str],
+                                   governed_exceptions: list[dict]) -> None:
+    """Tier-1 (2026-08-11, .claude/plans/wise-bubbling-toucan.md): encola
+    en la MISMA cola R1.8 un `DOCUMENTATION_GAP`/`PROVISIONAL_GAP` de modo
+    BASELINE (cobertura completa real, la conclusión no se toca) -- red de
+    seguridad adicional dado el límite de paráfrasis del 7B confirmado en
+    este arco. `candidates=None`: baseline no tiene pool de fusión (ya vio
+    todo el documento, no hay top-k que ofrecer). Mismo principio de
+    no-bloqueo que `_dispatch_partial_coverage_review`: un fallo de
+    encolado nunca tumba el run, se registra en governed_exceptions."""
+    try:
+        from factory.layer9.human_review_queue import enqueue_finding_for_review
+        enqueue_finding_for_review(
+            run_id=run_id, requirement_id=req_id, document_id=documento,
+            page=None, evidence_quote="",
+            conclusion=conclusion_value,
+            review_flags=[*review_flags, "BASELINE_GAP_PENDING_HUMAN_REVIEW_KNOWN_PARAPHRASE_LIMIT"],
+            agent_id=agent_id,
         )
     except Exception as exc:  # noqa: BLE001 -- ver docstring: no bloqueante, pero registrado
         governed_exceptions.append({

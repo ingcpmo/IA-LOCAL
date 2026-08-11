@@ -1268,7 +1268,9 @@ def test_baseline_mode_default_never_dispatches_partial_coverage_entry(monkeypat
     """Contraparte de control: con full_document_coverage=True (default),
     el mismo escenario negativo NUNCA genera una entrada
     EVIDENCE_NOT_LOCATED_IN_CANDIDATES -- ese despacho es exclusivo del
-    modo juicio, baseline sigue su camino PROVISIONAL_GAP sin cola."""
+    modo juicio. Baseline SÍ despacha (Tier-1, ver test siguiente), pero
+    con la conclusión de baseline real (PROVISIONAL_GAP), nunca la de
+    modo juicio."""
     from factory.layer9 import human_review_queue as hrq
 
     pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
@@ -1278,4 +1280,60 @@ def test_baseline_mode_default_never_dispatches_partial_coverage_entry(monkeypat
     ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
                         "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
                         run_context="production", use_verified_pipeline=True, document_type="FS")
-    assert hrq.list_pending() == []
+    pending = hrq.list_pending()
+    assert all(e["summary"]["conclusion"] != "EVIDENCE_NOT_LOCATED_IN_CANDIDATES" for e in pending)
+
+
+# ===========================================================================
+# Tier-1 (2026-08-11, .claude/plans/wise-bubbling-toucan.md): el modo
+# BASELINE tambien despacha DOCUMENTATION_GAP/PROVISIONAL_GAP a la cola
+# R1.8 -- red de seguridad adicional (no una correccion de bug como el
+# modo juicio): la conclusion NUNCA cambia, cobertura completa es real.
+# ===========================================================================
+
+def test_baseline_gap_dispatched_to_review_queue_conclusion_unchanged(monkeypatch, isolated_review_queue):
+    from factory.layer9 import human_review_queue as hrq
+
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+    c = result["verified_conclusions"]["21_CFR_11.10(e)"]
+    assert c["conclusion"] == "PROVISIONAL_GAP"  # sin cambios frente al baseline de siempre
+
+    pending = hrq.list_pending()
+    matches = [e for e in pending if e["summary"]["requirement_id"] == "21_CFR_11.10(e)"]
+    assert len(matches) == 1
+    entry = matches[0]["summary"]
+    assert entry["conclusion"] == "PROVISIONAL_GAP"
+    assert entry["page"] is None
+    assert entry["evidence_quote"] == ""
+    assert "BASELINE_GAP_PENDING_HUMAN_REVIEW_KNOWN_PARAPHRASE_LIMIT" in entry["review_flags"]
+    assert entry["candidates"] == []  # baseline no tiene pool de fusion
+    assert result["governed_exceptions"] == []
+
+
+def test_judgment_mode_gap_still_never_uses_baseline_dispatch(monkeypatch, isolated_review_queue):
+    """Contraste explicito: en modo JUICIO, la rama nueva de Tier-1
+    (full_document_coverage=True) nunca se activa -- sigue siendo
+    EVALUATION_INCOMPLETE/EVIDENCE_NOT_LOCATED_IN_CANDIDATES, nunca
+    DOCUMENTATION_GAP/PROVISIONAL_GAP con el flag de baseline."""
+    from factory.layer9 import human_review_queue as hrq
+
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                        "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                        run_context="production", use_verified_pipeline=True, document_type="FS",
+                        full_document_coverage=False)
+    pending = hrq.list_pending()
+    matches = [e for e in pending if e["summary"]["requirement_id"] == "21_CFR_11.10(e)"]
+    assert len(matches) == 1
+    flags = matches[0]["summary"]["review_flags"]
+    assert "BASELINE_GAP_PENDING_HUMAN_REVIEW_KNOWN_PARAPHRASE_LIMIT" not in flags
+    assert matches[0]["summary"]["conclusion"] == "EVIDENCE_NOT_LOCATED_IN_CANDIDATES"
