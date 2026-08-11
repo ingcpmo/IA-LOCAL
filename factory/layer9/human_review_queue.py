@@ -166,16 +166,15 @@ def get_queue_summary() -> dict:
     return summary
 
 
-_RESERVED_REVIEWERS = {"human", "agent", "layer8", "system", "capa8", "capa9"}
-
-
 def mark_reviewed(rc_id: str, decision: str, reviewer: str, *,
                    confirmed_page: int | None = None,
                    confirmed_quote: str | None = None) -> dict:
-    """Actualiza el estado de un RC en la cola. `reviewer` no puede ser un
-    valor reservado (mismo principio que release_candidate_builder.
-    confirm_rc: evita que un agente se auto-apruebe una decisión que por
-    diseño requiere humano).
+    """Actualiza el estado de un RC en la cola. `reviewer` no puede ser una
+    identidad reservada -- valida contra `factory.core.identity_policy`
+    (UNA sola lista de identidades reservadas en toda la fábrica, W5 V2
+    G1.15; ver docstring de ese módulo -- ocho copias distintas de esta
+    lista fue exactamente el defecto que ese módulo cierra, así que este
+    archivo NO define la suya).
 
     confirmed_page/confirmed_quote (R2.3 §4.3, 2026-08-11): opcionales --
     cuando un humano confirma evidencia real señalada entre los
@@ -184,9 +183,8 @@ def mark_reviewed(rc_id: str, decision: str, reviewer: str, *,
     (`human_confirmed_evidence`), un solo evento de auditoría igual que
     cualquier otra revisión -- esto alimenta al futuro Golden Dataset con
     positivos nuevos verificados por un humano real, no por el modelo."""
-    if reviewer.lower().strip() in _RESERVED_REVIEWERS:
-        raise ValueError(
-            f"reviewer='{reviewer}' es reservado. Usa el nombre real del revisor.")
+    from factory.core.identity_policy import validate_identity
+    reviewer = validate_identity(reviewer, field="reviewer")
 
     entries = _read_all()
     updated = False
