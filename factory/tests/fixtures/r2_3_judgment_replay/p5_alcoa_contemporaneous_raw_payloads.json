@@ -1,0 +1,202 @@
+[
+  {
+    "checkpoints": [
+      {
+        "req_id": "ALCOA_CONTEMPORANEOUS",
+        "estado": "evidencia_insuficiente",
+        "evidencia_exacta": "",
+        "brecha": "El documento no proporciona evidencia de que el registro se realice en el momento de la actividad como regla general, ni detalles sobre cómo se registra o quién registra.",
+        "recomendacion": "Incluir una descripción detallada del proceso de registro contemporáneo y quién realiza dichos registros.",
+        "criterion_assessments": [
+          {
+            "criterion_index": 1,
+            "criterion_text": "Registro en el momento de la actividad como regla general.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 2,
+            "criterion_text": "Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de que el registro sea realizado por el escribiente o quién registra y identifica al ejecutor real.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 3,
+            "criterion_text": "Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de un procedimiento gobernado para contrafirmas tardías o sus detalles específicos.",
+            "limitations": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checkpoints": [
+      {
+        "req_id": "ALCOA_CONTEMPORANEOUS",
+        "estado": "evidencia_insuficiente",
+        "evidencia_exacta": "",
+        "brecha": "El documento no proporciona evidencia de que el registro se realice en el momento de la actividad como regla general, ni sobre cómo se identifica al ejecutor real.",
+        "recomendacion": "Incluir una descripción detallada del proceso de registro contemporáneo y la identificación del ejecutor real.",
+        "criterion_assessments": [
+          {
+            "criterion_index": 1,
+            "criterion_text": "Registro en el momento de la actividad como regla general.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad como regla general.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 2,
+            "criterion_text": "Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad ni sobre cómo se identifica al ejecutor real.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 3,
+            "criterion_text": "Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de un procedimiento gobernado para contrafirmaciones tardías del ejecutor.",
+            "limitations": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checkpoints": [
+      {
+        "req_id": "ALCOA_CONTEMPORANEOUS",
+        "estado": "evidencia_insuficiente",
+        "evidencia_exacta": "",
+        "brecha": "El documento no proporciona evidencia de que el registro se realice en el momento de la actividad como regla general, ni detalles sobre cómo se registra o quién realiza el registro.",
+        "recomendacion": "Incluir una descripción detallada del proceso de registro contemporáneo y quién es responsable de él.",
+        "criterion_assessments": [
+          {
+            "criterion_index": 1,
+            "criterion_text": "Registro en el momento de la actividad como regla general.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad como regla general.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 2,
+            "criterion_text": "Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad por el escribiente y no retrospectivamente, ni quién es el ejecutor real.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 3,
+            "criterion_text": "Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de un procedimiento gobernado para contrafirmaciones tardías del ejecutor, incluyendo motivos reales, plazos máximos y revisiones.",
+            "limitations": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checkpoints": [
+      {
+        "req_id": "ALCOA_CONTEMPORANEOUS",
+        "estado": "evidencia_insuficiente",
+        "evidencia_exacta": "",
+        "brecha": "El documento no menciona la contemporaneidad del registro, lo que implica que no hay evidencia de que se registre en el momento de la actividad.",
+        "recomendacion": "Incluir una mención explícita a la contemporaneidad del registro en los requisitos funcionales o en un documento relacionado.",
+        "criterion_assessments": [
+          {
+            "criterion_index": 1,
+            "criterion_text": "Registro en el momento de la actividad como regla general.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se menciona la contemporaneidad del registro en el documento proporcionado.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 2,
+            "criterion_text": "Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.",
+            "status": "NOT_ASSESSABLE",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No hay evidencia de que se registre en el momento del evento o que se identifique al ejecutor real.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 3,
+            "criterion_text": "Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.",
+            "status": "NOT_ASSESSABLE",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No hay evidencia de un procedimiento para contrafirmación tardía en el documento proporcionado.",
+            "limitations": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checkpoints": [
+      {
+        "req_id": "ALCOA_CONTEMPORANEOUS",
+        "estado": "evidencia_insuficiente",
+        "evidencia_exacta": "",
+        "brecha": "El documento no proporciona evidencia de que el registro se realice en el momento de la actividad como regla general, ni detalles sobre cómo se registra o quién registra las actividades.",
+        "recomendacion": "Incluir una descripción detallada del proceso de registro contemporáneo y quién registra las actividades en el documento.",
+        "criterion_assessments": [
+          {
+            "criterion_index": 1,
+            "criterion_text": "Registro en el momento de la actividad como regla general.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad como regla general.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 2,
+            "criterion_text": "Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad por el escribiente y no retrospectivamente, ni identificación del ejecutor real.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 3,
+            "criterion_text": "Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de un procedimiento gobernado para contrafirmas tardías del ejecutor, incluyendo motivos reales, plazos máximos y revisiones.",
+            "limitations": ""
+          }
+        ]
+      }
+    ]
+  }
+]

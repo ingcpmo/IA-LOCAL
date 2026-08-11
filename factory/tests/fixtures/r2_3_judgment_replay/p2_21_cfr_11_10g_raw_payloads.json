@@ -1,0 +1,202 @@
+[
+  {
+    "checkpoints": [
+      {
+        "req_id": "21_CFR_11.10(g)",
+        "estado": "cumple_parcialmente",
+        "evidencia_exacta": "",
+        "brecha": "El documento menciona controles de seguridad y niveles de acceso, pero no proporciona evidencia explícita de la verificación de autoridad en tiempo real para cada operación.",
+        "recomendacion": "Incluir una matriz de operaciones del sistema con el nivel de autorización requerido por cada una (según aplique) y chequeos técnicos de autoridad ejecutados en el momento de cada operación aplicable.",
+        "criterion_assessments": [
+          {
+            "criterion_index": 1,
+            "criterion_text": "Matriz de operaciones del sistema con el nivel de autorizacion requerido por cada una (segun aplique).",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona una matriz detallada que muestre los niveles de autorización para cada operación.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 2,
+            "criterion_text": "Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se menciona ningún chequeo técnico de autoridad en tiempo real para las operaciones del sistema.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 3,
+            "criterion_text": "Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de pruebas negativas que demuestren que los intentos de operación sin autoridad suficiente son bloqueados.",
+            "limitations": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checkpoints": [
+      {
+        "req_id": "21_CFR_11.10(g)",
+        "estado": "evidencia_insuficiente",
+        "evidencia_exacta": "",
+        "brecha": "El documento no proporciona evidencia de que los chequeos de autoridad se realicen para cada operación aplicable, ni menciona la modificación de límites de alarmas por niveles de acceso específicos.",
+        "recomendacion": "Incluir detalles sobre cómo se realizan los chequeos de autoridad y cómo se controla el cambio de límites de alarma según los niveles de acceso.",
+        "criterion_assessments": [
+          {
+            "criterion_index": 1,
+            "criterion_text": "Matriz de operaciones del sistema con el nivel de autorización requerido por cada una (segun aplique).",
+            "status": "NOT_ASSESSABLE",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se menciona la matriz de operaciones ni los niveles de autorización.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 2,
+            "criterion_text": "Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.",
+            "status": "NOT_ASSESSABLE",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se menciona ningún chequeo de autoridad para las operaciones específicas.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 3,
+            "criterion_text": "Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.",
+            "status": "NOT_ASSESSABLE",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se menciona ninguna evidencia de prueba negativa para los chequeos de autoridad.",
+            "limitations": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checkpoints": [
+      {
+        "req_id": "21_CFR_11.10(g)",
+        "estado": "cumple_parcialmente",
+        "evidencia_exacta": "Both Microsoft Windows domain security and the FactoryTalk System Administration tool can enable the creation of a unique login and password for each user. FactoryTalk View SE can use Microsoft Windows security to manage user accounts. Password expiration, password aging, password complexity requirements, account expiration, disabling of accounts, lockout after invalid login attempts, and forcing a change of password on first login are all security features provided by both Microsoft Windows security and FactoryTalk Security.",
+        "brecha": "El documento no proporciona una matriz de operaciones del sistema con el nivel de autorización requerido para cada una. Además, no se menciona un chequeo tecnico de autoridad ejecutado en el momento de cada operación aplicable ni pruebas negativas.",
+        "recomendacion": "Incluir una matriz de operaciones y realizar chequeos técnicos de autoridad en tiempo real.",
+        "criterion_assessments": [
+          {
+            "criterion_index": 1,
+            "criterion_text": "Matriz de operaciones del sistema con el nivel de autorizacion requerido por cada una (segun aplique).",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona una matriz detallada.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 2,
+            "criterion_text": "Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se menciona un chequeo técnico de autoridad en tiempo real.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 3,
+            "criterion_text": "Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.",
+            "status": "NOT_MET",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporcionan pruebas negativas.",
+            "limitations": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checkpoints": [
+      {
+        "req_id": "21_CFR_11.10(g)",
+        "estado": "evidencia_insuficiente",
+        "evidencia_exacta": "",
+        "brecha": "El documento no proporciona evidencia de que se realicen verificaciones de autoridad en el sistema.",
+        "recomendacion": "Incluir un plan para implementar verificaciones de autoridad en el sistema.",
+        "criterion_assessments": [
+          {
+            "criterion_index": 1,
+            "criterion_text": "Matriz de operaciones del sistema con el nivel de autorizacion requerido por cada una (segun aplique).",
+            "status": "NOT_ASSESSABLE",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se menciona ninguna matriz de operaciones ni niveles de autorización en el documento.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 2,
+            "criterion_text": "Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.",
+            "status": "NOT_ASSESSABLE",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se menciona ningún chequeo de autoridad en tiempo real o en el documento.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 3,
+            "criterion_text": "Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.",
+            "status": "NOT_ASSESSABLE",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se menciona ninguna prueba negativa o evidencia de que los intentos sin autorización sean bloqueados.",
+            "limitations": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checkpoints": [
+      {
+        "req_id": "21_CFR_11.10(g)",
+        "estado": "evidencia_insuficiente",
+        "evidencia_exacta": "",
+        "brecha": "El documento no proporciona evidencia de que se implementen verificaciones de autoridad para asegurar que solo individuos autorizados puedan usar el sistema, firmar electrónicamente un registro, acceder a la operación o dispositivo de entrada/salida del sistema de computadoras, alterar un registro o realizar la operación en curso.",
+        "recomendacion": "Incluir una matriz de operaciones con los niveles de autorización requeridos y verificar tecnológicamente las autoridades en el momento de cada operación aplicable.",
+        "criterion_assessments": [
+          {
+            "criterion_index": 1,
+            "criterion_text": "Matriz de operaciones del sistema con el nivel de autorizacion requerido por cada una (segun aplique).",
+            "status": "NOT_ASSESSABLE",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de la matriz de operaciones.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 2,
+            "criterion_text": "Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.",
+            "status": "NOT_ASSESSABLE",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia del chequeo tecnológico de autoridad.",
+            "limitations": ""
+          },
+          {
+            "criterion_index": 3,
+            "criterion_text": "Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.",
+            "status": "NOT_ASSESSABLE",
+            "evidence_quote": "",
+            "evidence_location": "",
+            "justification": "No se proporciona evidencia de la prueba negativa.",
+            "limitations": ""
+          }
+        ]
+      }
+    ]
+  }
+]
