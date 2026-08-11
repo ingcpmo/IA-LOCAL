@@ -92,6 +92,14 @@ diseño. Debe re-etiquetarse (sin re-ejecutar, sin gastar presupuesto
 nuevo) una vez que §2 esté commiteado, para que el registro persistido
 de P7 sea consistente con el resto de la muestra corregida.
 
+**RESUELTO (R2.3 §2, 2026-08-11, commit `6ee8e21`)**: P7 re-etiquetado
+desde su checkpoint persistido (cero llamadas nuevas) a
+`EVIDENCE_NOT_LOCATED_IN_CANDIDATES` + cola R1.8. El barrido completo
+encontró 3 casos más con el mismo defecto (P2 y P5 viejos, ambos
+superseded por la re-medición correcta de `PILOT_EXECUTION-2026-012`;
+P6, sin re-medición más nueva) — ver
+`factory/tests/test_r2_3_judgment_relabel_consistency.py`.
+
 1.3 Higiene pendiente en el mismo ciclo: commitear (con diff+aprobación)
     los registros de calificación sin versionar
     (`qualification_record`/`runtime_calibration_record.json`) y el
