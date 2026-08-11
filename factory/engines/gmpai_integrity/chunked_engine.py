@@ -910,10 +910,26 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                       retry_technical_failures: bool = False,
                       provider: ModelProvider | None = None,
                       evaluation_profile: str = "BASELINE",
-                      target_requirement_ids: "list[str] | tuple[str, ...] | None" = None) -> dict:
+                      target_requirement_ids: "list[str] | tuple[str, ...] | None" = None,
+                      full_document_coverage: bool = True) -> dict:
     """Procesa TODO el documento (todas las páginas reales) en chunks
     acotados, con metadata de runtime completa por chunk, checkpoints de
     reanudación opcionales, y consolida un Finding final por checkpoint.
+
+    full_document_coverage (R2.2 §2, 2026-08-10, docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md):
+    default True -- cero cambio de comportamiento para todo llamador
+    existente (baseline/corpus_runner, que sí procesan el documento
+    completo). False es para llamadores como judgment.py (R2, modo
+    JUICIO) cuyo `per_unit_text` es un candidate pool top-k de BM25, NO
+    el documento completo -- cableado directo a
+    `absence_consolidator.consolidate(..., coverage_complete=...)`, que
+    YA exige este dato para poder emitir DOCUMENTATION_GAP (regla W5.5,
+    ver docstring de ese módulo). Hallazgo real que motiva este parámetro:
+    P2/P5 (re-medición Opción A, 2026-08-10) cerraron PROVISIONAL_GAP
+    con evidencia real presente en el documento pero fuera del candidate
+    pool visto -- porque este llamador pasaba `coverage_complete=True`
+    hardcodeado, violando la precondición que la propia función ya
+    protegía. No es una regla nueva: es hacer cumplir una que ya existía.
 
     Si checkpoint_store se provee: intenta reanudar un run incompleto del
     mismo documento+agente (find_resumable) antes de empezar de cero, y
@@ -1766,10 +1782,23 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         # aprobacion humana inexistente.
         applicability_rule_approved = _matrix_approved()
         contradicted_req_ids = {c["req_id"] for c in contradictions}
-        # coverage_complete=True es real, no asumido: evaluate_chunked()
-        # siempre procesa TODOS los chunks del documento -- cada uno aporto
-        # un registro (observado, no-observado o rejected_by_verifier) para
-        # cada requisito, nunca un subconjunto parcial.
+        # coverage_complete=full_document_coverage (R2.2 §2, 2026-08-10):
+        # para el llamador baseline (full_document_coverage=True, default)
+        # esto sigue siendo real, no asumido -- evaluate_chunked() procesa
+        # TODOS los chunks del documento en ese caso, cada uno aporto un
+        # registro (observado, no-observado o rejected_by_verifier) para
+        # cada requisito, nunca un subconjunto parcial. Para un llamador de
+        # modo JUICIO (judgment.py, full_document_coverage=False) esto ya
+        # NO es cierto -- per_unit_text es un candidate pool top-k de BM25,
+        # cobertura parcial por diseno -- y absence_consolidator.consolidate()
+        # ya sabe que hacer con eso (regla W5.5: DOCUMENTATION_GAP nunca se
+        # emite si coverage_complete=False, cae a EVALUATION_INCOMPLETE/
+        # ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE). Hallazgo real que motivo
+        # este fix: P2/P5 (re-medicion Opcion A) cerraron PROVISIONAL_GAP
+        # con evidencia real presente fuera del candidate pool visto,
+        # porque este llamador pasaba coverage_complete=True sin importar
+        # el modo -- violando la propia precondicion que consolidate() ya
+        # protegia.
         #
         # 2026-07-27: esto sigue siendo cierto al reanudar. Antes se apoyaba
         # en que checkpoint_store estaba prohibido con este flag; ahora se
@@ -1805,7 +1834,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 app = _applicability(req_id, document_type)
                 conclusion = _consolidate(
                     req_id, document_type, app["value"], verified_records_by_req.get(req_id, []),
-                    coverage_complete=True,
+                    coverage_complete=full_document_coverage,
                 )
                 finding = finding_by_req.get(req_id)
                 conclusion = _apply_preconditions(
@@ -1854,6 +1883,20 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 _dispatch_review_finding(run_id, req_id, documento, agent_id,
                                           verified_records_by_req.get(req_id, []),
                                           list(conclusion.review_flags), governed_exceptions)
+            # R2.2 §2 (2026-08-10): el techo negativo del modo JUICIO
+            # (full_document_coverage=False) es EVALUATION_INCOMPLETE con
+            # ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE -- nunca DOCUMENTATION_GAP/
+            # PROVISIONAL_GAP. Ese techo, igual que un positivo bajo
+            # revision, es accionable por un humano (puede ampliar la
+            # busqueda / decidir tratarlo como ausencia real) -- se encola
+            # con la MISMA cola R1.8, alcance acotado a esta causa exacta
+            # (no a cualquier EVALUATION_INCOMPLETE, mismo criterio de
+            # scope que ya aplica arriba a SUPPORTING_EVIDENCE_UNDER_REVIEW).
+            elif (not full_document_coverage and conclusion.conclusion == "EVALUATION_INCOMPLETE"
+                  and "ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE" in conclusion.review_flags):
+                _dispatch_partial_coverage_review(
+                    run_id, req_id, documento, agent_id, len(per_unit_text),
+                    conclusion.chunks_evaluated, list(conclusion.review_flags), governed_exceptions)
 
     result = {
         "run_id": run_id,
@@ -1971,6 +2014,40 @@ def _dispatch_review_finding(run_id: str, req_id: str, documento: str, agent_id:
             evidence_quote=observed["llm_output"].get("evidence_quote", ""),
             conclusion="SUPPORTING_EVIDENCE_UNDER_REVIEW",
             review_flags=review_flags, agent_id=agent_id,
+        )
+    except Exception as exc:  # noqa: BLE001 -- ver docstring: no bloqueante, pero registrado
+        governed_exceptions.append({
+            "req_id": req_id, "stage": "review_queue_dispatch",
+            "exception": type(exc).__name__, "detail": str(exc),
+        })
+
+
+def _dispatch_partial_coverage_review(run_id: str, req_id: str, documento: str, agent_id: str,
+                                       candidates_seen: int, chunks_evaluated: int,
+                                       review_flags: list[str],
+                                       governed_exceptions: list[dict]) -> None:
+    """R2.2 §2 (2026-08-10): encola en la MISMA cola de revision humana
+    (R1.8, factory/layer9/human_review_queue.py) el techo negativo del
+    modo JUICIO (EVALUATION_INCOMPLETE/ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE)
+    -- 'no se encontro evidencia en los candidatos vistos' NUNCA es lo
+    mismo que 'ausencia confirmada'; un humano puede decidir ampliar la
+    busqueda. Declara la cobertura real (cuantos candidatos vio, cuantos
+    de esos aportaron un registro valido) en vez de una cita/pagina, que
+    aqui no existen -- no hay evidencia observada que citar. Mismo
+    principio de no-bloqueo que _dispatch_review_finding: un fallo de
+    encolado nunca tumba el run, se registra en governed_exceptions."""
+    try:
+        from factory.layer9.human_review_queue import enqueue_finding_for_review
+        enqueue_finding_for_review(
+            run_id=run_id, requirement_id=req_id, document_id=documento,
+            page=None, evidence_quote="",
+            conclusion="EVIDENCE_NOT_LOCATED_IN_CANDIDATES",
+            review_flags=[
+                *review_flags,
+                f"PARTIAL_COVERAGE_CANDIDATES_SEEN={candidates_seen}",
+                f"PARTIAL_COVERAGE_CHUNKS_EVALUATED={chunks_evaluated}",
+            ],
+            agent_id=agent_id,
         )
     except Exception as exc:  # noqa: BLE001 -- ver docstring: no bloqueante, pero registrado
         governed_exceptions.append({

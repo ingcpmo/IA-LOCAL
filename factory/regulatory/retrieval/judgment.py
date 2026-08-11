@@ -159,6 +159,15 @@ def run_judgment_batch(units: list[JudgmentUnit], *,
                 use_verified_pipeline=True, document_type=unit.document_type,
                 retry_technical_failures=True, provider=provider,
                 evaluation_profile="H2H4", target_requirement_ids=[unit.requirement_id],
+                # R2.2 §2 (2026-08-10, docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md):
+                # per_unit_text aqui es SIEMPRE un candidate pool top-k de
+                # BM25 (unit.candidate_chunks), nunca el documento completo
+                # -- cobertura parcial por diseno. Sin esto, un negativo
+                # real (nada observado en los chunks vistos) podia cerrar
+                # PROVISIONAL_GAP como si fuera ausencia confirmada del
+                # documento entero (hallazgo real: P2/P5 en la re-medicion
+                # de Opcion A).
+                full_document_coverage=False,
             )
         except Exception as e:  # noqa: BLE001 -- nunca se traga: se registra y se relanza
             wall = time.monotonic() - t0

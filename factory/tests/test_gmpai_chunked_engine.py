@@ -1189,3 +1189,93 @@ def test_annex11_4_reference_list_still_rejected_after_kerning_fix():
     quote = "Good Automated Manufacturing Practice, GAMP5"
     fixed = ce._join_kerning_split_words(source)
     assert sev.detect_reference_list_context(quote, fixed) is True
+
+
+# ===========================================================================
+# R2.2 §2 (docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md, 2026-08-10): el modo
+# JUICIO (candidate pool top-k, cobertura parcial por diseno) NUNCA puede
+# emitir DOCUMENTATION_GAP/PROVISIONAL_GAP -- hallazgo real: P2/P5 (Opcion A)
+# cerraron PROVISIONAL_GAP con evidencia real presente fuera del pool visto.
+# ===========================================================================
+
+def test_baseline_mode_default_still_provisional_gap_no_regression(monkeypatch):
+    """Regresion explicita: full_document_coverage=True (default, ningun
+    llamador existente lo cambia) sigue produciendo PROVISIONAL_GAP como
+    siempre -- mismo escenario exacto que
+    test_verified_pipeline_all_insufficient_across_all_chunks_is_provisional_gap,
+    repetido aqui para contrastar linea por linea con el modo juicio de
+    abajo."""
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+    c = result["verified_conclusions"]["21_CFR_11.10(e)"]
+    assert c["conclusion"] == "PROVISIONAL_GAP"
+
+
+def test_judgment_mode_negative_never_emits_gap_falls_to_evaluation_incomplete(monkeypatch, isolated_review_queue):
+    """El mismo escenario exacto que el test anterior (mismos chunks, mismo
+    payload 'evidencia_insuficiente' en todos), pero con
+    full_document_coverage=False (modo juicio, como lo usa judgment.py) --
+    debe caer a EVALUATION_INCOMPLETE/ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE,
+    NUNCA PROVISIONAL_GAP ni DOCUMENTATION_GAP."""
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS",
+                                  full_document_coverage=False)
+    c = result["verified_conclusions"]["21_CFR_11.10(e)"]
+    assert c["conclusion"] == "EVALUATION_INCOMPLETE"
+    assert "ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE" in c["review_flags"]
+    assert c["conclusion"] not in ("PROVISIONAL_GAP", "DOCUMENTATION_GAP")
+
+
+def test_judgment_mode_negative_dispatched_to_human_review_queue(monkeypatch, isolated_review_queue):
+    """R2.2 §2: el techo negativo del modo juicio se encola en la MISMA
+    cola R1.8 que un positivo bajo revision -- 'no encontrado en los
+    candidatos vistos' es accionable por un humano, no un resultado mudo.
+    Declara cuantos candidatos vio (cobertura real), nunca una cita
+    inventada (no hay evidencia observada que citar)."""
+    from factory.layer9 import human_review_queue as hrq
+
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS",
+                                  full_document_coverage=False)
+    pending = hrq.list_pending()
+    matches = [e for e in pending if e["summary"]["requirement_id"] == "21_CFR_11.10(e)"]
+    assert len(matches) == 1
+    entry = matches[0]
+    assert entry["summary"]["conclusion"] == "EVIDENCE_NOT_LOCATED_IN_CANDIDATES"
+    assert entry["summary"]["page"] is None
+    assert entry["summary"]["evidence_quote"] == ""
+    flags = entry["summary"]["review_flags"]
+    assert any(f.startswith("PARTIAL_COVERAGE_CANDIDATES_SEEN=") for f in flags)
+    assert result["governed_exceptions"] == []
+
+
+def test_baseline_mode_default_never_dispatches_partial_coverage_entry(monkeypatch, isolated_review_queue):
+    """Contraparte de control: con full_document_coverage=True (default),
+    el mismo escenario negativo NUNCA genera una entrada
+    EVIDENCE_NOT_LOCATED_IN_CANDIDATES -- ese despacho es exclusivo del
+    modo juicio, baseline sigue su camino PROVISIONAL_GAP sin cola."""
+    from factory.layer9 import human_review_queue as hrq
+
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                        "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                        run_context="production", use_verified_pipeline=True, document_type="FS")
+    assert hrq.list_pending() == []
