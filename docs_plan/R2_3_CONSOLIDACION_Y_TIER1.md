@@ -382,6 +382,21 @@ en un solo documento por corrida) y el empaquetado del flujo end-to-end
 explícito de R2.3 §5: "si Cesar firma D2, la implementación... se
 planifica como corrida siguiente").
 
+### D2 — FIRMADO por Cesar (2026-08-11)
+
+Confirmado en conversación (no en el panel de gobernanza de
+`mission_control` -- D2 no gobierna ningún recurso de LLM/embeddings/
+corpus, es una decisión de RUMBO DE PRODUCTO, nunca se propuso como
+registro de `decision_family` en `decisions_v2.jsonl`; a diferencia de
+`EMBED_EXECUTION`/`PILOT_EXECUTION`, que sí viven ahí y sí aparecen en
+la UI, D2 vive solo como texto en este documento -- la confirmación de
+Cesar en el chat ES la firma, no falta nada en la UI).
+
+Rumbo del producto: Tier-1 asistido, alcance (a)-(f) de la tabla arriba,
+**detección automática de paráfrasis explícitamente excluida**.
+Implementación (informe asistido + empaquetado end-to-end) **pendiente
+de planificarse como corrida siguiente**, fuera de alcance de R2.3.
+
 **Pendiente de firma de Cesar**: adoptar D2 como rumbo del producto (o
 no) -- sin comprometer todavía la corrida de implementación.
 
