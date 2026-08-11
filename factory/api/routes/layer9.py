@@ -46,6 +46,7 @@ from factory.services import gmpai_artifact_service as _gmpai
 from factory.services import validation_readiness_service as _valready
 from factory.services import mission_evidence_service as _evidence
 from factory.services import test_console_service as _console
+from factory.services import tier1_report_service as _tier1
 
 router = APIRouter(prefix="/api/v1/layer9", tags=["layer9"])
 
@@ -835,6 +836,45 @@ def get_gmp_report_pdf(project_id: str, record_by: str | None = Query(default=No
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ── R2.3/D2 — Informes Tier-1 asistidos (analizador documental GMP) ──────────
+# Read-only sobre factory/services/tier1_report_service.py: sirve informes
+# YA persistidos por factory/regulatory/tier1_report_writer.py. Nunca dispara
+# una corrida nueva -- eso exige su propia PILOT_EXECUTION vigente y corre
+# fuera de HTTP (ver factory/regulatory/tier1_report.py), a propósito: un
+# endpoint POST que disparara inferencia real gastaría presupuesto de
+# gobernanza en cada llamada, sin la revisión previa que hoy tiene cada
+# corrida real de este arco.
+
+@router.get("/tier1-reports")
+def get_tier1_reports():
+    """Lista los informes Tier-1 persistidos (resumen: run_id, documento,
+    agente, counts_by_bucket), más recientes primero."""
+    return {"reports": _tier1.list_reports()}
+
+
+@router.get("/tier1-reports/{run_id}")
+def get_tier1_report(run_id: str):
+    """Informe Tier-1 estructurado completo (JSON) para un run_id ya
+    persistido -- incluye el detalle por requisito (bucket, evidencia
+    anclada cuando aplica, flags de revisión)."""
+    try:
+        return _tier1.get_report_json(run_id)
+    except _tier1.Tier1ReportNotFound as e:
+        raise HTTPException(404, str(e))
+
+
+@router.get("/tier1-reports/{run_id}/markdown")
+def get_tier1_report_markdown(run_id: str):
+    """Mismo informe Tier-1, como el texto markdown renderizado
+    (BORRADOR ASISTIDO -- ver banner de cumplimiento en
+    tier1_report.render_tier1_markdown())."""
+    try:
+        content = _tier1.get_report_markdown(run_id)
+    except _tier1.Tier1ReportNotFound as e:
+        raise HTTPException(404, str(e))
+    return Response(content=content, media_type="text/markdown; charset=utf-8")
 
 
 # ── W6 — Vistas MODO DISEÑO (read-only, NUNCA auditan, cero HTTP externo) ─────

@@ -256,3 +256,37 @@ def resolve_validation_evidence(run_id: str, evidence_base: Path) -> Path:
     if not target.is_relative_to(base):
         raise ValueError(f"run_id produce una ruta fuera de evidence_base: {run_id!r}")
     return target
+
+
+# ── R2.3/D2 — persistencia del informe Tier-1 asistido ───────────────────────
+
+_TIER1_REPORT_RUN_ID_RE = re.compile(r"^chunked-[0-9a-f]{12}$")
+TIER1_REPORT_EXTS = frozenset({".json", ".md"})
+TIER1_REPORT_MAX_BYTES = 10_000_000  # 10 MB, mismo tope que evidencia de validación
+
+
+def resolve_tier1_report(run_id: str, ext: str, reports_base: Path) -> Path:
+    """
+    Confina la persistencia/lectura del informe Tier-1 (D2, R2.3) a
+    reports_base/{run_id}{ext} -- mismo patrón que resolve_validation_evidence
+    (confinamiento + regex de run_id + extensión única), acotado a los
+    run_id reales que emite evaluate_chunked() ('chunked-<12 hex>'; el
+    Tier-1 nunca corre en el runner standalone de validación, así que no
+    hereda el prefijo 'w5v3-validation').
+
+    Raises:
+        ValueError: run_id no matchea el patrón esperado, o produce una
+            ruta fuera de reports_base.
+        PermissionError: extensión fuera de TIER1_REPORT_EXTS.
+    """
+    if not _TIER1_REPORT_RUN_ID_RE.match(run_id):
+        raise ValueError(
+            f"run_id inválido para informe Tier-1: {run_id!r} (esperado 'chunked-<12 hex>')"
+        )
+    if ext not in TIER1_REPORT_EXTS:
+        raise PermissionError(f"Extensión no permitida para informe Tier-1: {ext!r}")
+    base = reports_base.resolve()
+    target = (base / f"{run_id}{ext}").resolve()
+    if not target.is_relative_to(base):
+        raise ValueError(f"run_id produce una ruta fuera de reports_base: {run_id!r}")
+    return target
