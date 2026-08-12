@@ -6,7 +6,7 @@
 import { show, connect, refresh } from './refresh.js';
 import { toast, fakeSubmit } from './core.js';
 import { submitCreateMission, submitMissionDecision } from './missions.js';
-import { submitRCDecision } from './review.js';
+import { submitRCDecision, submitFindingDecision } from './review.js';
 import { submitW5Decision, submitW5Correction } from './w5_decisions.js';
 import { govOpen, govRecalcHash, govRefresh, govSubmitD1Correccion,
          govSubmitD1A, govSubmitPack211, govSubmitRevokeD2003,
@@ -40,7 +40,8 @@ import { doCaseSearch, submitRegQuery, promptCaseFetch,
 
 Object.assign(window, {
   show, connect, refresh, toast, fakeSubmit,
-  submitCreateMission, submitMissionDecision, submitRCDecision, submitW5Decision, submitW5Correction,
+  submitCreateMission, submitMissionDecision, submitRCDecision, submitFindingDecision,
+  submitW5Decision, submitW5Correction,
   govOpen, govRecalcHash, govRefresh, govSubmitD1Correccion, govSubmitD1A, govSubmitPack211,
   govSubmitRevokeD2003, govSubmitExcepcion, govSubmitCatalogVersion,
   govSubmitMatrixVersionRegularizacion,

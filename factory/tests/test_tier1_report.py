@@ -66,6 +66,7 @@ def test_hard_stop_without_pilot_execution_budget(monkeypatch, tmp_path):
     monkeypatch.setattr(t1, "_default_extractor", lambda path: _positive_pages())
     with pytest.raises(runner.CorpusRunNotAuthorizedError):
         t1.generate_tier1_report("RW-TEST", "fda_part11_agent", document_type="FS",
+                                  evaluation_profile="H2H4", target_requirement_ids=("21_CFR_11.10(d)",),
                                   checkpoint_dir=tmp_path / "ckpt")
 
 
@@ -76,6 +77,7 @@ def test_hard_stop_when_document_exceeds_budget(monkeypatch, tmp_path):
     monkeypatch.setattr(t1, "_default_extractor", lambda path: ["A" * 7000, "B" * 7000, "C" * 7000])
     with pytest.raises(t1.Tier1ReportError):
         t1.generate_tier1_report("RW-TEST", "fda_part11_agent", document_type="FS",
+                                  evaluation_profile="H2H4", target_requirement_ids=("21_CFR_11.10(d)",),
                                   checkpoint_dir=tmp_path / "ckpt")
 
 
@@ -89,6 +91,7 @@ def test_confirmed_requirement_includes_anchored_quote_and_source_caveat(monkeyp
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
 
     report = t1.generate_tier1_report("RW-TEST", "fda_part11_agent", document_type="FS",
+                                       evaluation_profile="H2H4", target_requirement_ids=("21_CFR_11.10(d)",),
                                        checkpoint_dir=tmp_path / "ckpt")
 
     outcome = next(r for r in report.requirements if r.requirement_id == "21_CFR_11.10(d)")
@@ -106,6 +109,7 @@ def test_gap_requirement_is_needs_human_review_and_links_queue_entry(monkeypatch
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
 
     report = t1.generate_tier1_report("RW-TEST", "fda_part11_agent", document_type="FS",
+                                       evaluation_profile="H2H4", target_requirement_ids=("21_CFR_11.10(e)",),
                                        checkpoint_dir=tmp_path / "ckpt")
 
     outcome = next(r for r in report.requirements if r.requirement_id == "21_CFR_11.10(e)")
@@ -115,8 +119,75 @@ def test_gap_requirement_is_needs_human_review_and_links_queue_entry(monkeypatch
     assert outcome.review_queue_rc_id == f"finding-{report.run_id}-21_CFR_11.10(e)"
 
 
+def test_baseline_profile_is_blocked_for_tier1(monkeypatch, tmp_path):
+    """R3-T1.2/F0.2 (2026-08-12): BASELINE midio 0/7 de recall en el
+    fixture set -- Tier-1 nunca debe poder correr con ese perfil, ni por
+    default ni explicito. Bloqueado ANTES de tocar presupuesto/Ollama."""
+    with pytest.raises(t1.Tier1ReportError, match="0/7"):
+        t1.generate_tier1_report("RW-TEST", "fda_part11_agent", document_type="FS",
+                                  evaluation_profile="BASELINE",
+                                  target_requirement_ids=("21_CFR_11.10(d)",),
+                                  checkpoint_dir=tmp_path / "ckpt")
+
+
+def test_evaluation_profile_has_no_default(monkeypatch, tmp_path):
+    """R3-T1.2/F0.2: omitir evaluation_profile debe ser un TypeError, no
+    un fallback silencioso a BASELINE (el defecto real del run 943a)."""
+    with pytest.raises(TypeError):
+        t1.generate_tier1_report("RW-TEST", "fda_part11_agent", document_type="FS",
+                                  target_requirement_ids=("21_CFR_11.10(d)",),
+                                  checkpoint_dir=tmp_path / "ckpt")
+
+
 def test_unknown_conclusion_fails_closed_to_needs_review():
     assert t1._bucket_for_conclusion("SOME_FUTURE_CONCLUSION_NOT_YET_MAPPED") == t1.NEEDS_HUMAN_REVIEW
+
+
+def test_not_observed_optional_gets_its_own_bucket_not_needs_review():
+    """R3-T1.2/F0.5 (2026-08-12): antes caia en NEEDS_HUMAN_REVIEW con un
+    mensaje que apuntaba a governed_exceptions -- pero esa lista SIEMPRE
+    queda vacia para este caso (NOT_OBSERVED_OPTIONAL nunca pasa por
+    ninguna de las 3 rutas de despacho de chunked_engine.py). Bucket
+    propio, honesto, sin pista de diagnostico falsa."""
+    assert t1._bucket_for_conclusion("NOT_OBSERVED_OPTIONAL") == t1.OPTIONAL_NOT_OBSERVED
+    assert t1.OPTIONAL_NOT_OBSERVED != t1.NEEDS_HUMAN_REVIEW
+
+
+@pytest.mark.parametrize("raw, expected", [
+    (None, None),
+    ("pag 45-46 (chunk 12)", "p. 45-46"),
+    ("paginas 1-58 (todo el documento, por chunks)", "p. 1-58"),
+    ("pag 13-14, pag 39-40, pag 49-50 (not_observed_in_chunk en todas las secciones evaluadas)",
+     "p. 13-14, p. 39-40, p. 49-50"),
+    ("(no evaluado: llamada bloqueada por el gate 4)", "(no evaluado: llamada bloqueada por el gate 4)"),
+])
+def test_normalize_page_or_section_unifies_format_without_inventing_data(raw, expected):
+    """R3-T1.2/F0.5: unifica 'pag'/'pagina'/'paginas' a 'p.' y quita el
+    parentesis final de anotacion interna -- pero si TODO el string era
+    esa anotacion (nada de pagina real), se conserva intacto en vez de
+    vaciarlo."""
+    assert t1._normalize_page_or_section(raw) == expected
+
+
+def test_cross_reference_reports_target_document(monkeypatch, tmp_path):
+    """R3-T1.2/F0.5: applicability() ya calculaba evidence_expected_in
+    pero se descartaba antes de llegar al informe -- CROSS_REFERENCE ahora
+    declara en que documento(s) se espera encontrar la evidencia real."""
+    _authorize(monkeypatch, max_calls=60)
+    monkeypatch.setattr(t1, "_default_extractor", lambda path: _positive_pages())
+    payload = _all_insufficient()
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
+
+    report = t1.generate_tier1_report("RW-TEST", "fda_part11_agent", document_type="FS",
+                                       evaluation_profile="H2H4",
+                                       target_requirement_ids=("21_CFR_11.10(a)",),
+                                       checkpoint_dir=tmp_path / "ckpt")
+
+    outcome = next(r for r in report.requirements if r.requirement_id == "21_CFR_11.10(a)")
+    assert outcome.bucket == t1.CROSS_REFERENCE
+    assert outcome.cross_reference_target
+    md = t1.render_tier1_markdown(report)
+    assert "evidencia esperada en" in md
 
 
 def test_render_markdown_never_declares_compliance_and_lists_confirmed_and_pending():
