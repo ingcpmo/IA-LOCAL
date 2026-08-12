@@ -262,6 +262,13 @@ VALID_EVENTS = {
     # paso, perdiendo los query_vectors ya calculados (nunca devueltos al
     # llamador porque la excepción interrumpió el return).
     "r2_embed_batch_completed",
+    # R3-T1.2/F0.3 (2026-08-12) — una entrada de la cola de revisión humana
+    # (o un informe Tier-1 persistido) se marca SUPERSEDED por un defecto
+    # técnico confirmado (ej. evaluation_profile equivocado), nunca por un
+    # juicio humano -- por eso no pasa por rc_reviewed/mark_reviewed
+    # (que exige una identidad de revisor real, no aplica aquí). El
+    # registro original nunca se borra, solo queda marcado.
+    "finding_superseded",
 }
 
 

@@ -155,15 +155,67 @@ def list_pending() -> list[dict]:
     return [e for e in _read_all() if e.get("status") == "pending"]
 
 
+def get_entry(rc_id: str) -> dict | None:
+    """R3-T1.2/F0.4 (2026-08-12): lectura pública de UNA entrada por
+    rc_id, sin importar su status -- a diferencia de `list_pending()`
+    (solo pendientes). Necesaria para que un endpoint HTTP pueda decidir
+    sobre una entrada de `finding_review` (que NUNCA tiene un
+    `rc_manifest.json` real como los RC -- `get_rc()` de
+    `release_candidate_builder` no aplica aquí) verificando su
+    `entry_type`/`status` ANTES de decidir, mismo patrón que `get_rc()`
+    hace para los RC reales."""
+    return next((e for e in _read_all() if e.get("rc_id") == rc_id), None)
+
+
 def get_queue_summary() -> dict:
     """Conteo por estado."""
     entries = _read_all()
-    summary: dict[str, int] = {"pending": 0, "approved": 0, "rejected": 0, "returned": 0}
+    summary: dict[str, int] = {
+        "pending": 0, "approved": 0, "rejected": 0, "returned": 0, "superseded": 0,
+    }
     for e in entries:
         st = e.get("status", "pending")
         if st in summary:
             summary[st] += 1
     return summary
+
+
+def supersede_finding(rc_id: str, reason: str, *, superseded_by: str | None = None) -> dict:
+    """R3-T1.2/F0.3 (2026-08-12): marca una entrada como SUPERSEDED por un
+    defecto técnico confirmado (ej. evaluation_profile equivocado, R3_T1_2
+    §F0.1/F0.2) -- NUNCA por un juicio humano, así que NO reutiliza
+    `mark_reviewed()` (esa función exige una identidad de revisor real vía
+    `identity_policy.validate_identity`; no aplica a una corrección de
+    proceso). El registro original NUNCA se borra ni se reescribe -- solo
+    gana `status='superseded'` + `superseded_reason` + `superseded_at`
+    (+ `superseded_by`, el run_id/artefacto que lo reemplaza cuando ya
+    existe). Trazable en la cadena de auditoría (`finding_superseded`),
+    mismo patrón que `rc_reviewed`."""
+    entries = _read_all()
+    updated = False
+    project_id = "unknown"
+    for e in entries:
+        if e.get("rc_id") == rc_id:
+            e["status"] = "superseded"
+            e["superseded_reason"] = reason
+            e["superseded_at"] = _ts()
+            if superseded_by is not None:
+                e["superseded_by"] = superseded_by
+            updated = True
+            project_id = e.get("project_id", "unknown")
+            break
+
+    if not updated:
+        raise FileNotFoundError(f"RC '{rc_id}' no encontrado en la cola")
+
+    _rewrite(entries)
+
+    write_event("finding_superseded", project_id, {
+        "rc_id": rc_id,
+        "reason": reason,
+        "superseded_by": superseded_by,
+    })
+    return {"rc_id": rc_id, "status": "superseded", "reason": reason}
 
 
 def mark_reviewed(rc_id: str, decision: str, reviewer: str, *,

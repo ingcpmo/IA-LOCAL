@@ -1,0 +1,24 @@
+{
+  "status": "SUPERSEDED_BY_PROFILE_CORRECTION",
+  "superseded_at": "2026-08-12T00:00:00+00:00",
+  "run_id": "chunked-943a62bcbb85",
+  "document_id": "RW-0005",
+  "original_artifacts_untouched": [
+    "informe_tier1.md",
+    "report_raw.json"
+  ],
+  "reason": "Este run corrio con evaluation_profile=BASELINE por default no declarado (factory/regulatory/tier1_report.py llamaba a chunked_engine.evaluate_chunked() sin pasar evaluation_profile; el default de esa funcion es 'BASELINE', que midio 0/7 de recall en el fixture set de recall -- vs 'H2H4', que midio 2/7, el unico perfil que supero el baseline en cualquier experimento medido. Ver docs_plan/W5V2_RECALL_EXPERIMENTS_RESULTADOS.md.",
+  "human_authorization_gap": "PILOT_EXECUTION-2026-013/014 (factory/layer9/decisions/decisions_v2.jsonl, aprobado por Cesar 2026-08-11) autorizo explicitamente el eje de full_document_coverage ('modo baseline' referido a cobertura, no al parametro evaluation_profile) -- nunca se le presento evaluation_profile=H2H4 vs BASELINE como decision. El default se aplico por omision, no por eleccion humana.",
+  "fix_reference": {
+    "plan": "docs_plan/R3_T1_2_PLAN_POR_FASES.md",
+    "phase": "F0.1 (hallazgo) / F0.2 (enforcement)",
+    "code_change": "factory/regulatory/tier1_report.py::generate_tier1_report() ahora exige evaluation_profile='H2H4' explicito -- 'BASELINE' queda bloqueado (Tier1ReportError) para cualquier corrida futura de este modulo."
+  },
+  "review_queue_entries_superseded": [
+    "finding-chunked-943a62bcbb85-21_CFR_11.10(d)",
+    "finding-chunked-943a62bcbb85-21_CFR_11.10(e)",
+    "finding-chunked-943a62bcbb85-21_CFR_11.10(g)"
+  ],
+  "replacement_run": null,
+  "next_step": "Corrida corregida bajo evaluation_profile=H2H4, gated por F1 (caso conocido, ~5-8 llamadas) y F2 (un requisito, cobertura completa del documento, ~29 llamadas) de docs_plan/R3_T1_2_PLAN_POR_FASES.md antes de comprometer una corrida formal de todo el catalogo."
+}
