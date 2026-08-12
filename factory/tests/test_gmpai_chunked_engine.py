@@ -768,6 +768,204 @@ def test_verified_pipeline_d_contradiction_across_chunks_stays_not_assessable(mo
     assert finding["substantive_support"] != "SUPPORTED"
 
 
+# ── Fix B4 (R3-T1.6, 2026-08-12, docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md) ─────
+# el candidato "headline" (evidencia_exacta, la cita RESUMEN del requisito)
+# puede venir vacio aunque criterion_assessments SI traiga citas MET reales
+# y ancladas -- sin rescate, D (ya corregido por B3) se calcula pero nunca
+# llega al Finding, porque solo un candidato con anchored=True puede ganar.
+
+def _d_assessments_partial(met_indices: set[int]) -> list:
+    """Como _d_assessments_subset, pero los indices fuera de met_indices
+    quedan NOT_MET (desacuerdo genuino, no NOT_ASSESSABLE) -- reproduce el
+    patron real encontrado en el checkpoint historico (21_CFR_11.10(e),
+    chunk 20: 2 MET anclados + 7 NOT_MET genericos, PARTIALLY_MET, nunca
+    NOT_ASSESSABLE por incertidumbre)."""
+    return [
+        {"criterion_index": i + 1, "criterion_text": text,
+         "status": "MET" if (i + 1) in met_indices else "NOT_MET",
+         "evidence_quote": text if (i + 1) in met_indices else "",
+         "evidence_location": "pag X" if (i + 1) in met_indices else "",
+         "justification": "test", "limitations": ""}
+        for i, text in enumerate(_D_CRITERIA_11_10_D)
+    ]
+
+
+def _run_b4(monkeypatch, estado, criterion_assessments, evidencia_exacta="", pages=None):
+    page = pages or [f"Introduccion. " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500]
+    entry = {"req_id": "21_CFR_11.10(d)", "estado": estado,
+             "evidencia_exacta": evidencia_exacta, "brecha": "n/a", "recomendacion": "n/a"}
+    if criterion_assessments is not None:
+        entry["criterion_assessments"] = criterion_assessments
+    payload = _all_insufficient({"21_CFR_11.10(d)": entry})
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    return ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", page,
+                                "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                run_context="production", use_verified_pipeline=True, document_type="FS")
+
+
+def test_b4_headline_empty_but_criterion_quotes_anchored_rescues_candidate(monkeypatch):
+    """CASO REAL: reproduce chunk 20 / 21_CFR_11.10(e) del checkpoint
+    historico chunked-943a62bcbb85. evidencia_exacta vacia, pero 2 de 5
+    criterios MET con cita real que SI ancla -- el candidato debe ganar
+    (headline derivado) y D (PARTIALLY_MET) debe llegar al Finding, en vez
+    de perderse en la rama 'sin candidatos'."""
+    result = _run_b4(monkeypatch, "cumple_parcialmente", _d_assessments_partial({1, 2}))
+    finding = next(f for f in result["findings"]
+                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
+    assert finding["d_sufficiency"] == "PARTIALLY_MET", finding
+    assert finding["evidencia_exacta"].startswith("[headline derivado de citas por criterio verificadas]")
+    assert _D_CRITERIA_11_10_D[0] in finding["evidencia_exacta"]
+
+
+def test_b4_absence_preserved_when_no_criterion_anchors(monkeypatch):
+    """AUSENCIA PRESERVADA: headline vacio Y cero criterios MET -- el
+    candidato NUNCA gana, la conclusion de ausencia queda intacta (mismo
+    comportamiento que antes del fix)."""
+    result = _run_b4(monkeypatch, "cumple_parcialmente", _d_assessments_partial(set()))
+    finding = next(f for f in result["findings"]
+                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
+    assert finding["d_sufficiency"] is None, finding
+    assert "derivado" not in finding["evidencia_exacta"]
+
+
+def test_b4_unanchored_criterion_quote_never_rescues(monkeypatch):
+    """GUARDIAN CENTRAL anti-fabricacion: headline vacio, y el unico
+    criterio 'MET' trae un evidence_quote que NO existe en el chunk (texto
+    inventado/de otro chunk) -- Nivel B de verify_sufficiency() ya lo
+    descarta de d_detail['met'], asi que el rescate B4 nunca lo ve. El
+    candidato sigue sin ganar."""
+    assessments = _d_assessments_partial({1})
+    assessments[0]["evidence_quote"] = "Este texto jamas aparece en el chunk evaluado, es inventado."
+    result = _run_b4(monkeypatch, "cumple_parcialmente", assessments)
+    finding = next(f for f in result["findings"]
+                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
+    assert finding["d_sufficiency"] is None, finding
+    assert "derivado" not in finding["evidencia_exacta"]
+
+
+def test_b4_reference_list_criterion_quote_never_rescues(monkeypatch):
+    """Hallazgo adicional durante el diseno (no en el plan original, pero
+    necesario): _classify_criteria_for_chunk() solo aplica verify_anchor()
+    por criterio, NUNCA detect_reference_list_context() -- a diferencia
+    del headline normal. Sin el chequeo explicito que este fix agrega, una
+    cita que ancla literalmente pero vive dentro de una lista de
+    referencias numeradas ('[N]', el patron real de ANNEX11_4) se colaria
+    por la ruta derivada aunque el headline normal la hubiera rechazado."""
+    # Indice 3 (no 1): build_page_chunks() re-junta palabras separadas por
+    # kerning artificial (ver test_annex11_4_reference_list_still_rejected_
+    # after_kerning_fix), y algunos criterios de _D_CRITERIA_11_10_D
+    # contienen una "o"/"y" suelta que ese mecanismo fusiona con la palabra
+    # vecina ("propio o federado" -> "propioo federado") -- corrompiendo el
+    # texto literal antes de llegar a este chequeo. El indice 3 no tiene ese
+    # patron y sobrevive intacto; el fenomeno es ortogonal a B4.
+    quote = _D_CRITERIA_11_10_D[2]
+    page = [f"Referencias: [6] Standard ABC [7] {quote} [8] Standard XYZ [9] Otro documento."]
+    assessments = _d_assessments_partial({3})
+    result = _run_b4(monkeypatch, "cumple_parcialmente", assessments, pages=page)
+    finding = next(f for f in result["findings"]
+                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
+    assert finding["d_sufficiency"] is None, finding
+    assert "derivado" not in finding["evidencia_exacta"]
+
+
+def test_b4_genuine_contradiction_still_blocks_with_both_headlines_empty(monkeypatch):
+    """CONTRADICCION GENUINA sigue bloqueando: dos chunks, AMBOS con
+    headline vacio (ambos rescatados por B4 via sus propios criterios
+    anclados), en desacuerdo real sobre el criterio 1 (MET en un chunk,
+    NOT_MET en el otro) -- D agregado degrada a NOT_ASSESSABLE, exactamente
+    igual que si los headlines hubieran venido anclados normalmente. B4
+    NUNCA debe destrabar una contradiccion real."""
+    page1 = f"Introduccion. " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500
+    page2 = "Seccion contradictoria del mismo documento. " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500
+    pages = [page1, page2]
+
+    assessments_chunk1 = _d_assessments_partial({1, 2, 3, 4, 5})
+    assessments_chunk2 = _d_assessments_partial({2, 3, 4, 5})  # criterio 1 queda NOT_MET (contradice)
+
+    # Mismo estado en ambos chunks a proposito: si difieren (p.ej. "cumple"
+    # vs "cumple_parcialmente"), dispara el contradiction check de headline
+    # (distinct_estados, linea ~1689 -- un mecanismo DISTINTO, anterior a la
+    # agregacion D) antes de llegar siquiera a D -- ese Finding nunca puebla
+    # d_sufficiency, por diseno, y no es lo que este test quiere ejercitar.
+    responses = [
+        _all_insufficient({"21_CFR_11.10(d)": {
+            "req_id": "21_CFR_11.10(d)", "estado": "cumple_parcialmente", "evidencia_exacta": "",
+            "brecha": "n/a", "recomendacion": "n/a", "criterion_assessments": assessments_chunk1,
+        }}),
+        _all_insufficient({"21_CFR_11.10(d)": {
+            "req_id": "21_CFR_11.10(d)", "estado": "cumple_parcialmente", "evidencia_exacta": "",
+            "brecha": "n/a", "recomendacion": "n/a", "criterion_assessments": assessments_chunk2,
+        }}),
+    ]
+    call_count = {"n": 0}
+
+    def _fake_generate(*a, **k):
+        idx = call_count["n"]
+        call_count["n"] += 1
+        return _ollama_response(responses[idx])
+
+    monkeypatch.setattr(ollama_client, "generate", _fake_generate)
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+
+    finding = next(f for f in result["findings"]
+                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
+    assert finding["d_sufficiency"] == "NOT_ASSESSABLE", finding
+    assert finding["substantive_support"] != "SUPPORTED"
+    # ambos candidatos SI ganaron gracias a B4 (headline derivado) -- la
+    # contradiccion se detecta en la agregacion D (verify_sufficiency_
+    # aggregated), visible en d_reason, no un candidato descartado en
+    # silencio por falta de headline.
+    assert finding["evidencia_exacta"].startswith("[headline derivado de citas por criterio verificadas]")
+
+
+def test_b4_annex11_4_reference_list_still_rejected_end_to_end(monkeypatch):
+    """ANNEX11_4 end-to-end tras B4: el caso real conocido (GAMP5 citado
+    dentro de una lista de referencias numeradas) sigue rechazado -- ruta
+    completa via evaluate_chunked(), no solo la funcion aislada
+    (test_annex11_4_reference_list_still_rejected_after_kerning_fix ya
+    cubre esa). El chunk NUNCA emite criterion_assessments para ANNEX11_4
+    en este escenario (fuera del contrato de fda_part11_agent) -- lo que
+    se prueba es que el headline vacio + evidencia solo en la lista de
+    referencias no produce una conclusion positiva via el candidato
+    headline normal (valid_candidate_verified), que B4 no toca ni afloja."""
+    page = ("REFERENCES [6] ISPE Baseline Guide [7] ISA-88 [8] Good Automated "
+            "Manufacturing Practice, GAMP5 [9] 21 CFR Part 11 [10] EU Annex 11")
+    entry = {"req_id": "21_CFR_11.10(d)", "estado": "cumple",
+             "evidencia_exacta": "Good Automated Manufacturing Practice, GAMP5",
+             "brecha": "n/a", "recomendacion": "n/a"}
+    payload = _all_insufficient({"21_CFR_11.10(d)": entry})
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", [page],
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+    c = result["verified_conclusions"]["21_CFR_11.10(d)"]
+    assert c["conclusion"] != "DOCUMENTED_AND_SUPPORTED"
+    assert c["conclusion"] != "PARTIALLY_DOCUMENTED"
+
+
+def test_b4_anchored_headline_unchanged_behavior(monkeypatch):
+    """RETROCOMPATIBILIDAD: un candidato con headline YA anclado (caso
+    normal, mayoria de las corridas) se comporta EXACTAMENTE igual que
+    antes del fix -- B4 nunca se activa (evidencia.strip() no esta vacio),
+    headline_source='model_headline', evidencia_exacta sin el marcador de
+    derivado."""
+    result = _run_verified_pipeline_with_positive_citation(
+        monkeypatch, _d_assessments(["MET"] * 5))
+    finding = next(f for f in result["findings"]
+                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
+    assert finding["evidencia_exacta"] == _ANCHORED_QUOTE
+    assert "derivado" not in finding["evidencia_exacta"]
+    assert finding["d_sufficiency"] == "MET"
+
+
 # ── W5 V2 Fase F: cierre del hueco de verified_conclusions (2026-07-25) ────
 # absence_consolidator decide sobre chunk records y NO conoce D. Sin este
 # cableado, una cita positiva anclada concluia DOCUMENTED_AND_SUPPORTED

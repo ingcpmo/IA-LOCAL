@@ -614,6 +614,85 @@ def _is_anchored(evidencia: str, source_text: str) -> bool:
     return _normalize(evidencia) in _normalize(source_text)
 
 
+def _apply_headline_rescue_b4(
+    candidate: dict, *, evidencia: str, requires_anchor: bool,
+    criterion_assessments: "list | None", chunk_text: str, d_detail: "dict | None",
+) -> None:
+    """Fix B4 (R3-T1.6, 2026-08-12, docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md):
+    el candidato headline (`evidencia_exacta`, la cita RESUMEN de todo el
+    requisito) puede venir vacia aunque el modelo SI haya citado evidencia
+    real y anclada por criterio individual (`criterion_assessments`) en la
+    MISMA respuesta -- confirmado con datos reales (checkpoint
+    `chunked-943a62bcbb85`, chunk 20, `21_CFR_11.10(e)`: evidencia_exacta=''
+    pero 2/9 criterios MET con cita real que SI ancla). Sin este ajuste, D
+    (ya corregido por B3) se calcula (`d_detail`, via `verify_evidence_abcd`
+    o `verify_sufficiency` directo) pero nunca se adjunta al Finding, porque
+    solo un candidato con `anchored=True` puede ganar (`best = candidates[0]`).
+
+    Muta `candidate` in-place (evidencia_exacta/anchored/has_evidence/
+    headline_source) SOLO si aplica el rescate; en cualquier otro caso solo
+    fija `headline_source='model_headline'` si aun no estaba, sin tocar
+    nada mas -- comportamiento previo intacto.
+
+    Extraida como funcion de modulo (R3-T1.6) para que tanto el bucle en
+    vivo de `evaluate_chunked()` COMO cualquier reconstruccion/replay sobre
+    datos ya guardados (checkpoints historicos, sin llamar de nuevo al
+    modelo) apliquen EXACTAMENTE la misma regla -- nunca dos
+    implementaciones que puedan divergir (el mismo gap de instrumentacion
+    que motivo el fix B3 original).
+
+    Regla: si `evidencia` (headline) viene vacia pero `d_detail['met']`
+    (calculado por `verify_sufficiency()`, Nivel B ya aplica `verify_anchor`
+    por criterio) trae al menos un criterio, el candidato se considera
+    anclado -- DERIVADO de esas citas YA verificadas, nunca inventado.
+    `d_detail['met']` por construccion solo puede contener criterios con
+    cita real y anclada -- este rescate NUNCA puede colarse con una cita
+    fabricada o de otro chunk. Si NINGUN criterio ancla o `evidencia` SI
+    tenia texto (solo fallo su propio anclaje), el candidato sigue sin
+    ganar -- ausencia/descarte honesto preservado.
+
+    Guardia adicional (encontrada al disenar este fix, no pedida
+    explicitamente pero necesaria): `_classify_criteria_for_chunk()`
+    (Nivel B de `verify_sufficiency`, la fuente de `d_detail`) SOLO aplica
+    `verify_anchor()` por criterio -- a diferencia del headline normal
+    (`valid_candidate_verified` en `evaluate_chunked()`), NUNCA llama a
+    `detect_reference_list_context()`. Sin este chequeo adicional, una cita
+    que ancla literalmente pero vive dentro de una lista de referencias
+    numeradas (el falso positivo real de ANNEX11_4, ej. "GAMP5" dentro de
+    "[8] Good Automated Manufacturing Practice, GAMP5") podria colarse por
+    esta ruta derivada aunque el headline normal la hubiera rechazado. Se
+    aplica el MISMO chequeo que ya protege el headline normal -- nunca un
+    umbral mas bajo para el camino derivado. Se revisa CADA cita
+    individualmente (no el texto unido con " | "): ese separador nunca
+    existe literalmente en el chunk, asi que `detect_reference_list_context()`
+    sobre el texto ya unido jamas encontraria la posicion y el chequeo
+    quedaria mudo en silencio para el caso de 2+ citas -- una sola cita
+    sospechosa invalida el rescate completo."""
+    if not evidencia.strip() and requires_anchor:
+        from factory.regulatory import semantic_evidence_verification as sev
+        met_criteria = set((d_detail or {}).get("met") or [])
+        derived_quotes = [
+            str(ca.get("evidence_quote") or "").strip()
+            for ca in (criterion_assessments or [])
+            if ca.get("status") == "MET" and ca.get("criterion_text") in met_criteria
+            and str(ca.get("evidence_quote") or "").strip()
+        ] if met_criteria else []
+        derived_quotes = list(dict.fromkeys(derived_quotes))  # dedupe, orden estable
+        any_reference_list = any(
+            sev.detect_reference_list_context(q, chunk_text) for q in derived_quotes
+        )
+        if derived_quotes and not any_reference_list:
+            candidate["evidencia_exacta"] = (
+                "[headline derivado de citas por criterio verificadas] "
+                + " | ".join(derived_quotes)
+            )
+            candidate["anchored"] = True
+            candidate["has_evidence"] = True
+            candidate["headline_source"] = "derived_from_criterion_quotes"
+    if "headline_source" not in candidate:
+        candidate["headline_source"] = "model_headline"
+
+
 _LABEL_STOPWORDS = {
     "y", "de", "del", "la", "el", "los", "las", "en", "a", "un", "una", "para", "con",
     "quien", "que", "es", "su", "sus", "o", "sin", "no", "al", "por",
@@ -1443,6 +1522,19 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 candidate["b_source"] = abcd.b_source
                 candidate["c_semantic"] = abcd.c_semantic
                 candidate["c_flags"] = abcd.c_flags
+
+                # Fix B4 (R3-T1.6, docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md):
+                # ver docstring de _apply_headline_rescue_b4() -- extraida a
+                # funcion de modulo (no inline) para que tanto este bucle en
+                # vivo COMO cualquier replay/reconstruccion sobre datos ya
+                # guardados (checkpoints historicos, sin volver a llamar al
+                # modelo) apliquen EXACTAMENTE la misma regla, nunca dos
+                # implementaciones que puedan divergir.
+                _apply_headline_rescue_b4(
+                    candidate, evidencia=evidencia, requires_anchor=requires_anchor,
+                    criterion_assessments=criterion_assessments, chunk_text=chunk["text"],
+                    d_detail=abcd.d_detail,
+                )
 
                 by_req.setdefault(req_id, []).append(candidate)
                 by_req_candidates.append({"req_id": req_id, "candidate": candidate})
