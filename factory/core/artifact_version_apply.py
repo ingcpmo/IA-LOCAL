@@ -39,6 +39,7 @@ se commiteó.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import subprocess
@@ -186,6 +187,84 @@ def propose_artifact_version_change(*, artifact_path: str, to_version: str,
         reason=change_reason, payload=payload, store_file=decision_store_file)
 
 
+def propose_catalog_source_verification_sync(*, to_version: str, change_reason: str,
+                                             proposed_by_id: str,
+                                             registry_path: Path | None = None,
+                                             repo: Path | None = None,
+                                             decision_store_file: Path | None = None) -> dict:
+    """R3-T1.2/F0.6 (2026-08-12) -- variante de `propose_artifact_version_change`
+    para EXACTAMENTE un caso real: sincronizar `source_verification_status`
+    (mecánico, `source_lifecycle.sync_catalog_source_verification_status()`)
+    contra el estado real de `evaluate_registry()`, en el mismo movimiento
+    que el bump de versión que lo declara.
+
+    Deliberadamente NO se generalizó `propose_artifact_version_change` para
+    aceptar "cualquier cambio de contenido" (mismo criterio que el docstring
+    de este módulo cita de Fase J: "no se fabrica código sin un caso real
+    que lo valide" -- un parámetro `content_transform` genérico sería
+    exactamente el tipo de escotilla que la gobernanza ARTIFACT_VERSION
+    existe para impedir). Esta función es angosta a propósito: solo hace
+    ESTA sincronización, nunca acepta contenido arbitrario de quien la
+    llama.
+
+    `registry_sha256_before` (extra, fuera de `REQUIRED_PROPOSAL_PAYLOAD_FIELDS`
+    pero exigido igual por `apply_catalog_source_verification_sync`): congela
+    qué estado del registry vio esta propuesta -- si el registry cambia
+    entre proponer y aplicar (otra reingesta, una revocación), aplicar debe
+    fallar y exigir una propuesta nueva, nunca aplicar una sincronización
+    calculada sobre un registry que ya no es el vivo."""
+    from factory.regulatory import source_lifecycle as sl
+    import yaml as _yaml
+
+    base = repo or guard.REPO
+    artifact_path = _catalog_artifact_id(base)
+
+    current = next((s for s in guard.enumerate_artifacts(repo=base)
+                    if s.artifact_id == artifact_path), None)
+    if current is None:
+        raise ArtifactVersionProposalError(
+            f"{artifact_path!r} no aparece en enumerate_artifacts() -- ¿archivo ausente?")
+    if current.version == to_version:
+        raise ArtifactVersionProposalError(
+            f"{artifact_path!r} ya está en version {to_version!r} -- nada que proponer")
+
+    live_text = (base / artifact_path).read_text(encoding="utf-8")
+    reg_path = registry_path or sl.REGISTRY_PATH
+    registry_sha256_before = hashlib.sha256(reg_path.read_bytes()).hexdigest()
+
+    data = _yaml.safe_load(live_text)
+    order = [(rid, entry["source_id"]) for rid, entry in data["requirements"].items()]
+    synced_text, changes = sl.sync_catalog_source_verification_status(
+        live_text, order, registry_path=registry_path, repo=base,
+        decision_store_file=decision_store_file)
+
+    versioned_text, n = CATALOG_VERSION_LINE.subn(
+        f"catalog_version: '{to_version}'", synced_text, count=1)
+    if n != 1:
+        raise ArtifactVersionProposalError(
+            "no se encontró la línea \"catalog_version: '...'\" -- no se puede "
+            "simular el bump para calcular expected_hash_after")
+    expected_hash_after = guard.canonical_hash_yaml_text(versioned_text, current.artifact)
+
+    payload = {
+        "artifact_path": artifact_path,
+        "artifact_hash_before": current.sha256,
+        "from_version": current.version,
+        "to_version": to_version,
+        "expected_hash_after": expected_hash_after,
+        "change_reason": change_reason,
+        "sync_type": "source_verification_status",
+        "registry_sha256_before": registry_sha256_before,
+        "source_verification_changes": changes,
+    }
+
+    from factory.services import governance_service as gov
+    return gov.propose(
+        "ARTIFACT_VERSION", target_ids=[artifact_path], decision_type="ORIGINAL",
+        selection_mode="EXPLICIT_LIST", proposed_by_id=proposed_by_id,
+        reason=change_reason, payload=payload, store_file=decision_store_file)
+
+
 def apply_catalog_version_bump(new_version: str, *, decision_instance_id: str,
                                repo: Path | None = None,
                                decision_store_file: Path | None = None,
@@ -311,6 +390,151 @@ def apply_catalog_version_bump(new_version: str, *, decision_instance_id: str,
         previous_sha256=previous_sha256,
         approved_by_decision=decision_instance_id)
     record["historical_copy"] = historical_copy
+
+    path = versions_store_file or guard.STORE_FILE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    write_event("artifact_version_applied", "factory", {
+        "artifact_id": artifact_id,
+        "from_version": previous_version,
+        "to_version": new_version,
+        "approved_by_decision": decision_instance_id,
+        "historical_copy": historical_copy,
+    })
+
+    return record
+
+
+def apply_catalog_source_verification_sync(new_version: str, *, decision_instance_id: str,
+                                           registry_path: Path | None = None,
+                                           repo: Path | None = None,
+                                           decision_store_file: Path | None = None,
+                                           versions_store_file: Path | None = None) -> dict:
+    """Aplica una propuesta de `propose_catalog_source_verification_sync()`.
+    Mismas validaciones que `apply_catalog_version_bump` (decisión cubre el
+    artefacto, transición exacta, versión/hash vivos coinciden con lo
+    propuesto) MÁS una adicional propia de este caso: el registry no puede
+    haber cambiado desde que se propuso (`registry_sha256_before`) -- una
+    reingesta o revocación nueva entre proponer y aplicar invalidaría el
+    cálculo, y aplicar de todas formas escribiría una sincronización que ya
+    no refleja el estado real. Regenera el texto nuevo llamando a
+    `sync_catalog_source_verification_status()` de nuevo (nunca guarda el
+    texto propuesto como blob) -- determinista, así que si nada cambió
+    produce byte-a-byte lo mismo que se propuso."""
+    from factory.regulatory import source_lifecycle as sl
+    import yaml as _yaml
+
+    base = repo or guard.REPO
+    artifact_id = _catalog_artifact_id(base)
+
+    scope = resolver.resolve(guard.DECISION_FAMILY, artifact_id,
+                             store_file=decision_store_file)
+    if not scope.authorized:
+        raise ArtifactVersionApplyError(
+            f"{artifact_id!r} no está autorizado para versionar: {scope.denial_reason}")
+    if decision_instance_id not in scope.covering_instances:
+        raise ArtifactVersionApplyError(
+            f"{decision_instance_id!r} no es una de las decisiones que otorgan "
+            f"cobertura ({scope.covering_instances!r}) -- no se aplica un bump "
+            "con una decisión que no es la que lo autoriza")
+
+    decision = next((r for r in store.read_all(decision_store_file)
+                     if r.get("decision_instance_id") == decision_instance_id), None)
+    if decision is None:
+        raise ArtifactVersionApplyError(
+            f"{decision_instance_id!r} no se encuentra en el almacén de decisiones")
+    payload = decision.get("payload") or {}
+    missing = [f for f in REQUIRED_PROPOSAL_PAYLOAD_FIELDS if f not in payload]
+    if missing:
+        raise ArtifactVersionApplyError(
+            f"{decision_instance_id!r} no declara la transición exacta que autoriza "
+            f"(faltan en payload: {missing})")
+    if payload.get("sync_type") != "source_verification_status":
+        raise ArtifactVersionApplyError(
+            f"{decision_instance_id!r} no es una propuesta de sincronización de "
+            "source_verification_status -- usar apply_catalog_version_bump para "
+            "un bump simple de versión")
+    if payload["artifact_path"] != artifact_id:
+        raise ArtifactVersionApplyError(
+            f"{decision_instance_id!r} autoriza artifact_path="
+            f"{payload['artifact_path']!r}, no {artifact_id!r}")
+    if payload["to_version"] != new_version:
+        raise ArtifactVersionApplyError(
+            f"{decision_instance_id!r} autoriza la transición a "
+            f"{payload['to_version']!r}, no a {new_version!r}")
+
+    current = next((s for s in guard.enumerate_artifacts(repo=base)
+                    if s.artifact_id == artifact_id), None)
+    if current is None:
+        raise ArtifactVersionApplyError(
+            f"{artifact_id!r} no aparece en enumerate_artifacts() -- ¿archivo ausente?")
+    if current.version == new_version:
+        raise ArtifactVersionApplyError(
+            f"catalog_version ya es {new_version!r} -- nada que aplicar")
+    if current.version != payload["from_version"]:
+        raise ArtifactVersionApplyError(
+            f"la versión viva ({current.version!r}) no coincide con from_version "
+            f"declarado en la decisión ({payload['from_version']!r}) -- el estado "
+            "cambió desde que se propuso, re-proponer sobre el estado actual")
+    if current.sha256 != payload["artifact_hash_before"]:
+        raise ArtifactVersionApplyError(
+            f"el hash vivo ({current.sha256}) no coincide con artifact_hash_before "
+            f"declarado en la decisión ({payload['artifact_hash_before']}) -- el "
+            "contenido cambió desde que se propuso, re-proponer sobre el estado actual")
+
+    reg_path = registry_path or sl.REGISTRY_PATH
+    registry_sha256_now = hashlib.sha256(reg_path.read_bytes()).hexdigest()
+    if registry_sha256_now != payload.get("registry_sha256_before"):
+        raise ArtifactVersionApplyError(
+            f"registry.json cambió desde que se propuso esta sincronización "
+            f"(antes {payload.get('registry_sha256_before')}, ahora "
+            f"{registry_sha256_now}) -- re-proponer sobre el estado actual, "
+            "nunca aplicar una sincronización calculada sobre un registry viejo")
+
+    previous_version, previous_sha256 = current.version, current.sha256
+    catalog_path = base / artifact_id
+    original_text = catalog_path.read_text(encoding="utf-8")
+
+    historical_copy = _freeze_historical_copy(
+        base, artifact_id, previous_version=previous_version,
+        previous_sha256=previous_sha256)
+
+    data = _yaml.safe_load(original_text)
+    order = [(rid, entry["source_id"]) for rid, entry in data["requirements"].items()]
+    synced_text, _changes = sl.sync_catalog_source_verification_status(
+        original_text, order, registry_path=registry_path, repo=base,
+        decision_store_file=decision_store_file)
+    new_text, n = CATALOG_VERSION_LINE.subn(
+        f"catalog_version: '{new_version}'", synced_text, count=1)
+    if n != 1:
+        raise ArtifactVersionApplyError(
+            "no se encontró la línea \"catalog_version: '...'\" -- bump "
+            "abortado, nada escrito en el archivo ni en el almacén")
+
+    catalog_path.write_text(new_text, encoding="utf-8")
+    try:
+        new_state = next((s for s in guard.enumerate_artifacts(repo=base)
+                          if s.artifact_id == artifact_id), None)
+        if new_state is None or new_state.version != new_version:
+            raise ArtifactVersionApplyError(
+                "el bump no produjo la versión esperada tras escribirlo")
+        if new_state.sha256 != payload["expected_hash_after"]:
+            raise ArtifactVersionApplyError(
+                f"el hash resultante ({new_state.sha256}) no coincide con "
+                f"expected_hash_after declarado en la decisión "
+                f"({payload['expected_hash_after']}) -- bump revertido")
+    except Exception:
+        catalog_path.write_text(original_text, encoding="utf-8")
+        raise
+
+    record = guard.build_version_record(
+        new_state, previous_version=previous_version,
+        previous_sha256=previous_sha256,
+        approved_by_decision=decision_instance_id)
+    record["historical_copy"] = historical_copy
+    record["source_verification_changes"] = payload.get("source_verification_changes")
 
     path = versions_store_file or guard.STORE_FILE
     path.parent.mkdir(parents=True, exist_ok=True)

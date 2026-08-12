@@ -296,6 +296,82 @@ def evaluate_registry(registry_path: Path | None = None, *,
 
 
 # ---------------------------------------------------------------------------
+# R3-T1.2/F0.6 (2026-08-12) -- espejo mecánico hacia el catálogo de
+# requisitos. `requirements.yaml` declara su PROPIO
+# `source_verification_status` por requisito (redundante por diseño con
+# este módulo -- el schema exige que coincida con la fuente real), pero
+# nada lo mantenía sincronizado tras una reverificación real: el catálogo
+# quedó congelado en 'PENDING_REVERIFICATION' incluso después de que la
+# segunda reingesta gobernada (G3, 2026-08-07) llevara las 4 fuentes a
+# LOCAL_CANONICAL_COPY_VERIFIED (verificado en vivo, no leído de un campo
+# guardado). Esta función NUNCA toca disco ni decide nada por juicio
+# humano -- es una función pura texto->texto, deliberadamente simétrica a
+# `artifact_version_apply.CATALOG_VERSION_LINE` (sustitución por regex
+# sobre el texto vivo, preservando comentarios/formato/orden -- nunca un
+# round-trip por un dumper YAML genérico, que destruiría ambos). El
+# resultado se PROPONE como ARTIFACT_VERSION (nunca se escribe aquí).
+# ---------------------------------------------------------------------------
+
+import re as _re
+
+_SOURCE_VERIFICATION_LINE = _re.compile(
+    r"(\bsource_verification_status:\s*)([A-Z_]+)")
+
+
+def sync_catalog_source_verification_status(
+    catalog_text: str, requirement_order: list[tuple[str, str]], *,
+    registry_path: Path | None = None,
+    decision_store_file: Path | None = None,
+    repo: Path | None = None,
+    now=None,
+) -> tuple[str, dict]:
+    """Recalcula `source_verification_status` de cada requisito contra el
+    estado REAL y vivo de `evaluate_registry()` (nunca contra un campo
+    guardado). `requirement_order` es `[(requirement_id, source_id), ...]`
+    EN EL ORDEN en que aparecen en `catalog_text` -- el llamador lo deriva
+    de `yaml.safe_load(catalog_text)['requirements']` (Python/PyYAML
+    preservan el orden del archivo) ANTES de llamar aquí, para que esta
+    función no dependa de un parser YAML propio y quede fácil de probar
+    con texto sintético corto.
+
+    Devuelve `(nuevo_texto, changes)` -- `changes` mapea
+    `requirement_id -> {'from': ..., 'to': ...}` SOLO para las entradas que
+    de verdad cambian (transparencia total del diff antes de proponerlo,
+    nunca "se recalculó todo" sin decir qué cambió realmente). Si el
+    número de ocurrencias de `source_verification_status:` en el texto no
+    coincide con `len(requirement_order)`, falla explícito -- nunca
+    adivina a qué requisito pertenece cada línea."""
+    matches = list(_SOURCE_VERIFICATION_LINE.finditer(catalog_text))
+    if len(matches) != len(requirement_order):
+        raise ValueError(
+            f"{len(matches)} líneas 'source_verification_status:' en el texto, "
+            f"pero {len(requirement_order)} requisitos declarados -- no se puede "
+            "emparejar 1:1 con seguridad, nada se cambia")
+
+    dims_by_source = {d.source_id: d for d in evaluate_registry(
+        registry_path, decision_store_file=decision_store_file, repo=repo, now=now)}
+
+    changes: dict[str, dict[str, str]] = {}
+    pieces: list[str] = []
+    cursor = 0
+    for (req_id, source_id), m in zip(requirement_order, matches):
+        dim = dims_by_source.get(source_id)
+        new_status = (
+            LOCAL_CANONICAL_COPY_VERIFIED
+            if dim is not None and dim.lifecycle_state == LOCAL_CANONICAL_COPY_VERIFIED
+            else CURRENCY_PENDING
+        )
+        old_status = m.group(2)
+        pieces.append(catalog_text[cursor:m.start()])
+        pieces.append(m.group(1) + new_status)
+        cursor = m.end()
+        if old_status != new_status:
+            changes[req_id] = {"from": old_status, "to": new_status}
+    pieces.append(catalog_text[cursor:])
+    return "".join(pieces), changes
+
+
+# ---------------------------------------------------------------------------
 # Derivación aditiva a registry_v2.json
 # ---------------------------------------------------------------------------
 
