@@ -1,8 +1,12 @@
 # R3-T1.4 — Defecto de agregación multi-chunk (B3): falsa contradicción
 
 Autoridad: Capa 9 = Cesar. Claude Code = Capa 8. Corrida de corrección de
-validador (capa D). **Sin commit** — código editado en el árbol de trabajo,
-pendiente de tu aprobación con diff.
+validador (capa D). **COMMITEADO** — `e823015` (2026-08-12), tras mostrar
+el diff completo de los 3 archivos y recibir tu aprobación explícita
+("lo apruebo"). Actualizado el 2026-08-12 (R3-T1.5 §0.1) para corregir la
+divergencia con `R3_T1_3_VIABILIDAD_F2.md` §5(ii), que ya reportaba el
+commit correctamente — este encabezado había quedado desactualizado desde
+antes del commit.
 
 **Cero llamadas LLM gastadas.** Toda la validación es por replay sobre
 checkpoints históricos ya pagados (`chunked-943a62bcbb85`, 29/29 chunks) y
@@ -343,17 +347,22 @@ FINGERPRINT_F2 =              codigo de agregacion D cambio -- una corrida F2 nu
 HISTORICAL_RECALL_IMPACT =    B3 deprimia el recall AGREGADO (no el reconocimiento
                               por-chunk) en toda corrida multi-chunk desde R2.1 Opcion C;
                               no afecta ni resuelve el limite de parafrasis (R2, separado)
-NEXT_SIGNATURES =             (i) aprobar este commit (diff + 5 tests nuevos,
+NEXT_SIGNATURES =             (i) [CUMPLIDA 2026-08-12, commit e823015] aprobar
+                              este commit (diff + 5 tests nuevos,
                               factory/regulatory/semantic_evidence_verification.py +
                               factory/engines/gmpai_integrity/chunked_engine.py +
                               factory/tests/test_semantic_evidence_verification.py);
-                              (ii) ARTIFACT_VERSION-2026-018 + decision de elegibilidad B1;
+                              (ii) ARTIFACT_VERSION-2026-019 (018 ya ocupado por otra
+                              propuesta sin confirmar, ver R3_T1_3_VIABILIDAD_F2.md §5(iii))
+                              + decision de elegibilidad B1;
                               (iii) autorizacion de F2 solo despues de (i)+(ii)
 CORPUS_READY = false
 PRODUCTION_ENABLEMENT = BLOCKED
 ```
 
-**DETENERSE.** Fix diseñado, implementado y validado por replay — sin
-commitear. Pendiente: (a) tu revisión del diff (3 archivos), (b) resultado
+**COMMITEADO.** Fix diseñado, implementado, validado por replay y
+commiteado (`e823015`, 2026-08-12) tras revisión del diff y aprobación
+explícita de Cesar. Pendiente al momento de este commit: (a) [CUMPLIDA]
+tu revisión del diff (3 archivos), (b) resultado
 final de la suite completa (corriendo en background al cierre de este
 informe), (c) tu aprobación explícita antes de `git commit`.
