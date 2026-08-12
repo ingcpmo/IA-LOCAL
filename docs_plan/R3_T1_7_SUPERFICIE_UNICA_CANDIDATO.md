@@ -617,3 +617,52 @@ f) original en disco intacto (SHA-256 antes/despues):                PASA
 ```
 
 **LOS 6 CRITERIOS DE F2-DRY PASAN.** F2-DRY queda cerrado.
+
+──────────────────────────────────────────────────────────────────────────────
+BLOQUE 4 — CICLO HUMANO EN LA UI (autorizado por Cesar)
+──────────────────────────────────────────────────────────────────────────────
+
+**Vía elegida (4.1)**: (ii) promover UNA entrada real, marcada
+`DRY_RUN_VALIDATION`. La vía (i) (apuntar la UI a la cola dry-run)
+hubiera exigido una variable de entorno nueva en el contenedor
+`factory-api` + reinicio -- cambio de infraestructura fuera de alcance
+sin aprobación aparte. La vía (ii) usa `enqueue_finding_for_review()`,
+la MISMA función real de producción, sin tocar Docker/endpoints.
+
+**Hallazgo y corrección antes de promover**: `review_queue.jsonl` (cola
+real) ya tenía 3 entradas contaminadas por un script de depuración manual
+de este mismo bloque (corrido fuera de pytest, sin el fixture autouse
+`isolated_review_queue` -- `document_id='doc.pdf'`, datos sintéticos).
+Nunca se borraron (append-only): se marcaron `superseded` con
+`supersede_finding()` (mismo mecanismo ya usado en este archivo desde
+R3-T1.2/F0.3), motivo explícito, para que el evento de auditoría
+`finding_enqueued_for_review` ya escrito quede justificado. Commit
+`06ddab7`.
+
+**Entrada promovida**:
+```
+rc_id: finding-chunked-943a62bcbb85-r3t17-dryrun-validation-21_CFR_11.10(d)
+conclusion: EVALUATION_INCOMPLETE
+review_flags: [ABCD_D_NOT_ASSESSABLE, SOURCE_PENDING_REVERIFICATION,
+               CONTRADICTION_BLOCKED_POSITIVE_CONCLUSION, DRY_RUN_VALIDATION]
+status: pending
+```
+Verificado visible en vivo vía `GET /api/v1/layer9/review-queue`
+(factory-api, puerto 9000, API key leída del contenedor -- solo lectura).
+
+**4.2 — Verificación de campos**: la entrada expone requisito
+(`21_CFR_11.10(d)`), conclusión (`EVALUATION_INCOMPLETE`), flags (los 4
+de arriba) y `agent_id`. `candidates: []` -- correcto y esperado: este
+despacho es de modo BASELINE (documento completo, sin pool de fusión),
+igual que `_dispatch_baseline_gap_review` -- "candidatos con página y
+extracto" solo aplica al despacho de modo JUICIO
+(`_dispatch_partial_coverage_review`), no a este caso. La validación de
+identidad del revisor (`mark_reviewed`/`identity_policy`) es código
+existente, ya cubierto por su propia suite de tests -- no se ejercitó en
+vivo aquí a propósito, para no consumir/cerrar la entrada antes de que
+Cesar la revise él mismo (eso es exactamente el paso 4.3).
+
+**4.3 — DETENERSE.** La entrada está en la cola real, pendiente. Abre la
+UI de Mission Control y regístrala TÚ -- ese clic cierra el criterio
+F2.3.d y el ciclo humano completo (documento → informe → cola → decisión
+humana) que era el corazón de esta fase.
