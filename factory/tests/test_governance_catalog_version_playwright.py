@@ -44,8 +44,15 @@ def _servidor_vivo() -> bool:
         return False
 
 
-pytestmark = pytest.mark.skipif(
-    not _servidor_vivo(), reason="requiere factory-api vivo (prueba de integracion de UI)")
+# R3-T1.8 bloque 3.3: `pytestmark` es una asignacion de MODULO -- dos
+# asignaciones separadas se sobrescriben (no se suman); mismo bug ya
+# encontrado y corregido en test_review_queue_finding_ui_playwright.py.
+# Lista unica con ambas marcas.
+pytestmark = [
+    pytest.mark.requires_live_ui,
+    pytest.mark.skipif(
+        not _servidor_vivo(), reason="requiere factory-api vivo (prueba de integracion de UI)"),
+]
 
 
 def _api_key_del_env() -> str:

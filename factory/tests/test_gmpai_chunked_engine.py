@@ -830,6 +830,50 @@ def test_b4_absence_preserved_when_no_criterion_anchors(monkeypatch):
     assert "derivado" not in finding["evidencia_exacta"]
 
 
+def test_b1_provisional_eligibility_survives_headline_rescue(monkeypatch):
+    """R3-T1.8 bloque 0: verificacion de que el bucket CONFIRMED/positivo
+    obtenido via el rescate B4/B5 (headline derivado, la ruta NUEVA que
+    introdujo la superficie unica, R3-T1.7) sigue pasando por
+    apply_conclusion_preconditions §10 -- NUNCA bypasea
+    positive_conclusion_eligibility=PROVISIONAL_ONLY (el estado real hoy
+    de 21_CFR_11.10(d) en el catalogo).
+
+    HIPOTESIS A confirmada por lectura de codigo (absence_consolidator.py
+    lineas 263-293): el prefijo PROVISIONALLY_ ES el mecanismo de respeto,
+    no un bypass -- este test lo fija con datos reales que pasan
+    especificamente por candidate_validity.resolve_candidate_evidence()
+    (headline vacio, rescatado por citas de criterio), no solo por el
+    camino de headline directo que test_verified_pipeline_real_anchored_
+    citation_is_provisionally_documented ya cubria antes de R3-T1.7."""
+    # _ANCHORED_QUOTE (no el texto crudo del criterio del catalogo) como
+    # evidence_quote: relevance_score(_ANCHORED_QUOTE, ...) = 0.875, muy
+    # por encima del umbral -- evita que verify_llm_output (V5) marque
+    # RELEVANCE_REVIEW_REQUIRED (status='review_required' nunca llega a
+    # apply_conclusion_preconditions §10 en absoluto -- consolidate() lo
+    # resuelve directo a SUPPORTING_EVIDENCE_UNDER_REVIEW, un camino real
+    # pero que no ejercita la precondicion B1 que este test quiere probar).
+    page = [f"Introduccion. {_ANCHORED_QUOTE} " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500]
+    assessments = [
+        {"criterion_index": i + 1, "criterion_text": text, "status": "MET",
+         "evidence_quote": _ANCHORED_QUOTE, "evidence_location": "pag 1",
+         "justification": "test", "limitations": ""}
+        for i, text in enumerate(_D_CRITERIA_11_10_D)
+    ]
+    result = _run_b4(monkeypatch, "cumple_parcialmente", assessments, evidencia_exacta="", pages=page)
+    c = result["verified_conclusions"]["21_CFR_11.10(d)"]
+    # NUNCA el resultado final "pelado" (bypass de B1) -- solo su
+    # equivalente PROVISIONALLY_ (el catalogo real sigue PROVISIONAL_ONLY).
+    assert c["conclusion"] not in ("DOCUMENTED_AND_SUPPORTED", "PARTIALLY_DOCUMENTED"), c
+    assert c["conclusion"] in ("PROVISIONALLY_DOCUMENTED", "PROVISIONALLY_PARTIALLY_DOCUMENTED"), c
+    assert "SOURCE_PENDING_REVERIFICATION" in c["review_flags"], c
+    assert c["chunks_observed"] >= 1
+    finding = next(f for f in result["findings"]
+                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
+    assert finding["evidencia_exacta"].startswith("[headline derivado de citas por criterio verificadas]"), (
+        "este test debe ejercitar la ruta de rescate B4/B5, no el headline directo -- "
+        "si esto falla, el test dejo de probar lo que dice probar")
+
+
 def test_b4_unanchored_criterion_quote_never_rescues(monkeypatch):
     """GUARDIAN CENTRAL anti-fabricacion: headline vacio, y el unico
     criterio 'MET' trae un evidence_quote que NO existe en el chunk (texto

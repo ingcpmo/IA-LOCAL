@@ -375,7 +375,32 @@ def _derive_citation_anchor_status(evidencia: str, anchor_rule: str, source_text
     que no ancla realmente)."""
     if source_text is None:
         return ("VERIFIED", anchor_rule + " -> VERIFIED (source_text no provisto, comportamiento historico preservado)")
+
+    # R3-T1.8 bloque 2 (docs_plan/R3_T1_8_VERIFICACION_Y_LIVE_MINIMA.md):
+    # `evidencia` puede ser un headline DERIVADO (R3-T1.6/7, fix B4/B5) --
+    # texto de presentacion con un prefijo humano que une varias citas con
+    # " | ", que NUNCA existe literalmente en el documento como una sola
+    # cadena (mismo problema ya encontrado y corregido para la Ruta B via
+    # CandidateEvidence.verifiable_quote). Este modulo (Ruta D) hoy no
+    # tiene llamador de produccion -- pero si llegara a activarse sin este
+    # chequeo, revendria el MISMO defecto por un quinto sitio. Se detecta
+    # via candidate_validity.is_derived_headline() (la superficie unica,
+    # nunca un marcador hardcodeado aqui) y se re-verifica CADA cita
+    # individual -- VERIFIED solo si TODAS anclan; una sola cita que no
+    # ancle invalida el conjunto (nunca se rescata parcialmente).
+    from factory.regulatory.candidate_validity import is_derived_headline, split_derived_quotes
     from factory.regulatory.semantic_evidence_verification import verify_anchor
+    if is_derived_headline(evidencia):
+        quotes = split_derived_quotes(evidencia)
+        if not quotes:
+            return ("NOT_VERIFIED", f"{anchor_rule} -> headline derivado sin citas extraibles")
+        results = [verify_anchor(q, source_text) for q in quotes]
+        if all(status == "PASS" and match_type != "fuzzy" for status, match_type in results):
+            return ("VERIFIED", f"{anchor_rule} -> verify_anchor real sobre {len(quotes)} cita(s) derivada(s): todas PASS exact/normalized/despaced")
+        if all(status == "PASS" for status, _ in results):
+            return ("UNDER_REVIEW", f"{anchor_rule} -> verify_anchor real sobre {len(quotes)} cita(s) derivada(s): al menos una fuzzy (CITATION_DEVIATION)")
+        return ("NOT_VERIFIED", f"{anchor_rule} -> verify_anchor real sobre {len(quotes)} cita(s) derivada(s): al menos una NO ancla en source_text")
+
     status, match_type = verify_anchor(evidencia, source_text)
     if status == "PASS" and match_type != "fuzzy":
         return ("VERIFIED", f"{anchor_rule} -> verify_anchor real: match_type={match_type}")

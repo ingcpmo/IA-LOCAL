@@ -15,6 +15,24 @@ REPO_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 
+def pytest_configure(config):
+    # R3-T1.8 bloque 3.3 (docs_plan/R3_T1_8_VERIFICACION_Y_LIVE_MINIMA.md):
+    # tests que EXIGEN un servicio vivo alcanzable (factory-api en :9000,
+    # Playwright contra Mission Control) -- ya caracterizados como
+    # "ambientales" en Gate 0 desde F0, pero nunca marcados explicitamente,
+    # asi que Gate 0 no podia dar una senal limpia (el rojo se volvio
+    # "normal" en vez de accionable). `pytest -m "not requires_live_ui"`
+    # da Gate 0 limpio; correr CON esos tests (sin el -m) sigue siendo
+    # posible y sigue siendo la unica forma de detectar el incidente real
+    # de esta fase (endpoint commiteado pero ausente del proceso vivo).
+    config.addinivalue_line(
+        "markers",
+        "requires_live_ui: exige un servicio HTTP vivo alcanzable "
+        "(factory-api/Mission Control) -- no es parte del Gate 0 limpio, "
+        "correr aparte con 'pytest -m requires_live_ui'.",
+    )
+
+
 #: Requisitos del catalogo cuyo Evidence Pack existe pero AUN NO tiene
 #: interpretacion humana (`structure_only_pending_human_interpretation`).
 #:

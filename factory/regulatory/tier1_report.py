@@ -284,6 +284,23 @@ _BUCKET_LABELS = {
 }
 
 
+def _estado_label(r: RequirementOutcome) -> str:
+    """R3-T1.8 bloque 0.3: `_BUCKET_LABELS[CONFIRMED]` por si sola no
+    distingue un resultado final de uno PROVISIONAL (positive_conclusion_
+    eligibility=PROVISIONAL_ONLY, W5 V2 §10) -- un lector que solo mire la
+    columna 'Estado' podria leer 'Confirmado' como cumplimiento. La
+    columna 'Conclusión' YA muestra el string real (p.ej.
+    PROVISIONALLY_PARTIALLY_DOCUMENTED) y el detalle YA agrega '[fuente
+    pendiente de reverificación]' -- esto refuerza la misma señal en la
+    columna que un lector mira primero, sin inventar un bucket nuevo ni
+    tocar la logica de negocio (candidate_validity.py/absence_consolidator.py
+    intactos)."""
+    label = _BUCKET_LABELS[r.bucket]
+    if r.bucket == CONFIRMED and r.conclusion.startswith("PROVISIONALLY_"):
+        return "Confirmado PROVISIONAL (fuente sin reverificar -- NO es declaración de cumplimiento)"
+    return label
+
+
 def render_tier1_markdown(report: Tier1Report) -> str:
     """Función pura texto→texto -- no escribe a disco (persistencia es
     una decisión de empaquetado posterior, fuera de alcance de este
@@ -324,5 +341,5 @@ def render_tier1_markdown(report: Tier1Report) -> str:
             detalle = f"aplicabilidad opcional para este tipo documental, sin evidencia observada{pagina}"
         elif r.bucket == CROSS_REFERENCE and r.cross_reference_target:
             detalle = f"evidencia esperada en: {', '.join(r.cross_reference_target)}"
-        lines.append(f"| {r.requirement_id} | {_BUCKET_LABELS[r.bucket]} | {r.conclusion} | {detalle} |")
+        lines.append(f"| {r.requirement_id} | {_estado_label(r)} | {r.conclusion} | {detalle} |")
     return "\n".join(lines) + "\n"

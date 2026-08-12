@@ -97,6 +97,19 @@ function renderCandidatesTable(candidates, honestyNote){
     </table>`;
 }
 
+/* R3-T1.8 bloque 1 (docs_plan/R3_T1_8_VERIFICACION_Y_LIVE_MINIMA.md):
+   "confirmar" no significa lo mismo para toda conclusion -- mismos dos
+   conjuntos que el backend (factory/api/routes/layer9.py,
+   _FINDING_QUOTE_REQUIRED_CONCLUSIONS / _NOT_APPLICABLE_CONCLUSIONS).
+   Antes de esto el campo "Cita confirmada" se mostraba SIEMPRE como
+   "(opcional)" sin importar la conclusion -- asi quedo la entrada de
+   validacion de R3-T1.7 con quote="mejora", un dato sin sentido en un
+   campo que alimenta el Golden Dataset. */
+const FINDING_QUOTE_REQUIRED_CONCLUSIONS = new Set(['SUPPORTING_EVIDENCE_UNDER_REVIEW']);
+const FINDING_QUOTE_NOT_APPLICABLE_CONCLUSIONS = new Set([
+  'EVALUATION_INCOMPLETE', 'PROVISIONAL_GAP', 'DOCUMENTATION_GAP', 'CROSS_REFERENCE_MISSING',
+]);
+
 function renderFindingCard(rc){
   const s = rc.summary || {};
   const safeName = rc.rc_id.replace(/[^a-zA-Z0-9_-]/g,'_');
@@ -104,6 +117,21 @@ function renderFindingCard(rc){
   const evidencia = s.evidence_quote
     ? `<div class="meta" style="margin-top:6px">«${(s.evidence_quote||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}»${s.page?' (pág. '+s.page+')':''}</div>`
     : `<div class="meta" style="margin-top:6px;color:var(--faint)">Sin cita anclada -- ver candidatos de recuperación abajo si existen.</div>`;
+  const quoteRequired = FINDING_QUOTE_REQUIRED_CONCLUSIONS.has(s.conclusion);
+  const quoteNotApplicable = FINDING_QUOTE_NOT_APPLICABLE_CONCLUSIONS.has(s.conclusion);
+  const quoteFields = quoteNotApplicable ? `
+        <div class="meta" style="margin:6px 0;color:var(--faint)">
+          Esta conclusión (<span class="mono">${s.conclusion}</span>) es una ausencia/bloqueo,
+          no evidencia observada -- no hay cita que confirmar. "Confirmar" aquí significa
+          aceptar el bloqueo/ausencia y la necesidad de revisión adicional.
+        </div>` : `
+        <div class="field"><label>Página confirmada ${quoteRequired?'':'(opcional, si señalas un candidato real)'}</label>
+          <input id="finding-page-${safeName}" placeholder="p.ej. 45" autocomplete="off">
+        </div>
+        <div class="field"><label>Cita confirmada ${quoteRequired?'(obligatoria -- la cita real que sustenta el requisito)':'(opcional)'}</label>
+          <input id="finding-quote-${safeName}" placeholder="cita textual real del candidato" autocomplete="off">
+        </div>`;
+  const confirmLabel = quoteNotApplicable ? 'Confirmar bloqueo/ausencia' : 'Confirmar evidencia';
   return `
   <div class="rc" style="margin-bottom:14px">
     <div class="rc-head">
@@ -129,14 +157,9 @@ function renderFindingCard(rc){
         <div class="field"><label>Revisor (nombre real)</label>
           <input id="finding-reviewer-${safeName}" placeholder="p.ej. Cesar" autocomplete="off">
         </div>
-        <div class="field"><label>Página confirmada (opcional, si señalas un candidato real)</label>
-          <input id="finding-page-${safeName}" placeholder="p.ej. 45" autocomplete="off">
-        </div>
-        <div class="field"><label>Cita confirmada (opcional)</label>
-          <input id="finding-quote-${safeName}" placeholder="cita textual real del candidato" autocomplete="off">
-        </div>
+        ${quoteFields}
         <div class="actions">
-          <button class="btn pass" onclick="submitFindingDecision('${rc.rc_id}','confirmed')">Confirmar evidencia</button>
+          <button class="btn pass" onclick="submitFindingDecision('${rc.rc_id}','confirmed')">${confirmLabel}</button>
           <button class="btn fail" onclick="submitFindingDecision('${rc.rc_id}','rejected')">Rechazar</button>
         </div>
       </div>

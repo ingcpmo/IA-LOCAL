@@ -92,3 +92,30 @@ def test_is_anchored_is_a_thin_reexport_not_a_reimplementation():
     assert "_normalize(" not in body, (
         "_is_anchored() volvio a implementar su propia normalizacion -- "
         "debe delegar en la superficie unica, no duplicarla")
+
+
+def test_gap_assessment_finding_mapper_uses_the_single_surface_for_derived_headlines():
+    """R3-T1.8 bloque 2.4: extiende el guardian a la Ruta D
+    (gap_assessment_finding_mapper.py, LATENTE hoy -- sin llamador de
+    produccion, pero prerequisito tecnico de R4-T1). Debe detectar/partir
+    headlines derivados via candidate_validity.is_derived_headline()/
+    split_derived_quotes() -- nunca reimplementar el marcador ni el
+    join/split a mano."""
+    mapper_path = FACTORY_ROOT / "services" / "gap_assessment_finding_mapper.py"
+    source = mapper_path.read_text(encoding="utf-8")
+    assert "from factory.regulatory.candidate_validity import is_derived_headline, split_derived_quotes" in source, (
+        "gap_assessment_finding_mapper.py ya no importa is_derived_headline/split_derived_quotes -- "
+        "¿alguien reimplemento la deteccion de headline derivado inline?")
+
+
+def test_derived_prefix_has_a_single_public_accessor():
+    """El marcador de headline derivado (_DERIVED_PREFIX) es privado a
+    proposito -- CUALQUIER consumidor debe pasar por is_derived_headline()/
+    split_derived_quotes(), nunca importar/hardcodear el string el mismo
+    (eso fue exactamente el gap que gap_assessment_finding_mapper.py tenia
+    antes de R3-T1.8 bloque 2)."""
+    source = CANDIDATE_VALIDITY_PATH.read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    top_level_funcs = {n.name for n in tree.body if isinstance(n, ast.FunctionDef)}
+    assert "is_derived_headline" in top_level_funcs
+    assert "split_derived_quotes" in top_level_funcs

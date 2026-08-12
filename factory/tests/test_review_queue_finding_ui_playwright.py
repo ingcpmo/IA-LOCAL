@@ -41,8 +41,17 @@ def _servidor_vivo() -> bool:
         return False
 
 
-pytestmark = pytest.mark.skipif(
-    not _servidor_vivo(), reason="requiere factory-api vivo (prueba de integracion de UI)")
+# R3-T1.8 bloque 3.3: `pytestmark` es una asignacion de MODULO -- una
+# segunda linea `pytestmark = ...` mas abajo SOBRESCRIBIA (no sumaba) la
+# marca `requires_live_ui` puesta arriba, y `-m "not requires_live_ui"`
+# nunca deseleccionaba estos tests (bug encontrado al correr Gate 0 limpio
+# por primera vez tras este bloque). Lista, no dos asignaciones -- mismo
+# patron ya usado en test_governance_ui_deploy_consistency_live.py.
+pytestmark = [
+    pytest.mark.requires_live_ui,
+    pytest.mark.skipif(
+        not _servidor_vivo(), reason="requiere factory-api vivo (prueba de integracion de UI)"),
+]
 
 
 def _api_key_del_env() -> str:

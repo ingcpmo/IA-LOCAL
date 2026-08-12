@@ -1375,6 +1375,34 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     criterion_assessments=criterion_assessments, d_detail=abcd.d_detail,
                 )
 
+                # R3-T1.8 bloque 0 (hallazgo real, no solo verificacion):
+                # `abcd.a_anchor`/`b_source`/`c_semantic` (y por lo tanto
+                # `substantive_evidence_accepted`, que apply_conclusion_
+                # preconditions() SI usa como gate real -- nunca solo
+                # diagnostico) se calcularon arriba sobre `evidencia`
+                # ORIGINAL, que para un candidato rescatado por B4/B5 es
+                # SIEMPRE '' (vacia) -- verify_anchor('', ...) es FAIL
+                # incondicional. Con D=MET completo esto colapsaba a
+                # `substantive_evidence_accepted=False` pese a evidencia
+                # real y anclada, cayendo en la rama `else` de
+                # apply_conclusion_preconditions (pensada para "sin datos
+                # ABCD en absoluto", no para "D=MET con A stale") ->
+                # EVALUATION_INCOMPLETE/ABCD_NOT_EVALUATED en vez de
+                # PROVISIONALLY_DOCUMENTED -- confirmado con
+                # test_b1_provisional_eligibility_survives_headline_rescue.
+                # Se recalcula A/B/C (nunca D, ya correcto) sobre
+                # `resolved.verifiable_quote` -- la MISMA cita, literal y
+                # ya verificada, que la superficie unica usa para decidir
+                # que el candidato gano -- para que substantive_evidence_
+                # accepted sea consistente con el candidato que realmente
+                # gano, nunca con el headline vacio que perdio.
+                if resolved.headline_source == "derived_from_criterion_quotes":
+                    abcd = sev.verify_evidence_abcd(
+                        resolved.verifiable_quote, chunk["text"], req_id,
+                        requirement_terms_by_req.get(req_id, []),
+                        criterion_assessments=criterion_assessments,
+                    )
+
                 # Fase 3 (document_remediation_evolution): a diferencia del
                 # camino legacy de abajo, el pipeline verificado necesita UN
                 # registro por cada (chunk, requisito) evaluado -- incluidos

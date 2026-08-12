@@ -41,6 +41,28 @@ def _normalize(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip().lower()
 
 
+def is_derived_headline(evidencia_exacta: str) -> bool:
+    """R3-T1.8 bloque 2: expone publicamente la deteccion del prefijo de
+    headline derivado -- CUALQUIER consumidor downstream de
+    `Finding.evidencia_exacta` (Ruta A) que necesite re-verificar esa cita
+    contra un texto fuente (p.ej. `gap_assessment_finding_mapper.py`,
+    Ruta D, hoy sin llamador de produccion) DEBE usar esta funcion en vez
+    de reimplementar/hardcodear el marcador -- exactamente el patron que
+    causo el defecto B3/B4/B5 (una misma senal, verificada de formas
+    distintas en sitios distintos)."""
+    return evidencia_exacta.startswith(_DERIVED_PREFIX)
+
+
+def split_derived_quotes(evidencia_exacta: str) -> list[str]:
+    """Inverso de la union `_DERIVED_PREFIX + ' | '.join(derived_quotes)` --
+    devuelve las citas individuales, cada una literal y re-verificable por
+    separado. `evidencia_exacta` debe cumplir `is_derived_headline()`;
+    si no, devuelve `[]` (nunca inventa una cita)."""
+    if not is_derived_headline(evidencia_exacta):
+        return []
+    return evidencia_exacta[len(_DERIVED_PREFIX):].split(" | ")
+
+
 def is_literally_anchored(quote: str, source_text: str) -> bool:
     """Verificacion de anclaje simple (normalize + substring, sin fuzzy) --
     identica a la que `chunked_engine._is_anchored()` usaba antes de

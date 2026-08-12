@@ -100,6 +100,14 @@ def test_confirmed_requirement_includes_anchored_quote_and_source_caveat(monkeyp
     assert outcome.evidence_quote == _ANCHORED_QUOTE
     assert "SOURCE_PENDING_REVERIFICATION" in outcome.review_flags
 
+    # R3-T1.8 bloque 0.3: la columna "Estado" del markdown NUNCA debe
+    # mostrar el "Confirmado" generico para una conclusion PROVISIONALLY_ --
+    # un lector que solo mire esa columna no puede confundirlo con
+    # cumplimiento declarado.
+    md = t1.render_tier1_markdown(report)
+    assert "Confirmado PROVISIONAL" in md
+    assert "NO es declaración de cumplimiento" in md
+
 
 def test_gap_requirement_is_needs_human_review_and_links_queue_entry(monkeypatch, tmp_path, isolated_review_queue):
     _authorize(monkeypatch, max_calls=60)

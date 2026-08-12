@@ -325,6 +325,26 @@ def post_return_rc(rc_id: str, body: ReviewReturn):
 
 _FINDING_REVIEW_VALID_DECISIONS = {"confirmed", "rejected"}
 
+# R3-T1.8 bloque 1 (docs_plan/R3_T1_8_VERIFICACION_Y_LIVE_MINIMA.md):
+# "confirmar" un finding_review NO significa lo mismo para todas las
+# conclusiones. Cuando la conclusión es SUPPORTING_EVIDENCE_UNDER_REVIEW
+# (hay evidencia observada real, solo pendiente de verificación humana),
+# confirmar significa "la cita citada sustenta el requisito" -- el campo
+# `confirmed_quote` DEBE traer esa cita real. Cuando la conclusión es una
+# ausencia/bloqueo (EVALUATION_INCOMPLETE, PROVISIONAL_GAP/DOCUMENTATION_GAP,
+# CROSS_REFERENCE_MISSING) NUNCA hay evidencia observada que citar --
+# confirmar ahí significa "acepto el bloqueo/ausencia y la necesidad de
+# revisión adicional", NUNCA una confirmación de evidencia. Aceptar
+# cualquier string en `confirmed_quote` para ese segundo grupo (como
+# ocurrió con la entrada de validación de R3-T1.7, quote="mejora") mezcla
+# datos sin sentido con evidencia real en el mismo campo -- y ese campo
+# alimenta el Golden Dataset (docs_plan/... golden_dataset_criteria.py).
+_FINDING_QUOTE_REQUIRED_CONCLUSIONS = frozenset({"SUPPORTING_EVIDENCE_UNDER_REVIEW"})
+_FINDING_QUOTE_NOT_APPLICABLE_CONCLUSIONS = frozenset({
+    "EVALUATION_INCOMPLETE", "PROVISIONAL_GAP", "DOCUMENTATION_GAP",
+    "CROSS_REFERENCE_MISSING",
+})
+
 
 @router.post("/review/findings/{rc_id}/decide")
 def post_decide_finding(rc_id: str, body: FindingReviewDecision):
@@ -338,7 +358,13 @@ def post_decide_finding(rc_id: str, body: FindingReviewDecision):
     `finding-{run_id}-{req_id}`), así que esos endpoints 404 ANTES de
     llegar a `mark_reviewed()`: decidir sobre un finding era imposible vía
     HTTP. Este endpoint usa `get_entry()`/`mark_reviewed()` directo, sin
-    pasar por la capa de RC reales."""
+    pasar por la capa de RC reales.
+
+    R3-T1.8 bloque 1: valida `confirmed_quote` según la semántica real de
+    la conclusión (ver `_FINDING_QUOTE_REQUIRED_CONCLUSIONS`/
+    `_FINDING_QUOTE_NOT_APPLICABLE_CONCLUSIONS` arriba) -- nunca acepta
+    texto libre donde no aplica, nunca deja vacío donde sí se exige
+    evidencia real."""
     try:
         entry = get_entry(rc_id)
         if entry is None or entry.get("entry_type") != "finding_review":
@@ -357,6 +383,23 @@ def post_decide_finding(rc_id: str, body: FindingReviewDecision):
                 "decision": body.decision,
                 "valid_decisions": sorted(_FINDING_REVIEW_VALID_DECISIONS),
             })
+        conclusion = (entry.get("summary") or {}).get("conclusion")
+        if body.decision == "confirmed":
+            quote = (body.confirmed_quote or "").strip()
+            if conclusion in _FINDING_QUOTE_REQUIRED_CONCLUSIONS and not quote:
+                raise HTTPException(422, {
+                    "error": "confirmed_quote_required",
+                    "detail": f"conclusion={conclusion!r} exige confirmed_quote "
+                              "(la cita real que sustenta el requisito) -- no puede quedar vacio.",
+                })
+            if conclusion in _FINDING_QUOTE_NOT_APPLICABLE_CONCLUSIONS and quote:
+                raise HTTPException(422, {
+                    "error": "confirmed_quote_not_applicable",
+                    "detail": f"conclusion={conclusion!r} es una ausencia/bloqueo, no evidencia "
+                              "observada -- confirmed_quote no aplica aqui (confirmar significa "
+                              "'acepto el bloqueo/ausencia', nunca una cita de evidencia). "
+                              "Deja el campo vacio.",
+                })
         return mark_reviewed(
             rc_id, body.decision, body.reviewer,
             confirmed_page=body.confirmed_page, confirmed_quote=body.confirmed_quote,

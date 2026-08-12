@@ -1,4 +1,20 @@
-"""W5 Ciclo 1 (v2), Fase 2, Bloque 2.3 — orquestacion verificada por
+"""DEPRECATED (R3-T1.8, 2026-08-12, docs_plan/R3_T1_8_VERIFICACION_Y_LIVE_MINIMA.md
+bloque 2.2) -- SIN llamadores de produccion, confirmado por grep en todo
+`factory/` (excluyendo tests) al momento de esta nota. El pipeline
+verificado real vive en `chunked_engine.evaluate_chunked(use_verified_pipeline=True)`
++ `verified_pipeline_adapter.py` (Ruta B activa) -- este modulo es un
+prototipo anterior a esa integracion, nunca retirado. Riesgo real que
+motiva esta nota (no una limpieza cosmetica): una fase futura podria
+revivirlo creyendolo vigente, reintroduciendo una TERCERA implementacion
+de la logica de verificacion/consolidacion -- exactamente el patron que
+causo el defecto B3/B4/B5 (la misma decision, calculada de formas
+distintas en sitios distintos). Decision de Cesar pendiente: retiro
+definitivo o mantenerlo como referencia historica marcada. No se borra en
+esta corrida -- documentacion, no borrado.
+
+──────────────────────────────────────────────────────────────────────────
+
+W5 Ciclo 1 (v2), Fase 2, Bloque 2.3 — orquestacion verificada por
 requisito x documento.
 
 Flujo (por requisito, sobre los chunks relevantes ya filtrados por la

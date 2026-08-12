@@ -470,3 +470,50 @@ def test_verified_conclusion_path_also_records_the_verdict(findings_by_id):
         verified_conclusion=conclusion,
     )
     assert "substantive_verdict" in result.rules
+
+
+# ── R3-T1.8 bloque 2 (docs_plan/R3_T1_8_VERIFICACION_Y_LIVE_MINIMA.md):
+# Ruta D (este modulo) es LATENTE hoy (sin llamador de produccion) pero se
+# activaria en R4-T1 -- estos tests fijan que, si se activa, consume la
+# superficie unica (candidate_validity) para headlines derivados en vez de
+# reimplementar/romperse con el mismo defecto B4/B5 por un quinto sitio.
+
+_DERIVED_PREFIX = "[headline derivado de citas por criterio verificadas] "
+
+
+def test_derive_citation_anchor_status_verifies_each_derived_quote_individually():
+    """Headline derivado con 2 citas, AMBAS ancladas en source_text ->
+    VERIFIED. Antes de este fix, verify_anchor() sobre el texto COMPLETO
+    (prefijo + ' | ' + citas) jamas encontraria un match literal -- el
+    mismo defecto ya encontrado y corregido para la Ruta B
+    (verified_pipeline_adapter), ahora tambien cerrado aqui."""
+    quote1 = "Timestamp de fecha y hora del cambio registrado en el sistema."
+    quote2 = "Registro de entradas y acciones del operador conservado."
+    source_text = f"Introduccion. {quote1} Texto intermedio. {quote2} Cierre."
+    evidencia = _DERIVED_PREFIX + f"{quote1} | {quote2}"
+    status, rule = mapper._derive_citation_anchor_status(evidencia, "R1", source_text)
+    assert status == "VERIFIED", rule
+    assert "2 cita(s) derivada(s)" in rule
+
+
+def test_derive_citation_anchor_status_rejects_when_one_derived_quote_unanchored():
+    """Una sola cita del conjunto derivado que NO ancla invalida el
+    conjunto entero -- nunca se rescata parcialmente (guardian central
+    anti-fabricacion, mismo principio que candidate_validity.py)."""
+    quote1 = "Timestamp de fecha y hora del cambio registrado en el sistema."
+    quote_fabricada = "Este texto jamas aparece en el documento fuente."
+    source_text = f"Introduccion. {quote1} Cierre."
+    evidencia = _DERIVED_PREFIX + f"{quote1} | {quote_fabricada}"
+    status, rule = mapper._derive_citation_anchor_status(evidencia, "R1", source_text)
+    assert status == "NOT_VERIFIED", rule
+
+
+def test_derive_citation_anchor_status_still_handles_direct_headline():
+    """Retrocompatibilidad: un headline DIRECTO (no derivado, el caso
+    historico ya cubierto) sigue verificandose exactamente igual que
+    antes -- la rama nueva solo se activa para headlines derivados."""
+    quote = "Cita directa real del modelo, sin rescate."
+    source_text = f"Contexto. {quote} Fin."
+    status, rule = mapper._derive_citation_anchor_status(quote, "R1", source_text)
+    assert status == "VERIFIED", rule
+    assert "headline derivado" not in rule
