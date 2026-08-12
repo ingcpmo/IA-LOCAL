@@ -38,6 +38,7 @@ known_consumers:
   - audit_reporting
   - package_regeneration
   - pilot_runner
+  - remediation_package_creation
 
 families:
 
@@ -137,6 +138,39 @@ families:
     consumers: [package_regeneration]
     requires_human_confirmation: true
     legacy_w5_decision_id: D5_regenerate_qa_package
+    # R4-T1 (2026-08-12, docs_plan/R4_T1_PLAN_POR_FASES.md): D5 NO cubre
+    # la primera generacion de un paquete -- ver REMEDIATION_PACKAGE_GENERATION
+    # abajo. D5 no tiene target_registry (igual que D4), asi que
+    # tecnicamente se podria firmar para un package_id que aun no existe --
+    # pero su etiqueta ("Regeneracion") y su unico precedente historico
+    # (D5_regenerate_qa_package, una correccion real de un paquete ya
+    # existente) documentan que YA HABIA un paquete y se corrigio. Usarlo
+    # para una primera publicacion dejaria un rastro de auditoria enganoso
+    # (un auditor futuro leeria "Regeneracion" sobre lo que en realidad fue
+    # la primera vez). Mismo criterio ya aplicado para separar
+    # EMBED_EXECUTION de PILOT_EXECUTION: acciones semanticamente distintas
+    # no comparten familia aunque el mecanismo de resolucion sea identico.
+
+  REMEDIATION_PACKAGE_GENERATION:
+    label: "Primera generacion de un paquete de remediacion (borrador controlado, nunca liberado)"
+    target_kind: package_id
+    target_registry: null
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [remediation_package_creation]
+    requires_human_confirmation: true
+    # R4-T1 (2026-08-12): familia NUEVA, mecanicamente igual a D5 (mismo
+    # target_kind, misma exigencia de confirmacion humana) pero para la
+    # PRIMERA generacion de un paquete -- nunca una regeneracion (eso sigue
+    # siendo D5, sin cambios). Firmar esta familia NUNCA autoriza, ni por
+    # accidente, `create_release_record()` -- el endpoint de release sigue
+    # sin exponerse, PRODUCTION_ENABLEMENT sigue BLOCKED
+    # independientemente de esta firma. Su consumidor
+    # (`remediation_package_creation`) debe cablearse en R4-T1.0 -- a
+    # diferencia de `package_regeneration` (D5), que hoy es deuda tecnica
+    # declarada y sin cablear (ver test_t24_declared_consumers_have_a_wired_module,
+    # xfail), esta familia nace ya consumida por el resolver real, no se
+    # suma a esa lista de deuda.
 
   SOURCE_REGISTRATION:
     label: "Alta de fuente regulatoria en el registry"
