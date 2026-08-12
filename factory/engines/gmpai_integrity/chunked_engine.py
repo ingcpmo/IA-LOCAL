@@ -604,93 +604,13 @@ def _join_kerning_split_words(text: str) -> str:
     return _KERNING_SPLIT_RE.sub(_join, text or "")
 
 
-def _normalize(s: str) -> str:
-    return re.sub(r"\s+", " ", s).strip().lower()
-
-
 def _is_anchored(evidencia: str, source_text: str) -> bool:
-    if not evidencia or not evidencia.strip():
-        return False
-    return _normalize(evidencia) in _normalize(source_text)
-
-
-def _apply_headline_rescue_b4(
-    candidate: dict, *, evidencia: str, requires_anchor: bool,
-    criterion_assessments: "list | None", chunk_text: str, d_detail: "dict | None",
-) -> None:
-    """Fix B4 (R3-T1.6, 2026-08-12, docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md):
-    el candidato headline (`evidencia_exacta`, la cita RESUMEN de todo el
-    requisito) puede venir vacia aunque el modelo SI haya citado evidencia
-    real y anclada por criterio individual (`criterion_assessments`) en la
-    MISMA respuesta -- confirmado con datos reales (checkpoint
-    `chunked-943a62bcbb85`, chunk 20, `21_CFR_11.10(e)`: evidencia_exacta=''
-    pero 2/9 criterios MET con cita real que SI ancla). Sin este ajuste, D
-    (ya corregido por B3) se calcula (`d_detail`, via `verify_evidence_abcd`
-    o `verify_sufficiency` directo) pero nunca se adjunta al Finding, porque
-    solo un candidato con `anchored=True` puede ganar (`best = candidates[0]`).
-
-    Muta `candidate` in-place (evidencia_exacta/anchored/has_evidence/
-    headline_source) SOLO si aplica el rescate; en cualquier otro caso solo
-    fija `headline_source='model_headline'` si aun no estaba, sin tocar
-    nada mas -- comportamiento previo intacto.
-
-    Extraida como funcion de modulo (R3-T1.6) para que tanto el bucle en
-    vivo de `evaluate_chunked()` COMO cualquier reconstruccion/replay sobre
-    datos ya guardados (checkpoints historicos, sin llamar de nuevo al
-    modelo) apliquen EXACTAMENTE la misma regla -- nunca dos
-    implementaciones que puedan divergir (el mismo gap de instrumentacion
-    que motivo el fix B3 original).
-
-    Regla: si `evidencia` (headline) viene vacia pero `d_detail['met']`
-    (calculado por `verify_sufficiency()`, Nivel B ya aplica `verify_anchor`
-    por criterio) trae al menos un criterio, el candidato se considera
-    anclado -- DERIVADO de esas citas YA verificadas, nunca inventado.
-    `d_detail['met']` por construccion solo puede contener criterios con
-    cita real y anclada -- este rescate NUNCA puede colarse con una cita
-    fabricada o de otro chunk. Si NINGUN criterio ancla o `evidencia` SI
-    tenia texto (solo fallo su propio anclaje), el candidato sigue sin
-    ganar -- ausencia/descarte honesto preservado.
-
-    Guardia adicional (encontrada al disenar este fix, no pedida
-    explicitamente pero necesaria): `_classify_criteria_for_chunk()`
-    (Nivel B de `verify_sufficiency`, la fuente de `d_detail`) SOLO aplica
-    `verify_anchor()` por criterio -- a diferencia del headline normal
-    (`valid_candidate_verified` en `evaluate_chunked()`), NUNCA llama a
-    `detect_reference_list_context()`. Sin este chequeo adicional, una cita
-    que ancla literalmente pero vive dentro de una lista de referencias
-    numeradas (el falso positivo real de ANNEX11_4, ej. "GAMP5" dentro de
-    "[8] Good Automated Manufacturing Practice, GAMP5") podria colarse por
-    esta ruta derivada aunque el headline normal la hubiera rechazado. Se
-    aplica el MISMO chequeo que ya protege el headline normal -- nunca un
-    umbral mas bajo para el camino derivado. Se revisa CADA cita
-    individualmente (no el texto unido con " | "): ese separador nunca
-    existe literalmente en el chunk, asi que `detect_reference_list_context()`
-    sobre el texto ya unido jamas encontraria la posicion y el chequeo
-    quedaria mudo en silencio para el caso de 2+ citas -- una sola cita
-    sospechosa invalida el rescate completo."""
-    if not evidencia.strip() and requires_anchor:
-        from factory.regulatory import semantic_evidence_verification as sev
-        met_criteria = set((d_detail or {}).get("met") or [])
-        derived_quotes = [
-            str(ca.get("evidence_quote") or "").strip()
-            for ca in (criterion_assessments or [])
-            if ca.get("status") == "MET" and ca.get("criterion_text") in met_criteria
-            and str(ca.get("evidence_quote") or "").strip()
-        ] if met_criteria else []
-        derived_quotes = list(dict.fromkeys(derived_quotes))  # dedupe, orden estable
-        any_reference_list = any(
-            sev.detect_reference_list_context(q, chunk_text) for q in derived_quotes
-        )
-        if derived_quotes and not any_reference_list:
-            candidate["evidencia_exacta"] = (
-                "[headline derivado de citas por criterio verificadas] "
-                + " | ".join(derived_quotes)
-            )
-            candidate["anchored"] = True
-            candidate["has_evidence"] = True
-            candidate["headline_source"] = "derived_from_criterion_quotes"
-    if "headline_source" not in candidate:
-        candidate["headline_source"] = "model_headline"
+    """Reexportada desde candidate_validity.is_literally_anchored() --
+    R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md): esa es
+    ahora la UNICA definicion; este alias existe solo para no romper
+    imports/tests existentes que llaman ce._is_anchored() directamente."""
+    from factory.regulatory.candidate_validity import is_literally_anchored
+    return is_literally_anchored(evidencia, source_text)
 
 
 _LABEL_STOPWORDS = {
@@ -1421,20 +1341,39 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     "chunk_text": chunk["text"], "estado": estado,
                 })
                 evidencia = str(entry.get("evidencia_exacta") or "")
-                anchored = _is_anchored(evidencia, chunk["text"]) if evidencia else False
                 requires_anchor = estado in ("cumple", "cumple_parcialmente")
-                valid_candidate = anchored if requires_anchor else True
-                # Fix 2026-07-16: anclaje literal no basta para cumple/
-                # cumple_parcialmente — la cita debe ademas ser tematicamente
-                # relevante al checkpoint (ver _is_topically_relevant). Este
-                # gate (legacy, result["findings"]) se queda igual: no tiene
-                # ningun consumidor downstream capaz de manejar una senal
-                # suave -- ver R1.7 mas abajo para el pipeline verificado.
-                topically_relevant = (
-                    _is_topically_relevant(evidencia, cp_label_by_req.get(req_id, ""))
-                    if (requires_anchor and evidencia) else True
+                criterion_assessments = entry.get("criterion_assessments")
+
+                # W5 V2 Fase F (ampliacion D, 2026-07-25): criterion_assessments
+                # de la respuesta del modelo NUNCA se ignora en silencio --
+                # se extrae y se pasa a verify_evidence_abcd() (A/B/C/D
+                # completo, no solo D). Ausente (None) -> D queda
+                # NOT_ASSESSABLE explicito (semantic_evidence_verification.py),
+                # nunca un campo vacio sin explicacion. Se calcula ANTES de
+                # decidir Ruta A/Ruta B (R3-T1.7) porque ambas rutas
+                # necesitan el mismo `d_detail` para la superficie unica de
+                # abajo.
+                abcd = sev.verify_evidence_abcd(
+                    evidencia, chunk["text"], req_id, requirement_terms_by_req.get(req_id, []),
+                    criterion_assessments=criterion_assessments,
                 )
-                valid_candidate = valid_candidate and topically_relevant
+
+                # R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md):
+                # superficie UNICA de validez/anclaje -- antes, esta decision
+                # vivia fragmentada en 2 rutas independientes (la de abajo,
+                # "verified_records_by_req"/Ruta B verificada, y la de
+                # "candidate"/Ruta A/Finding, mas abajo), cada una con su
+                # propia logica y su propio bug (B4 corrigio solo la Ruta A;
+                # el hallazgo "B5" era exactamente que la Ruta B nunca recibia
+                # ese mismo rescate). Ahora AMBAS llaman a la MISMA funcion.
+                # `resolve_candidate_evidence()` documenta la regla completa
+                # (headline directo + chequeo de lista de referencias +
+                # rescate por criterios anclados) -- no se reimplementa aqui.
+                from factory.regulatory.candidate_validity import resolve_candidate_evidence
+                resolved = resolve_candidate_evidence(
+                    evidencia=evidencia, requires_anchor=requires_anchor, chunk_text=chunk["text"],
+                    criterion_assessments=criterion_assessments, d_detail=abcd.d_detail,
+                )
 
                 # Fase 3 (document_remediation_evolution): a diferencia del
                 # camino legacy de abajo, el pipeline verificado necesita UN
@@ -1442,39 +1381,18 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 # los 'evidencia_insuficiente', que el camino legacy descarta
                 # (nunca aportaron un Finding propio) pero que SÍ cuentan para
                 # que coverage_complete de absence_consolidator sea real, no
-                # inventado.
-                #
-                # R1.7 (2026-08-09, docs_plan/R1_6_VALIDADOR_RELEVANCIA_IDIOMA.md):
-                # el pipeline verificado (el que usa corpus_runner/produccion)
-                # deja de usar _is_topically_relevant -- es un pre-filtro propio,
-                # mas crudo que la validacion C real y ya probada del sistema
-                # (semantic_evidence_verification.verify_semantic_relevance /
-                # detect_reference_list_context, language-agnostic via
-                # requirement_terms.yaml, que ademas NUNCA rechaza duro por
-                # relevancia lexica -- solo marca NOT_VERIFIABLE/review_required).
-                # build_finding_record() -> verify_llm_output() ya calcula esa
-                # misma relevancia lexica (V5, sin tocar aqui) y la traduce a
-                # status='review_required' cuando es debil; absence_consolidator
-                # ya sabe tratar ese status de forma segura (SUPPORTING_EVIDENCE_
-                # UNDER_REVIEW, nunca lo promueve a una conclusion positiva
-                # confirmada) -- pero esa maquinaria nunca llegaba a ejecutarse
-                # de verdad porque este pre-filtro ya blanqueaba la evidencia
-                # antes. Se mantiene UNICAMENTE el componente estructural y
-                # deterministico de la validacion C real (deteccion de listas de
-                # referencias numeradas, el mecanismo que de verdad rechaza
-                # ANNEX11_4 -- antes se rechazaba por coincidencia accidental de
-                # idioma, no por esto). `sev` ya esta importado mas arriba en
-                # esta funcion.
-                valid_candidate_verified = (
-                    anchored and not sev.detect_reference_list_context(evidencia, chunk["text"])
-                    if requires_anchor else True
-                )
+                # inventado. `resolved` (superficie unica) se usa TAL CUAL --
+                # NUNCA mutado -- esta es la Ruta B verificada, que R1.7
+                # (2026-08-09) dejo deliberadamente SIN el filtro crudo de
+                # relevancia lexica (ver mas abajo) porque tiene un consumidor
+                # downstream mejor (verify_llm_output V5 + status
+                # 'review_required').
                 if use_verified_pipeline and req_id in verified_records_by_req:
                     from factory.regulatory.verified_pipeline_adapter import build_finding_record
                     v_candidate = {
                         "page_start": chunk["page_start"], "page_end": chunk["page_end"],
-                        "estado": estado if valid_candidate_verified else "evidencia_insuficiente",
-                        "evidencia_exacta": evidencia if valid_candidate_verified else "",
+                        "estado": estado if resolved.anchored else "evidencia_insuficiente",
+                        "evidencia_exacta": resolved.verifiable_quote if resolved.anchored else "",
                     }
                     verified_records_by_req[req_id].append(build_finding_record(
                         f"vrec-{task_id}-{req_id}", v_candidate, req_id, chunk,
@@ -1483,35 +1401,48 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
 
                 if estado == "evidencia_insuficiente":
                     continue
-                has_evidence = bool(evidencia.strip())
+
+                # Fix 2026-07-16 (post-mortem C1-FDA-11.10d / C3-ANNEX11-12):
+                # anclaje literal no basta para cumple/cumple_parcialmente --
+                # la cita debe ademas ser tematicamente relevante al
+                # checkpoint. Heuristica PROPIA de la Ruta A/Finding (legacy,
+                # `result["findings"]`) -- se aplica SOLO a `route_a_anchored`
+                # (variable local, NUNCA muta `resolved`) para no filtrar
+                # tambien hacia la Ruta B de arriba, que R1.7 (2026-08-09)
+                # dejo deliberadamente sin este filtro (tiene un consumidor
+                # downstream mejor). R3-T1.7 solo unifica el anclaje/rescate;
+                # esta divergencia de relevancia entre rutas es intencional y
+                # ya documentada -- mutar `resolved` aqui (como paso en un
+                # intento inicial de esta corrida) filtraba tambien la Ruta B
+                # y rompia test_p5_real_evidence_reaches_observed_flagged_for_review/
+                # test_wrong_topic_same_language_flagged_not_silently_verified.
+                # Quitar el filtro de la Ruta A directamente (en vez de
+                # aislarlo) aflojaria un validador real, confirmado por
+                # test_topically_irrelevant_citation_is_rejected.
+                route_a_anchored = resolved.anchored
+                if resolved.headline_source == "model_headline" and requires_anchor and evidencia:
+                    if not _is_topically_relevant(evidencia, cp_label_by_req.get(req_id, "")):
+                        route_a_anchored = False  # has_evidence NO cambia: el texto SI existe, solo es de otro tema
+
                 candidate = {
                     "chunk_index": chunk["chunk_index"], "page_start": chunk["page_start"],
                     "page_end": chunk["page_end"], "estado": estado,
-                    "evidencia_exacta": evidencia if (anchored or not requires_anchor) else "(no anclado en el chunk, descartado)",
+                    "evidencia_exacta": resolved.evidencia_exacta,
                     "brecha": str(entry.get("brecha") or ""),
                     "recomendacion": str(entry.get("recomendacion") or ""),
-                    "anchored": valid_candidate,
-                    "has_evidence": has_evidence,
+                    "anchored": route_a_anchored,
+                    "has_evidence": resolved.has_evidence,
+                    "headline_source": resolved.headline_source,
                 }
-
-                # W5 V2 Fase F (ampliacion D, 2026-07-25): criterion_assessments
-                # de la respuesta del modelo NUNCA se ignora en silencio --
-                # se extrae y se pasa a verify_evidence_abcd() (A/B/C/D
-                # completo, no solo D), y el resultado se persiste en el
-                # candidate. Ausente (None) -> D queda NOT_ASSESSABLE
-                # explicito (ver semantic_evidence_verification.py), nunca
-                # un campo vacio sin explicacion.
-                criterion_assessments = entry.get("criterion_assessments")
-                abcd = sev.verify_evidence_abcd(
-                    evidencia, chunk["text"], req_id, requirement_terms_by_req.get(req_id, []),
-                    criterion_assessments=criterion_assessments,
-                )
                 candidate["d_sufficiency"] = abcd.d_sufficiency
                 candidate["d_reason"] = abcd.d_reason
                 candidate["d_detail"] = abcd.d_detail
                 candidate["substantive_evidence_accepted"] = abcd.substantive_evidence_accepted
                 candidate["operational_result"] = abcd.operational_result
-                # R2.1 Opcion C: A/B/C crudos del candidato, para poder
+                # R2.1 Opcion C: A/B/C crudos del candidato (calculados sobre
+                # la evidencia ORIGINAL del modelo, no la derivada -- son
+                # diagnostico, no el gate real; el gate real es
+                # `candidate["anchored"]`, ya resuelto arriba), para poder
                 # recombinar con el D AGREGADO del requisito (ver
                 # verify_sufficiency_aggregated mas abajo) sin re-evaluar
                 # anclaje/fuente/relevancia semantica -- esos tres siguen
@@ -1522,19 +1453,6 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 candidate["b_source"] = abcd.b_source
                 candidate["c_semantic"] = abcd.c_semantic
                 candidate["c_flags"] = abcd.c_flags
-
-                # Fix B4 (R3-T1.6, docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md):
-                # ver docstring de _apply_headline_rescue_b4() -- extraida a
-                # funcion de modulo (no inline) para que tanto este bucle en
-                # vivo COMO cualquier replay/reconstruccion sobre datos ya
-                # guardados (checkpoints historicos, sin volver a llamar al
-                # modelo) apliquen EXACTAMENTE la misma regla, nunca dos
-                # implementaciones que puedan divergir.
-                _apply_headline_rescue_b4(
-                    candidate, evidencia=evidencia, requires_anchor=requires_anchor,
-                    criterion_assessments=criterion_assessments, chunk_text=chunk["text"],
-                    d_detail=abcd.d_detail,
-                )
 
                 by_req.setdefault(req_id, []).append(candidate)
                 by_req_candidates.append({"req_id": req_id, "candidate": candidate})
@@ -2042,6 +1960,30 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 _dispatch_baseline_gap_review(
                     run_id, req_id, documento, agent_id, conclusion.conclusion,
                     list(conclusion.review_flags), governed_exceptions)
+            # R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md,
+            # bloque 3, hallazgo de despacho): apply_conclusion_preconditions()
+            # degrada a EVALUATION_INCOMPLETE/ABCD_D_NOT_ASSESSABLE cuando
+            # D=NOT_ASSESSABLE sobre una conclusion que consolidate() YA
+            # habia decidido como support-asserting (es decir, SI hubo un
+            # registro "observed" real) -- el caso central es una
+            # contradiccion genuina entre chunks (verify_sufficiency_aggregated,
+            # fix B3), pero cubre cualquier motivo de D=NOT_ASSESSABLE sobre
+            # evidencia ya observada. Ninguna de las 3 ramas de arriba lo
+            # cubria: antes de la superficie unica (R3-T1.7, fix B4/B5), este
+            # caso nunca llegaba a "observed" en absoluto (el candidato se
+            # perdia en la rama de ausencia), asi que el gap nunca se
+            # manifestaba con datos reales -- confirmado con el checkpoint
+            # historico chunked-943a62bcbb85, 21_CFR_11.10(d): quedaba
+            # NEEDS_HUMAN_REVIEW en el informe pero SIN entrada en la cola.
+            # Semantica DISTINTA de _dispatch_baseline_gap_review (limite de
+            # parafrasis, ausencia posible): aqui SI hay evidencia positiva
+            # observada, en desacuerdo real con otra seccion -- un humano
+            # debe decidir cual seccion es la vigente, no ampliar la busqueda.
+            elif (full_document_coverage and conclusion.conclusion == "EVALUATION_INCOMPLETE"
+                  and "ABCD_D_NOT_ASSESSABLE" in conclusion.review_flags):
+                _dispatch_contradiction_blocked_review(
+                    run_id, req_id, documento, agent_id,
+                    list(conclusion.review_flags), governed_exceptions)
 
     result = {
         "run_id": run_id,
@@ -2257,6 +2199,44 @@ def _dispatch_baseline_gap_review(run_id: str, req_id: str, documento: str, agen
             page=None, evidence_quote="",
             conclusion=conclusion_value,
             review_flags=[*review_flags, "BASELINE_GAP_PENDING_HUMAN_REVIEW_KNOWN_PARAPHRASE_LIMIT"],
+            agent_id=agent_id,
+        )
+    except Exception as exc:  # noqa: BLE001 -- ver docstring: no bloqueante, pero registrado
+        governed_exceptions.append({
+            "req_id": req_id, "stage": "review_queue_dispatch",
+            "exception": type(exc).__name__, "detail": str(exc),
+        })
+
+
+def _dispatch_contradiction_blocked_review(run_id: str, req_id: str, documento: str, agent_id: str,
+                                            review_flags: list[str],
+                                            governed_exceptions: list[dict]) -> None:
+    """R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md, bloque 3):
+    encola en la MISMA cola R1.8 un `EVALUATION_INCOMPLETE` con
+    `ABCD_D_NOT_ASSESSABLE` -- D no pudo resolverse (el caso central: una
+    contradicción genuina entre chunks, `verify_sufficiency_aggregated`,
+    fix B3) sobre un requisito que SI llegó a tener un registro "observed"
+    real (`consolidate()` ya lo habia decidido support-asserting antes de
+    que `apply_conclusion_preconditions()` lo degradara). Semántica
+    DISTINTA de `_dispatch_baseline_gap_review` (limite de parafrasis,
+    posible ausencia real): aquí SI hay evidencia positiva observada, en
+    desacuerdo real con otra sección del documento -- un humano debe
+    decidir cuál sección es la vigente, no ampliar la búsqueda ni asumir
+    ausencia. Hallazgo real que motiva este despacho: antes de la
+    superficie única (B4/B5), este candidato nunca llegaba a "observed" en
+    absoluto (se perdía en la rama de ausencia), así que el requisito
+    aparecía como `NEEDS_HUMAN_REVIEW` en el informe pero SIN entrada en
+    la cola -- confirmado con el checkpoint histórico
+    `chunked-943a62bcbb85`, `21_CFR_11.10(d)`. Mismo principio de
+    no-bloqueo que el resto de los despachos: un fallo de encolado nunca
+    tumba el run, se registra en governed_exceptions."""
+    try:
+        from factory.layer9.human_review_queue import enqueue_finding_for_review
+        enqueue_finding_for_review(
+            run_id=run_id, requirement_id=req_id, document_id=documento,
+            page=None, evidence_quote="",
+            conclusion="EVALUATION_INCOMPLETE",
+            review_flags=[*review_flags, "CONTRADICTION_BLOCKED_POSITIVE_CONCLUSION"],
             agent_id=agent_id,
         )
     except Exception as exc:  # noqa: BLE001 -- ver docstring: no bloqueante, pero registrado

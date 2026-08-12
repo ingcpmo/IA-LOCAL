@@ -924,6 +924,82 @@ def test_b4_genuine_contradiction_still_blocks_with_both_headlines_empty(monkeyp
     assert finding["evidencia_exacta"].startswith("[headline derivado de citas por criterio verificadas]")
 
 
+def test_b4_contradiction_blocked_conclusion_reaches_review_queue(monkeypatch, isolated_review_queue):
+    """R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md, bloque 3):
+    hallazgo real encontrado al validar la superficie unica en la salida
+    final -- antes de B4/B5, un candidato con headline vacio nunca llegaba
+    a 'observed', asi que una contradiccion genuina jamas llegaba a
+    EVALUATION_INCOMPLETE/ABCD_D_NOT_ASSESSABLE con evidencia real
+    observada -- quedaba huerfano (NEEDS_HUMAN_REVIEW en el informe, SIN
+    entrada en la cola, ninguna de las 3 condiciones de despacho lo
+    cubria). Con B4/B5 corregido, este caso SI ocurre -- este test
+    confirma que ahora SI se despacha, con la superficie unica activa
+    (mismo escenario de dos chunks contradictorios de
+    test_b4_genuine_contradiction_still_blocks_with_both_headlines_empty,
+    verificado end-to-end contra verified_conclusions y la cola real).
+
+    _ANCHORED_QUOTE (no el texto crudo del criterio del catalogo) como
+    evidence_quote: relevance_score(_ANCHORED_QUOTE, ...) = 0.875, muy
+    por encima del umbral -- evita que verify_llm_output (V5) marque
+    RELEVANCE_REVIEW_REQUIRED y el registro quede status='review_required'
+    (lo que haria que consolidate() resolviera SUPPORTING_EVIDENCE_UNDER_
+    REVIEW/OBSERVED_ONLY_UNVERIFIED directamente, SIN pasar por D en
+    absoluto -- un camino real pero DISTINTO al que este test quiere
+    ejercitar: contradiccion genuina sobre evidencia YA verificada)."""
+    page1 = f"Introduccion. {_ANCHORED_QUOTE} " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500
+    page2 = f"Seccion contradictoria del mismo documento. {_ANCHORED_QUOTE} " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500
+    pages = [page1, page2]
+
+    def _assessments_anchored_quote(met_indices):
+        return [
+            {"criterion_index": i + 1, "criterion_text": text,
+             "status": "MET" if (i + 1) in met_indices else "NOT_MET",
+             "evidence_quote": _ANCHORED_QUOTE if (i + 1) in met_indices else "",
+             "evidence_location": "pag X" if (i + 1) in met_indices else "",
+             "justification": "test", "limitations": ""}
+            for i, text in enumerate(_D_CRITERIA_11_10_D)
+        ]
+
+    assessments_chunk1 = _assessments_anchored_quote({1, 2, 3, 4, 5})
+    assessments_chunk2 = _assessments_anchored_quote({2, 3, 4, 5})  # criterio 1 queda NOT_MET (contradice)
+
+    responses = [
+        _all_insufficient({"21_CFR_11.10(d)": {
+            "req_id": "21_CFR_11.10(d)", "estado": "cumple_parcialmente", "evidencia_exacta": "",
+            "brecha": "n/a", "recomendacion": "n/a", "criterion_assessments": assessments_chunk1,
+        }}),
+        _all_insufficient({"21_CFR_11.10(d)": {
+            "req_id": "21_CFR_11.10(d)", "estado": "cumple_parcialmente", "evidencia_exacta": "",
+            "brecha": "n/a", "recomendacion": "n/a", "criterion_assessments": assessments_chunk2,
+        }}),
+    ]
+    call_count = {"n": 0}
+
+    def _fake_generate(*a, **k):
+        idx = call_count["n"]
+        call_count["n"] += 1
+        return _ollama_response(responses[idx])
+
+    monkeypatch.setattr(ollama_client, "generate", _fake_generate)
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS")
+
+    c = result["verified_conclusions"]["21_CFR_11.10(d)"]
+    assert c["conclusion"] == "EVALUATION_INCOMPLETE", c
+    assert "ABCD_D_NOT_ASSESSABLE" in c["review_flags"], c
+    assert c["chunks_observed"] >= 1, "debe haber al menos un registro observed real, no ausencia"
+
+    from factory.layer9.human_review_queue import list_pending
+    pending = [e for e in list_pending()
+               if e.get("summary", {}).get("run_id") == result["run_id"]
+               and e.get("summary", {}).get("requirement_id") == "21_CFR_11.10(d)"]
+    assert len(pending) == 1, "el requisito debe tener EXACTAMENTE una entrada en la cola -- antes de este fix no tenia ninguna"
+    assert "CONTRADICTION_BLOCKED_POSITIVE_CONCLUSION" in pending[0]["summary"]["review_flags"]
+
+
 def test_b4_annex11_4_reference_list_still_rejected_end_to_end(monkeypatch):
     """ANNEX11_4 end-to-end tras B4: el caso real conocido (GAMP5 citado
     dentro de una lista de referencias numeradas) sigue rechazado -- ruta
