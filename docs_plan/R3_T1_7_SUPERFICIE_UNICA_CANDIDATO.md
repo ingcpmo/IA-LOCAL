@@ -666,3 +666,156 @@ Cesar la revise él mismo (eso es exactamente el paso 4.3).
 UI de Mission Control y regístrala TÚ -- ese clic cierra el criterio
 F2.3.d y el ciclo humano completo (documento → informe → cola → decisión
 humana) que era el corazón de esta fase.
+
+──────────────────────────────────────────────────────────────────────────────
+BLOQUE 5 — CIERRE DE R3-T1
+──────────────────────────────────────────────────────────────────────────────
+
+## 5.1 — Cadena completa de defectos encontrados y cerrados en esta fase
+
+```
+kerning (extraccion)
+  → contrato de prompt (criterion_assessments)
+  → B3 (agregacion D multi-chunk, verify_sufficiency_aggregated -- e823015)
+  → B4 (anclaje del candidato en la Ruta A/Finding -- f629959)
+  → B5 (el MISMO anclaje nunca llegaba a la Ruta B/verified_records_by_req
+     -- descubierto validando B4 en la salida final, no en una capa
+     intermedia)
+  → gap de despacho (EVALUATION_INCOMPLETE/ABCD_D_NOT_ASSESSABLE sin
+     condicion de cola -- expuesto por B4/B5 al hacer que la contradiccion
+     genuina por fin llegara a "observed" con datos reales)
+  → [CENTRALIZADO] candidate_validity.py -- superficie unica (R3-T1.7,
+     a2cabb8): B4 y B5 eran el MISMO defecto en dos sitios: se dejo de
+     tratar sitio por sitio y se centralizo la decision completa.
+```
+
+**¿Hay una capa posterior a la superficie única que aún pueda descartar
+evidencia ya validada?** No encontrada. La auditoría del bloque 1 mapeó
+4 rutas reales + 1 código muerto + 1 consumidor latente (Ruta D,
+`gap_assessment_finding_mapper.py`, sin llamador de producción hoy) --
+las dos rutas VIVAS (A y B) ya consumen la superficie única; la Ruta D,
+si se activa alguna vez, deberá consumirla también (el guardián de
+no-bypass lo detectaría si no lo hiciera). No se abre un "B6" sin
+evidencia -- no la hay.
+
+## 5.2 — Qué DEMUESTRA R3-T1 (con F2-DRY cerrado y la entrada real en cola)
+
+El flujo Tier-1 asistido, con el código corregido:
+- produce informes trazables, con anclaje real cuando la evidencia existe
+  (`21_CFR_11.10(e)`: bucket `CONFIRMED`, cita real y anclada visible,
+  derivada honestamente de citas por criterio ya verificadas -- nunca
+  inventada);
+- produce estados honestos cuando la evidencia no alcanza o hay
+  desacuerdo real (`21_CFR_11.10(d)`: contradicción genuina entre
+  secciones del mismo documento, bloqueada correctamente, nunca resuelta
+  en silencio);
+- enriquece la cola de revisión humana con el motivo exacto de por qué
+  cada requisito necesita ojos humanos (`ABCD_D_NOT_ASSESSABLE` +
+  `CONTRADICTION_BLOCKED_POSITIVE_CONCLUSION`, no un genérico
+  "needs review");
+- cierra el ciclo completo documento → informe → cola → decisión humana
+  con una entrada real, verificable en la UI viva.
+
+Todo esto validado con **cero llamadas LLM** sobre datos ya pagados --
+el patrón de replay demostró, cuarta vez en este arco, que la mayoría de
+las preguntas de este tipo no necesitan presupuesto nuevo para
+responderse.
+
+## 5.3 — Qué NO demuestra, sin maquillar
+
+- **Detección automática de paráfrasis**: sigue siendo el límite central
+  medido en R2 (recall 2/7 en el fixture set) -- B3/B4/B5 corrigieron
+  cómo se AGREGA y ANCLA evidencia ya reconocida por el modelo, nunca
+  tocaron si el modelo RECONOCE evidencia parafraseada en primer lugar.
+  Ese límite sigue vivo, sin cambios.
+- **CONFIRMED automático**: bloqueado por B1
+  (`positive_conclusion_eligibility=PROVISIONAL_ONLY`) -- por eso
+  `21_CFR_11.10(e)` llega a `PROVISIONALLY_PARTIALLY_DOCUMENTED`, nunca
+  `DOCUMENTED_AND_SUPPORTED` -- y por cobertura real del documento
+  (criterios 1,4-9 de `21_CFR_11.10(e)` genuinamente sin evidencia en
+  ningún chunk de las 29 evaluadas, ya establecido en R3-T1.3).
+- **Reproducibilidad estricta entre corridas**: la variabilidad B2 sigue
+  viva (documentada en R3-T1.3 §0) -- una corrida H2H4 real podría dar
+  resultados de chunk distintos al checkpoint BASELINE histórico usado
+  en todo este replay.
+- **Que el checkpoint histórico sea representativo de H2H4**: todo este
+  bloque 1-4 corrió sobre un checkpoint BASELINE (perfil que midió 0/7
+  de recall) -- el resultado (`21_CFR_11.10(e)` alcanzable) es sobre
+  ESE perfil; una corrida H2H4 real (2/7, mejor) no está garantizada a
+  reproducir exactamente los mismos 2 criterios anclados, aunque el
+  mecanismo de agregación/anclaje corregido aplicaría igual.
+
+## 5.4 — F2-LIVE: ¿se justifica?
+
+**Criterio ya fijado** (R3-T1.5 §2.3): solo si responde una pregunta que
+cambie una decisión de producto.
+
+**NO se justifica hoy, completo (29 llamadas).** El replay ya demostró,
+con el código corregido, exactamente lo que F2 completo habría medido:
+`21_CFR_11.10(e)` alcanza evidencia parcial real y anclada (2/9
+criterios), `21_CFR_11.10(d)` queda bloqueado por contradicción genuina,
+y el resto sin evidencia real en el documento. Gastar 29 llamadas H2H4
+no cambiaría la ARQUITECTURA de la decisión (el pipeline ya demostrado
+correcto) -- en el mejor caso, actualizaría CUÁLES criterios específicos
+anclan (por la mejora de recall 2/7 vs 0/7), pero eso es una pregunta de
+medición de recall (dominio de R2), no de si el pipeline Tier-1 funciona
+(dominio de R3-T1, ya demostrado).
+
+**Si algo se justifica**: un alcance MÍNIMO, acotado a los criterios de
+`21_CFR_11.10(e)` que hoy quedan sin evidencia (1, 4-9) sobre los
+chunks donde B2 (variabilidad de muestreo) podría dar un resultado
+distinto al BASELINE histórico -- 3-5 chunks, no 29, con su propia firma
+`PILOT_EXECUTION` pequeña. Decisión de Cesar, no autorizada en esta
+corrida.
+
+## 5.5 — Lección registrada (memoria + skill)
+
+Guardada como memoria de proyecto (`project_r3_t1_superficie_unica.md`,
+ver `MEMORY.md`): el patrón de 3 fixes puntuales (B3→B4→B5) para el
+MISMO defecto reapareciendo en sitios distintos, resuelto centralizando
+en una superficie única con test de no-bypass -- mismo patrón que
+`path_policy.py`/`decision_scope_resolver.py`. Principio: "cuando un
+defecto reaparece en un segundo lugar, no se parchea el segundo lugar,
+se audita exhaustivamente." Y: "el criterio de aceptación se mide en la
+salida final del producto, no en una capa intermedia" -- tres cierres
+prematuros (R3-T1.5, R3-T1.6 inicial, y el intento de fusionar
+`_is_topically_relevant`) se evitaron o corrigieron aplicando esto.
+
+## 5.6 — Pendientes con dueño
+
+```
+B1 (positive_conclusion_eligibility=PROVISIONAL_ONLY):
+  decision de Cesar, ID disponible ARTIFACT_VERSION-2026-019
+  (018 ya ocupado, ver R3_T1_3_VIABILIDAD_F2.md §5(iii))
+PROMPT FANTASMA (part11_prompts.yaml en
+  factory/workspaces/gmpai_document_validation/prompts/, v1.0.0, no
+  cargado por produccion): decision de Cesar pendiente, sin cambios
+  desde F1 (R3_T1_3_VIABILIDAD_F2.md §3)
+TESTS AMBIENTALES DE GATE 0 (Playwright/endpoint vivo, 6 fallos + 2
+  errores ya caracterizados en R3-T1.5/T1.6/T1.7 -- consistentes,
+  ninguno nuevo): sin dueño asignado, no bloquean produccion
+CICLO HUMANO (bloque 4.3): pendiente el clic real de Cesar en la UI
+  sobre la entrada promovida
+F2-LIVE MINIMO (5.4): decision de Cesar sobre si vale la pena, alcance
+  3-5 chunks si se autoriza
+```
+
+## Entrega final
+
+```
+R3_T1_DEMOSTRADO =        §5.2 (informes trazables, anclaje real, estados
+                           honestos, cola enriquecida, ciclo humano
+                           cerrable) -- CIERTO, con evidencia
+R3_T1_NO_DEMOSTRADO =     §5.3 (parafrasis, CONFIRMED automatico,
+                           reproducibilidad B2, representatividad H2H4)
+                           -- declarado sin maquillar
+F2_LIVE_JUSTIFIED =       NO, completo. SI, minimo (3-5 chunks) -- decision
+                           de Cesar, no autorizada aqui
+LESSON_RECORDED =         memoria de proyecto + este documento
+CORPUS_READY = false
+PRODUCTION_ENABLEMENT = BLOCKED
+```
+
+**R3-T1 queda cerrado en lo que el código puede demostrar hoy.** Falta
+únicamente tu clic real en la UI (bloque 4.3) para cerrar también el
+ciclo humano -- eso es lo único que sigue en tus manos, no en las mías.
