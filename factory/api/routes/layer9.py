@@ -31,7 +31,7 @@ from factory.layer9.mission_control import (
 from factory.layer9.instruction_center import submit_requirement, list_requirements
 from factory.layer9.decision_log import write_decision, list_decisions, get_project_decisions
 from factory.layer9.risk_acceptance import accept_risk, list_risks
-from factory.layer9.human_review_queue import list_pending, get_queue_summary, mark_reviewed
+from factory.layer9.human_review_queue import list_pending, get_queue_summary, mark_reviewed, get_entry
 from factory.layer8.release_candidate_builder import get_rc, confirm_rc
 from factory.services import case_analysis_service as _case_analysis
 from factory.services import design_mode_service as _design
@@ -118,6 +118,18 @@ class ReviewReturn(BaseModel):
     approved_by: str
     notes: str = ""
     adjustments_needed: str = ""
+
+
+class FindingReviewDecision(BaseModel):
+    """R3-T1.2/F0.4 (2026-08-12): decisión humana sobre una entrada de
+    `finding_review` -- NUNCA un RC real (esas no tienen `rc_manifest.json`,
+    ver `get_entry()` vs `get_rc()`). `confirmed_page`/`confirmed_quote`
+    (R2.3 §4.3) opcionales -- cuando el humano señala evidencia real entre
+    los `candidates` de una entrada de modo JUICIO."""
+    reviewer: str
+    decision: str
+    confirmed_page: int | None = None
+    confirmed_quote: str | None = None
 
 
 class MissionReturn(BaseModel):
@@ -303,6 +315,54 @@ def post_return_rc(rc_id: str, body: ReviewReturn):
         result = confirm_rc(rc_id, body.approved_by, "returned_to_adjustments", notes)
         mark_reviewed(rc_id, "returned", body.approved_by)
         return result
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+_FINDING_REVIEW_VALID_DECISIONS = {"confirmed", "rejected"}
+
+
+@router.post("/review/findings/{rc_id}/decide")
+def post_decide_finding(rc_id: str, body: FindingReviewDecision):
+    """R3-T1.2/F0.4 (2026-08-12): decisión humana sobre una entrada de
+    `finding_review` (`factory.layer9.human_review_queue.
+    enqueue_finding_for_review()`, R1.8/R2.3 §4) -- hallazgo real: NO
+    existía ningún endpoint para esto. `/review/{rc_id}/approve|reject`
+    llaman a `get_rc()`/`confirm_rc()` (`release_candidate_builder.py`),
+    que buscan un `rc_manifest.json` real en disco -- una entrada de
+    finding_review NUNCA tiene uno (su rc_id es sintético,
+    `finding-{run_id}-{req_id}`), así que esos endpoints 404 ANTES de
+    llegar a `mark_reviewed()`: decidir sobre un finding era imposible vía
+    HTTP. Este endpoint usa `get_entry()`/`mark_reviewed()` directo, sin
+    pasar por la capa de RC reales."""
+    try:
+        entry = get_entry(rc_id)
+        if entry is None or entry.get("entry_type") != "finding_review":
+            raise HTTPException(404, f"finding_review '{rc_id}' no encontrado")
+        if entry.get("status") != "pending":
+            raise HTTPException(409, {
+                "error": "finding_already_decided",
+                "rc_id": rc_id,
+                "current_status": entry["status"],
+                "previously_decided_by": entry.get("reviewer", "?"),
+                "previously_decided_at": entry.get("reviewed_at", "?"),
+            })
+        if body.decision not in _FINDING_REVIEW_VALID_DECISIONS:
+            raise HTTPException(422, {
+                "error": "invalid_decision",
+                "decision": body.decision,
+                "valid_decisions": sorted(_FINDING_REVIEW_VALID_DECISIONS),
+            })
+        return mark_reviewed(
+            rc_id, body.decision, body.reviewer,
+            confirmed_page=body.confirmed_page, confirmed_quote=body.confirmed_quote,
+        )
+    except HTTPException:
+        raise
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
     except ValueError as e:
