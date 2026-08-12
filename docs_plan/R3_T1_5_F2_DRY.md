@@ -209,3 +209,242 @@ DETENERSE tras el CHECKPOINT 1 para tu decisión de revisión, y de nuevo
 antes de proponer cualquier llamada en vivo. Ninguna corrida de 29 llamadas
 se autoriza mientras el replay pueda responder la misma pregunta gratis —
 esa es la regla que esta fase acaba de demostrar dos veces.
+
+──────────────────────────────────────────────────────────────────────────────
+EJECUCIÓN 2026-08-12 — BLOQUE 1 (F2-DRY)
+──────────────────────────────────────────────────────────────────────────────
+
+## Intento 1: evaluate_chunked() rehúsa reabrir un checkpoint completado
+
+Se intentó pasar el checkpoint histórico `chunked-943a62bcbb85` por
+`ce.evaluate_chunked()` directamente (con un "guard provider" que revienta
+si intenta una llamada real -- cero llamadas salieron, confirmado), en la
+misma configuración BASELINE del checkpoint original. El motor NO lo
+reconoció como reanudable: generó un run_id nuevo e intentó ejecutar los
+29 chunks desde cero (el guard los bloqueó, resultado vacío).
+
+**Causa raíz** (`chunked_engine.py`, `CheckpointStore.find_resumable()`,
+línea 853): el fingerprint coincidía exacto (verificado), pero nunca se
+llegó a comprobar porque hay una barrera anterior, explícita y deliberada:
+*"Un run completado SIN fallos tecnicos nunca se reabre... jamas
+re-analizar contenido ya evaluado"*. `chunked-943a62bcbb85` está
+`completed=True` sin fallos técnicos, así que se descarta antes de mirar
+el fingerprint. **Es una guardia de gobernanza intencional, no un bug.**
+Cesar decidió no bypasearla (ni siquiera en un script aislado) -- ver
+"Replay acotado" abajo.
+
+## Intento 2 (aprobado por Cesar): replay acotado sobre funciones reales
+
+En vez de forzar `evaluate_chunked()`, se reconstruyó el tramo de
+consolidación A/B/C/D llamando DIRECTAMENTE a las mismas funciones de
+producción que ese tramo ya usa
+(`semantic_evidence_verification.verify_sufficiency_aggregated` -- fix
+B3 incluido --, `absence_consolidator.consolidate`,
+`apply_conclusion_preconditions`, `evidence_pack_gate`, `Finding`,
+`compute_substantive_support`, `applicability`), alimentadas con los
+datos YA GUARDADOS en el checkpoint histórico
+(`chunk_executions[i]['_by_req_candidates']`,
+`chunk_executions[i]['_criterion_assessments_for_d']`,
+`verified_records_by_req`). Ningún validador se reimplementó; solo se
+reordenó la orquestación (el mismo "glue" que `evaluate_chunked()` ya
+tiene). Script: `factory/regulatory/pilot_run/tier1_dry_run_20260812/
+replay_f2_dry.py`.
+
+**Gap adicional encontrado y resuelto**: este checkpoint es ANTERIOR a la
+instrumentación del fix B3 (commit `e823015`) -- `_criterion_assessments_for_d`
+no trae el campo `estado` (se empezó a guardar recién en ese commit). Sin
+él, el fix no tenía nada que reclasificar. Se reconstruyó `estado` desde
+el `raw_response` completo de cada chunk (descomprimido desde
+`raw_response_full_path`, mismo mecanismo que `CheckpointStore.
+load_raw_response()`) -- misma técnica que R3_T1_4 ya había usado para su
+propia validación de replay.
+
+## Resultado de la función D (validado con datos reales, cero llamadas)
+
+| Requisito | D agregado (con fix B3) | contradicted |
+|---|---|---|
+| `21_CFR_11.10(e)` | **PARTIALLY_MET, 2/9** | vacío -- falsa contradicción CORREGIDA |
+| `21_CFR_11.10(d)` | NOT_ASSESSABLE, "contradiccion real... 1 criterio" | `Mecanismo de control de acceso...` -- contradicción GENUINA preservada |
+| `21_CFR_11.10(a)` | NOT_ASSESSABLE, incertidumbre real | vacío |
+| `21_CFR_11.10(g)` | NOT_MET, ningún criterio confirmado | vacío |
+| `21_CFR_11.50_11.70` | NOT_MET, ningún criterio confirmado | vacío |
+
+Esto reproduce EXACTAMENTE lo que R3_T1_3/R3_T1_4 ya habían documentado
+para 11.10(e) y 11.10(d) -- el fix B3 funciona correctamente a nivel de
+función, con datos reales, cero llamadas.
+
+## HALLAZGO NUEVO (no cubierto por B3): un gate independiente impide que D llegue al producto final para 11.10(d)/(e) en ESTE checkpoint
+
+`Finding.d_sufficiency` (el valor que `apply_conclusion_preconditions()`
+lee para decidir la conclusión final) NUNCA se puebla con el resultado de
+`verify_sufficiency_aggregated()` salvo que exista un "candidato ganador"
+con anclaje a nivel de headline (`by_req[req_id]` con `anchored=True`
+para al menos un candidato) -- ver `chunked_engine.py` línea ~1729
+(`if "a_anchor" in best:`). Es un gate TOTALMENTE INDEPENDIENTE del
+defecto B3 (que vive dentro de la agregación D en sí).
+
+Verificado con datos reales de este checkpoint:
+
+| Requisito | candidatos headline anclados | D llega a Finding.d_sufficiency? |
+|---|---|---|
+| `21_CFR_11.10(e)` | **0 de 1** | NO -- D calculado (PARTIALLY_MET) pero nunca adjuntado |
+| `21_CFR_11.10(d)` | **0 de 3** | NO -- D calculado (contradicción genuina) pero nunca adjuntado |
+| `21_CFR_11.10(g)` | 3 de 6 | SÍ |
+| `21_CFR_11.50_11.70` | 3 de 6 | SÍ |
+
+Para 11.10(d)/(e) en este checkpoint, la conclusión final (`PROVISIONAL_GAP`
+para ambos) queda decidida enteramente por `absence_consolidator.
+consolidate()` sobre `verified_records_by_req` -- un canal que NUNCA
+consultó D. El fix B3 es correcto y no necesita tocarse, pero **por sí
+solo no cambia el bucket Tier-1 de estos dos requisitos en este documento
+histórico** -- coincide con lo que R3_T1_4 §4.1 ya anticipaba
+("CONFIRMED no alcanzable para 11.10(e) en este documento, por cobertura
+real, no por B3"), pero aquí se ve más fino: ni siquiera se intenta,
+porque el candidato ganador headline nunca ancló.
+
+## Criterios de aceptación F2-DRY (1.2 a-f)
+
+```
+a) informe se genera sin error, 5 requisitos, buckets validos, page_or_section
+   normalizado:                                                    PASA
+b) 11.10(e) con estado honesto, contradicted vacio, PRUEBA de que B3
+   llega al producto final:                                        PARCIAL --
+   llega hasta Finding.d_sufficiency? NO (gate headline independiente,
+   ver hallazgo arriba). Llega hasta la FUNCION de agregacion? SI,
+   confirmado con datos reales.
+c) 11.10(d) sigue bloqueado por contradiccion genuina:              PASA a nivel
+   de funcion (D=NOT_ASSESSABLE, contradicted no vacio) -- el bucket final
+   (PROVISIONAL_GAP) no viene de D en este caso, mismo gate que (b).
+d) cada requisito NEEDS_HUMAN_REVIEW tiene entrada en cola con
+   candidatos/paginas/extractos:                                   PASA --
+   3 entradas en review_queue_entries_DRY_RUN.json (aislado, cola real
+   NUNCA tocada -- verificado con git diff)
+e) ningun bucket huerfano (NOT_OBSERVED_OPTIONAL de F0.5 verificable):
+   PASA -- 21_CFR_11.50_11.70 cae correctamente en OPTIONAL_NOT_OBSERVED
+f) original en disco intacto (SHA-256 antes/despues):               PASA --
+   documento 56095a75... y checkpoint f4226cc8... identicos, verificados
+```
+
+## Aislamiento verificado (cero contaminación de estado compartido)
+
+- `human_review_queue.REVIEW_QUEUE_FILE` monkeypatched a
+  `review_queue_dry_run.jsonl` (mismo patrón que
+  `factory/tests/conftest.py:isolated_review_queue`) -- confirmado con
+  `git diff factory/layer9/review_queue.jsonl`: el único diff presente es
+  el que YA existía antes de esta sesión (entrada `chunked-50534e75927c`
+  de una corrida anterior, ajena a este dry-run).
+- No se llamó `evaluate_chunked()` en el intento aprobado -- cero riesgo
+  sobre `checkpoint_store`/`validation_evidence_writer`/`audit_writer`.
+- Checkpoint original y documento fuente verificados byte-idénticos
+  antes/después (SHA-256).
+
+## Artefactos generados (ruta de trabajo separada, marcados DRY_RUN)
+
+```
+factory/regulatory/pilot_run/tier1_dry_run_20260812/
+├── replay_f2_dry.py                        (script, no versionado aun)
+├── chunked-943a62bcbb85.checkpoint.json     (copia, para el intento 1 fallido)
+├── informe_tier1_DRY_RUN.md                 (banner DRY_RUN en portada)
+├── verified_conclusions_DRY_RUN.json
+├── governed_exceptions_DRY_RUN.json         (vacio -- 0 excepciones)
+└── review_queue_entries_DRY_RUN.json        (3 entradas, aisladas)
+```
+
+## Pendiente: CHECKPOINT 1 -- ciclo humano en vivo (1.3)
+
+No ejecutado en esta corrida -- requiere que TÚ abras la UI de revisión y
+registres una decisión real sobre una de las 3 entradas del dry-run
+(`finding-chunked-943a62bcbb85-21_CFR_11.10(d|e|g)`), con tu identidad.
+Nota: estas entradas viven SOLO en `review_queue_dry_run.jsonl`, aisladas
+-- la UI de producción no las verá a menos que se decida (aparte, con tu
+aprobación) promoverlas a la cola real, algo que esta corrida NO hizo.
+
+**DETENERSE.** Bloque 1 completo salvo 1.3 (tuyo). No se avanza a bloque
+2 (evaluación de si F2-LIVE se justifica) sin tu revisión de este
+hallazgo -- en particular, decidir si el gate de "candidato ganador
+headline" (independiente de B3) merece su propia corrida de diagnóstico
+antes de cerrar R3-T1.
+
+──────────────────────────────────────────────────────────────────────────────
+INVESTIGACIÓN DEL GATE HEADLINE (2026-08-12, a pedido de Cesar, antes de seguir)
+──────────────────────────────────────────────────────────────────────────────
+
+## Mecanismo exacto (código, sin ambigüedad)
+
+`chunked_engine.py`:
+- Línea 1405: un chunk con `estado == "evidencia_insuficiente"` NUNCA
+  produce un candidato headline para `by_req[req_id]` (`continue` antes
+  de construirlo).
+- Línea 611-614 (`_is_anchored`): un candidato se marca `anchored=True`
+  solo si `evidencia_exacta` (la cita RESUMEN de todo el requisito, un
+  campo distinto de las citas por criterio) es substring literal exacto
+  del texto del chunk. Vacío o ausente → `anchored=False` de inmediato.
+- Línea ~1729 (`if "a_anchor" in best:`): `verify_sufficiency_aggregated()`
+  (D, con el fix B3) solo se llama y su resultado solo se adjunta al
+  `Finding` si existe un candidato `anchored=True` que gane
+  (`all_candidates = [c for c in by_req.get(req_id, []) if c["anchored"]]`).
+  Si NINGÚN candidato ancla, el Finding cae en la rama "sin candidatos"
+  (líneas 1604-1687), donde `d_sufficiency` nunca se asigna (queda `None`
+  por default del dataclass) -- D se calculó, pero nadie lo lee.
+
+## Causa raíz confirmada con datos reales (`raw_response` completo, chunk 20, `21_CFR_11.10(e)`)
+
+```
+estado (headline)        = "cumple_parcialmente"
+evidencia_exacta (headline) = ''          ← el modelo la dejó VACÍA
+
+criterion_assessments (nivel fino, la MISMA respuesta del modelo):
+  Timestamp de fecha/hora.              → MET, quote="UR3.3.1 Every time..." (real, ancla)
+  Registro de entradas y acciones...    → MET, quote="UR3.3.1 Every time..." (real, ancla)
+  (7 criterios más)                     → NOT_MET, quote=''
+```
+
+El modelo hizo el trabajo fino correctamente -- 2 de 9 criterios con cita
+verbatim real que SÍ ancla contra el chunk -- pero dejó vacío el campo
+resumen de nivel superior. `_is_anchored('', chunk_text)` devuelve `False`
+de inmediato (línea 612) → el candidato nunca gana → D, ya corregido por
+B3, se descarta sin usarse. Mismo patrón para `21_CFR_11.10(d)` (los 3
+candidatos crudos llevan el marcador `"(no anclado en el chunk,
+descartado)"` que el propio código pone cuando `anchored=False`).
+
+## Diagnóstico: gap de diseño conocido, mismo tipo que B3, nunca cerrado
+
+El propio código lo documenta (comentario de R2.1 Opción C, 2026-08-10,
+línea ~1718): *"A/B/C siguen siendo del candidato ganador (cita/anclaje/
+relevancia son propiedades de ESA cita, no se agregan)"*. Cuando se
+diseñó la agregación de D entre chunks, A/B/C (el anclaje headline) se
+dejó deliberadamente como propiedad de UN candidato único -- nunca se
+contempló el caso donde NINGÚN chunk produce un candidato headline
+anclado, aun cuando el nivel fino (`criterion_assessments`) sí tiene
+evidencia real y anclada. Es, en espíritu, el mismo defecto que B3: el
+modelo se contradice entre dos campos de su propia salida (aquí:
+`evidencia_exacta` headline vacío vs. `criterion_assessments` con citas
+reales) y el motor no reconcilia esa contradicción -- descarta todo lo
+fino cuando lo grueso falla.
+
+## Decisión de Cesar (2026-08-12)
+
+Documentar y DETENER aquí -- sin diseñar ni implementar ningún fix en
+esta corrida. Queda registrado como candidato de defecto nuevo
+("gate de candidato headline", en la misma familia que B1/B2/B3, sin
+letra asignada todavía) para una corrida futura, con toda la evidencia de
+causa raíz ya reunida arriba -- no hace falta re-investigar desde cero.
+
+```
+HEADLINE_GATE_ROOT_CAUSE =  by_req candidate solo gana si evidencia_exacta
+                             (cita headline) ancla literal -- 'evidencia_insuficiente'
+                             nunca produce candidato, evidencia_exacta vacia/no
+                             literal descarta el candidato aunque criterion_assessments
+                             (D, ya con fix B3) tenga citas reales y ancladas
+CONFIRMED_CASES =           21_CFR_11.10(e) chunk20 (evidencia_exacta='', 2/9
+                             criterios MET con cita real ignorados);
+                             21_CFR_11.10(d) chunks18/19/20 (mismo patron)
+RELATION_TO_B3 =            gap DISTINTO e independiente -- B3 vive dentro de
+                             verify_sufficiency_aggregated(); esto vive ANTES,
+                             en la seleccion del candidato ganador que decide si
+                             D se llama y se adjunta al Finding
+STATUS =                    documentado, SIN disenar fix, SIN tocar codigo
+NEXT =                      corrida futura -- decidir si amerita su propio R3-T
+                             (fix + tests) antes de reintentar F2-DRY bloque 1
+                             sobre este mismo checkpoint
+```
