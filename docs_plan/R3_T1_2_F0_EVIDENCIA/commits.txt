@@ -1,0 +1,6 @@
+9943c968ba77783889d3de979a39e43a6df24105  2026-08-12  docs(r3-t1-2): guarda el plan de fases F0-F2 (validar barato, correr completo solo si pasa)
+6d3584e4b6d34011d52936538d5dcdcbab319534  2026-08-12  feat(catalog-governance): sincronizacion mecanica de source_verification_status
+713f8a5175816e049e397d94142e996583091b99  2026-08-12  feat(review-ui): endpoint y UI para decidir sobre finding_review, distinto de un RC
+14ffbc44a344afaa891128f80ab9d9d2d7130692  2026-08-12  feat(review-queue): supersede_finding() + marca run 943a como superseded
+8a99b4ec0126430063c34d69f243f0fc3b163fdc  2026-08-12  fix(tier1): exige evaluation_profile=H2H4 explicito, corrige consistencia del informe
+3c45d0647743d6297b0e57dddb7640a24e5a6737  2026-08-11  feat(tier1): persistencia a disco + endpoint HTTP de solo lectura del informe Tier-1 (D2, R2.3)

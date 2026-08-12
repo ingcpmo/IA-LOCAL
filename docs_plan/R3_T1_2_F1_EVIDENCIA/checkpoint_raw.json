@@ -1,0 +1,704 @@
+{
+  "run_id": "chunked-50534e75927c",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "fda_part11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 5,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-50534e75927c",
+      "task_id": "task-bf3897479d56",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 5060,
+      "started_at": "2026-08-12T02:55:43.531732+00:00",
+      "finished_at": "2026-08-12T03:09:41.555755+00:00",
+      "wall_clock_ms": 838024.0,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"21_CFR_11.10(e)\",\n      \"estado\": \"cumple_parcialmente\",\n      \"evidencia_exacta\": \"UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated. The record shall contain the following fields 1. Date and time stamps of the change 2. Original threshold value 3. Threshold value after change 4. User ID of the individual who has changed the threshold value (performer) 5. Full name of the individual who has changed the threshold value (performer) 6. Meaning of signature (performer) 7. User ID of the individual who has approved the change (approver) 8. Full name of the individual who has approved the change (approver) 9. Meaning of signature (approver). UR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the following fields 1. Alarm date and time stamps 2. Alarm tag 3. Alarm value 4. Alarm description 5. A similar record shall be generated whenever a critical alarm condition returns to normal condition.\",\n      \"brecha\": \"No se menciona la generación automática, independiente del operador ni la preservación del valor/información previa (no solo el nuevo valor).\",\n      \"recomendacion\": \"Incluir en los registros la información de fecha/hora y el valor original antes de la modificación.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Generacion automatica, independiente del operador.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la generación automática y/o independiente del operador en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Timestamp de fecha/hora.\",\n          \"status\": \"MET\",\n          \"evidence_quote\": \"UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated. The record shall contain the following fields 1. Date and time stamps of the change UR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the following fields 1. Alarm date and time stamps\",\n          \"evidence_location\": \"\",\n          \"justification\": \"Los registros incluyen timestamps de fecha/hora.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\",\n          \"status\": \"MET\",\n          \"evidence_quote\": \"UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated. The record shall contain the following fields 1. Date and time stamps of the change UR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the following fields 1. Alarm date and time stamps\",\n          \"evidence_location\": \"\",\n          \"justification\": \"Los registros incluyen información sobre modificaciones y condiciones de alarma.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 4,\n          \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la preservación del valor original en los registros.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 5,\n          \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan controles específicos de acceso a los registros de auditoría en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 6,\n          \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan mécanismos específicos para la trazabilidad o detección de manipulación en los registros de auditoría.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 7,\n          \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan mécanismos específicos para la prohibición o detección de modificaciones silenciosas en los registros de auditoría.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 8,\n          \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la política de retención de registros en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 9,\n          \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan mécanismos específicos para la exportación o copia de registros de auditoría en el documento.\",\n          \"limitations\": \"\"\n        }\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-50534e75927c/task-bf3897479d56.txt.gz",
+      "raw_response_full_sha256": "b33c65a15e101dab0fe5779c19ed7caf13a2ac91e006430e5ccb1c4f3b8c0ab2",
+      "_by_req_candidates": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "candidate": {
+            "chunk_index": 0,
+            "page_start": 1,
+            "page_end": 1,
+            "estado": "cumple_parcialmente",
+            "evidencia_exacta": "UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated. The record shall contain the following fields 1. Date and time stamps of the change 2. Original threshold value 3. Threshold value after change 4. User ID of the individual who has changed the threshold value (performer) 5. Full name of the individual who has changed the threshold value (performer) 6. Meaning of signature (performer) 7. User ID of the individual who has approved the change (approver) 8. Full name of the individual who has approved the change (approver) 9. Meaning of signature (approver). UR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the following fields 1. Alarm date and time stamps 2. Alarm tag 3. Alarm value 4. Alarm description 5. A similar record shall be generated whenever a critical alarm condition returns to normal condition.",
+            "brecha": "No se menciona la generación automática, independiente del operador ni la preservación del valor/información previa (no solo el nuevo valor).",
+            "recomendacion": "Incluir en los registros la información de fecha/hora y el valor original antes de la modificación.",
+            "anchored": true,
+            "has_evidence": true,
+            "d_sufficiency": "NOT_ASSESSABLE",
+            "d_reason": "contrato de criterion_assessments violado: 2 problema(s)",
+            "d_detail": {
+              "contract_violations": [
+                "status=MET sin evidence_quote/evidence_location (criterion_index=2)",
+                "status=MET sin evidence_quote/evidence_location (criterion_index=3)"
+              ]
+            },
+            "substantive_evidence_accepted": false,
+            "operational_result": "EVALUATION_INCOMPLETE",
+            "a_anchor": "PASS",
+            "a_match_type": "normalized",
+            "b_source": "PASS",
+            "c_semantic": "PASS",
+            "c_flags": []
+          }
+        }
+      ],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Generacion automatica, independiente del operador.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la generación automática y/o independiente del operador en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Timestamp de fecha/hora.",
+              "status": "MET",
+              "evidence_quote": "UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated. The record shall contain the following fields 1. Date and time stamps of the change UR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the following fields 1. Alarm date and time stamps",
+              "evidence_location": "",
+              "justification": "Los registros incluyen timestamps de fecha/hora.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Registro de entradas y acciones (crear/modificar/eliminar).",
+              "status": "MET",
+              "evidence_quote": "UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated. The record shall contain the following fields 1. Date and time stamps of the change UR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the following fields 1. Alarm date and time stamps",
+              "evidence_location": "",
+              "justification": "Los registros incluyen información sobre modificaciones y condiciones de alarma.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Preservacion del valor/informacion previa (no solo el nuevo valor).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la preservación del valor original en los registros.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Controles de acceso privilegiado sobre el propio audit trail.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se mencionan controles específicos de acceso a los registros de auditoría en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Trazabilidad y capacidad de deteccion de manipulacion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se mencionan mécanismos específicos para la trazabilidad o detección de manipulación en los registros de auditoría.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Prohibicion y deteccion de modificacion silenciosa.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se mencionan mécanismos específicos para la prohibición o detección de modificaciones silenciosas en los registros de auditoría.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 8,
+              "criterion_text": "Retencion igual o mayor al periodo de retencion del registro asociado.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la política de retención de registros en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 9,
+              "criterion_text": "Capacidad de exportar/copiar para inspeccion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se mencionan mécanismos específicos para la exportación o copia de registros de auditoría en el documento.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "ller B \nSerialization B \nVial Syringe Labeler  B \nParts Washer / Sterilizer  B \nClean Steam Generator B \nWaste Lift and Neutralization  B \nWater for Injection  B \nWeigh / Dispense B \nAlarm Details B \nAlarm Limit Modification (page 1 of 2) E \nAlarm Limit Modification2 (page 2 of 2) E \n3Table 4-2: Security Code Assignments for Graphic Displays \n \n2 Screen access is defined by the first code (least rest rictive), additional codes indicate objects on screen are \nsubject to additional restrictions \n Project: Mark Cuban Cost Plus Drug Company, PBC – \n MCCPDC - SCADA and PCS MISC. PLC System \n \nFunctional Specification for the MCCPDC - SCADA and PCS MISC. PLC System  \n \n \nID code: 215115305 -FS (V1.2) Page 45 of 58 \n© 2022 Rockwell Automation, Inc. All Rights Reserved / Author: Buol, Scott \n5 Data \nF11.00: Databases and Historical Logging \nThis function implements the following user requirement(s)  \nUR3.3.6 Data retention time on the system \n1. The system shall have provision for retaining 1 year of historical data locally before it is \narchived in an alternate location for safe keeping.   \nUR5.4.7 [URS-PCS-SR-041] The PLC system shall co mmunicate with a plant historian (collect and \ntransfer data).   \n F11.01: Process Historian \nThis system contains the Rockwell FactoryTalk Historian SE software and server which \nsatisfies the requirement to collect and transfer data. \n F11.02: Critical Data Records \nThis system maintains the following critical runtime data records: \n FactoryTalk View SE alarm log and activity log data are stored in the corresponding \ndatabases as analog, digital and string values.     \n Analog, digital and string device tags that are transferred from the PLC to the \nFactoryTalk View SE system. \nF12.00: Audit Trail \nThis function implements the following user requirement(s)  \nUR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated.  The \nrecord shall contain the following fields  \n1. Date and time stamps of the change \n2. Original threshold value \n3. Threshold value after change \n4. User ID of the individual who has changed the threshold value (performer) \n5. Full name of the individual who has changed the threshold value (performer) \n6. Meaning of signature (performer) \n7. User ID of the individual who has approved the change (approver) \n8. Full name of the individual who has approved the change (approver) \n9. Meaning of signature (approver).  \nUR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the \nfollowing fields  \n1. Alarm date and time stamps  \n2. Alarm tag 3. Alarm value \n4. Alarm description \n5. A similar record shall be generated whenever a critical alarm condition returns to normal \ncondition.  \n\f\nProject: Mark Cuban Cost Plus Drug Company, PBC – \n MCCPDC - SCADA and PCS MISC. PLC System \n \nFunctional Specification for the MCCPDC - SCADA and PCS MISC. PLC System  \n \n \nID code: 215115305 -FS (V1.2) Page 46 of 58 \n© 2022 Rockwell Automation, Inc. All Rights Reserved / Author: Buol, Scott \nThis function implements the following user requirement(s)  \nUR3.3.3 Audit trail records shall be archived.  \nUR3.3.3 Audit trail records shall be archived.   \nUR5.2.3 [URS-PCS-SR-009] Logins, logouts, and login attempts must be recorded in the Audit Trail.   \nUR5.4.2 [URS-PCS-SR-036] All manual interactions  (parameter changes, device mode changes, etc.) \nshall be sent to a database for event logging,  including user name, action and timestamp.   \n \nFactoryTalk View SE provides an electronic signature feature for capturing operator actions \nperformed in the production system.  This feature is  available in an E-Signature control, as well \nas the native button, numeric, and string input objects. \nWith the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View \nSE activity log is identified with: \n time and date the action occurred, \n name of the logged-in operator who performed the action, \n terminal the action was performed from, \n type of operation that was performed, and \n value of the changed item before and after the change. \nWhen electronic signatures are used, the operator’s username and full name are also included. \n The Critical Alarm Threshold Change Audit Trail entry will contain the following information: \n Date and time stamps of the change \n Original threshold value \n Threshold value after change \n User ID of the individual who has changed the threshold value (performer) \n Full name of the individual who has changed the threshold value (performer) \n Meaning of signature (performer) \n User ID of the individual who has approved the change (approver) \n Full name of the individual who has approved the change (approver) \n Meaning of signature (approver). \n \nThe Critical Alarm Audit Trail entry will contain the following information: \n Alarm date and time stamps \n Alarm tag \n Alarm value \n Alarm description \n A similar record shall be generated whenever a critical alarm condition returns to \nnormal condition. \n "
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-50534e75927c",
+      "task_id": "task-1cec697ae89c",
+      "chunk_index": 1,
+      "page_start": 2,
+      "page_end": 2,
+      "has_overlap_prefix": true,
+      "text_chars": 5056,
+      "started_at": "2026-08-12T03:09:41.564615+00:00",
+      "finished_at": "2026-08-12T03:17:12.848355+00:00",
+      "wall_clock_ms": 451283.7,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_11.10(e)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no menciona la generación automática, independiente del operador de un audit trail seguro con timestamp.\",\n            \"recomendacion\": \"Incluir en el sistema una funcionalidad que genere audit trails seguros y con timestamps independientes del operador.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Generacion automatica, independiente del operador.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la generación automática y/o independiente del operador de audit trails en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Timestamp de fecha/hora.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la inclusión de timestamps en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona el registro de entradas y acciones en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la preservación de valores/información previa en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se mencionan controles de acceso privilegiado en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la trazabilidad o la capacidad de detección de manipulación en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la prohibición o detección de modificaciones silenciosas en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 8,\n                    \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la retención en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 9,\n                    \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la capacidad de exportación o copia en el documento.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-50534e75927c/task-1cec697ae89c.txt.gz",
+      "raw_response_full_sha256": "7c23f5bb2fc7d737fe83b70841535bfb9df5cba078383f1a8d925d0319c939b8",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Generacion automatica, independiente del operador.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la generación automática y/o independiente del operador de audit trails en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Timestamp de fecha/hora.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la inclusión de timestamps en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Registro de entradas y acciones (crear/modificar/eliminar).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona el registro de entradas y acciones en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Preservacion del valor/informacion previa (no solo el nuevo valor).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la preservación de valores/información previa en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Controles de acceso privilegiado sobre el propio audit trail.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se mencionan controles de acceso privilegiado en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Trazabilidad y capacidad de deteccion de manipulacion.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la trazabilidad o la capacidad de detección de manipulación en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Prohibicion y deteccion de modificacion silenciosa.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la prohibición o detección de modificaciones silenciosas en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 8,
+              "criterion_text": "Retencion igual o mayor al periodo de retencion del registro asociado.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la retención en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 9,
+              "criterion_text": "Capacidad de exportar/copiar para inspeccion.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la capacidad de exportación o copia en el documento.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "shold value (performer) \n Meaning of signature (performer) \n User ID of the individual who has approved the change (approver) \n Full name of the individual who has approved the change (approver) \n Meaning of signature (approver). \n \nThe Critical Alarm Audit Trail entry will contain the following information: \n Alarm date and time stamps \n Alarm tag \n Alarm value \n Alarm description \n A similar record shall be generated whenever a critical alarm condition returns to \nnormal condition. \n shold value (performer) \n Meaning of signature (performer) \n User ID of the individual who has approved the change (approver) \n Full name of the individual who has approved the change (approver) \n Meaning of signature (approver). \n \nThe Critical Alarm Audit Trail entry will contain the following information: \n Alarm date and time stamps \n Alarm tag \n Alarm value \n Alarm description \n A similar record shall be generated whenever a critical alarm condition returns to \nnormal condition. \n Project: Mark Cuban Cost Plus Drug Company, PBC – \n MCCPDC - SCADA and PCS MISC. PLC System \n \nFunctional Specification for the MCCPDC - SCADA and PCS MISC. PLC System  \n \n \nID code: 215115305 -FS (V1.2) Page 47 of 58 \n© 2022 Rockwell Automation, Inc. All Rights Reserved / Author: Buol, Scott \nF13.00: Long-Term Archiv ing and Data Retrieval \nThis function implements the following user requirement(s)  \nUR3.3.7 Data archiving requirements and data storage media. \n1. MCCPDC will be responsible for archiving histor ical data per their internal procedures at \na location of their choosing.  Regular archiving is recommended.   \n \nMCCPDC will be responsible for long-term archiving of historical data per their internal procedures at a location of their choosing.  Regular archiving is recommended. \nF14.00: Backup and recovery \nThis function implements the following user requirement(s)  \nUR3.2.2 Failur e/Recovery \nPLC/HMI \nThe system shall have the means to reco ver from a hardware fault by means of \nreconfiguration and/or replacem ent and then reconfiguration. \nA list of hardware settings for each device shall be maintained as applicable. \nA list of software settings or suitable configurat ion file(s) for each device shall be maintained \nas applicable. \nProcess Automation Control Server System \nThe System shall have a means to recover from  software corruption or loss of configuration \ninformation by reprogramming or reloading of  the appropriate parameters. (Restore from \nbackup)   \n \n A back-up of the PLC program shall be maintained to allow for the restoration of the PLC in the \nevent it is needed.    A list of hardware settings for the SCADA and PCS Misc. PLC System components shall be maintained for the restoration of hardware devices.  A list of software settings or suitable configuration file(s) for each device shall be maintained for the restoration of software-related settings on devices. \n A back-up of the FactoryTalk View SE application shall be maintained to allow for the \nrestoration of the user application in the event it is needed. \nF15.00: Frequency of data point collection \nThis function implements the following user requirement(s)  \nUR3.2.4 Capacity and speed of data acquisition from MCCPDC  \n1. The system shall be capable of acquiring a data sample consis ting of a combination of at \nleast 100 data points of analog and/or digital every 15 seconds.   \nUR3.3.4 Frequency of data point collection \n1. The system shall be configur able allowing for differing logg ing rates depending on signal \ntype.  A table indicating the measurement ty pe and the logging frequency required can be \nfound in the Functional Specification.  (e.g., Temperature sampled every 60 sec.).   \n \nThis FactoryTalk Historian SE license permits up to 250 points to be logged based on a configurable \nrate.  One hundred points once every 15 seconds can be accommodated. \n This FactoryTalk Historian SE is capable of logging data at different rates based on its configuration.   \n\f\nProject: Mark Cuban Cost Plus Drug Company, PBC – \n MCCPDC - SCADA and PCS MISC. PLC System \n \nFunctional Specification for the MCCPDC - SCADA and PCS MISC. PLC System  \n \n \nID code: 215115305 -FS (V1.2) Page 48 of 58 \n© 2022 Rockwell Automation, Inc. All Rights Reserved / Author: Buol, Scott \n \nThe data shall be logged according to rates show in Table 5-1 below.  \nData Point Type Frequency of Logging Comment \nRelativity Humidity 60 seconds  \nPressure (compressed air system) 15 seconds  \nDifferential Pressure (Room) 60 seconds  \nDew Point 60 seconds  \nHydrocarbons 60 seconds  \nPump Speed (RPM) (soft I/O) 5 seconds  \nSurge Bag Weight (soft I/O) 15 seconds  \nVaporous Hydrogen Peroxide \nConcentration (VHP) 15 seconds  \nType not listed above 60 seconds  \nTable 5-1: Data point collection frequency by type \n \nThe customer representative has recently informed us of their interest in changing their requirement from time-based to event-based logging.  Once agreed upon and formalized, the response to that change will be reflected here as required. "
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-50534e75927c",
+      "task_id": "task-cb44216ff6d2",
+      "chunk_index": 2,
+      "page_start": 3,
+      "page_end": 3,
+      "has_overlap_prefix": true,
+      "text_chars": 5635,
+      "started_at": "2026-08-12T03:17:12.851436+00:00",
+      "finished_at": "2026-08-12T03:27:06.302069+00:00",
+      "wall_clock_ms": 593450.6,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_11.10(e)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no menciona la generación automática, independiente del operador de los registros de auditoría.\",\n            \"recomendacion\": \"Incluir en el sistema una funcionalidad que genere audit trails de manera automática e independiente del operador.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Generacion automatica, independiente del operador.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la generación automática e independiente de los registros de auditoría en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Timestamp de fecha/hora.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No hay información sobre la inclusión de timestamps en los registros de auditoría.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la inclusión de registros de entradas y acciones en los audit trails.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la preservación de información previa en los audit trails.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se mencionan controles de acceso privilegiado para los audit trails.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la trazabilidad o la capacidad de detección de manipulación en los audit trails.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la prohibición o detección de modificaciones silenciosas en los audit trails.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 8,\n                    \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la retención de audit trails en relación con el período de retención de registros asociados.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 9,\n                    \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la capacidad de exportación o copia de audit trails para inspección.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-50534e75927c/task-cb44216ff6d2.txt.gz",
+      "raw_response_full_sha256": "809559e594a4080fbd1f294fb296e19a82f90fc36737828814ae650a4c3e4bc1",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Generacion automatica, independiente del operador.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la generación automática e independiente de los registros de auditoría en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Timestamp de fecha/hora.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No hay información sobre la inclusión de timestamps en los registros de auditoría.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Registro de entradas y acciones (crear/modificar/eliminar).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la inclusión de registros de entradas y acciones en los audit trails.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Preservacion del valor/informacion previa (no solo el nuevo valor).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la preservación de información previa en los audit trails.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Controles de acceso privilegiado sobre el propio audit trail.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se mencionan controles de acceso privilegiado para los audit trails.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Trazabilidad y capacidad de deteccion de manipulacion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la trazabilidad o la capacidad de detección de manipulación en los audit trails.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Prohibicion y deteccion de modificacion silenciosa.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la prohibición o detección de modificaciones silenciosas en los audit trails.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 8,
+              "criterion_text": "Retencion igual o mayor al periodo de retencion del registro asociado.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la retención de audit trails en relación con el período de retención de registros asociados.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 9,
+              "criterion_text": "Capacidad de exportar/copiar para inspeccion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la capacidad de exportación o copia de audit trails para inspección.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "s  \nHydrocarbons 60 seconds  \nPump Speed (RPM) (soft I/O) 5 seconds  \nSurge Bag Weight (soft I/O) 15 seconds  \nVaporous Hydrogen Peroxide \nConcentration (VHP) 15 seconds  \nType not listed above 60 seconds  \nTable 5-1: Data point collection frequency by type \n \nThe customer representative has recently informed us of their interest in changing their requirement from time-based to event-based logging.  Once agreed upon and formalized, the response to that change will be reflected here as required. System-Level Software Requirements \nF05.00: SCADA Process Visualization \nF07.00: Alarms, Warning Messages and Error reporting \nF10.00: Logical Security \nF11.00: Databases and Historical Logging \nF12.00: Audit Trail \nF13.00: Long-Term Archiving and Data Retrieval \nF14.00: Backup and recovery \nF15.00: Frequency of data point collection \nF16.00: PLC Interfaces (PCS-CP 01 and other Vendor Systems) \nF17.00: Non-PLC Interfaces \nF19.00: Availability \nF21.00: Maintainability \nF23.00: System Performance Project: Mark Cuban Cost Plus Drug Company, PBC – \n MCCPDC - SCADA and PCS MISC. PLC System \n \nFunctional Specification for the MCCPDC - SCADA and PCS MISC. PLC System  \n \n \nID code: 215115305 -FS (V1.2) Page 55 of 58 \n© 2022 Rockwell Automation, Inc. All Rights Reserved / Author: Buol, Scott \n \nTraceability URS - Require ments to FS-Functions \nNone.-* N/A *, 10 \nUR3.1.1 The system shall measure the critical process paramete rs for the process, which incl ude flow, humidity, dew point, pres sure, \nand temperature.-F16.00, 49 \nUR3.2.1 Mode of operations- Re ady for WFI Sampling, WFI Samp ling, Sanitization.-F02.02, 20 \nUR3.2.2 Failure/Recovery-F14.00, 47 \nUR3.2.2 Failure/Recovery-F19.00, 51 \nUR3.2.3 The Equipment shall have critical alarms and warnings as  listed in (URS) Table 1- List of Critical-to-Quality Alarms.-\nF07.01, 37 \nUR3.2.4 Capacity and speed of data acquisition from MCCPDC-F15.00, 47 \nUR3.2.5 System must implement electronic signatures.-F02.01, 19 \nUR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated.  The record shall contain the \nfollowing fields-F12.00, 45 \nUR3.3.2 Every time a critical alarm condition occurs an audit tr ail record shall be generated with the following fields-F12.00,  45 \nUR3.3.3 Audit trail records shall be archived.-F12.00, 46 \nUR3.3.4 Frequency of data point collection-F15.00, 47 \nUR3.3.5 Hardcopy/electronic data colle ction requirements-F01.03, 13, 14 \nUR3.3.6 Data retention time  on the system-F11.00, 45 \nUR3.3.7 Data archiving requirements and data storage media.-F13.00, 47 \nUR3.4.1 The system shall implement the security and access cont rol requirements of 21 CFR Part 11 requirements for computerized  \nsystems, as they are for this system-F10.00, 40 \nUR3.5.1 Language requirements for operator and non-operator dialogs boxes (administrators) .  Information will be displayed in \nEnglish.-F02.01, 20 \nUR3.5.2 [MCCPDC 1.4.2.4] - The SI shall imp lement thin client archit ecture for the SCADA/HMI to allow process control in a \nsustainable and scalable platform and to seamlessly integrate sk ids PLC’s and OIT’s while providing features, tools, and methods \nof a-F01.01, 13, 49 \nUR3.5.3 [MCCPDC 2.1.3.2] - The system shall have the ability to wirelessly communicate with tablet PCs for HMI display and \ncontrol.-F01.04, 14 \nUR3.6.1 Stick-Build PCS I/O shall be directly wired to the PCS miscellaneous PLC Panel to facili tate control and GMP monitoring .  \n(reference document- 63FFVL02-J-IO-0001)-F01.06, 15 \nUR3.6.2 [MCCPDC 1.4.2.7] - The Environmental Monitoring System  (EMS) instruments shall be part of the project stick-build \ninstrumentation and shall be directly wired to the PCS Miscella neous PLC Panel to facilitate GMP monitoring. No independent \nEMS wille-F01.06, 15 \nUR3.6.3 [MCCPDC 3.3.1] - The system shall interface with an OEM ve ndor supplied equipment named WFI Generation, Storage, \nand Distribution system.  The OEM vendor on-skid control system  platform is Allen-Bradley CompactLogix with 1769 Remote \nI/O.-F16.00, 49 \nUR3.6.4 [MCCPDC 3.3.1] - The system shall interface with an OEM ve ndor supplied equipment named Filler System.  The OEM \nvendor on-skid control system platform is Al len-Bradley GuardLogix (1756-L72S).-F16.00, 49 \nUR3.6.5 [MCCPDC 3.3.1] - The system shall interface with an OEM vendor supplied equi pment named Vial/Syringe Labeler.  The \nOEM vendor on-skid control system platform is A llen-Bradley CompactLogix (5380 series).-F16.00, 49 \nUR3.6.6 [MCCPDC 3.3.1] - The system shall interface with  an OEM vendor supplied equi pment named Waste Lift and \nNeutralization System.  The OE M vendor on-skid control system platform is  Allen-Bradley MicroLogix or CompactLogix.-\nF16.00, 49 \nUR3.6.7 [MCCPDC 3.3.1] - The system shall interface with an OEM vendor supplied eq uipment named Washer/Sterilizer with Clean \nSteam Generator.  The OEM vendor on-skid control system platform is Fedegari THEMA4 & Siemens S7-1512 PLC, with \nNanoBox IPC227E, an-F16.00, 49 \nUR3.6.8 [MCCPDC 3.3.1] - The system shall interface with an OEM ve ndor supplied equipment named Serialization.  The OEM \nvendor on-skid control system platfo rm is Beckhoff IPC (Windows 10 w ith Bosch Rexroth HMI).-F16.00, 49 \nUR4.1.1 [MCCPDC 3.2.3] - The physical servers shall be two (2) redundant Rockwell VersaVirtu al™ Appliances suitable for \ninstallation in the Data Center racks provided by VDS (Voice-Data-Security). System provided is one system that has two \nredundant server-F01.01, 13 \nUR4.10.1 [URS-PCS-HR-022] The field inputs and outputs to the PCS Miscellaneous PL C shall be hardwired I/O-F01.06, 15 "
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-50534e75927c",
+      "task_id": "task-faaf94fc5904",
+      "chunk_index": 3,
+      "page_start": 4,
+      "page_end": 4,
+      "has_overlap_prefix": true,
+      "text_chars": 7074,
+      "started_at": "2026-08-12T03:27:06.306323+00:00",
+      "finished_at": "2026-08-12T03:38:00.785153+00:00",
+      "wall_clock_ms": 654478.7,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_11.10(e)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no menciona la generación automática, independiente del operador, ni el registro de entradas y acciones (crear/modificar/eliminar) con timestamps.\",\n            \"recomendacion\": \"Incluir detalles sobre la generación automática e independiente de audit trails con timestamps en el sistema.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Generacion automatica, independiente del operador.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la generación automática e independiente de audit trails en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Timestamp de fecha/hora.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la inclusión de timestamps en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona el registro de entradas y acciones en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la preservación de información previa en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se mencionan controles de acceso privilegiado en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la trazabilidad o capacidad de detección de manipulación en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la prohibición o detección de modificaciones silenciosas en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 8,\n                    \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la retención en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 9,\n                    \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la capacidad de exportación o copia en el documento.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-50534e75927c/task-faaf94fc5904.txt.gz",
+      "raw_response_full_sha256": "a7a61dbe1fa2dcf6356de5769a6c129ab025918602721e1c1217b7252b7e3ab9",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Generacion automatica, independiente del operador.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la generación automática e independiente de audit trails en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Timestamp de fecha/hora.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la inclusión de timestamps en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Registro de entradas y acciones (crear/modificar/eliminar).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona el registro de entradas y acciones en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Preservacion del valor/informacion previa (no solo el nuevo valor).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la preservación de información previa en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Controles de acceso privilegiado sobre el propio audit trail.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se mencionan controles de acceso privilegiado en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Trazabilidad y capacidad de deteccion de manipulacion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la trazabilidad o capacidad de detección de manipulación en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Prohibicion y deteccion de modificacion silenciosa.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la prohibición o detección de modificaciones silenciosas en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 8,
+              "criterion_text": "Retencion igual o mayor al periodo de retencion del registro asociado.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la retención en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 9,
+              "criterion_text": "Capacidad de exportar/copiar para inspeccion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la capacidad de exportación o copia en el documento.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "M \nvendor on-skid control system platfo rm is Beckhoff IPC (Windows 10 w ith Bosch Rexroth HMI).-F16.00, 49 \nUR4.1.1 [MCCPDC 3.2.3] - The physical servers shall be two (2) redundant Rockwell VersaVirtu al™ Appliances suitable for \ninstallation in the Data Center racks provided by VDS (Voice-Data-Security). System provided is one system that has two \nredundant server-F01.01, 13 \nUR4.10.1 [URS-PCS-HR-022] The field inputs and outputs to the PCS Miscellaneous PL C shall be hardwired I/O-F01.06, 15 M \nvendor on-skid control system platfo rm is Beckhoff IPC (Windows 10 w ith Bosch Rexroth HMI).-F16.00, 49 \nUR4.1.1 [MCCPDC 3.2.3] - The physical servers shall be two (2) redundant Rockwell VersaVirtu al™ Appliances suitable for \ninstallation in the Data Center racks provided by VDS (Voice-Data-Security). System provided is one system that has two \nredundant server-F01.01, 13 \nUR4.10.1 [URS-PCS-HR-022] The field inputs and outputs to the PCS Miscellaneous PL C shall be hardwired I/O-F01.06, 15 Project: Mark Cuban Cost Plus Drug Company, PBC – \n MCCPDC - SCADA and PCS MISC. PLC System \n \nFunctional Specification for the MCCPDC - SCADA and PCS MISC. PLC System  \n \n \nID code: 215115305 -FS (V1.2) Page 56 of 58 \n© 2022 Rockwell Automation, Inc. All Rights Reserved / Author: Buol, Scott \nUR4.10.2 [MCCPDC 3.2.2] All stick-build field instrumentation will be powered from the PCS PLC Panel (2-wire loop-powered and \n4-wire instruments).-F01.06, 15 \nUR4.2.1 System shall include a de dicated engineering workstation PC suitable for installation in a dedicated PC & Print room/of fice \nwith general purpose area classification.-F01.03, 13 \nUR4.2.2 Engineering workstation PC sh all include a method to annunciate audi ble alarms (speakers).-F01.03, 13 \nUR4.2.3 System shall include a color duplex printer suitable for installation in a dedi cated PC & Print room/office with general \npurpose area classifi cation.-F01.03, 13 \nUR4.2.4 System shall include three portable Microsoft Surface Pro wireless tablets, each with 12.3” screen, charger, IP65 stain less \nsteel housing with carrying handle suitable for operation in GMP cleanrooms.-F01.04, 14 \nUR4.2.5 System shall include a 15” touchscreen HMI in th e face of the PCS Miscella neous PLC panel.-F01.05, 15 \nUR4.3.1 [URS-PCS-HR-001] The PCS Miscella neous Programmable Logic Controller (PLC) platform shall be Rockwell Automation \nControlLogix.-F01.06, 15 \nUR4.3.2 [URS-PCS-HR-002] The mach ine control system must have sufficient network conne ctions to allow for the connection to \nhigher level SCADA systems such as  virtual active directory, ne twork time protocol server, data  historian, etc.-F01.06, 15 \nUR4.3.2 [URS-PCS-HR-002] The mach ine control system must have sufficient network conne ctions to allow for the connection to \nhigher level SCADA systems such as  virtual active directory, ne twork time protocol server, data  historian, etc.-F01.07, 16 \nUR4.3.3 [URS-PCS-HR-003] The PCS Miscella neous PLC Panel shall have no powers ource greater than 50V except in the \ndedicated UPS compartment. The PLC pa nel shall not require  Personal Protection Equipment (PPE) for arc flash during \nmaintenance and calibrati-F01.08, 17 \nUR4.3.4 [MCCPDC 3.2.2] The PCS Miscella neous PLC panel shall have a UPS battery back-up system installed.-F01.09, 17 \nUR4.3.5 [MCCPDC 3.2.2] The PCS Miscellaneou s PLC panel UPS shall be capable of suppl ying the connected system power for at \nleast fifteen (15) minutes of operation after lo ss of facility electric al power.-F01.09, 17 \nUR4.4.1 [URS-PCS-HR-006] Operator Interface Te rminals (OIT’s) shall be provided for the operator to perform process monitoring \nand process control.-F01.05, 15 \nUR4.4.1 Operator Interface Terminals (OIT’s ) shall be provided for the operator to perfo rm process monitoring and process contr ol.-\nF01.04, 14 \nUR4.4.2 [URS-PCS-HR-007] Ethern et switch shall be provided for communications  connectivity between the PCS Miscellaneous \nPLC and its OIT, and external systems. Ethernet  switch shall be powered by 24VDC.-F01.07, 16 \nUR4.5.1 [URS-PCS-HR-013] All wiri ng inside the machine must be separated into power, signal, and network channels.-F01.10, 18 \nUR4.5.2 [URS-PCS-HR-014] El ectrical enclosures shall be washdown  duty, NEMA 4X rated.-F01.08, 17 \nUR4.5.3 [URS-PCS-HR-015] All electrical components shall be UL listed.-F01.10, 18 \nUR4.5.4 [URS-PCS-HR-016] A lockable disconn ect switch shall be provided on each main feed to the PCS Miscellaneous PLC Panel \nenclosure.  The disconnect switch shall be rated per NEC guidelines of supplied volta ge and current ratings (minimum 600VAC / \n30A /-F01.11, 18 \nUR4.5.5 [MCCPDC 3.2.2] Comple ted, assembled panel shall be  UL certified.-F01.10, 18 \nUR4.5.6 [MCCPDC 3.2.2] Completed,  assembled panel shall be UL listed for the a ppropriate electrical ar ea classification.-F01.10 , 18 \nUR4.5.7 [MCCPDC 7.2.3] The SI shall provide  PCS Miscellaneous PLC Panel Heat Load Calculation & Electrical Loading Calcs. \nThese calculations shall be maintained through to  the final validated state As-Builts.-F01.08, 17 \nUR4.6.1 [URS-PCS-HR-017] All indi cator lights shall be suitable for operation on 24 VDC. Lamps (LED preferred) and caps shall be  \nreplaceable from the outside front of the pa nel. For lamp caps specified as colored in hardware design specifications, the lamp -\nF01.12, 18 \nUR4.7.1 [URS-PCS-HR-018] All com ponents of the system shall be specified with  a mean-time between fa ilures of more than 2 \nyears.-F01.13, 19 \nUR4.8.1 [URS-PCS-HR-019] System shall have  the ability to alert users with an audible alert… (see below)-F01.14, 19 \nUR4.9.1 [URS-PCS-HR-020] Communication be tween SCADA and plant PLC’s shall be vi a Ethernet protocol. All communication \ncabling shall be CAT6/CAT6A and in compliance  with ANSI/TIA/EIA-568-B standards.-F01.06, 15 \nUR4.9.1 [URS-PCS-HR-020] Communication be tween SCADA and plant PLC’s shall be vi a Ethernet protocol. All communication \ncabling shall be CAT6/CAT6A and in compliance  with ANSI/TIA/EIA-568-B standards.-F01.07, 16 \nUR4.9.2 [URS-PCS-HR-021] All switc hing and cabling shall be capable of gigabit data transfer, where applicable.-F01.02, 13 \nUR4.9.2 [URS-PCS-HR-021] All switc hing and cabling shall be capable of gigabit data transfer, where applicable.-F01.06, 15 \nUR4.9.2 [URS-PCS-HR-021] All switc hing and cabling shall be capable of gigabit data transfer, where applicable.-F01.07, 16 \nUR5.1.1 [URS-PCS-SR-001] A SI provided Engi neering Workstation perform online and offline changes to the PCS Miscellaneous \nPLC configuration and shall be  capable of being connected  to the OIT’s.-F01.03, 14 \nUR5.1.1 [URS-PCS-SR-001] A SI provided Engi neering Workstation perform online and offline changes to the PCS Miscellaneous \nPLC configuration and shall be  capable of being connected  to the OIT’s.-F01.05, 15 \nUR5.1.1 [URS-PCS-SR-001] A SI provided Engi neering Workstation perform online and offline changes to the PCS Miscellaneous \nPLC configuration and shall be  capable of being connected  to the OIT’s.-F01.07, 16 "
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-50534e75927c",
+      "task_id": "task-a19808aa3603",
+      "chunk_index": 4,
+      "page_start": 5,
+      "page_end": 5,
+      "has_overlap_prefix": true,
+      "text_chars": 6256,
+      "started_at": "2026-08-12T03:38:00.793359+00:00",
+      "finished_at": "2026-08-12T03:46:42.050891+00:00",
+      "wall_clock_ms": 521257.5,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_11.10(e)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no menciona la generación automática, independiente del operador de los registros de auditoría.\",\n            \"recomendacion\": \"Incluir en el sistema una funcionalidad que genere audit trails de manera automática e independiente del operador.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Generacion automatica, independiente del operador.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la generación automática e independiente de los registros de auditoría en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Timestamp de fecha/hora.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"El documento no proporciona información sobre la inclusión de timestamps en los registros de auditoría.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la inclusión del registro de entradas y acciones en los registros de auditoría.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la preservación de información previa en los registros de auditoría.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se mencionan controles de acceso privilegiado para los registros de auditoría.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la trazabilidad o la capacidad de detección de manipulación en los registros de auditoría.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la prohibición o detección de modificaciones silenciosas en los registros de auditoría.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 8,\n                    \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la política de retención de registros de auditoría en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 9,\n                    \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la capacidad de exportación o copia de registros de auditoría.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-50534e75927c/task-a19808aa3603.txt.gz",
+      "raw_response_full_sha256": "706414c5a216d7d1f6c60104912cbf8262bc09c21987f10e83eb1ff88822d972",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Generacion automatica, independiente del operador.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la generación automática e independiente de los registros de auditoría en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Timestamp de fecha/hora.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "El documento no proporciona información sobre la inclusión de timestamps en los registros de auditoría.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Registro de entradas y acciones (crear/modificar/eliminar).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la inclusión del registro de entradas y acciones en los registros de auditoría.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Preservacion del valor/informacion previa (no solo el nuevo valor).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la preservación de información previa en los registros de auditoría.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Controles de acceso privilegiado sobre el propio audit trail.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se mencionan controles de acceso privilegiado para los registros de auditoría.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Trazabilidad y capacidad de deteccion de manipulacion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la trazabilidad o la capacidad de detección de manipulación en los registros de auditoría.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Prohibicion y deteccion de modificacion silenciosa.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la prohibición o detección de modificaciones silenciosas en los registros de auditoría.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 8,
+              "criterion_text": "Retencion igual o mayor al periodo de retencion del registro asociado.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la política de retención de registros de auditoría en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 9,
+              "criterion_text": "Capacidad de exportar/copiar para inspeccion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la capacidad de exportación o copia de registros de auditoría.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "figuration and shall be  capable of being connected  to the OIT’s.-F01.03, 14 \nUR5.1.1 [URS-PCS-SR-001] A SI provided Engi neering Workstation perform online and offline changes to the PCS Miscellaneous \nPLC configuration and shall be  capable of being connected  to the OIT’s.-F01.05, 15 \nUR5.1.1 [URS-PCS-SR-001] A SI provided Engi neering Workstation perform online and offline changes to the PCS Miscellaneous \nPLC configuration and shall be  capable of being connected  to the OIT’s.-F01.07, 16 ased on a system of letter codes (A-P) which are assigned to the \nindividual users to define their access.   \nFactoryTalk View SE makes efficient use of the security features built into the underlying Microsoft \nWindows operating systems.  For compliance, all FactoryTalk View SE computers in a closed system must be part of the same Windows domain.  Microsoft’s Windows 2019, 2016, 2012, and 10 encrypt passwords using the operating system’s built-in encryption mechanisms.  The FactoryTalk View SE Project: Mark Cuban Cost Plus Drug Company, PBC – \n MCCPDC - SCADA and PCS MISC. PLC System \n \nFunctional Specification for the MCCPDC - SCADA and PCS MISC. PLC System  \n \n \nID code: 215115305 -FS (V1.2) Page 41 of 58 \n© 2022 Rockwell Automation, Inc. All Rights Reserved / Author: Buol, Scott \nserver in this system uses Windows Server 2016 while the Engineering Workstation uses Remote \nDesktop Client and will be viewing Windows Server 2016 desktops.  (see 2.1.1 Software). \nBefore you can add users and user groups to the a ccounts list in the FactoryTalk View SE Runtime \nSecurity editor, you have to create accounts for them in FactoryTalk Security services. Add only a subset of the Microsoft Windows users to FactoryTalk View SE, as needed.  \nThe Windows-linked All Users group is automatically added to the FactoryTalk Runtime Security \naccounts.  By default, this gives all users access to  all FactoryTalk View SE runtime security codes (A-\nP), and all FactoryTalk Security actions. \n F10.02: FactoryTalk View SE Security \n Use a password-protected screen saver.  To ensure that only operators with the proper \ncredentials are accessing workstations in a closed system, a password-protected screen \nsaver can be used on the FactoryTalk View SE Client terminals.  This system will take the recommended exception to this rule when critical process data must be displayed at all times.  In this case, a ‘view only’ user account will be logged in to display the status of production and alarm information.  \n Use the included DeskLock software feature to restrict operators’ access to the client’s \noperating system.  \n Disable switch to other applications since this opens access to other programs.  \n Disable ‘Allow display code debugging’  since this allows launching of the VBA editor, \nwhich is not secure. \n Change the window properties of the FactoryTalk View SE Client to disable the title \nbar, the system menu, the close button, and the show diagnostics list.  Set the window to be maximized. \n F10.03: Configure FactoryTalk View SE clients automatically login as DEFAULT user \nafter a period of inactivity \nSince the system requires that critical operations  information be displayed at all times, the DEFAULT \nUser (a user with ‘view only’ access) shall be logged in when a period of inactivity occurs.  This allows the read-only display of production and alarm information.  \nFactoryTalk View SE clients can be configured to automatically log out after a specified \nperiod of time, however this feature does not subsequently permit the immediate and automatic login of another user (DEFAULT) as required.  To achieve the required actions, idle conditions will be detected and then the DEFAULT user will be logged in effectively logging out the current user.    \n\f\nProject: Mark Cuban Cost Plus Drug Company, PBC – \n MCCPDC - SCADA and PCS MISC. PLC System \n \nFunctional Specification for the MCCPDC - SCADA and PCS MISC. PLC System  \n \n \nID code: 215115305 -FS (V1.2) Page 42 of 58 \n© 2022 Rockwell Automation, Inc. All Rights Reserved / Author: Buol, Scott \n F10.04: Security/Access Levels \nThe access and manipulation of this system is prot ected through the FactoryTalk Security software \nmodule which integrates with FactoryTalk View SE.  FactoryTalk Security software provides access \nbased on the system user level.  The following security levels are identified for this SCADA project: \n \nSecurity level Allowed access/action level Security Code \nAssignment \nDEFAULT User  View/Read only access to graphi cs with DEFAULT user access A \nOperator  All privileges of the DEFAULT User \n Ability to acknowledge alarms \n Ability to interact with stan dard equipment control buttons \n Ability to select and activate recipes (N/A for this system) A, B \nSupervisor  All privileges of Operator A, B, C \nMaintenance  All privileges of Operator \n Ability to view PLC and OIT revision \n Ability to change input values via simulation feature A, B, C, D \nAdministrator  All privileges \n Ability to view PLC and OIT revision \n Ability to change input values via simulation feature \n Ability to modify alarm limits (Level 1 and Level 2 alarms) \n Ability add, modify, delete recipes (N/A for this system) A, B, C, D, E \nTable 4-1: Security levels for this system \nUser account controls are in compliance with: \nUR5.3.3 [URS-PCS-SR-032] All inputs shall provide state and simulation features. This shall be \ncaptured on a separate maintenance screen, ac cessible by Admin and Maintenance personnel. \nUR5.2.17 [USR-PCS-SR-023] The PLC revision will be addressed to a PLC register, and hard \ncoded OIT revision shall be accessible via a main menu selection to users with Administrator or Engineer (Maintenance) security level privileges. \nUR5.3.5 [URS-PCS-SR-034] Alarm functionality is to include the ability to change alarm limit \nvalues via user input from the OIT display.  This functionality shall be secured level access for level \n1 and level 2 alarms only.  Changes shall only be capable from Administrator level access.  \n \n F10.05: User account configuration \nThis function implements the following user requirement(s)  \nUR5.2.4 [URS-PCS-SR-010] The user identification mu st consist of two parts, username and password.  "
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "21_CFR_11.10(e)"
+    ]
+  },
+  "verified_records_by_req": {
+    "21_CFR_11.10(e)": [
+      {
+        "record_id": "vrec-task-bf3897479d56-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "observed",
+          "evidence_quote": "UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated. The record shall contain the following fields 1. Date and time stamps of the change 2. Original threshold value 3. Threshold value after change 4. User ID of the individual who has changed the threshold value (performer) 5. Full name of the individual who has changed the threshold value (performer) 6. Meaning of signature (performer) 7. User ID of the individual who has approved the change (approver) 8. Full name of the individual who has approved the change (approver) 9. Meaning of signature (approver). UR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the following fields 1. Alarm date and time stamps 2. Alarm tag 3. Alarm value 4. Alarm description 5. A similar record shall be generated whenever a critical alarm condition returns to normal condition.",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-1cec697ae89c-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 2,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-cb44216ff6d2-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 3,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-faaf94fc5904-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 4,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-a19808aa3603-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 5,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

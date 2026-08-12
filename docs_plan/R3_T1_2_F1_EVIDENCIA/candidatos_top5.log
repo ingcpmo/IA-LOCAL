@@ -1,0 +1,17 @@
+document_sha256: 56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb
+candidatos top-5:
+  chunk_index=20 pag=45-46 bm25_rank=1 embedding_rank=2
+  chunk_index=21 pag=47-48 bm25_rank=5 embedding_rank=1
+  chunk_index=25 pag=55-55 bm25_rank=3 embedding_rank=3
+  chunk_index=26 pag=56-56 bm25_rank=4 embedding_rank=12
+  chunk_index=18 pag=41-42 bm25_rank=10 embedding_rank=6
+Traceback (most recent call last):
+  File "/tmp/claude-1001/-home-ing-cpmo/d4f5173b-35a4-4688-8561-8ec3908f4e3b/scratchpad/f1_p1_judgment.py", line 29, in <module>
+    summary = run_judgment_batch([unit], progress_file=progress_file)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ing_cpmo/factory/regulatory/retrieval/judgment.py", line 213, in run_judgment_batch
+    _append_progress(progress_file, outcome)
+  File "/home/ing_cpmo/factory/regulatory/retrieval/judgment.py", line 227, in _append_progress
+    progress_file.parent.mkdir(parents=True, exist_ok=True)
+    ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'parent'

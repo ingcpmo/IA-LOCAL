@@ -1,0 +1,100 @@
+factory/tests/test_gmpai_chunked_engine.py: 377 warnings
+factory/tests/test_governance_endpoints.py: 2241 warnings
+factory/tests/test_governance_signature_flow_g21.py: 1863 warnings
+factory/tests/test_human_source_registration.py: 7 warnings
+factory/tests/test_human_source_regovernance.py: 3 warnings
+factory/tests/test_model_provider.py: 10 warnings
+factory/tests/test_model_qualification_gate.py: 843 warnings
+factory/tests/test_model_requalification_calibration.py: 86 warnings
+factory/tests/test_ollama_client.py: 6 warnings
+factory/tests/test_output_token_budget.py: 40 warnings
+factory/tests/test_pilot_execution_selection.py: 125 warnings
+factory/tests/test_pilot_isolation.py: 44 warnings
+factory/tests/test_provisional_evidence_model.py: 12 warnings
+factory/tests/test_r1_7_soft_relevance_verified_pipeline.py: 4 warnings
+factory/tests/test_r1_8_review_queue_dispatch.py: 3 warnings
+factory/tests/test_r2_3_p2_p5_judgment_replay.py: 10 warnings
+factory/tests/test_r2_3_reviewer_enrichment.py: 5 warnings
+factory/tests/test_r2_judgment.py: 66 warnings
+factory/tests/test_release_decision_coverage.py: 1230 warnings
+factory/tests/test_remediation_package_audit_isolation.py: 2 warnings
+factory/tests/test_requirement_catalog_loader.py: 67 warnings
+factory/tests/test_resignature_g2prime.py: 326 warnings
+factory/tests/test_retry_technical_failures.py: 94 warnings
+factory/tests/test_run_context_audit.py: 2 warnings
+factory/tests/test_schema_enforcement.py: 34 warnings
+factory/tests/test_semantic_verification_golden_dataset.py: 80 warnings
+factory/tests/test_sign_artifact_version_proposal_cli.py: 6 warnings
+factory/tests/test_source_baseline_allowlist.py: 14 warnings
+factory/tests/test_source_currency_checker.py: 18 warnings
+factory/tests/test_source_currency_confirmation.py: 24 warnings
+factory/tests/test_source_lifecycle.py: 1010 warnings
+factory/tests/test_source_origin_verification.py: 29 warnings
+factory/tests/test_status_risks.py: 6 warnings
+factory/tests/test_tier1_report.py: 60 warnings
+factory/tests/test_verified_pipeline.py: 10 warnings
+factory/tests/test_w5v2_governance_gates.py: 1 warning
+factory/tests/test_w5v2_regulatory_schemas.py: 23 warnings
+  /home/ing_cpmo/factory/regulatory/schema_loader.py:44: DeprecationWarning: jsonschema.RefResolver is deprecated as of v4.18.0, in favor of the https://github.com/python-jsonschema/referencing library, which provides more compliant referencing behavior as well as more flexible APIs for customization. A future release will remove RefResolver. Please file a feature request (on referencing) if you are missing an API for the kind of customization you need.
+    resolver=jsonschema.RefResolver(base_uri=f"{SCHEMAS_DIR.as_uri()}/", referrer=load_schema(schema_name)),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED factory/tests/test_governance_catalog_version_playwright.py::test_button_enabled_and_signs_with_full_echo_back_when_valid
+FAILED factory/tests/test_governance_catalog_version_playwright.py::test_409_proposal_mismatch_is_rendered_persistently
+FAILED factory/tests/test_governance_catalog_version_playwright.py::test_409_stale_state_is_rendered_persistently
+FAILED factory/tests/test_governance_ui_deploy_consistency_live.py::test_governance_state_endpoint_reachable_with_real_key
+ERROR factory/tests/test_review_queue_finding_ui_playwright.py::test_reserved_identity_shows_visible_error_and_never_advances
+ERROR factory/tests/test_review_queue_finding_ui_playwright.py::test_confirm_with_real_reviewer_sends_exactly_one_decide_call
+4 failed, 2417 passed, 5 skipped, 1 xfailed, 102756 warnings, 2 errors in 982.38s (0:16:22)
+  [0;31mFAIL[0m  pytest: fallos detectados
+
+[1m[0;34m━━━ 3/6  audit chain (por dimensión) ━━━[0m
+  CONTENT_HASH_INTEGRITY     VERIFIED
+  CHAIN_CONTINUITY           ACCEPTED_WITH_DOCUMENTED_EXCEPTION
+  HISTORICAL_FORK_PRESENT    True
+  NEW_FORKS_SINCE_BASELINE   0
+  PART11_COMPLIANCE          ACCEPTED_WITH_DOCUMENTED_EXCEPTION  (informativo)
+  [0;33mWARN[0m  audit chain: continuidad ACEPTADA CON EXCEPCIÓN documentada — nunca 'sin errores'
+  [0;32mPASS[0m  audit chain: contenido auténtico (41148 entradas, excepción vigente)
+
+[1m[0;34m━━━ 4/6  factory_status.sh ━━━[0m
+  [0;32mPASS[0m  Disco: 67% usado
+  [0;32mPASS[0m  Ollama: 4 modelos (nomic-embed-text:latest, qwen2.5:7b-instruct-q4_K_M, llama3.2:latest)
+  [0;32mPASS[0m  Workspaces activos: 5
+  [0;32mPASS[0m  Releases: 2 versiones en total
+  [0;32mPASS[0m  runtime_config: headless=False, mode=manual_assisted
+[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+  [0;32mPASS[0m 26   [0;33mWARN[0m 3   [0;31mFAIL[0m 0
+[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+  [0;32mPASS[0m  factory_status.sh: WARNs presentes pero sin FAILs (aceptable en self-check)
+
+[1m[0;34m━━━ 5/6  validation_evidence git-safety scan ━━━[0m
+
+  [0;32mPASS[0m  validation_evidence: solo allowlist tracked, sin contenido prohibido
+
+[1m[0;34m━━━ 6/6  consistencia de versiones de artefactos ━━━[0m
+  28 artefactos (catalog=1, applicability_matrix=1, evidence_pack=20, prompt=5, golden_dataset=1)
+  34 version_record en el almacen
+  WARN evidence_pack/21_CFR_11.10(a): NO_APPROVING_DECISION
+  WARN evidence_pack/21_CFR_11.10(d): NO_APPROVING_DECISION
+  WARN evidence_pack/21_CFR_11.10(e): NO_APPROVING_DECISION
+  WARN evidence_pack/21_CFR_11.10(g): NO_APPROVING_DECISION
+  WARN evidence_pack/21_CFR_11.50_11.70: NO_APPROVING_DECISION
+  WARN evidence_pack/ALCOA_ACCURATE: NO_APPROVING_DECISION
+  WARN evidence_pack/ALCOA_ATTRIBUTABLE: NO_APPROVING_DECISION
+  WARN evidence_pack/ALCOA_AVAILABLE: NO_APPROVING_DECISION
+  WARN evidence_pack/ALCOA_COMPLETE: NO_APPROVING_DECISION
+  WARN evidence_pack/ALCOA_CONSISTENT: NO_APPROVING_DECISION
+  WARN evidence_pack/ALCOA_CONTEMPORANEOUS: NO_APPROVING_DECISION
+  WARN evidence_pack/ALCOA_ENDURING: NO_APPROVING_DECISION
+  … y 12 mas
+  [0;33mWARN[0m  artifact versions: 24 artefacto(s) con version_record pero SIN decision que lo apruebe — fotografiados, no aprobados (G4c/G5)
+  [0;32mPASS[0m  artifact versions: 0 inconsistencias de trazabilidad
+
+[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m  FACTORY SELF-CHECK — [0;32mPASS=5[0m  [0;33mWARN=2[0m  [0;31mFAIL=1[0m
+[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+
+  [0;31m✗ Gate 0 FAILED — corregir antes de continuar[0m
+

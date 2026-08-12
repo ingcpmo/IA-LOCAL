@@ -1,0 +1,128 @@
+COMMIT 9943c968ba77783889d3de979a39e43a6df24105
+2026-08-12 02:17:18 +0000
+
+docs(r3-t1-2): guarda el plan de fases F0-F2 (validar barato, correr completo solo si pasa)
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+----------------------------------------
+COMMIT 6d3584e4b6d34011d52936538d5dcdcbab319534
+2026-08-12 02:17:13 +0000
+
+feat(catalog-governance): sincronizacion mecanica de source_verification_status
+
+Hallazgo real (F0.6): la reingesta gobernada G3 (2026-08-07) llevo las 4
+fuentes regulatorias a LOCAL_CANONICAL_COPY_VERIFIED (confirmado en vivo
+via source_lifecycle.evaluate_registry(), no leido de un campo guardado),
+pero requirements.yaml (catalog_version 2.1, generado 2026-07-17) seguia
+declarando source_verification_status=PENDING_REVERIFICATION en las 20
+entradas -- nadie lo habia vuelto a sincronizar. Las 20 D2 de este catalogo
+ya estaban firmadas por Cesar (2026-08-07), pero requirements.yaml es un
+artefacto gobernado bajo ARTIFACT_VERSION: no se edita a mano.
+
+sync_catalog_source_verification_status() (source_lifecycle.py): funcion
+pura texto->texto, sustitucion por regex sobre el texto vivo (preserva
+comentarios/formato/orden, nunca un round-trip por un dumper YAML
+generico). Nunca decide por juicio humano -- solo espeja el estado real.
+
+propose_catalog_source_verification_sync()/apply_catalog_source_verification_sync()
+(artifact_version_apply.py): variante angosta de
+propose_artifact_version_change(), deliberadamente NO generalizada a
+"cualquier cambio de contenido" (mismo criterio de Fase J citado en el
+modulo: no fabricar una escotilla generica sin caso real). Guardia extra:
+detecta si registry.json cambio entre proponer y aplicar.
+
+Incluye la propuesta real ARTIFACT_VERSION-2026-018 (agent_proposed, SIN
+confirmar -- pendiente de firma de Cesar) + 3 decisiones reales de una
+sesion anterior (D1-2026-056, PILOT_EXECUTION-2026-013/014) que quedaron
+sin commitear.
+
+R3-T1.2/F0.6.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+----------------------------------------
+COMMIT 713f8a5175816e049e397d94142e996583091b99
+2026-08-12 02:16:52 +0000
+
+feat(review-ui): endpoint y UI para decidir sobre finding_review, distinto de un RC
+
+Hallazgo real: POST /review/{rc_id}/approve|reject llaman a get_rc()/
+confirm_rc() (release_candidate_builder.py), que buscan un rc_manifest.json
+real en disco -- una entrada finding_review (enqueue_finding_for_review(),
+rc_id sintetico 'finding-{run_id}-{req_id}') nunca tiene uno, asi que esos
+endpoints 404 SIEMPRE, antes de llegar a mark_reviewed(): no existia
+ninguna forma de decidir sobre un hallazgo via HTTP.
+
+Nuevo POST /api/v1/layer9/review/findings/{rc_id}/decide (404/409/422
+reales, usa get_entry()/mark_reviewed() directo, nunca la capa de RC).
+
+review.js ahora renderiza por TIPO: los finding_review muestran evidencia/
+candidatos de fusion (pagina+extracto+rank+nota de honestidad) y nunca
+intentan pedir un diff que no existe; los RC reales conservan su diff. El
+fetch de diff de un RC real ya no se traga errores en silencio (catch(e){}
+vacio) -- ahora tiene timeout (8s) y muestra el error visible.
+
+4 tests Playwright contra el Mission Control real (page.route intercepta
+TODO el trafico de escritura -- cero POSTs reales con identidad inventada).
+
+R3-T1.2/F0.4.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+----------------------------------------
+COMMIT 14ffbc44a344afaa891128f80ab9d9d2d7130692
+2026-08-12 02:16:24 +0000
+
+feat(review-queue): supersede_finding() + marca run 943a como superseded
+
+Nueva funcion supersede_finding() en human_review_queue.py -- marca una
+entrada como SUPERSEDED por un defecto tecnico confirmado, nunca por un
+juicio humano, asi que no reutiliza mark_reviewed() (esa exige una
+identidad de revisor real via identity_policy, no aplica a una correccion
+de proceso). El registro original nunca se borra: gana status='superseded'
++ superseded_reason + superseded_at, trazable via el nuevo evento de
+auditoria 'finding_superseded'.
+
+Tambien agrega get_entry() (lectura publica de una entrada por rc_id sin
+importar su status, usada por el endpoint de decision de F0.4).
+
+Aplicado a las 3 entradas reales de cola del run chunked-943a62bcbb85
+(evaluation_profile equivocado, ver commit anterior) + sidecar
+SUPERSEDED_BY_PROFILE_CORRECTION.json junto al informe persistido, sin
+tocar ni borrar los artefactos originales.
+
+R3-T1.2/F0.3.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+----------------------------------------
+COMMIT 8a99b4ec0126430063c34d69f243f0fc3b163fdc
+2026-08-12 02:16:11 +0000
+
+fix(tier1): exige evaluation_profile=H2H4 explicito, corrige consistencia del informe
+
+El run RW-0005 (chunked-943a62bcbb85) corrio con evaluation_profile=BASELINE
+por default no declarado -- tier1_report.py llamaba a
+chunked_engine.evaluate_chunked() sin pasar el parametro, heredando en
+silencio el default de la funcion (BASELINE, que midio 0/7 de recall en el
+fixture set, vs H2H4 que midio 2/7). generate_tier1_report() ahora exige
+evaluation_profile explicito (sin default, TypeError si se omite) y bloquea
+'BASELINE' con un Tier1ReportError citando el hallazgo -- Tier-1 solo acepta
+'H2H4'.
+
+De paso, corrige 3 defectos de consistencia del informe encontrados al
+revisar el primer run real:
+- NOT_OBSERVED_OPTIONAL tenia su propio bucket (antes caia en
+  NEEDS_HUMAN_REVIEW con un mensaje que apuntaba a governed_exceptions,
+  pero esa lista siempre queda vacia para este caso).
+- page_or_section normalizado a un formato unico (antes mezclaba
+  'pag X-Y (chunk N)', 'paginas 1-N (todo el documento)', etc.).
+- CROSS_REFERENCE ahora declara el documento destino real
+  (applicability() ya calculaba evidence_expected_in pero se descartaba).
+
+R3-T1.2/F0.2, F0.5.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+----------------------------------------

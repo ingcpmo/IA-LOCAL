@@ -1,0 +1,123 @@
+{
+  "schema_version": "decision_record_v1",
+  "decision_family": "ARTIFACT_VERSION",
+  "decision_instance_id": "ARTIFACT_VERSION-2026-018",
+  "decision_type": "ORIGINAL",
+  "amendment_sequence": 0,
+  "supersedes_event_id": null,
+  "supersedes_instance_id": null,
+  "selection_mode": "EXPLICIT_LIST",
+  "resolved_target_ids": [
+    "factory/regulatory/requirement_catalog/requirements.yaml"
+  ],
+  "target_set_hash": "14481408631a78e8e0c6fc5dba1826f6b0357f6850f15876cba0a66f53b04e6c",
+  "registry_hash_at_decision": null,
+  "families_registry_hash": "c3d38d01304c12bba6ee6dab67918162cad7b90611c04cd106719edeea5db2c6",
+  "decision": "APPROVE",
+  "decision_origin": "agent_proposed",
+  "proposed_by_id": "claude_code_session_r3_t1_2_20260812",
+  "confirms_instance_id": null,
+  "approved_by_id": null,
+  "approved_by_display_name": null,
+  "recorded_by": null,
+  "decision_date": "2026-08-12T01:50:48.561905+00:00",
+  "recorded_at": "2026-08-12T01:50:48.561905+00:00",
+  "reason": "R3-T1.2/F0.6: sincronizacion mecanica de source_verification_status contra el estado real de source_lifecycle.evaluate_registry() -- las 4 fuentes (incluyendo ecfr_21cfr_part11/211) estan LOCAL_CANONICAL_COPY_VERIFIED desde la reingesta G3 real del 2026-08-07, pero el catalogo v2.1 (generado 2026-07-17) seguia declarando PENDING_REVERIFICATION en las 20 entradas. Las 20 D2 de este catalogo ya estan human_confirmed por Cesar (2026-08-07) -- este cambio SOLO sincroniza el campo mecanico source_verification_status, NO toca positive_conclusion_eligibility/baseline_eligibility/content_review_status (esos ejes de juicio interpretativo quedan exactamente como estan, sin firma nueva que los cubra explicitamente).",
+  "status": "ACTIVE",
+  "payload": {
+    "artifact_path": "factory/regulatory/requirement_catalog/requirements.yaml",
+    "artifact_hash_before": "7ae4aaf28534b769271d7b9e50837191922cbf4db46067f2a768733c3fbcaf16",
+    "from_version": "2.1",
+    "to_version": "2.2",
+    "expected_hash_after": "440eb00a79e8501d65b0a2cd44630c1d5674d6fc1fa7a9877fd6777d9b944247",
+    "change_reason": "R3-T1.2/F0.6: sincronizacion mecanica de source_verification_status contra el estado real de source_lifecycle.evaluate_registry() -- las 4 fuentes (incluyendo ecfr_21cfr_part11/211) estan LOCAL_CANONICAL_COPY_VERIFIED desde la reingesta G3 real del 2026-08-07, pero el catalogo v2.1 (generado 2026-07-17) seguia declarando PENDING_REVERIFICATION en las 20 entradas. Las 20 D2 de este catalogo ya estan human_confirmed por Cesar (2026-08-07) -- este cambio SOLO sincroniza el campo mecanico source_verification_status, NO toca positive_conclusion_eligibility/baseline_eligibility/content_review_status (esos ejes de juicio interpretativo quedan exactamente como estan, sin firma nueva que los cubra explicitamente).",
+    "sync_type": "source_verification_status",
+    "registry_sha256_before": "487c1135c9f1851a136ebb027f42ebc9f818198f706e14f9518eedafc0608e00",
+    "source_verification_changes": {
+      "21_CFR_11.10(a)": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "21_CFR_11.10(d)": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "21_CFR_11.10(e)": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "21_CFR_11.10(g)": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "21_CFR_11.50_11.70": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ANNEX11_4": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ANNEX11_7.1": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ANNEX11_9": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ANNEX11_12": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ANNEX11_17": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ALCOA_ATTRIBUTABLE": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ALCOA_LEGIBLE": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ALCOA_CONTEMPORANEOUS": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ALCOA_ORIGINAL": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ALCOA_ACCURATE": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ALCOA_COMPLETE": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ALCOA_CONSISTENT": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ALCOA_ENDURING": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "ALCOA_AVAILABLE": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      },
+      "21_CFR_211.68(b)": {
+        "from": "PENDING_REVERIFICATION",
+        "to": "LOCAL_CANONICAL_COPY_VERIFIED"
+      }
+    }
+  },
+  "provenance": "NATIVE",
+  "reconstruction_evidence": null,
+  "audit_event_id": null,
+  "invalid_reason": null
+}
