@@ -667,6 +667,45 @@ UI de Mission Control y regístrala TÚ -- ese clic cierra el criterio
 F2.3.d y el ciclo humano completo (documento → informe → cola → decisión
 humana) que era el corazón de esta fase.
 
+## 4.4 — Incidente encontrado y resuelto: "Hallazgo no encontrado" al firmar
+
+Cesar reportó que la UI mostraba la entrada correctamente pero la firma
+fallaba con `Hallazgo no encontrado (finding-chunked-943a62bcbb85-
+r3t17-dryrun-validation-21_CFR_11.10(d))`.
+
+**Diagnóstico** (sin tocar nada hasta confirmar la causa):
+- El archivo `review_queue.jsonl` dentro del contenedor `factory-api` es
+  BYTE-IDÉNTICO al del host (bind mount `.:/app/factory`, confirmado con
+  `diff`).
+- `get_entry(rc_id)` ejecutado en un proceso Python fresco DENTRO del
+  contenedor SÍ encuentra la entrada correctamente.
+- Pero el 404 real, probado en vivo contra el servidor, es el 404
+  GENÉRICO de FastAPI (`{"detail":"Not Found"}`, "ninguna ruta coincide"),
+  NO nuestro mensaje custom (`"finding_review '{rc_id}' no encontrado"`)
+  -- la petición nunca llega al handler.
+- Confirmado con el propio `/openapi.json` del servidor VIVO: la ruta
+  `/api/v1/layer9/review/findings/{rc_id}/decide` NO estaba registrada en
+  el proceso corriendo.
+
+**Causa raíz**: el contenedor `factory-api` arrancó el 2026-08-11 12:38.
+El endpoint que resuelve `finding_review` (`/review/findings/{rc_id}/decide`)
+se commiteó DESPUÉS, el 2026-08-12 02:16 (`713f8a5`). El contenedor nunca
+se reconstruyó/reinició desde entonces -- seguía sirviendo código de
+antes de que ese endpoint existiera. La UI llamaba a la ruta correcta
+(`review.js`, `submitFindingDecision()`); el backend en memoria
+simplemente no la tenía cargada.
+
+**Corrección**: `docker compose -f docker-compose.factory.yml restart
+factory-api` -- autorizado explícitamente por Cesar antes de tocar el
+contenedor. Como `factory/` está bind-mounted (no requiere rebuild de
+imagen, solo recargar el proceso), un restart bastó. Verificado
+post-restart: `/health` OK, la ruta aparece en `/openapi.json` del
+servidor vivo, y la entrada de la cola sigue intacta (no se perdió nada
+en el restart).
+
+**Pendiente**: que Cesar reintente la firma en la UI -- el endpoint que
+la resuelve ya está cargado.
+
 ──────────────────────────────────────────────────────────────────────────────
 BLOQUE 5 — CIERRE DE R3-T1
 ──────────────────────────────────────────────────────────────────────────────
