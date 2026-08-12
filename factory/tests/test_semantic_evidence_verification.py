@@ -340,6 +340,133 @@ class TestVerifySufficiencyAggregated:
         assert status == "NOT_ASSESSABLE", detail
         assert len(detail["not_assessable_individual"]) == 5
 
+    def test_off_topic_chunk_boilerplate_not_met_does_not_poison_real_evidence(self):
+        """Fix B3 (R3-T1.4, docs_plan/R3_T1_4_FIX_AGREGACION_B3.md): un
+        chunk cuyo `estado` de mas alto nivel ya es evidencia_insuficiente
+        para este req_id (no trato el tema en absoluto) NUNCA debe poder
+        contradecir en falso a un chunk que SI ancla evidencia real -- ese
+        NOT_MET boilerplate se reclasifica a NOT_ASSESSABLE antes de
+        agregar, no se cuenta como voto real."""
+        anchor_text = " ".join(_ACCESS_CRITERIA)
+        anchor_assessments = _all_met()  # chunk relevante, ancla los 5 criterios
+
+        off_topic_text = "Alarm Limit Modification (page 1 of 2) Security Code Assignments"
+        off_topic_assessments = _all_not_met()  # boilerplate "no se menciona X" en un chunk que no trata el tema
+
+        status, reason, detail = sev.verify_sufficiency_aggregated(
+            "21_CFR_11.10(d)",
+            [
+                (anchor_assessments, anchor_text, "cumple_parcialmente"),
+                (off_topic_assessments, off_topic_text, "evidencia_insuficiente"),
+            ],
+        )
+        assert status == "MET", detail
+        assert set(detail["met"]) == set(_ACCESS_CRITERIA)
+        assert "contradicted" not in detail
+
+    def test_off_topic_chunk_reproduces_real_11_10_e_partial_case(self):
+        """Reproduccion del caso real (R3_T1_3_VIABILIDAD_F2.md secc.1,
+        checkpoint chunked-943a62bcbb85): el chunk ancla (p.45-46) confirma
+        2/9 criterios de 21_CFR_11.10(e); los otros 28 chunks del documento
+        no tratan el audit trail en absoluto y su propio `estado` ya lo
+        dice (evidencia_insuficiente) pese a emitir NOT_MET boilerplate.
+        Antes del fix esto daba NOT_ASSESSABLE por 'contradiccion real'
+        (falsa, ver detail['contradicted'] con crit1..4). Con el fix sigue
+        en NOT_ASSESSABLE (los criterios 5-9 nunca se resuelven en ningun
+        chunk del documento real -- eso es honesto, no un defecto), pero
+        AHORA por cobertura incompleta real, nunca por una contradiccion
+        fabricada: crit1 (NOT_MET generico) y crit4 (NOT_MET generico) del
+        ancla ya no colisionan con los NOT_MET boilerplate de los otros 28
+        chunks, y los 2 MET reales (crit2/crit3) se preservan intactos."""
+        from factory.regulatory.requirement_catalog.requirement_catalog_loader import get_requirement
+
+        criteria = get_requirement("21_CFR_11.10(e)")["evidence_min_criteria"]
+        assert len(criteria) == 9
+
+        anchor_text = "UR3.3.1 ... Date and time stamps ... fields listed"
+        anchor_assessments = [
+            _assessment(1, criteria[0], "NOT_MET"),
+            _assessment(2, criteria[1], "MET", quote="Date and time stamps", location="pag 46"),
+            _assessment(3, criteria[2], "MET", quote="fields listed", location="pag 46"),
+            _assessment(4, criteria[3], "NOT_MET"),
+        ] + [_assessment(i + 5, c, "NOT_ASSESSABLE") for i, c in enumerate(criteria[4:])]
+
+        off_topic_text = "Alarm Limit Modification (page 1 of 2) Security Code Assignments"
+        off_topic_assessments = [_assessment(i + 1, c, "NOT_MET") for i, c in enumerate(criteria)]
+
+        per_chunk = [(anchor_assessments, anchor_text, "cumple_parcialmente")] + [
+            (off_topic_assessments, off_topic_text, "evidencia_insuficiente") for _ in range(28)
+        ]
+        status, reason, detail = sev.verify_sufficiency_aggregated("21_CFR_11.10(e)", per_chunk)
+        assert status == "NOT_ASSESSABLE", detail
+        assert "cobertura completa" in reason  # NOT_ASSESSABLE por incertidumbre real, no por contradiccion
+        assert "contradicted" not in detail
+        assert set(detail["met"]) == {criteria[1], criteria[2]}
+        assert set(detail["not_met"]) == {criteria[0], criteria[3]}
+
+    def test_genuine_contradiction_between_two_relevant_chunks_still_blocks(self):
+        """Guardian obligatorio (sec.2.3 del plan): el fix B3 NUNCA debe
+        destrabar una contradiccion GENUINA -- dos chunks AMBOS relevantes
+        (estado != evidencia_insuficiente/no_aplica) en desacuerdo real
+        sobre un criterio siguen forzando NOT_ASSESSABLE, exactamente como
+        antes del fix."""
+        crit = _ACCESS_CRITERIA[0]
+        rest = _ACCESS_CRITERIA[1:]
+        chunk_text = " ".join(_ACCESS_CRITERIA)
+
+        assessments_a = [_assessment(1, crit, "MET", quote=crit, location="pag 1")] + [
+            _assessment(i + 2, c, "MET", quote=c, location="pag 1") for i, c in enumerate(rest)
+        ]
+        assessments_b = [_assessment(1, crit, "NOT_MET")] + [
+            _assessment(i + 2, c, "MET", quote=c, location="pag 1") for i, c in enumerate(rest)
+        ]
+        status, reason, detail = sev.verify_sufficiency_aggregated(
+            "21_CFR_11.10(d)",
+            [
+                (assessments_a, chunk_text, "cumple_parcialmente"),
+                (assessments_b, chunk_text, "no_cumple"),  # AMBOS chunks relevantes, no fuera de tema
+            ],
+        )
+        assert status == "NOT_ASSESSABLE"
+        assert crit in detail["contradicted"]
+        assert "contradiccion" in reason
+
+    def test_absence_across_all_chunks_never_fabricates_met(self):
+        """Guardian obligatorio: si NINGUN chunk del documento trata el
+        tema (todos evidencia_insuficiente), el fix jamas fabrica un MET --
+        el agregado queda en incertidumbre real (NOT_ASSESSABLE), nunca en
+        una conclusion positiva. Mas conservador que antes (que daba
+        NOT_MET, una negativa 'confiada' que el propio contrato del prompt
+        ya advierte no declarar sobre documentos de ingenieria OT), jamas
+        menos."""
+        off_topic_text = "contenido totalmente no relacionado con el requisito"
+        off_topic_assessments = _all_not_met()
+        per_chunk = [(off_topic_assessments, off_topic_text, "evidencia_insuficiente") for _ in range(5)]
+        status, reason, detail = sev.verify_sufficiency_aggregated("21_CFR_11.10(d)", per_chunk)
+        assert status == "NOT_ASSESSABLE", detail
+        assert not detail["met"]
+
+    def test_missing_chunk_estado_matches_pre_fix_behavior_exactly(self):
+        """Retrocompatibilidad estricta: omitir el 3er elemento de la tupla
+        (llamadores viejos, checkpoints anteriores al fix) reproduce el
+        comportamiento EXACTO de antes del fix -- un NOT_MET sin `estado`
+        conocido sigue contando como voto real y sigue pudiendo contradecir."""
+        crit = _ACCESS_CRITERIA[0]
+        rest = _ACCESS_CRITERIA[1:]
+        chunk_text = " ".join(_ACCESS_CRITERIA)
+        assessments_a = [_assessment(1, crit, "MET", quote=crit, location="pag 1")] + [
+            _assessment(i + 2, c, "MET", quote=c, location="pag 1") for i, c in enumerate(rest)
+        ]
+        assessments_b = [_assessment(1, crit, "NOT_MET")] + [
+            _assessment(i + 2, c, "MET", quote=c, location="pag 1") for i, c in enumerate(rest)
+        ]
+        status, reason, detail = sev.verify_sufficiency_aggregated(
+            "21_CFR_11.10(d)",
+            [(assessments_a, chunk_text), (assessments_b, chunk_text)],  # 2-tuplas, sin estado
+        )
+        assert status == "NOT_ASSESSABLE"
+        assert crit in detail["contradicted"]
+
     def test_contradiction_across_chunks_never_resolved_silently(self):
         """Riesgo explicito del diseno (sec.3.1): un criterio MET anclado en
         un chunk y NOT_MET en otro es una contradiccion real -- degrada a

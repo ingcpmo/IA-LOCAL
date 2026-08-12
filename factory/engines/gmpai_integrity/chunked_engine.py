@@ -1182,13 +1182,23 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     cp_label_by_req = {cp["req_id"]: cp["label"] for cp in meta["checkpoints"]}
     # R2.1 Opcion C (docs_plan/R2_1_C_DISENO_AGREGACION_D.md, 2026-08-10):
     # criterion_assessments crudos de CADA chunk que respondio para un
-    # req_id, sin filtrar por estado/anclaje -- alimenta
+    # req_id, sin EXCLUIR chunks por estado/anclaje -- alimenta
     # sev.verify_sufficiency_aggregated() al cerrar cada requisito, para
     # que D combine criterios confirmados en DISTINTOS chunks en vez de
     # depender de un solo chunk "ganador" (ver best = candidates[0] mas
     # abajo). Vive fuera de by_req a proposito: by_req solo lleva
     # candidatos con evidencia positiva anclada, pero un chunk sin
     # evidencia positiva puede igual haber clasificado criterios reales.
+    # Fix B3 (R3-T1.4, 2026-08-12, docs_plan/R3_T1_4_FIX_AGREGACION_B3.md):
+    # se sigue sin EXCLUIR ningun chunk aqui -- el `estado` de cada chunk se
+    # adjunta como 3er elemento de la tupla para que la agregacion (no este
+    # punto) pueda distinguir un NOT_MET genuino (chunk que trato el tema y
+    # lo contradijo) de un NOT_MET producido por un chunk que el propio
+    # modelo ya califico como evidencia_insuficiente/no_aplica para este
+    # req_id (el chunk no trato el tema en absoluto -- ver el defecto B3
+    # documentado en R3_T1_3_VIABILIDAD_F2.md: esos NOT_MET son ruido de
+    # incumplimiento de contrato del modelo entre 'estado' y
+    # 'criterion_assessments', no evidencia real en contra).
     criterion_assessments_by_req: dict[str, list[tuple]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
 
     verified_records_by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
@@ -1217,8 +1227,12 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             cand["candidate"].setdefault("has_evidence", True)
             by_req.setdefault(cand["req_id"], []).append(cand["candidate"])
         for item in ce.get("_criterion_assessments_for_d", []):
+            # .get("estado") con default None: checkpoints de antes del fix
+            # B3 (R3-T1.4, 2026-08-12) no tienen este campo -- None preserva
+            # el comportamiento previo exacto en verify_sufficiency_aggregated
+            # (todo NOT_MET cuenta como voto real, sin excepcion).
             criterion_assessments_by_req.setdefault(item["req_id"], []).append(
-                (item["criterion_assessments"], item["chunk_text"]))
+                (item["criterion_assessments"], item["chunk_text"], item.get("estado")))
 
     # Plan de ejecucion: primero los chunks a REEMPLAZAR (reintento dirigido
     # de fallos tecnicos, 2026-07-28), luego los que faltan por ejecutar. Un
@@ -1309,18 +1323,24 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     continue
                 req_id = entry["req_id"]
                 responded_req_ids.add(req_id)
+                estado = entry.get("estado") if entry.get("estado") in _VALID_ESTADOS else "evidencia_insuficiente"
                 # R2.1 Opcion C: se captura ANTES de cualquier `continue` de
                 # estado (evidencia_insuficiente incluido) -- un chunk sin
                 # evidencia positiva para la cita principal puede igual
                 # haber clasificado criterios reales, y esa clasificacion
-                # cuenta para la agregacion de D del requisito.
+                # cuenta para la agregacion de D del requisito. `estado` se
+                # incluye junto al array (R3-T1.4, fix B3, 2026-08-12): un
+                # chunk cuyo propio juicio de mas alto nivel ya declaro
+                # evidencia_insuficiente/no_aplica para este req_id no debe
+                # poder contradecir, criterio por criterio, a un chunk que
+                # SI ancla evidencia -- ver
+                # verify_sufficiency_aggregated._classify_criteria_for_chunk.
                 criterion_assessments_by_req.setdefault(req_id, []).append(
-                    (entry.get("criterion_assessments"), chunk["text"]))
+                    (entry.get("criterion_assessments"), chunk["text"], estado))
                 criterion_assessments_for_d_this_chunk.append({
                     "req_id": req_id, "criterion_assessments": entry.get("criterion_assessments"),
-                    "chunk_text": chunk["text"],
+                    "chunk_text": chunk["text"], "estado": estado,
                 })
-                estado = entry.get("estado") if entry.get("estado") in _VALID_ESTADOS else "evidencia_insuficiente"
                 evidencia = str(entry.get("evidencia_exacta") or "")
                 anchored = _is_anchored(evidencia, chunk["text"]) if evidencia else False
                 requires_anchor = estado in ("cumple", "cumple_parcialmente")

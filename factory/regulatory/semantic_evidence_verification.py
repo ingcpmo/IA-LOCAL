@@ -179,6 +179,23 @@ def verify_semantic_relevance(
 
 _VALID_CRITERION_STATUSES = frozenset({"MET", "NOT_MET", "NOT_ASSESSABLE"})
 
+# Fix B3 (R3-T1.4, 2026-08-12, docs_plan/R3_T1_4_FIX_AGREGACION_B3.md):
+# estados de chunked_engine._VALID_ESTADOS en los que el propio modelo, a
+# nivel de checkpoint (mas alto nivel que criterion_assessments), ya
+# declaro que este chunk NO trato el tema del requisito en absoluto. El
+# prompt real (part11_prompts.yaml, regla 4 y 6) instruye explicitamente
+# "que no mencione un control no implica incumplimiento" y "si no estas
+# seguro... usa NOT_ASSESSABLE, nunca NOT_MET" -- pero el modelo (qwen2.5:7b)
+# viola esa regla de forma sistematica (confirmado con datos reales de
+# chunked-943a62bcbb85 y chunked-50534e75927c, R3_T1_3_VIABILIDAD_F2.md
+# secc.1): emite NOT_MET con justificacion boilerplate ("no se menciona X")
+# en chunks que su PROPIO campo `estado` ya califica como
+# evidencia_insuficiente/no_aplica para ese req_id. Sin este ajuste, esos
+# NOT_MET colisionan en la agregacion con un MET real anclado en otro
+# chunk y fuerzan NOT_ASSESSABLE por "contradiccion" -- una contradiccion
+# FALSA (el chunk nunca trato el tema) disfrazada de contradiccion real.
+_OFF_TOPIC_CHUNK_ESTADOS = frozenset({"evidencia_insuficiente", "no_aplica"})
+
 
 def _find_contract_violations(criterion_assessments: list, ordered_real_criteria: list) -> list[str]:
     """Nivel A de verify_sufficiency(): violaciones de CONTRATO que
@@ -287,24 +304,41 @@ def verify_sufficiency(
 
 
 def _classify_criteria_for_chunk(
-    criterion_assessments: list, source_text: str,
+    criterion_assessments: list, source_text: str, chunk_estado: str | None = None,
 ) -> tuple[set, set, set, list]:
     """Clasifica los criterios de UN chunk ya validado a nivel de contrato
     (ver _find_contract_violations, corrida ANTES de llamar esto). Extraido
     de verify_sufficiency() (R2.1 Opcion C, 2026-08-10) para que el mismo
     criterio de anclaje se reutilice tanto para un solo chunk
     (verify_sufficiency) como para agregar varios (verify_sufficiency_aggregated)
-    -- nunca reimplementado dos veces."""
+    -- nunca reimplementado dos veces.
+
+    `chunk_estado` (fix B3, R3-T1.4, 2026-08-12): default None preserva el
+    comportamiento exacto previo a este fix (verify_sufficiency(), un solo
+    chunk, nunca lo pasa -- no cambia). Cuando SI se provee (agregacion
+    multi-chunk) y esta en _OFF_TOPIC_CHUNK_ESTADOS, un NOT_MET de este
+    chunk se reclasifica como NOT_ASSESSABLE: el chunk no vota sobre un
+    criterio que su propio `estado` de mas alto nivel ya declaro fuera de
+    tema para este requisito -- MAS conservador que antes (NOT_ASSESSABLE
+    nunca contribuye a MET ni destrababa nada por si solo, ver
+    _finalize_sufficiency), nunca menos: esto NUNCA convierte un NOT_MET en
+    MET, ni rescata un criterio sin evidencia real -- solo evita que un
+    chunk irrelevante contradiga en falso a un chunk que si aporto
+    evidencia."""
     confirmed_met: set = set()
     confirmed_not_met: set = set()
     confirmed_not_assessable_individual: set = set()
     discarded_unanchored: list = []
+    off_topic_chunk = chunk_estado in _OFF_TOPIC_CHUNK_ESTADOS
 
     for e in criterion_assessments:
         text = e["criterion_text"]
         status = e["status"]
         if status == "NOT_MET":
-            confirmed_not_met.add(text)
+            if off_topic_chunk:
+                confirmed_not_assessable_individual.add(text)
+            else:
+                confirmed_not_met.add(text)
         elif status == "NOT_ASSESSABLE":
             confirmed_not_assessable_individual.add(text)
         else:  # MET, ya validado a nivel de contrato (evidence_quote/evidence_location presentes)
@@ -346,7 +380,7 @@ def _finalize_sufficiency(
 
 
 def verify_sufficiency_aggregated(
-    requirement_id: str, per_chunk: list[tuple[list | None, str]],
+    requirement_id: str, per_chunk: list[tuple[list | None, str] | tuple[list | None, str, str | None]],
 ) -> tuple[str, str, dict]:
     """R2.1 Opcion C (2026-08-10, docs_plan/R2_1_C_DISENO_AGREGACION_D.md):
     version agregada de verify_sufficiency() -- mismo contrato de retorno
@@ -357,10 +391,13 @@ def verify_sufficiency_aggregated(
     combinar -- nunca se reimplementa el anclaje ni la validacion de
     contrato.
 
-    `per_chunk`: lista de (criterion_assessments, chunk_source_text), un
-    par por cada chunk real que la unidad evaluo (incluidos los que no
-    aportaron evidencia -- se excluyen naturalmente al combinar, nunca se
-    filtran a mano antes de llamar esto).
+    `per_chunk`: lista de (criterion_assessments, chunk_source_text) o
+    (criterion_assessments, chunk_source_text, chunk_estado) -- un
+    elemento por cada chunk real que la unidad evaluo (incluidos los que
+    no aportaron evidencia -- se excluyen naturalmente al combinar, nunca
+    se filtran a mano antes de llamar esto). El 3er elemento (`chunk_estado`,
+    fix B3, R3-T1.4, 2026-08-12) es opcional y retrocompatible: si se omite
+    o es None, el comportamiento es IDENTICO al de antes de este fix.
 
     Reglas de combinacion (nuevas, explicitas, nunca aflojan el criterio
     de anclaje de cada chunk individual):
@@ -370,13 +407,25 @@ def verify_sufficiency_aggregated(
       no hay chunks), cae a NOT_ASSESSABLE explicito.
     - Un criterio queda confirmado MET si ALGUN chunk lo ancla
       (verify_anchor PASS contra el texto de ESE chunk).
+    - Fix B3 (R3-T1.4, 2026-08-12, docs_plan/R3_T1_4_FIX_AGREGACION_B3.md):
+      un NOT_MET que viene de un chunk cuyo propio `chunk_estado` ya es
+      evidencia_insuficiente/no_aplica para este requisito (el chunk no
+      trato el tema en absoluto, segun el JUICIO DE MAS ALTO NIVEL del
+      propio modelo) se reclasifica como NOT_ASSESSABLE antes de agregar --
+      ver _classify_criteria_for_chunk. Esto NUNCA fabrica un MET ni
+      rescata un criterio sin evidencia: solo impide que un chunk fuera de
+      tema vote NOT_MET por defecto y colisione en falso con un chunk que
+      SI ancla evidencia real para ese mismo criterio.
     - CONTRADICCION (dura, nunca resuelta en silencio): un criterio con
-      MET anclado en un chunk Y NOT_MET en otro se mueve a un set
-      `contradicted` -- fuerza NOT_ASSESSABLE con
+      MET anclado en un chunk Y NOT_MET GENUINO (de un chunk relevante,
+      tras el ajuste anterior) en otro se mueve a un set `contradicted` --
+      fuerza NOT_ASSESSABLE con
       d_reason='contradiccion real entre chunks en al menos un criterio'
       y el detalle de que criterios contradijeron. Mismo principio que
       la deteccion de contradiccion ya existente a nivel de
-      estado/checkpoint (chunked_engine.py).
+      estado/checkpoint (chunked_engine.py). Esta regla SIGUE intacta para
+      contradicciones reales (dos chunks relevantes en desacuerdo) -- el
+      fix B3 nunca la desactiva, solo evita que dispare en falso.
     - Sin contradiccion: mismas reglas finales de _finalize_sufficiency
       (missing -> NOT_ASSESSABLE; incertidumbre en algun criterio ->
       NOT_ASSESSABLE; todos MET -> MET; ninguno MET -> NOT_MET; mezcla ->
@@ -400,7 +449,9 @@ def verify_sufficiency_aggregated(
     excluded_chunks_contract_violations: list = []
     valid_chunk_count = 0
 
-    for criterion_assessments, source_text in per_chunk:
+    for chunk_entry in per_chunk:
+        criterion_assessments, source_text, *rest = chunk_entry
+        chunk_estado = rest[0] if rest else None
         if criterion_assessments is None:
             continue
         violations = _find_contract_violations(criterion_assessments, ordered_real_criteria)
@@ -409,7 +460,7 @@ def verify_sufficiency_aggregated(
             continue
         valid_chunk_count += 1
         met, not_met, not_assessable, discarded = _classify_criteria_for_chunk(
-            criterion_assessments, source_text)
+            criterion_assessments, source_text, chunk_estado)
         all_met |= met
         all_not_met |= not_met
         all_not_assessable |= not_assessable
