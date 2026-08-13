@@ -52,6 +52,7 @@ DECISION_IDS = (
     "D3_T039",
     "D4_corpus_execution",
     "D5_regenerate_qa_package",
+    "D6_pdf_generation_policy",
 )
 
 
@@ -176,6 +177,27 @@ _STATIC_CONTEXT = {
                 "referencias_cruzadas NOT_EVALUATED. El paquete almacenado NO se "
                 "regeneró: hacerlo cambia un artefacto gobernado y su fingerprint.",
     },
+    "D6_pdf_generation_policy": {
+        "summary": "Confirmar como decisión humana la política de generación de "
+                   "candidato para documentos PDF sin fuente editable, ya "
+                   "implementada en código pero nunca registrada como decisión "
+                   "(R4-T1.1v2 §4.2, docs_plan/R4_T1_1v2_DESBLOQUEO_Y_VALIDACION_"
+                   "FRIA.md).",
+        "policy": {
+            "TEXT_NATIVE": "reconstruir vía document_structure_extractor.py + "
+                           "candidate_document_generator.py -- genera DOCX y PDF "
+                           "candidatos, registra limitaciones de fidelidad "
+                           "(generation_ready=True, PDF_RECONSTRUCTED_DOCX_AND_PDF).",
+            "OCR_REQUIRED_o_NOT_EXTRACTABLE": "GENERATION_BLOCKED_INSUFFICIENT_"
+                           "FIDELITY -- nunca se fuerza una reconstrucción de "
+                           "baja fidelidad.",
+        },
+        "correction": "NO es 'todo PDF bloqueado' -- esa lectura, presente en la "
+                      "version original de R4-T1.1v2 §1.3, quedó corregida frente "
+                      "al diseño real ya implementado.",
+        "detail_document": "factory/docs/design/regulatory_redesign_v2/"
+                           "CORRECTED_DOCUMENT_GENERATION_AND_FORMAT_SPEC.md \xa74",
+    },
 }
 
 _TITLES = {
@@ -184,6 +206,7 @@ _TITLES = {
     "D3_T039": "T-039 — clasificación de RW-0008 (PDF) frente a RW-0007 (DOCM)",
     "D4_corpus_execution": "Ejecución del corpus restante — aprobación de costo",
     "D5_regenerate_qa_package": "Regeneración del paquete QA de FS_v1.2",
+    "D6_pdf_generation_policy": "Política de generación para PDF sin fuente editable",
 }
 
 

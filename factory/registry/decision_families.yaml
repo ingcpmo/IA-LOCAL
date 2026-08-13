@@ -39,6 +39,7 @@ known_consumers:
   - package_regeneration
   - pilot_runner
   - remediation_package_creation
+  - remediation_directive_creation
 
 families:
 
@@ -150,6 +151,25 @@ families:
     # la primera vez). Mismo criterio ya aplicado para separar
     # EMBED_EXECUTION de PILOT_EXECUTION: acciones semanticamente distintas
     # no comparten familia aunque el mecanismo de resolucion sea identico.
+
+  REMEDIATION_DIRECTIVE_AUTHORSHIP:
+    label: "Autoria humana de una directiva de remediacion sobre un hallazgo confirmado"
+    target_kind: finding_rc_id
+    target_registry: null
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [remediation_directive_creation]
+    requires_human_confirmation: true
+    # R4-T1.1v2 §4.1 (2026-08-13, docs_plan/R4_T1_1v2_DESBLOQUEO_Y_VALIDACION_FRIA.md):
+    # familia NUEVA -- propose_remediation_directive() (remediation_directive.py)
+    # hoy no consulta ninguna familia de gobernanza (verificado leyendo el
+    # modulo: cero resolver.resolve(...) ahi). REMEDIATION_PACKAGE_GENERATION
+    # no la cubre: target_kind=package_id, consumidor=remediation_package_creation
+    # -- una directiva no tiene package_id (existe antes del paquete, antes
+    # del dispatch). La directiva es el acto de autoria humana; REMEDIATION_
+    # PACKAGE_GENERATION es la generacion automatica posterior -- nunca
+    # comparten familia (mismo criterio ya usado arriba para separar
+    # EMBED_EXECUTION de PILOT_EXECUTION y D5 de REMEDIATION_PACKAGE_GENERATION).
 
   REMEDIATION_PACKAGE_GENERATION:
     label: "Primera generacion de un paquete de remediacion (borrador controlado, nunca liberado)"
