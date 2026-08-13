@@ -76,6 +76,17 @@ Opción C.
 
 ## 2. Triage de tipo de evidencia (cero LLM)
 
+> **⚠️ INSTRUMENTO INVÁLIDO PARA DECIDIR (corregido en R2.2 §3,
+> 2026-08-10)**: la tabla de §2.1 y la distribución heurística de §2.3
+> midieron el EJE EQUIVOCADO (prosa vs. tabular) con 50% de error de
+> validación declarado. La re-medición real (Opción A, P1-P7) mostró que
+> el discriminador real es **eco léxico vs. paráfrasis** — P5 comparte
+> literalmente el mismo chunk limpio que P1 (ambos prosa estructurada,
+> mismo texto fuente) y aun así P5 falló. Se conservan §2.1/§2.3 como
+> historia de esta corrida, **no se usan para ninguna decisión
+> posterior**. Ver `docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md` sección 3
+> para la reclasificación correcta.
+
 ### 2.1 Los 7 positivos del fixture, por tipo real
 
 | # | requirement_id | Doc/página real | Tipo (texto real, verificado) | ¿Reconocido en re-medición real? |
@@ -257,14 +268,42 @@ Confirmado en chat. Estado de los 3 requisitos que la Opción A exige
    firmas de prompt (`commit 52f502f`) construido, validado y firmado
    por Cesar (`commit 735f24c`) — `artifact_version_guard` en `WARN`,
    `fail_count=0`.
-2. **Re-medición dimensionada del §4** — **PROPUESTA, sin firmar**:
-   `PILOT_EXECUTION-2026-009` (`agent_proposed`, `max_calls=25`,
-   P2 k=10 + P4/P5/P7 k=5 cada uno) creada en `decisions_v2.jsonl` —
-   pendiente de tu firma real por el panel "Piloto de diagnóstico" de
-   la consola (mismo panel ya usado para `-004`). Corre con D ya
-   agregado entre chunks (Opción C), así que esta medición no estará
-   contaminada por el bloqueador estructural que afectó a la corrida
-   original.
+2. **Re-medición dimensionada del §4** — **PARCIAL, 20/25 llamadas
+   reales, DETENIDA a pedido de Cesar antes de terminar P7**.
+   `PILOT_EXECUTION-2026-009` propuesta y confirmada por Cesar como
+   `PILOT_EXECUTION-2026-010` (`human_confirmed`, `approved_by_id=cesar`,
+   2026-08-10T17:31:30). Ejecutada en background con D ya agregado
+   entre chunks (Opción C) — esta medición NO está contaminada por el
+   bloqueador estructural que afectó a la corrida original.
+
+   **Resultado real (3 de 4 unidades completas, checkpoints limpios,
+   sin corrupción):**
+
+   | Unidad | Llamadas | `chunk_observation` | `conclusion` |
+   |---|---|---|---|
+   | P2 (`21_CFR_11.10(g)`) | 10/10 | `not_observed_in_chunk` | `PROVISIONAL_GAP` |
+   | P4 (`ALCOA_ATTRIBUTABLE`) | 5/5 | `not_observed_in_chunk` | `EVALUATION_INCOMPLETE` |
+   | P5 (`ALCOA_CONTEMPORANEOUS`) | 5/5 | `not_observed_in_chunk` | `PROVISIONAL_GAP` |
+   | P7 (`21_CFR_211.68(b)`, RW-0012) | **0/5, no ejecutada** | — | — |
+
+   **Hallazgo honesto, no maquillado**: las 3 unidades completas dieron
+   **negativo**. Particularmente notable: **P5 comparte literalmente el
+   mismo chunk/pasaje que P1** (el caso que Causa 1 sí rescató, P1
+   `observed`) — mismo texto fuente, mismo artefacto de kerning ya
+   corregido, y aun así P5 dio `not_observed_in_chunk`. Esto contradice
+   la inferencia anterior ("P5 se rescataría igual que P1 por compartir
+   chunk") — el requisito evaluado (`ALCOA_CONTEMPORANEOUS` vs.
+   `21_CFR_11.10(e)`) importa tanto como el texto fuente: el modelo no
+   generaliza automáticamente una evidencia anclada de un requisito a
+   otro relacionado sobre el mismo pasaje.
+
+   Con datos parciales (3/6-7 negativos, ninguno rescatado más allá de
+   P1), el criterio de decisión pre-fijado en §4 ("≤3/6-7 → Opción B
+   domina") **casi se cumple pero no está completo** — falta P7. No se
+   declara un veredicto final sobre Causa 3 todavía: quedan 5 llamadas
+   pendientes (P7) para completar la muestra, sin gastar de
+   `PILOT_EXECUTION-2026-010` en este momento (Cesar puede retomarlas
+   cuando decida).
 3. **Aceptar que la evidencia tabular real queda como "sin evidencia
    localizada → revisión humana"** — aceptado implícitamente al elegir
    A; no requiere ninguna acción técnica adicional, es un criterio de
@@ -355,20 +394,26 @@ INSTRUMENT_FIXES =             P1/N2 pool compartido (causa precisa
                                original no sobrevive); fixture P3
                                consistente (diferencia es solo
                                convencion de indexado 0-idx vs 1-idx)
-REMEASURE_PLAN =               P2(k10)+P4(k5)+P5(k5)+P7(k5) = 25 llamadas;
-                               +4 opcional para experimento de dilucion;
-                               criterio A/B/mixto fijado ANTES de medir
-DECISION_PACKAGE =             Opciones A/B/C presentadas sin sesgo
-                               (arriba, seccion 5) -- C es nueva,
-                               priorizada por el hallazgo de §1.3
-SAMPLE_SUFFICIENCY_NOTE =      2/6 re-medidas != veredicto (confirmado,
-                               sin cambios desde §4)
+REMEASURE_PLAN =               EJECUTADO PARCIAL: P2(10/10)+P4(5/5)+P5(5/5)
+                               = 20/25 llamadas reales, P7 (0/5) sin
+                               ejecutar -- detenido a pedido de Cesar,
+                               checkpoints limpios, sin corrupcion.
+                               PILOT_EXECUTION-2026-010 con 5 llamadas de
+                               margen sin gastar
+DECISION_PACKAGE =             OPCION A elegida por Cesar (ver seccion
+                               "DECISION DE CESAR" arriba). C ya
+                               implementada; P7 pendiente para cerrar el
+                               criterio de decision del §4
+SAMPLE_SUFFICIENCY_NOTE =      P1(observed)/P6/P2/P4/P5(not_observed) = 1/5
+                               re-medidas con evidencia -- todavia falta P7
+                               para completar la muestra de 6; 3/5 negativas
+                               NO es veredicto final sobre Causa 3
 D4_2026_004_STATUS =           PROPOSED (sin cambios)
-NEXT_HUMAN_DECISION =          Rumbo A/B/C; si autoriza PILOT_EXECUTION
-                               nueva para el plan de re-medicion del §4;
-                               si prioriza el bloqueador estructural de
-                               verify_sufficiency (Opcion C) antes que
-                               mas recall
+NEXT_HUMAN_DECISION =          Retomar P7 (5 llamadas, presupuesto ya
+                               autorizado y disponible) para cerrar el
+                               criterio de decision del §4; o declarar
+                               Causa 3 confirmada con los datos parciales
+                               (no recomendado -- muestra incompleta)
 CORPUS_READY =                 false
 PRODUCTION_ENABLEMENT =        BLOCKED
 ```

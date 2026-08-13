@@ -67,7 +67,7 @@ from factory.services import decision_store_v2 as store
 GOVERNED_FAMILIES = ("D1", "D2", "D3", "D4", "D5", "ARTIFACT_VERSION",
                      "APPLICABILITY_MATRIX", "SOURCE_CURRENCY",
                      "SOURCE_ORIGIN_VERIFICATION", "CORPUS_AUTHORIZATION",
-                     "PILOT_EXECUTION")
+                     "PILOT_EXECUTION", "EMBED_EXECUTION")
 
 # R2.1 Opción C (2026-08-10): los 3 prompts gobernados cuyo bump de
 # prompt_version (Causa 2, commit d42d919) quedó sin decisión ARTIFACT_VERSION

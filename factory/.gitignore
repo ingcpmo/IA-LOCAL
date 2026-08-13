@@ -41,6 +41,11 @@ remediation_packages/**/state.json
 # el nombre de archivo -- mismo criterio que los checkpoints de arriba)
 regulatory/retrieval_index/
 
+# R2.2 §4.3: índice de embeddings por documento (regenerable re-llamando a
+# Ollama con el mismo modelo/digest declarado en EMBED_EXECUTION -- mismo
+# criterio que retrieval_index/, nunca fuente de verdad)
+regulatory/embedding_index/
+
 # Config local de Claude Code dentro de deployments
 deployments/*/.claude/
 

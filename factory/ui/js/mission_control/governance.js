@@ -137,6 +137,15 @@ const PANELS = [
        (mismo defecto de RC-7) ANTES de que Cesar terminara de intentar
        firmar PILOT_EXECUTION-2026-003 sin panel que lo mostrara. */
     resumen:'Alcance EXPLICITO (documento/agente/requisito) y tope duro de llamadas. NUNCA autoriza CORPUS_AUTHORIZATION ni D4 -- familia separada, ninguna otra la lee.' },
+  { id:'embed-execution', gate:'EMBED', family:'EMBED_EXECUTION',
+    titulo:'Capa semántica local — llamadas de embedding (R2.2 §4.2)',
+    /* gate:'EMBED' es deliberadamente un id fuera de G1..G8 (mismo motivo
+       que 'PILOT'): no hay precondicion real que heredar. Familia NUEVA
+       (2026-08-10, docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md sec.4.2):
+       un embedding es un vector determinista, NO es juicio LLM -- separada
+       de PILOT_EXECUTION a proposito, para que el presupuesto de recall de
+       juicio nunca se mezcle con el de recuperacion semantica. */
+    resumen:'Vectores deterministas (nomic-embed-text local) para medir recuperación semántica -- NUNCA juicio LLM, nunca autoriza PILOT_EXECUTION/CORPUS_AUTHORIZATION/D4.' },
   { id:'prompt-version-regularizacion', gate:'G-PV', family:'ARTIFACT_VERSION',
     titulo:'Prompts gobernados — regularización de versión (R2.1 Causa 2)',
     /* Mismo patron que matrix-version-regularizacion (RC-7/G6-MVR): un
@@ -1548,6 +1557,76 @@ function panelPilotExecution(){
   </div>`;
 }
 
+/* ── Panel — Capa semántica local, llamadas de embedding (R2.2 §4.2) ──── */
+
+function embedExecutionProposals(){
+  return (GOV?.proposals?.EMBED_EXECUTION || []).filter(p => p.proposal_state === 'PROPOSED');
+}
+
+function panelEmbedExecution(){
+  const propuestas = embedExecutionProposals();
+
+  const bloque = (p) => {
+    const pl = p.payload || {};
+    const scope = pl.scope || [];
+    const prefix = 'embexec_' + p.decision_instance_id.replace(/[^a-zA-Z0-9]/g, '_');
+    const filas = scope.map(u => `<tr>
+      <td class="mono">${esc(u.document_id)}</td>
+      <td class="mono">${esc(u.purpose)}</td>
+      <td class="meta">${esc(u.selection_reason)}</td>
+    </tr>`).join('');
+    return `<div class="card" style="margin-top:10px;padding:8px;border:1px solid var(--warn)">
+      <b>${esc(p.decision_instance_id)}</b>
+
+      <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px">
+        <div class="meta">TOPE DURO DE LLAMADAS: <span class="mono">${esc(pl.max_calls)}</span></div>
+        <div class="meta">MODELO DE EMBEDDING: <span class="mono">${esc(pl.embedding_model)}</span></div>
+        <div class="meta">AUTORIZA PILOT_EXECUTION: <span class="mono" style="color:var(--fail)">${esc(String(pl.authorizes_pilot_execution))}</span></div>
+        <div class="meta">AUTORIZA CORPUS_AUTHORIZATION: <span class="mono" style="color:var(--fail)">${esc(String(pl.authorizes_corpus))}</span></div>
+      </div>
+
+      <div class="meta" style="margin-top:8px;color:var(--warn)">
+        Un embedding es un vector determinista de un input -- no genera
+        texto ni conclusiones, no es juicio LLM. Familia SEPARADA de
+        PILOT_EXECUTION: firmar esto no puede, ni por accidente, gastar
+        presupuesto de juicio ni autorizar una corrida de juicio.</div>
+
+      <div class="meta" style="margin-top:10px">${esc(p.reason||'')}</div>
+
+      <div style="margin-top:10px"><b>ALCANCE EXPLÍCITO (${scope.length})</b></div>
+      <table class="tbl" style="width:100%;font-size:11px;margin-top:6px">
+        <thead><tr><th>Documento</th><th>Propósito</th><th>Motivo de selección</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+
+      ${signatureForm(prefix)}
+      ${NO_EJECUTA}
+      <div class="meta" style="margin-top:6px;color:var(--faint)">
+        Confirmar esto NO calcula ningún embedding real -- el runner de
+        recuperación semántica es una pieza aparte que se invoca por
+        separado, siempre con este tope duro de llamadas como techo.</div>
+      <div style="margin-top:8px">
+        <button id="${prefix}-submit-btn" onclick="govSubmitEmbedExecution('${esc(p.decision_instance_id)}','${esc(prefix)}')">
+          Confirmar ${esc(p.decision_instance_id)}</button>
+      </div>
+      ${statusLine(prefix)}
+    </div>`;
+  };
+
+  return `
+  <div class="card">
+    <b>Capa semántica local — llamadas de embedding (R2.2 §4.2)</b>
+    <div class="meta" style="margin-top:6px">
+      Ligera y separada de PILOT_EXECUTION a propósito: mide recuperación
+      semántica pura (BM25 + embeddings + fusión) para el caso de
+      paráfrasis (P2/P4/P5/P6/P7, R2.2 §3) ANTES de comprometer
+      presupuesto de juicio nuevo. Nunca promueve CORPUS_READY ni
+      PRODUCTION_ENABLEMENT.</div>
+    ${propuestas.map(bloque).join('') || '<div class="meta" style="margin-top:8px;color:var(--pass)">Ninguna propuesta de embedding pendiente de firma.</div>'}
+    <div style="margin-top:12px"><button onclick="govOpen('')">Volver al índice</button></div>
+  </div>`;
+}
+
 function panelExcepcion(){
   const a = GOV.audit;
   const MEDIDAS = medidas();
@@ -1662,6 +1741,7 @@ function paint(){
   else if(p.id==='corpus-authorization') body = panelCorpusAuthorization();
   else if(p.id==='pilot-execution')      body = panelPilotExecution();
   else if(p.id==='prompt-version-regularizacion') body = panelPromptVersionRegularizacion();
+  else if(p.id==='embed-execution')       body = panelEmbedExecution();
   else                             body = panelPendiente(p);
   el.innerHTML = banner + body;
   if(p.id==='d1-correccion') govRecalcHash();
@@ -2106,6 +2186,14 @@ export async function govSubmitPilotExecution(decisionInstanceId, prefix){
   if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
   if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
   await confirmarPropuestaExistente(decisionInstanceId, 'PILOT_EXECUTION', sig,
+                                    {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
+}
+
+export async function govSubmitEmbedExecution(decisionInstanceId, prefix){
+  const sig = readSignature(prefix);
+  if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
+  if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
+  await confirmarPropuestaExistente(decisionInstanceId, 'EMBED_EXECUTION', sig,
                                     {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
 }
 

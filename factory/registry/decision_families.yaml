@@ -38,6 +38,7 @@ known_consumers:
   - audit_reporting
   - package_regeneration
   - pilot_runner
+  - embedding_runner
   - remediation_package_creation
   - remediation_directive_creation
 
@@ -129,6 +130,27 @@ families:
     # accidente, satisfacer la cobertura que exige la corrida formal --
     # ver PLAN_PILOTO_DIAGNOSTICO_PRECORPUS.md Sec 2 y
     # test_pilot_isolation.py.
+
+  EMBED_EXECUTION:
+    label: "Autorizacion LIGERA de llamadas de EMBEDDING (vectores deterministas, no juicio LLM) para medir recuperacion semantica -- nunca autoriza PILOT_EXECUTION, CORPUS_AUTHORIZATION ni D4"
+    target_kind: run_scope
+    # Mismo patron que PILOT_EXECUTION: el objetivo es un plan de corrida
+    # acotado (documentos + fixture), no un id que viva en un registry.
+    target_registry: null
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [embedding_runner]
+    requires_human_confirmation: true
+    # R2.2 §4.2 (2026-08-10, docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md):
+    # familia NUEVA, distinta de PILOT_EXECUTION a proposito -- un embedding
+    # (vector determinista de un input, sin texto generado ni conclusion)
+    # NO es juicio LLM ni gasta el presupuesto de recall que mide si el
+    # MODELO DE JUICIO reconoce evidencia. Mezclar los dos conteos
+    # ocultaria cuanto presupuesto de juicio real queda disponible. Esta
+    # familia NUNCA cubre PILOT_EXECUTION/CORPUS_AUTHORIZATION/D4 (el
+    # resolver de esas familias no la consulta) -- firmar un
+    # EMBED_EXECUTION no autoriza, ni por accidente, ninguna llamada de
+    # juicio.
 
   D5:
     label: "Regeneracion de paquetes QA"
