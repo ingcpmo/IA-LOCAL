@@ -29,6 +29,7 @@ __pycache__/
 .npm/
 .nvm/
 .ollama/
+.gnupg/
 
 # Otras CLIs de agentes instaladas en el home
 .codex/
@@ -78,3 +79,6 @@ node_modules/
 /requirements.txt.backup.*
 /index*.html
 /log_llamada_exitosa.txt
+
+# Reportes internos/confidenciales sueltos en el home, nunca al repo
+/private_reports/
