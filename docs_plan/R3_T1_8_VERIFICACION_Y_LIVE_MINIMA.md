@@ -390,3 +390,211 @@ PRODUCTION_ENABLEMENT = BLOCKED
 pendientes de tu revisión y aprobación antes de commitear. DETENERSE
 aquí -- el bloque 4 (validación mínima en vivo, 3-5 llamadas) requiere
 tu firma explícita de autorización antes de ejecutarse.
+
+Bloques 0-3 commiteados en `17c41d0` (2026-08-12), con aprobación explícita
+de Cesar tras revisión del diff completo.
+
+──────────────────────────────────────────────────────────────────────────────
+EJECUCIÓN 2026-08-12 — BLOQUE 4 (validación mínima en vivo)
+──────────────────────────────────────────────────────────────────────────────
+
+## Autorización
+
+`PILOT_EXECUTION-2026-017` (`agent_proposed`) → `PILOT_EXECUTION-2026-018`
+(`human_confirmed` por `cesar`, 2026-08-12T21:xx, citando explícitamente el
+mensaje de chat "continua con lo pendiente ya se firmo 21_CFR_11.10(e) valida
+y continua" como acto de firma). Tope: 6 llamadas. Alcance: `21_CFR_11.10(e)`
+sobre `RW-0005`, perfil H2H4.
+
+## Ejecución (2 corridas, 5 de 6 llamadas usadas)
+
+**Corrida 1** (3 llamadas, `PILOT_EXECUTION-2026-018`): 3 `PilotSampleUnit`
+separadas (ancla p.45-46, contraste p.9, contraste p.13) -- **defecto de
+diseño propio**: cada unidad genera su PROPIO `run_id` independiente
+(`chunked-2678358a06b3`, `chunked-e6994ea8e953`, `chunked-d9b5bc77c9db`),
+así que nunca se agregan entre sí -- el bucket final y el fix B3
+(contradicción entre chunks del MISMO run) no quedaron ejercitados como
+pedía el plan.
+
+**Corrida 2** (2 llamadas, mismo `PILOT_EXECUTION-2026-018`, presupuesto
+acumulado exacto 3+2=5 de 6 firmadas, sin exceder): corregido -- UNA sola
+`PilotSampleUnit` con `page_indices=(44,45,12)` (ancla + contraste en el
+MISMO run), `run_id` único `chunked-c2c7dff6900c`, 2 chunks reales
+agregados en `verified_records_by_req`.
+
+## Resultado contra los criterios pre-fijados (a-f)
+
+**a) El chunk ancla ancla de nuevo bajo H2H4: CUMPLE.** `a_anchor=PASS`
+(match_type `normalized`), cita real UR3.3.1/UR3.3.2 idéntica en esencia a
+la del checkpoint histórico `chunked-943a62bcbb85`.
+
+**b) El bucket final coincide con lo que el replay predijo (o si difiere,
+se explica): DIFIERE, EXPLICADO -- no coincide literal.** El replay
+histórico predijo `CONFIRMED`/`PROVISIONALLY_PARTIALLY_DOCUMENTED`; esta
+corrida dio `EVALUATION_INCOMPLETE`/`ABCD_D_NOT_ASSESSABLE`. Causa raíz
+verificada en el propio candidato: `d_reason: "contrato de
+criterion_assessments violado: 2 problema(s)"` -- los criterios 2 y 3
+(timestamp, registro de acciones) vinieron `status=MET` con
+`evidence_quote` real pero `evidence_location` VACÍO, violación de
+contrato NIVEL A (`_find_contract_violations`, rechazo atómico del array
+completo). **Es la MISMA clase de incumplimiento de instrucción del
+modelo (`qwen2.5:7b`) ya documentada como hallazgo secundario en
+`docs_plan/R3_T1_2_F1_EVIDENCIA/RESUMEN.md`** ("es esperable que esta
+clase de violación aparezca de nuevo... no es necesario ni deseable
+arreglarla aflojando el validador") -- reproducida de forma independiente
+en esta llamada nueva, no causada por ningún fix de Bloques 0-3. El
+guardián (capa D / contrato) actuó correctamente: bloqueó la conclusión
+positiva en vez de aceptar un MET sin evidencia completa.
+
+**c) Los NOT_MET off-topic no producen falsa contradicción (B3 vivo):
+CUMPLE -- corregido tras reanálisis.** Verificación inicial incompleta:
+el primer reporte miró `candidate["d_reason"]` (valor POR CHUNK, previo a
+la agregación) y confundió el "contrato violado" del chunk ancla con la
+causa del bloqueo agregado. Recomputado con los datos reales exactos
+(`criterion_assessments`, `chunk_estado`, texto real de página vía
+`_extract_pilot_excerpt`) llamando directamente a la función real
+`verify_sufficiency_aggregated()`: `detail["contradicted"] = []` --
+**nunca hubo contradicción real entre chunks** (`all_met & all_not_met`
+vacío). El chunk de contraste (p.13, `chunk_estado="evidencia_insuficiente"`)
+fue correctamente reclasificado por B3 (`_classify_criteria_for_chunk`,
+`off_topic_chunk=True`) de NOT_MET a NOT_ASSESSABLE para sus 9 criterios
+-- nunca colisionó en falso con los criterios MET del chunk ancla. El
+bloqueo final (D=NOT_ASSESSABLE) vino de que el chunk ancla quedó
+EXCLUIDO de la agregación por su propia violación de contrato (mismo
+hallazgo de (b)), dejando la cobertura incompleta -- causa distinta de
+(b), pero tampoco B3. **B3 funciona correctamente en vivo, bajo datos
+reales nuevos.**
+
+**d) Rescate por criterios anclados si el headline queda vacío (B4/B5
+vivo): NO APLICABLE esta corrida.** El modelo devolvió headline
+(`evidencia_exacta`) directamente no vacío -- el camino de rescate B4/B5
+no se activó (nada que ejercitar).
+
+**e) Ninguna cita no anclada aparece como evidencia: CUMPLE.** La cita
+aceptada como headline está literalmente anclada (`a_anchor=PASS`); el
+MET con evidencia incompleta (criterios 2/3) fue BLOQUEADO por el
+contrato, nunca se coló como evidencia aceptada.
+
+**f) La entrada de cola se genera con sus candidatos si corresponde:
+CUMPLE (con nota).** Las 4 entradas (una por `run_id`) se generaron
+correctamente en `review_queue.jsonl` (`EVALUATION_INCOMPLETE` para las 2
+corridas con contradicción bloqueada, `PROVISIONAL_GAP` para las 2
+corridas de solo-contraste sin evidencia). `candidates: []` en todas --
+consistente con el path de despacho real (`_dispatch_contradiction_blocked_review`/
+`_dispatch_baseline_gap_review` no pasan lista de candidatos), no un
+defecto nuevo.
+
+## Veredicto
+
+**MIXTO, no un PASA limpio, pero con la mayoría de los criterios
+cerrados.** (a), (c) y (e) confirman que el pipeline H2H4 + superficie
+única (incluido el fix B3) siguen funcionando correctamente en vivo, con
+datos nuevos, no históricos. (b) difiere del replay, pero con una causa
+raíz identificada, verificada, y ya documentada como comportamiento
+conocido y aceptado del modelo (no un defecto introducido por Bloques
+0-3). (d) no quedó ejercitado -- 0/3 llamadas reales activó el camino de
+rescate B4/B5 (headline siempre no vacío en este caso puntual). Presupuesto
+agotado, 6 de 6 usadas, sin exceder lo firmado.
+
+`REPLAY_WAS_REPRESENTATIVE = PARCIAL` -- el replay predice bien el caso
+"feliz" (modelo cumple contrato), pero el pipeline real bajo H2H4 tiene
+una tasa no despreciable de violación de contrato por llamada (ya vista en
+F1 y de nuevo aquí) que el replay histórico (una sola corrida ya
+"limpia") no capturó como variable. Esto no es un defecto de código --
+es información real sobre el comportamiento del modelo que **condiciona
+el presupuesto de R4-T1** (esperar reintentos/exclusiones por este motivo
+con más frecuencia de la que el replay sugería).
+
+Decisión de Cesar (chat, 2026-08-12): usar la última llamada solo para (d)
+(fenómeno de un chunk, no requiere agregación) -- (c) quedó pospuesto en
+ese momento por creerse sin respuesta con los datos existentes.
+
+## Corrida 3 (1 llamada, `PILOT_EXECUTION-2026-018`, 5+1=6 de 6 exacto)
+
+Una sola `PilotSampleUnit`, `page_indices=(44,)` (solo página 45, nunca 2
+índices, para garantizar exactamente 1 llamada real bajo ninguna
+circunstancia). `run_id` `chunked-e8208618982a`.
+
+**Resultado**: `evidencia_exacta` (headline) de nuevo NO vacío -- B4/B5 NO
+se activó (nada que rescatar). Mismo patrón de contrato violado:
+`d_reason: "contrato de criterion_assessments violado: 2 problema(s)"` --
+criterios 2 y 3 otra vez `MET` con `evidence_quote` real pero
+`evidence_location` vacío.
+
+**Hallazgo relevante para R4-T1** (más significativo que "fluke
+ocasional"): en las 3 llamadas reales independientes de bloque 4 que
+tocaron el chunk ancla (`chunked-2678358a06b3`, `chunked-c2c7dff6900c`
+chunk 0, `chunked-e8208618982a`) -- 3 de 3 -- el modelo devolvió
+`evidence_location` vacío para los criterios MET, y 0 de 3 devolvió el
+headline top-level vacío. Esto sugiere que, para este documento/prompt/
+perfil H2H4, el patrón "MET sin `evidence_location`" es **consistente y
+esperable en la mayoría de las llamadas**, no un evento raro como sugería
+la caracterización original de F1 ("es esperable que reaparezca") --
+información directamente accionable para dimensionar el presupuesto de
+R4-T1 (esperar reintentos/exclusiones por esta causa con más frecuencia
+de la que el replay de un solo run históricamente limpio sugería). (d)
+queda **NO EJERCITADO por agotamiento de presupuesto** (0/3 intentos
+reales activó el camino de rescate) -- no refutado, solo sin datos con
+headline vacío bajo H2H4 para este caso puntual.
+
+## Reanálisis de (c) — cerrado sin gastar presupuesto nuevo
+
+Al preparar la autorización para cerrar (c) con llamadas nuevas, se
+detectó que el primer reporte de (c) se basó en el campo
+`candidate["d_reason"]` (valor POR CHUNK, calculado antes de la
+agregación) en vez del resultado agregado real. Recomputado llamando
+directamente a `verify_sufficiency_aggregated()` con los datos exactos de
+la corrida 2 (`criterion_assessments`, `chunk_estado`, texto real de
+página vía `_extract_pilot_excerpt`): `detail["contradicted"] = []` --
+nunca hubo contradicción real entre chunks. B3 reclasificó correctamente
+el contraste off-topic. (c) queda **CUMPLE**, con los datos ya existentes
+-- Cesar decidió explícitamente NO gastar las 2-3 llamadas adicionales
+propuestas, dado este cierre.
+
+```
+LIVE_MIN_AUTHORIZATION =       PILOT_EXECUTION-2026-018, tope 6, firmada
+                                por cesar (chat, 2026-08-12)
+LIVE_MIN_RESULT =               a) CUMPLE  b) DIFIERE-EXPLICADO
+                                c) CUMPLE (reanalisis, sin gasto nuevo)
+                                d) NO EJERCITADO (0/3, presupuesto agotado)
+                                e) CUMPLE  f) CUMPLE
+REPLAY_WAS_REPRESENTATIVE =    PARCIAL -- caso feliz si, B3 confirmado en
+                                vivo, tasa de violacion de contrato del
+                                modelo mas alta y mas consistente de lo
+                                que el replay sugeria (3/3 llamadas reales)
+CALLS_USED =                   6 de 6 (presupuesto agotado, sin exceder)
+R4_PLAN =                      NO iniciado -- pendiente de decision de
+                                Cesar sobre bloque 5, considerando el
+                                dimensionamiento de presupuesto de R4-T1
+                                a la luz de la tasa real de violacion de
+                                contrato (~3/3 en esta muestra)
+CORPUS_READY = false
+PRODUCTION_ENABLEMENT = BLOCKED
+```
+
+──────────────────────────────────────────────────────────────────────────────
+EJECUCIÓN 2026-08-12 — BLOQUE 5 (diseño de R4-T1, sin ejecutar)
+──────────────────────────────────────────────────────────────────────────────
+
+Diseño completo en `docs_plan/R4_T1_PLAN_POR_FASES.md` -- se auditó
+primero la infraestructura REAL ya existente (`remediation_package_service.py`,
+schemas, generadores XLSX/DOCX, traceability/manifest, Ruta D) antes de
+diseñar una sola línea nueva. R4-T1 resulta más acotado de lo esperado:
+la máquina de estados de paquetes, los formatos de artefacto
+(`CANDIDATE_DRAFT`/`REDLINE`/`REPORT`/`MANIFEST`) y los generadores de
+documento YA existen y están probados -- lo que falta es (1) el wiring
+cola-confirmada→Ruta D→paquete (hoy la cola es un callejón sin salida),
+(2) la marca explícita NO-APROBADO en el candidato generado, (3) correr
+el gate de aceptación (Piloto 2 original) con el pipeline conectado
+extremo a extremo sobre hallazgos REALES confirmados (nunca sintéticos),
+y (4) una decisión de gobernanza pendiente (si D5 cubre primera
+generación o hace falta familia nueva). 3 de las 4 fases del plan
+(R4-T1.0 a R4-T1.2) no requieren ninguna llamada LLM. `R4_T1_INICIADO = NO`
+-- diseño únicamente, per este bloque.
+
+```
+BLOQUE_5_ENTREGA =              docs_plan/R4_T1_PLAN_POR_FASES.md
+R4_T1_INICIADO =                NO
+CORPUS_READY = false
+PRODUCTION_ENABLEMENT = BLOCKED
+```

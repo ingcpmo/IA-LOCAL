@@ -1735,3 +1735,48 @@ def post_artifact_version_sign(body: ArtifactVersionSignBody):
         if err.status_code == 409:
             err.detail = {"detail": err.detail, "reason": "stale_state"}
         raise err
+
+
+class RemediationDirectiveCreate(BaseModel):
+    """R4-T1.0v2 bloque 3 (docs_plan/R4_T1_0v2_DIRECTIVA_REMEDIACION.md):
+    Acto 2 -- autoría humana de la corrección. `proposed_text` y
+    `original_text` (si aplica) vienen SIEMPRE del cuerpo del humano que
+    envía la petición -- este endpoint nunca los genera ni los completa."""
+    finding_rc_id: str
+    change_type: str
+    proposed_text: str
+    target_location: dict
+    regulatory_citation: list[str]
+    rationale: str
+    authored_by_id: str
+    authored_by_display_name: str | None = None
+    original_text: str | None = None
+
+
+@router.post("/remediation/directives", status_code=201)
+def post_remediation_directive(body: RemediationDirectiveCreate):
+    """Vía mínima de captura (3.3: "entregar primero el endpoint +
+    validación... proponer la UI rica como fase aparte"). Cada rechazo
+    devuelve motivo explícito (422); identidad reservada también 422 vía
+    el mismo validador que el resto de la fábrica."""
+    from factory.core.identity_policy import IdentityValidationError
+    from factory.services import remediation_directive as _rd
+    try:
+        return _rd.propose_remediation_directive(
+            finding_rc_id=body.finding_rc_id, change_type=body.change_type,
+            proposed_text=body.proposed_text, target_location=body.target_location,
+            regulatory_citation=body.regulatory_citation, rationale=body.rationale,
+            authored_by_id=body.authored_by_id,
+            authored_by_display_name=body.authored_by_display_name,
+            original_text=body.original_text,
+        )
+    except IdentityValidationError as e:
+        raise HTTPException(422, {"error": "invalid_identity", "detail": str(e)})
+    except _rd.RemediationDirectiveError as e:
+        raise HTTPException(422, {"error": "remediation_directive_rejected", "detail": str(e)})
+
+
+@router.get("/remediation/directives")
+def get_remediation_directives(finding_rc_id: str | None = Query(default=None)):
+    from factory.services import remediation_directive as _rd
+    return {"directives": _rd.list_directives(finding_rc_id=finding_rc_id)}

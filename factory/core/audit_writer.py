@@ -269,6 +269,12 @@ VALID_EVENTS = {
     # (que exige una identidad de revisor real, no aplica aquí). El
     # registro original nunca se borra, solo queda marcado.
     "finding_superseded",
+    # R4-T1.0v2 (2026-08-13, docs_plan/R4_T1_0v2_DIRECTIVA_REMEDIACION.md)
+    # -- Acto 2 (autoria humana de la correccion), distinto de rc_reviewed/
+    # mark_reviewed (Acto 1, adjudicar el hallazgo). proposed_text SIEMPRE
+    # viene del humano identificado en authored_by_id -- este evento nunca
+    # se dispara desde codigo de agente.
+    "remediation_directive_authored",
 }
 
 
