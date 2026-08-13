@@ -196,10 +196,17 @@ def test_full_cold_chain_rw0005_directive_to_traceable_candidate(tmp_path):
     remediation_package_service.create_package -> generador de candidato
     -> redline -> manifest -> trazabilidad. Evalua los 8 criterios de
     aceptacion de §2.3 (a-h). CERO llamadas LLM."""
-    commit_sha = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2],
-        capture_output=True, text=True, check=True,
-    ).stdout.strip()
+    try:
+        commit_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        # binario git no disponible / repo no montado dentro del
+        # contenedor factory-api (solo factory/ esta bind-mounted, sin
+        # .git) -- generation_commit_sha es metadata de trazabilidad del
+        # paquete DRY_RUN, no se valida su contenido en este test.
+        commit_sha = "UNKNOWN_NO_GIT_IN_CONTAINER"
 
     pdf_path, doc_sha_before = _resolve_document_path("RW-0005")
     sha_before = _sha256_bytes(pdf_path.read_bytes())
