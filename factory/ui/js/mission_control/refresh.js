@@ -21,6 +21,7 @@ import { renderMissionDetail } from './mission_detail_view.js';
 import { renderMissionAgents, renderAgentsCatalog } from './agents_view.js';
 import { renderReports } from './reports_view.js';
 import { renderValidationPackage } from './validation_view.js';
+import { renderRemediationDirectives } from './remediation.js';
 import { fillMissionSelect, toast } from './core.js';
 
 const TITLES={
@@ -41,7 +42,8 @@ const TITLES={
   system:["Estado del sistema","mission-control / system"],
   tasks:["Tareas de agentes · MODO DISEÑO","mission-control / intel / agent-tasks"],
   sources:["Fuentes regulatorias · MODO DISEÑO","mission-control / intel / sources"],
-  memory:["Memoria de casos · memoria ligera gobernada","mission-control / intel / case-memory"]
+  memory:["Memoria de casos · memoria ligera gobernada","mission-control / intel / case-memory"],
+  remediacion:["Remediación — directivas y adjudicación","mission-control / governance / remediation"],
 };
 
 export function show(v,btn){
@@ -270,6 +272,14 @@ export async function refresh(v){
     if(v==='memory'){
       const r=await fetch(API_BASE+"/api/v1/layer9/case-memory",{headers:headers()});
       if(r.ok){ renderCaseMemory(await r.json()); }
+    }
+    if(v==='remediacion'){
+      const r=await fetch(API_BASE+"/api/v1/layer9/remediation/directives",{headers:headers()});
+      if(r.ok){ renderRemediationDirectives(await r.json()); }
+      else {
+        const el=document.getElementById('remediation-directives-list');
+        if(el) el.innerHTML='<div class="card"><div class="meta" style="color:var(--fail)">Error HTTP '+r.status+' al leer las directivas.</div></div>';
+      }
     }
   }catch(e){
     /* Corrección operativa: antes se tragaba en silencio cualquier error

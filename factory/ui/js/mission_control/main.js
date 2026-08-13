@@ -37,6 +37,8 @@ import { doCaseSearch, submitRegQuery, promptCaseFetch,
   copyCaseCitation, promptCaseCompare, runCaseCompare,
   toggleCaseAnalysis, loadCaseAnalysis, runCaseAnalysis,
   decideCaseAnalysis } from './intel_views.js';
+import { loadRemediationPackage, submitExceptionReview,
+  submitMediumRiskBatch, submitPackageDecision } from './remediation.js';
 
 Object.assign(window, {
   show, connect, refresh, toast, fakeSubmit,
@@ -63,6 +65,7 @@ Object.assign(window, {
   submitRegQuery, promptCaseFetch,
   copyCaseCitation, promptCaseCompare, runCaseCompare,
   toggleCaseAnalysis, loadCaseAnalysis, runCaseAnalysis, decideCaseAnalysis,
+  loadRemediationPackage, submitExceptionReview, submitMediumRiskBatch, submitPackageDecision,
 });
 
 document.querySelectorAll('#nav button').forEach(b=>{

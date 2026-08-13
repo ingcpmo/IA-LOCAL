@@ -86,12 +86,29 @@ def _add_warning(doc: Document, texto: str) -> None:
     run.font.size = Pt(10)
 
 
+# R4-T1.1 (docs_plan/R4_T1_1v2_DESBLOQUEO_Y_VALIDACION_FRIA.md, §2.3.b):
+# marca visible obligatoria en TODO candidato/redline generado por este
+# módulo -- texto literal fijo (no parafraseado) para que un chequeo por
+# reapertura (mismo patrón que verify_document_conformance) pueda
+# localizarla de forma determinista, nunca inferida de otro texto.
+NO_APROBADO_MARK = "BORRADOR — NO APROBADO — pendiente de revisión QA"
+
+
+def _add_no_aprobado_mark(doc: Document) -> None:
+    p = doc.add_paragraph()
+    run = p.add_run(NO_APROBADO_MARK)
+    run.bold = True
+    run.font.color.rgb = _WARNING_COLOR
+    run.font.size = Pt(12)
+
+
 def generate_candidate_document(structure: dict, changes: list[dict]) -> Document:
     """Documento candidato completo, version limpia (§2): texto original
     intacto + `proposed_content` de cada cambio insertado en su sección,
     sin marcado visual de diff -- el documento "como quedaria"."""
     doc = Document()
     doc.add_heading("Documento candidato completo -- DRAFT", level=1)
+    _add_no_aprobado_mark(doc)
     _add_warning(
         doc,
         "ESTADO: DRAFT. Los cambios documentales NO garantizan por si solos "
@@ -126,6 +143,7 @@ def generate_redline_document(structure: dict, changes: list[dict]) -> tuple[Doc
     depender de un conteo manual paralelo que pueda desincronizarse)."""
     doc = Document()
     doc.add_heading("Documento candidato -- REDLINE (DRAFT)", level=1)
+    _add_no_aprobado_mark(doc)
     _add_warning(
         doc,
         "ESTADO: DRAFT. Texto en verde con tag [change_id] = insertado por "

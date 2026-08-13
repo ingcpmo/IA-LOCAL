@@ -37,6 +37,7 @@
       <button data-v="review">Revisión humana</button>
       <button data-v="w5">Decisiones W5</button>
       <button data-v="gobierno">Gobernanza de decisiones</button>
+      <button data-v="remediacion">Remediación — directivas</button>
       <button data-v="pipeline">Pipeline Capa 8</button>
       <div class="grp">Cumplimiento</div>
       <button data-v="audit">Auditoría</button>
@@ -443,6 +444,38 @@
           <div class="card"><div class="meta" style="color:var(--faint)">(conectar para ver cola de revisión…)</div></div>
         </div>
         <p class="note">El deploy nunca es automático: aprobar el RC habilita la autorización de despliegue, que es un paso humano adicional.</p>
+      </section>
+
+      <!-- R4-T1.1v2 §3.2 — REMEDIACIÓN: directivas + adjudicación de paquete -->
+      <section class="view" id="v-remediacion">
+        <p class="lead">Directivas de remediación (autoría humana sobre un hallazgo confirmado) y
+        adjudicación del paquete de candidato generado a partir de ellas. <b>Registrar aquí NUNCA
+        libera el documento</b>: <span class="mono">create_release_record()</span> existe en el
+        servicio pero no está conectado a ningún endpoint — <span class="mono">DOCUMENT_RELEASED</span>
+        permanece <span class="mono">false</span> siempre.</p>
+
+        <div class="card">
+          <h3>Directivas de remediación</h3>
+          <div class="hr"></div>
+          <div id="remediation-directives-list">
+            <div class="meta" style="color:var(--faint)">(conectar para ver directivas…)</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h3>Paquete de remediación — buscar y adjudicar</h3>
+          <div class="meta" style="margin-top:4px">No existe todavía un listado de paquetes — se busca
+          por identificador exacto (project_id / package_id / version), el mismo que produce
+          <span class="mono">remediation_package_service.create_package()</span>.</div>
+          <div class="grid g3" style="margin-top:8px">
+            <div class="field"><label>project_id</label><input id="rp-project" placeholder="p.ej. RW-0005" autocomplete="off"></div>
+            <div class="field"><label>package_id</label><input id="rp-package" placeholder="p.ej. RW-0005-pkg" autocomplete="off"></div>
+            <div class="field"><label>version</label><input id="rp-version" placeholder="1" autocomplete="off"></div>
+          </div>
+          <button class="btn" style="margin-top:8px" onclick="loadRemediationPackage()">Buscar paquete</button>
+        </div>
+
+        <div id="remediation-package-box" style="margin-top:14px"></div>
       </section>
 
       <!-- 05b W5 — DECISIONES HUMANAS -->
