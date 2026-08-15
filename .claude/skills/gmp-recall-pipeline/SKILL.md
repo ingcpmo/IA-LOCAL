@@ -289,6 +289,53 @@ movió el recall de juicio fuera del rango 1-2/7 medido desde H1-H4. El
 techo es del modelo de 7B sobre evidencia parafraseada, no de ninguna
 etapa de recuperación o extracción — confirmado, no ya hipótesis.
 
+## R4 — el techo se confirma por experimento directo también para dilución tabular (2026-08-15)
+
+La auditoría `docs_plan/AUDITORIA_ARQUITECTONICA_2026-08/` (Pista A,
+representación documental) y su continuación de ejecución
+(`docs_plan/CONTINUACION_FASE0_P4_FASE1.md` +
+`docs_plan/CONTINUACION_CIERRE_ESTRATEGICO.md`) confirmaron el mismo
+techo por una vía INDEPENDIENTE a R2: dilución de ruido tabular en vez
+de paráfrasis.
+
+**P4/P6** (RW-0011 p.12, mismo chunk, dos requisitos/agentes distintos):
+tabla de señales I/O y cabecera de plantilla removidas por completo a
+mano, prosa relevante en contexto narrativo limpio (1670 caracteres,
+ratio de señal 6.6% vs 4.5% original), verificación mecánica previa
+confirmó la separación antes de gastar la llamada. **Resultado idéntico
+al de la corrida sin aislar** — `evidencia_insuficiente`/`""` en ambos.
+Checkpoints reales preservados:
+`chunked-8e2b20bfa511`/`chunked-510444cedc9b` (aislado) vs.
+`chunked-5a439f3fde11`/`chunked-554544f4090f` (sin aislar).
+
+**Con esto, evidencia perfectamente aislada que no cambia el juicio es
+ahora un patrón confirmado DOS veces por vías independientes** — R2
+(P2/P5, paráfrasis) y R4 (P4/P6, dilución tabular). El techo es del
+modelo de 7B, mecanismo desconocido del lado del modelo, no un accidente
+de una sola medición. **Table/EvidenceUnit (arquitectura DOM completa
+para atacar recall de juicio) queda descartada** por esta evidencia —
+la Pista A de esa auditoría demostró valor táctico real (fix de
+furniture simétrico LLM/verificador, commit `e271488`, con beneficio
+colateral medido en retrieval `retrieval_recall_at_5` 4/7→5/7) pero no
+la palanca estratégica esperada.
+
+**P7 (RW-0012 p.13, mismo requisito que P6) NO se suma como quinto caso
+confirmado** — queda `OPEN_DECISION` explícito. Lectura directa de su
+texto real mostró un patrón de eco léxico casi verbatim (contradice
+paráfrasis) sin tabla en su página (contradice dilución) — ninguna de
+las dos hipótesis ya medidas lo explica, y no hay checkpoint histórico
+propio para confirmar la causa real. **Lección de proceso**: una versión
+intermedia de este mismo arco lo había dado por "mismo bucket que P2/P5"
+por INFERENCIA sin leer su texto — detectado y corregido en la misma
+sesión. Regla derivada: nunca generalizar la causa de un caso sin leer
+su evidencia propia, aunque comparta pasaje con un caso ya medido.
+
+Con el techo confirmado en 4/7 casos por experimento directo (P2, P4,
+P5, P6), el paquete de decisión estratégica (Palancas A — GPU local
+mayor, B — `AnthropicProvider`, C — Tier-1 de alcance reducido ya
+construido) queda listo en `docs_plan/PAQUETE_DECISION_ESTRATEGICA.md`,
+sin recomendación sesgada, pendiente de decisión de Cesar.
+
 ## Qué está diferido (y su condición de reactivación)
 
 - **H5** (modelo alternativo) / **H6** (caracterización de

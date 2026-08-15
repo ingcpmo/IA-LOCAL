@@ -27,13 +27,27 @@ Requiere: `PILOT_EXECUTION` vigente seleccionada por el resolver (nunca
 proponer una nueva sin verificar primero), aprobación de Cesar para
 gastar hasta 2 llamadas LLM nuevas.
 
-### Fase 2 — Table/EvidenceUnit, condicionada al resultado de Fase 1
+### Fase 2 — Table/EvidenceUnit: NO JUSTIFICADA (cerrado 2026-08-15)
 
-Solo si el experimento C confirma que separar tabla de prosa cambia el
-resultado de juicio en P6/P7. Si no lo confirma (mismo patrón que P2/P5:
-evidencia perfecta, juicio sin cambio), esta fase se cancela
-explícitamente — no se construye una representación completa "por si
-acaso" contra la evidencia del propio experimento.
+**Estado anterior**: "condicionada al resultado del experimento C".
+**Estado real, cerrado formalmente** (`docs_plan/
+CONTINUACION_CIERRE_ESTRATEGICO.md` Bloque 1): el experimento C se
+ejecutó de verdad el 2026-08-14/15 — tabla de señales I/O y cabecera de
+plantilla removidas por completo, prosa relevante en contexto narrativo
+limpio (1670 caracteres, ratio de señal 6.6% vs. 4.5% original),
+verificado mecánicamente antes de gastar la llamada. **Resultado:
+idéntico al de la corrida sin aislar** — ambos `evidencia_insuficiente`,
+sin cita, mismos criterios `NOT_MET`/`NOT_ASSESSABLE`. Checkpoints
+reales preservados: `chunked-8e2b20bfa511` (P4 aislado),
+`chunked-510444cedc9b` (P6 aislado) — comparar contra
+`chunked-5a439f3fde11`/`chunked-554544f4090f` (misma corrida sin aislar).
+
+**Esta fase queda CANCELADA, no pausada**: la evidencia del propio
+experimento la refuta. No se construye `Table`/`EvidenceUnit` — sería
+invertir esfuerzo real contra el resultado ya medido. Reabrir solo si
+aparece un caso futuro con una causa distinta a las ya evaluadas
+(paráfrasis, confirmada refutada para representación; dilución tabular,
+confirmada refutada), con su propio experimento previo.
 
 ### Fase 3 — Contrato formal prompt↔verificador (Pista B, P1)
 

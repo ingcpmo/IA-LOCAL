@@ -17,15 +17,16 @@ completo a aprobación de Cesar. No es un compromiso de construcción.
                          │  simétrico LLM/verificador     │  ← Fase 0
                          └──────────────┬───────────────┘
                                         │
-                    ┌───────────────────┴────────────────────┐
-                    │                                         │
-        ┌───────────▼───────────┐              ┌──────────────▼─────────────┐
-        │ CHUNKING actual        │              │ Table/EvidenceUnit          │
-        │ (build_page_chunks,    │              │ CONDICIONADO al resultado   │
-        │  sin cambio salvo fix) │              │ del Experimento C (Fase 1)  │  ← solo si
-        └───────────┬───────────┘              └──────────────┬─────────────┘     se justifica
-                    │                                         │
-                    └───────────────────┬─────────────────────┘
+                                        │
+                         ┌──────────────▼───────────────┐
+                         │ CHUNKING actual                 │
+                         │ (build_page_chunks,             │
+                         │  sin cambio salvo fix)          │
+                         │                                  │
+                         │  [Table/EvidenceUnit: DESCARTADO │
+                         │   2026-08-15 — experimento C     │
+                         │   real lo refutó, ver abajo]     │
+                         └──────────────┬───────────────┘
                                         │
                          ┌──────────────▼───────────────┐
                          │  RETRIEVAL — ya resuelto (R2)  │
@@ -95,14 +96,24 @@ nunca producto) — corre en paralelo a la Pista A, sin dependencia mutua.
 ECC_NATURE_CONFIRMED       = agent harness / tooling de desarrollo — confirmado, no corregido
 ECC_DOC_PROCESSING_VALUE   = NINGUNO — confirmado
 INFORMATION_LOSS_MAP       = 6 transiciones documentadas; furniture asimétrico CORREGIDO (Bloque 1,
-                              commit e271488); dilución tabular P4/P6/P7 REFUTADA como causa (ver abajo)
-BOTTLENECK_CONCLUSION      = F (el modelo/LLM) para los 5 casos positivos fallidos del fixture
-                              (P2, P4, P5, P6, P7) — CONFIRMADO, no hipótesis. P2/P5 vía R2 (3
-                              mediciones independientes); P4/P6 vía experimento C real ejecutado
-                              2026-08-15 (tabla removida por completo, prosa en contexto limpio
-                              1670 chars/6.6%, mismo resultado que con tabla presente); P7
-                              recalificado al mismo bucket (sin tabla real en su página). Ninguna
-                              mejora de pipeline movió el resultado en ningún caso medido.
+                              commit e271488); dilución tabular P4/P6 REFUTADA como causa (ver abajo);
+                              P7 sin causa confirmada (OPEN_DECISION, corregido 2026-08-15)
+BOTTLENECK_CONCLUSION      = F (el modelo/LLM), CONFIRMADO por experimento directo para 4 de los 5
+                              casos positivos fallidos del fixture (P2, P4, P5, P6) — no hipótesis.
+                              P2/P5 vía R2 (3 mediciones independientes); P4/P6 vía experimento C
+                              real ejecutado 2026-08-15 (tabla removida por completo, prosa en
+                              contexto limpio 1670 chars/6.6%, mismo resultado que con tabla
+                              presente). Ninguna mejora de pipeline movió el resultado en ninguno
+                              de esos 4 casos. **P7 CORREGIDO (2026-08-15, docs_plan/
+                              CONTINUACION_CIERRE_ESTRATEGICO.md Bloque 0)**: la versión anterior de
+                              este bloque lo daba por "recalificado al mismo bucket" por INFERENCIA
+                              sin leer su texto real — error. Lectura directa confirma texto
+                              verbatim (no paráfrasis) y sin tabla, pero el Evidence Pack real de 7
+                              criterios (medido en P6, mismo agente) abre una explicación alternativa
+                              genuina (evidencia insuficiente frente a criterio amplio, no
+                              necesariamente un miss). Sin checkpoint propio de P7 y sin poder
+                              re-ejecutar en esta corrida (regla dura: cero LLM) — queda
+                              OPEN_DECISION, fuera del conteo de casos confirmados.
 DOM_JUSTIFIED_ENTITIES     = Document/Section/Paragraph (ya existen, uso ya vigente en Fase 4 de
                               generación de candidato). Table/EvidenceUnit: NO JUSTIFICADAS para
                               atacar recall de juicio — experimento real las refutó para P4/P6/P7,
@@ -142,3 +153,16 @@ aprobación explícita separada de Cesar, según el protocolo ya
 establecido. Ninguna implementación adicional (DOM, `Table`,
 `EvidenceUnit`, Tier-1, o cualquier otra línea de `IMPLEMENTATION_PLAN.md`)
 comienza sin nueva aprobación explícita.
+
+## Balance honesto de la Pista A (2026-08-15, docs_plan/CONTINUACION_CIERRE_ESTRATEGICO.md Bloque 1.3)
+
+La Pista A demostró tener **valor táctico real** (fix de furniture,
+commit `e271488`, en producción, con beneficio colateral medido en
+retrieval 4/7→5/7) pero **no la palanca estratégica que se esperaba**
+(una arquitectura DOM completa que resolviera el recall de juicio). Esto
+no invalida el trabajo — es exactamente el tipo de resultado honesto que
+una auditoría de diseño debe producir: una mejora real y acotada,
+distinguida con precisión de una hipótesis mayor que no se sostuvo al
+medirse. La palanca real para mover el recall de juicio no está en la
+Pista A — ver `STRATEGIC_DECISION_PACKAGE` en `docs_plan/
+PAQUETE_DECISION_ESTRATEGICA.md`.

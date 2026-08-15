@@ -132,6 +132,53 @@ del experimento tabular** (no tiene sentido aislar una tabla que no
 existe en su chunk); si Cesar quiere investigar P7 más a fondo, debe
 tratarse como candidato al mismo bucket que P2/P5, no al de P6/P4.
 
+### CORRECCIÓN 2026-08-15 (docs_plan/CONTINUACION_CIERRE_ESTRATEGICO.md, Bloque 0) — P7 pasa de INFERENCE a lectura textual directa, pero la clasificación final queda OPEN_DECISION
+
+El párrafo anterior trataba a P7 como si su causa ya estuviera resuelta
+por analogía con P2/P5 — eso era **INFERENCE sin lectura del texto
+real**, exactamente el mismo tipo de sobregeneralización que el
+`RISK_REGISTER.md` marca como riesgo transversal principal. Corregido:
+
+**FACT (lectura directa del texto completo de la página, 2026-08-15)**:
+el pasaje relevante SÍ existe en RW-0012 p.13, sección "4.3 Operator
+Interface": *"Each of the input signals is displayed in engineering
+units on the HMI. As mentioned previously, with the proper credentials,
+the input points can be simulated for calibration or other maintenance
+activities."* — **casi verbatim** respecto al de P4/P6 (RW-0011), NO
+parafraseado. Este es el mismo patrón de eco léxico que hizo funcionar a
+P1, no el patrón de paráfrasis de P2/P5. La hipótesis "P7 = mismo bucket
+que P2/P5" del párrafo anterior queda **contradicha por el propio texto**.
+
+**FACT (verificado en `W5V2_RECALL_EXPERIMENTS_RESULTADOS.md`, 4 filas
+de experimentos H1-H6 independientes)**: P7 falló consistentemente en la
+historia real medida (`no_cumple`/`evidencia_insuficiente`/`not_found`
+en las 4 filas) — no era una asunción, hubo medición real, aunque el
+checkpoint específico no se preservó.
+
+**Tercera hipótesis, no considerada antes, con apoyo real parcial**: los
+checkpoints reales propios de esta sesión para P6 (mismo agente
+`fda_cgmp_211_agent`, mismo `req_id`, `chunked-554544f4090f` y
+`chunked-510444cedc9b`) muestran un Evidence Pack de **7 criterios**
+amplios (control técnico de cambios en registros maestros,
+identificación de personal autorizado, exactitud de I/O, etc.) — la
+oración de calibración/credenciales solo toca tangencialmente uno de
+esos criterios, nunca los cubre todos. Es decir: **incluso un modelo que
+reconociera la oración literal seguiría teniendo motivo legítimo para
+marcar la mayoría de los 7 criterios como NOT_MET/NOT_ASSESSABLE** — lo
+que abre la posibilidad de que el fallo histórico de P7 no sea un "miss"
+de reconocimiento, sino una evaluación correcta de evidencia insuficiente
+frente a un criterio regulatorio amplio.
+
+**OPEN_DECISION, no forzado a FACT**: no existe checkpoint histórico
+propio de P7 preservado (mismo límite documentado desde la primera
+versión de este documento), y esta corrida tiene la regla dura de cero
+llamadas LLM — no se puede re-ejecutar P7 para confirmar cuál de las dos
+lecturas es la real (miss de reconocimiento vs. evaluación
+multi-criterio correcta). **P7 NO se suma como sexto caso confirmado a
+la conclusión del cuello de botella** — queda fuera del conteo de casos
+confirmados por experimento directo hasta que exista su propio
+checkpoint real (re-ejecución futura, con aprobación de Cesar).
+
 ## ACTUALIZACIÓN 2026-08-15 — Corrida real de P4/P6 ejecutada (2 llamadas LLM, aprobadas por Cesar)
 
 Ejecutada vía `corpus_runner.run_pilot_sample_batch()` (`PILOT_EXECUTION-2026-010`,
@@ -205,26 +252,34 @@ una causa estructuralmente distinta (ruido tabular vs. paráfrasis) — dos
 vías de medición distintas convergiendo en la misma conclusión: el techo
 es del modelo de 7B, no de ninguna etapa de representación o extracción.
 
-## BOTTLENECK_CONCLUSION (actualizada 2026-08-15, final)
+## BOTTLENECK_CONCLUSION (actualizada 2026-08-15, corregida — P7 no forzado)
 
 Se responde por caso, no en bloque — el brief pedía una respuesta única
 del §23 pero la evidencia real no la sostiene como una sola letra. Con el
-experimento C real completado, la conclusión ya no es parcial:
+experimento C real completado, la conclusión es sólida para 4 casos; P7
+queda explícitamente fuera del conteo (ver corrección arriba):
 
-| Caso | Cuello de botella confirmado | Evidencia |
+| Caso | Cuello de botella | Nivel de evidencia |
 |---|---|---|
-| P2, P5 (paráfrasis) | **F — el modelo/LLM**, no representación ni recuperación | 3 mediciones independientes, R2 |
-| P4, P6 (dilución tabular, mismo chunk) | **F — el modelo/LLM, REFUTADA la hipótesis de representación por experimento real**: tabla removida por completo, prosa en contexto limpio (1670 chars, ratio 6.6%), mismo resultado que con la tabla presente | corrida real `chunked-8e2b20bfa511`/`chunked-510444cedc9b` (aislado) vs. `chunked-5a439f3fde11`/`chunked-554544f4090f` (sin aislar), checkpoints preservados |
-| P7 | **Recalificado** — la página NO tiene tabla de contenido real; la prosa vive en contexto limpio. Mismo bucket que P2/P5/P4/P6 — límite del modelo, no de representación | re-extracción real 2026-08-14, consistente con el patrón ahora confirmado en P4/P6 |
+| P2, P5 (paráfrasis) | **F — el modelo/LLM**, no representación ni recuperación | **FACT** — 3 mediciones independientes, R2 |
+| P4, P6 (dilución tabular, mismo chunk) | **F — el modelo/LLM, REFUTADA la hipótesis de representación por experimento real**: tabla removida por completo, prosa en contexto limpio (1670 chars, ratio 6.6%), mismo resultado que con la tabla presente | **FACT** — corrida real `chunked-8e2b20bfa511`/`chunked-510444cedc9b` (aislado) vs. `chunked-5a439f3fde11`/`chunked-554544f4090f` (sin aislar), checkpoints preservados |
+| P7 | **NO clasificado** — texto verbatim (no paráfrasis), sin tabla, pero posible evidencia genuinamente insuficiente frente a un Evidence Pack de 7 criterios amplios (no un miss de reconocimiento necesariamente) | **OPEN_DECISION** — sin checkpoint histórico propio, sin re-ejecución en esta corrida (regla dura: cero LLM) |
 
-**Conclusión final del arco P2/P4/P5/P6/P7**: los 5 casos positivos
-fallidos del fixture 7P+2N comparten la misma causa raíz — el techo de
-juicio del modelo de 7B, no una deficiencia de representación,
-extracción, chunking o recuperación. Ninguna mejora de pipeline (fix de
-kerning, fix de furniture, fusión semántica de retrieval, ni ahora
-aislamiento completo de ruido tabular) movió el resultado. Esto NO es
-una hipótesis — es la conclusión de 5 mediciones reales independientes
-(R2 para P2/P5, esta auditoría para P4/P6/P7).
+**Conclusión final, precisa (corrige "5 casos" de la versión anterior de
+este documento)**: **4 de los 5 casos positivos fallidos del fixture
+7P+2N (P2, P4, P5, P6) están confirmados por experimento directo** —
+comparten la misma causa raíz, el techo de juicio del modelo de 7B, no
+una deficiencia de representación, extracción, chunking o recuperación.
+Ninguna mejora de pipeline (kerning, furniture, fusión semántica de
+retrieval, aislamiento completo de ruido tabular) movió el resultado en
+ninguno de esos 4 casos. **P7 sigue sin causa confirmada** — su texto
+verbatim contradice la hipótesis de paráfrasis, su página sin tabla
+contradice la hipótesis de dilución, y la única explicación con apoyo
+real (Evidence Pack de 7 criterios amplios sobre P6/mismo agente) es
+INFERENCE, no un hecho verificado sobre el propio P7. Tratarlo como
+quinto caso confirmado sería exactamente la sobregeneralización que
+`RISK_REGISTER.md` marca como el riesgo transversal más importante de
+todo este arco.
 
 **Riesgo de diseño explícito para Cesar**: construir un DOM/EvidenceUnit
 para atacar P6/P7 (dilución tabular) es una apuesta razonable dado el
