@@ -14,7 +14,18 @@ asumidos del diseño original): retrieval_recall_at_5 = 4/7 sobre los 7
 positivos del fixture (P1, P4, P6, P7 sí; P2, P3, P5 no -- P5 es
 justamente el caso que R1.6/R1.7 ya mostró que el modelo cita de forma
 parafraseada, sin vocabulario gobernado literal, así que BM25 -- también
-léxico -- tiene el mismo punto ciego). retrieval_recall_at_10 = 7/7
+léxico -- tiene el mismo punto ciego).
+
+Actualización 2026-08-14 (docs_plan/CONTINUACION_FASE0_P4_FASE1.md
+Bloque 1): retrieval_recall_at_5 sube a 5/7 -- el fix de furniture
+simétrico (chunked_engine.build_page_chunks() ahora reutiliza
+evidence_verifier.strip_page_furniture()) quita boilerplate repetido de
+plantilla Rockwell que diluía las frecuencias de término de BM25; P2
+(21_CFR_11.10(g)) entra al top-5 (rank 4). Efecto colateral medido, no
+buscado a propósito (el objetivo del fix era la simetría LLM/verificador
+del anclaje, no retrieval) -- ver test_p2_21_cfr_11_10g_rank_in_top5_after_furniture_fix.
+
+retrieval_recall_at_10 = 7/7
 (actualizado 2026-08-10, R2.1 Causa 1: la normalización de kerning en
 chunked_engine.build_page_chunks() -- ver docs_plan/R2_1_CORRECCION_JUDGMENT_RECALL.md
 sec.2 -- restaura el token "retention" en el chunk real de P3, subiendo
@@ -95,9 +106,23 @@ class TestPurRetrievalMetricAgainstFixture7P2N:
         rank = self._rank_of_page(_RW_0005, "21_CFR_11.10(e)", 46)
         assert rank is not None and rank <= 5
 
-    def test_p2_21_cfr_11_10g_not_in_top5_but_in_top10(self):
+    def test_p2_21_cfr_11_10g_rank_in_top5_after_furniture_fix(self):
+        """Historial del rank (mismo caso real, RW-0005 p.40, misma query):
+          - rank 5<r<=10: baseline BM25 original (furniture de plantilla
+            Rockwell todavia presente en chunk['text'], contaminando las
+            frecuencias de termino con boilerplate repetido en cada
+            chunk).
+          - rank 4 (este test): tras el fix de furniture simetrico
+            (docs_plan/CONTINUACION_FASE0_P4_FASE1.md Bloque 1,
+            chunked_engine.build_page_chunks() ahora reutiliza
+            evidence_verifier.strip_page_furniture()) -- el membrete ya
+            no diluye el conteo de terminos reales del chunk, entra al
+            top-5 por primera vez. Efecto colateral BENEFICO y medido,
+            no buscado a proposito por este fix (el objetivo era la
+            simetria LLM/verificador, no retrieval) -- registrado tal
+            cual, sin maquillar."""
         rank = self._rank_of_page(_RW_0005, "21_CFR_11.10(g)", 40)
-        assert rank is not None and 5 < rank <= 10
+        assert rank is not None and rank <= 5
 
     def test_p3_annex11_17_not_in_top5_but_in_top10_after_kerning_fix(self):
         """req_id corregido (2026-08-09, autorizado por Cesar): P3 era
@@ -144,10 +169,16 @@ class TestPurRetrievalMetricAgainstFixture7P2N:
         rank = self._rank_of_page(_RW_0012, "21_CFR_211.68(b)", 14)
         assert rank is not None and rank <= 5
 
-    def test_retrieval_recall_at_5_is_4_of_7(self):
+    def test_retrieval_recall_at_5_is_5_of_7_after_furniture_fix(self):
         """El número que importa para el reporte -- fijado explícitamente
         como su propio test para que cualquier cambio futuro al chunking/
-        query/BM25 tenga que declarar conscientemente si sube o baja."""
+        query/BM25 tenga que declarar conscientemente si sube o baja.
+
+        Historial: 4/7 (baseline BM25 original) -> 5/7 (este test, tras
+        el fix de furniture simétrico de
+        docs_plan/CONTINUACION_FASE0_P4_FASE1.md Bloque 1 -- P2 entra al
+        top-5, ver test_p2_21_cfr_11_10g_rank_in_top5_after_furniture_fix
+        para el detalle). Mejora medida y explicada, nunca silenciosa."""
         positives = [
             (_RW_0005, "21_CFR_11.10(e)", 46),
             (_RW_0005, "21_CFR_11.10(g)", 40),
@@ -161,7 +192,7 @@ class TestPurRetrievalMetricAgainstFixture7P2N:
             1 for doc, req, page in positives
             if (r := self._rank_of_page(doc, req, page)) is not None and r <= 5
         )
-        assert hits == 4
+        assert hits == 5
 
     def test_retrieval_recall_at_10_is_7_of_7_after_kerning_fix(self):
         """R2.1 Causa 1 (docs_plan/R2_1_CORRECCION_JUDGMENT_RECALL.md

@@ -83,6 +83,15 @@ def _strip_page_furniture(text: str) -> str:
     return _PAGE_FURNITURE_RE.sub(" ", text or "")
 
 
+# Alias público -- docs_plan/CONTINUACION_FASE0_P4_FASE1.md Bloque 1: reutilizado
+# por chunked_engine.build_page_chunks() para que el texto que ve el LLM
+# quede sin furniture, no solo el texto que ve el verificador (asimetria
+# documentada en docs_plan/AUDITORIA_ARQUITECTONICA_2026-08/INFORMATION_LOSS_
+# ANALYSIS.md). Superficie unica: esta sigue siendo la UNICA implementacion
+# de la regex/funcion, nunca duplicada.
+strip_page_furniture = _strip_page_furniture
+
+
 # W5V2_REMEDIACION_RECALL_MODELO.md, hallazgo del experimento H2
 # (2026-08-08): una cita real y correcta del modelo (RW-0005 p.45, tabla de
 # campos del Audit Trail de cambio de umbral) quedaba `not_found` (score

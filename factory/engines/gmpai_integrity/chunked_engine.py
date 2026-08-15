@@ -701,6 +701,8 @@ def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS
 
     for i, page_text in enumerate(per_unit_text, start=1):
         page_text = _join_kerning_split_words(page_text or "")
+        from factory.regulatory.evidence_verifier import strip_page_furniture
+        page_text = strip_page_furniture(page_text)
         if current_text and len(current_text) + len(page_text) > max_chars:
             _flush()
         current_pages.append(i)

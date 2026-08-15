@@ -1510,6 +1510,69 @@ def test_annex11_4_reference_list_still_rejected_after_kerning_fix():
 
 
 # ===========================================================================
+# CONTINUACION_FASE0_P4_FASE1.md Bloque 1 (2026-08-14): fix de la asimetria
+# furniture LLM/verificador diagnosticada en INFORMATION_LOSS_ANALYSIS.md --
+# antes de este fix, _strip_page_furniture solo se aplicaba en la
+# normalizacion interna de evidence_verifier.match_citation() (transitoria,
+# nunca mutaba chunk['text']); el texto que build_prompt() enviaba al LLM
+# seguia con el membrete de pagina intacto. build_page_chunks() ahora
+# reutiliza evidence_verifier.strip_page_furniture (superficie unica, misma
+# regex _PAGE_FURNITURE_RE, sin reimplementar nada) en el mismo punto donde
+# ya se aplica el fix de kerning.
+# ===========================================================================
+
+def test_build_page_chunks_strips_page_furniture_from_every_page():
+    """chunk['text'] ya no contiene el membrete de plantilla Rockwell --
+    antes de este fix, este assert fallaba (el membrete solo se removia
+    en la ruta de verificacion, nunca en la ruta que ve el LLM)."""
+    chunks = ce.build_page_chunks([P1_CHUNK_TEXT], max_chars=10000)
+    assert "Rockwell Automation, Inc. All Rights Reserved" not in chunks[0]["text"]
+    assert "ID code: 215115305" not in chunks[0]["text"]
+    # Contenido real (no furniture) se preserva intacto.
+    assert "F11.00: Databases and Historical Logging" in chunks[0]["text"]
+    assert "UR3.3.1 Every time a critical alarm threshold" in chunks[0]["text"]
+
+
+def test_build_page_chunks_furniture_strip_reuses_evidence_verifier_single_surface(monkeypatch):
+    """Superficie unica (regla dura del Bloque 1.1): build_page_chunks()
+    debe invocar evidence_verifier.strip_page_furniture(), nunca una
+    regex propia duplicada. Spy sobre la funcion real del modulo --
+    confirma reuso real, no una coincidencia de comportamiento."""
+    from factory.regulatory import evidence_verifier as ev
+
+    calls = []
+    original = ev.strip_page_furniture
+
+    def _spy(text):
+        calls.append(text)
+        return original(text)
+
+    monkeypatch.setattr(ev, "strip_page_furniture", _spy)
+    ce.build_page_chunks(["hello world"], max_chars=10000)
+    assert calls == ["hello world"]
+
+
+def test_evidence_verifier_strip_page_furniture_is_the_same_object_as_private():
+    """El alias publico es una asignacion directa, no una copia -- una
+    sola implementacion de la regex/funcion en todo el repo."""
+    from factory.regulatory import evidence_verifier as ev
+    assert ev.strip_page_furniture is ev._strip_page_furniture
+
+
+def test_match_citation_still_works_on_furniture_free_chunk():
+    """Regresion: evidence_verifier.match_citation() no cambia firma ni
+    comportamiento -- sigue comparando contra chunk['text'], ahora ya sin
+    furniture desde el origen (idempotente: su propia normalizacion
+    interna vuelve a aplicar la misma regex sobre texto ya limpio, sin
+    efecto adverso)."""
+    from factory.regulatory.evidence_verifier import match_citation
+
+    chunks = ce.build_page_chunks([P1_CHUNK_TEXT], max_chars=10000)
+    mtype, _score = match_citation(P1_QUOTE, chunks[0]["text"])
+    assert mtype in ("exact", "normalized", "despaced")
+
+
+# ===========================================================================
 # R2.2 §2 (docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md, 2026-08-10): el modo
 # JUICIO (candidate pool top-k, cobertura parcial por diseno) NUNCA puede
 # emitir DOCUMENTATION_GAP/PROVISIONAL_GAP -- hallazgo real: P2/P5 (Opcion A)

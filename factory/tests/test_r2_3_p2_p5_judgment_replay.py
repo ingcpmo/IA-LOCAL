@@ -43,8 +43,34 @@ ALCOA_PROMPT_PATH = Path(__file__).parent.parent / "engines" / "gmpai_integrity"
 # Mismo orden de chunk_index (fusión RRF top-5) que run_judgment_batch()
 # construyó realmente en PILOT_EXECUTION-2026-012 -- ver
 # docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md §5.2.
-_P2_CHUNK_ORDER = [18, 17, 19, 26, 10]
-_P5_CHUNK_ORDER = [27, 20, 24, 25, 11]
+#
+# REMAPEADO 2026-08-14 (docs_plan/CONTINUACION_FASE0_P4_FASE1.md Bloque 1,
+# aprobado por Cesar): el fix de furniture simétrico
+# (chunked_engine.build_page_chunks() ahora reutiliza evidence_verifier.
+# strip_page_furniture()) reduce los caracteres por página, así que
+# build_page_chunks() agrupa distinto -- TODO chunk_index de RW-0005 se
+# renumeró (29 chunks -> 25). Los índices históricos originales ya no
+# existen (KeyError). Remapeo por página, no por número: se extrajo el
+# page_start/page_end real de cada chunk_index histórico del índice BM25
+# persistido en disco ANTES del fix
+# (factory/regulatory/retrieval_index/56095a75...json, pre-fix, todavía
+# en disco al momento del remapeo) y se ubicó el chunk_index NUEVO que
+# contiene esa misma página de inicio en el índice reconstruido POST-fix.
+# Esto preserva el contenido real (mismas páginas del documento) que la
+# corrida histórica usó como evidence pool -- no los números originales,
+# que ya no tienen significado tras el re-chunking.
+#   P2 (21_CFR_11.10(g)): 18->15 (p.41), 17->14 (p.39), 19->16 (p.43-44),
+#                          26->22 (p.56), 10->9 (p.22-23)
+#   P5 (ALCOA_CONTEMPORANEOUS): 27->23 (p.57), 20->17 (p.45-46),
+#                                24->20 (p.53), 25->21 (p.55), 11->10 (p.24-25)
+# El remapeo no altera la conclusión del test: los 5 raw_payloads
+# persistidos siguen siendo `evidencia_exacta=""` en los 5 (el hallazgo
+# histórico real es que el modelo NO encontró evidencia en NINGUNO de los
+# 5 candidatos), así que el contenido textual exacto de cada chunk nunca
+# fue lo que determinaba el resultado -- el remapeo por página es
+# suficiente para preservar la fidelidad del replay.
+_P2_CHUNK_ORDER = [15, 14, 16, 22, 9]
+_P5_CHUNK_ORDER = [23, 17, 20, 21, 10]
 
 
 def _sequential_generate_mock(raw_payloads: list[dict]):
