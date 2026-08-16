@@ -1,0 +1,11 @@
+{
+  "run_id": "r3t18-bloque4-20260812T212007Z-3821029",
+  "pid": 3821029,
+  "kind": "r3t18_bloque4_live_min",
+  "status": "COMPLETED",
+  "finished_at": "2026-08-12T21:47:45+00:00",
+  "stop_reason": "CORPUS_COMPLETE",
+  "total_calls_made": 3,
+  "manifest_path": "/home/ing_cpmo/factory/regulatory/pilot_run/manifests/corpus_run_20260812T214745Z.json",
+  "result_path": "/tmp/claude-1001/-home-ing-cpmo/46e2b8cc-020f-4791-bb5a-72e7597d67f4/scratchpad/r3t18_bloque4_result.json"
+}

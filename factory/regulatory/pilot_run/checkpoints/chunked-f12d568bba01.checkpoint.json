@@ -1,0 +1,287 @@
+{
+  "run_id": "chunked-f12d568bba01",
+  "document_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
+  "agent_id": "alcoa_plus_agent",
+  "documento": "RW-0011",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/MCCPDC EMS Control Block Narrative revB.pdf",
+  "total_chunks": 1,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-f12d568bba01",
+      "task_id": "task-02a3818e7658",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 2516,
+      "started_at": "2026-08-08T02:56:07.134949+00:00",
+      "finished_at": "2026-08-08T03:22:42.872468+00:00",
+      "wall_clock_ms": 1595737.4,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 4096,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"ALCOA_ATTRIBUTABLE\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona detalles sobre la identificación única e individual de los datos ni el mecanismo tecnico que sostiene la atribución.\",\n            \"recomendacion\": \"Incluir información sobre la identificación y atribución de los datos generados por acciones humanas y sistemas autogenerados.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Para accion humana - Identificacion unica e individual por dato.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la identificación única y personal de los datos generados por acciones humanas.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Para accion humana - Mecanismo tecnico que sostiene esa atribucion de forma confiable (no solo un campo de texto libre).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona el mecanismo técnico para la atribución confiable de los datos generados por acciones humanas.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Para accion humana - Atribucion sostenida para crear/modificar/eliminar, no solo creacion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la atribución sostenida para la modificación y eliminación de datos generados por acciones humanas.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Para dato autogenerado - Identificador de instrumento/sistema/fuente tecnica especifico y trazable (no una categoria generica de equipo).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona el identificador específico y trazable del instrumento/sistema que genera los datos autogenerados.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Para dato autogenerado - Trazabilidad de que ese instrumento/sistema fue el que efectivamente genero el dato (no solo que existe en el area).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la trazabilidad del instrumento/sistema que genera los datos autogenerados.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        },\n        {\n            \"req_id\": \"ALCOA_LEGIBLE\",\n            \"estado\": \"cumple_parcialmente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona detalles sobre la legibilidad durante todo el ciclo de vida y la permanencia del dato.\",\n            \"recomendacion\": \"Incluir información sobre la garantía de legibilidad durante todo el ciclo de vida y la permanencia del dato.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Legibilidad garantizada durante todo el ciclo de vida.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la garantía de legibilidad durante todo el ciclo de vida del dato.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Permanencia (sin sobrescritura silenciosa).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la permanencia del dato.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Criterio de continuidad de legibilidad cuando el riesgo de obsolescencia del formato es real.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la continuidad de legibilidad en caso de riesgo de obsolescencia del formato.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        },\n        {\n            \"req_id\": \"ALCOA_CONTEMPORANEOUS\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona detalles sobre el registro en el momento de la actividad.\",\n            \"recomendacion\": \"Incluir información sobre el registro contemporáneo y la identificación del ejecutor real.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Registro en el momento de la actividad como regla general.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona el registro contemporáneo del dato.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona el registro contemporáneo del dato ni la identificación del ejecutor real.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona el procedimiento de contrafirma tardía.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        },\n        {\n            \"req_id\": \"ALCOA_ORIGINAL\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona detalles sobre la preservación del original o copia certificada.\",\n            \"recomendacion\": \"Incluir información sobre el proceso de preservación del original y la certificación de copias.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Original de primera captura identificado y preservado, o copia certificada con proceso real descrito.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona el proceso de preservación del original o la certificación de copias.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"E",
+      "raw_response_truncated_in_log": true,
+      "_by_req_candidates": [
+        {
+          "req_id": "ALCOA_LEGIBLE",
+          "candidate": {
+            "chunk_index": 0,
+            "page_start": 1,
+            "page_end": 1,
+            "estado": "cumple_parcialmente",
+            "evidencia_exacta": "(no anclado en el chunk, descartado)",
+            "brecha": "El documento no proporciona detalles sobre la legibilidad durante todo el ciclo de vida y la permanencia del dato.",
+            "recomendacion": "Incluir información sobre la garantía de legibilidad durante todo el ciclo de vida y la permanencia del dato.",
+            "anchored": false,
+            "has_evidence": false,
+            "d_sufficiency": "NOT_ASSESSABLE",
+            "d_reason": "cobertura completa pero con incertidumbre real en al menos un criterio",
+            "d_detail": {
+              "met": [],
+              "not_met": [],
+              "not_assessable_individual": [
+                "Criterio de continuidad de legibilidad cuando el riesgo de obsolescencia del formato es real.",
+                "Legibilidad garantizada durante todo el ciclo de vida.",
+                "Permanencia (sin sobrescritura silenciosa)."
+              ],
+              "discarded_unanchored": [],
+              "missing": []
+            },
+            "substantive_evidence_accepted": false,
+            "operational_result": "EVALUATION_INCOMPLETE"
+          }
+        },
+        {
+          "req_id": "ALCOA_COMPLETE",
+          "candidate": {
+            "chunk_index": 0,
+            "page_start": 1,
+            "page_end": 1,
+            "estado": "cumple_parcialmente",
+            "evidencia_exacta": "(no anclado en el chunk, descartado)",
+            "brecha": "El documento no proporciona detalles sobre la captura de todos los datos relevantes y el registro de resultados OOS.",
+            "recomendacion": "Incluir información sobre la captura completa de datos y el registro de resultados OOS.",
+            "anchored": false,
+            "has_evidence": false,
+            "d_sufficiency": "NOT_ASSESSABLE",
+            "d_reason": "cobertura completa pero con incertidumbre real en al menos un criterio",
+            "d_detail": {
+              "met": [],
+              "not_met": [],
+              "not_assessable_individual": [
+                "Captura de todos los datos relevantes del proceso evaluado, incluidos reintentos/reprocesamientos/exclusiones/desviaciones cuando formen parte de ese proceso.",
+                "Cuando OOS aplique al proceso evaluado: tratamiento y registro de los resultados OOS descrito.",
+                "Reconstruccion completa de la actividad posible.",
+                "Sin eliminacion selectiva de datos desfavorables que formen parte del proceso evaluado."
+              ],
+              "discarded_unanchored": [],
+              "missing": []
+            },
+            "substantive_evidence_accepted": false,
+            "operational_result": "EVALUATION_INCOMPLETE"
+          }
+        },
+        {
+          "req_id": "ALCOA_AVAILABLE",
+          "candidate": {
+            "chunk_index": 0,
+            "page_start": 1,
+            "page_end": 1,
+            "estado": "cumple_parcialmente",
+            "evidencia_exacta": "(no anclado en el chunk, descartado)",
+            "brecha": "El documento no proporciona detalles sobre la recuperación sin demora indebida y la independencia de personal específico/sistemas legados.",
+            "recomendacion": "Incluir información sobre la recuperación sin demora indebida y la independencia del sistema para su uso en auditorías.",
+            "anchored": false,
+            "has_evidence": false,
+            "d_sufficiency": "NOT_ASSESSABLE",
+            "d_reason": "cobertura completa pero con incertidumbre real en al menos un criterio",
+            "d_detail": {
+              "met": [],
+              "not_met": [],
+              "not_assessable_individual": [
+                "Independencia de personal especifico/sistemas legados sin contingencia.",
+                "Recuperacion sin demora indebida, directamente accesible cuando sea solicitado y en forma legible para revision o inspeccion."
+              ],
+              "discarded_unanchored": [],
+              "missing": []
+            },
+            "substantive_evidence_accepted": false,
+            "operational_result": "EVALUATION_INCOMPLETE"
+          }
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.0",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true
+  },
+  "verified_records_by_req": {
+    "ALCOA_ATTRIBUTABLE": [
+      {
+        "record_id": "vrec-task-02a3818e7658-ALCOA_ATTRIBUTABLE",
+        "llm_output": {
+          "requirement_id": "ALCOA_ATTRIBUTABLE",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ALCOA_LEGIBLE": [
+      {
+        "record_id": "vrec-task-02a3818e7658-ALCOA_LEGIBLE",
+        "llm_output": {
+          "requirement_id": "ALCOA_LEGIBLE",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ALCOA_CONTEMPORANEOUS": [
+      {
+        "record_id": "vrec-task-02a3818e7658-ALCOA_CONTEMPORANEOUS",
+        "llm_output": {
+          "requirement_id": "ALCOA_CONTEMPORANEOUS",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ALCOA_ORIGINAL": [
+      {
+        "record_id": "vrec-task-02a3818e7658-ALCOA_ORIGINAL",
+        "llm_output": {
+          "requirement_id": "ALCOA_ORIGINAL",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ALCOA_ACCURATE": [
+      {
+        "record_id": "vrec-task-02a3818e7658-ALCOA_ACCURATE",
+        "llm_output": {
+          "requirement_id": "ALCOA_ACCURATE",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ALCOA_COMPLETE": [
+      {
+        "record_id": "vrec-task-02a3818e7658-ALCOA_COMPLETE",
+        "llm_output": {
+          "requirement_id": "ALCOA_COMPLETE",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ALCOA_CONSISTENT": [
+      {
+        "record_id": "vrec-task-02a3818e7658-ALCOA_CONSISTENT",
+        "llm_output": {
+          "requirement_id": "ALCOA_CONSISTENT",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ALCOA_ENDURING": [
+      {
+        "record_id": "vrec-task-02a3818e7658-ALCOA_ENDURING",
+        "llm_output": {
+          "requirement_id": "ALCOA_ENDURING",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ALCOA_AVAILABLE": [
+      {
+        "record_id": "vrec-task-02a3818e7658-ALCOA_AVAILABLE",
+        "llm_output": {
+          "requirement_id": "ALCOA_AVAILABLE",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

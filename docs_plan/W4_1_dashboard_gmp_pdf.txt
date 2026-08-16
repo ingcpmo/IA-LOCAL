@@ -1,0 +1,425 @@
+============================================================
+W4.1 — DASHBOARD GMP + INFORME PDF DE EVALUACIÓN POR MISIÓN
+GMP AI Factory · Mission Control · Post W4
+============================================================
+
+OBJETIVO
+  Capa de PRESENTACIÓN sobre W4. NO rehace W4 ni cambia su lógica funcional
+  validada. Agrega:
+    (1) Vista "Dashboard GMP de la misión" — narra en lenguaje claro y
+        profesional toda la historia de la misión, con lectura ejecutiva
+        farmacéutica + evidencia técnica colapsable.
+    (2) Botón "Generar PDF" — versión congelada y profesional del dashboard.
+
+PRINCIPIO INVIOLABLE: NO INVENTAR DATOS
+  El dashboard y el PDF se construyen ÚNICAMENTE con evidencia real ya
+  disponible en los endpoints existentes:
+    - /summary        (W3)
+    - /agents         (W3)
+    - /test-catalog   (W4)
+    - /test-results   (W4)
+    - /deployment     (W3)
+    - /audit          (W3)
+    - /rcs            (W3)
+    - workspace files (W3)
+  Si un dato no existe → mostrar "no disponible". NUNCA fabricar valores,
+  resultados, ni texto regulatorio.
+
+REGLAS DURAS
+  - No headless. No código nuevo de misión. No Docker nuevo. No repetir deploy.
+  - No modificar la lógica funcional de W4 (executor, catálogo, aserciones).
+  - No tocar producto base, .env base, data/, backups/, aria-*, hotelbot-*.
+  - No exponer secretos en dashboard NI en PDF (GMP_API_KEY, tokens, .env).
+  - El PDF pasa por la misma sanitización de secretos que el resto.
+  - *** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+------------------------------------------------------------
+PASO 0 — Confirmar que W4 está intacto y las fuentes existen
+------------------------------------------------------------
+cd /home/ing_cpmo
+export FK="$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)"
+export HDR="X-API-Key"
+
+echo "=== W4 intacto: catálogo y resultados existen ==="
+curl -s -H "$HDR: $FK" \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/test-catalog \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print('agentes en catálogo:', len(d.get('agents',[])))"
+curl -s -H "$HDR: $FK" \
+  "http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/test-results?limit=50" \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print('resultados previos:', len(d.get('results',d if isinstance(d,list) else [])))"
+
+echo "=== Fuentes de evidencia para el dashboard ==="
+for sec in summary agents deployment rcs; do
+  CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "$HDR: $FK" \
+    "http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/$sec")
+  echo "  /$sec → HTTP $CODE"
+done
+
+echo "=== Selfcheck base ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "Gate 0|PASS|FAIL"
+
+  >> Si test-results está vacío, el dashboard mostrará "sin pruebas
+     ejecutadas aún" en la sección de resultados. NO inventar resultados.
+
+------------------------------------------------------------
+TAREA 1 — LIBRERÍA PDF (verificar disponibilidad, sin instalar pesado)
+------------------------------------------------------------
+echo "=== ¿Qué hay para generar PDF en el factory-api? ==="
+docker exec factory-api python3 -c "
+for lib in ['reportlab','weasyprint','fpdf','fpdf2']:
+    try:
+        __import__(lib); print(f'{lib}: disponible')
+    except Exception:
+        print(f'{lib}: NO')
+"
+  >> Preferencia de implementación:
+     1) Si reportlab está disponible → usarlo (robusto, sin dependencias de SO).
+     2) Si no, usar fpdf2 (pip install fpdf2, ligero, puro Python).
+     3) NO usar weasyprint si requiere libs de SO no instaladas (pesado).
+     Elegir la opción disponible con menos fricción. Reportar cuál se usa.
+
+  >> Si hay que instalar fpdf2, hacerlo SOLO en el factory-api:
+     docker exec factory-api pip install --no-cache-dir fpdf2
+     (no toca producto base, no rebuild)
+
+------------------------------------------------------------
+TAREA 2 — ENDPOINT AGREGADOR DEL DASHBOARD (read-only)
+------------------------------------------------------------
+# GET /api/v1/layer9/missions/{project_id}/gmp-report
+# Consolida TODA la evidencia real en la estructura narrativa del informe.
+# Read-only, NO audita. Reutiliza internamente summary/agents/test-results/
+# deployment/rcs/audit (no re-implementa, los llama o comparte helpers).
+
+# Response shape (todo campo puede ser "no_disponible" si falta la fuente):
+# {
+#   "meta": {
+#     "project_id": "oos_hplc_investigator",
+#     "generated_at": "2026-...",   // timestamp de generación
+#     "client_type": "..." | "no_disponible",
+#     "canonical_rc": "oos_hplc_investigator-rc-v1.1-..." | "no_disponible",
+#     "deployment_status": "desplegado" | "no_desplegado",
+#     "report_source": "evidencia real: summary, agents, test-results, deployment, audit, rcs"
+#   },
+#   "executive_summary": { ... derivado de datos reales, sin inventar ... },
+#   "mission_objective": { from summary.mission + workspace/task.md if present },
+#   "pharma_case": { from designs/requirement_spec.yaml if present else "no_disponible" },
+#   "agents_evaluated": {
+#     "profiles_inherited": [...],
+#     "new_agents": [...],
+#     "total": N
+#   },
+#   "results_by_agent": [
+#     {
+#       "agent_id": "...",
+#       "uses_llm": true|false,
+#       "tests": [
+#         {
+#           "test_id": "...", "title": "...", "endpoint": "...",
+#           "result": "PASS|FAIL|ERROR|no_ejecutado",
+#           "run_by": "..." | "no_disponible",
+#           "run_at": "..." | "no_disponible",
+#           "relevant_datum": "...",   // qué dato fue clave (de la respuesta real)
+#           "llm_evidence": {model, elapsed_seconds, ollama_status, inference_success, timed_out} | null
+#         }
+#       ]
+#     }
+#   ],
+#   "pharma_interpretation": [ ... texto por agente, derivado de resultados reales ... ],
+#   "gmp_implication": { ... OOS/HPLC/ALCOA+ significado de los PASS/FAIL reales ... },
+#   "rules_vs_llm": {
+#     "deterministic_endpoints": [...],   // uses_llm=false
+#     "llm_endpoints": [...],             // uses_llm=true
+#     "explanation": "qué corre por reglas Python vs Ollama local"
+#   },
+#   "audit_traceability": {
+#     "canonical_rc": "...", "rc_sha256": {...},
+#     "test_events_count": N,
+#     "last_audit_events": [ ... de /audit filtrado ... ]
+#   },
+#   "operational_impact": { ... texto de impacto estimado, ver Tarea 4 ... },
+#   "limitations": [ ... reales: PENDING_DOCUMENT, corpus interno, CPU lento, etc ... ],
+#   "pending_before_golive": [ ... derivado de pending_documents + estado real ... ],
+#   "conclusion": { ... ver Tarea 4 para el texto de cierre obligatorio ... }
+# }
+
+# IMPORTANTE — cómo se derivan los textos narrativos:
+#   - Los textos ejecutivos se CONSTRUYEN a partir de los datos reales
+#     (cuántas pruebas PASS, qué agentes, qué endpoints), NO se inventan.
+#   - Ejemplo: "results_by_agent" toma cada test real de test-results y
+#     genera la explicación en lenguaje claro usando el resultado real.
+#   - Si NO hay test-results → results_by_agent = [] y el texto dice
+#     "No se han ejecutado pruebas funcionales aún para esta misión."
+#   - NADA de texto regulatorio fabricado. Las referencias a OOS/HPLC/ALCOA+
+#     describen el SIGNIFICADO del resultado observado, no citan norma exacta
+#     salvo lo que ya esté marcado en el workspace (PENDING_DOCUMENT respetado).
+
+------------------------------------------------------------
+TAREA 3 — ENDPOINT DE GENERACIÓN DE PDF
+------------------------------------------------------------
+# GET /api/v1/layer9/missions/{project_id}/gmp-report.pdf
+# Genera el PDF congelado a partir del MISMO agregador de la Tarea 2.
+# Devuelve application/pdf como descarga (Content-Disposition: attachment).
+# Read-only respecto al estado (NO audita la generación por defecto).
+#   → Opcional: si Cesar quiere trazabilidad de "informe generado", auditar
+#     un evento gmp_report_generated con run_by. DEJARLO CONFIGURABLE:
+#     por defecto NO audita (es lectura); si viene ?record_by=Cesar, audita 1.
+
+# Estructura del PDF (profesional, congelado):
+#   - Portada: título "Informe de Evaluación Funcional GMP",
+#     misión, cliente, RC canónico, fecha/hora de generación,
+#     estado del deployment, sello "Evidencia real — no fabricada"
+#   - Resumen ejecutivo
+#   - Objetivo de la misión
+#   - Caso farmacéutico planteado (o "no disponible")
+#   - Agentes evaluados (perfiles heredados vs nuevos)
+#   - Pruebas PASS/FAIL por agente (tabla)
+#   - Interpretación farmacéutica por agente
+#   - Implicación GMP (OOS/HPLC/ALCOA+)
+#   - Uso de reglas Python vs Ollama local (con modelo y tiempos si aplica)
+#   - Auditoría y trazabilidad (RC sha256, eventos)
+#   - Limitaciones
+#   - Pendientes antes de go-live
+#   - Impacto operativo esperado
+#   - Conclusión final (texto obligatorio de Tarea 4)
+#   - Pie de página en cada hoja: misión + fecha + "no reemplaza decisión QA/QC"
+
+# SANITIZACIÓN OBLIGATORIA antes de escribir el PDF:
+#   - Recorrer todo el contenido y BLOQUEAR/enmascarar cualquier:
+#     GMP_API_KEY, FACTORY_API_KEY, ANTHROPIC_API_KEY, sk-ant-,
+#     POSTGRES_PASSWORD, tokens, rutas .env, credentials.
+#   - Función sanitize_for_report() que corre sobre el dict del agregador
+#     ANTES de renderizar (dashboard y PDF usan la misma función).
+#   - Test que verifica que un PDF generado NO contiene el valor real de
+#     GMP_API_KEY.
+
+------------------------------------------------------------
+TAREA 4 — TEXTOS OBLIGATORIOS (impacto y conclusión)
+------------------------------------------------------------
+# El agregador incluye estos textos en operational_impact y conclusion.
+# Redactados como ESTIMACIÓN, no como dato medido. Claros sobre límites.
+
+# operational_impact (texto base, ajustable a datos reales):
+#   "Los agentes evaluados podrían operar de forma continua (7x24) como
+#    apoyo al monitoreo, preclasificación y validación funcional de
+#    resultados de laboratorio: detección de resultados fuera de
+#    especificación (OOS), revisión de parámetros cromatográficos (HPLC/SST)
+#    y validación de integridad de datos (ALCOA+), generando evidencia
+#    trazable y auditada. En una operación madura, esto podría reducir de
+#    forma estimada entre 30% y 60% el tiempo dedicado a revisión
+#    preliminar, validación repetitiva y preparación de evidencia. Esta
+#    cifra es una estimación de mejora potencial, no una medición del
+#    entorno actual."
+
+# conclusion (debe incluir SIEMPRE la aclaración de no-reemplazo):
+#   "... [resumen de resultados reales] ... Estos agentes funcionan como
+#    apoyo a QA/QC y NO reemplazan la decisión humana ni liberan lotes de
+#    forma automática. La liberación de lote y la disposición final
+#    permanecen bajo responsabilidad del personal QA/QC calificado. El
+#    sistema aporta velocidad, consistencia y evidencia trazable en las
+#    etapas preliminares, manteniendo el control humano en la decisión."
+
+#   Si hay PENDING_DOCUMENT o corpus interno no validado, la conclusión
+#   DEBE mencionarlo como pendiente antes de go-live regulatorio.
+
+------------------------------------------------------------
+TAREA 5 — FRONTEND: PESTAÑA "DASHBOARD GMP"
+------------------------------------------------------------
+mkdir -p backups/frontend
+cp factory/ui/mission_control.html backups/frontend/mission_control.html.pre_W4_1
+
+# Agregar en el panel por misión una pestaña/vista nueva: "Dashboard GMP"
+# (junto a Estado/Evidencia/Agentes/Pruebas/Acciones).
+
+# NIVEL 1 — LECTURA EJECUTIVA (visible por defecto, lenguaje claro):
+#   Secciones renderizadas desde /gmp-report:
+#     - Resumen ejecutivo
+#     - Objetivo de la misión
+#     - Caso farmacéutico planteado
+#     - Agentes evaluados (perfiles heredados vs nuevos, con badges)
+#     - Resultados por agente (cada prueba explicada en lenguaje claro:
+#         qué se evaluó, por qué pasó/falló, qué dato fue relevante,
+#         qué significa para GMP/OOS/HPLC/ALCOA+)
+#     - Interpretación farmacéutica
+#     - Implicación GMP
+#     - Uso de reglas Python vs Ollama local (badges por endpoint:
+#         "REGLAS PYTHON (determinístico)" vs "LLM LOCAL: <model> · <s>")
+#     - Auditoría y trazabilidad
+#     - Impacto operativo esperado
+#     - Limitaciones
+#     - Conclusión final
+#   El usuario entiende la conclusión SIN leer JSON.
+
+# NIVEL 2 — EVIDENCIA TÉCNICA (colapsable, "Ver evidencia técnica"):
+#   Por cada prueba, al expandir:
+#     - endpoint, payload, respuesta JSON completa (read-only, scroll, copiar)
+#     - aserción evaluada (esperado vs recibido)
+#     - run_by, run_at, latencia
+#     - llm_evidence si aplica
+#   Más: RC canónico + sha256, estado deployment, últimos eventos de auditoría.
+#   El JSON SIEMPRE disponible como soporte, pero no obligatorio de leer.
+
+# BOTÓN "Generar PDF" / "Descargar informe PDF":
+#   - Llama GET /gmp-report.pdf → descarga el archivo.
+#   - Muestra estado "generando..." y luego dispara la descarga.
+#   - Nombre sugerido: informe_gmp_{project_id}_{YYYYMMDD-HHMM}.pdf
+
+# Cada afirmación del dashboard que venga de un dato real debe ser
+# rastreable a su fuente (tooltip o nota "fuente: test-results" etc.).
+# Donde el dato no exista: mostrar "no disponible" en gris, no vacío.
+
+------------------------------------------------------------
+TAREA 6 — TESTS NUEVOS
+------------------------------------------------------------
+# factory/tests/test_gmp_report.py
+#   - GET /gmp-report devuelve shape correcto y NO audita (delta cadena=0)
+#   - Campos faltantes aparecen como "no_disponible", no inventados
+#   - Si test-results vacío → results_by_agent=[] y texto "sin pruebas"
+#   - sanitize_for_report enmascara GMP_API_KEY / sk-ant- / passwords
+#   - GET /gmp-report.pdf devuelve application/pdf con bytes > 0
+#   - El PDF generado NO contiene el valor real de GMP_API_KEY (leer bytes,
+#     buscar substring de la key → debe estar ausente)
+#   - Generación de PDF NO audita por defecto (delta=0);
+#     con ?record_by=Cesar audita exactamente 1
+
+# factory/tests/test_refresh_readonly.py (extender)
+#   - /gmp-report en la lista de readers que NO crecen la cadena
+
+# Verificar que W4 sigue intacto:
+#   - test_functional_testing.py sigue pasando sin cambios
+
+------------------------------------------------------------
+TAREA 7 — VALIDACIONES Y EVIDENCIA
+------------------------------------------------------------
+echo "=== py_compile ==="
+PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile \
+  factory/api/routes/layer9.py factory/api/routes/layer8.py \
+  $(ls factory/api/routes/*.py)
+
+echo "=== JS check (extraer script del HTML) ==="
+python3 - <<'PYEOF'
+import re,subprocess,tempfile,pathlib,os,sys
+html=pathlib.Path("factory/ui/mission_control.html").read_text()
+js="\n".join(re.findall(r"<script[^>]*>(.*?)</script>",html,re.S))
+f=tempfile.NamedTemporaryFile("w",suffix=".js",delete=False); f.write(js); f.close()
+r=subprocess.run(["node","--check",f.name],capture_output=True,text=True)
+print("JS:", "OK" if r.returncode==0 else "FAIL"); print(r.stderr[:600])
+os.unlink(f.name); sys.exit(r.returncode)
+PYEOF
+
+echo "=== Tests ==="
+python3 -m pytest factory/tests/test_gmp_report.py -q
+python3 -m pytest factory/tests/test_functional_testing.py -q   # W4 intacto
+python3 -m pytest factory/tests/test_refresh_readonly.py -q
+python3 -m pytest factory/tests/ -q --tb=no
+
+echo "=== Selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "Gate 0|PASS|FAIL"
+
+echo "=== EVIDENCIA 1: agregador dashboard (read-only) ==="
+curl -s -H "$HDR: $FK" \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/gmp-report \
+  | python3 -m json.tool | head -60
+
+echo "=== EVIDENCIA 2: /gmp-report NO crece la cadena ==="
+AUDIT="$(find factory -name '*.jsonl' | grep -E 'audit.*jsonl$' | head -1)"
+C0=$(wc -l < "$AUDIT")
+for i in 1 2 3; do
+  curl -s -H "$HDR: $FK" \
+    http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/gmp-report -o /dev/null
+done
+C1=$(wc -l < "$AUDIT")
+echo "delta tras 3 GET /gmp-report: $((C1-C0))   (DEBE ser 0)"
+
+echo "=== EVIDENCIA 3: generar y descargar PDF ==="
+curl -s -H "$HDR: $FK" \
+  "http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/gmp-report.pdf" \
+  -o /tmp/informe_gmp_oos.pdf -w "HTTP:%{http_code} size:%{size_download} bytes\n"
+file /tmp/informe_gmp_oos.pdf
+echo "Tamaño PDF: $(du -h /tmp/informe_gmp_oos.pdf | cut -f1)"
+
+echo "=== EVIDENCIA 4: el PDF NO contiene GMP_API_KEY ==="
+GMP_KEY="$(docker exec factory-api printenv GMP_API_KEY 2>/dev/null)"
+if [ -n "$GMP_KEY" ] && strings /tmp/informe_gmp_oos.pdf | grep -qF "$GMP_KEY"; then
+  echo "*** FALLO: el PDF CONTIENE la API key ***"
+else
+  echo "OK: el PDF no contiene GMP_API_KEY"
+fi
+# También verificar que no hay sk-ant- ni passwords
+strings /tmp/informe_gmp_oos.pdf | grep -iE "sk-ant-|POSTGRES_PASSWORD|FACTORY_API_KEY" \
+  && echo "*** REVISAR: posible secreto en PDF ***" \
+  || echo "OK: sin sk-ant / passwords en PDF"
+
+echo "=== EVIDENCIA 5: W4 funcional intacto ==="
+python3 -m pytest factory/tests/test_functional_testing.py -q
+
+------------------------------------------------------------
+PAUSA FINAL — REPORTE Y CLASIFICACIÓN
+------------------------------------------------------------
+git status --short
+git diff --stat
+git diff -- factory/ui/mission_control.html factory/api/routes factory/tests
+
+Clasificar:
+
+  | Item | Estado | Evidencia |
+  |---|---|---|
+  | /gmp-report agrega evidencia real (read-only)      | sí/no | curl json |
+  | /gmp-report NO audita (delta=0)                    | sí/no | wc diff |
+  | Datos faltantes = "no disponible" (no inventados)  | sí/no | revisión |
+  | /gmp-report.pdf genera PDF válido (bytes>0)        | sí/no | file cmd |
+  | PDF descargable desde el browser                   | sí/no | UI |
+  | PDF NO contiene GMP_API_KEY / sk-ant / passwords   | sí/no | strings |
+  | Dashboard nivel 1 ejecutivo (lenguaje claro)       | sí/no | screenshot |
+  | Dashboard nivel 2 evidencia técnica colapsable     | sí/no | screenshot |
+  | Cada prueba explicada sin necesidad de leer JSON   | sí/no | UI |
+  | JSON disponible como soporte técnico               | sí/no | UI |
+  | Badges reglas Python vs LLM local (Ollama)         | sí/no | UI |
+  | Conclusión incluye "no reemplaza QA/QC ni libera lotes" | sí/no | texto |
+  | Impacto 30-60% marcado como ESTIMACIÓN             | sí/no | texto |
+  | Pendientes go-live derivados de datos reales       | sí/no | UI |
+  | Lógica funcional W4 NO alterada                    | sí/no | tests W4 |
+  | JS check                                           | PASS/FAIL | |
+  | Tests suite                                        | N/N | |
+  | Gate 0 selfcheck                                   | PASS/FAIL | |
+  | No headless, no código nuevo, no Docker, no deploy | confirmar | |
+  | aria-ollama intacto, producto base intacto         | confirmar | |
+  | No secretos en dashboard ni PDF                    | confirmar | |
+
+>> Entregar a Cesar:
+   - Screenshot del dashboard nivel 1 (ejecutivo)
+   - Screenshot del dashboard nivel 2 (evidencia técnica expandida)
+   - El PDF generado (/tmp/informe_gmp_oos.pdf) para revisión
+   - Salida de las 5 evidencias
+>> "W4.1 listo. Dashboard + PDF funcionando con evidencia real, sin
+    secretos, W4 intacto. ¿Apruebas el commit?"
+>> Sugerido:
+>>   factory: W4.1 — dashboard GMP legible + informe PDF por misión
+>>            (solo evidencia real, sanitizado, sin alterar lógica W4)
+
+*** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+============================================================
+NOTAS — QUÉ HACE W4.1 Y QUÉ NO
+============================================================
+QUÉ HACE:
+  ✓ Cuenta la historia de la misión en lenguaje claro para QA/QC/auditor/cliente
+  ✓ Dos niveles: ejecutivo farmacéutico + evidencia técnica colapsable
+  ✓ Explica cada prueba: qué se evaluó, por qué pasó/falló, qué significa GMP
+  ✓ Distingue reglas Python determinísticas de LLM local (Ollama)
+  ✓ Genera y descarga PDF profesional congelado
+  ✓ Solo evidencia real; "no disponible" donde falte
+  ✓ Sanitiza secretos en dashboard y PDF
+  ✓ Conclusión con impacto estimado 30-60% y aclaración de no-reemplazo QA/QC
+
+QUÉ NO HACE:
+  ✗ No rehace W4 ni cambia su lógica funcional validada
+  ✗ No ejecuta headless, no genera código de misión, no crea Docker, no deploy
+  ✗ No inventa datos, resultados ni texto regulatorio
+  ✗ No toca producto base ni aria-ollama
+  ✗ No expone secretos
+
+SIGUIENTE
+  Con el informe GMP + PDF, la misión OOS queda presentable a cliente/auditor.
+  Bloque natural siguiente: ingesta de corpus regulatorio real (go-live) o
+  replicar dashboard para una segunda misión.
+============================================================

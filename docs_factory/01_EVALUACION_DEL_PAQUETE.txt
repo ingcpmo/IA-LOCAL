@@ -1,0 +1,149 @@
+================================================================================
+GMP AI FACTORY — EVALUACION DEL PAQUETE ADJUNTO Y REDISEÑO
+Documento: 01_EVALUACION_DEL_PAQUETE.txt
+================================================================================
+
+VEREDICTO GENERAL
+--------------------------------------------------------------------------------
+El OBJETIVO del paquete adjunto es correcto y se conserva al 100%: elevar
+Capa 8 a agente tecnico autonomo-controlado orientado a mision, y formalizar
+Capa 9 como Mission Control. La especificacion de modulos, eventos de auditoria
+y rutas API es buena y se reutiliza casi integra.
+
+Lo que SE REDISEÑA es la SECUENCIA y los DEFAULTS de seguridad, no el destino.
+El paquete adjunto, ejecutado tal cual, presenta 6 riesgos que conviene
+corregir. Cesar me dio autonomia para rediseñar y la ejerzo aqui.
+
+================================================================================
+HALLAZGOS Y REDISEÑO (N1-N6)
+================================================================================
+
+N1. MONOLITO DE UNA SOLA SESION  → DIVIDIR EN FASES PEQUEÑAS  [CRITICO]
+--------------------------------------------------------------------------------
+Problema: el paquete crea en una sola sesion ~13 modulos en layer8/, ~7 en
+layer9/, rutas API, reescritura de UI, eventos de audit y la mision piloto.
+Eso produce un diff enorme imposible de revisar con criterio (la aprobacion
+humana se vuelve un "si" a ciegas), y si algo falla a mitad, deja el repo en
+estado ambiguo — exactamente el problema que ya vivimos en F5.
+
+Rediseño: respetar la disciplina que ya funciono en F0-F4 (una fase por
+sesion, diff revisable, commit entre fases). Se divide en:
+  F5-R  → recuperar y cerrar F5 (independiente, bajo riesgo).
+  F4.5a → Capa 9 Mission Control (plano de control, sin ejecucion).
+  F4.5b → Capa 8 Tier-1: diseño/planificacion (sin ejecutar Claude Code).
+  F4.5c → Capa 8 Tier-2: runtime controlado (headless DESHABILITADO).
+  F4.5d → API + UI de Capas 8/9 + piloto end-to-end en manual_assisted.
+  F6    → deployment, solo con release aprobado.
+
+N2. F5 SIN CERRAR ANTES DE AÑADIR AUTONOMIA  → CERRAR F5 PRIMERO  [ALTO]
+--------------------------------------------------------------------------------
+Problema: el adjunto construye toda la capa de autonomia y recien al final
+prepara la mision lab_qc, sobre un F5 que sigue parcial. Apilar una capa nueva
+y no probada encima de un workspace inconsistente multiplica el riesgo.
+
+Rediseño: F5-R es la PRIMERA fase. Se recupera el workspace lab_qc, se aplica
+el patron PENDING_DOCUMENT, se completan artefactos tecnicos, se corren gates
+G01-G13 y se crea release v0.1.0 (pending_approval). Asi entramos a la fase de
+autonomia con un piloto YA cerrado y un release real que sirve de "verdad de
+referencia". La automatizacion no regenera ese trabajo: lo reconoce y lo
+enlaza (workspace_builder/recovery_manager idempotentes — ver N5).
+
+N3. HEADLESS (claude -p) ACTIVO DE ENTRADA  → DESHABILITADO POR DEFECTO  [CRITICO]
+--------------------------------------------------------------------------------
+Problema: el adjunto implementa run_controlled_headless y lo deja disponible
+desde el inicio. Dar capacidad de auto-ejecucion de codigo a un orquestador
+recien escrito, antes de validar el flujo manual, es el mayor riesgo de toda
+la iniciativa (un bug del orquestador podria lanzar Claude Code con una tarea
+mal formada).
+
+Rediseño (alineado con M7 del diseño original):
+- runtime_config.yaml: headless_enabled: false  (default).
+- Modo por defecto: manual_assisted → claude_runtime solo PREPARA el comando
+  (prepare_manual_command) y Cesar lo ejecuta a mano en el workspace.
+- controlled_headless se IMPLEMENTA pero queda tras DOBLE llave:
+  (a) flag headless_enabled: true en runtime_config, y
+  (b) mission_approval con allowed_action run_claude_code = true Y
+      una validacion previa de seguridad de task.md que pase.
+- Solo se habilita controlled_headless DESPUES de que el piloto lab_qc se
+  complete con exito en manual_assisted (eso es F7, backlog).
+- Guards duros en claude_runtime (se conservan del adjunto): rechazar si
+  faltan CLAUDE.md / task.md / .claude/settings.json; rechazar si task.md
+  referencia app/, .env, docker-compose.yml base, data/, backups/pre_factory,
+  o contiene --dangerously-skip-permissions / git push / rm -rf. Nunca usar
+  --dangerously-skip-permissions. Nunca guardar credenciales/tokens.
+
+N4. CONTENT FILTER COMO "RECOVERY" REACTIVO  → REGLA PROACTIVA  [ALTO]
+--------------------------------------------------------------------------------
+Problema: el adjunto trata content_filter_blocked como un caso de recovery a
+posteriori. Pero la causa es intentar generar texto normativo: es prevenible.
+
+Rediseño: el regulatory_compliance_engine NUNCA emite texto normativo. Genera
+EXCLUSIVAMENTE estructura de ingesta y placeholders:
+  PENDING_DOCUMENTS.txt, README_INGESTION.md, corpus_manifest.yaml,
+  regulatory_matrix.yaml, pending_documents.yaml, compliance_assessment.json.
+La funcion validate_no_unsupported_regulatory_claims() actua como GATE previo
+a cualquier escritura de corpus: si detecta parrafos largos que parezcan CFR/
+FDA/USP/ICH, ABORTA y marca PENDING. recovery_manager.recover_from_content_
+filter_block() queda como red de seguridad, no como camino normal.
+
+N5. IDEMPOTENCIA / NO DESTRUCCION  → EXPLICITA EN WORKSPACE Y RELEASE  [MEDIO]
+--------------------------------------------------------------------------------
+Problema: el adjunto no garantiza que re-ejecutar la mision no pise el trabajo
+de F5 ya recuperado.
+
+Rediseño:
+- workspace_builder.create_workspace_from_mission(): si el workspace existe,
+  NO sobrescribe; entra en modo "resume" (valida + completa faltantes) y
+  registra workspace_resumed en audit.
+- release_manager: versiones inmutables; si vX.Y.Z existe, error (ya estaba).
+- recovery_manager.detect_partial_f5(): clasifica A/B/C/D y propone plan; nunca
+  borra automaticamente; backup tar.gz antes de cualquier limpieza.
+
+N6. CAPA 9 DEBE PRECEDER A CAPA 8  → CONSTRUIR EL CONTROL ANTES QUE LA POTENCIA
+--------------------------------------------------------------------------------
+Problema: ambas capas se construyen a la vez. Pero Capa 9 (Mission Control) es
+el plano de gobierno que AUTORIZA lo que Capa 8 puede hacer. Sin Capa 9
+funcionando, Capa 8 no tiene de donde leer allowed_actions/stop_conditions.
+
+Rediseño: F4.5a construye y valida Capa 9 STANDALONE primero (es puro estado/
+gobernanza, riesgo casi nulo). Capa 8 (F4.5b/c) lee la aprobacion de mision
+desde Capa 9 como precondicion de cada accion.
+
+================================================================================
+LO QUE SE CONSERVA DEL ADJUNTO (sin cambios de fondo)
+================================================================================
+- La lista de modulos de layer8/ y layer9/ (se distribuye en fases).
+- El esquema de mission_approval: autonomy_level controlled_full,
+  allowed_actions, stop_conditions, final_human_decision.
+- approval_matrix con las 10 acciones aprobables.
+- decision_log y risk_acceptance.
+- requirement_interpreter con deteccion de dominios para lab_qc
+  (LIMS/HPLC/OOS/DI/CAPA, dual-use 211+820, Part 11, ALCOA+).
+- agent_design_engine con el arbol de decision (heredar/perfil/nuevo) y la
+  recomendacion para lab_qc (heredar capa; qa_oos_profile; integrity_lims_
+  profile; hplc_data_review_agent nuevo). Se conserva la nota sobre routing:
+  documentar por que qa/integrity directos pueden NO heredarse si los perfiles
+  especializados los sustituyen (evita ruido en detect_agent).
+- job_queue con estados pending/running/completed/failed.
+- Los nuevos eventos de auditoria (se añaden manteniendo verify_chain compat).
+- Las rutas API de layer8 y layer9.
+- La mision lab_qc_project con deploy_docker_if_gates_pass: false y decision
+  final humana requerida.
+- La salida obligatoria antes de aprobacion (veredicto + evidencia + diff +
+  riesgos + proximo paso) y la prohibicion de commit/release/deploy sin
+  aprobacion.
+
+================================================================================
+MATRIZ DE DECISIONES DE REDISEÑO (resumen)
+================================================================================
+Adjunto (tal cual)              →  Rediseño adoptado
+--------------------------------   --------------------------------------------
+1 sesion monolitica             →  6 fases (F5-R, F4.5a-d, F6) una por sesion
+F5 sin cerrar antes de autonomia→  F5-R primero, cierra el piloto
+headless disponible de entrada  →  headless deshabilitado por defecto (F7)
+content_filter como recovery    →  prevencion proactiva (gate anti-texto-norm.)
+posible sobrescritura de F5      →  workspace_builder/recovery idempotentes
+Capa 8 y 9 a la vez             →  Capa 9 primero, Capa 8 lee su autorizacion
+
+CONCLUSION: mismo objetivo, camino mas seguro, auditable y mantenible.
+================================================================================

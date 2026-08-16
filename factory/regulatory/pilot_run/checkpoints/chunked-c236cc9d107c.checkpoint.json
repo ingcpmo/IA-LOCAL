@@ -1,0 +1,131 @@
+{
+  "run_id": "chunked-c236cc9d107c",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "eu_annex11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 1,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-c236cc9d107c",
+      "task_id": "task-363ffd0ced20",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 1756,
+      "started_at": "2026-08-08T02:20:21.980508+00:00",
+      "finished_at": "2026-08-08T02:41:22.137531+00:00",
+      "wall_clock_ms": 1260157.0,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 3072,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"ANNEX11_4\",\n      \"estado\": \"evidencia_insuficiente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"No se proporcionan detalles sobre la documentación de validación, la evaluación de riesgo ni la conexión entre estos aspectos y las decisiones de validación.\",\n      \"recomendacion\": \"Incluir una descripción detallada de la documentación de validación, la evaluación de riesgo y su conexión con las decisiones de validación en el documento URS o FS.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Documentacion de validacion que cubre las etapas relevantes del ciclo de vida.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona documentación de validación en el documento proporcionado.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Evaluacion de riesgo real y documentada.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona evaluación de riesgo en el documento proporcionado.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Conexion explicita y trazable entre esa evaluacion de riesgo y las decisiones de validacion tomadas (alcance, protocolos, criterios de aceptacion, procedimientos, registros).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona conexión entre la evaluación de riesgo y las decisiones de validación en el documento proporcionado.\",\n          \"limitations\": \"\"\n        }\n      ]\n    },\n    {\n      \"req_id\": \"ANNEX11_7.1\",\n      \"estado\": \"evidencia_insuficiente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"No se proporcionan detalles sobre los medios físicos y electrónicos de protección, la verificación documentada de accesibilidad, legibilidad y exactitud, ni la definición de la frecuencia de revisión.\",\n      \"recomendacion\": \"Incluir una descripción detallada de los medios físicos y electrónicos de protección, la verificación documentada de accesibilidad, legibilidad y exactitud, y la definición de la frecuencia de revisión en el documento URS o FS.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Medios fisicos de proteccion descritos (acceso restringido a sala de servidores/racks).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan medios físicos de protección en el documento proporcionado.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Medios electronicos de proteccion descritos (redundancia, checksums, control de integridad).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan medios electrónicos de protección en el documento proporcionado.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Verificacion documentada (al menos una vez, con evidencia real) de accesibilidad, legibilidad y exactitud.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona verificación documentada en el documento proporcionado.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 4,\n          \"criterion_text\": \"Frecuencia de reverificacion definida segun riesgo y procedimiento, cuando el riesgo del sistema lo justifique.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona frecuencia de revisión en el documento proporcionado.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 5,\n          \"criterion_text\": \"Periodo de retencion declarado, con evidencia de que el acceso a los datos se mantiene durante ese periodo.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona declaración del período de retención en el documento proporcionado.\",\n          \"limitations\": \"\"\n        }\n      ]\n    },\n    {\n      \"req_id\": \"ANNEX11_9\",\n      \"estado\": \"evidencia_insuficiente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"No se proporcionan detalles sobre la evaluación de riesgo, el audit trail generado por el sistema, los motivos documentados para cambios/eliminaciones GMP-relevantes, ni la revisión periodica del audit trail.\",\n      \"recomendacion\": \"Incluir una descripción detallada de la evaluación de riesgo, el audit trail generado por el sistema, los motivos documentados para cambios/eliminaciones GMP-relevantes, y la revisión periodica del audit trail en el documento URS o FS.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Evaluacion de riesgo documentada sobre la necesidad/alcance del audit trail.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona evaluación de riesgo en el documento proporcionado.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Audit trail generado por el sistema que registra cambios y eliminaciones GMP-relevantes.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona audit trail en el documento proporcionado.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Motivo documentado para cada cambio/eliminacion GMP-relevante (no solo el hecho del cambio).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan motivos documentados en el documento proporcionado.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 4,\n          \"criterion_text\": \"Formato disponible y convertible a forma generalmente inteligible (exportable/legible por humano).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona formato convertible en el documento proporcionado.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 5,\n          \"criterion_text\": \"Evidencia de revision periodica real del audit trail (no solo su existencia).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona revisión periódica en el documento proporcionado.\",\n          \"limitations\": \"\"\n        }\n      ]\n    },\n    {\n      \"req_id\": \"ANNEX11_12\",\n      \"estado\": \"evidencia_insuficiente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"No se proporcionan detalles sobre los controles físicos y/o lógicos, la justificación de la combinación elegida según el riesgo, ni la evidencia de restricción efectiva a personas autorizadas.\",\n      \"recomendacion\": \"Incluir una descripción detallada de los controles físicos y/o lógicos, la justificación de la combinación elegida según el riesgo, y la evidencia de restricción efectiva a personas autorizadas en el documento URS o FS.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Controles fisicos y/o logicos descritos con metodo concreto (llaves, tarjetas, codigos+contrasenas, biometria, acceso restringido a equipos/areas).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan controles físicos y/o lógicos en el documento proporcionado.\",\n          \"limitations\": \"\"\n ",
+      "raw_response_truncated_in_log": true,
+      "_by_req_candidates": []
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.0",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true
+  },
+  "verified_records_by_req": {
+    "ANNEX11_4": [
+      {
+        "record_id": "vrec-task-363ffd0ced20-ANNEX11_4",
+        "llm_output": {
+          "requirement_id": "ANNEX11_4",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ANNEX11_7.1": [
+      {
+        "record_id": "vrec-task-363ffd0ced20-ANNEX11_7.1",
+        "llm_output": {
+          "requirement_id": "ANNEX11_7.1",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ANNEX11_9": [
+      {
+        "record_id": "vrec-task-363ffd0ced20-ANNEX11_9",
+        "llm_output": {
+          "requirement_id": "ANNEX11_9",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ANNEX11_12": [
+      {
+        "record_id": "vrec-task-363ffd0ced20-ANNEX11_12",
+        "llm_output": {
+          "requirement_id": "ANNEX11_12",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ],
+    "ANNEX11_17": [
+      {
+        "record_id": "vrec-task-363ffd0ced20-ANNEX11_17",
+        "llm_output": {
+          "requirement_id": "ANNEX11_17",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

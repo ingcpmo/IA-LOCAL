@@ -1,0 +1,501 @@
+============================================================
+W3 — VISOR OPERATIVO DE EVIDENCIA POR MISIÓN
+GMP AI Factory · Mission Control · Post V1/V2/W1/W2
+============================================================
+
+CONTEXTO Y MEJORAS RESPECTO AL ARQ W3
+============================================================
+El ARQ pide un endpoint /full-detail con 9 secciones en un solo JSON, y
+un endpoint /artifact paralelo a los existentes. Las mejoras de W3:
+
+  (1) SPLIT del endpoint: /summary (rápido, ~5 KB, cacheable con ETag) +
+      secciones lazy /design /agents /headless /tests /rc /deployment
+      /audit. El frontend carga summary primero, expande secciones bajo
+      demanda. Evita martilleo de disco en cada refresh.
+
+  (2) REUTILIZAR política de rutas U7 (factory/core/path_policy.py).
+      No crear endpoint /artifact paralelo: extender los allowlist
+      existentes a designs/ y deployments/. Una política, varios
+      consumidores, menos superficie.
+
+  (3) PARSEAR el log JSONL del headless en backend. Hoy es 1 línea de
+      ~3 KB con JSON anidado (resultado, modelUsage, costos, turns).
+      Exponer campos individuales para que la UI no parsee formatos
+      internos del CLI.
+
+  (4) VISTA DE PROFILES vs AGENTS NUEVOS — distinción clave de Capa 8.
+      En oos_hplc_investigator hubo 2 profiles heredados (qa_oos_profile,
+      integrity_lims_profile) + 1 agent nuevo (hplc_data_review_agent).
+      Esa decisión es informativa y debe destacarse.
+
+  (5) CACHING con ETag en /summary para que polling de UI no re-lea
+      disco si nada cambió desde el último refresh.
+
+REGLAS DURAS
+  - No ejecutar headless. No deploy. No Docker nuevo.
+  - No tocar app/, .env, docker-compose base, data/, backups/, aria-*, hotelbot-*.
+  - No exponer secretos: .env, .claude/, .ssh/, credentials.json, *.key, *.pem.
+  - No exponer build artifacts: __pycache__, .pytest_cache, *.pyc, *.bin.
+  - No exponer data productiva: data/chroma/, backups/.
+  - Toda lectura usa path_policy.resolve_workspace() o equivalente.
+  - *** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+------------------------------------------------------------
+PASO 0 — Estado base
+------------------------------------------------------------
+cd /home/ing_cpmo
+export FK="$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)"
+export HDR="X-API-Key"
+
+echo "=== Confirmar stacks y W2 funcional ==="
+docker ps --filter "name=oos_hplc" --format "{{.Names}} {{.Ports}} {{.Status}}"
+curl -s -m 5 http://localhost:8102/health | python3 -m json.tool
+
+echo "=== Confirmar W1: RC canónico marcado ==="
+curl -s -H "$HDR: $FK" \
+  http://localhost:9000/api/v1/layer9/projects/oos_hplc_investigator/canonical \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print('canonical:', d.get('rc_id','—'), '| is_canonical:', d.get('is_canonical'))"
+
+echo "=== Selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | tail -5
+
+echo "=== Inventario de fuentes de evidencia disponibles ==="
+echo "designs/:"; ls factory/designs/oos_hplc_investigator/
+echo ""; echo "workspaces/ (filtrado):"
+find factory/workspaces/oos_hplc_investigator -type f \
+  ! -path "*__pycache__*" ! -path "*.pytest_cache*" ! -name "*.pyc" \
+  ! -path "*.claude*" | sort
+echo ""; echo "release_candidates/:"; ls factory/release_candidates/oos_hplc_investigator/
+echo ""; echo "deployments/:"; ls factory/deployments/oos_hplc_investigator/ 2>/dev/null \
+  || echo "(no deployments dir — verificar nombre real)"
+
+  >> Confirmar las 4 fuentes y los conteos antes de empezar.
+
+------------------------------------------------------------
+TAREA 1 — EXTENDER POLÍTICA DE RUTAS U7
+------------------------------------------------------------
+# El módulo factory/core/path_policy.py ya tiene resolve_workspace() para
+# factory/workspaces/{id}/ con allowlist + anti-traversal + anti-secretos.
+# W3 lo extiende a:
+#   - factory/designs/{id}/
+#   - factory/release_candidates/{id}/.../artifacts/
+#   - factory/deployments/{id}/    (con allowlist MÁS ESTRICTA aún)
+
+# Backup
+cp factory/core/path_policy.py backups/path_policy.py.pre_W3
+
+# Agregar funciones (no reemplazar resolve_workspace, agregar nuevas):
+#   resolve_design(project_id, relative_path) -> Path
+#   resolve_rc_artifact(project_id, rc_id, relative_path) -> Path
+#   resolve_deployment(project_id, relative_path) -> Path
+#
+# Cada una:
+#   - Allowlist propia (raíz canónica + tipos permitidos)
+#   - Misma protección anti-traversal/símbolos/secretos
+#   - Para deployment: BLOQUEAR adicionalmente .env, env.example, scripts/sql/,
+#     data/, knowledge/corpus/, releases/*.json (releases son metadata interna,
+#     solo se exponen via endpoint de metadata)
+#   - Tipos permitidos por raíz:
+#       designs/      → .yaml, .yml, .md (solo lectura de diseño)
+#       workspaces/   → ya cubierto por resolve_workspace
+#       rc artifacts/ → .json, .log, .txt, .md
+#       deployments/  → .py, .yml, .yaml, .md, .json (sin .env, .sql, .sh con keys)
+
+# Tests: extender factory/tests/test_path_policy.py con:
+#   - resolve_design rechaza ../../../etc/passwd
+#   - resolve_deployment rechaza .env, data/chroma/, releases/v0.3.0.json
+#   - resolve_rc_artifact rechaza paths fuera del rc_id solicitado
+
+python3 -m pytest factory/tests/test_path_policy.py -q
+
+------------------------------------------------------------
+TAREA 2 — ENDPOINT /summary (rápido, cacheable)
+------------------------------------------------------------
+# GET /api/v1/layer9/missions/{project_id}/summary
+# Devuelve solo metadatos consolidados, sin contenido de archivos.
+# Tamaño objetivo: <5 KB
+# Caching: ETag basado en hash de los timestamps de los archivos clave.
+
+# Response shape:
+# {
+#   "project_id": "oos_hplc_investigator",
+#   "mission": {
+#     "status": "approved",
+#     "client_type": "...",
+#     "created_at": "...",
+#     "approved_at": "...",
+#     "approved_by": "cesar"
+#   },
+#   "design": {
+#     "files_count": 6,
+#     "agents_summary": {
+#       "profiles_inherited": 2,
+#       "new_agents": 1,
+#       "agent_ids": ["qa_oos_profile", "integrity_lims_profile", "hplc_data_review_agent"]
+#     },
+#     "pending_documents_count": 3
+#   },
+#   "workspace": {
+#     "files_visible": 13,
+#     "py_files": 8,
+#     "has_test_report": true,
+#     "has_headless_log": true
+#   },
+#   "headless": {
+#     "job_id": "f85474d2-983c-463e-9017-b3e8e69c3a36",
+#     "returncode": 0,
+#     "duration_seconds": 199.5,
+#     "total_cost_usd": 0.5117,
+#     "num_turns": 20,
+#     "model_used": ["claude-haiku-4-5-20251001", "claude-sonnet-4-6"],
+#     "terminal_reason": "completed"
+#   },
+#   "tests": {
+#     "passed": 12, "failed": 0, "returncode": 0
+#   },
+#   "rcs": {
+#     "count": 3,
+#     "canonical": "oos_hplc_investigator-rc-v1.1-20260626T191819",
+#     "statuses": {"approved": 2, "pending": 0}
+#   },
+#   "deployment": {
+#     "exists": true,
+#     "containers_running": 3,
+#     "api_port": 8102,
+#     "health_ok": true,
+#     "health_check_at": "2026-06-29T..."
+#   },
+#   "audit": {
+#     "event_count_filtered": 47,
+#     "last_event_at": "2026-06-29T16:12:35Z",
+#     "last_event_type": "rc_reviewed"
+#   },
+#   "etag": "sha256:..."
+# }
+
+# Implementación clave:
+#   - ETag = SHA-256 de tuplas (path, mtime) de los archivos consultados
+#   - Si request trae If-None-Match == ETag → 304 Not Modified
+#   - NO escribir auditoría (es endpoint de lectura, regla U5)
+
+------------------------------------------------------------
+TAREA 3 — ENDPOINTS LAZY POR SECCIÓN
+------------------------------------------------------------
+# GET /api/v1/layer9/missions/{project_id}/design
+#   → lista archivos en factory/designs/{project_id}/, sin contenido
+#   → para cada archivo: name, size, ext, summary parseado si es YAML
+
+# GET /api/v1/layer9/missions/{project_id}/agents
+#   → lee agent_design_proposal.yaml
+#   → devuelve estructura tipada:
+#     {
+#       "agents": [
+#         {
+#           "agent_id": "qa_oos_profile",
+#           "decision": "profile",    // profile | new_agent
+#           "domain": "QA / OOS",
+#           "function": "...",
+#           "rag_collection": "...",
+#           "is_inherited": true,
+#           "source_file": "factory/designs/oos_hplc_investigator/agent_design_proposal.yaml"
+#         },
+#         ...
+#       ],
+#       "summary": {"profiles_inherited": 2, "new_agents": 1}
+#     }
+
+# GET /api/v1/layer9/missions/{project_id}/headless
+#   → lee logs/headless_*.log (formato JSONL del CLI Claude)
+#   → parsea y devuelve estructura plana:
+#     {
+#       "job_id": "...",
+#       "log_path": "...",
+#       "log_size_bytes": 3007,
+#       "result": {
+#         "returncode": 0,
+#         "subtype": "success",
+#         "duration_ms": 199511,
+#         "duration_api_ms": 195537,
+#         "num_turns": 20,
+#         "terminal_reason": "completed",
+#         "total_cost_usd": 0.5117,
+#         "models_used": ["claude-haiku-4-5-20251001", "claude-sonnet-4-6"],
+#         "model_breakdown": {
+#           "claude-haiku-4-5-20251001": {"inputTokens": 3091, "outputTokens": 23, "costUSD": 0.003206},
+#           "claude-sonnet-4-6": {"inputTokens": 17, "outputTokens": 13003, "costUSD": 0.5085}
+#         },
+#         "permission_denials": [],
+#         "result_text": "..." // el reporte de cierre, primeros 4 KB
+#       }
+#     }
+
+# GET /api/v1/layer9/missions/{project_id}/tests
+#   → lee test_report.json del workspace
+#   → devuelve { passed, failed, returncode, output (truncado a 4 KB) }
+
+# GET /api/v1/layer9/missions/{project_id}/rcs
+#   → lista todos los RCs del project_id
+#   → por cada uno: rc_id, version, status, is_canonical, artifacts, sha256sums,
+#     approved_by, decided_at, proposed_at
+
+# GET /api/v1/layer9/missions/{project_id}/deployment
+#   → si existe factory/deployments/{project_id}/:
+#     {
+#       "exists": true,
+#       "compose_file": "docker-compose.yml",
+#       "expected_containers": ["..._api", "..._postgres", "..._redis"],
+#       "running_containers": [...],
+#       "ports": {"api": 8102, "postgres": 5434, "redis": 6381},
+#       "health": {...},   // resultado de http://localhost:{api_port}/health
+#       "docs_url": "http://localhost:{api_port}/docs",
+#       "files_visible": 12   // lista lazy via /file
+#     }
+#   → si no existe: {"exists": false}
+
+# GET /api/v1/layer9/missions/{project_id}/audit?limit=50
+#   → lee factory/audit/factory_audit.jsonl
+#   → filtra por project_id
+#   → devuelve últimos N eventos: timestamp, event_type, entry_hash, data resumida
+
+------------------------------------------------------------
+TAREA 4 — ENDPOINTS DE CONTENIDO (file readers)
+------------------------------------------------------------
+# REUTILIZAR endpoints existentes donde aplique:
+#   GET /api/v1/layer8/workspaces/{id}/file?path=... (ya existe, usa resolve_workspace)
+#
+# AGREGAR endpoints nuevos para las otras categorías, con la política U7
+# extendida (TAREA 1):
+#
+#   GET /api/v1/layer9/missions/{id}/design/file?path=...
+#     usa resolve_design(id, path)
+#
+#   GET /api/v1/layer9/missions/{id}/rc/{rc_id}/file?path=...
+#     usa resolve_rc_artifact(id, rc_id, path)
+#
+#   GET /api/v1/layer9/missions/{id}/deployment/file?path=...
+#     usa resolve_deployment(id, path) — MÁS ESTRICTA
+#
+# Cada endpoint:
+#   - Read-only (sin auditoría)
+#   - Devuelve {project_id, path, size, ext, content}
+#   - Límite de tamaño: 256 KB (mismo que workspaces)
+#   - Errores limpios: 404 si no existe, 403 si bloqueado por policy
+
+------------------------------------------------------------
+TAREA 5 — FRONTEND: VISOR EN 4 SECCIONES
+------------------------------------------------------------
+mkdir -p backups/frontend
+cp factory/ui/mission_control.html backups/frontend/mission_control.html.pre_W3
+
+# Al hacer clic en una misión del Panel general → panel lateral con:
+#
+# SECCIÓN 1 — ESTADO (carga /summary inmediatamente)
+#   - Resumen de mission/headless/tests/rcs/deployment
+#   - Badges verde/ámbar/rojo según estado
+#   - Checklist preflight F5 si aplica (reusa /f5/preflight de W1)
+#
+# SECCIÓN 2 — EVIDENCIA (subpaneles colapsables, lazy-loaded)
+#   2a) Diseño              → llama /design al expandir
+#   2b) Código generado     → llama /workspaces/{id}/tree al expandir
+#   2c) Tests               → llama /tests al expandir
+#   2d) Logs Headless       → llama /headless al expandir, muestra modelos+costos
+#   2e) Release Candidates  → llama /rcs al expandir, marca canonical
+#   2f) Deployment Docker   → llama /deployment al expandir, muestra health real
+#   2g) Auditoría filtrada  → llama /audit?limit=50 al expandir
+#
+#   Cada subpanel:
+#   - Lista archivos con name + size + ext
+#   - Click en archivo → fetch del endpoint /file correspondiente
+#   - Visor read-only con scroll completo, botón Copiar, botón Cerrar
+#   - "Sin datos" si la fase no aplica (deployment no existe, etc.)
+#   - Error claro si endpoint devuelve 4xx/5xx
+#
+# SECCIÓN 3 — AGENTES (llama /agents)
+#   - Tabla con columnas: agent_id | decisión | dominio | función | rag_collection
+#   - Badge "PROFILE HEREDADO" (verde) o "AGENT NUEVO" (azul)
+#   - Resumen arriba: "2 profiles heredados + 1 agent nuevo"
+#
+# SECCIÓN 4 — ACCIONES (reusa endpoints W1)
+#   - Botón "Marcar canónico" por RC (POST /review/{rc_id}/mark-canonical)
+#   - Botón "Modificar misión" (ya existía en W1)
+#   - Botón "Preparar Docker F5" (reusa preflight de W1)
+#   - Cada acción muestra resultado y refresca /summary
+
+# Caching frontend: guardar ETag de /summary; al refrescar, mandar
+# If-None-Match. Si servidor devuelve 304, no re-renderizar.
+
+# Filtros defensivos en frontend (defensa en profundidad además del backend):
+# Ocultar nombres que contengan: .pytest_cache, __pycache__, .pyc, .env,
+# .claude, data/chroma, backups, .ssh, .key, .pem, credentials
+
+------------------------------------------------------------
+TAREA 6 — TESTS NUEVOS
+------------------------------------------------------------
+# factory/tests/test_mission_summary.py
+#   - /summary devuelve shape correcto
+#   - ETag presente y estable si no cambia nada
+#   - If-None-Match con ETag correcto → 304
+#   - /summary NO escribe en cadena de auditoría (delta=0)
+#
+# factory/tests/test_mission_evidence_readers.py
+#   - /design devuelve lista de archivos YAML
+#   - /agents parsea agent_design_proposal correctamente, separa profiles/new
+#   - /headless parsea log JSONL y devuelve estructura plana
+#   - /deployment con stack corriendo devuelve health=ok
+#   - /audit?limit=N respeta el límite
+#
+# factory/tests/test_path_policy.py (extender)
+#   - resolve_design rechaza secretos y traversal
+#   - resolve_deployment rechaza .env, data/, releases/*.json
+#   - resolve_rc_artifact rechaza paths fuera del rc_id solicitado
+
+------------------------------------------------------------
+TAREA 7 — VALIDACIONES
+------------------------------------------------------------
+echo "=== py_compile (con PYTHONDONTWRITEBYTECODE por el bug de permisos) ==="
+PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile \
+  factory/api/routes/layer9.py \
+  factory/api/routes/layer8.py \
+  factory/core/path_policy.py
+
+echo "=== JS check (extraer script del HTML, no node sobre HTML) ==="
+python3 - <<'PYEOF'
+import re, subprocess, tempfile, pathlib, os, sys
+html = pathlib.Path("factory/ui/mission_control.html").read_text()
+js = "\n".join(re.findall(r"<script[^>]*>(.*?)</script>", html, re.S))
+f = tempfile.NamedTemporaryFile("w", suffix=".js", delete=False)
+f.write(js); f.close()
+r = subprocess.run(["node", "--check", f.name], capture_output=True, text=True)
+print("JS:", "OK" if r.returncode == 0 else "FAIL")
+if r.stderr: print(r.stderr[:600])
+os.unlink(f.name)
+sys.exit(r.returncode)
+PYEOF
+
+echo "=== Suite de tests ==="
+python3 -m pytest factory/tests/test_path_policy.py -q
+python3 -m pytest factory/tests/test_refresh_readonly.py -q
+python3 -m pytest factory/tests/test_rc_approval_idempotency.py -q
+python3 -m pytest factory/tests/test_mission_summary.py -q
+python3 -m pytest factory/tests/test_mission_evidence_readers.py -q
+python3 -m pytest factory/tests/ -q --tb=no
+
+echo "=== Selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "Gate 0|PASS|FAIL"
+
+echo "=== Tests funcionales endpoint summary ==="
+curl -s -H "$HDR: $FK" \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/summary \
+  | python3 -m json.tool | head -50
+
+echo "=== ETag funciona ==="
+ETAG=$(curl -s -H "$HDR: $FK" -D - \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/summary \
+  | grep -i "^etag:" | awk '{print $2}' | tr -d '\r')
+echo "ETag: $ETAG"
+echo "Segunda llamada con If-None-Match — debe ser 304:"
+curl -s -o /dev/null -w "HTTP:%{http_code}\n" \
+  -H "$HDR: $FK" -H "If-None-Match: $ETAG" \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/summary
+
+echo "=== Endpoints lazy ==="
+for sec in design agents headless tests rcs deployment audit; do
+  CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "$HDR: $FK" \
+    "http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/$sec")
+  echo "  /$sec → HTTP $CODE"
+done
+
+echo "=== Política de rutas: rechazo de secretos ==="
+for badpath in ".env" "../../etc/passwd" "data/chroma/x" "releases/v0.3.0.json"; do
+  CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "$HDR: $FK" \
+    "http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/deployment/file?path=$badpath")
+  echo "  deployment/file?path=$badpath → HTTP $CODE (esperado 403 o 404)"
+done
+
+echo "=== Invariante read-only: /summary NO crece la cadena ==="
+AUDIT="$(find factory -name '*.jsonl' | grep -E 'audit.*jsonl$' | head -1)"
+C0=$(wc -l < "$AUDIT")
+for i in 1 2 3; do
+  curl -s -H "$HDR: $FK" \
+    http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/summary \
+    -o /dev/null
+done
+C1=$(wc -l < "$AUDIT")
+echo "delta cadena tras 3 calls a /summary: $((C1 - C0))   (DEBE ser 0)"
+
+------------------------------------------------------------
+PAUSA FINAL — REPORTE Y CLASIFICACIÓN
+------------------------------------------------------------
+git status --short
+git diff --stat
+git diff -- factory/ui/mission_control.html \
+            factory/api/routes/layer9.py \
+            factory/api/routes/layer8.py \
+            factory/core/path_policy.py \
+            factory/tests
+
+Clasificar:
+
+  | Item | Estado | Evidencia |
+  |---|---|---|
+  | /summary devuelve shape correcto + ETag           | sí/no | curl + json |
+  | If-None-Match → 304                               | sí/no | HTTP 304 |
+  | /design /agents /headless /tests /rcs /deployment /audit funcionan | n/7 | HTTP por endpoint |
+  | Endpoints /file por categoría con políticas       | sí/no | 4 categorías |
+  | Política U7 extendida (designs/deployments/rcs)   | sí/no | tests |
+  | Secretos bloqueados (.env, data/, .claude)        | sí/no | curl 403 |
+  | Build artifacts bloqueados (__pycache__, .pyc)    | sí/no | tree filtrado |
+  | Diseño visible en browser                         | sí/no | UI |
+  | Agentes visibles separados (profile vs new)       | sí/no | UI |
+  | Código generado visible read-only                 | sí/no | UI |
+  | test_report.json parseado                         | sí/no | UI |
+  | Headless log parseado (cost, turns, models)       | sí/no | UI |
+  | RC artifacts visibles                             | sí/no | UI |
+  | Deployment health en vivo                         | sí/no | UI |
+  | Auditoría filtrada por project_id                 | sí/no | UI |
+  | /summary NO escribe en cadena (delta=0)           | sí/no | wc diff |
+  | JS check                                          | PASS / FAIL | |
+  | Tests suite                                       | N/N | |
+  | Gate 0 selfcheck                                  | PASS / FAIL | |
+  | No headless ejecutado                             | confirmar | |
+  | No deploy nuevo                                   | confirmar | |
+  | No Docker nuevo                                   | confirmar | |
+  | No secretos en respuesta de ningún endpoint       | confirmar | grep en responses |
+
+>> "W3 listo. ¿Apruebas el commit?"
+>> Sugerido:
+>>   factory: W3 — visor operativo de evidencia por misión
+>>            (/summary + secciones lazy + política U7 extendida)
+
+*** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+============================================================
+NOTAS FINALES — QUÉ HACE W3 Y QUÉ NO
+============================================================
+
+QUÉ HACE:
+  ✓ Hace navegable desde el browser TODO lo que Capa 8 generó
+  ✓ Muestra ciclo completo: misión → diseño → agentes → código → tests → log → RC → deployment → auditoría
+  ✓ Distingue profiles heredados de agents nuevos (decisión clave de Capa 8)
+  ✓ Parsea el log JSONL del CLI para que la UI muestre costo, turns, modelos
+  ✓ Health en vivo del deployment desplegado
+  ✓ Caching con ETag para no martillear disco en cada refresh
+  ✓ Política de rutas server-side extendida (designs, deployments, RC)
+  ✓ Tests de seguridad bloquean secretos, traversal y build artifacts
+  ✓ /summary y todos los endpoints lazy son read-only (no auditan)
+
+QUÉ NO HACE (por diseño, no por limitación):
+  ✗ No ejecuta headless
+  ✗ No hace deploy
+  ✗ No crea Docker nuevo
+  ✗ No modifica código del workspace
+  ✗ No edita ningún archivo del filesystem
+  ✗ No expone .env, .claude, .ssh, credentials, *.key, *.pem
+  ✗ No expone __pycache__, .pytest_cache, *.pyc, data/chroma/, backups/
+
+SIGUIENTE TRAS W3
+  - Decidir si ingestar PDFs regulatorios reales (FDA OOS 2022, FDA DI 2018,
+    USP 621/1058, ICH Q2/Q10, FDA PV 2011, GAMP5) — bloqueador go-live
+  - Phase 3 GMP Copilot base (Redis compartido entre agentes, RBAC Keycloak)
+  - Upgrade LLM a Llama 3.1 70B cuando haya GPU NVIDIA 4GB+
+============================================================

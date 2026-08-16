@@ -1,0 +1,133 @@
+================================================================================
+GMP AI FACTORY — EVALUACION DEL ESTADO ACTUAL Y MEMORIA ACTUALIZADA
+Documento: 00_ESTADO_Y_MEMORIA.txt
+Fecha: 2026-06-13
+================================================================================
+
+A. MEMORIA DEL PROYECTO — ACTUALIZADA
+--------------------------------------------------------------------------------
+Se registro en memoria el estado de construccion de la fabrica y el nuevo
+objetivo:
+- Factory F0-F4 COMPLETAS. F5 PARCIAL (bloqueo por content filter al generar
+  seed de corpus regulatorio). F6 NO INICIADA.
+- Nuevo objetivo: Capa 8 autonoma-controlada orientada a mision + Capa 9
+  como Mission Control formal.
+- Reglas criticas de la nueva fase: corpus regulatorio nunca se fabrica
+  (PENDING_DOCUMENT); headless de Claude Code deshabilitado por defecto
+  (manual_assisted primero); nunca --dangerously-skip-permissions ni guardar
+  credenciales; piloto lab_qc con perfiles qa_oos / integrity_lims y agente
+  nuevo hplc_data_review_agent.
+
+B. EVALUACION DEL ESTADO (a confirmar en servidor con el bloque DIAGNOSTICO)
+--------------------------------------------------------------------------------
+Lo que sabemos por el reporte de Cesar y la memoria:
+
+F0-F4: COMPLETAS.
+  - F0: base protegido, backup pre_factory, baseline de recursos, tag
+    base-v1.0.0.
+  - F1: estructura factory/, 6 politicas, registry, 3 skills.
+  - F2: template_export.sh, template_engine.py, port_registry.py, demo_smoke.
+  - F3: audit_writer.py (hash-chain), claude_bridge.py, quality_gate_runner.py.
+  - F4: Factory API + consola UI en puerto 9000.
+
+F5: PARCIAL Y BLOQUEADA.
+  - Causa raiz: al generar el "seed" del corpus regulatorio, el contenido
+    normativo largo activo el content filter y la sesion se interrumpio.
+  - Diagnostico de diseño: el bloqueo NO es un fallo del sistema; es la
+    confirmacion practica de una regla que ya estaba en el diseño original
+    (no fabricar texto regulatorio). La solucion no es "reintentar el seed",
+    es FORMALIZAR el patron PENDING_DOCUMENT.
+  - Estado esperado del workspace lab_qc_project: artefactos tecnicos
+    parciales + intento de corpus abortado. Hay que clasificar, no borrar.
+
+F6: NO INICIADA. Correcto: no debe ejecutarse sin release aprobado.
+
+Producto base: se presume intacto (a confirmar con /health 8000 y git status).
+Factory 9000: se presume sano (a confirmar con /health 9000).
+
+Capa 8 actual: existe como BRIDGE manual (claude_bridge.py). NO tiene aun
+  orquestacion de mision, ni interprete de requerimiento, ni motor de diseño
+  de agentes, ni motor de cumplimiento regulatorio, ni runtime controlado.
+Capa 9 actual: existe de forma IMPLICITA (aprobacion humana por diff/consola).
+  NO existe como Mission Control formal (misiones, matriz de aprobacion,
+  decision log, aceptacion de riesgo).
+
+C. VEREDICTO
+--------------------------------------------------------------------------------
+El proyecto esta sano y bien encaminado. El "bloqueo" de F5 es recuperable y
+de hecho util: valida la regla de no fabricar contenido regulatorio. El paso
+correcto NO es ejecutar el paquete monolitico adjunto tal cual, sino:
+  1) recuperar y cerrar F5 de forma segura (patron PENDING_DOCUMENT), y
+  2) construir la autonomia de Capa 8 + Capa 9 en fases pequeñas y
+     auditables, con la ejecucion headless DESHABILITADA por defecto.
+La justificacion del rediseño esta en el documento 01.
+
+D. BLOQUE DIAGNOSTICO (pegar primero en Claude Code, solo lectura)
+--------------------------------------------------------------------------------
+DIAGNOSTICO — Estado real GMP AI Factory antes de continuar
+
+Ejecuta en orden y muestra la salida de cada bloque. NO modifiques nada.
+Esto es solo lectura para confirmar el estado antes de planear.
+
+cd /home/ing_cpmo
+
+echo "=== Git ultimos commits ==="
+git log --oneline -12
+
+echo ""; echo "=== Estado Git ==="
+git status --short
+
+echo ""; echo "=== Diff stat actual ==="
+git diff --stat
+
+echo ""; echo "=== Tag base ==="
+git tag -l | grep base || echo "SIN TAG base"
+
+echo ""; echo "=== Health base 8000 ==="
+curl -s http://localhost:8000/health || echo "BASE NO RESPONDE"
+
+echo ""; echo "=== Health factory 9000 ==="
+curl -s http://localhost:9000/health || echo "FACTORY NO RESPONDE"
+
+echo ""; echo "=== factory/.env versionado? (debe estar vacio) ==="
+git ls-files factory/.env || true
+
+echo ""; echo "=== Contenedores relevantes ==="
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "NAMES|gmp|factory|lab_qc" || true
+
+echo ""; echo "=== Estructura factory nivel 2 ==="
+find factory -maxdepth 2 -type d 2>/dev/null | sort
+
+echo ""; echo "=== Workspaces ==="
+find factory/workspaces -maxdepth 2 2>/dev/null | sort || true
+
+echo ""; echo "=== Releases ==="
+find factory/releases -maxdepth 4 -type f 2>/dev/null | sort || true
+
+echo ""; echo "=== Deployments ==="
+find factory/deployments -maxdepth 4 -type f 2>/dev/null | sort || true
+
+echo ""; echo "=== Skills instalados ==="
+ls -1 /home/ing_cpmo/.claude/skills 2>/dev/null || echo "SIN SKILLS"
+
+echo ""; echo "=== Audit factory verify ==="
+python3 - <<'PY'
+try:
+    from factory.core.audit_writer import verify_chain
+    print(verify_chain())
+except Exception as e:
+    print("verify_chain no disponible:", e)
+PY
+
+Tras ejecutar, entrega un veredicto breve confirmando:
+F0-F4 estado real, F5 archivos parciales exactos (clasificados A/B/C/D),
+F6 no iniciada, base intacto si/no, factory 9000 sano si/no, que existe
+hoy de Capa 8 y de Capa 9, y que falta. NO hagas cambios. Espera mi senal
+para pasar al plan.
+
+================================================================================
+Continua en:
+  01_EVALUACION_DEL_PAQUETE.txt   → critica tecnica del paquete adjunto + rediseño
+  02_NUEVO_PLAN_FASES.txt         → fases re-secuenciadas con criterios de salida
+  03_PROMPTS_CLAUDE_CODE.txt      → bloques listos para pegar, en orden
+================================================================================

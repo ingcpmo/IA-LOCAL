@@ -1,0 +1,10 @@
+{
+  "run_id": "pilot-2026-08-08-001",
+  "pid": 1420452,
+  "kind": "sample",
+  "status": "COMPLETED",
+  "finished_at": "2026-08-08T03:58:43+00:00",
+  "stop_reason": "CORPUS_COMPLETE",
+  "total_calls_made": 8,
+  "manifest_path": "/home/ing_cpmo/factory/regulatory/pilot_run/manifests/corpus_run_20260808T035843Z.json"
+}

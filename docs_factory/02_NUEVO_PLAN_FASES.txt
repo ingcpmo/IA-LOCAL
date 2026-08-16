@@ -1,0 +1,172 @@
+================================================================================
+GMP AI FACTORY — NUEVO PLAN DE TRABAJO RE-SECUENCIADO
+Documento: 02_NUEVO_PLAN_FASES.txt
+
+Objetivo final: Capa 8 = agente tecnico autonomo-controlado orientado a mision;
+Capa 9 = Mission Control formal. Camino: cerrar F5, construir el plano de
+control (Capa 9), luego la potencia (Capa 8) en dos tiers de seguridad, probar
+el piloto end-to-end en modo manual_assisted, y solo entonces desplegar.
+
+Regla transversal: una fase por sesion de Claude Code; diff visible y aprobado
+antes de cada commit; commits prefijados "factory:"; nunca tocar el base; nunca
+commit/release/deploy/headless sin aprobacion explicita de Cesar (Capa 9).
+================================================================================
+
+FASE F5-R — RECUPERACION Y CIERRE DE F5 (manual_assisted)
+--------------------------------------------------------------------------------
+Objetivo: cerrar el piloto lab_qc_project que quedo bloqueado, sin fabricar
+contenido regulatorio.
+Actividades:
+  1. Clasificar cambios parciales (A globales / B workspace lab_qc / C
+     temporales / D peligrosos). No borrar nada automaticamente.
+  2. Convertir el corpus a estructura PENDING_DOCUMENT: PENDING_DOCUMENTS.txt,
+     README_INGESTION.md, corpus_manifest.yaml, regulatory_matrix.yaml,
+     pending_documents.yaml, compliance_assessment.json + placeholders. CERO
+     texto normativo.
+  3. Completar artefactos tecnicos del workspace: app custom (capa + perfiles
+     qa_oos / integrity_lims; evaluar hplc_data_review_agent), manifest.yaml,
+     docker-compose generado, .env.example, baterias de prueba.
+  4. Levantar la solucion TEMPORALMENTE en sus puertos, correr gates G01-G13
+     (G14 pendiente), detenerla (compose stop).
+  5. Mostrar diff completo + quality_gates_report.json.
+  6. Tras aprobacion: crear release v0.1.0 (pending_approval).
+Entregables: workspace coherente + release v0.1.0 + reporte de gates.
+Criterio de salida: gates G01-G13 en verde (corpus en PENDING declarado como
+limitacion, no como fallo), base intacto, release inmutable creado.
+Aprobacion Capa 9: 1) decision de agentes/perfiles, 2) creacion del release.
+
+FASE F4.5a — CAPA 9 MISSION CONTROL (plano de control, sin ejecucion)
+--------------------------------------------------------------------------------
+Objetivo: formalizar la gobernanza que autoriza a Capa 8.
+Actividades:
+  1. Crear factory/layer9/: mission_control.py, instruction_center.py,
+     approval_matrix.py, decision_log.py, requirement_schema.py,
+     risk_acceptance.py, README.md.
+  2. Almacenamiento en archivos: factory/layer9/missions/<project_id>.yaml,
+     decisiones y riesgos en JSON/JSONL. Sin postgres/redis (M2).
+  3. Ampliar audit_writer.py con eventos layer9_* manteniendo verify_chain
+     compatible.
+  4. Crear la mision lab_qc_project.yaml (autonomy_level controlled_full;
+     allowed_actions hasta create_release; deploy_docker_if_gates_pass: false;
+     final_human_decision_required: deploy_docker, keep_docker_running,
+     expose_external_access). ENLAZARLA al release v0.1.0 de F5-R (trazabilidad
+     retroactiva, sin regenerar).
+Criterio de salida: py_compile OK; crear/aprobar/listar misiones funciona en
+seco; decision_log y risk_acceptance escriben y leen; audit verify OK.
+Aprobacion Capa 9: diff → commit "factory: F4.5a Capa 9 Mission Control".
+
+FASE F4.5b — CAPA 8 TIER-1 (diseño y planificacion, SIN ejecutar Claude Code)
+--------------------------------------------------------------------------------
+Objetivo: que Capa 8 interprete misiones y produzca diseño + plan, sin tocar
+todavia la ejecucion de codigo.
+Actividades:
+  1. Crear factory/layer8/ (Tier-1): requirement_interpreter.py,
+     agent_design_engine.py, regulatory_compliance_engine.py (con
+     validate_no_unsupported_regulatory_claims como gate anti-texto-normativo),
+     workspace_builder.py (idempotente, modo resume — N5), diff_manager.py,
+     validation_manager.py, recovery_manager.py, job_queue.py, y
+     layer8_orchestrator.py en modo "plan only".
+  2. factory/jobs/{pending,running,completed,failed}/.gitkeep
+  3. Ampliar audit con eventos layer8_* (excepto los de ejecucion claude_*,
+     que entran en F4.5c).
+  4. Prueba en seco sobre lab_qc (que ya existe): interpretar requerimiento →
+     generar requirement_spec + agent_design_proposal + regulatory_matrix +
+     corpus_manifest, todo como ARTEFACTOS, sin ejecutar nada ni regenerar el
+     workspace cerrado. workspace_builder debe detectar el workspace existente
+     y entrar en resume.
+Criterio de salida: orquestador en plan-only produce los artefactos de diseño
+para lab_qc sin ejecutar Claude Code ni modificar el release; gate
+anti-texto-normativo demostrado (rechaza un parrafo de prueba tipo CFR).
+Aprobacion Capa 9: diff → commit "factory: F4.5b Capa 8 Tier-1 diseño".
+
+FASE F4.5c — CAPA 8 TIER-2 (runtime controlado, HEADLESS DESHABILITADO)
+--------------------------------------------------------------------------------
+Objetivo: dar a Capa 8 la capacidad de ejecucion controlada, pero apagada por
+defecto y con guards duros.
+Actividades:
+  1. factory/runtime/: runtime_config.yaml (headless_enabled: false),
+     claude_status.json.example.
+  2. claude_account_status.py: check_claude_cli() + write_status() — registra
+     solo cli_found/path/version/linux_user/auth_status/mode/checked_at. NUNCA
+     credenciales ni tokens.
+  3. claude_runtime.py: validate_workspace, validate_task_safety (guards N3),
+     prepare_manual_command (modo por defecto), run_controlled_headless
+     (implementado pero bloqueado salvo doble llave: headless_enabled true +
+     mission allowed_action run_claude_code + task_safety OK). Logs en
+     workspace/logs/. Nunca --dangerously-skip-permissions.
+  4. code_generation_manager.py (prepare_generation_plan / run_generation /
+     collect_generation_outputs) operando por defecto en manual_assisted.
+  5. Ampliar audit con eventos claude_* (status_checked, execution_started/
+     completed/failed) y layer8_stop_condition_triggered / recovery_required.
+  6. Pruebas: claude_account_status escribe status; validate_task_safety
+     RECHAZA un task.md de prueba con ruta prohibida; prepare_manual_command
+     devuelve el comando correcto; run_controlled_headless devuelve "disabled"
+     con headless_enabled false. CERO ejecucion real de claude -p en esta fase.
+Criterio de salida: runtime instalado, headless probadamente DESHABILITADO,
+guards de seguridad demostrados, base intacto.
+Aprobacion Capa 9: diff → commit "factory: F4.5c Capa 8 Tier-2 runtime (off)".
+
+FASE F4.5d — API + UI DE CAPAS 8/9 + PILOTO END-TO-END (manual_assisted)
+--------------------------------------------------------------------------------
+Objetivo: exponer Mission Control y la autonomia en la consola, y probar el
+ciclo completo de mision sobre lab_qc en modo manual.
+Actividades:
+  1. factory/api/routes/layer9.py y layer8.py con los endpoints del adjunto;
+     registrar routers en factory/api/main.py.
+  2. Actualizar factory/ui/index.html con pestañas: Capa 9 (Misiones,
+     Aprobaciones, Decisiones), Capa 8 (Ejecucion, Claude Status, Jobs),
+     Cumplimiento regulatorio, Recovery/Pendientes. API key se ingresa en
+     frontend, NO se persiste, NO se hardcodea.
+  3. Reinicio de factory-api SOLO con aprobacion explicita (no reiniciar
+     gmp-api base).
+  4. PILOTO end-to-end de lab_qc via Mission Control en manual_assisted:
+     crear/aprobar mision (Capa 9) → orquestador interpreta → diseño →
+     valida regulatorio → resume workspace → genera task package → Cesar
+     ejecuta Claude Code manualmente en el workspace → recolecta diff →
+     gates → (release ya existe de F5-R; se enlaza/valida, no se duplica).
+Criterio de salida: consola operativa en 9000 con Capas 8/9; ciclo de mision
+recorrido completo en manual; base y release intactos.
+Aprobacion Capa 9: exposicion de cambios en 9000 + diff → commit
+"factory: F4.5d API/UI Capas 8-9 + piloto manual".
+
+FASE F6 — DEPLOYMENT lab_qc_project (Docker 3)
+--------------------------------------------------------------------------------
+Objetivo: desplegar la solucion piloto aprobada como Docker independiente.
+Precondicion: release v0.1.0 con approval.status=approved (G14) y
+final_human_decision de Capa 9 (deploy_docker / keep_running).
+Actividades: verificar SHA256SUMS, recursos (max 2 activas, free -m, df -h),
+desempaquetar a deployments/, generar .env real (key nueva openssl), up -d,
+gates de runtime G03-G10 en caliente + smoke de 3 flujos, verificar
+convivencia de los 3 stacks (8000/9000/8101), registrar deployment en audit.
+Criterio de salida: 3 stacks estables, gates en verde, evidencia archivada.
+Aprobacion Capa 9: deploy + decision de dejar corriendo o stop.
+
+FASE F7 (BACKLOG) — HABILITAR HEADLESS CONTROLADO
+--------------------------------------------------------------------------------
+Solo despues de un piloto manual exitoso y auditado. Activar headless_enabled:
+true para UNA mision nueva, con allowed_action run_claude_code, timeout y logs,
+y revision humana del log antes de continuar. Comparar resultado headless vs
+manual antes de adoptarlo como modo por defecto.
+
+================================================================================
+MATRIZ DE APROBACIONES (Capa 9 = Cesar)
+--------------------------------------------------------------------------------
+F5-R   : decision de agentes/perfiles + release v0.1.0      → aprobar ambos
+F4.5a  : diff Capa 9 Mission Control                        → aprobar commit
+F4.5b  : diff Capa 8 Tier-1                                 → aprobar commit
+F4.5c  : diff Capa 8 Tier-2 (headless off)                  → aprobar commit
+F4.5d  : exposicion 9000 + diff + (opcional restart api)    → aprobar
+F6     : deploy Docker 3 + decision dejar corriendo/stop    → aprobar
+F7     : habilitar headless para mision nueva               → aprobar (futuro)
+================================================================================
+
+CRITERIO DE EXITO GLOBAL
+--------------------------------------------------------------------------------
+Al cierre de F6 conviven estables:
+  Docker1 base (8000) intacto · Docker2 factory (9000) con Capas 7/8/9 y
+  Mission Control · Docker3 lab_qc (8101) trazable hasta base-v1.0.0.
+Capa 9 gobierna misiones con aprobaciones, decisiones y riesgos auditados.
+Capa 8 ejecuta el ciclo completo en manual_assisted; headless queda listo pero
+apagado hasta F7. Cero fabricacion de contenido regulatorio: todo lo no
+soportado por PDF queda como PENDING_DOCUMENT con estructura de ingesta lista.
+================================================================================

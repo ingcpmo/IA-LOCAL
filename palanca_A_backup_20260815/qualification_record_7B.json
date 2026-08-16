@@ -1,0 +1,224 @@
+{
+  "status": "QUALIFIED",
+  "evaluated_at": "2026-08-10T12:50:15+00:00",
+  "fingerprint": {
+    "model_name": "qwen2.5:7b-instruct-q4_K_M",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "prompt_versions": {
+      "alcoa_prompts.yaml": "1.1.1",
+      "annex11_prompts.yaml": "1.1.1",
+      "cgmp211_prompts.yaml": "1.0.0",
+      "part11_prompts.yaml": "1.1.1",
+      "traceability_prompts.yaml": "1.0.0"
+    },
+    "schema_version": "checkpoint_llm_response_v1",
+    "schema_sha256": "00ccc255e3b6397f42ab2ff0bbe516eb487f90a8a4530603d631f92f8c40a8bf",
+    "golden_dataset_sha256": "c28379accaa8fc43c52ce5f3c35b0bdc4e1e53cb46c0db98fc0a3103846ba279",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "num_ctx": 16384,
+    "temperature": 0.0,
+    "chunk_max_chars": 6000,
+    "chunk_overlap_chars": 500,
+    "output_token_budget_formula": {
+      "tokens_per_criterion": 130,
+      "tokens_per_checkpoint": 60,
+      "json_overhead": 120
+    }
+  },
+  "previous_fingerprint": {
+    "model_name": "qwen2.5:7b-instruct-q4_K_M",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "prompt_versions": {
+      "alcoa_prompts.yaml": "1.1.1",
+      "annex11_prompts.yaml": "1.1.1",
+      "cgmp211_prompts.yaml": "1.0.0",
+      "part11_prompts.yaml": "1.1.1",
+      "traceability_prompts.yaml": "1.0.0"
+    },
+    "schema_version": "checkpoint_llm_response_v1",
+    "schema_sha256": "00ccc255e3b6397f42ab2ff0bbe516eb487f90a8a4530603d631f92f8c40a8bf",
+    "golden_dataset_sha256": "c28379accaa8fc43c52ce5f3c35b0bdc4e1e53cb46c0db98fc0a3103846ba279",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "num_ctx": 16384,
+    "temperature": 0.0,
+    "chunk_max_chars": 6000,
+    "chunk_overlap_chars": 500,
+    "output_token_budget_formula": {
+      "tokens_per_criterion": 130,
+      "tokens_per_checkpoint": 60,
+      "json_overhead": 120
+    }
+  },
+  "metrics": [
+    {
+      "name": "schema_valid_rate",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "17 casos del Golden Dataset (schema/contrato de salida)"
+    },
+    {
+      "name": "citation_anchor_precision",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "6 casos: evidence_from_wrong_document, invented_citation, invented_part211_section_rejected, nonexistent_clause, predicate_rule_quote_not_in_document, predicate_rule_resolves_in_catalog"
+    },
+    {
+      "name": "semantic_precision",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "2 casos: ANNEX11_4_reference_list, evidence_out_of_context"
+    },
+    {
+      "name": "semantic_recall",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "1 casos: incomplete_coverage_never_gap"
+    },
+    {
+      "name": "false_positive_rate",
+      "value": 0.0,
+      "threshold": 0.0,
+      "measured": true,
+      "passed": true,
+      "basis": "2 casos: ANNEX11_4_reference_list, evidence_out_of_context"
+    },
+    {
+      "name": "false_negative_rate",
+      "value": 0.0,
+      "threshold": 0.0,
+      "measured": true,
+      "passed": true,
+      "basis": "1 casos: incomplete_coverage_never_gap"
+    },
+    {
+      "name": "contradiction_detection_rate",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "1 casos: contradiction_between_sections"
+    },
+    {
+      "name": "remediation_acceptance_rate",
+      "value": 1.0,
+      "threshold": 1.0,
+      "measured": true,
+      "passed": true,
+      "basis": "7 casos: partial_evidence_sufficiency, sufficiency_duplicate_criterion_rejected_atomically, sufficiency_incomplete_coverage_never_guessed, sufficiency_invented_criterion_rejected_atomically, sufficiency_met_all_criteria_anchored, sufficiency_met_without_evidence_rejected_atomically, sufficiency_not_met_all_criteria_unmet"
+    },
+    {
+      "name": "unsupported_claim_rate",
+      "value": 0.0,
+      "threshold": 0.0,
+      "measured": true,
+      "passed": true,
+      "basis": "6 casos: evidence_from_wrong_document, invented_citation, invented_part211_section_rejected, nonexistent_clause, predicate_rule_quote_not_in_document, predicate_rule_resolves_in_catalog"
+    },
+    {
+      "name": "latency_p50",
+      "value": 1645.7642519905057,
+      "threshold": null,
+      "measured": true,
+      "passed": true,
+      "basis": "corrida real de calibracion 'chunked-77b0d8302c4d' (2 llamadas, 2026-08-10T12:49:40+00:00)"
+    },
+    {
+      "name": "latency_p95",
+      "value": 1802.906110359551,
+      "threshold": null,
+      "measured": true,
+      "passed": true,
+      "basis": "corrida real de calibracion 'chunked-77b0d8302c4d' (2 llamadas, 2026-08-10T12:49:40+00:00)"
+    },
+    {
+      "name": "tokens_per_task",
+      "value": 3277,
+      "threshold": null,
+      "measured": true,
+      "passed": true,
+      "basis": "corrida real de calibracion 'chunked-77b0d8302c4d' (2 llamadas, 2026-08-10T12:49:40+00:00)"
+    },
+    {
+      "name": "retry_rate",
+      "value": 0.0,
+      "threshold": null,
+      "measured": true,
+      "passed": true,
+      "basis": "corrida real de calibracion 'chunked-77b0d8302c4d' (2 llamadas, 2026-08-10T12:49:40+00:00)"
+    }
+  ],
+  "golden_dataset": {
+    "total": 17,
+    "passed": 17,
+    "failed": 0,
+    "failed_case_ids": []
+  },
+  "failed_metrics": [],
+  "unmeasured_metrics": [],
+  "priority_verdicts": [
+    {
+      "priority": "cero_citas_inventadas",
+      "metrics": [
+        "citation_anchor_precision",
+        "unsupported_claim_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "menor_tasa_falsos_positivos",
+      "metrics": [
+        "false_positive_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "menor_tasa_falsos_negativos_criticos",
+      "metrics": [
+        "false_negative_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "cumplimiento_de_schema",
+      "metrics": [
+        "schema_valid_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "estabilidad",
+      "metrics": [
+        "contradiction_detection_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "calidad_de_remediacion",
+      "metrics": [
+        "remediation_acceptance_rate"
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "priority": "rendimiento",
+      "metrics": [
+        "latency_p50",
+        "latency_p95",
+        "tokens_per_task",
+        "retry_rate"
+      ],
+      "verdict": "PASS"
+    }
+  ],
+  "blocking_reason": null
+}

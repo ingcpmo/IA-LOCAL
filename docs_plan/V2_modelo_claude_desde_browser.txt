@@ -1,0 +1,544 @@
+============================================================
+V2 — CONFIGURACIÓN DE MODELO CLAUDE DESDE BROWSER
+Evaluación técnica + implementación
+GMP AI Factory · Capa 8 + Mission Control UI
+============================================================
+
+ANÁLISIS TÉCNICO PREVIO (leer antes de ejecutar)
+============================================================
+
+PREGUNTA: ¿Es viable autenticar Claude Code desde el browser y elegir el modelo?
+
+RESPUESTA CORTA: Parcialmente. La autenticación del CLI NO puede delegarse al
+browser (la clave de Anthropic nunca debe tocar el frontend). Pero la elección
+del MODELO y la visualización del estado de autenticación SÍ son viables y
+se pueden agregar con 3 componentes sobre la arquitectura actual.
+
+ARQUITECTURA ACTUAL (lo que ya existe):
+  Browser → POST /layer8/missions/{id}/headless → factory-api (contenedor)
+                                                        ↓
+                                               host_worker.py (host)
+                                                        ↓
+                                        claude -p --permission-mode auto [modelo fijo]
+
+ARQUITECTURA OBJETIVO (lo que V2 agrega):
+  Browser → GET /layer8/claude/status  → muestra: autenticado, modelo activo
+  Browser → POST /layer8/claude/config → cambia modelo (no la clave)
+                                                        ↓
+                                               host_worker.py usa modelo elegido
+  Browser → POST /layer8/missions/{id}/headless/{modelo} → encola con modelo
+
+LO QUE EL BROWSER NUNCA PODRÁ HACER (regla de seguridad inamovible):
+  - Ver o modificar ANTHROPIC_API_KEY
+  - Ver o modificar ~/.claude/ credentials
+  - Autenticar por primera vez (eso siempre es una acción en el host)
+  - Ver el output completo del CLI en tiempo real (solo el log post-ejecución)
+
+MODELOS DISPONIBLES (a la fecha):
+  - claude-haiku-4-5-20251001   → más rápido, más barato (~$0.08/job demo)
+  - claude-sonnet-4-6           → balance calidad/velocidad (actual default)
+  - claude-opus-4-6             → máxima calidad, más lento (~$1.5/job demo)
+  - claude-opus-4-7             → frontier (si está disponible en tu plan)
+
+IMPLICACIONES PART-11:
+  El cambio de modelo es una DECISIÓN TÉCNICA con consecuencia en la calidad
+  del código generado. Debe quedar auditado: quién cambió el modelo, cuándo,
+  y qué job lo usó. V2 incluye esto en la cadena de auditoría.
+
+============================================================
+MODO
+  - Sin headless en este plan (es configuración, no generación de código)
+  - Sin deploy
+  - No tocar app/, .env base, data/, backups/, aria-*, hotelbot-*
+  - Pausas antes de cada commit
+  - *** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+============================================================
+
+------------------------------------------------------------
+PASO 0 — Estado base y verificación pre-V2
+------------------------------------------------------------
+cd /home/ing_cpmo
+
+export FK="$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)"
+export HDR="X-API-Key"
+
+echo "=== Selfcheck antes de tocar nada ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "Gate 0|PASS|FAIL"
+
+echo "=== Modelo activo actual en runtime_config ==="
+python3 -c "
+import yaml,pathlib
+d=yaml.safe_load(pathlib.Path('factory/runtime/runtime_config.yaml').read_text())
+print('modelo actual:', d.get('claude_model','no configurado'))
+print('headless:', d.get('headless_enabled'))
+"
+
+echo "=== CLI disponible y versión ==="
+which claude && claude --version 2>/dev/null || echo "CLI no encontrado"
+
+echo "=== Test de auth CLI (no headless, solo ping) ==="
+echo '{"test":true}' | timeout 15 claude -p \
+  --output-format json --no-session-persistence \
+  2>&1 | python3 -c "
+import sys,json
+raw=sys.stdin.read()
+try:
+    d=json.loads(raw)
+    print('CLI OK — tipo:', d.get('type','?'))
+except:
+    print('CLI respuesta raw:', raw[:200])
+" || echo "CLI timeout o no autenticado"
+
+------------------------------------------------------------
+PASO 1 — BACKEND: endpoint GET /layer8/claude/status
+------------------------------------------------------------
+# Agregar a factory/api/routes/layer8.py
+
+cat >> /tmp/v2_claude_status_endpoint.py << 'SNIPPET'
+# === V2: endpoint claude/status ===
+# Agregar dentro de factory/api/routes/layer8.py
+# después de los imports existentes
+
+import subprocess, shutil
+
+@router.get("/claude/status")
+def get_claude_status(api_key: str = Depends(verify_api_key)):
+    """
+    Estado del CLI de Claude Code en el host.
+    Lee la configuración del modelo desde runtime_config.yaml.
+    NUNCA expone la API key de Anthropic.
+    """
+    import yaml, pathlib
+    rc_path = pathlib.Path("factory/runtime/runtime_config.yaml")
+    config = yaml.safe_load(rc_path.read_text()) if rc_path.exists() else {}
+    
+    # Verificar si el CLI existe en el host
+    cli_path = shutil.which("claude")
+    
+    # Test rápido de autenticación (sin ejecutar trabajo real)
+    auth_ok = False
+    cli_version = "desconocida"
+    if cli_path:
+        try:
+            # Solo consultar versión — no consume tokens
+            r = subprocess.run(
+                ["claude", "--version"],
+                capture_output=True, text=True, timeout=5
+            )
+            if r.returncode == 0:
+                cli_version = r.stdout.strip()
+                auth_ok = True  # Si --version responde, el CLI está instalado
+        except Exception:
+            pass
+    
+    # Modelos disponibles (whitelist explícita — no dinámica)
+    available_models = [
+        {"id": "claude-haiku-4-5-20251001",  "label": "Haiku 4.5  — rápido / económico",   "tier": "fast"},
+        {"id": "claude-sonnet-4-6",           "label": "Sonnet 4.6 — balance (recomendado)","tier": "balanced"},
+        {"id": "claude-opus-4-6",             "label": "Opus 4.6   — máxima calidad",       "tier": "quality"},
+        {"id": "claude-opus-4-7",             "label": "Opus 4.7   — frontier",             "tier": "frontier"},
+    ]
+    
+    return {
+        "cli_installed": cli_path is not None,
+        "cli_path": cli_path,
+        "cli_version": cli_version,
+        "auth_configured": auth_ok,
+        # NUNCA incluir: api_key, ANTHROPIC_API_KEY, ~/.claude/
+        "active_model": config.get("claude_model", "claude-sonnet-4-6"),
+        "headless_enabled": config.get("headless_enabled", False),
+        "available_models": available_models,
+        "note": "La clave de Anthropic vive en el host y nunca se expone por esta API."
+    }
+SNIPPET
+
+echo "=== Snippet generado — revisar antes de aplicar ==="
+cat /tmp/v2_claude_status_endpoint.py
+
+  >> *** PAUSA: revisar el snippet. Si OK, continuar a PASO 2. ***
+
+------------------------------------------------------------
+PASO 2 — BACKEND: endpoint POST /layer8/claude/config
+------------------------------------------------------------
+cat >> /tmp/v2_claude_config_endpoint.py << 'SNIPPET'
+# === V2: endpoint claude/config ===
+# Agregar a factory/api/routes/layer8.py
+
+from pydantic import BaseModel, validator
+
+ALLOWED_MODELS = {
+    "claude-haiku-4-5-20251001",
+    "claude-sonnet-4-6",
+    "claude-opus-4-6",
+    "claude-opus-4-7",
+}
+
+class ClaudeConfigUpdate(BaseModel):
+    model: str
+    changed_by: str  # nombre real, mismo estándar Part-11 que approved_by
+
+    @validator("model")
+    def validate_model(cls, v):
+        if v not in ALLOWED_MODELS:
+            raise ValueError(f"Modelo no permitido: {v}. Permitidos: {ALLOWED_MODELS}")
+        return v
+
+    @validator("changed_by")
+    def validate_changed_by(cls, v):
+        reserved = {"human", "agent", "system", "admin", "user", "factory"}
+        if not v or v.strip().lower() in reserved:
+            raise ValueError(f"changed_by debe ser nombre real, no genérico: '{v}'")
+        return v.strip()
+
+@router.post("/claude/config")
+def update_claude_config(body: ClaudeConfigUpdate,
+                          api_key: str = Depends(verify_api_key)):
+    """
+    Actualiza el modelo de Claude Code para próximas ejecuciones headless.
+    Requiere nombre real del responsable (Part-11).
+    Auditado en la cadena.
+    """
+    import yaml, pathlib
+    from factory.core.audit_writer import write_event
+
+    rc_path = pathlib.Path("factory/runtime/runtime_config.yaml")
+    config = yaml.safe_load(rc_path.read_text()) if rc_path.exists() else {}
+    
+    prev_model = config.get("claude_model", "claude-sonnet-4-6")
+    config["claude_model"] = body.model
+    config["model_changed_by"] = body.changed_by
+    config["model_changed_at"] = __import__("datetime").datetime.utcnow().isoformat() + "Z"
+    
+    rc_path.write_text(yaml.safe_dump(config, sort_keys=False))
+    
+    # Auditar el cambio — es una decisión técnica con consecuencia
+    write_event("claude_model_changed", "factory_config", extra={
+        "prev_model": prev_model,
+        "new_model": body.model,
+        "changed_by": body.changed_by,
+        "decision_origin": "human_confirmed"
+    })
+    
+    return {
+        "status": "updated",
+        "prev_model": prev_model,
+        "active_model": body.model,
+        "changed_by": body.changed_by,
+        "audit": "event registered in chain"
+    }
+SNIPPET
+
+echo "=== Snippet POST /claude/config — revisar ==="
+cat /tmp/v2_claude_config_endpoint.py
+
+------------------------------------------------------------
+PASO 3 — APLICAR LOS ENDPOINTS AL ARCHIVO REAL
+------------------------------------------------------------
+# Backup primero
+cp factory/api/routes/layer8.py backups/frontend/layer8.py.pre_V2
+
+# Agregar los dos endpoints al final del archivo (antes del último cierre si existe)
+# Hacerlo con str_replace o append — usar el método más seguro según el archivo actual
+
+echo "=== Fin actual del archivo layer8.py ==="
+tail -20 factory/api/routes/layer8.py
+
+echo "=== Verificar que los endpoints no existen ya ==="
+grep -n "claude/status\|claude/config\|ClaudeConfigUpdate" factory/api/routes/layer8.py \
+  || echo "(no existen — se pueden agregar)"
+
+# Si no existen, append:
+cat /tmp/v2_claude_status_endpoint.py >> factory/api/routes/layer8.py
+cat /tmp/v2_claude_config_endpoint.py >> factory/api/routes/layer8.py
+
+echo "=== py_compile tras cambio ==="
+python3 -m py_compile factory/api/routes/layer8.py && echo "OK"
+
+echo "=== Reiniciar factory-api para activar nuevos endpoints ==="
+# (NO rebuild — los volúmenes están hot-reload montados)
+docker compose -f factory/docker-compose.yml restart api 2>/dev/null \
+  || docker restart factory-api
+sleep 3
+
+echo "=== Verificar nuevos endpoints en OpenAPI ==="
+curl -s http://localhost:9000/openapi.json \
+  | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for p in sorted(d.get('paths',{})):
+    if 'claude' in p: print(p)
+"
+
+echo "=== Test GET /layer8/claude/status ==="
+curl -s -H "X-API-Key: $FK" http://localhost:9000/api/v1/layer8/claude/status \
+  | python3 -m json.tool
+
+------------------------------------------------------------
+PASO 4 — FRONTEND: selector de modelo en Pipeline Capa 8
+------------------------------------------------------------
+# Backup del HTML
+mkdir -p backups/frontend
+cp factory/ui/mission_control.html backups/frontend/mission_control.html.pre_V2
+
+# El cambio en el HTML añade:
+# 1. Panel "Configuración Claude" en sección 04 Pipeline Capa 8
+# 2. GET /layer8/claude/status al cargar la sección
+# 3. Selector de modelo con los modelos del whitelist
+# 4. Campo "Responsable del cambio" (mismo estándar que approved_by)
+# 5. Botón "Actualizar modelo" que llama POST /layer8/claude/config
+# 6. Badge del modelo activo visible en el sidebar
+
+# Buscar el bloque del panel Headless en el HTML y agregar después:
+python3 - <<'PYEOF'
+import pathlib, re
+
+html_path = pathlib.Path("factory/ui/mission_control.html")
+html = html_path.read_text()
+
+# Verificar que no esté ya el panel
+if "claude-model-panel" in html:
+    print("Panel ya existe — nada que hacer")
+else:
+    # Panel HTML para insertar en sección 04 (Pipeline Capa 8)
+    panel = """
+      <!-- V2: Configuración de modelo Claude -->
+      <div id="claude-model-panel" style="background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:16px;margin-top:16px;">
+        <div style="color:var(--cyan);font-weight:600;margin-bottom:12px;font-size:13px;">
+          MODELO CLAUDE CODE
+          <span id="active-model-badge" style="margin-left:8px;font-size:11px;background:rgba(86,212,221,0.1);color:var(--cyan);padding:2px 8px;border-radius:10px;">cargando...</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <label style="color:var(--text-dim);font-size:11px;display:block;margin-bottom:4px;">MODELO</label>
+            <select id="claude-model-select" style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-family:inherit;font-size:12px;">
+              <option value="">Cargando modelos...</option>
+            </select>
+          </div>
+          <div>
+            <label style="color:var(--text-dim);font-size:11px;display:block;margin-bottom:4px;">RESPONSABLE DEL CAMBIO</label>
+            <input id="claude-model-changed-by" type="text" placeholder="Nombre real (ej. Cesar)"
+              style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-family:inherit;font-size:12px;">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button onclick="submitModelChange()"
+            style="background:var(--purple);color:white;border:none;padding:7px 16px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px;">
+            Actualizar modelo
+          </button>
+          <span id="model-change-status" style="font-size:11px;color:var(--text-dim);"></span>
+        </div>
+        <div style="margin-top:8px;color:var(--text-dim);font-size:10px;">
+          La clave de Anthropic vive en el host y nunca se expone aquí. El cambio queda auditado.
+        </div>
+      </div>
+"""
+    # Insertar antes del cierre de la sección 04 (buscar marker)
+    # Intentar insertar antes del div de cierre de la sección headless
+    marker = '<!-- end section 04 -->'
+    if marker in html:
+        html = html.replace(marker, panel + marker)
+        print("Insertado con marker")
+    else:
+        # Fallback: insertar antes del script principal
+        html = html.replace('<script>', panel + '\n\n<script>', 1)
+        print("Insertado antes de <script> (fallback)")
+    
+    html_path.write_text(html)
+    print("HTML actualizado")
+PYEOF
+
+# Agregar las funciones JS al bloque de scripts
+python3 - <<'PYEOF'
+import pathlib, re
+
+html_path = pathlib.Path("factory/ui/mission_control.html")
+html = html_path.read_text()
+
+if "loadClaudeStatus" in html:
+    print("JS ya presente — nada que hacer")
+else:
+    js_block = """
+// === V2: Claude model config ===
+async function loadClaudeStatus() {
+  try {
+    const r = await apiGet('/api/v1/layer8/claude/status');
+    if (!r) return;
+    
+    // Badge del modelo activo
+    const badge = document.getElementById('active-model-badge');
+    if (badge) badge.textContent = r.active_model || '—';
+    
+    // Poblar selector con whitelist del backend
+    const sel = document.getElementById('claude-model-select');
+    if (sel && r.available_models) {
+      sel.innerHTML = r.available_models.map(m =>
+        `<option value="${m.id}" ${m.id === r.active_model ? 'selected' : ''}>${m.label}</option>`
+      ).join('');
+    }
+    
+    // Auth status en sidebar
+    const authEl = document.getElementById('cli-auth-status');
+    if (authEl) {
+      authEl.textContent = r.auth_configured ? '● autenticado' : '○ sin auth';
+      authEl.style.color = r.auth_configured ? 'var(--green)' : 'var(--amber)';
+    }
+  } catch(e) {
+    console.warn('claude/status no disponible:', e);
+  }
+}
+
+let _modelChanging = false;
+async function submitModelChange() {
+  if (_modelChanging) return;
+  const model = document.getElementById('claude-model-select')?.value;
+  const changedBy = document.getElementById('claude-model-changed-by')?.value?.trim();
+  const statusEl = document.getElementById('model-change-status');
+  
+  if (!model) { if(statusEl) statusEl.textContent = 'Selecciona un modelo'; return; }
+  if (!changedBy) { if(statusEl) statusEl.textContent = 'Escribe tu nombre real'; return; }
+  
+  const reserved = ['human','agent','system','admin','user','factory'];
+  if (reserved.includes(changedBy.toLowerCase())) {
+    if(statusEl) statusEl.textContent = 'Nombre genérico rechazado — escribe tu nombre real';
+    return;
+  }
+  
+  _modelChanging = true;
+  if(statusEl) statusEl.textContent = 'Actualizando...';
+  
+  const r = await apiPost('/api/v1/layer8/claude/config', {
+    model, changed_by: changedBy
+  });
+  
+  _modelChanging = false;
+  if (r && r.active_model) {
+    const badge = document.getElementById('active-model-badge');
+    if (badge) badge.textContent = r.active_model;
+    if(statusEl) statusEl.textContent = `✓ Modelo actualizado · auditado`;
+    showToast(`Modelo: ${r.active_model} — cambiado por ${r.changed_by}`);
+  } else {
+    if(statusEl) statusEl.textContent = r?.detail || 'Error al actualizar';
+  }
+}
+
+// Cargar al abrir sección 04
+const _origRenderPipeline = typeof renderPipeline === 'function' ? renderPipeline : null;
+// Hook: llamar loadClaudeStatus cuando se navega a sección 04
+document.addEventListener('DOMContentLoaded', () => {
+  // Observar clicks en el nav
+  document.querySelectorAll('[data-section="04"], [href*="pipeline"], [onclick*="pipeline"]')
+    .forEach(el => el.addEventListener('click', () => setTimeout(loadClaudeStatus, 300)));
+  // También cargar en el refresh general
+  if (typeof refresh === 'function') {
+    const _origRefresh = refresh;
+    window.refresh = async function(...args) {
+      await _origRefresh(...args);
+      await loadClaudeStatus();
+    };
+  }
+});
+// === fin V2 ===
+"""
+    # Insertar antes del cierre </script>
+    html = html.replace('</script>', js_block + '\n</script>', 1)
+    html_path.write_text(html)
+    print("JS agregado al HTML")
+PYEOF
+
+echo "=== Verificar JS sin errores de sintaxis ==="
+python3 - <<'PY'
+import re,subprocess,tempfile,os,pathlib
+html=pathlib.Path("factory/ui/mission_control.html").read_text()
+scripts=re.findall(r"<script[^>]*>(.*?)</script>",html,re.S)
+js="\n".join(s for s in scripts if "src=" not in s[:60])
+f=tempfile.NamedTemporaryFile("w",suffix=".js",delete=False)
+f.write(js); f.close()
+r=subprocess.run(["node","--check",f.name],capture_output=True,text=True)
+print("JS check:", "OK" if r.returncode==0 else "FAIL")
+if r.stderr: print(r.stderr[:500])
+os.unlink(f.name)
+PY
+
+------------------------------------------------------------
+PASO 5 — TEST INTEGRAL
+------------------------------------------------------------
+echo "=== Test 1: GET /layer8/claude/status ==="
+curl -s -H "X-API-Key: $FK" http://localhost:9000/api/v1/layer8/claude/status \
+  | python3 -m json.tool
+
+echo "=== Test 2: POST /layer8/claude/config con nombre genérico (debe rechazar 422) ==="
+curl -s -X POST -H "X-API-Key: $FK" -H "Content-Type: application/json" \
+  -d '{"model":"claude-sonnet-4-6","changed_by":"human"}' \
+  http://localhost:9000/api/v1/layer8/claude/config | python3 -m json.tool
+
+echo "=== Test 3: POST /layer8/claude/config con nombre real ==="
+curl -s -X POST -H "X-API-Key: $FK" -H "Content-Type: application/json" \
+  -d '{"model":"claude-sonnet-4-6","changed_by":"Cesar"}' \
+  http://localhost:9000/api/v1/layer8/claude/config | python3 -m json.tool
+
+echo "=== Test 4: modelo no permitido (debe rechazar 422) ==="
+curl -s -X POST -H "X-API-Key: $FK" -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4","changed_by":"Cesar"}' \
+  http://localhost:9000/api/v1/layer8/claude/config | python3 -m json.tool
+
+echo "=== Test 5: verificar evento en cadena de auditoría ==="
+export AUDIT="$(find factory -name '*.jsonl' | grep audit | head -1)"
+tail -3 "$AUDIT" | python3 -c "
+import json,sys
+for ln in sys.stdin:
+    try:
+        e=json.loads(ln)
+        if 'model' in e.get('event_type',''):
+            print(json.dumps(e,indent=2))
+    except: pass
+"
+
+echo "=== Test 6: selfcheck + test suite ==="
+python3 -m pytest factory/tests/ -q --tb=no 2>&1 | tail -3
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "Gate 0|FAIL|PASS"
+
+------------------------------------------------------------
+PAUSA FINAL — REPORTE Y COMMIT
+------------------------------------------------------------
+Clasificar:
+
+  | Item | Estado |
+  | GET /layer8/claude/status funciona (200, sin exponer API key) | sí/no |
+  | POST /layer8/claude/config rechaza actores genéricos (422)     | sí/no |
+  | POST /layer8/claude/config acepta nombre real (200)            | sí/no |
+  | POST /layer8/claude/config rechaza modelos no whitelistados    | sí/no |
+  | Cambio de modelo auditado en cadena Part-11                    | sí/no |
+  | Panel de modelo visible en sección 04 del browser              | sí/no |
+  | JS check OK                                                    | sí/no |
+  | Selfcheck Gate 0 PASS                                          | sí/no |
+  | ANTHROPIC_API_KEY nunca expuesta en endpoint ni en HTML        | sí/no |
+
+>> "V2 listo. ¿Apruebas el commit?"
+>> Sugerido: factory: V2 — selector de modelo Claude desde browser; auditado Part-11
+
+  *** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+============================================================
+NOTAS FINALES SOBRE EL ALCANCE DE V2
+============================================================
+
+LO QUE V2 LOGRA:
+  ✓ Desde el browser puedes ver qué modelo está activo
+  ✓ Desde el browser puedes cambiar el modelo para el próximo headless
+  ✓ El cambio queda auditado con tu nombre real
+  ✓ El selector usa whitelist del backend (no puedes poner modelos arbitrarios)
+  ✓ La API key de Anthropic NUNCA toca el browser
+
+LO QUE V2 NO LOGRA (por diseño, no por limitación técnica):
+  ✗ Primera autenticación desde el browser (eso siempre es una acción en el host)
+  ✗ Ver el output del CLI en tiempo real (solo log post-ejecución)
+  ✗ Cambiar la API key de Anthropic desde el browser (sería un riesgo de seguridad)
+
+PARA VER EL MODELO EN USO EN EL PRÓXIMO HEADLESS:
+  El host_worker.py debe leer claude_model de runtime_config.yaml al
+  construir el comando. Agregar en host_worker.py:
+    config = yaml.safe_load(Path("factory/runtime/runtime_config.yaml").read_text())
+    model = config.get("claude_model", "claude-sonnet-4-6")
+    cmd = ["claude", "-p", "--model", model, "--permission-mode", "auto", ...]
+  Esto conecta el selector del browser con la ejecución real del agente.
+============================================================

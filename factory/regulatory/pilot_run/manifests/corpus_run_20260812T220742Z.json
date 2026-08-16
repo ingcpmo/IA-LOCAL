@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-08-12T22:07:42+00:00",
+  "stop_reason": "CORPUS_COMPLETE",
+  "total_calls_made": 2,
+  "total_wall_seconds": 1022.6,
+  "units": [
+    {
+      "document_id": "RW-0005",
+      "agent_id": "fda_part11_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-c2c7dff6900c",
+      "calls_made_this_invocation": 2,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 1022.6470411869959,
+      "error": null
+    }
+  ]
+}

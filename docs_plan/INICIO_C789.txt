@@ -1,0 +1,164 @@
+================================================================================
+GMP AI FACTORY — PLAN DE CIERRE DE CAPAS 7, 8 Y 9
+Archivo: INICIO_C789.txt
+Uso: pegar el bloque entre ▼ y ▲ en Claude Code (cd /home/ing_cpmo && claude).
+================================================================================
+
+PLAN DE TRABAJO (resumen para Cesar)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Estado de partida (verificado en las sesiones previas, commits reales):
+  A 8c033fa · B+C 8f7c21e · D+E f5e58eb · F f89d336 · G1 709b9ca ·
+  G2 bbfff96 · G3 625266f.  lab_qc_project v0.3.0 deployed_and_validated.
+
+Diagnóstico honesto de las 3 capas frente al objetivo del ARQ:
+  • Capa 7 (governance release/deploy): CUMPLE en lo esencial. v0.3.0 con
+    approval.json approved/Cesar/human_confirmed y releases/v0.3.0.json. Falta
+    solo documentar que v0.3.0 es re_certification (no rebuild) y dejar una nota
+    de rollback. Trabajo: mínimo.
+  • Capa 8 (agente Claude Code): PARCIAL. Todo el mecanismo existe y un ciclo
+    corrió end-to-end, PERO el headless de ese ciclo fue una tarea de VALIDACIÓN
+    (leyó reportes y escribió un log). El código del módulo lo escribió la sesión
+    interactiva (manual_assisted). Para pasar a CUMPLE hay que ejecutar UN ciclo
+    donde el headless GENERE código real en un workspace aislado y no productivo.
+    Trabajo: la fase central de este plan.
+  • Capa 9 (Mission Control + UI): API CUMPLE (endpoints de review-queue activos).
+    Falta la interfaz HTML: copiar la consola a factory/ui/mission_control.html y
+    crear el script de arranque. Trabajo: instalación, sin tocar la API.
+
+Fases de este plan (una por sesión; commit solo con tu aprobación):
+  Fase 0  Diagnóstico (este archivo)         → no modifica nada
+  Fase 7  Cerrar governance de release       → 07_CAPA7_GOVERNANCE.txt
+  Fase 8  Ciclo headless que GENERA código   → 08_CAPA8_CODEGEN_REAL.txt  (clave)
+  Fase 9  Consola HTML de Mission Control     → 09_CAPA9_CONSOLA_HTML.txt
+  Final   Reporte integral 7/8/9              → 10_REPORTE_FINAL.txt
+
+Subir al servidor (una sola vez):
+  scp INICIO_C789.txt 07_CAPA7_GOVERNANCE.txt 08_CAPA8_CODEGEN_REAL.txt \
+      09_CAPA9_CONSOLA_HTML.txt 10_REPORTE_FINAL.txt \
+      09_consola_capa9_mission_control.html \
+      ing_cpmo@35.243.160.0:/home/ing_cpmo/docs_plan/
+
+REGLAS DURAS (todas las fases):
+  NUNCA tocar app/ · docker-compose.yml base · .env base · data/chroma ·
+        data/audit_logs · backups/pre_factory · aria-* · hotelbot-*
+  NUNCA --dangerously-skip-permissions · credenciales en disco · texto regulatorio
+        fabricado · commit/deploy/headless sin tu aprobación · abrir UFW sin aprobación
+  SIEMPRE git diff --stat antes de commit · headless→false al terminar ·
+        factory_selfcheck.sh antes de cada commit · approved_by con nombre real
+
+================================================================================
+▼ PEGAR EN CLAUDE CODE — FASE 0 (DIAGNÓSTICO, SIN MODIFICAR NADA) ▼
+──────────────────────────────────────────────────────────────────────────────
+ARQ Capas 7/8/9 — Fase 0: diagnóstico. No modifiques nada. Lee el repo real.
+
+cd /home/ing_cpmo
+
+echo "━━━ GIT ━━━"
+git log --oneline -10
+echo ""; git status --short
+
+echo ""; echo "━━━ STACKS ━━━"
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "NAMES|gmp|factory|lab_qc"
+curl -s http://localhost:8000/health | python3 -m json.tool 2>/dev/null | head -6 || echo "BASE no responde"
+curl -s http://localhost:9000/health | python3 -m json.tool 2>/dev/null | head -4 || echo "FACTORY no responde"
+curl -s http://localhost:8101/health | python3 -m json.tool 2>/dev/null | head -4 || echo "LAB_QC no responde"
+
+echo ""; echo "━━━ HEADLESS ━━━"
+grep headless_enabled factory/runtime/runtime_config.yaml
+
+echo ""; echo "━━━ SELFCHECK + TESTS ━━━"
+python3 -m pytest factory/tests/ -q --tb=no 2>&1 | tail -2
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "PASS|FAIL|WARN|Gate 0"
+
+echo ""; echo "━━━ CAPA 7: releases lab_qc_project ━━━"
+python3 - <<'PY'
+import json, pathlib, yaml
+# approval.json
+ap = pathlib.Path('factory/deployments/lab_qc_project/approval.json')
+if ap.exists():
+    d = json.loads(ap.read_text())
+    print(f"approval.json: version={d.get('version')} status={d.get('status')} approved_by={d.get('approved_by')} decision_origin={d.get('decision_origin')}")
+# releases registrados
+for base in ['factory/deployments/lab_qc_project/releases','factory/releases/lab_qc_project']:
+    p = pathlib.Path(base)
+    if p.exists():
+        for f in sorted(p.glob('*')):
+            print(f"  release: {base}/{f.name}")
+PY
+
+echo ""; echo "━━━ CAPA 8: módulos ━━━"
+for m in host_worker autonomy_policy_engine autonomous_build_orchestrator test_execution_manager gate_execution_manager artifact_collector release_candidate_builder; do
+  [ -f "factory/layer8/${m}.py" ] && echo "  ✓ $m" || echo "  ✗ $m"
+done
+[ -f factory/layer9/human_review_queue.py ] && echo "  ✓ human_review_queue (L9)" || echo "  ✗ human_review_queue"
+[ -f .claude/skills/gmp-layer8-agent/SKILL.md ] && echo "  ✓ skill gmp-layer8-agent" || echo "  ✗ skill"
+
+echo ""; echo "━━━ CAPA 8: evidencia de GENERACIÓN headless ━━━"
+python3 - <<'PY'
+import pathlib, json
+# ¿algún job headless_run completado?
+done = list(pathlib.Path('factory/jobs/completed').glob('*.json')) if pathlib.Path('factory/jobs/completed').exists() else []
+hl = []
+for f in done:
+    try:
+        d = json.loads(f.read_text())
+        if d.get('job_type')=='headless_run' or d.get('type')=='headless_run':
+            hl.append((f.stem[:8], d.get('project_id')))
+    except: pass
+print(f"jobs headless_run completados: {len(hl)} -> {hl}")
+# ¿manifest indica manual_assisted o autobuild?
+for ws in pathlib.Path('factory/workspaces').glob('*'):
+    mf = ws/'manifest.yaml'
+    if mf.exists():
+        import yaml
+        try:
+            m = yaml.safe_load(mf.read_text())
+            print(f"  {ws.name}: generation_mode={m.get('generation_mode', m.get('generation',{}).get('mode','?'))}")
+        except: pass
+PY
+
+echo ""; echo "━━━ CAPA 8: RC existentes ━━━"
+python3 - <<'PY'
+import pathlib, json
+rc_dir = pathlib.Path('factory/release_candidates')
+if rc_dir.exists():
+    for f in rc_dir.rglob('rc_manifest.json'):
+        d = json.loads(f.read_text())
+        print(f"  RC {d.get('rc_id')}: status={d.get('status')} approved_by={d.get('approved_by')}")
+else: print("  (sin release_candidates/)")
+PY
+
+echo ""; echo "━━━ CAPA 9: API + UI ━━━"
+FK=$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)
+for ep in missions review-queue decisions; do
+  code=$(curl -s -o /dev/null -w "%{http_code}" -H "X-Api-Key: $FK" http://localhost:9000/api/v1/layer9/$ep)
+  echo "  GET /layer9/$ep → $code"
+done
+[ -f factory/ui/mission_control.html ] && echo "  ✓ factory/ui/mission_control.html instalada" || echo "  ✗ mission_control.html NO instalada"
+[ -f factory/scripts/ops/run_mission_control_ui.sh ] && echo "  ✓ run_mission_control_ui.sh" || echo "  ✗ run_mission_control_ui.sh NO existe"
+[ -f docs_plan/09_consola_capa9_mission_control.html ] && echo "  ✓ fuente HTML en docs_plan/" || echo "  ✗ fuente HTML NO está en docs_plan/ (Cesar debe subirla)"
+
+echo ""; echo "━━━ AUDIT ━━━"
+python3 -c "
+import sys; sys.path.insert(0,'.')
+from factory.core.audit_writer import verify_chain
+r=verify_chain()
+print(f'verified={r.get(\"verified\")} entries={r.get(\"log_count\")} hash_errors={r.get(\"hash_errors\")} chain_errors={r.get(\"chain_errors\")}')
+"
+
+Con esa salida, entrega una tabla de diagnóstico:
+  Capa 7: CUMPLE / PARCIAL / NO CUMPLE  + por qué
+  Capa 8: CUMPLE / PARCIAL / NO CUMPLE  + por qué (clave: ¿hay job headless_run
+          que GENERÓ código, o solo validación + manual_assisted?)
+  Capa 9: CUMPLE / PARCIAL / NO CUMPLE  + estado de la UI HTML
+
+Determina la fase a ejecutar:
+  - Capa 7 incompleta → Fase 7 (07_CAPA7_GOVERNANCE.txt)
+  - Capa 8 PARCIAL (sin generación headless real) → Fase 8 (08_CAPA8_CODEGEN_REAL.txt)
+  - UI HTML no instalada → Fase 9 (09_CAPA9_CONSOLA_HTML.txt)
+Recomienda el orden 7 → 8 → 9 y di:
+  "Diagnóstico listo. Recomiendo empezar por FASE [X]. ¿Confirmas?"
+
+NO modifiques nada en esta fase.
+──────────────────────────────────────────────────────────────────────────────
+▲ FIN FASE 0 ▲

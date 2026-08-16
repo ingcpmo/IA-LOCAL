@@ -1,0 +1,584 @@
+{
+  "run_id": "chunked-5077df33d5ae",
+  "document_sha256": "de7b70c297f0fbf1269d47e334a7575d4de3429bff6ed797fc663b85fea15c71",
+  "agent_id": "fda_cgmp_211_agent",
+  "documento": "RW-0012",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/MCCPDC PCS Signal Interface Control Block Narrative.pdf",
+  "total_chunks": 5,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-5077df33d5ae",
+      "task_id": "task-9d32af80f7dc",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 6051,
+      "started_at": "2026-08-10T20:51:56.943555+00:00",
+      "finished_at": "2026-08-10T21:04:38.375037+00:00",
+      "wall_clock_ms": 761431.4,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"21_CFR_211.68(b)\",\n      \"estado\": \"evidencia_insuficiente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"El documento no proporciona evidencia de controles técnicos que restringan quién puede modificar registros maestros de producción y control, ni detalles sobre la verificación de exactitud de datos de entrada/salida, el respaldo de datos o medidas de protección contra alteración.\",\n      \"recomendacion\": \"Incluir mecanismos de control de cambios y verificación de datos en el diseño del sistema.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona ningún mecanismo técnico para controlar los cambios en registros maestros de producción y control.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona ningún mecanismo para identificar quién ha realizado modificaciones en registros maestros de producción y control.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona ningún mecanismo para verificar la exactitud de los datos de entrada/salida del sistema.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 4,\n          \"criterion_text\": \"Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona ninguna verificación de exactitud ni su frecuencia o justificación basada en la complejidad del sistema.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 5,\n          \"criterion_text\": \"Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona ningún mecanismo de respaldo de datos ni su validez.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 6,\n          \"criterion_text\": \"Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona ninguna protección contra la alteración, borrado accidental o pérdida de respaldos.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 7,\n          \"criterion_text\": \"Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona ningún caso excepcional ni medidas para manejar la eliminación de datos por diseño del proceso automatizado.\",\n          \"limitations\": \"\"\n        }\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-5077df33d5ae/task-9d32af80f7dc.txt.gz",
+      "raw_response_full_sha256": "370971a172d108971e165606b659ffb61a82716c075a9dd0d2ddc3f0d1b44b02",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_211.68(b)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo técnico para controlar los cambios en registros maestros de producción y control.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo para identificar quién ha realizado modificaciones en registros maestros de producción y control.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo para verificar la exactitud de los datos de entrada/salida del sistema.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna verificación de exactitud ni su frecuencia o justificación basada en la complejidad del sistema.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo de respaldo de datos ni su validez.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna protección contra la alteración, borrado accidental o pérdida de respaldos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún caso excepcional ni medidas para manejar la eliminación de datos por diseño del proceso automatizado.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "er -level logic control ; sometimes the PAC and PLC \nterminology is used interchangeably.)  \nProgramming -  Developing software logic or source code  \nSCADA – Supervisory Control and Data Acquisition  \nVHP  – Vaporized  Hydrogen Peroxide  \nWFI – Water for Injection  \n3. INPUT CONSIDERATIONS  \nPrior to generating this Control Block Narrative  customer documentation and project deliverables were \nreviewed.   \nThe following was received from Mark Cuban Cost Plus Drug Company, PBC as design input:   PCS Signal Interface  \nControl Block Narrative  \nMAVERICK Project # 215115305  \nMark Cuban Cost Plus Drug Company  \nSCADA- PCS  Misc. PLC  Document No.  \n \nPage:  \nRevision:  \nDate:  PCS Signal Interface \nCN \n5 of 14 \nA \nApril 15, 2022  \n \nMAVERICK TECHNOLOGIES®, MAVERICK®, PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFORMANCE® are registered trademarks of MAVERICK Technologies, LLC.  \n©2012 MAVERICK Technologies, LLC  \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed.  \nThe only current copy of this document is maintained electronically.  • P&IDs  \n• Instrument Index and I/O Database  \n• Control Block Narratives  \n• Alarm Definition  \n• Historical Data C ollection Requirements  \n \nThe following were generated by MAVERICK for this project as design input:  \n• Functional Specification  \n• Control System Architecture  \n4. PCS SIGNAL INTERFACE CONTROL DESCRIPTION The SCADA- PCS Misc. PLC system  consists of  hardware  and softwa re connections to other systems in \nthe MCCPDC M3 Fill Line Facility.   This document describes hardware and software signals that are \nnot part of other PCS sub- systems (i.e., EMS ) and what actions are taken by this system in response to \nthose inputs.   \n Since an Administrator or Maintenance person may put any input point in SIMULATE and change its value, it is the responsibility of th is person to supervise and adjust the manually inserted value for any \npoints placed in SIMULATE .  Failure to properly super vise and adjust manually inserted values may \ncause incorrect control functions and may lead to equipment damage.  \n Where vendor controller status information is required  for HMI display  and alarming , the FactoryTalk \nLinx communications driver will be utilized  and communication link status (active/ lost) will be read \nfrom the FactoryTalk Linx driver itself.   \n Where vendor information is required for control (Clean Steam Generator requesting Water For Injection delivery) , the connection is from the PCS -CP01 controller to vendor ’s controller and logic is \nimplemented to know if the communication link is active or not.  Presently , this is only required on two \nvendor system, WFI and Parts Washer/Sterilizer.  The communication link status with logic is described in the MCCPDC WFI Control Block Narrative.docx document for those systems.  The PCS  Signals Interface  sub- system operates  in only one mode : Monitoring. \n \n4.1 Process Description and Strategy Design  \n4.1.1 Weigh/Dispense System  \n4.1.1.1 Common Trouble Signal  \nThe PCS system has a hardwired input signal from the Weigh/Dispense system which indicates the status of the Weigh/Dispense module.  The signal is named: \n“Weigh/Dispense Common Trouble Signal”  (XA -30001- 8).  When this signal is received, \nthe PCS Light Tree Amber light shall be illuminated and an alarm banner shall be displayed on the PCS HMI screens.  \n\f\n PCS Signal Interface  \nControl Block Narrative  \nMAVERICK Project # 215115305  \nMark Cuban Cost Plus Drug Company  \nSCADA- PCS  Misc. PLC  Document No.  \n \nPage:  \nRevision:  \nDate:  PCS Signal Interface \nCN \n6 of 14 \nA \nApril 15, 2022  \n \nMAVERICK TECHNOLOGIES®, MAVERICK®, PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFORMANCE® are registered trademarks of MAVERICK Technologies, LLC.  \n©2012 MAVERICK Technologies, LLC  \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed.  \nThe only current copy of this document is maintained electronically.    \n4.1.1.2 Hardware and Software Input and Output points  \nGeneral hardwired I/O points.  \nField I/O Point  Type  Description  \nXA-30001- 8 DI Weigh/Dispense Common Trouble Signal  \nTable -1: Weigh/Dispense Hardwired Input and Output Points  \n    General software I/O points (peer -to-peer).  \nSoft I/O Point  Type  Description  \nN/A N/A N/A \nTable 4-2: Weigh/Dispense Software Input and Output Points  \n \n4.1.2 Filler Signals  \n4.1.2.1 Filler Run Status  \nThe PCS system has a software input signal from the Filler PLC which indicates the running status of the system.  The signal is named: “ Filler Run Status” \n(Filler_Stat_Running).  If the Filler Run Status  signal indicates the system is no longer  \nrunning (1= Running, 0=Not running) the HMI indicator will change state to indicate no \nlonger running.  \n 4.1.2.2 Filler Common Trouble Alarm Signal  \nThe PCS system has a software input signal from  the Filler  PLC which indicates the \ntrouble/alarm status of the system.  The signal is named: “ Filler Common Trouble \nAlarm” ( Filler _Sys_OK ).  If the Filler  Common Trouble alarm signal indicates trouble  \n(1=System OK, 0=Trouble), the HMI Filler Common Trouble Alarm indicator will \nchange state to indicate alarm and an alarm ba nner entry shall be displayed on the PCS \nHMI screens.  \n 4.1.2.3 Filler Particulate Count High Alarm Signal  \nThe PCS system has a software input signal from the Filler PL C which indicates if the \nparticulate count from the Filler particle counter instrument is indicating a high level of particulates.  \n 4.1.2.4 Filler Vaporous Hydrogen Peroxide (VHP) Concentration  \nThe PCS system has a software input signal from the Filler PLC which indicates the concentration of the  Vaporous Hydrogen Peroxide (VHP) as detected by the Filler \nsensors.  (After change request processing this signal will be changing from a software signal to a hardware signal.)    Additional discussion regarding this signal can be found in \nthe Environmental Monitoring System (EMS) Control Block Narrative.  \n "
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-5077df33d5ae",
+      "task_id": "task-f1c0c662b15f",
+      "chunk_index": 1,
+      "page_start": 2,
+      "page_end": 2,
+      "has_overlap_prefix": true,
+      "text_chars": 5334,
+      "started_at": "2026-08-10T21:04:38.382762+00:00",
+      "finished_at": "2026-08-10T21:12:54.558108+00:00",
+      "wall_clock_ms": 496175.3,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_211.68(b)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona evidencia de controles técnicos que restringan quién puede modificar registros maestros de producción y control, ni de la identificación de personal autorizado para realizar modificaciones.\",\n            \"recomendacion\": \"Incluir mecanismos técnicos de control de cambios y registro de personal autorizado en el sistema.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo técnico para controlar quién puede modificar los registros.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo para identificar al personal autorizado que realiza modificaciones.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"El documento no proporciona información sobre la verificación de la exactitud de los datos de entrada/salida.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona información sobre el grado o frecuencia de verificación de exactitud.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo de respaldo de datos.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna protección contra la alteración, borrado accidental o pérdida de respaldos.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún caso excepcional ni mecanismo para manejar la eliminación de datos por diseño del proceso automatizado.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-5077df33d5ae/task-f1c0c662b15f.txt.gz",
+      "raw_response_full_sha256": "f9eab2ccd73757710442a83498af3966a869ab693bbe88e509d2ddf6b647bd02",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_211.68(b)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo técnico para controlar quién puede modificar los registros.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo para identificar al personal autorizado que realiza modificaciones.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "El documento no proporciona información sobre la verificación de la exactitud de los datos de entrada/salida.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre el grado o frecuencia de verificación de exactitud.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo de respaldo de datos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna protección contra la alteración, borrado accidental o pérdida de respaldos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún caso excepcional ni mecanismo para manejar la eliminación de datos por diseño del proceso automatizado.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "f particulates.  \n 4.1.2.4 Filler Vaporous Hydrogen Peroxide (VHP) Concentration  \nThe PCS system has a software input signal from the Filler PLC which indicates the concentration of the  Vaporous Hydrogen Peroxide (VHP) as detected by the Filler \nsensors.  (After change request processing this signal will be changing from a software signal to a hardware signal.)    Additional discussion regarding this signal can be found in \nthe Environmental Monitoring System (EMS) Control Block Narrative.  \n le alarm signal indicates trouble  (1=System OK,  0=Trouble), the HMI Cold Room \nStorage Common Trouble Alarm indicator will change state to indicate alarm and an alarm ba nner entry shall be displayed on the PCS HMI screens.  \n 4.1.8.3 Hardware and Software Input and Output points  \nGeneral hardwired I/O points.  \nField I/O Point  Type  Description  \nN/A N/A N/A \nTable 4-15: Hardwired Input and Output Points  \n   General software I/O points (peer -to-peer).  \nSoft I/O Point  Type  Description   PCS Signal Interface  \nControl Block Narrative  \nMAVERICK Project # 215115305  \nMark Cuban Cost Plus Drug Company  \nSCADA- PCS  Misc. PLC  Document No.  \n \nPage:  \nRevision:  \nDate:  PCS Signal Interface \nCN \n13 of 14 \nA \nApril 15, 2022  \n \nMAVERICK TECHNOLOGIES®, MAVERICK®, PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFORMANCE® are registered trademarks of MAVERICK Technologies, LLC.  \n©2012 MAVERICK Technologies, LLC  \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed.  \nThe only current copy of this document is maintained electronically.  Soft I/O Point  Type  Description  \nCRS_ Stat_Running  \n(This is anticipated work and \nwill be finalized once the Cold \nRoom Storage Change request \nis processed.)  DI Cold Room Storage Run Status (OK/Running = 1, \nNot Running = 0)  \nCRS_ Sys_OK  \n(This is anticipated work and \nwill be finalized once the Cold Room Storage Change request \nis processed.)  DI Cold Room Storage Common Trouble Alarm (OK \n= 1, Alarm= 0)  \nCRS_TI_30002_01  \n(This is anticipated work and will be finalized once the Cold \nRoom Storage Change request \nis processed.)  AI Cold Room Storage Temperature  \nCRS_HI_30002_01  \n(This is anticipated work and \nwill be finalized once the Cold \nRoom Storage Change request \nis processed.)  AI Cold Room Storage Humidity  \nTable 4-16: Software Input and Output Points  \n \n4.1.9 Data Loggin g \nThe PCS shall historically record quality data and system alarms.  All data shall be \navailable to user via displays.  The logging of data points is not set in the PLC but rather in the FactoryTalk Historian Site Edition (SE) software product.  See MCCPDC PCS -\nCP01 Alarms Hard Soft IO Listing.xlsx to determine which input, output, and internal points shall be configured to be logged in the Historian software product.   \n4.2 Tasks/Routines/Functions  \nThe inputs will be assigned with MapIn and MapOut routines  as described according to the \nController Guidelines document.    For this work the following specific routines are expected:  \n R110_MapInLAD  \n R111_MapInFBD  \n\f\n PCS Signal Interface  \nControl Block Narrative  \nMAVERICK Project # 215115305  \nMark Cuban Cost Plus Drug Company  \nSCADA- PCS  Misc. PLC  Document No.  \n \nPage:  \nRevision:  \nDate:  PCS Signal Interface \nCN \n14 of 14 \nA \nApril 15, 2022  \n \nMAVERICK TECHNOLOGIES®, MAVERICK®, PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFORMANCE® are registered trademarks of MAVERICK Technologies, LLC.  \n©2012 MAVERICK Technologies, LLC  \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed.  \nThe only current copy of this document is maintained electronically.  4.3 Operator Interface  \nEach of the input signals is displayed in engineering units on the HMI.  As mentioned \npreviously, with the proper credentials, the input points can be simulated for calibration or other \nmaintenance activities .   \n4.4 Messages  and Alarming  \nThe messages and alarms have been combined into the overall PCS  system  document named \nMCCPDC PCS -CP01 A larm Listing  which provides among other details, the alarm text  and the \ninput point tag identifier associated with the alarm.   Software alarms read from vendor systems \nare handled in the FactoryTalk Alarm and Events Server.  \n \n4.5 Calculations  \nThere are no special calculations for this control strategy.   \n \n4.6 Sequencers  \nThere are no sequencers for this control strategy.  \n5. SOFTWARE PERMISSIVES  \nThe Signal Interface portion of the system does not have any software permissives. \n6. INTER -NETWORK RELATIONSHIPS  \nThe PCS -PLC receives signals from the vendor/OEM skid control systems within the facility via peer -\nto-peer communication.  For each vendor skid the PCS  PLC is reading soft I/O values from, heartbeat -\ntype logic shall be implemented to ensure a n active connection exists and data values are live.  See the \nrelevant section above for a particular machine’s signals.    \n7. HARDWARE INTERLOCKS  \nThe Signal Interface portion of the system does not have any hardware interlocks. \n8. REFERENCES  \n215115305 SCADA -PCS Misc. PLC System FS (Functional Specification)  \nMCCPDC PCS -CP01 Alarms Hard Soft IO Listing.xlsx \nMCCPDC WFI Control Block Narrative.docx  \nMCCPDC HMI Programming Guidelines  MCCPDC Controller  Programming Guidelines  "
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-5077df33d5ae",
+      "task_id": "task-b1b3afd99e13",
+      "chunk_index": 2,
+      "page_start": 3,
+      "page_end": 3,
+      "has_overlap_prefix": true,
+      "text_chars": 4774,
+      "started_at": "2026-08-10T21:12:54.561830+00:00",
+      "finished_at": "2026-08-10T21:19:40.936556+00:00",
+      "wall_clock_ms": 406374.7,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_211.68(b)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no menciona ningún mecanismo de control de cambios, verificación de exactitud I/O ni respaldo de datos.\",\n            \"recomendacion\": \"Incluir detalles sobre los controles de cambios, la verificación de exactitud I/O y el respaldo de datos en el sistema.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo técnico para controlar los cambios en registros maestros.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna identificación o registro de cambios realizados por personal autorizado.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo para verificar la exactitud I/O en el sistema.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna justificación para el grado o frecuencia de verificación I/O.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo de respaldo de datos ni su verificación de exactitud y completitud.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna protección contra la alteración, borrado accidental o pérdida del respaldo de datos.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún caso excepcional ni procedimiento para la eliminación de datos por diseño del proceso automatizado.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-5077df33d5ae/task-b1b3afd99e13.txt.gz",
+      "raw_response_full_sha256": "906ecc325a09b6cd7be4ce0800e7b10a48e8a6dbed7e6b404c238ac8336828f5",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_211.68(b)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo técnico para controlar los cambios en registros maestros.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna identificación o registro de cambios realizados por personal autorizado.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo para verificar la exactitud I/O en el sistema.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna justificación para el grado o frecuencia de verificación I/O.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo de respaldo de datos ni su verificación de exactitud y completitud.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna protección contra la alteración, borrado accidental o pérdida del respaldo de datos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún caso excepcional ni procedimiento para la eliminación de datos por diseño del proceso automatizado.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "ensure a n active connection exists and data values are live.  See the \nrelevant section above for a particular machine’s signals.    \n7. HARDWARE INTERLOCKS  \nThe Signal Interface portion of the system does not have any hardware interlocks. \n8. REFERENCES  \n215115305 SCADA -PCS Misc. PLC System FS (Functional Specification)  \nMCCPDC PCS -CP01 Alarms Hard Soft IO Listing.xlsx \nMCCPDC WFI Control Block Narrative.docx  \nMCCPDC HMI Programming Guidelines  MCCPDC Controller  Programming Guidelines  .................................... 8 \nTable 4 -7: Hardwired Input and Output Points ....................................................................................................... 8 \nTable 4 -8: Software Input and Output Points  ......................................................................................................... 8 \nTable 4 -9: Hardwired Input and Output Points ....................................................................................................... 9  PCS Signal Interface  \nControl Block Narrative  \nMAVERICK Project # 215115305  \nMark Cuban Cost Plus Drug Company  \nSCADA- PCS  Misc. PLC  Document No.  \n \nPage:  \nRevision:  \nDate:  PCS Signal Interface \nCN \n3 of 14 \nA \nApril 15, 2022  \n \nMAVERICK TECHNOLOGIES®, MAVERICK®, PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFORMANCE® are registered trademarks of MAVERICK Technologies, LLC.  \n©2012 MAVERICK Technologies, LLC  \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed.  \nThe only current copy of this document is maintained electronically.  Table 4 -10: Software Input and Output Points  ..................................................................................................... 10 \nTable 4 -11: Hardwired Input and Output Points ................................................................................................... 10 \nTable 4 -12: Software Input and Output Points  ..................................................................................................... 11 \nTable 4 -13: Hardwired Input and Output Points ................................................................................................... 11 \nTable 4 -14: Software Input and Output Points  ..................................................................................................... 12 \nTable 4 -15: Hardwired Input and Output Points ................................................................................................... 12 \nTable 4 -16: Software Input and Output Points  ..................................................................................................... 13 \n \n\f\n PCS Signal Interface  \nControl Block Narrative  \nMAVERICK Project # 215115305  \nMark Cuban Cost Plus Drug Company  \nSCADA- PCS  Misc. PLC  Document No.  \n \nPage:  \nRevision:  \nDate:  PCS Signal Interface \nCN \n4 of 14 \nA \nApril 15, 2022  \n \nMAVERICK TECHNOLOGIES®, MAVERICK®, PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFORMANCE® are registered trademarks of MAVERICK Technologies, LLC.  \n©2012 MAVERICK Technologies, LLC  \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed.  \nThe only current copy of this document is maintained electronically.  1. OBJECTIVE  \nThis document describes the functions of the Signal Interface sub -system  with in the Mark Cuban Cost \nPlus Drug Company, PBC SCADA -PCS Misc. PLC project .  This document describes  the necessary  \ncontrol logic blocks for the project  and is supplement ed by the Functional Specification .   \n2. TERMINOLOGY  \nConfiguration – Setting the control software to match the hardware modules and communication \nmethods  \nDCS  - Distributed Control System   \nEMS  – Environmental Monitoring System   \nHMI  - Human Machine Interface  \nI/O - Input / Output  \nP&ID  - Piping and Instrumentation Diagram   \nPAC  - Programmable Automation Controller  (used for higher -level , process -type control functionality \ncompared to PLCs, approaching or equal to DCS functionality.  Sometimes the PAC and PLC \nterminology is used interchangeably.)  \nPCS – Process Control System (This project’s panel is named PCS -CP01, Process Control System \nControl Panel 01)  \nPLC - Programmable Logic Controller  (used for lower -level logic control ; sometimes the PAC and PLC \nterminology is used interchangeably.)  \nProgramming -  Developing software logic or source code  \nSCADA – Supervisory Control and Data Acquisition  \nVHP  – Vaporized  Hydrogen Peroxide  \nWFI – Water for Injection  \n3. INPUT CONSIDERATIONS  \nPrior to generating this Control Block Narrative  customer documentation and project deliverables were \nreviewed.   \nThe following was received from Mark Cuban Cost Plus Drug Company, PBC as design input:  "
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-5077df33d5ae",
+      "task_id": "task-33649aa70920",
+      "chunk_index": 3,
+      "page_start": 4,
+      "page_end": 4,
+      "has_overlap_prefix": true,
+      "text_chars": 5201,
+      "started_at": "2026-08-10T21:19:40.939952+00:00",
+      "finished_at": "2026-08-10T21:28:21.530838+00:00",
+      "wall_clock_ms": 520590.8,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_211.68(b)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona detalles sobre controles técnicos que restringen quién puede modificar registros maestros de producción y control, ni sobre la verificación de exactitud de datos de entrada/salida del sistema. Además, no se menciona un mecanismo de respaldo de los datos.\",\n            \"recomendacion\": \"Incluir detalles técnicos sobre controles de cambios, verificación de I/O, y mecanismos de respaldo en el documento.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona información sobre controles técnicos específicos para la modificación de registros.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona un mecanismo específico para identificar cambios realizados por personal autorizado.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona información sobre un mecanismo específico para verificar la exactitud de los datos de entrada/salida.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona un mecanismo de verificación ni su justificación basada en la complejidad o confiabilidad del sistema.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona un mecanismo específico para el respaldo de datos ni su verificación de exactitud y completitud.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona un mecanismo específico para la protección del respaldo de datos.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona un mecanismo específico para el caso excepcional donde datos sean eliminados por diseño del proceso automatizado.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-5077df33d5ae/task-33649aa70920.txt.gz",
+      "raw_response_full_sha256": "76b1adffb56093ae9e994b65d40d7fbf174c2c861590a7b0e4568e77a783e3e3",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_211.68(b)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre controles técnicos específicos para la modificación de registros.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona un mecanismo específico para identificar cambios realizados por personal autorizado.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre un mecanismo específico para verificar la exactitud de los datos de entrada/salida.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona un mecanismo de verificación ni su justificación basada en la complejidad o confiabilidad del sistema.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona un mecanismo específico para el respaldo de datos ni su verificación de exactitud y completitud.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona un mecanismo específico para la protección del respaldo de datos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona un mecanismo específico para el caso excepcional donde datos sean eliminados por diseño del proceso automatizado.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "er -level logic control ; sometimes the PAC and PLC \nterminology is used interchangeably.)  \nProgramming -  Developing software logic or source code  \nSCADA – Supervisory Control and Data Acquisition  \nVHP  – Vaporized  Hydrogen Peroxide  \nWFI – Water for Injection  \n3. INPUT CONSIDERATIONS  \nPrior to generating this Control Block Narrative  customer documentation and project deliverables were \nreviewed.   \nThe following was received from Mark Cuban Cost Plus Drug Company, PBC as design input:  f particulates.  \n 4.1.2.4 Filler Vaporous Hydrogen Peroxide (VHP) Concentration  \nThe PCS system has a software input signal from the Filler PLC which indicates the concentration of the  Vaporous Hydrogen Peroxide (VHP) as detected by the Filler \nsensors.  (After change request processing this signal will be changing from a software signal to a hardware signal.)    Additional discussion regarding this signal can be found in \nthe Environmental Monitoring System (EMS) Control Block Narrative.  \n  PCS Signal Interface  \nControl Block Narrative  \nMAVERICK Project # 215115305  \nMark Cuban Cost Plus Drug Company  \nSCADA- PCS  Misc. PLC  Document No.  \n \nPage:  \nRevision:  \nDate:  PCS Signal Interface \nCN \n7 of 14 \nA \nApril 15, 2022  \n \nMAVERICK TECHNOLOGIES®, MAVERICK®, PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFORMANCE® are registered trademarks of MAVERICK Technologies, LLC.  \n©2012 MAVERICK Technologies, LLC  \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed.  \nThe only current copy of this document is maintained electronically.   \n \n4.1.2.5 Hardware and Software Input and Output points  \nGeneral hardwired I/O points.  \nField I/O Point  Type  Description  \nN/A N/A N/A \nTable 4-3: Hardwired Input and Output Points  \n \n   General software I/O points (peer -to-peer).  \nSoft I/O Point  Type  Description  \nFiller_Stat_Running  DI Filler machine run status (OK/Running = \n1, Not Running = 0)  \nFiller_Sys_OK  DI Filler machine common trouble alarm (OK \n= 1, Alarm = 0)  \nFiller_ Particulate _Count_High_Alarm  DI Particle Count High Alarm from Filler \nmachine  \nFiller_VHP_Conc  \n(After processing of the VHP change \nrequest, this point will change from a \nsoftware point to a hardware point wired to this system.)  AI Filler reports VHP concentration, PLC \nprogramming determines when high and \nhigh- high alarms are triggered.  \nTable 4-4: Software Input and Output Points  \n \n4.1.3 WFI Generation, Storage, and Distribution  Signal s \n4.1.3.1 WFI Signals  \nRefer to the separate document WFI Control Narrative, which describes the WFI system \nand all associated signals.  \n \n4.1.3.2 Hardware and Software Input and Output points  \nGeneral hardwired I/O points.  \nField I/O Point  Type  Description  \n- - See WFI Control Block Narrative  \nTable 4-5: Hardwired Input and Output Points  \n    General software I/O points (peer -to-peer).  \nSoft I/O Point  Type  Description  \n\f\n PCS Signal Interface  \nControl Block Narrative  \nMAVERICK Project # 215115305  \nMark Cuban Cost Plus Drug Company  \nSCADA- PCS  Misc. PLC  Document No.  \n \nPage:  \nRevision:  \nDate:  PCS Signal Interface \nCN \n8 of 14 \nA \nApril 15, 2022  \n \nMAVERICK TECHNOLOGIES®, MAVERICK®, PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFORMANCE® are registered trademarks of MAVERICK Technologies, LLC.  \n©2012 MAVERICK Technologies, LLC  \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed.  \nThe only current copy of this document is maintained electronically.  Soft I/O Point  Type  Description  \n- - See WFI Control Block Narrative  \nTable 4-6: Software Input and Output Points  \n \n4.1.4 Vial Labeler Signals  \n4.1.4.1 Vial Labeler Run Status  \nPer reply to RFI -006, the PCS system shall read a software input signal from the Vial \nLabeler System which indicates the running status of the system.  The signal is named: \n“Vial Labeler Run Status” (Vial Label _Stat_Running).  If the Vial Labeler Run Status  \nsignal indicates the system is no longer  running (1=Running, 0=Not running) the HMI \nindicator will change state to indicate no longer running.  4.1.4.2 Vial / Syringe Labeler Common Trouble Alarm Signal  \nPer reply to RFI -006, the PCS system shall read a software i nput signal from the Vial \nLabeler System  which indicates the trouble/alarm status of the system.  The signal is \nnamed: “Vial Common Trouble Alarm” ( VialLabel _Sys_OK ).  If the Vial  Common \nTrouble alarm signal indicates trouble  (1=System OK, 0=Trouble), the HMI Vial Labeler \nCommon Trouble Alarm indicator will change state to indicate alarm and an alarm banner entry shall be displayed on the PCS HMI screens.  \n  4.1.4.3 Hardware and Software Input and Output points  \nGeneral hardwired I/O points.  \nField I/O Point  Type  Description  \nN/A N/A N/A \nTable 4-7: Hardwired Input and Output Points  \n    General software I/O points (peer -to-peer).  \nSoft I/O Point  Type  Description  \nVialLabel_Stat_Running  DI Vial / Syringe Labeler machine run status \n(OK/Running = 1, Not Running = 0)  \nVialLabel_Sys_OK  DI Vial / Syringe Labeler machine common \ntrouble alarm (OK = 1, Alarm = 0)  \nTable 4-8: Software Input and Output Points  \n "
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-5077df33d5ae",
+      "task_id": "task-60130ea98961",
+      "chunk_index": 4,
+      "page_start": 5,
+      "page_end": 5,
+      "has_overlap_prefix": true,
+      "text_chars": 5226,
+      "started_at": "2026-08-10T21:28:21.538092+00:00",
+      "finished_at": "2026-08-10T21:36:54.377481+00:00",
+      "wall_clock_ms": 512839.3,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_211.68(b)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no menciona controles técnicos ni políticas específicas para la modificación de registros maestros de producción y control, ni el grado o frecuencia de verificación de exactitud I/O del sistema.\",\n            \"recomendacion\": \"Incluir detalles sobre los controles de cambios y la verificación de exactitud I/O en el documento.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo técnico para controlar los cambios en registros maestros.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo para identificar quién realiza cambios en registros maestros.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo para verificar la exactitud I/O del sistema.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo para verificar la exactitud I/O ni el grado o frecuencia de dicha verificación.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo de respaldo de datos ni su exactitud o completitud.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna protección contra la alteración, borrado accidental o pérdida de respaldos.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo para el caso excepcional de eliminación de datos por diseño del proceso automatizado.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-5077df33d5ae/task-60130ea98961.txt.gz",
+      "raw_response_full_sha256": "e4c74ceedcf4b546144b9038fede9c4a5512772bdd8edb6de897ac11ead402db",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_211.68(b)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo técnico para controlar los cambios en registros maestros.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo para identificar quién realiza cambios en registros maestros.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo para verificar la exactitud I/O del sistema.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo para verificar la exactitud I/O ni el grado o frecuencia de dicha verificación.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo de respaldo de datos ni su exactitud o completitud.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna protección contra la alteración, borrado accidental o pérdida de respaldos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo para el caso excepcional de eliminación de datos por diseño del proceso automatizado.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "Software Input and Output points  \nGeneral hardwired I/O points.  \nField I/O Point  Type  Description  \nN/A N/A N/A \nTable 4-7: Hardwired Input and Output Points  \n    General software I/O points (peer -to-peer).  \nSoft I/O Point  Type  Description  \nVialLabel_Stat_Running  DI Vial / Syringe Labeler machine run status \n(OK/Running = 1, Not Running = 0)  \nVialLabel_Sys_OK  DI Vial / Syringe Labeler machine common \ntrouble alarm (OK = 1, Alarm = 0)  \nTable 4-8: Software Input and Output Points  \n indicates trouble  (1=System OK, \n0=Trouble), the HMI Waste Lift & Neutralization Common Trouble Alarm indicator will \nchange state to indicate alarm and an alarm ba nner entry shall be displayed on the PCS \nHMI screens.  \n \n \n4.1.6.3 Hardware a nd Software Input and Output points  \nGeneral hardwired I/O points.  \nField I/O Point  Type  Description  \nN/A N/A N/A \nTable 4-11: Hardwired Input and Output Points  \n    General software I/O points (peer -to-peer).  \nSoft I/O Point  Type  Description   PCS Signal Interface  \nControl Block Narrative  \nMAVERICK Project # 215115305  \nMark Cuban Cost Plus Drug Company  \nSCADA- PCS  Misc. PLC  Document No.  \n \nPage:  \nRevision:  \nDate:  PCS Signal Interface \nCN \n11 of 14 \nA \nApril 15, 2022  \n \nMAVERICK TECHNOLOGIES®, MAVERICK®, PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFORMANCE® are registered trademarks of MAVERICK Technologies, LLC.  \n©2012 MAVERICK Technologies, LLC  \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed.  \nThe only current copy of this document is maintained electronically.  Waste_Lift _Stat_Running  DI Waste Lift & Neutralization machine \nrun status (OK/Running = 1, Not \nRunning = 0)  \nWaste_Lift_ Sys_OK  DI Waste Lift & Neutralization machine \ncommon trouble alarm (OK = 1, Alarm = 0) \nTable 4-12: Software Input and Output Points  \n \n4.1.7 Serialization Signals  \n \n4.1.7.1 Serialization Run Status  \nThe PCS system has a software input signal from the Serialization  PLC which indicates \nthe running status of the system.  The signal is named: “ Serialization  Run Status” \n(Serializer_Stat_Running ).  If the Serialization  Run Status  signal indicates the system is \nno longer  running (1=Running, 0=Not running) the HMI indicator will change state to \nindicate no longerr unning. \n 4.1.7.2 Serialization  Common Trouble Alarm Signal  \nThe PCS system has a software input signal from  the Serialization  PLC  which indicates \nthe trouble/alarm status of the system.  The signal is named: “ Serialization  Common \nTrouble Alarm” ( Serializer_Sys_OK ).  If the Serialization  Common Trouble alarm signal \nindicates trouble  (1=System OK, 0=Trouble), the HMI Serialization  Com mon Trouble \nAlarm indicator will change state to indicate alarm and an alarm ba nner entry shall be \ndisplayed on the PCS HMI screens.  \n \n \n4.1.7.3 Hardware and Software Input and Output points  \nGeneral hardwired I/O points.  \nField I/O Point  Type  Description  \nN/A N/A N/A \nTable 4-13: Hardwired Input and Output Points  \n    General software I/O points (peer -to-peer).  \nSoft I/O Point  Type  Description  \nSerializer_ Stat_Running  DI Serialization  machine run status \n(OK/Running = 1, Not Running = 0)  \nSerializer_ Sys_OK  DI Serialization  machine common trouble \nalarm (OK = 1, Alarm = 0)  \n\f\n PCS Signal Interface  \nControl Block Narrative  \nMAVERICK Project # 215115305  \nMark Cuban Cost Plus Drug Company  \nSCADA- PCS  Misc. PLC  Document No.  \n \nPage:  \nRevision:  \nDate:  PCS Signal Interface \nCN \n12 of 14 \nA \nApril 15, 2022  \n \nMAVERICK TECHNOLOGIES®, MAVERICK®, PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFORMANCE® are registered trademarks of MAVERICK Technologies, LLC.  \n©2012 MAVERICK Technologies, LLC  \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed.  \nThe only current copy of this document is maintained electronically.  Table 4-14: Software Input and Output Points  \n \n4.1.8 Cold Room Storage Signals  \n4.1.8.1 Cold Room Storage Run Status  \nThe PCS system has a software input signal from the Cold Room Storage PLC which \nindicates the running status of the system.  The signal is named: “Cold Room Storage Run Status” (CRS_Stat _Running).  If the Cold R oom Storage Run Status  signal indicates \nthe system is no longer  running (1=Running, 0=Not running) the HMI indicator will \nchange state to indicate no longer running.  \n 4.1.8.2 Cold Room Storage Common Trouble Alarm Signal  \nThe PCS system has a software input signal from  the Cold Room Storage PLC which \nindicates the trouble/alarm status of the system.  The signal is named: “Cold Room Storage Common Trouble Alarm” ( CRS_ Sys_OK ).  If the Cold Room Storage Common \nTrouble alarm signal indicates trouble  (1=System OK,  0=Trouble), the HMI Cold Room \nStorage Common Trouble Alarm indicator will change state to indicate alarm and an alarm ba nner entry shall be displayed on the PCS HMI screens.  \n 4.1.8.3 Hardware and Software Input and Output points  \nGeneral hardwired I/O points.  \nField I/O Point  Type  Description  \nN/A N/A N/A \nTable 4-15: Hardwired Input and Output Points  \n   General software I/O points (peer -to-peer).  \nSoft I/O Point  Type  Description  "
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.0.0",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "de7b70c297f0fbf1269d47e334a7575d4de3429bff6ed797fc663b85fea15c71",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "21_CFR_211.68(b)"
+    ]
+  },
+  "verified_records_by_req": {
+    "21_CFR_211.68(b)": [
+      {
+        "record_id": "vrec-task-9d32af80f7dc-21_CFR_211.68(b)",
+        "llm_output": {
+          "requirement_id": "21_CFR_211.68(b)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-f1c0c662b15f-21_CFR_211.68(b)",
+        "llm_output": {
+          "requirement_id": "21_CFR_211.68(b)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 2,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b1b3afd99e13-21_CFR_211.68(b)",
+        "llm_output": {
+          "requirement_id": "21_CFR_211.68(b)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 3,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-33649aa70920-21_CFR_211.68(b)",
+        "llm_output": {
+          "requirement_id": "21_CFR_211.68(b)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 4,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-60130ea98961-21_CFR_211.68(b)",
+        "llm_output": {
+          "requirement_id": "21_CFR_211.68(b)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 5,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

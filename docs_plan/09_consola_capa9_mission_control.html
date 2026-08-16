@@ -1,0 +1,606 @@
+<!--
+  GMP AI Factory — Capa 9 Mission Control (DISEÑO / MOCKUP)
+  Diseño profesional para revisión. No persiste secretos. La API key se ingresa
+  en sesión y vive solo en memoria (sin localStorage). Si se conecta a un
+  factory-api real (mismo origen, p.ej. http://IP:9000), consume /api/v1/*; si no,
+  muestra datos representativos del estado real del proyecto.
+  Abrir en navegador para revisar el diseño. No desplegar sin aprobación.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GMP AI Factory · Mission Control</title>
+<style>
+:root{
+  --ink:#0c1014; --panel:#141a21; --panel-2:#1a222b; --panel-3:#202a34;
+  --line:#26303b; --line-soft:#1d262f;
+  --text:#e8eef4; --muted:#8a97a6; --faint:#5c6878;
+  --primary:#3f8fb8; --primary-h:#52a6cf;
+  --pass:#4cb585; --warn:#d8a23a; --fail:#d96f63;
+  --accent:#c6a14d;   /* sello de auditoría / hash chain */
+  --human:#9b82d4;    /* decisión humana — firma Part 11 */
+  --radius:10px;
+  --sans:"Inter","SF Pro Display",ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--text);font-family:var(--sans);
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(900px 500px at 78% -8%,#16202b 0%,transparent 60%);}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--primary-h);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---- shell ---- */
+.shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.rail{background:linear-gradient(180deg,#10161d,#0d1318);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{padding:22px 20px 16px;border-bottom:1px solid var(--line-soft)}
+.seal{width:34px;height:34px;border-radius:50%;display:inline-grid;place-items:center;
+  border:1.5px solid var(--accent);color:var(--accent);font-family:var(--mono);
+  font-size:11px;letter-spacing:.5px;position:relative;flex:0 0 auto}
+.seal::after{content:"";position:absolute;inset:3px;border:1px dotted var(--accent);
+  border-radius:50%;opacity:.5}
+.brand-row{display:flex;align-items:center;gap:11px}
+.brand h1{font-size:14px;font-weight:650;letter-spacing:.2px;margin:0;line-height:1.15}
+.brand .sub{font-family:var(--mono);font-size:10.5px;color:var(--faint);
+  letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+nav{padding:10px 10px;display:flex;flex-direction:column;gap:2px;overflow:auto}
+nav .grp{font-family:var(--mono);font-size:10px;letter-spacing:1.4px;color:var(--faint);
+  text-transform:uppercase;padding:14px 12px 6px}
+nav button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:8px;color:var(--muted);font-size:13px;font-weight:500;
+  transition:background .15s,color .15s}
+nav button .ix{font-family:var(--mono);font-size:10px;color:var(--faint);width:18px}
+nav button:hover{background:#172029;color:var(--text)}
+nav button.on{background:#18242e;color:var(--text)}
+nav button.on .ix{color:var(--accent)}
+.rail-foot{margin-top:auto;padding:14px 16px;border-top:1px solid var(--line-soft);
+  font-family:var(--mono);font-size:10.5px;color:var(--faint);line-height:1.7}
+.dotpass{color:var(--pass)} .dotwarn{color:var(--warn)} .dotfail{color:var(--fail)}
+
+/* ---- topbar ---- */
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;
+  padding:14px 28px;background:rgba(12,16,20,.82);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line)}
+.top h2{font-size:16px;font-weight:640;letter-spacing:.2px;margin:0}
+.top .crumb{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.5px}
+.spacer{flex:1}
+.keyfield{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;padding:5px 8px 5px 12px}
+.keyfield label{font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:1px}
+.keyfield input{all:unset;width:150px;font-family:var(--mono);font-size:12px;color:var(--text)}
+.keyfield input::placeholder{color:var(--faint)}
+.conn{font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;color:var(--faint)}
+.conn b{font-weight:600}
+
+/* ---- content ---- */
+.wrap{padding:26px 28px 60px;max-width:1180px;width:100%}
+.view{display:none}.view.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.lead{color:var(--muted);font-size:13px;margin:-4px 0 22px;max-width:70ch}
+
+/* chips / states */
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.6px;padding:3px 9px;border-radius:999px;border:1px solid transparent;text-transform:uppercase}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.c-pass{color:var(--pass);background:#102219;border-color:#1d3a2c}
+.c-warn{color:var(--warn);background:#241c0d;border-color:#3d3017}
+.c-fail{color:var(--fail);background:#241211;border-color:#3d1d1a}
+.c-info{color:var(--primary-h);background:#0f1f29;border-color:#1c3645}
+.c-human{color:var(--human);background:#181228;border-color:#2c2148}
+.c-mute{color:var(--faint);background:#161c23;border-color:#232c36}
+.c-accent{color:var(--accent);background:#221d10;border-color:#3a3119}
+
+/* cards / grid */
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.card h3{margin:0 0 4px;font-size:13px;font-weight:600;letter-spacing:.2px}
+.card .k{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--faint)}
+.stat{display:flex;flex-direction:column;gap:6px}
+.stat .n{font-size:30px;font-weight:680;letter-spacing:-.5px;line-height:1;font-feature-settings:"tnum"}
+.stat .n small{font-size:14px;color:var(--faint);font-weight:500}
+.row{display:flex;gap:10px;align-items:center}
+.between{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.meta{font-size:12.5px;color:var(--muted)}
+.mono{font-family:var(--mono)}
+.hr{height:1px;background:var(--line-soft);margin:14px 0}
+.sec-h{display:flex;align-items:center;gap:10px;margin:30px 0 12px}
+.sec-h h3{font-size:12px;font-family:var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);margin:0}
+.sec-h .bar{flex:1;height:1px;background:var(--line-soft)}
+
+/* ---- signature: governed pipeline ---- */
+.flow{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin:6px 0 4px}
+.node{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:11px 10px;
+  position:relative;min-height:78px;display:flex;flex-direction:column;justify-content:space-between}
+.node .lab{font-size:11.5px;font-weight:600}
+.node .st{font-family:var(--mono);font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--faint)}
+.node .ix{position:absolute;top:8px;right:9px;font-family:var(--mono);font-size:9px;color:var(--faint)}
+.node.done{border-color:#1d3a2c}.node.done .st{color:var(--pass)}
+.node.active{border-color:#1c3645;box-shadow:0 0 0 1px #1c3645}.node.active .st{color:var(--primary-h)}
+.node.gate{border-color:#2c2148}.node.gate .st{color:var(--human)}
+.node.todo{opacity:.62}
+.node .led{position:absolute;left:10px;bottom:10px;width:6px;height:6px;border-radius:50%;background:var(--faint)}
+.node.done .led{background:var(--pass)}.node.active .led{background:var(--primary-h);
+  box-shadow:0 0 0 3px rgba(82,166,207,.18)}
+.node.gate .led{background:var(--human)}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);
+  text-align:left;padding:8px 12px;border-bottom:1px solid var(--line)}
+td{padding:11px 12px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+tr:hover td{background:#10161d}
+.tbl-wrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+
+/* forms */
+.form{display:grid;gap:14px;max-width:680px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-family:var(--mono);font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+.field input,.field select,.field textarea{background:var(--panel-2);border:1px solid var(--line);
+  color:var(--text);border-radius:8px;padding:9px 11px;font-family:var(--sans);font-size:13px}
+.field textarea{resize:vertical;min-height:74px}
+.field .hint{font-size:11px;color:var(--faint)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:8px;
+  font-size:13px;font-weight:600;letter-spacing:.2px;transition:filter .15s,background .15s}
+.btn.primary{background:var(--primary);color:#06121a}.btn.primary:hover{background:var(--primary-h)}
+.btn.ghost{border:1px solid var(--line);color:var(--text)}.btn.ghost:hover{background:#172029}
+.btn.pass{background:var(--pass);color:#06140d}.btn.pass:hover{filter:brightness(1.08)}
+.btn.warn{border:1px solid #3d3017;color:var(--warn)}.btn.warn:hover{background:#241c0d}
+.btn.fail{border:1px solid #3d1d1a;color:var(--fail)}.btn.fail:hover{background:#241211}
+.btn.human{background:var(--human);color:#0e0a1c}.btn.human:hover{filter:brightness(1.08)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+
+/* audit / hash strip */
+.chain{background:#0e141a;border:1px solid var(--line);border-radius:var(--radius);padding:4px 0;overflow:hidden}
+.link{display:grid;grid-template-columns:120px 150px 1fr auto;gap:14px;align-items:center;
+  padding:9px 16px;border-bottom:1px solid var(--line-soft);font-size:12.5px}
+.link:last-child{border-bottom:0}
+.link .t{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.link .ev{font-weight:600}
+.link .h{font-family:var(--mono);font-size:11px;color:var(--accent);opacity:.85;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seal-line{display:flex;align-items:center;gap:10px;padding:12px 16px;
+  background:#15110a;border:1px solid #3a3119;border-radius:var(--radius);margin-bottom:14px}
+.seal-line .seal{width:30px;height:30px;font-size:10px}
+.seal-line .txt{font-size:12.5px;color:#d7c79a}
+.seal-line .txt b{color:var(--accent)}
+
+/* rc review */
+.rc{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.rc-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.rc-body{display:grid;grid-template-columns:1.3fr 1fr;gap:0}
+.rc-col{padding:16px 18px}.rc-col+.rc-col{border-left:1px solid var(--line-soft)}
+.diffbox{background:#0c1217;border:1px solid var(--line);border-radius:8px;font-family:var(--mono);
+  font-size:11.5px;line-height:1.7;padding:12px;max-height:280px;overflow:auto}
+.diffbox .add{color:var(--pass)} .diffbox .del{color:var(--fail)} .diffbox .ctx{color:var(--faint)}
+.gate-line{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;
+  border-bottom:1px solid var(--line-soft);font-size:12.5px}
+.gate-line:last-child{border-bottom:0}
+.gate-line .gid{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* warn banners */
+.banner{display:flex;gap:11px;align-items:flex-start;padding:12px 14px;border-radius:10px;font-size:12.5px;margin-bottom:16px}
+.banner.warn{background:#241c0d;border:1px solid #3d3017;color:#e7c98a}
+.banner.info{background:#0f1f29;border:1px solid #1c3645;color:#a9d2e6}
+.banner b{font-weight:650}
+
+/* footer note */
+.note{margin-top:26px;font-size:11.5px;color:var(--faint);font-family:var(--mono);letter-spacing:.3px}
+
+@media (max-width:920px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:fixed;left:-260px;transition:left .2s;z-index:30;width:248px}
+  .rail.open{left:0}
+  .g4{grid-template-columns:repeat(2,1fr)}.g3,.g2{grid-template-columns:1fr}
+  .flow{grid-template-columns:repeat(2,1fr)}
+  .rc-body{grid-template-columns:1fr}.rc-col+.rc-col{border-left:0;border-top:1px solid var(--line-soft)}
+  .two{grid-template-columns:1fr}
+  .menu-btn{display:inline-flex!important}
+}
+.menu-btn{display:none;all:unset;cursor:pointer;font-size:18px;padding:2px 8px;border:1px solid var(--line);border-radius:8px}
+</style>
+
+<div class="shell">
+  <!-- RAIL -->
+  <aside class="rail" id="rail">
+    <div class="brand">
+      <div class="brand-row">
+        <span class="seal">§11</span>
+        <div>
+          <h1>GMP AI Factory</h1>
+          <div class="sub">Mission Control · C9</div>
+        </div>
+      </div>
+    </div>
+    <nav id="nav">
+      <div class="grp">Gobierno</div>
+      <button class="on" data-v="dash"><span class="ix">01</span> Panel general</button>
+      <button data-v="create"><span class="ix">02</span> Crear misión</button>
+      <button data-v="approve"><span class="ix">03</span> Aprobación de misión</button>
+      <div class="grp">Construcción</div>
+      <button data-v="pipeline"><span class="ix">04</span> Pipeline Capa 8</button>
+      <button data-v="review"><span class="ix">05</span> Revisión humana</button>
+      <div class="grp">Evidencia</div>
+      <button data-v="audit"><span class="ix">06</span> Auditoría</button>
+      <button data-v="system"><span class="ix">07</span> Estado del sistema</button>
+    </nav>
+    <div class="rail-foot">
+      <div><span class="dotpass">●</span> base 8000 · factory 9000</div>
+      <div><span class="dotpass">●</span> lab_qc 8101 · v0.2.0</div>
+      <div><span class="dotwarn">●</span> headless: revisar estado</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="top">
+      <button class="menu-btn" onclick="document.getElementById('rail').classList.toggle('open')">≡</button>
+      <div>
+        <h2 id="vtitle">Panel general</h2>
+        <div class="crumb" id="vcrumb">mission-control / overview</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="keyfield">
+        <label>API KEY</label>
+        <input id="apikey" type="password" placeholder="solo en memoria" autocomplete="off">
+        <button class="btn ghost" style="padding:5px 10px" onclick="connect()">Conectar</button>
+      </div>
+      <div class="conn" id="conn">modo <b>diseño</b></div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- 01 DASHBOARD -->
+      <section class="view on" id="v-dash">
+        <p class="lead">Estado del gobierno de misiones y del agente constructor (Capa 8). La clave nunca se guarda; se usa solo durante esta sesión para consultar el factory-api.</p>
+
+        <div class="grid g4">
+          <div class="card stat"><span class="k">Misiones activas</span><span class="n" id="m-active">2</span></div>
+          <div class="card stat"><span class="k">Decisiones pendientes</span><span class="n" id="m-pending">1</span></div>
+          <div class="card stat"><span class="k">Release candidates</span><span class="n" id="m-rc">1<small> / revisar</small></span></div>
+          <div class="card stat"><span class="k">Cadena de auditoría</span><span class="n" id="m-audit" style="color:var(--pass)">OK<small> · 65</small></span></div>
+        </div>
+
+        <div class="sec-h"><h3>Flujo gobernado</h3><span class="bar"></span><span class="chip c-human">decisión final humana</span></div>
+        <div class="card" style="padding:14px">
+          <div class="flow">
+            <div class="node done"><div><div class="ix">01</div><div class="lab">Misión</div></div><div class="st">aprobada</div><span class="led"></span></div>
+            <div class="node done"><div><div class="ix">02</div><div class="lab">Diseño</div></div><div class="st">generado</div><span class="led"></span></div>
+            <div class="node active"><div><div class="ix">03</div><div class="lab">Headless</div></div><div class="st">en curso</div><span class="led"></span></div>
+            <div class="node todo"><div><div class="ix">04</div><div class="lab">Código</div></div><div class="st">pendiente</div><span class="led"></span></div>
+            <div class="node todo"><div><div class="ix">05</div><div class="lab">Tests</div></div><div class="st">pendiente</div><span class="led"></span></div>
+            <div class="node todo"><div><div class="ix">06</div><div class="lab">Quality gates</div></div><div class="st">pendiente</div><span class="led"></span></div>
+            <div class="node todo"><div><div class="ix">07</div><div class="lab">Release cand.</div></div><div class="st">pendiente</div><span class="led"></span></div>
+            <div class="node gate"><div><div class="ix">08</div><div class="lab">Aprobación</div></div><div class="st">humano</div><span class="led"></span></div>
+          </div>
+          <div class="meta" style="margin-top:8px">Misión en curso: <b class="mono">r6_change_control</b> — el código de la solución debe provenir del paso headless (Capa 8), no de la sesión interactiva.</div>
+        </div>
+
+        <div class="grid g2" style="margin-top:18px">
+          <div class="card">
+            <div class="between"><h3>Misiones</h3><span class="chip c-mute">Capa 9</span></div>
+            <div class="hr"></div>
+            <div class="between" style="margin-bottom:10px">
+              <div><b class="mono">lab_qc_project</b><div class="meta">Lab QC · LIMS/HPLC/OOS/DI/CAPA</div></div>
+              <span class="chip c-pass">desplegada v0.2.0</span>
+            </div>
+            <div class="between">
+              <div><b class="mono">r6_change_control</b><div class="meta">Change Control · LIMS/DI/CAPA</div></div>
+              <span class="chip c-info">en construcción</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="between"><h3>Riesgos abiertos</h3><span class="chip c-warn">3</span></div>
+            <div class="hr"></div>
+            <div class="meta" style="line-height:2">
+              <div><span class="chip c-warn" style="margin-right:8px">alto</span> Plano de ejecución host-side del CLI no formalizado</div>
+              <div><span class="chip c-warn" style="margin-right:8px">medio</span> Corpus interno sin etiqueta INTERNAL_SUMMARY (verificar)</div>
+              <div><span class="chip c-warn" style="margin-right:8px">medio</span> headless pudo quedar habilitado — confirmar OFF</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec-h"><h3>Stacks</h3><span class="bar"></span></div>
+        <div class="grid g3">
+          <div class="card"><div class="between"><h3>Docker 1 · Base</h3><span class="chip c-pass">:8000</span></div><div class="meta mono" style="margin-top:8px">api · postgres · redis · ollama → ok</div></div>
+          <div class="card"><div class="between"><h3>Docker 2 · Factory</h3><span class="chip c-pass">:9000</span></div><div class="meta mono" style="margin-top:8px">factory-api · ~45 rutas → ok</div></div>
+          <div class="card"><div class="between"><h3>Docker 3 · lab_qc</h3><span class="chip c-pass">:8101</span></div><div class="meta mono" style="margin-top:8px">api · postgres · redis → ok · 411 chunks</div></div>
+        </div>
+        <p class="note">Diseño de referencia. Los valores se reemplazan por datos en vivo al conectar con un factory-api real.</p>
+      </section>
+
+      <!-- 02 CREATE -->
+      <section class="view" id="v-create">
+        <p class="lead">Define una misión para el agente constructor. La misión fija el alcance, la regulación, el nivel de autonomía y las acciones permitidas. Crear una misión no autoriza nada todavía — la aprobación es un paso aparte.</p>
+        <form class="form" onsubmit="return fakeSubmit('Misión creada en estado borrador')">
+          <div class="two">
+            <div class="field"><label>project_id</label><input placeholder="p.ej. r7_batch_review" required><span class="hint">minúsculas, sin espacios</span></div>
+            <div class="field"><label>Nombre del proyecto</label><input placeholder="Revisión de registros de lote" required></div>
+          </div>
+          <div class="field"><label>Objetivo</label><textarea placeholder="Qué debe construir la solución y para qué cliente."></textarea></div>
+          <div class="two">
+            <div class="field"><label>Tipo de cliente</label><input placeholder="pharma_mfg_site"></div>
+            <div class="field"><label>Dominios</label><input placeholder="LIMS, DATA_INTEGRITY, CAPA"><span class="hint">separados por coma</span></div>
+          </div>
+          <div class="field"><label>Alcance regulatorio</label><input placeholder="21_CFR_PART_11, 21_CFR_PART_211, ALCOA+"></div>
+          <div class="two">
+            <div class="field"><label>Nivel de autonomía</label>
+              <select><option>controlled_full (hasta release candidate)</option><option>design_only (plan)</option><option>manual_assisted</option></select>
+            </div>
+            <div class="field"><label>Documentos requeridos</label><input placeholder="ICH Q10, FDA PV 2011, GAMP 5"><span class="hint">se marcan PENDING; no se fabrican</span></div>
+          </div>
+          <div class="field"><label>Acciones permitidas</label>
+            <textarea placeholder="analyze_requirement, design_agents, create_workspace, run_claude_code, generate_code, run_tests, run_quality_gates, create_release_candidate">analyze_requirement, design_agents, create_workspace, run_claude_code, generate_code, run_tests, run_quality_gates, create_release_candidate</textarea>
+            <span class="hint">deploy_docker queda en false — la decisión final es humana</span>
+          </div>
+          <div class="field"><label>Criterios de salida</label><textarea placeholder="Qué define que la misión está lista para revisión humana."></textarea></div>
+          <div class="actions">
+            <button class="btn primary" type="submit">Crear misión (borrador)</button>
+            <button class="btn ghost" type="reset">Limpiar</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- 03 APPROVE -->
+      <section class="view" id="v-approve">
+        <p class="lead">Aprobar, rechazar o devolver a ajustes una misión. La aprobación exige el nombre real del aprobador; valores genéricos como “human” se rechazan. Toda decisión queda en la cadena de auditoría.</p>
+        <div class="banner warn"><span>⚠</span><div><b>Regla Part 11:</b> approved_by no puede ser “human”. La confirmación humana es un acto separado de la propuesta del agente (decision_origin: human_confirmed).</div></div>
+
+        <div class="card">
+          <div class="between"><h3 class="mono">r6_change_control</h3><span class="chip c-info">pending_approval</span></div>
+          <div class="hr"></div>
+          <div class="grid g2">
+            <div>
+              <div class="meta"><span class="k">Objetivo</span><br>Módulo de gestión de cambios con audit trail ALCOA+ (21 CFR Part 11), evaluación de impacto y CAPA vinculado.</div>
+              <div class="hr"></div>
+              <div class="meta mono">proposed_by &nbsp;·&nbsp; layer8_orchestrator</div>
+              <div class="meta mono">proposed_at &nbsp;·&nbsp; 2026-06-15 02:51Z</div>
+              <div class="meta mono">approved_by &nbsp;·&nbsp; <span style="color:var(--faint)">— (pendiente)</span></div>
+              <div class="meta mono">decision_origin &nbsp;·&nbsp; agent_proposed</div>
+            </div>
+            <div>
+              <div class="meta"><span class="k">Documentos PENDING</span></div>
+              <div class="meta" style="line-height:2;margin-top:4px">
+                <span class="chip c-warn">PENDING</span> ICH Q10 · Pharmaceutical Quality System<br>
+                <span class="chip c-warn">PENDING</span> FDA Process Validation Guidance 2011<br>
+                <span class="chip c-warn">PENDING</span> ISPE GAMP 5
+              </div>
+              <div class="hr"></div>
+              <div class="field"><label>Aprobador (nombre real)</label><input id="approver" placeholder="p.ej. Cesar"></div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn human" onclick="needApprover()">Aprobar misión</button>
+            <button class="btn warn" onclick="fakeSubmit('Misión devuelta a ajustes')">Devolver a ajustes</button>
+            <button class="btn fail" onclick="fakeSubmit('Misión rechazada')">Rechazar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 PIPELINE -->
+      <section class="view" id="v-pipeline">
+        <p class="lead">Pipeline del agente constructor de Capa 8 para la misión en curso. Headless solo se ejecuta si la misión lo autoriza y queda registrado; se devuelve a OFF al terminar.</p>
+        <div class="banner info"><span>ℹ</span><div>El CLI de Claude Code vive en el host. El factory-api encola el trabajo headless y un worker host-side lo ejecuta; el contenedor no invoca el CLI.</div></div>
+
+        <div class="grid g2">
+          <div class="card">
+            <h3>Diseño generado</h3><div class="hr"></div>
+            <div class="meta" style="line-height:2">
+              <div>Agentes: <b class="mono">capa</b> (heredado) · <b class="mono">integrity_lims_profile</b> (perfil)</div>
+              <div>Workspace: <span class="chip c-pass">resume</span> <span class="mono">factory/workspaces/r6_change_control</span></div>
+              <div>task package: <span class="chip c-pass">CLAUDE.md · task.md · settings.json</span></div>
+              <div>Validación regulatoria: <span class="chip c-pass">sin texto fabricado</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="between"><h3>Headless</h3><span class="chip c-warn" id="hl-state">verificar</span></div>
+            <div class="hr"></div>
+            <div class="meta mono" style="line-height:2">
+              comando &nbsp; claude -p · --permission-mode auto<br>
+              salida &nbsp;&nbsp;&nbsp; --output-format json · --no-session-persistence<br>
+              doble llave &nbsp; headless_enabled + allowed_action + task_safe<br>
+              plano &nbsp;&nbsp;&nbsp;&nbsp; worker host-side (no contenedor)
+            </div>
+            <div class="actions">
+              <button class="btn ghost" onclick="fakeSubmit('Solicitud de log enviada')">Ver log</button>
+              <button class="btn warn" onclick="fakeSubmit('Headless devuelto a OFF')">Devolver headless a OFF</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec-h"><h3>Tests &amp; Quality gates</h3><span class="bar"></span></div>
+        <div class="grid g2">
+          <div class="card">
+            <h3>Tests del módulo</h3><div class="hr"></div>
+            <div class="gate-line"><span>Suite del proyecto</span><span class="chip c-mute">pendiente</span></div>
+            <div class="meta" style="margin-top:8px">Se ejecutan tras la generación headless y se consolidan en el release candidate.</div>
+          </div>
+          <div class="card">
+            <h3>Quality gates (GD_*)</h3><div class="hr"></div>
+            <div class="gate-line"><span class="gid">GD_AUTH / HEALTH / CORPUS</span><span class="chip c-mute">en espera</span></div>
+            <div class="gate-line"><span class="gid">GD_AUDIT / KEY_NOT_IN_UI</span><span class="chip c-mute">en espera</span></div>
+            <div class="gate-line"><span class="gid">GD_QUERY_LLM (fast=false)</span><span class="chip c-mute">en espera</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 05 REVIEW -->
+      <section class="view" id="v-review">
+        <p class="lead">Cola de release candidates a revisión humana. El despliegue permanece bloqueado hasta que un revisor real apruebe el RC. Aquí se ven el diff, los tests y los gates antes de decidir.</p>
+
+        <div class="rc">
+          <div class="rc-head">
+            <span class="seal" style="width:30px;height:30px;font-size:10px">RC</span>
+            <div>
+              <div class="mono" style="font-weight:600">lab_qc_project · rc-v0.2.0</div>
+              <div class="meta mono">propuesto por layer8 · pending_human_confirmation</div>
+            </div>
+            <div class="spacer"></div>
+            <span class="chip c-pass">gates 12/12</span>
+            <span class="chip c-pass">tests ok</span>
+            <span class="chip c-human">espera humano</span>
+          </div>
+          <div class="rc-body">
+            <div class="rc-col">
+              <div class="k" style="margin-bottom:8px">Diff (resumen)</div>
+              <div class="diffbox">
+<span class="ctx">app/main.py</span>
+<span class="add">+ collection lab_qc_hplc reingestada (89 chunks)</span>
+<span class="add">+ gate GD_STREAM_200 añadido</span>
+<span class="del">- placeholder de corpus vacío</span>
+<span class="ctx">manifest.yaml</span>
+<span class="add">+ status: validated · gates 12/12</span>
+<span class="ctx">releases/v0.2.0.json</span>
+<span class="add">+ registro de release inmutable</span>
+              </div>
+            </div>
+            <div class="rc-col">
+              <div class="k" style="margin-bottom:8px">Quality gates</div>
+              <div class="gate-line"><span class="gid">GD_HEALTH_FULL</span><span class="chip c-pass">pass</span></div>
+              <div class="gate-line"><span class="gid">GD_AUTH_REJECT/ACCEPT</span><span class="chip c-pass">pass</span></div>
+              <div class="gate-line"><span class="gid">GD_KNOWLEDGE_STATS</span><span class="chip c-pass">pass</span></div>
+              <div class="gate-line"><span class="gid">GD_AUDIT_VERIFY</span><span class="chip c-pass">pass</span></div>
+              <div class="gate-line"><span class="gid">GD_KEY_NOT_IN_UI</span><span class="chip c-pass">pass</span></div>
+              <div class="gate-line"><span class="gid">GD_STREAM_200</span><span class="chip c-pass">pass</span></div>
+              <div class="hr"></div>
+              <div class="field"><label>Revisor (nombre real)</label><input placeholder="p.ej. Cesar"></div>
+              <div class="actions">
+                <button class="btn pass" onclick="fakeSubmit('Release candidate aprobado — deploy habilitado para autorización')">Aprobar RC</button>
+                <button class="btn fail" onclick="fakeSubmit('Release candidate rechazado')">Rechazar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="note">El deploy nunca es automático: aprobar el RC habilita la autorización de despliegue, que es un paso humano adicional.</p>
+      </section>
+
+      <!-- 06 AUDIT -->
+      <section class="view" id="v-audit">
+        <p class="lead">Cadena de auditoría 21 CFR Part 11. Cada evento encadena el hash del anterior (SHA-256); cualquier alteración rompe la cadena y queda en evidencia.</p>
+        <div class="seal-line">
+          <span class="seal">✓</span>
+          <div class="txt"><b>Cadena verificada</b> · 65 entradas · 0 errores de hash · 0 errores de cadena · part11_compliant: true</div>
+        </div>
+        <div class="chain">
+          <div class="link"><span class="t">02:51:12Z</span><span class="ev">layer8_workspace_created</span><span class="meta mono">r6_change_control</span><span class="h">e7c2…a91f</span></div>
+          <div class="link"><span class="t">02:52:40Z</span><span class="ev">layer8_headless_enabled</span><span class="meta mono">scope=r6 · approved_by=Cesar_R6</span><span class="h">b341…7d0c</span></div>
+          <div class="link"><span class="t">01:39:48Z</span><span class="ev"><span style="color:var(--human)">approval_confirmed</span></span><span class="meta mono">lab_qc · by=Cesar</span><span class="h">8b6d…2e44</span></div>
+          <div class="link"><span class="t">17:34:00Z</span><span class="ev">deployment_gates_validated</span><span class="meta mono">lab_qc · 12/12</span><span class="h">aec3…14db</span></div>
+          <div class="link"><span class="t">17:04:04Z</span><span class="ev">deployment_started</span><span class="meta mono">lab_qc · v0.2.0 redeploy</span><span class="h">778e…03ab</span></div>
+          <div class="link"><span class="t">—</span><span class="ev"><span style="color:var(--accent)">decision · correction</span></span><span class="meta mono">F6 reclasificado agent_proposed</span><span class="h">d99d…101a</span></div>
+        </div>
+      </section>
+
+      <!-- 07 SYSTEM -->
+      <section class="view" id="v-system">
+        <p class="lead">Salud de los stacks y recursos del servidor frente a la política. Sin secretos: la API key se ingresa arriba y no se persiste.</p>
+        <div class="grid g3">
+          <div class="card"><div class="between"><h3>Base · 8000</h3><span class="chip c-pass">pass</span></div><div class="hr"></div><div class="meta mono">api·postgres·redis·ollama → ok</div></div>
+          <div class="card"><div class="between"><h3>Factory · 9000</h3><span class="chip c-pass">pass</span></div><div class="hr"></div><div class="meta mono">factory-api → ok · selfcheck Gate 0</div></div>
+          <div class="card"><div class="between"><h3>lab_qc · 8101</h3><span class="chip c-pass">pass</span></div><div class="hr"></div><div class="meta mono">api·postgres·redis → ok</div></div>
+        </div>
+        <div class="sec-h"><h3>Recursos vs política</h3><span class="bar"></span></div>
+        <div class="grid g3">
+          <div class="card stat"><span class="k">RAM</span><span class="n" style="font-size:24px">29.5%<small> usado</small></span><span class="chip c-pass" style="width:max-content">dentro de política</span></div>
+          <div class="card stat"><span class="k">Disco /</span><span class="n" style="font-size:24px">49.5%<small> usado</small></span><span class="chip c-pass" style="width:max-content">ok</span></div>
+          <div class="card stat"><span class="k">Soluciones custom</span><span class="n" style="font-size:24px">1<small> / 2 máx</small></span><span class="chip c-pass" style="width:max-content">ok</span></div>
+        </div>
+        <div class="sec-h"><h3>Ollama</h3><span class="bar"></span></div>
+        <div class="card"><div class="meta mono">proceso nativo del host · *:11434 · compartido por base/factory/custom vía host-gateway. (No publicado por aria-ollama.)</div></div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---- estado de sesión: la API key vive solo en memoria ---- */
+let API_KEY = "";
+let CONNECTED = false;
+const API_BASE = ""; // mismo origen cuando se sirve desde factory-api (:9000)
+
+const TITLES = {
+  dash:["Panel general","mission-control / overview"],
+  create:["Crear misión","mission-control / missions / new"],
+  approve:["Aprobación de misión","mission-control / approvals"],
+  pipeline:["Pipeline Capa 8","mission-control / layer8 / pipeline"],
+  review:["Revisión humana","mission-control / review-queue"],
+  audit:["Auditoría","mission-control / audit / chain"],
+  system:["Estado del sistema","mission-control / system"]
+};
+
+document.querySelectorAll('#nav button').forEach(b=>{
+  b.addEventListener('click',()=>show(b.dataset.v,b));
+});
+function show(v,btn){
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('on'));
+  document.getElementById('v-'+v).classList.add('on');
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('on'));
+  (btn||document.querySelector('#nav button[data-v="'+v+'"]')).classList.add('on');
+  const t=TITLES[v]; document.getElementById('vtitle').textContent=t[0];
+  document.getElementById('vcrumb').textContent=t[1];
+  document.getElementById('rail').classList.remove('open');
+  if(CONNECTED) refresh(v);
+}
+
+/* ---- conexión opcional a un factory-api real (no persiste la clave) ---- */
+async function connect(){
+  API_KEY = document.getElementById('apikey').value.trim();
+  const conn = document.getElementById('conn');
+  if(!API_KEY){ conn.innerHTML='modo <b>diseño</b>'; CONNECTED=false; return; }
+  try{
+    const r = await fetch(API_BASE + "/health");
+    if(!r.ok) throw new Error();
+    CONNECTED = true;
+    conn.innerHTML='<span class="dotpass">●</span> conectado';
+    refresh('dash');
+  }catch(e){
+    CONNECTED=false;
+    conn.innerHTML='<span class="dotwarn">●</span> sin factory-api · <b>diseño</b>';
+  }
+}
+function headers(){ return {'Content-Type':'application/json','X-Api-Key':API_KEY}; }
+
+/* refresca una vista con datos en vivo cuando hay conexión (degradación elegante) */
+async function refresh(v){
+  try{
+    if(v==='dash' || v==='system'){
+      const r = await fetch(API_BASE+"/api/v1/status/full",{headers:headers()});
+      if(r.ok){ const d=await r.json();
+        const ok=d.summary?.stacks_ok, tot=d.summary?.stacks_total;
+        if(ok!=null) document.getElementById('m-audit').firstChild &&
+          (document.getElementById('m-audit').innerHTML = (d.summary.audit_verified?'OK':'FALLA')+'<small> · '+(d.summary.audit_entries||'')+'</small>');
+      }
+    }
+    if(v==='approve' || v==='dash'){
+      const r = await fetch(API_BASE+"/api/v1/layer9/missions",{headers:headers()});
+      if(r.ok){ const ms=await r.json();
+        document.getElementById('m-active').textContent = Array.isArray(ms)? ms.length : '—';
+      }
+    }
+  }catch(e){ /* mantiene el diseño con datos de referencia */ }
+}
+
+/* ---- interacciones de diseño (no ejecutan nada destructivo) ---- */
+function toast(msg){
+  let t=document.getElementById('_toast');
+  if(!t){ t=document.createElement('div'); t.id='_toast';
+    t.style.cssText='position:fixed;right:22px;bottom:22px;background:#18242e;border:1px solid #26303b;color:#e8eef4;padding:11px 15px;border-radius:10px;font-size:13px;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.4)';
+    document.body.appendChild(t);}
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._h); t._h=setTimeout(()=>t.style.opacity='0',2200);
+}
+function fakeSubmit(msg){ toast(msg + (CONNECTED?'':' · (vista de diseño)')); return false; }
+function needApprover(){
+  const a=document.getElementById('approver').value.trim();
+  if(!a){ toast('Ingresa el nombre real del aprobador (no “human”).'); return; }
+  if(a.toLowerCase()==='human'){ toast('“human” no es válido — usa un nombre real.'); return; }
+  toast('Misión aprobada por '+a+' · decision_origin: human_confirmed'+(CONNECTED?'':' · (diseño)'));
+}
+</script>

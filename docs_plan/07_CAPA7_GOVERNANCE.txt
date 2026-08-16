@@ -1,0 +1,122 @@
+================================================================================
+GMP AI FACTORY — FASE 7: GOVERNANCE DE RELEASE / DEPLOYMENT (CAPA 7)
+Archivo: 07_CAPA7_GOVERNANCE.txt
+Precondición: Fase 0 ejecutada. Cesar confirmó esta fase.
+================================================================================
+▼ PEGAR EN CLAUDE CODE ▼
+──────────────────────────────────────────────────────────────────────────────
+FASE 7 — Cerrar governance de release/deployment de lab_qc_project.
+
+Objetivo: dejar la Capa 7 con evidencia completa: release v0.3.0 registrado,
+approval.json coherente, deployment activo == release, gates documentados,
+naturaleza re_certification explícita y recomendación de rollback registrada.
+Cambios mínimos. No reiniciar contenedores. No tocar producción.
+
+cd /home/ing_cpmo
+
+═══ 7.1 — VERIFICAR COHERENCIA RELEASE ↔ DEPLOYMENT ════════════════════════
+
+python3 - <<'PY'
+import json, pathlib
+ap = pathlib.Path('factory/deployments/lab_qc_project/approval.json')
+rel = pathlib.Path('factory/deployments/lab_qc_project/releases/v0.3.0.json')
+print("=== approval.json ===")
+if ap.exists():
+    d = json.loads(ap.read_text())
+    checks = {
+        "version==v0.3.0": d.get('version')=='v0.3.0',
+        "status==approved": d.get('status')=='approved',
+        "approved_by no reservado": d.get('approved_by') not in (None,'human','agent','system','capa8','capa9'),
+        "decision_origin==human_confirmed": d.get('decision_origin')=='human_confirmed',
+    }
+    for k,v in checks.items(): print(f"  {'✓' if v else '✗'} {k}: {d.get(k.split('==')[0].split(' ')[0],'?') if '==' in k else ''}")
+    print(f"  approved_by={d.get('approved_by')} decision_origin={d.get('decision_origin')}")
+print("=== releases/v0.3.0.json ===")
+if rel.exists():
+    r = json.loads(rel.read_text())
+    print(f"  status={r.get('status')} release_type={r.get('release_type')}")
+else:
+    print("  ✗ NO existe — se creará")
+PY
+
+echo ""; echo "=== Deployment activo ==="
+docker ps --filter name=lab_qc_project --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+IMG=$(docker inspect lab_qc_project_api --format '{{.Image}}' 2>/dev/null | cut -c1-19)
+echo "Imagen activa: $IMG"
+
+═══ 7.2 — DOCUMENTAR re_certification + ROLLBACK (si falta) ════════════════
+
+python3 - <<'PY'
+import json, pathlib
+rel = pathlib.Path('factory/deployments/lab_qc_project/releases/v0.3.0.json')
+if rel.exists():
+    r = json.loads(rel.read_text())
+    changed = False
+    if r.get('release_type') != 're_certification':
+        r['release_type'] = 're_certification'; changed = True
+    # Nota de rollback explícita
+    if 'rollback' not in r:
+        r['rollback'] = {
+            'strategy': 'redeploy_previous_release',
+            'previous_stable': 'v0.2.0',
+            'note': ('v0.3.0 es re-certificación: código idéntico a v0.2.0, sin rebuild. '
+                     'Rollback = redeploy de v0.2.0 (imagen sha256:dcf81a827689) si una '
+                     'regresión apareciera; no hay cambio de imagen que revertir.'),
+            'requires_human_approval': True,
+        }
+        changed = True
+    if 'deployment_reconciled' not in r:
+        r['deployment_reconciled'] = True
+        r['reconcile_note'] = 'running == release v0.3.0 (misma imagen, mismos volúmenes)'
+        changed = True
+    if changed:
+        rel.write_text(json.dumps(r, indent=2, ensure_ascii=False))
+        print("releases/v0.3.0.json actualizado (re_certification + rollback + reconcile).")
+    else:
+        print("OK: releases/v0.3.0.json ya completo.")
+else:
+    print("releases/v0.3.0.json NO existe — créalo con los datos del deployment activo:")
+    print("  status=deployed_and_validated, release_type=re_certification,")
+    print("  approval={approved_by:Cesar, decision_origin:human_confirmed},")
+    print("  rollback={previous_stable:v0.2.0, requires_human_approval:true}")
+PY
+
+═══ 7.3 — VERIFICAR GATES DEL DEPLOYMENT (vía factory-api, no rebuild) ═════
+
+FK=$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)
+echo "=== Quality gates del deployment activo (fast) ==="
+curl -s --max-time 120 -X POST \
+  -H "X-Api-Key: $FK" -H "Content-Type: application/json" \
+  -d '{"fast":true}' \
+  http://localhost:9000/api/v1/deployments/lab_qc_project/quality-gates \
+  | python3 -c "
+import sys,json
+try:
+    d=json.load(sys.stdin); s=d.get('summary',{})
+    print(f'PASS={s.get(\"PASS\")} FAIL={s.get(\"FAIL\")} SKIPPED={s.get(\"SKIPPED\")}')
+    for g in d.get('gates',[]):
+        if g.get('status')=='SKIPPED':
+            print(f'  SKIP {g.get(\"gate\")}: {g.get(\"evidence\",\"\")[:60]}')
+except Exception as e: print('error:', e)
+"
+echo "Nota: GD_QUERY_LLM SKIPPED en fast es aceptable (requiere ~90s de LLM)."
+
+═══ 7.4 — VALIDACIÓN Y DIFF ════════════════════════════════════════════════
+
+echo ""; echo "=== selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "PASS|FAIL|Gate 0"
+echo ""; echo "=== diff ==="
+git status --short && git diff --stat
+
+Entrega el reporte de Capa 7:
+  - release v0.3.0 registrado: sí/no
+  - approval.json coherente (approved/Cesar/human_confirmed/v0.3.0): sí/no
+  - deployment activo == release: sí/no
+  - gates documentados (PASS/SKIP y por qué): sí
+  - re_certification explícito + rollback registrado: sí/no
+  - Clasificación final Capa 7: CUMPLE / PARCIAL / NO CUMPLE
+
+NO hagas commit sin mi aprobación.
+Commit propuesto: "factory: Capa 7 governance — v0.3.0 re_certification + rollback documentado"
+──────────────────────────────────────────────────────────────────────────────
+▲ FIN FASE 7 ▲

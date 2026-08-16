@@ -1,0 +1,513 @@
+<title>Directiva de Remediación</title>
+<style>
+  :root{
+    --bg:#f4f5f7;
+    --surface:#ffffff;
+    --surface-2:#eceef2;
+    --border:#d8dce3;
+    --border-strong:#c1c7d1;
+    --text:#1c2128;
+    --text-muted:#5b6472;
+    --text-faint:#8790a0;
+    --accent:#3a5a7a;
+    --accent-strong:#24405c;
+    --accent-tint:#e4ebf1;
+    --success:#2f7d5a;
+    --success-tint:#e4f1ea;
+    --warning:#a3690f;
+    --warning-tint:#f7ecd9;
+    --critical:#b23b3b;
+    --critical-tint:#f8e6e6;
+    --pending:#6b6f76;
+    --pending-tint:#eceef0;
+    --font-display: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --font-body: ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12151a;
+      --surface:#181c22;
+      --surface-2:#20252c;
+      --border:#2c323b;
+      --border-strong:#394048;
+      --text:#e6e9ee;
+      --text-muted:#9aa2ad;
+      --text-faint:#6d7480;
+      --accent:#8fb2d1;
+      --accent-strong:#b7d2e8;
+      --accent-tint:#1e2c38;
+      --success:#5fbf8f;
+      --success-tint:#173029;
+      --warning:#e0a83f;
+      --warning-tint:#332a15;
+      --critical:#e0696f;
+      --critical-tint:#331d1e;
+      --pending:#9aa0a8;
+      --pending-tint:#22262c;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12151a;
+    --surface:#181c22;
+    --surface-2:#20252c;
+    --border:#2c323b;
+    --border-strong:#394048;
+    --text:#e6e9ee;
+    --text-muted:#9aa2ad;
+    --text-faint:#6d7480;
+    --accent:#8fb2d1;
+    --accent-strong:#b7d2e8;
+    --accent-tint:#1e2c38;
+    --success:#5fbf8f;
+    --success-tint:#173029;
+    --warning:#e0a83f;
+    --warning-tint:#332a15;
+    --critical:#e0696f;
+    --critical-tint:#331d1e;
+    --pending:#9aa0a8;
+    --pending-tint:#22262c;
+  }
+
+  *{box-sizing:border-box;}
+  html{background:var(--bg);}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.55;
+    margin:0;
+    padding:56px 24px 96px;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--accent-tint); }
+
+  .sheet{
+    max-width:760px;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:40px;
+  }
+
+  /* ── Header ─────────────────────────────────────────── */
+  header.doc-head{
+    border-bottom:2px solid var(--text);
+    padding-bottom:20px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:600;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-size:clamp(28px,4vw,36px);
+    font-weight:600;
+    margin:0;
+    text-wrap:balance;
+    color:var(--text);
+    letter-spacing:-.01em;
+  }
+  .doc-sub{
+    font-size:14.5px;
+    color:var(--text-muted);
+    max-width:60ch;
+  }
+  .meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 22px;
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-faint);
+    margin-top:6px;
+  }
+  .meta-row b{ color:var(--text-muted); font-weight:600; }
+
+  /* ── Status strip ───────────────────────────────────── */
+  .status-strip{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:1px;
+    background:var(--border);
+    border:1px solid var(--border);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .status-cell{
+    background:var(--surface);
+    padding:14px 14px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .status-cell .label{
+    font-size:12px;
+    color:var(--text-muted);
+    font-weight:600;
+  }
+  .chip{
+    align-self:flex-start;
+    font-family:var(--font-mono);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.03em;
+    padding:3px 8px;
+    border-radius:20px;
+  }
+  .chip.done{ background:var(--success-tint); color:var(--success); }
+  .chip.blocked{ background:var(--critical-tint); color:var(--critical); }
+  .chip.pending{ background:var(--pending-tint); color:var(--pending); }
+
+  /* ── Sections ───────────────────────────────────────── */
+  section.block{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .block-head{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    flex-wrap:wrap;
+    border-bottom:1px solid var(--border);
+    padding-bottom:10px;
+  }
+  .block-head h2{
+    font-family:var(--font-display);
+    font-size:20px;
+    font-weight:600;
+    margin:0;
+    color:var(--text);
+  }
+  .block-head .tag{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-faint);
+  }
+  .block-head .chip{ margin-left:auto; }
+
+  p{ margin:0; font-size:15px; color:var(--text); max-width:66ch; }
+  p.lede{ color:var(--text-muted); }
+
+  ul.findings{
+    margin:0;
+    padding:0;
+    list-style:none;
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+  }
+  ul.findings li{
+    font-size:14.5px;
+    color:var(--text);
+    padding-left:18px;
+    position:relative;
+    max-width:66ch;
+  }
+  ul.findings li::before{
+    content:"—";
+    position:absolute;
+    left:0;
+    color:var(--text-faint);
+  }
+  ul.findings li b{ color:var(--text); font-weight:600; }
+  ul.findings li .mono{ font-family:var(--font-mono); font-size:13px; color:var(--accent); }
+
+  .callout{
+    border:1px solid var(--border);
+    border-left:3px solid var(--accent);
+    background:var(--accent-tint);
+    border-radius:8px;
+    padding:14px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .callout.critical{ border-left-color:var(--critical); background:var(--critical-tint); }
+  .callout .callout-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-weight:700;
+    color:var(--accent);
+  }
+  .callout.critical .callout-label{ color:var(--critical); }
+  .callout p{ font-size:14px; color:var(--text); }
+
+  /* ── Verification table ─────────────────────────────── */
+  .verify-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13.5px;
+  }
+  .verify-table th, .verify-table td{
+    text-align:left;
+    padding:9px 10px;
+    border-bottom:1px solid var(--border);
+  }
+  .verify-table th{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--text-faint);
+    font-weight:600;
+  }
+  .verify-table td.num{
+    font-family:var(--font-mono);
+    font-variant-numeric:tabular-nums;
+    color:var(--text);
+  }
+  .verify-table td.result{ font-family:var(--font-mono); font-size:13px; }
+  .verify-table tr:last-child td{ border-bottom:none; }
+  .result.pass{ color:var(--success); }
+  .table-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:8px; }
+  .table-wrap .verify-table{ min-width:480px; }
+
+  /* ── Entrega block ──────────────────────────────────── */
+  dl.entrega{
+    display:grid;
+    grid-template-columns:minmax(180px,220px) 1fr;
+    gap:0;
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    background:var(--surface);
+  }
+  dl.entrega > div{
+    display:contents;
+  }
+  dl.entrega dt, dl.entrega dd{
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    font-size:13px;
+    margin:0;
+  }
+  dl.entrega dt{
+    font-family:var(--font-mono);
+    color:var(--text-faint);
+    background:var(--surface-2);
+  }
+  dl.entrega dd{
+    color:var(--text);
+    font-family:var(--font-mono);
+    line-height:1.5;
+  }
+  dl.entrega dd.val-blocked{ color:var(--critical); }
+  dl.entrega dd.val-pending{ color:var(--warning); }
+  dl.entrega dd.val-ok{ color:var(--success); }
+  dl.entrega > div:last-child dt, dl.entrega > div:last-child dd{ border-bottom:none; }
+  .table-wrap.entrega-wrap{ overflow-x:auto; }
+  .table-wrap.entrega-wrap dl.entrega{ min-width:520px; }
+
+  /* ── Decisions ──────────────────────────────────────── */
+  .decision-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .decision{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px 14px;
+    background:var(--surface);
+  }
+  .decision .num{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-faint);
+    padding-top:2px;
+  }
+  .decision p{ font-size:14px; }
+  .decision p b{ color:var(--text); }
+
+  footer.doc-foot{
+    border-top:1px solid var(--border);
+    padding-top:18px;
+    font-size:12.5px;
+    color:var(--text-faint);
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  footer.doc-foot .mono{ font-family:var(--font-mono); }
+
+  @media (max-width:520px){
+    dl.entrega{ grid-template-columns:1fr; }
+    dl.entrega dt{ border-bottom:none; padding-bottom:4px; }
+    dl.entrega dd{ padding-top:2px; }
+  }
+</style>
+
+<div class="sheet">
+
+  <header class="doc-head">
+    <span class="eyebrow">GMP AI Factory · Capa 8 → Capa 9</span>
+    <h1>R4-T1.0v2 — Directiva de Remediación</h1>
+    <p class="doc-sub">Reporte de ejecución de <span style="font-family:var(--font-mono)">docs_plan/R4_T1_0v2_DIRECTIVA_REMEDIACION.md</span> — el concepto de Acto 2 (autoría humana de la corrección), separado del Acto 1 (adjudicación del hallazgo).</p>
+    <div class="meta-row">
+      <span><b>Corrida:</b> 2026-08-13</span>
+      <span><b>Commit:</b> f6607e9</span>
+      <span><b>Llamadas LLM gastadas:</b> 0</span>
+      <span><b>Autoridad:</b> Capa 9 = Cesar</span>
+    </div>
+  </header>
+
+  <div class="status-strip">
+    <div class="status-cell"><span class="label">Bloque 0 — Verificación previa</span><span class="chip done">CERRADO</span></div>
+    <div class="status-cell"><span class="label">Bloque 1 — Directiva</span><span class="chip done">CERRADO</span></div>
+    <div class="status-cell"><span class="label">Bloque 2 — Wiring a Ruta D</span><span class="chip done">CERRADO</span></div>
+    <div class="status-cell"><span class="label">Bloque 3 — Endpoint mínimo</span><span class="chip done">CERRADO</span></div>
+    <div class="status-cell"><span class="label">Bloque 4 — Marca NO-APROBADO</span><span class="chip blocked">BLOQUEADO</span></div>
+    <div class="status-cell"><span class="label">Gate R4-T1.2</span><span class="chip pending">PENDIENTE</span></div>
+  </div>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Bloque 0 — ¿Existe hoy un disparador válido?</h2>
+      <span class="tag">§0 · cero llamadas</span>
+      <span class="chip done">CERRADO</span>
+    </div>
+    <p class="lede">Inventario real de <span style="font-family:var(--font-mono)">human_review_queue.jsonl</span> (34 entradas) antes de diseñar nada — la predicción del plan se confirmó exacta.</p>
+    <ul class="findings">
+      <li><b>0 disparadores válidos hoy.</b> Ninguna entrada <span class="mono">confirmed</span> tiene conclusión en <span class="mono">{DOCUMENTATION_GAP, PROVISIONAL_GAP}</span>. Las 12 que existen están <span class="mono">superseded</span> (perfil BASELINE) o <span class="mono">pending</span> sin confirmar.</li>
+      <li>RW-0011 / RW-0012 (candidatos a piloto) solo tienen una entrada cada uno, <span class="mono">pending</span>, conclusión <span class="mono">EVIDENCE_NOT_LOCATED_IN_CANDIDATES</span> — no es un hallazgo confirmable.</li>
+      <li><b>Dimensionamiento de la corrida Tier-1 necesaria:</b> 7 requisitos aplicables × 7 chunks (H2H4) = <b>49 llamadas</b>. Latencia real medida (p50≈600s, p95≈850s) ⇒ <b>~8.2–11.6h de pared</b>, secuencial. Presentado, no autorizado.</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Bloque 1 — El artefacto <span style="font-family:var(--font-mono);font-size:16px">RemediationDirective</span></h2>
+      <span class="tag">§1 · factory/services/remediation_directive.py</span>
+      <span class="chip done">CERRADO</span>
+    </div>
+    <p class="lede">Registro del Acto 2: autoría humana de la corrección. 20 tests, incluido un guardián estático.</p>
+    <ul class="findings">
+      <li><span class="mono">propose_remediation_directive()</span> exige hallazgo <span class="mono">confirmed</span> con conclusión en <span class="mono">DOCUMENTATION_GAP</span> / <span class="mono">PROVISIONAL_GAP</span> — cualquier otra se rechaza con motivo explícito.</li>
+      <li><span class="mono">document_sha256</span> recalculado y comparado contra el documento real (guardia de drift); <span class="mono">original_text</span> anclado literalmente para REPLACE/DELETE; cita regulatoria verificada contra el catálogo real; identidad real validada.</li>
+      <li><b>Autoría humana blindada:</b> guardián estático (<span class="mono">ast</span>) que confirma que <span class="mono">proposed_text</span> es siempre el parámetro tal cual — nunca una expresión calculada — y que el módulo no referencia ningún símbolo de generación/LLM.</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Bloque 2 — Wiring: directiva → Ruta D</h2>
+      <span class="tag">§2 · remediation_directive_dispatch.py</span>
+      <span class="chip done">CERRADO</span>
+    </div>
+    <p class="lede">Traduce una directiva ya validada al formato narrativo que exige <span style="font-family:var(--font-mono)">gap_assessment_finding_mapper</span>. 6 tests.</p>
+    <ul class="findings">
+      <li><span class="mono">change_type=DELETE</span> rechazado explícitamente — Ruta D no tiene verbo mapeado para eliminación.</li>
+      <li><b>Bug real encontrado y corregido durante la implementación:</b> <span class="mono">clasificacion_brecha</span> no puede ser la misma para ADD y REPLACE — usar <span class="mono">DOCUMENTATION_GAP</span> para ambos rechazaba todo REPLACE real. Corregido mapeando por <span class="mono">change_type</span>, no por la conclusión que disparó el hallazgo.</li>
+      <li>Se agregó <span class="mono">estado_agente_original="evidencia_insuficiente"</span> para que el veredicto sustantivo transportado (deuda I-1) resuelva <span class="mono">NOT_APPLICABLE</span> correctamente.</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Bloque 3 — Interfaz mínima del Acto 2</h2>
+      <span class="tag">§3 · POST/GET /api/v1/layer9/remediation/directives</span>
+      <span class="chip done">CERRADO</span>
+    </div>
+    <p class="lede">Vía mínima de captura, sin UI rica (diferida a propósito, per §3.3). 5 tests.</p>
+    <ul class="findings">
+      <li>422 con motivo explícito para cada rechazo: identidad reservada, disparador inválido, campos vacíos.</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Bloque 4 — Marca NO-APROBADO (R4-T1.1)</h2>
+      <span class="tag">§4 · candidate generator</span>
+      <span class="chip blocked">BLOQUEADO</span>
+    </div>
+    <div class="callout critical">
+      <span class="callout-label">Hallazgo nuevo, no anticipado</span>
+      <p>El documento piloto real (RW-0011, <i>MCCPDC EMS Control Block Narrative revB.pdf</i>) es <b>PDF</b>. Hoy solo existen generadores de candidato para <b>XLSX</b> y <b>DOCX</b> — ninguno aplica. Estampar la marca "BORRADOR — NO APROBADO" en un formato sin generador no es barato como asumía el plan: es un cuarto hallazgo de diseño, de la misma familia que pausó R4-T1.0 la vez anterior. No implementado en esta corrida — documentado para decisión de Cesar antes de escribir código nuevo.</p>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Verificación</h2>
+      <span class="tag">suite dirigida + no-bypass</span>
+      <span class="chip done">VERDE</span>
+    </div>
+    <div class="table-wrap">
+      <table class="verify-table">
+        <thead>
+          <tr><th>Suite</th><th>Resultado</th><th>Llamadas LLM</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>test_remediation_directive.py</td><td class="num">20 tests</td><td class="result pass">passed</td></tr>
+          <tr><td>test_remediation_directive_dispatch.py</td><td class="num">6 tests</td><td class="result pass">passed</td></tr>
+          <tr><td>test_remediation_directive_endpoint.py</td><td class="num">5 tests</td><td class="result pass">passed</td></tr>
+          <tr><td>no-bypass (candidate_validity / gap_assessment / decision_resolver)</td><td class="num">70 passed, 1 xfailed</td><td class="result pass">sin regresión</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13px;color:var(--text-faint)">Re-ejecutado y confirmado en esta sesión (2026-08-13) contra el árbol real, con el intérprete del proyecto — <span class="mono">.venv/bin/python -m pytest</span>: 31/31 verdes.</p>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Entrega</h2>
+      <span class="tag">§6 · bloque de reporte real</span>
+    </div>
+    <div class="table-wrap entrega-wrap">
+      <dl class="entrega">
+        <div><dt>VALID_TRIGGERS_TODAY</dt><dd class="val-blocked">0</dd></div>
+        <div><dt>PILOT_RUN_SIZING</dt><dd>49 llamadas (7 req × 7 chunks) · ~8.2–11.6h de pared · no autorizado</dd></div>
+        <div><dt>DIRECTIVE_SCHEMA</dt><dd class="val-ok">implementado y probado (20 tests)</dd></div>
+        <div><dt>HUMAN_AUTHORSHIP_ENFORCED</dt><dd class="val-ok">SÍ — guardián estático (ast)</dd></div>
+        <div><dt>TRIGGER_GUARDS</dt><dd class="val-ok">6/6 PASA</dd></div>
+        <div><dt>RUTA_D_CONSUMES_DIRECTIVE</dt><dd class="val-ok">SÍ — única entrada</dd></div>
+        <div><dt>NO_BYPASS_COVERS_RUTA_D</dt><dd class="val-ok">true</dd></div>
+        <div><dt>DIRECTIVE_GOVERNANCE_FAMILY</dt><dd class="val-pending">PENDIENTE — decisión de Cesar</dd></div>
+        <div><dt>UI_ACTO2</dt><dd>endpoint + validación listos · UI rica diferida</dd></div>
+        <div><dt>NO_APROBADO_MARK</dt><dd class="val-blocked">BLOQUEADO — sin generador de candidato PDF</dd></div>
+        <div><dt>GATE_SEQUENCE</dt><dd>(i–v) documentada · (iv) bloqueada por el hallazgo de arriba</dd></div>
+        <div><dt>CORPUS_READY</dt><dd class="val-blocked">false</dd></div>
+        <div><dt>PRODUCTION_ENABLEMENT</dt><dd class="val-blocked">BLOCKED</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Pendiente de Cesar</h2>
+    </div>
+    <div class="decision-list">
+      <div class="decision">
+        <span class="num">1</span>
+        <p><b>Familia de gobernanza de la directiva</b> — si <span style="font-family:var(--font-mono)">REMEDIATION_PACKAGE_GENERATION</span> (ya existente, commit <span style="font-family:var(--font-mono)">d8b8e5c</span>) cubre la directiva o si necesita familia propia.</p>
+      </div>
+      <div class="decision">
+        <span class="num">2</span>
+        <p><b>Autorización de la corrida Tier-1 piloto</b> — 49 llamadas, ~8–12h de pared. Única parte de todo R4 con costo de inferencia; sin ella no hay hallazgo real que remediar.</p>
+      </div>
+      <div class="decision">
+        <span class="num">3</span>
+        <p><b>Generador de candidato para PDF</b> — construir uno nuevo, convertir el documento, o elegir otro piloto ya XLSX/DOCX. Bloquea R4-T1.1 y, por extensión, el gate de R4-T1.2.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="doc-foot">
+    <span>Fuente de la orden: <span class="mono">docs_plan/R4_T1_0v2_DIRECTIVA_REMEDIACION.md</span> · commit <span class="mono">f6607e9</span></span>
+    <span>PRODUCTION_ENABLEMENT = BLOCKED · CORPUS_READY = false — sin cambios por este reporte</span>
+  </footer>
+
+</div>

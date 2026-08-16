@@ -1,0 +1,227 @@
+================================================================================
+GMP AI FACTORY — FASE F: RELEASE CANDIDATE + COLA REVISIÓN + CONSOLA
+Archivo: 04_FASE_F_RC_Y_COLA_REVISION.txt
+Precondición: Fase D+E commiteada. Selfcheck PASS.
+================================================================================
+▼ PEGAR EN CLAUDE CODE ▼
+──────────────────────────────────────────────────────────────────────────────
+FASE F — Release Candidate formal + cola de revisión humana + consola Capa 9
+
+Cierra B3: el RC es un objeto explícito en pending_human_confirmation,
+visible en la consola, con endpoints de Capa 9 para aprobar/rechazar/devolver.
+
+cd /home/ing_cpmo
+
+═══ PRE — LEER ESTADO ═══════════════════════════════════════════════════════
+
+echo "=== layer8 / layer9 ==="
+find factory/layer8 factory/layer9 -name "*.py" | sort
+
+echo ""; echo "=== endpoints Capa 9 actuales ==="
+grep -n "^@router\|def " factory/api/routes/layer9.py 2>/dev/null | head -30
+
+echo ""; echo "=== endpoints Capa 8 actuales ==="
+grep -n "^@router\|def " factory/api/routes/layer8.py 2>/dev/null | head -30
+
+echo ""; echo "=== release_candidates/ ==="
+find factory/release_candidates -type f 2>/dev/null | sort | head -10 || echo "no existe"
+
+echo ""; echo "=== consola Capa 9 disponible ==="
+[ -f docs_plan/09_consola_capa9_mission_control.html ] && echo "✓ disponible" || echo "✗ no subida todavía"
+[ -f factory/ui/mission_control.html ] && echo "✓ ya instalada" || echo "no instalada"
+
+Lee lo anterior antes de crear nada.
+
+═══ F1 — RELEASE_CANDIDATE_BUILDER.PY ══════════════════════════════════════
+
+Crea o completa factory/layer8/release_candidate_builder.py:
+
+  build_rc(project_id: str, version: str) -> dict
+    1. Llama artifact_collector.collect(project_id, rc_id)
+       donde rc_id = f"{project_id}-rc-{version}-{ts:%Y%m%dT%H%M%S}"
+    2. Si collect falla (artefactos incompletos) → return {ok:False, ...}
+    3. Escribe factory/release_candidates/<project_id>/<rc_id>/rc_manifest.json:
+         {rc_id, project_id, version,
+          status: "pending_human_confirmation",   ← NUNCA "approved"
+          decision_origin: "agent_proposed",
+          approved_by: null,
+          artifacts_path, proposed_at, sha256sums}
+    4. Genera SHA256SUMS de los artefactos
+    5. Registra release_candidate_created en audit
+    6. Llama a human_review_queue.enqueue(rc_id, project_id, summary)
+    7. Return {ok:True, rc_id, status, artifacts_path}
+
+  list_pending_rcs() -> list
+    Lee factory/release_candidates/**/ buscando rc_manifest.json
+    con status="pending_human_confirmation"
+
+  get_rc(rc_id: str) -> dict
+    Busca rc_manifest.json por rc_id en todos los subdirectorios.
+
+  confirm_rc(rc_id: str, approved_by: str,
+             decision: str, notes: str = "") -> dict
+    decision: "approved" | "rejected" | "returned_to_adjustments"
+    RESERVED = {"human","agent","layer8","system","capa8","capa9"}
+    Si approved_by.lower() en RESERVED → raise ValueError
+    Escribe: status=decision, approved_by, decided_at,
+             decision_origin="human_confirmed"
+    Registra release_candidate_approved/_rejected en audit
+    Return {ok:True, rc_id, decision, approved_by}
+
+═══ F2 — HUMAN_REVIEW_QUEUE.PY (layer9) ════════════════════════════════════
+
+Crea o completa factory/layer9/human_review_queue.py:
+
+  enqueue(rc_id: str, project_id: str, summary: dict)
+    Append a factory/layer9/review_queue.jsonl:
+    {rc_id, project_id, enqueued_at, status:"pending", summary}
+    Registra rc_enqueued en audit.
+
+  list_pending() -> list
+    Lee review_queue.jsonl → filtra status="pending"
+
+  get_queue_summary() -> dict
+    {pending:N, approved:N, rejected:N, returned:N}
+
+  mark_reviewed(rc_id: str, decision: str, reviewer: str)
+    Actualiza entry en review_queue.jsonl. Registra rc_reviewed en audit.
+
+═══ F3 — ENDPOINTS NUEVOS ═══════════════════════════════════════════════════
+
+Actualiza factory/api/routes/layer9.py añadiendo (leer el archivo primero
+y solo añadir lo que no exista):
+
+  GET  /api/v1/layer9/review-queue          → list_pending() + summary
+  GET  /api/v1/layer9/review/{rc_id}        → get_rc(rc_id)
+  POST /api/v1/layer9/review/{rc_id}/approve
+       body: {approved_by, notes=""} → confirm_rc(...,"approved") + mark_reviewed
+       422 si approved_by es reservado
+  POST /api/v1/layer9/review/{rc_id}/reject
+       body: {approved_by, notes} → confirm_rc(...,"rejected")
+  POST /api/v1/layer9/review/{rc_id}/return
+       body: {approved_by, notes, adjustments_needed} → confirm_rc(...,"returned_to_adjustments")
+  POST /api/v1/layer9/missions/{id}/return
+       body: {returned_by, reason} → actualiza misión a "returned_to_adjustments"
+
+Actualiza factory/api/routes/layer8.py añadiendo:
+
+  POST /api/v1/layer8/missions/{id}/build
+       → autonomous_build_orchestrator.run_build_mission
+       Requiere headless_enabled=True → si no: 400
+       Retorna job encolado (asíncrono)
+
+  POST /api/v1/layer8/missions/{id}/release-candidate
+       body: {version:str}
+       → release_candidate_builder.build_rc + return {rc_id, status}
+
+  GET  /api/v1/layer8/missions/{id}/artifacts
+       → artifact_collector preview
+
+  GET  /api/v1/layer8/missions/{id}/diff
+       → diff_manager.collect_diff (ya existe)
+
+Registra nuevos routers en factory/api/main.py si aplica.
+
+═══ F4 — CONSOLA CAPA 9 ════════════════════════════════════════════════════
+
+# Instalar la consola profesional de Capa 9 como página separada
+if [ -f docs_plan/09_consola_capa9_mission_control.html ]; then
+  cp factory/ui/index.html backups/frontend/index_pre_missioncontrol_$(date +%Y%m%d).html 2>/dev/null || \
+  mkdir -p backups/frontend && cp factory/ui/index.html backups/frontend/index_pre_missioncontrol_$(date +%Y%m%d).html
+  cp docs_plan/09_consola_capa9_mission_control.html factory/ui/mission_control.html
+  echo "✓ mission_control.html instalada"
+else
+  echo "PENDIENTE: subir docs_plan/09_consola_capa9_mission_control.html al servidor"
+  echo "La ruta GET /mission-control se puede exponer después"
+fi
+
+# Añadir ruta en main.py para servir mission_control.html
+python3 - <<'PY'
+import pathlib
+p = pathlib.Path('factory/api/main.py')
+src = p.read_text()
+if 'mission_control' not in src and 'mission-control' not in src:
+    inject = '''
+@app.get("/mission-control", include_in_schema=False)
+async def mission_control_ui():
+    from fastapi.responses import FileResponse
+    import pathlib
+    ui = pathlib.Path(__file__).parent.parent / "ui" / "mission_control.html"
+    if ui.exists():
+        return FileResponse(str(ui))
+    return {"error": "mission_control.html not installed yet"}
+'''
+    # Insertar antes de la última línea del archivo
+    lines = src.rstrip().splitlines()
+    lines.append(inject)
+    p.write_text('\n'.join(lines) + '\n')
+    print('Ruta /mission-control añadida a main.py')
+else:
+    print('OK: ruta /mission-control ya presente')
+PY
+
+═══ AÑADIR EVENTOS A VALID_EVENTS ══════════════════════════════════════════
+
+python3 - <<'PY'
+import pathlib
+p = pathlib.Path('factory/core/audit_writer.py')
+src = p.read_text()
+nuevos = ['release_candidate_created','release_candidate_approved',
+          'release_candidate_rejected','rc_enqueued','rc_reviewed']
+to_add = [e for e in nuevos if f'"{e}"' not in src]
+if to_add:
+    anchor = '"knowledge_ingested",'
+    insert = anchor + '\n    ' + '\n    '.join(f'"{e}",' for e in to_add)
+    src = src.replace(anchor, insert, 1)
+    p.write_text(src)
+    print('Añadidos:', to_add)
+else: print('OK: ya presentes')
+PY
+
+═══ VALIDACIÓN ══════════════════════════════════════════════════════════════
+
+echo "=== py compile ==="
+python3 -c "
+files = [
+    'factory/layer8/release_candidate_builder.py',
+    'factory/layer9/human_review_queue.py',
+    'factory/api/routes/layer9.py',
+    'factory/api/routes/layer8.py',
+    'factory/api/main.py',
+]
+for f in files:
+    try: compile(open(f).read(),f,'exec'); print('OK:',f)
+    except Exception as e: print('FALLO:',f,e)
+"
+
+echo ""; echo "=== pytest ==="
+python3 -m pytest factory/tests/ -q --tb=short 2>&1 | tail -8
+
+echo ""; echo "=== compose config ==="
+docker compose -f factory/docker-compose.factory.yml config -q && echo "compose OK"
+
+echo ""; echo "=== VALID_EVENTS nuevos ==="
+python3 -c "
+import sys; sys.path.insert(0,'.')
+from factory.core.audit_writer import VALID_EVENTS
+for e in ['release_candidate_created','rc_enqueued','rc_reviewed']:
+    print(e+':', '✓' if e in VALID_EVENTS else '✗')
+"
+
+echo ""; echo "=== selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "PASS|FAIL|━"
+
+echo ""; echo "=== diff ==="
+git status --short && git diff --stat
+
+# Si hay cambios en factory/api/, el contenedor necesita reiniciarse.
+echo ""
+echo "NOTA: si hay cambios en factory/api/, factory-api necesita reinicio."
+echo "Pide mi aprobación antes de ejecutar:"
+echo "  docker compose -f factory/docker-compose.factory.yml up -d --force-recreate factory-api"
+
+NO hagas commit ni reinicies sin mi aprobación.
+Muestra resumen: módulos creados, endpoints nuevos, consola instalada/pendiente.
+Commit cuando apruebe: "factory: Fase F release candidate + cola revisión + consola C9"
+──────────────────────────────────────────────────────────────────────────────
+▲ FIN FASE F ▲

@@ -1,0 +1,390 @@
+============================================================
+W1 — VISTA DETALLE POR MISIÓN + RC CANÓNICO + PREFLIGHT F5
+GMP AI Factory · Mission Control · Post V1/V2
+============================================================
+
+CONTEXTO Y MEJORAS RESPECTO AL ARQ ORIGINAL
+============================================================
+El ARQ propone 9 tabs por misión, regla de "marcar v1.0 como superseded",
+botón "Preparar Docker F5" y eventos filtrados de auditoría. La evidencia
+del log de auditoría muestra dos problemas adicionales que el ARQ no
+detecta y que W1 corrige:
+
+  1) DOBLE APROBACIÓN DEL MISMO RC:
+     v1.1 fue aprobado el 2026-06-26T19:19:10 ("Cesar") y otra vez el
+     2026-06-29T16:12:35 ("cesar") via Mission Control.
+     Hoy approve no es idempotente — debe rechazar con 409 si ya está
+     approved. Esto es un bug Part-11 real.
+
+  2) RC CANÓNICO IMPLÍCITO:
+     v1.0 y v1.1 ambos quedaron approved. El sistema no sabe cuál es el
+     bueno para F5. Marcar uno como is_canonical=true en rc_manifest.json
+     resuelve esto en backend (no solo "pintar en UI").
+
+MEJORAS APLICADAS:
+  - 3 grupos en lugar de 9 tabs (Estado / Evidencia / Acciones).
+  - Endpoint real para "modificar misión" con validación de estado.
+  - Endpoint real para preflight F5 (checklist JSON, no solo botón).
+  - Idempotencia de approve (409 si ya está approved).
+  - Campo is_canonical explícito en rc_manifest (un solo RC canónico por
+    proyecto a la vez).
+
+MODO
+  - Read-only en backend para Tarea 1, 4. Acciones nuevas en Tarea 2, 3, 5.
+  - No headless, no deploy, no Docker nuevo todavía.
+  - No tocar app/, .env base, data/, backups/, aria-*, hotelbot-*.
+  - Pausas obligatorias antes de cada commit.
+  - *** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+------------------------------------------------------------
+PASO 0 — Estado base
+------------------------------------------------------------
+cd /home/ing_cpmo
+
+export FK="$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)"
+export HDR="X-API-Key"
+
+echo "=== Selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | tail -10
+
+echo "=== Confirmar que no hay headless, no hay Docker OOS ==="
+python3 -c "
+import yaml,pathlib
+d=yaml.safe_load(pathlib.Path('factory/runtime/runtime_config.yaml').read_text())
+print('headless_enabled:', d.get('headless_enabled'))
+print('claude_model:', d.get('claude_model'))
+"
+docker ps --filter "name=oos_hplc" --format "{{.Names}}" \
+  || echo "(sin Docker OOS activo)"
+
+echo "=== Estado actual de RCs de oos_hplc_investigator ==="
+ls factory/release_candidates/oos_hplc_investigator/
+for rc in factory/release_candidates/oos_hplc_investigator/*/rc_manifest.json; do
+  python3 -c "
+import json
+m=json.load(open('$rc'))
+print(f\"  {m.get('rc_id','?')[:60]:60} status={m.get('status','?')}\")
+"
+done
+
+  >> Esperado: 3 directorios RC, v1.0-183854 (status=pending tal vez),
+     v1.0-183923 (approved), v1.1-191819 (approved).
+     Ambos aprobados confirma el problema de RC canónico ambiguo.
+
+------------------------------------------------------------
+TAREA 1 — IDEMPOTENCIA DE APPROVE/REJECT  (CRÍTICO Part-11)
+------------------------------------------------------------
+# El bug: la cadena de auditoría tiene 2 release_candidate_approved del
+# mismo rc_id. Un RC debe poder aprobarse UNA SOLA VEZ.
+
+echo "=== Localizar handler approve en layer9 ==="
+grep -rInE "review/.*/approve|review/.*/reject" factory/api/routes/ | head -10
+
+echo "=== Estado actual del RC en review_queue ==="
+cat factory/layer9/review_queue.jsonl | python3 -c "
+import json,sys
+for ln in sys.stdin:
+    e=json.loads(ln)
+    if 'oos_hplc' in e.get('project_id',''):
+        print(f\"  {e.get('rc_id','?')[:60]} status={e.get('status')}\")
+"
+
+# Modificar factory/api/routes/layer9.py:
+# - Antes de procesar approve/reject, leer el estado actual del RC en review_queue.jsonl
+# - Si status ya es 'approved' o 'rejected': retornar 409 con detalle:
+#     {
+#       "detail": "RC already approved",
+#       "rc_id": "...",
+#       "current_status": "approved",
+#       "previously_approved_by": "...",
+#       "previously_approved_at": "..."
+#     }
+# - Solo permitir approve/reject si status es 'pending'
+
+# Esquema sugerido en el handler:
+cat > /tmp/idempotency_logic.txt <<'EOF'
+def approve_rc(rc_id, body, ...):
+    queue = load_review_queue()
+    rc = next((r for r in queue if r["rc_id"] == rc_id), None)
+    if not rc:
+        raise HTTPException(404, "RC not found")
+    
+    if rc.get("status") in ("approved", "rejected"):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": "rc_already_finalized",
+                "rc_id": rc_id,
+                "current_status": rc["status"],
+                "previously_decided_by": rc.get("reviewer","?"),
+                "previously_decided_at": rc.get("reviewed_at","?")
+            }
+        )
+    
+    # ... resto del flujo de aprobación existente
+EOF
+cat /tmp/idempotency_logic.txt
+
+echo "=== Crear test guard ==="
+# Crear factory/tests/test_rc_approval_idempotency.py con:
+#   - Crear RC mock en review_queue
+#   - Aprobar 1ra vez → 200
+#   - Aprobar 2da vez → 409
+#   - Cadena de auditoría NO crece en el 2do intento (assert delta=0)
+
+  >> *** PAUSA 1: revisar la lógica antes de aplicarla. ***
+
+------------------------------------------------------------
+TAREA 2 — CAMPO is_canonical EN RC_MANIFEST  (CRÍTICO F5)
+------------------------------------------------------------
+# Hoy v1.0 y v1.1 ambos aprobados. El sistema no sabe cuál es el bueno.
+# Solución: agregar campo is_canonical (un único true por project_id).
+
+echo "=== rc_manifest actual ==="
+cat factory/release_candidates/oos_hplc_investigator/oos_hplc_investigator-rc-v1.1-20260626T191819/rc_manifest.json
+
+# Agregar nuevos endpoints en factory/api/routes/layer9.py:
+
+# GET /api/v1/layer9/projects/{project_id}/canonical
+# Devuelve el RC marcado como is_canonical=true para el project_id.
+# 404 si no hay ninguno canónico aún.
+
+# POST /api/v1/layer9/review/{rc_id}/mark-canonical
+# Body: {"marked_by": "Cesar"}
+# Validaciones:
+#   - RC debe existir
+#   - RC debe estar approved (no pending, no rejected)
+#   - marked_by no puede ser genérico (human/agent/system/admin)
+# Acción:
+#   1) Cargar todos los rc_manifest.json del project_id
+#   2) Setear is_canonical=false en TODOS
+#   3) Setear is_canonical=true SOLO en el rc_id elegido
+#   4) Setear is_canonical_marked_by=marked_by
+#   5) Setear is_canonical_marked_at=utcnow
+#   6) Auditar evento rc_marked_canonical
+#   7) Si había otro canónico previo: auditar rc_unmarked_canonical
+
+# Tests asociados:
+#   - mark v1.0 → v1.0 canónico, v1.1 no canónico
+#   - mark v1.1 → v1.1 canónico, v1.0 no canónico (transición auditada)
+#   - mark RC no aprobado → 409
+#   - mark con "human" → 422
+
+  >> *** PAUSA 2: revisar la migración (RCs existentes sin campo
+       is_canonical) antes de aplicar. ***
+
+# Migración: para los 3 RCs existentes de oos_hplc_investigator, dejar
+# is_canonical=null inicialmente (no decidir por defecto).
+# Cesar luego marca v1.1 explícitamente desde el browser.
+
+------------------------------------------------------------
+TAREA 3 — ENDPOINT PREFLIGHT F5
+------------------------------------------------------------
+# El ARQ pide "botón Preparar Docker F5" pero sin endpoint.
+# Mejor: endpoint que devuelve checklist completo, el botón se habilita
+# en frontend si el checklist está todo verde.
+
+# Agregar en factory/api/routes/layer8.py:
+#
+# GET /api/v1/layer8/missions/{project_id}/f5/preflight
+# Devuelve JSON:
+# {
+#   "project_id": "oos_hplc_investigator",
+#   "ready_for_f5": true/false,
+#   "checks": [
+#     {"id": "mission_approved", "ok": true, "detail": "approved by Cesar"},
+#     {"id": "headless_completed", "ok": true, "detail": "rc=0, job f85474d2"},
+#     {"id": "tests_pass", "ok": true, "detail": "12/12 PASS"},
+#     {"id": "gates_no_fail", "ok": true, "detail": "PASS=1 FAIL=0 SKIP=2"},
+#     {"id": "rc_canonical_marked", "ok": false, "detail": "Sin RC canónico marcado"},
+#     {"id": "port_reserved", "ok": true, "detail": "8102"},
+#     {"id": "no_docker_active", "ok": true, "detail": "Sin contenedor activo en 8102"},
+#     {"id": "no_pending_documents_blocking", "ok": true, "detail": "PENDING_DOCUMENT no bloquean"}
+#   ],
+#   "blockers": ["rc_canonical_marked"],
+#   "next_action": "Marcar RC v1.1 como canónico desde Mission Control"
+# }
+
+# Este endpoint es 100% read-only.
+# ready_for_f5 = all(c.ok for c in checks)
+# F5 NO se ejecuta — solo se reporta si se PODRÍA ejecutar.
+
+------------------------------------------------------------
+TAREA 4 — ENDPOINT MODIFICAR MISIÓN
+------------------------------------------------------------
+# El ARQ describe reglas pero no el endpoint. Lo agrego concreto:
+
+# POST /api/v1/layer9/missions/{project_id}/revise
+# Body: {
+#   "changes": { ... campos modificados de la misión ... },
+#   "reason": "string requerido",
+#   "changed_by": "Cesar"
+# }
+#
+# Validaciones por estado actual:
+#   - draft:                    PERMITIDO editar campos directamente
+#   - returned_to_adjustments:  PERMITIDO editar (re-trabajo solicitado)
+#   - approved sin headless:    PERMITIDO con flag re_approve_required=true
+#   - approved con código generado: BLOQUEADO con 409
+#                                   → forzar crear nueva misión
+#   - approved con RC aprobado: BLOQUEADO con 409 sugiriendo v1.x+1
+#   - rejected:                 BLOQUEADO con 409
+#
+# Toda revisión:
+#   - guarda snapshot previo en factory/layer9/missions_history/{project_id}/
+#   - registra rev_id, previous_version, new_version
+#   - audita layer9_mission_revised con changed_by, reason
+#   - rechaza changed_by genérico (human, agent, system) con 422
+
+  >> *** PAUSA 3: revisar matriz de estados antes de aplicar. ***
+
+------------------------------------------------------------
+TAREA 5 — VISTA DETALLE EN MISSION CONTROL (frontend)
+------------------------------------------------------------
+# Backup primero
+mkdir -p backups/frontend
+cp factory/ui/mission_control.html backups/frontend/mission_control.html.pre_W1
+
+# Cambios en factory/ui/mission_control.html:
+
+# A) Click en una misión del Panel general abre PANEL LATERAL (no modal
+#    bloqueante) con 3 grupos colapsables, no 9 tabs:
+#
+#    GRUPO 1 — ESTADO   (resumen + checklist preflight F5)
+#    GRUPO 2 — EVIDENCIA (archivos + tests + logs + auditoría filtrada)
+#    GRUPO 3 — ACCIONES  (modificar misión, marcar canónico, preparar F5)
+#
+# Por qué 3 grupos y no 9 tabs: con 9 tabs el usuario no ve el estado
+# general de un vistazo. Con grupos colapsables, todo cabe en una columna.
+
+# B) GRUPO 1 — ESTADO
+#    Llamar GET /layer8/missions/{id}/f5/preflight
+#    Renderizar cada check con badge verde/rojo/ámbar.
+#    Mostrar:
+#      - project_id, estado misión, modelo Claude usado
+#      - job_id headless, returncode, duración, costo
+#      - puerto reservado, Docker activo (sí/no)
+#      - RC canónico actual (o "sin marcar" en ámbar)
+#      - blockers para F5
+
+# C) GRUPO 2 — EVIDENCIA
+#    Usar endpoints existentes:
+#      GET /layer8/workspaces/{id}/tree
+#      GET /layer8/workspaces/{id}/file?path=...
+#    Lista de archivos colapsable; click abre contenido read-only.
+#    Sub-bloques:
+#      - Diseño (factory/designs/{id}/*.yaml)
+#      - Código generado (workspace/app/*.py)
+#      - Tests + test_report.json
+#      - Logs headless
+#      - RC manifests (todos los RCs con status + is_canonical)
+#      - Auditoría filtrada por project_id (últimos 20 eventos)
+
+# D) GRUPO 3 — ACCIONES
+#    Botones (cada uno con su pre-condición):
+#      [ Modificar misión ]    → solo si estado lo permite (TAREA 4)
+#      [ Marcar como canónico ]→ por RC (TAREA 2)
+#      [ Preparar Docker F5 ]  → habilitado solo si preflight.ready_for_f5
+#    El botón "Preparar Docker F5" NO ejecuta deploy. Solo abre un
+#    dialog con resumen y pide confirmación. La ejecución real es F5
+#    propio (futuro).
+
+# E) Filtros estrictos en frontend (defensa en profundidad además del backend):
+#    No mostrar: .pytest_cache/, __pycache__/, .pyc, .env, .claude/, data/chroma/
+#    El backend ya los filtra (tree devuelve 13 archivos limpios), pero
+#    el frontend debe filtrar también por si en el futuro cambian las
+#    reglas server-side.
+
+------------------------------------------------------------
+TAREA 6 — CORREGIR ESTADO VISUAL OBSOLETO
+------------------------------------------------------------
+# El Panel general muestra "Código GENERANDO" para c8_alcoa_validator
+# cuando ya está completado. Esto es estado stale.
+
+# Regla en frontend renderFlow():
+#   if (project.has_test_report && project.rc_approved):
+#       paso "Código" = "GENERADO" (no "GENERANDO")
+#   if (jobs.running === 0 && jobs.pending === 0):
+#       ningún paso debe mostrar "EN CURSO"
+
+# La fuente de verdad: GET /layer8/status (ya devuelve jobs.running=0 hoy).
+# Si running=0, ningún paso puede estar EN_CURSO.
+
+------------------------------------------------------------
+TAREA 7 — VALIDACIONES TÉCNICAS
+------------------------------------------------------------
+node --check factory/ui/mission_control.html 2>&1 | head -10 \
+  || python3 -c "
+import re,subprocess,tempfile,os,pathlib
+html=pathlib.Path('factory/ui/mission_control.html').read_text()
+js='\n'.join(re.findall(r'<script[^>]*>(.*?)</script>',html,re.S))
+f=tempfile.NamedTemporaryFile('w',suffix='.js',delete=False); f.write(js); f.close()
+r=subprocess.run(['node','--check',f.name],capture_output=True,text=True)
+print('JS:', 'OK' if r.returncode==0 else 'FAIL', r.stderr[:300]); os.unlink(f.name)
+"
+
+python3 -m py_compile factory/api/routes/layer9.py factory/api/routes/layer8.py
+
+python3 -m pytest factory/tests/test_path_policy.py -q
+python3 -m pytest factory/tests/test_refresh_readonly.py -q
+python3 -m pytest factory/tests/test_rc_approval_idempotency.py -q  # nuevo
+python3 -m pytest factory/tests/ -q --tb=no
+
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "Gate 0|PASS|FAIL"
+
+# Endpoints nuevos
+curl -s -H "$HDR: $FK" \
+  http://localhost:9000/api/v1/layer8/missions/oos_hplc_investigator/f5/preflight \
+  | python3 -m json.tool
+
+# Idempotencia: probar approve doble del v1.1
+echo "=== Test idempotencia approve (debe dar 409) ==="
+curl -s -w "\nHTTP:%{http_code}\n" \
+  -X POST -H "$HDR: $FK" -H "Content-Type: application/json" \
+  -d '{"approved_by":"Cesar","notes":"test idempotencia"}' \
+  "http://localhost:9000/api/v1/layer9/review/oos_hplc_investigator-rc-v1.1-20260626T191819/approve"
+
+# La cadena no debe crecer en el approve duplicado
+AUDIT="$(find factory -name '*.jsonl' | grep -E 'audit.*jsonl$' | head -1)"
+echo "Líneas de auditoría: $(wc -l < $AUDIT)"
+
+------------------------------------------------------------
+PAUSA FINAL — REPORTE Y CLASIFICACIÓN
+------------------------------------------------------------
+git status --short
+git diff --stat
+
+Clasificar:
+
+  | Item | Estado | Evidencia |
+  |---|---|---|
+  | Approve idempotente (409 en doble approve)        | sí/no | curl con 409 |
+  | RC v1.1 marcable como canónico                    | sí/no | endpoint mark-canonical |
+  | Solo un RC canónico por proyecto                  | sí/no | test |
+  | GET /f5/preflight devuelve checklist completo     | sí/no | curl |
+  | POST /missions/{id}/revise valida por estado      | sí/no | tests |
+  | Vista detalle 3 grupos (no 9 tabs)                | sí/no | UI |
+  | Archivos workspace visibles + filtros aplicados   | sí/no | screenshot |
+  | Estado "Código GENERANDO" corregido               | sí/no | UI |
+  | Botón "Preparar Docker F5" NO ejecuta deploy      | sí | confirmar |
+  | Cadena de auditoría NO crece en doble approve     | sí/no | diff conteo |
+  | Tests: PASS/FAIL                                  | N/N |  |
+  | Gate 0 selfcheck                                  | PASS / FAIL |  |
+  | No se hizo headless, no deploy, no Docker nuevo   | confirmar |  |
+  | No se expusieron secretos                         | confirmar |  |
+
+>> "W1 listo. ¿Apruebas el commit?"
+>> Sugerido:
+>>   factory: W1 — vista detalle por misión, RC canónico explícito,
+>>            preflight F5, idempotencia approve
+
+  *** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+============================================================
+SIGUIENTE TRAS W1
+  W2 — F5 (creación real del Docker OOS HPLC) cuando Cesar autorice.
+       Requiere: RC canónico marcado, preflight all-green, port_policy OK,
+       backup pre-F5, smoke tests post-F5, rollback documentado.
+
+  NO PARTE DE W1.
+============================================================

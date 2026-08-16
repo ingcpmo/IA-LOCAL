@@ -1,0 +1,159 @@
+{
+  "run_id": "chunked-d9b5bc77c9db",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "fda_part11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 1,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-d9b5bc77c9db",
+      "task_id": "task-5c21e6b966a9",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 2538,
+      "started_at": "2026-08-12T21:41:28.292772+00:00",
+      "finished_at": "2026-08-12T21:47:45.144939+00:00",
+      "wall_clock_ms": 376852.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"21_CFR_11.10(e)\",\n      \"estado\": \"evidencia_insuficiente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"El documento no menciona la generación automática, independiente del operador, ni el registro de entradas y acciones (crear/modificar/eliminar) con timestamp.\",\n      \"recomendacion\": \"Incluir detalles sobre el sistema de auditoría en el diseño del PLC/SCADA para cumplir con los requisitos de 21 CFR Part 11.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Generacion automatica, independiente del operador.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la generación automática y/o independiente del operador en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Timestamp de fecha/hora.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona el timestamp en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona el registro de entradas y acciones en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 4,\n          \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No hay información relevante en el documento para evaluar este criterio.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 5,\n          \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No hay información relevante en el documento para evaluar este criterio.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 6,\n          \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No hay información relevante en el documento para evaluar este criterio.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 7,\n          \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No hay información relevante en el documento para evaluar este criterio.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 8,\n          \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No hay información relevante en el documento para evaluar este criterio.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 9,\n          \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No hay información relevante en el documento para evaluar este criterio.\",\n          \"limitations\": \"\"\n        }\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-d9b5bc77c9db/task-5c21e6b966a9.txt.gz",
+      "raw_response_full_sha256": "e8c9fa1223ab8a2befa0cbc90944b5854513f5cfbbb05f7c4d5820ea79e1f6e7",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Generacion automatica, independiente del operador.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la generación automática y/o independiente del operador en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Timestamp de fecha/hora.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona el timestamp en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Registro de entradas y acciones (crear/modificar/eliminar).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona el registro de entradas y acciones en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Preservacion del valor/informacion previa (no solo el nuevo valor).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No hay información relevante en el documento para evaluar este criterio.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Controles de acceso privilegiado sobre el propio audit trail.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No hay información relevante en el documento para evaluar este criterio.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Trazabilidad y capacidad de deteccion de manipulacion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No hay información relevante en el documento para evaluar este criterio.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Prohibicion y deteccion de modificacion silenciosa.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No hay información relevante en el documento para evaluar este criterio.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 8,
+              "criterion_text": "Retencion igual o mayor al periodo de retencion del registro asociado.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No hay información relevante en el documento para evaluar este criterio.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 9,
+              "criterion_text": "Capacidad de exportar/copiar para inspeccion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No hay información relevante en el documento para evaluar este criterio.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "Project: Mark Cuban Cost Plus Drug Company, PBC – \n MCCPDC - SCADA and PCS MISC. PLC System \n \nFunctional Specification for the MCCPDC - SCADA and PCS MISC. PLC System  \n \n \nID code: 215115305 -FS (V1.2) Page 13 of 58 \n© 2022 Rockwell Automation, Inc. All Rights Reserved / Author: Buol, Scott \n3 Functions and Processes \nF01.00: Hardware \n F01.01: System Server  \nThis function implements the following user requirement(s)  \nUR4.1.1 [MCCPDC 3.2.3] - The physical servers shall be two (2) redundant Rockwell VersaVirtual™ \nAppliances suitable for installation in the Da ta Center racks provided by VDS (Voice-Data-\nSecurity). System provided is one system th at has two redundant servers within it.  \nUR3.5.2 [MCCPDC 1.4.2.4] - The SI shall implement th in client architecture for the SCADA/HMI to allow \nprocess control in a sustainable and scalable platform and to seamlessly integrate skids \nPLC’s and OIT’s while providing features, to ols, and methods of access which make it \nsimple to monitor and adjust user sessions.  \n \nA Rockwell Automation VersaVirtual™ Appliance is provided.  The single system consists of two \nredundant servers that provide for a highly available system.   \nA ThinManager® software solution provides the thin client architecture for the SCADA/HMI as \nrequired. \n F01.02: System Ethernet Switch  \nThis function implements the following user requirement(s)  \nUR4.9.2 [URS-PCS-HR-021] All switching and cabling shall be capable of gigabit data transfer, where \napplicable.  \nUR5.4.3 [URS-PCS-SR-037] All data comm unication shall be via Ethernet (protocol).  \n \nA Cisco Catalyst 9300 Network Advantage, 48 port Ethernet switch provides the connectivity \nbetween the VersaVirtual Appliance, the MISC. PLC, and the other networked system components.   \nThe switch is capable of gigabit data transfer. \n F01.03: Engineering Workstation  \nThis function implements the following user requirement(s)  \nUR3.3.5 Hardcopy/electronic data collection requirements  \n1. All logged data shall be capable of being tran sferred to external equipment for print our \nand/or storage.   \nUR4.2.1 System shall include a dedicated engineering workstation PC suitable for installation in a \ndedicated PC & Print room/office with general purpose area classification.    \nUR4.2.2 Engineering workstation PC shall include a method to annunciate audible alarms (speakers).  \nUR4.2.3 System shall include a color duplex printer suitable for installation in a dedicated PC & Print \nroom/office with general purpose area classification.  ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "21_CFR_11.10(e)"
+    ]
+  },
+  "verified_records_by_req": {
+    "21_CFR_11.10(e)": [
+      {
+        "record_id": "vrec-task-5c21e6b966a9-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

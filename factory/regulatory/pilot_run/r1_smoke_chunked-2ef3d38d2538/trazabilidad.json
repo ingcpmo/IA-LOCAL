@@ -1,0 +1,49 @@
+{
+  "hallazgo": "ALCOA_CONTEMPORANEOUS sobre RW-0005: sin_evidencia_localizada",
+  "requirement_id": "ALCOA_CONTEMPORANEOUS",
+  "agent_id": "alcoa_plus_agent",
+  "catalog_source": "factory/regulatory/requirement_catalog/requirements.yaml",
+  "cita_anclada": null,
+  "pagina_original": 45,
+  "documento": {
+    "document_id": "RW-0005",
+    "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+    "original_sha256_checkpoint": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "original_sha256_post_smoke": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "original_intacto": true
+  },
+  "checkpoint_verificado": {
+    "run_id": "chunked-2ef3d38d2538",
+    "task_id": "task-70b3354a5168",
+    "checkpoint_file": "checkpoint.json",
+    "raw_response_file": "raw_response/task-70b3354a5168.txt.gz",
+    "verified_record_id": "vrec-task-70b3354a5168-ALCOA_CONTEMPORANEOUS",
+    "verified_status": "verified",
+    "chunk_observation": "not_observed_in_chunk",
+    "model": "qwen2.5:7b-instruct-q4_K_M",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "ollama_version": "0.21.2",
+    "wall_clock_ms": 1660367.0
+  },
+  "autorizacion": {
+    "decision_family": "PILOT_EXECUTION",
+    "selected_instance_id": "PILOT_EXECUTION-2026-006",
+    "co_covering_instances": ["PILOT_EXECUTION-2026-004"],
+    "selection_rule_applied": "vigente ∧ cubre TODOS los documentos del lote ∧ presupuesto>0 ∧ decision_date más reciente (desempate estable)",
+    "max_calls_autorizadas": 1,
+    "calls_realizadas": 1
+  },
+  "auditoria": {
+    "audit_event_entry_id": "80796d46-223b-42c9-992b-355616c03bcd",
+    "audit_event_type": "corpus_run_batch_completed",
+    "audit_log": "factory/audit/factory_audit.jsonl"
+  },
+  "manifest": "manifest.json",
+  "cola_revision_humana": {
+    "mecanismo": "factory/layer9/human_review_queue.py (reutilizado; no existe aun una cola propia del analizador -- eso es alcance de R5)",
+    "rc_id": "r1-smoke-chunked-2ef3d38d2538",
+    "status": "pending"
+  },
+  "estado_final": "sin_evidencia_localizada",
+  "clasificacion_ncr_capa_changecontrol": "NO_APLICABLE -- sin evidencia anclada no hay clasificacion (regla R3, aun no implementada; declarado explicitamente para no inventar una)"
+}

@@ -1,0 +1,353 @@
+============================================================
+W3.5 — VERIFICAR Y CORREGIR INTEGRACIÓN OLLAMA EN OOS
+GMP AI Factory · Deployment oos_hplc_investigator · Pre-W4
+============================================================
+
+OBJETIVO
+  Verificar y corregir la integración real de Ollama local en el deployment
+  oos_hplc_investigator. NO es "instalar Ollama" (ya existe). Es validar que
+  /api/v1/query responda, autentique con GMP_API_KEY, llame de verdad a
+  /api/generate, tenga timeout y error claro, no quede colgado, y que la
+  respuesta incluya model, elapsed_seconds y estado de Ollama.
+  Además: dejar que W4 distinga endpoints determinísticos (reglas Python)
+  de endpoints que usan LLM local.
+
+HIPÓTESIS DE DIAGNÓSTICO (a confirmar, no a asumir)
+  - Los endpoints OOS funcionales (/oos/records, /hplc/sst/validate,
+    /audit/alcoa/validate) son código stdlib determinístico → NO usan Ollama.
+  - /api/v1/query es el único que llama /api/generate y es el que cuelga.
+  - Causa probable del cuelgue: falta de timeout o timeout < tiempo de
+    inferencia (mistral:7b en CPU tarda 20-120s), o sin límite de tokens.
+
+REGLAS DURAS
+  - No ejecutar headless. No crear Docker nuevo. No repetir W2 (deploy).
+  - No tocar producto base (app/, .env base, docker-compose base, data/, backups/).
+  - No tocar aria-* ni hotelbot-* (aria-ollama solo se LEE en logs, no se toca).
+  - Corrección MÍNIMA y solo dentro del deployment OOS.
+  - No exponer secretos (GMP_API_KEY, OLLAMA_BASE_URL con tokens si los hubiera).
+  - *** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+------------------------------------------------------------
+PASO 0 — Mapa de Ollama y del deployment OOS
+------------------------------------------------------------
+cd /home/ing_cpmo
+export FK="$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)"
+
+echo "=== Ollama: ¿proceso nativo del host o contenedor? ==="
+ps aux | grep -i "[o]llama serve" || echo "(no proceso nativo)"
+docker ps --filter "name=ollama" --format "{{.Names}} {{.Ports}} {{.Status}}"
+ss -tulpen 2>/dev/null | grep 11434 || sudo ss -tulpen | grep 11434
+
+echo "=== Modelos disponibles en Ollama ==="
+curl -s http://localhost:11434/api/tags | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for m in d.get('models',[]): print('  ', m.get('name'), m.get('size',0)//1_000_000, 'MB')
+" 2>/dev/null || echo "Ollama no responde en localhost:11434"
+
+echo "=== Variables Ollama del contenedor OOS ==="
+docker exec oos_hplc_investigator_api printenv | grep -iE "OLLAMA|GMP_API_KEY|MODEL" \
+  | sed 's/\(GMP_API_KEY=\).*/\1***OCULTO***/' \
+  | sed 's/\(API_KEY=\).*/\1***OCULTO***/'
+
+echo "=== ¿El contenedor OOS alcanza Ollama? (red) ==="
+docker exec oos_hplc_investigator_api sh -lc '
+  echo "OLLAMA_BASE_URL=$OLLAMA_BASE_URL"
+  echo "OLLAMA_MODEL=$OLLAMA_MODEL"
+  # Probar conectividad cruda (sin generar, solo tags)
+  (command -v curl >/dev/null && curl -s -m 5 "$OLLAMA_BASE_URL/api/tags" -o /dev/null -w "tags HTTP:%{http_code} time:%{time_total}s\n") \
+  || echo "curl no disponible en el contenedor — usar python"
+' 2>&1
+
+  >> CLAVE: confirmar qué URL usa el contenedor para Ollama. En Linux,
+     host.docker.internal NO existe por defecto; debe usar host-gateway o
+     la IP del bridge. Si OLLAMA_BASE_URL apunta a algo inalcanzable desde
+     el contenedor, ESA es la causa del cuelgue (no timeout, sino que nunca
+     conecta y espera). Anotar el resultado.
+
+------------------------------------------------------------
+PASO 1 — Localizar el handler /api/v1/query en el deployment OOS
+------------------------------------------------------------
+echo "=== Buscar el endpoint query y la llamada a Ollama ==="
+grep -rInE "api/v1/query|/api/generate|ollama|OLLAMA" \
+  factory/deployments/oos_hplc_investigator/app/ 2>/dev/null | head -40
+
+echo "=== Ver el handler completo ==="
+# Abrir el archivo donde está /api/v1/query (probablemente main.py o un router)
+# y revisar:
+#   - ¿valida X-Api-Key / GMP_API_KEY?
+#   - ¿qué cliente HTTP usa para llamar a Ollama? (httpx / requests)
+#   - ¿tiene timeout? ¿de cuánto?
+#   - ¿pasa num_predict / options para limitar tokens?
+#   - ¿maneja excepción de conexión/timeout con error claro?
+#   - ¿devuelve model + elapsed_seconds?
+
+  >> Reportar el handler actual ANTES de modificar. PAUSA implícita: no
+     editar hasta entender qué hace hoy.
+
+------------------------------------------------------------
+PASO 2 — Reproducir el cuelgue con evidencia (diagnóstico)
+------------------------------------------------------------
+echo "=== Auth: query SIN api key debe dar 401/403 ==="
+curl -s -o /dev/null -w "sin-key HTTP:%{http_code}\n" -m 10 \
+  -X POST http://localhost:8102/api/v1/query \
+  -H "Content-Type: application/json" \
+  -d '{"query":"test"}'
+
+echo "=== Auth: query CON GMP_API_KEY ==="
+# Descubrir el header que espera el deployment OOS (puede ser X-Api-Key)
+GMP_KEY="$(docker exec oos_hplc_investigator_api printenv GMP_API_KEY 2>/dev/null)"
+echo "Probando query con timeout de cliente 130s (mistral CPU puede tardar)..."
+time curl -s -m 130 -w "\nHTTP:%{http_code} time:%{time_total}s\n" \
+  -X POST http://localhost:8102/api/v1/query \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: $GMP_KEY" \
+  -d '{"query":"Responde solo: OOS OK"}' 2>&1 | tail -20
+
+echo "=== EN PARALELO: logs de Ollama durante la llamada ==="
+# Si Ollama es nativo del host:
+journalctl -u ollama --since "2 minutes ago" 2>/dev/null | tail -20 \
+  || echo "(Ollama no es servicio systemd — revisar logs nativos)"
+# Si Ollama es el contenedor aria-ollama (SOLO LECTURA):
+docker logs --since 2m aria-ollama 2>&1 | grep -iE "POST /api/generate|generate" | tail -10 \
+  || echo "(sin POST /api/generate en aria-ollama)"
+
+echo "=== Logs del contenedor OOS durante la llamada ==="
+docker logs --since 2m oos_hplc_investigator_api 2>&1 | tail -30
+
+  >> Resultado esperado del diagnóstico (uno de):
+     A) curl cuelga hasta los 130s → el cliente HTTP del deployment no tiene
+        timeout o el modelo tarda más que el timeout configurado.
+     B) curl da error de conexión rápido → OLLAMA_BASE_URL inalcanzable
+        desde el contenedor (problema de red, no de timeout).
+     C) curl responde 200 en 20-120s → funciona pero es lento; falta
+        límite de tokens y feedback de progreso.
+     Clasificar A / B / C antes de corregir.
+
+------------------------------------------------------------
+PASO 3 — PAUSA: reporte de diagnóstico
+------------------------------------------------------------
+Reportar:
+  - Ollama: nativo/contenedor, puerto, modelos disponibles
+  - OLLAMA_BASE_URL que usa el contenedor OOS y si lo alcanza (HTTP tags)
+  - Handler /api/v1/query actual: auth sí/no, timeout sí/no (cuánto),
+    límite tokens sí/no, manejo error sí/no, devuelve model/elapsed sí/no
+  - Clasificación del cuelgue: A (timeout) / B (red) / C (lento)
+  - Causa raíz identificada
+
+>> "Diagnóstico W3.5 listo. Causa = [A/B/C]. ¿Apruebas la corrección
+    mínima propuesta?"
+
+*** NO MODIFICAR CÓDIGO SIN CONFIRMACIÓN DE CESAR ***
+
+------------------------------------------------------------
+PASO 4 — CORRECCIÓN MÍNIMA (tras confirmación)
+------------------------------------------------------------
+# Backup del archivo a modificar
+mkdir -p backups/deployments/oos_hplc_investigator
+cp factory/deployments/oos_hplc_investigator/app/<archivo_query>.py \
+   backups/deployments/oos_hplc_investigator/<archivo_query>.py.pre_W3_5
+
+# Corrección según la causa:
+
+# CASO B (red) — OLLAMA_BASE_URL inalcanzable:
+#   - Corregir la URL en el .env del deployment OOS (NO el .env base).
+#     En Linux con host-gateway: http://host.docker.internal:11434
+#     o la IP del host en la red Docker. Mismo patrón que lab_qc.
+#   - Verificar extra_hosts host-gateway en docker-compose del deployment.
+#   - Si falta regla UFW para la subred del contenedor OOS → 11434,
+#     aplicar el MISMO patrón que W2 ya usó (172.21.0.0/16 → 11434).
+
+# CASO A y C (timeout / lento) — corregir el handler /api/v1/query:
+#   Reescribir la llamada a Ollama con (mínimo y seguro):
+#     - timeout explícito del cliente: connect=5s, read=130s
+#     - options en el body de /api/generate:
+#         "options": {"num_predict": 256, "temperature": 0.2}
+#       (limita tokens → respuesta acotada, evita generación infinita)
+#     - "stream": false
+#     - try/except que capture:
+#         ConnectError      → 503 {"error":"ollama_unreachable", ...}
+#         ReadTimeout       → 504 {"error":"ollama_timeout","elapsed_seconds":N, ...}
+#         otra excepción    → 500 con mensaje claro
+#     - medir elapsed con time.monotonic() antes/después
+#     - respuesta exitosa SIEMPRE incluye:
+#         {
+#           "answer": "...",
+#           "model": "mistral:7b-instruct-q4_K_M",
+#           "elapsed_seconds": 23.4,
+#           "ollama_status": "ok",
+#           "used_llm": true
+#         }
+#     - respuesta de error SIEMPRE incluye model + elapsed_seconds + ollama_status
+
+# Validación de auth (si falta o es débil):
+#   - /api/v1/query debe exigir X-Api-Key == GMP_API_KEY
+#   - sin key → 401; key incorrecta → 403
+
+# Aplicar SIN rebuild si los volúmenes están montados:
+docker compose -f factory/deployments/oos_hplc_investigator/docker-compose.yml \
+  restart oos_hplc_investigator_api 2>/dev/null \
+  || docker restart oos_hplc_investigator_api
+sleep 4
+
+------------------------------------------------------------
+PASO 5 — PRUEBA TÉCNICA "Responde solo: OOS OK"
+------------------------------------------------------------
+echo "=== Health tras restart ==="
+curl -s -m 5 http://localhost:8102/health | python3 -m json.tool
+
+echo "=== Prueba de inferencia local corta ==="
+GMP_KEY="$(docker exec oos_hplc_investigator_api printenv GMP_API_KEY 2>/dev/null)"
+time curl -s -m 140 -w "\nHTTP:%{http_code} time:%{time_total}s\n" \
+  -X POST http://localhost:8102/api/v1/query \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: $GMP_KEY" \
+  -d '{"query":"Responde solo: OOS OK"}' | python3 -m json.tool 2>/dev/null \
+  || echo "(revisar respuesta cruda arriba)"
+
+echo "=== Evidencia: POST /api/generate en logs de Ollama ==="
+# Nativo:
+journalctl -u ollama --since "3 minutes ago" 2>/dev/null | grep -i "generate" | tail -5
+# Contenedor (solo lectura):
+docker logs --since 3m aria-ollama 2>&1 | grep -i "POST /api/generate" | tail -5
+
+echo "=== Logs del deployment OOS (debe mostrar la llamada y elapsed) ==="
+docker logs --since 3m oos_hplc_investigator_api 2>&1 | tail -20
+
+  >> CRITERIO DE ÉXITO:
+     - /api/v1/query devuelve HTTP 200 con answer + model + elapsed_seconds
+       + ollama_status + used_llm:true
+     - O devuelve error CLARO (503/504) sin colgarse indefinidamente
+     - Aparece POST /api/generate en logs de Ollama
+     - La respuesta NO queda colgada (siempre retorna en < timeout)
+
+------------------------------------------------------------
+PASO 6 — AJUSTE A W4: distinguir LLM vs reglas por prueba
+------------------------------------------------------------
+# Modificar el catálogo de pruebas W4 y el executor para etiquetar cada
+# endpoint según use o no LLM local. Esto NO ejecuta W4, solo prepara el
+# catálogo y el campo de evidencia.
+
+# En factory/test_catalogs/oos_hplc_investigator.yaml, agregar por test:
+#   uses_llm: true|false
+#   Ejemplos:
+#     /oos/records          → uses_llm: false   (regla determinística)
+#     /hplc/sst/validate    → uses_llm: false   (regla determinística)
+#     /audit/alcoa/validate → uses_llm: false   (regla determinística)
+#     /api/v1/query         → uses_llm: true    (inferencia Ollama)
+
+# En el executor de W4 (POST /test/run), el resultado de cada prueba debe
+# incluir SIEMPRE un bloque de evidencia LLM:
+#   {
+#     "result": "PASS|FAIL|ERROR",
+#     "uses_llm": true|false,
+#     "llm_evidence": {            // presente solo si uses_llm o si el
+#                                  // endpoint reportó model/elapsed
+#       "model": "mistral:7b-instruct-q4_K_M" | null,
+#       "elapsed_seconds": 23.4 | null,
+#       "ollama_status": "ok|timeout|unreachable" | null,
+#       "inference_success": true|false|null,
+#       "timed_out": true|false
+#     }
+#   }
+# Si uses_llm=false → llm_evidence.model=null, inference_success=null,
+#   y la UI muestra badge "REGLAS PYTHON (determinístico)".
+# Si uses_llm=true  → la UI muestra badge "LLM LOCAL: <model> · <elapsed>s"
+#   y marca claramente si hubo timeout.
+
+# Regla de evidencia honesta: el executor NO asume que un endpoint usa LLM.
+# Lee uses_llm del catálogo Y, si la respuesta del endpoint trae campos
+# model/elapsed_seconds/ollama_status, los refleja. Si no los trae y
+# uses_llm=true, marca inference_success=false con detalle "endpoint no
+# reportó evidencia de inferencia".
+
+------------------------------------------------------------
+PASO 7 — VALIDACIONES
+------------------------------------------------------------
+echo "=== py_compile del deployment OOS modificado ==="
+PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile \
+  factory/deployments/oos_hplc_investigator/app/*.py 2>&1 | head -5 || echo OK
+
+echo "=== Selfcheck factory (no debe romperse) ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "Gate 0|PASS|FAIL"
+
+echo "=== Confirmar que NO se ejecutó headless ==="
+python3 -c "
+import yaml,pathlib
+d=yaml.safe_load(pathlib.Path('factory/runtime/runtime_config.yaml').read_text())
+print('headless_enabled:', d.get('headless_enabled'), '(debe ser False)')
+"
+
+echo "=== Confirmar que NO se creó Docker nuevo (mismos 4 stacks) ==="
+docker ps --format "{{.Names}}" | grep -E "oos_hplc|lab_qc|gmp-api|factory-api" | sort
+
+echo "=== Confirmar que aria-ollama NO se tocó ==="
+docker ps --filter "name=aria-ollama" --format "{{.Names}} {{.Status}}"
+
+------------------------------------------------------------
+PASO 8 — REPORTE ANTES DE COMMIT (evidencia completa)
+------------------------------------------------------------
+git status --short
+git diff --stat
+git diff -- factory/deployments/oos_hplc_investigator/ \
+            factory/test_catalogs/ \
+            factory/api/routes/
+
+# Entregar a Cesar la evidencia que pidió:
+echo "=== EVIDENCIA 1: curl /api/v1/query (HTTP + tiempo + body) ==="
+echo "(salida del PASO 5)"
+echo "=== EVIDENCIA 2: logs aria-ollama con POST /api/generate ==="
+docker logs --since 5m aria-ollama 2>&1 | grep -i "generate" | tail -5
+echo "=== EVIDENCIA 3: logs oos_hplc_investigator_api ==="
+docker logs --since 5m oos_hplc_investigator_api 2>&1 | tail -15
+
+Clasificar:
+
+  | Item | Estado | Evidencia |
+  |---|---|---|
+  | Ollama mapeado (nativo/contenedor, puerto, modelos) | sí/no | PASO 0 |
+  | Contenedor OOS alcanza Ollama (HTTP tags)           | sí/no | PASO 0 |
+  | /api/v1/query autentica con GMP_API_KEY             | sí/no | curl 401/200 |
+  | /api/v1/query llama realmente /api/generate         | sí/no | logs ollama |
+  | Causa del cuelgue identificada (A/B/C)              | A/B/C | diagnóstico |
+  | Timeout configurado (connect+read)                 | sí/no | código |
+  | Límite de tokens (num_predict)                      | sí/no | código |
+  | Manejo de error claro (503/504/500)                | sí/no | código |
+  | Respuesta incluye model + elapsed_seconds + status | sí/no | curl json |
+  | Prueba "Responde solo: OOS OK" → inferencia OK      | sí/no | curl |
+  | POST /api/generate visible en logs                 | sí/no | logs |
+  | Respuesta ya NO queda colgada                       | sí/no | time<timeout |
+  | Catálogo W4 con uses_llm por endpoint              | sí/no | yaml |
+  | llm_evidence en resultado de prueba (model/elapsed/timeout) | sí/no | diseño |
+  | Selfcheck Gate 0                                   | PASS/FAIL | |
+  | No headless ejecutado                              | confirmar | runtime_config |
+  | No Docker nuevo                                    | confirmar | docker ps |
+  | No se repitió W2 (deploy)                          | confirmar | sin redeploy |
+  | aria-ollama intacto                                | confirmar | docker ps |
+  | No secretos expuestos (GMP_API_KEY oculta)         | confirmar | grep |
+
+>> "W3.5 listo. /api/v1/query responde [200/error claro] con evidencia de
+    /api/generate. ¿Apruebas el commit?"
+>> Sugerido:
+>>   factory: W3.5 — fix integración Ollama en deployment OOS
+>>            (timeout, límite tokens, error claro, model+elapsed; W4 distingue LLM vs reglas)
+
+*** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+============================================================
+RELACIÓN CON W4
+============================================================
+W3.5 corre ANTES de W4. Al terminar:
+  - /api/v1/query funciona o falla con claridad (no cuelga).
+  - El catálogo W4 ya tiene uses_llm por endpoint.
+  - El executor W4 reportará llm_evidence por prueba.
+Entonces W4 puede ejecutarse y la consola de pruebas mostrará, por cada
+caso, si usó LLM local (modelo + tiempo + timeout) o solo reglas Python.
+
+QUÉ NO HACE W3.5:
+  ✗ No instala Ollama (ya existe)
+  ✗ No ejecuta headless
+  ✗ No crea Docker nuevo ni repite W2
+  ✗ No toca el producto base ni aria-ollama (solo lee sus logs)
+  ✗ No expone secretos
+============================================================

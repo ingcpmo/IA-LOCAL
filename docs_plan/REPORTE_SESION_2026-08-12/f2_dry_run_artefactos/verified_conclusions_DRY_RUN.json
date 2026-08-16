@@ -1,0 +1,49 @@
+{
+  "21_CFR_11.10(a)": {
+    "conclusion": "CROSS_REFERENCE_MISSING",
+    "chunks_evaluated": 29,
+    "chunks_observed": 0,
+    "chunks_review_pending": 0,
+    "review_flags": [
+      "SOURCE_PENDING_REVERIFICATION"
+    ]
+  },
+  "21_CFR_11.10(d)": {
+    "conclusion": "EVALUATION_INCOMPLETE",
+    "chunks_evaluated": 29,
+    "chunks_observed": 1,
+    "chunks_review_pending": 0,
+    "review_flags": [
+      "ABCD_D_NOT_ASSESSABLE",
+      "SOURCE_PENDING_REVERIFICATION"
+    ]
+  },
+  "21_CFR_11.10(e)": {
+    "conclusion": "PROVISIONALLY_PARTIALLY_DOCUMENTED",
+    "chunks_evaluated": 29,
+    "chunks_observed": 1,
+    "chunks_review_pending": 0,
+    "review_flags": [
+      "ABCD_D_PARTIALLY_MET",
+      "SOURCE_PENDING_REVERIFICATION"
+    ]
+  },
+  "21_CFR_11.10(g)": {
+    "conclusion": "PROVISIONAL_GAP",
+    "chunks_evaluated": 29,
+    "chunks_observed": 0,
+    "chunks_review_pending": 0,
+    "review_flags": [
+      "SOURCE_PENDING_REVERIFICATION"
+    ]
+  },
+  "21_CFR_11.50_11.70": {
+    "conclusion": "NOT_OBSERVED_OPTIONAL",
+    "chunks_evaluated": 29,
+    "chunks_observed": 0,
+    "chunks_review_pending": 0,
+    "review_flags": [
+      "SOURCE_PENDING_REVERIFICATION"
+    ]
+  }
+}

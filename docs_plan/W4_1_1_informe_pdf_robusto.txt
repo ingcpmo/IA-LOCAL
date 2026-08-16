@@ -1,0 +1,568 @@
+============================================================
+W4.1.1 — INFORME PDF GMP ROBUSTO
+Misión, agentes, evidencia y operación 7x24
+GMP AI Factory · Mission Control · Post W4.1
+============================================================
+
+OBJETIVO
+  Robustecer EXCLUSIVAMENTE el contenido del PDF generado por el
+  Dashboard GMP. NO cambia lógica funcional, NO modifica endpoints de
+  prueba, NO altera W4/W3.5/W3. Es una mejora de composición del PDF.
+
+  El PDF pasa de resumen a informe formal de evaluación funcional GMP,
+  con narrativa completa, interpretación farmacéutica, evidencia técnica
+  resumida en cuerpo + historial completo en anexo, y explicación
+  operativa 7x24 de los agentes.
+
+PRINCIPIO INVIOLABLE: EVIDENCIA REAL, NO FABRICADA
+  El PDF se construye ÚNICAMENTE con datos reales de:
+    - /summary, /agents, /test-catalog, /test-results
+    - /deployment, /audit, /rcs
+    - workspace files, design files (requirement_spec.yaml,
+      agent_design_proposal.yaml, compliance_assessment.yaml,
+      regulatory_matrix.yaml, corpus_manifest.yaml, pending_documents.yaml)
+  Los TEXTOS NARRATIVOS son plantillas parametrizadas: estructura fija,
+  valores SIEMPRE derivados de la evidencia. Si un dato no existe →
+  "no disponible" o se omite la subsección. Nunca "ejemplo", nunca
+  fecha/aprobación/cita inventada, nunca resultado no medido.
+
+REGLAS DURAS
+  - No headless. No código nuevo de misión. No Docker nuevo. No deploy.
+  - No modificar W4 (executor, catálogo, aserciones) ni W3.5 (integración Ollama).
+  - No modificar producto base, .env base, data/, backups/, aria-*, hotelbot-*.
+  - No instalar deps pesadas nuevas: si fpdf2 ya funciona en W4.1, MANTENERLO.
+  - Sanitización de secretos obligatoria (misma función sanitize_for_report
+    de W4.1, extendida si aparecen campos nuevos).
+  - No incluir en el commit archivos preexistentes sucios ajenos a W4.1.1.
+  - *** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+------------------------------------------------------------
+PASO 0 — Confirmar base W4.1 intacta y decidir librería PDF
+------------------------------------------------------------
+cd /home/ing_cpmo
+export FK="$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)"
+export HDR="X-API-Key"
+
+echo "=== W4.1 activo: /gmp-report y /gmp-report.pdf responden ==="
+curl -s -o /dev/null -w "gmp-report      HTTP:%{http_code}\n" -H "$HDR: $FK" \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/gmp-report
+curl -s -o /dev/null -w "gmp-report.pdf  HTTP:%{http_code} size:%{size_download}\n" -H "$HDR: $FK" \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/gmp-report.pdf
+
+echo "=== Librería PDF disponible (mantener la que ya funciona) ==="
+docker exec factory-api python3 -c "
+for lib in ['reportlab','fpdf','fpdf2']:
+    try:
+        m=__import__(lib); print(f'{lib}: OK v{getattr(m,\"__version__\",\"?\")}')
+    except Exception:
+        print(f'{lib}: NO')
+"
+  >> Usar la misma librería que ya funciona en W4.1. No cambiar.
+
+echo "=== Fuentes de diseño que W4.1.1 leerá para narrativa ==="
+ls factory/designs/oos_hplc_investigator/
+  >> Debe existir: requirement_spec.yaml, agent_design_proposal.yaml,
+     compliance_assessment.yaml, regulatory_matrix.yaml, corpus_manifest.yaml,
+     pending_documents.yaml. Cualquier ausencia → sección con "no disponible".
+
+echo "=== W4 intacto: catálogo + resultados ==="
+curl -s -H "$HDR: $FK" \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/test-results?limit=100 \
+  | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+res = d.get('results', d if isinstance(d,list) else [])
+print(f'resultados totales: {len(res)}')
+from collections import Counter
+c = Counter(r.get('test_id','?') for r in res)
+print('por test_id:', dict(c))
+"
+
+  >> Anotar: cuántos test_id únicos hay y cuántas ejecuciones repetidas.
+     Cuerpo principal muestra el ÚLTIMO por test_id; anexo muestra todo.
+
+------------------------------------------------------------
+TAREA 1 — MÓDULO DE COMPOSICIÓN ROBUSTA DEL PDF
+------------------------------------------------------------
+# Crear factory/api/reports/pdf_composer_robust.py
+# (o el path equivalente donde vive el compositor actual de W4.1).
+# NO reemplazar el módulo actual — agregar uno nuevo o extender con una
+# función compose_robust_report(payload_gmp_report) que devuelve bytes PDF.
+
+# El módulo consume el MISMO payload del agregador /gmp-report (W4.1) —
+# no crea endpoints nuevos ni recolecta datos por su cuenta. Solo compone.
+
+# API del módulo:
+#   compose_robust_report(payload: dict, project_id: str) -> bytes
+#
+# Internamente:
+#   1) sanitize_for_report(payload)  # reutiliza la de W4.1
+#   2) dedupe_last_by_test_id(payload['results_by_agent'])
+#      → cuerpo principal: 1 fila por test_id (la más reciente)
+#      → conserva payload original en payload['_appendix_all_results']
+#   3) build_traceability_matrix(payload)
+#      → cruza objetivos derivados de requirement_spec/regulatory_matrix
+#        con agents/tests/results reales
+#   4) render_sections(...)  # las 18 secciones
+
+# Reglas transversales:
+#   - Sin "ejemplo", sin fechas ficticias, sin aprobaciones inventadas.
+#   - Textos narrativos son PLANTILLAS con placeholders {…} que se
+#     rellenan con datos reales. Si el placeholder no tiene fuente,
+#     la subsección se omite o dice "no disponible".
+#   - Toda cita regulatoria específica DEBE venir de un archivo real del
+#     workspace/designs (regulatory_matrix.yaml, corpus_manifest.yaml).
+#     Si no existe → texto genérico sin cita.
+
+# Modificar el endpoint GET /gmp-report.pdf para usar el compositor
+# robusto. Parámetro opcional ?variant=robust por si se quiere conservar
+# la versión anterior:
+#   /gmp-report.pdf                → robusto (default nuevo)
+#   /gmp-report.pdf?variant=simple → versión W4.1 previa (compatibilidad)
+# Si Cesar prefiere reemplazo total sin variant, dejarlo así y borrar el
+# comentario. Confirmar en Pausa 1.
+
+------------------------------------------------------------
+TAREA 2 — LAS 18 SECCIONES (mapa de composición)
+------------------------------------------------------------
+# Cada sección lista sus fuentes; si TODAS faltan, la sección se marca
+# "no disponible" o se colapsa. Nada se rellena con ejemplo.
+
+# SECCIÓN 1 — Portada
+#   Fuentes: summary.mission, rcs.canonical, deployment.exists,
+#            fecha de generación (utcnow).
+#   Contenido:
+#     - Título: "Informe de Evaluación Funcional GMP"
+#     - Misión, cliente, RC canónico, fecha, estado deployment, versión informe.
+#     - Aviso "Evidencia real, no fabricada".
+#     - Aviso "No reemplaza la decisión QA/QC ni libera lotes automáticamente".
+
+# SECCIÓN 2 — Resumen ejecutivo
+#   Fuentes: agents, test-results deduplicados, deployment, pending_documents.
+#   Contenido: qué se evaluó, número de agentes, número de pruebas únicas,
+#     PASS/FAIL/ERROR, estado deployment, pendientes regulatorios,
+#     conclusión general (derivada, no inventada).
+
+# SECCIÓN 3 — Introducción de la misión
+#   Fuentes: summary.mission + requirement_spec.yaml si existe.
+#   Contenido narrativo sobre creación de la misión en GMP AI Factory,
+#   rol de Mission Control / Capa 8 / Capa 9 / Deployment.
+#   El texto sobre roles de capas es descriptivo del sistema, no de la misión.
+
+# SECCIÓN 4 — Objetivo detallado de la misión creada
+#   Fuentes: requirement_spec.yaml (objectives/scope), regulatory_matrix.yaml,
+#            agent_design_proposal.yaml, test-results.
+#   Contenido:
+#     - Los 6 puntos narrativos del pedido (misión OOS/HPLC, transformación
+#       necesidad→solución, apoyo a QC, no reemplaza QA/QC, demostración
+#       vía pruebas funcionales, conexión objetivo↔agente↔prueba↔resultado).
+#     - Tabla "Trazabilidad objetivo-agente-evidencia" con columnas:
+#         Objetivo | Agente responsable | Función esperada | Prueba asociada
+#         | Resultado | Evidencia disponible | Interpretación GMP
+#     - Origen de los objetivos:
+#         a) requirement_spec.yaml.objectives si existe
+#         b) sino, derivar del regulatory_matrix.yaml (dominios)
+#         c) sino, tomar objetivos mínimos genéricos SOLO si hay dominios
+#            OOS/HPLC/ALCOA+ confirmados en el diseño.
+#     - Estado por objetivo: cumplido / parcialmente cumplido / pendiente
+#       derivado de test-results reales. Si no hay pruebas para un objetivo →
+#       "sin evidencia de prueba funcional para este objetivo".
+
+# SECCIÓN 5 — Caso farmacéutico planteado
+#   Fuentes: requirement_spec.yaml (context/scenario) + agent_design_proposal.
+#   Contenido: escenario laboratorio QC + flujo esperado (recepción,
+#   comparación, detección, revisión HPLC, ALCOA+, evidencia, apoyo a
+#   disposición humana).
+
+# SECCIÓN 6 — Objetivos funcionales de la misión
+#   Fuentes: regulatory_matrix.yaml + agent_design_proposal + test-results.
+#   Tabla: Objetivo | Agente | Evidencia | Resultado | Estado.
+#   Objetivos mínimos aplicables (solo si el diseño incluye dominio):
+#     detectar OOS, validar in-spec, HPLC/SST, RSD, anomalías cromatográficas,
+#     ALCOA+, sello auditoría, trazabilidad, apoyo QA/QC sin reemplazo.
+
+# SECCIÓN 7 — Agentes creados o reutilizados
+#   Fuentes: agent_design_proposal.yaml + agents endpoint + test-results.
+#   Por cada agente:
+#     nombre, tipo (perfil heredado / nuevo), propósito, responsabilidad,
+#     datos que evalúa, decisión preliminar que apoya, pruebas que lo
+#     validaron, resultado de pruebas, limitaciones.
+#   Textos por agente (qa_oos_profile, hplc_data_review_agent,
+#   integrity_lims_profile) usan PLANTILLAS: la función esperada se
+#   describe con base en su rol declarado en el diseño; el resultado
+#   evaluado se toma de test-results reales. Si un agente no fue probado
+#   → "sin pruebas funcionales ejecutadas para este agente".
+
+# SECCIÓN 8 — Resultados de pruebas funcionales por agente
+#   Fuentes: test-results deduplicado por test_id (último) + test-catalog.
+#   NO repetir múltiples ejecuciones del mismo test_id (van al anexo).
+#   Por cada prueba principal:
+#     test_id, título, agente, endpoint, PASS/FAIL/ERROR,
+#     qué se evaluó, dato relevante, esperado, recibido,
+#     interpretación farmacéutica, implicación GMP, fuente, timestamp, run_by.
+#   Redacción tipo:
+#     "La prueba evaluó si el sistema detecta un resultado fuera de
+#      especificación al comparar el valor analítico contra el rango
+#      permitido. El resultado fue {PASS/FAIL} porque el sistema
+#      {clasificó correctamente el caso como OOS / no detectó la
+#      condición esperada}. La implicación GMP es que este caso {debe
+#      entrar a investigación documentada / requiere revisión del
+#      criterio}, sin liberación automática del lote."
+#   La estructura es fija; PASS/FAIL, agente, endpoint, dato relevante
+#   vienen de la evidencia real.
+
+# SECCIÓN 9 — Interpretación por agente (narrativa)
+#   Subsecciones por cada uno de los agentes con datos reales:
+#     Qué hizo, qué demostró, parte del objetivo cumple, qué haría en
+#     operación real, límites.
+#   Si un agente no tuvo pruebas: subsección con explicación de su rol
+#   diseñado + nota "aún no evaluado funcionalmente".
+
+# SECCIÓN 10 — Funcionamiento operativo esperado (7x24)
+#   Texto descriptivo del pedido:
+#     monitoreo continuo, lectura LIMS/API/archivos,
+#     preclasificación OOS/no OOS, revisión HPLC, ALCOA+, priorización,
+#     alertas, evidencia auditada, escalamiento, no decisión final autónoma,
+#     trazabilidad.
+#   Requisitos operativos:
+#     integración LIMS/CDS validada, roles/permisos, firma electrónica,
+#     validación CSV, SOP, aprobación QA, corpus regulatorio completo,
+#     pruebas con datos reales/representativos, control de cambios.
+
+# SECCIÓN 11 — Flujo operativo propuesto (tabla o diagrama textual)
+#   Pasos: resultado HPLC → ingesta → qa_oos_profile evalúa spec →
+#   hplc_data_review_agent revisa SST/RSD/picos → integrity_lims_profile
+#   valida ALCOA+ → sistema genera alerta+evidencia → QA/QC revisa →
+#   decisión investigación/retest/rechazo/liberación según SOP → audit trail.
+#   Aclarar que la ejecución real del flujo requiere el ambiente productivo
+#   descrito en Sección 10.
+
+# SECCIÓN 12 — Reglas Python vs Ollama local (mejor redacción)
+#   Lógica:
+#     - Si NO hay resultados con used_llm=true en test-results:
+#       "El catálogo evaluado en este informe contiene pruebas
+#        funcionales determinísticas ejecutadas por reglas Python. La
+#        capacidad LLM/Ollama local puede existir como función separada
+#        de consulta o interpretación, pero no fue ejecutada dentro del
+#        conjunto de pruebas resumido en este PDF. Por tanto, este
+#        informe no atribuye resultados funcionales al LLM."
+#     - Si hay resultados con used_llm=true: mostrar por prueba
+#       endpoint, model, elapsed_seconds, used_llm, ollama_status,
+#       interpretación breve.
+#   No decir simplemente "no disponible".
+
+# SECCIÓN 13 — Auditoría y trazabilidad (ampliada)
+#   Fuentes: rcs.canonical + audit endpoint.
+#   Contenido:
+#     RC canónico, sha256 si existe, cantidad total de eventos auditados,
+#     últimos eventos relevantes (rc_reviewed, rc_marked_canonical,
+#     deployment_created/started, agent_functional_test_executed,
+#     agent_suite_tested, gmp_report_generated si aplica),
+#     usuario/run_by/timestamp por evento.
+#   Aviso: "La auditoría soporta trazabilidad pero no sustituye
+#   validación regulatoria completa."
+
+# SECCIÓN 14 — Limitaciones (reales)
+#   Fuentes: pending_documents.yaml + corpus_manifest.yaml.
+#   Contenido: PENDING_DOCUMENT, corpus incompleto, datos sintéticos,
+#   no integración productiva LIMS/CDS, no liberación automática,
+#   estimación no medida, validación regulatoria pendiente.
+
+# SECCIÓN 15 — Pendientes antes de go-live
+#   Contenido: resolver PENDING_DOCUMENT, cargar corpus regulatorio,
+#   validar contra datos representativos, SOP, roles/firmas/permisos,
+#   CSV/IQ/OQ/PQ si aplica, pruebas de seguridad, aprobación QA,
+#   monitoreo y control de cambios.
+
+# SECCIÓN 16 — Impacto operativo esperado
+#   Texto de W4.1 con mejoras:
+#     "Los agentes podrían operar de forma continua 7x24 como apoyo al
+#      monitoreo, preclasificación y validación funcional. En una
+#      operación madura, podrían reducir de forma estimada entre 30% y
+#      60% el tiempo dedicado a revisión preliminar, validaciones
+#      repetitivas y preparación de evidencia. Esta cifra es una
+#      estimación potencial, NO una medición del entorno actual, y
+#      debe validarse mediante piloto operativo."
+#   Beneficios: menor tiempo de detección, menor reproceso documental,
+#   mayor consistencia, priorización de casos críticos, evidencia más
+#   ordenada, mayor disponibilidad fuera de horario, soporte a QA/QC.
+
+# SECCIÓN 17 — Conclusión final robusta
+#   Debe cubrir: qué se creó, qué agentes se evaluaron, qué resultados
+#   obtuvieron, qué objetivos cumplen, qué valor aporta, qué límites
+#   existen, qué se requiere antes de uso productivo.
+#   Aclaración OBLIGATORIA literal:
+#     "Estos agentes funcionan como apoyo a QA/QC y no reemplazan la
+#      decisión humana ni liberan lotes automáticamente."
+#   Si hay PENDING_DOCUMENT o corpus interno no validado → mencionarlo
+#   como pendiente regulatorio antes de go-live.
+
+# SECCIÓN 18 — Anexo técnico
+#   Fuentes: test-results COMPLETO (sin dedupe) + test-catalog.
+#   Tabla completa:
+#     test_id, endpoint, payload_resumen o referencia al catálogo,
+#     aserción, esperado, recibido, HTTP status, run_by, run_at, fuente.
+#   Si un test_id tiene N ejecuciones, aparecen las N ordenadas por fecha.
+#   El JSON completo de cada respuesta puede resumirse a 500-1000 chars
+#   por celda o ir en subpáginas si el PDF lo soporta razonablemente.
+
+  >> *** PAUSA 1: revisar el mapa de secciones y la decisión de variant
+       (¿reemplazo total o /gmp-report.pdf?variant=robust como default?)
+       antes de implementar. ***
+
+------------------------------------------------------------
+TAREA 3 — DEDUPLICACIÓN Y TABLA DE TRAZABILIDAD
+------------------------------------------------------------
+# Helper: dedupe_last_by_test_id(results)
+#   Agrupa por test_id, retorna solo el evento con run_at más reciente.
+#   Guarda los N originales en payload['_appendix_all_results'] para el
+#   anexo (Sección 18).
+
+# Helper: build_traceability_matrix(payload)
+#   Estructura de salida (lista de filas):
+#     {
+#       "objective": "Detectar resultados OOS",
+#       "agent": "qa_oos_profile",
+#       "function": "Comparar resultado analítico vs límites de spec",
+#       "test_id": "oos_create_out_of_spec",
+#       "result": "PASS|FAIL|ERROR|no_evaluado",
+#       "evidence_source": "test-results / RC v1.1 / audit",
+#       "gmp_interpretation": "..."
+#     }
+#   Origen de las filas:
+#     1) requirement_spec.yaml.objectives (si existe)
+#     2) fallback: mapping automático:
+#        - dominio OOS  → objetivo "Detectar resultados OOS" y "Validar in-spec"
+#        - dominio HPLC → "Evaluar desempeño HPLC/SST", "Calcular RSD",
+#                         "Detectar anomalías cromatográficas"
+#        - dominio ALCOA/LIMS → "Validar ALCOA+", "Trazabilidad"
+#     3) Cruce con agents/test-catalog para mapear agente responsable.
+#     4) result y evidence_source vienen del último test-result por test_id.
+#     5) gmp_interpretation es texto de plantilla parametrizado por result.
+
+# La tabla nunca inventa objetivos que el diseño no soporte.
+
+------------------------------------------------------------
+TAREA 4 — FRONTEND (mínimo)
+------------------------------------------------------------
+# El botón "Generar PDF" del dashboard sigue apuntando al mismo endpoint.
+# Cambios mínimos:
+#   - Nombre del archivo descargado:
+#     informe_gmp_{project_id}_{YYYYMMDD-HHMM}.pdf (mantener o pulir).
+#   - Si se implementa ?variant=simple, agregar un enlace secundario
+#     "Descargar versión resumida (W4.1)" solo si Cesar lo pide en la
+#     Pausa 1. Por defecto: un solo botón "Generar PDF" que trae la
+#     versión robusta.
+
+mkdir -p backups/frontend
+cp factory/ui/mission_control.html backups/frontend/mission_control.html.pre_W4_1_1
+
+------------------------------------------------------------
+TAREA 5 — TESTS
+------------------------------------------------------------
+# factory/tests/test_pdf_robust.py
+#   - compose_robust_report(payload_minimo) devuelve bytes > 0
+#   - Contiene los 18 títulos de sección esperados (buscar por texto
+#     dentro del PDF con pypdf o pdfminer si están instalados; si no,
+#     usar strings sobre bytes).
+#   - Si test-results tiene N ejecuciones del mismo test_id, el cuerpo
+#     principal muestra 1 y el anexo muestra N (verificar por conteos).
+#   - Si NO hay used_llm=true en test-results, la sección 12 usa el
+#     texto explicativo (no "no disponible").
+#   - Si hay used_llm=true, la sección 12 incluye model+elapsed_seconds.
+#   - Con requirement_spec.yaml ausente → sección 4/5 muestra
+#     "no disponible" para los subcampos que dependen de él y NO se
+#     rellenan con ejemplo.
+#   - sanitize_for_report enmascara GMP_API_KEY, FACTORY_API_KEY,
+#     ANTHROPIC_API_KEY, sk-ant-, POSTGRES_PASSWORD.
+#   - El PDF generado NO contiene el valor real de esos secretos (leer
+#     con strings sobre bytes).
+#   - Generación de PDF NO audita por defecto (delta cadena=0).
+#   - La aclaración "no reemplaza la decisión humana ni liberan lotes
+#     automáticamente" aparece en la conclusión.
+
+# factory/tests/test_functional_testing.py (W4) — NO se toca; debe
+# seguir pasando idéntico.
+
+# factory/tests/test_refresh_readonly.py — /gmp-report y /gmp-report.pdf
+# siguen sin auditar (delta=0).
+
+------------------------------------------------------------
+TAREA 6 — VALIDACIONES Y EVIDENCIA
+------------------------------------------------------------
+echo "=== py_compile ==="
+PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile $(ls factory/api/routes/*.py factory/api/reports/*.py 2>/dev/null)
+
+echo "=== JS check ==="
+python3 - <<'PYEOF'
+import re,subprocess,tempfile,pathlib,os,sys
+html=pathlib.Path("factory/ui/mission_control.html").read_text()
+js="\n".join(re.findall(r"<script[^>]*>(.*?)</script>",html,re.S))
+f=tempfile.NamedTemporaryFile("w",suffix=".js",delete=False); f.write(js); f.close()
+r=subprocess.run(["node","--check",f.name],capture_output=True,text=True)
+print("JS:", "OK" if r.returncode==0 else "FAIL"); print(r.stderr[:600])
+os.unlink(f.name); sys.exit(r.returncode)
+PYEOF
+
+echo "=== Tests ==="
+python3 -m pytest factory/tests/test_pdf_robust.py -q
+python3 -m pytest factory/tests/test_functional_testing.py -q   # W4 intacto
+python3 -m pytest factory/tests/test_refresh_readonly.py -q
+python3 -m pytest factory/tests/ -q --tb=no
+
+echo "=== Selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "Gate 0|PASS|FAIL"
+
+echo "=== EVIDENCIA 1: descargar PDF robusto ==="
+curl -s -H "$HDR: $FK" \
+  "http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/gmp-report.pdf" \
+  -o /tmp/informe_gmp_robusto.pdf -w "HTTP:%{http_code} size:%{size_download} bytes\n"
+file /tmp/informe_gmp_robusto.pdf
+echo "Tamaño: $(du -h /tmp/informe_gmp_robusto.pdf | cut -f1)"
+
+echo "=== EVIDENCIA 2: /gmp-report.pdf NO crece cadena ==="
+AUDIT="$(find factory -name '*.jsonl' | grep -E 'audit.*jsonl$' | head -1)"
+C0=$(wc -l < "$AUDIT")
+for i in 1 2 3; do
+  curl -s -H "$HDR: $FK" \
+    "http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/gmp-report.pdf" \
+    -o /dev/null
+done
+C1=$(wc -l < "$AUDIT")
+echo "delta tras 3 descargas: $((C1-C0))   (DEBE ser 0)"
+
+echo "=== EVIDENCIA 3: el PDF contiene títulos de las 18 secciones ==="
+for titulo in "Resumen ejecutivo" "Objetivo detallado" "Trazabilidad objetivo-agente-evidencia" \
+              "Caso farmacéutico" "Objetivos funcionales" "Agentes creados o reutilizados" \
+              "Resultados de pruebas funcionales" "Interpretación por agente" \
+              "Funcionamiento operativo" "Flujo operativo" "Reglas Python vs Ollama" \
+              "Auditoría y trazabilidad" "Limitaciones" "Pendientes antes de go-live" \
+              "Impacto operativo" "Conclusión" "Anexo técnico"; do
+  strings /tmp/informe_gmp_robusto.pdf | grep -qi "$titulo" \
+    && echo "  ✓ $titulo" \
+    || echo "  ✗ FALTA: $titulo"
+done
+
+echo "=== EVIDENCIA 4: el PDF NO contiene secretos ==="
+GMP_KEY="$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null || docker exec factory-api printenv GMP_API_KEY 2>/dev/null)"
+if [ -n "$GMP_KEY" ] && strings /tmp/informe_gmp_robusto.pdf | grep -qF "$GMP_KEY"; then
+  echo "  *** FALLO: el PDF contiene la API key ***"
+else
+  echo "  OK: sin API key en el PDF"
+fi
+strings /tmp/informe_gmp_robusto.pdf | grep -iE "sk-ant-|POSTGRES_PASSWORD|ANTHROPIC_API_KEY" \
+  && echo "  *** REVISAR: posible secreto ***" \
+  || echo "  OK: sin sk-ant / passwords / tokens"
+
+echo "=== EVIDENCIA 5: la aclaración obligatoria está en el PDF ==="
+strings /tmp/informe_gmp_robusto.pdf | grep -qi "no reemplaza" \
+  && echo "  ✓ aclaración de no-reemplazo QA/QC presente" \
+  || echo "  ✗ FALTA la aclaración obligatoria"
+
+echo "=== EVIDENCIA 6: deduplicación del cuerpo ==="
+# Contar cuántas veces aparece cada test_id en el cuerpo (heurística):
+python3 - <<'PYEOF'
+import subprocess, re
+out = subprocess.run(["strings","/tmp/informe_gmp_robusto.pdf"],
+                     capture_output=True, text=True).stdout
+# Ajustar patrones según los test_id reales del catálogo:
+for tid in ["oos_create_in_spec","oos_create_out_of_spec","sst_fail_low_plates","alcoa_all_present"]:
+    n = len(re.findall(rf"\b{re.escape(tid)}\b", out))
+    print(f"  {tid}: {n} apariciones (cuerpo + anexo). Debe ser >=1 y coherente con dedupe.")
+PYEOF
+
+echo "=== EVIDENCIA 7: W4 intacto ==="
+python3 -m pytest factory/tests/test_functional_testing.py -q
+
+echo "=== EVIDENCIA 8: infraestructura intacta ==="
+docker ps --format "{{.Names}}" | sort
+python3 -c "
+import yaml, pathlib
+d=yaml.safe_load(pathlib.Path('factory/runtime/runtime_config.yaml').read_text())
+print('headless_enabled:', d.get('headless_enabled'), '(debe ser False)')
+"
+
+------------------------------------------------------------
+PAUSA FINAL — REPORTE Y CLASIFICACIÓN
+------------------------------------------------------------
+git status --short
+git diff --stat
+
+# LIMPIEZA: NO incluir en el commit archivos preexistentes sucios ajenos
+# a W4.1.1. Verificar que git add solo incluye:
+#   - factory/api/reports/pdf_composer_robust.py   (nuevo)
+#   - factory/api/routes/... (solo cambios del endpoint /gmp-report.pdf si aplica)
+#   - factory/tests/test_pdf_robust.py             (nuevo)
+#   - factory/ui/mission_control.html              (si hubo cambio menor)
+#   - backups/frontend/mission_control.html.pre_W4_1_1  (opcional)
+
+git diff -- factory/api/reports factory/api/routes factory/tests factory/ui/mission_control.html
+
+Clasificar:
+
+  | Item | Estado | Evidencia |
+  |---|---|---|
+  | 18 secciones presentes en el PDF                    | sí/no | EVIDENCIA 3 |
+  | Portada con misión/RC/fecha/deployment/avisos       | sí/no | strings |
+  | Objetivo detallado con tabla trazabilidad           | sí/no | strings |
+  | Caso farmacéutico y flujo esperado                  | sí/no | strings |
+  | Objetivos funcionales con tabla objetivo/agente/estado | sí/no | strings |
+  | Agentes con perfil heredado vs nuevo bien indicado  | sí/no | UI+PDF |
+  | Resultados por agente en lenguaje claro             | sí/no | PDF |
+  | Deduplicación por test_id en cuerpo principal       | sí/no | EVIDENCIA 6 |
+  | Historial completo en anexo técnico                 | sí/no | anexo |
+  | Interpretación narrativa por agente                 | sí/no | PDF |
+  | Sección funcionamiento 7x24 y requisitos operativos | sí/no | PDF |
+  | Flujo operativo propuesto                           | sí/no | PDF |
+  | Sección Reglas Python vs Ollama sin "no disponible" | sí/no | PDF |
+  | Auditoría ampliada con eventos + run_by             | sí/no | PDF |
+  | Limitaciones y pendientes go-live derivados de reales | sí/no | PDF |
+  | Impacto 30-60% como ESTIMACIÓN                       | sí/no | PDF |
+  | Conclusión con aclaración obligatoria               | sí/no | EVIDENCIA 5 |
+  | Anexo técnico con historial completo                | sí/no | PDF |
+  | PDF NO contiene secretos                             | sí/no | EVIDENCIA 4 |
+  | Datos faltantes = "no disponible" (no inventados)   | sí/no | revisión |
+  | /gmp-report.pdf NO audita (delta=0)                 | sí/no | EVIDENCIA 2 |
+  | W4 funcional intacto                                 | sí/no | EVIDENCIA 7 |
+  | Lógica funcional W4 NO alterada                     | sí/no | diff |
+  | JS check                                             | PASS/FAIL | |
+  | Tests suite                                          | N/N | |
+  | Gate 0 selfcheck                                     | PASS/FAIL | |
+  | No headless, no código nuevo, no Docker, no deploy  | confirmar | |
+  | aria-ollama y producto base intactos                | confirmar | |
+  | Sin archivos preexistentes sucios en el commit       | confirmar | git diff |
+
+>> Entregar a Cesar:
+   - /tmp/informe_gmp_robusto.pdf (para revisión visual)
+   - Screenshots del dashboard con el botón Generar PDF y descarga en curso
+   - Salida de las 8 evidencias
+>> "W4.1.1 listo. PDF robusto con 18 secciones, dedupe por test_id,
+    tabla trazabilidad, anexo técnico completo, sin secretos, W4 intacto.
+    ¿Apruebas el commit?"
+>> Sugerido:
+>>   factory: W4.1.1 — informe PDF GMP robusto
+>>            (18 secciones, trazabilidad, dedupe, anexo, evidencia real)
+
+*** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+============================================================
+NOTAS — QUÉ HACE W4.1.1 Y QUÉ NO
+============================================================
+QUÉ HACE:
+  ✓ PDF robusto de 18 secciones con narrativa completa
+  ✓ Tabla trazabilidad objetivo-agente-evidencia
+  ✓ Deduplicación por test_id en cuerpo, historial completo en anexo
+  ✓ Textos narrativos con plantillas parametrizadas por datos reales
+  ✓ Sección explícita reglas Python vs Ollama con lógica correcta
+  ✓ Interpretación por agente + funcionamiento 7x24 + flujo operativo
+  ✓ Sanitización de secretos verificada por strings
+  ✓ Conclusión con aclaración obligatoria de no-reemplazo QA/QC
+
+QUÉ NO HACE:
+  ✗ No cambia W4 ni W3.5 ni W3
+  ✗ No ejecuta headless, no genera código, no crea Docker, no deploy
+  ✗ No inventa objetivos, resultados, fechas, aprobaciones ni citas
+  ✗ No toca producto base ni aria-ollama
+  ✗ No expone secretos en dashboard ni en PDF
+  ✗ No incluye archivos preexistentes sucios en el commit
+============================================================

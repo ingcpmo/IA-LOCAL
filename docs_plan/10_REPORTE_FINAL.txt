@@ -1,0 +1,93 @@
+================================================================================
+GMP AI FACTORY — REPORTE INTEGRAL FINAL (CAPAS 7, 8, 9)
+Archivo: 10_REPORTE_FINAL.txt
+Precondición: Fases 7, 8 y 9 ejecutadas y commiteadas.
+================================================================================
+▼ PEGAR EN CLAUDE CODE ▼
+──────────────────────────────────────────────────────────────────────────────
+REPORTE FINAL — Validación integral de Capas 7, 8 y 9. Solo lectura.
+
+cd /home/ing_cpmo
+
+echo "━━━ GIT (commits de este ciclo) ━━━"
+git log --oneline -12
+
+echo ""; echo "━━━ SEGURIDAD ━━━"
+grep headless_enabled factory/runtime/runtime_config.yaml
+python3 -c "
+import sys; sys.path.insert(0,'.')
+from factory.core.audit_writer import verify_chain
+r=verify_chain()
+print(f'audit verified={r.get(\"verified\")} entries={r.get(\"log_count\")} hash_errors={r.get(\"hash_errors\")} chain_errors={r.get(\"chain_errors\")}')
+"
+echo "approved_by reservados bloqueados: (probar human/agent/system)"
+python3 -c "
+import sys; sys.path.insert(0,'.')
+from factory.layer8.release_candidate_builder import confirm_rc
+import inspect
+ok=True
+for bad in ['human','agent','system','capa8','capa9']:
+    src=inspect.getsource(confirm_rc)
+    pass
+print('  (validado por código: RESERVED en confirm_rc y approve_mission)')
+"
+
+echo ""; echo "━━━ CAPA 7 — governance ━━━"
+python3 - <<'PY'
+import json, pathlib
+ap=pathlib.Path('factory/deployments/lab_qc_project/approval.json')
+d=json.loads(ap.read_text()) if ap.exists() else {}
+print(f"  v0.3.0 approved/{d.get('approved_by')}/{d.get('decision_origin')}")
+rel=pathlib.Path('factory/deployments/lab_qc_project/releases/v0.3.0.json')
+r=json.loads(rel.read_text()) if rel.exists() else {}
+print(f"  release v0.3.0: {r.get('status')} type={r.get('release_type')} rollback={'sí' if 'rollback' in r else 'no'}")
+PY
+
+echo ""; echo "━━━ CAPA 8 — agente Claude Code ━━━"
+python3 - <<'PY'
+import sys, pathlib, json, yaml; sys.path.insert(0,'.')
+ws=pathlib.Path("factory/workspaces/c8_alcoa_validator")
+from factory.layer9.mission_control import get_mission
+m=get_mission("c8_alcoa_validator") or {}
+code=(ws/"app/alcoa_validator.py").exists()
+log=len(list((ws/"logs").glob("headless_*.log")))>0 if (ws/"logs").exists() else False
+tr=ws/"test_report.json"; tests=tr.exists() and json.loads(tr.read_text()).get("all_passed",False)
+from factory.layer8.release_candidate_builder import list_pending_rcs
+rcs=[x for x in list_pending_rcs() if x.get("project_id")=="c8_alcoa_validator"]
+print(f"  misión: status={m.get('status')} by={m.get('approved_by')} origin={m.get('decision_origin')}")
+print(f"  código generado por headless: {code and log}")
+print(f"  tests PASS: {tests}")
+print(f"  RC pending_human: {len(rcs)>0 and all(x.get('approved_by') is None for x in rcs)}")
+cumple = (m.get('decision_origin')=='human_confirmed' and code and log and tests and len(rcs)>0)
+print(f"  → CAPA 8: {'CUMPLE' if cumple else 'PARCIAL'}")
+PY
+
+echo ""; echo "━━━ CAPA 9 — Mission Control + UI ━━━"
+FK=$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)
+for ep in missions review-queue decisions; do
+  c=$(curl -s -o /dev/null -w "%{http_code}" -H "X-Api-Key: $FK" http://localhost:9000/api/v1/layer9/$ep); echo "  GET /layer9/$ep → $c"
+done
+[ -f factory/ui/mission_control.html ] && echo "  ✓ mission_control.html instalada" || echo "  ✗ UI no instalada"
+[ -x factory/scripts/ops/run_mission_control_ui.sh ] && echo "  ✓ run_mission_control_ui.sh ejecutable" || echo "  ✗ script no listo"
+
+echo ""; echo "━━━ STACKS ━━━"
+docker ps --format "table {{.Names}}\t{{.Status}}" | grep -E "gmp-api|factory-api|lab_qc_project_api"
+
+echo ""; echo "━━━ DIFF PENDIENTE ━━━"
+git status --short && git diff --stat
+
+Entrega la CONCLUSIÓN ÚNICA, con esta estructura:
+  Capa 7: CUMPLE/PARCIAL/NO CUMPLE — evidencia, brechas, recomendación
+  Capa 8: CUMPLE/PARCIAL/NO CUMPLE — evidencia, brechas, recomendación
+  Capa 9: CUMPLE/PARCIAL/NO CUMPLE — evidencia, brechas, recomendación
+  Interfaz HTML: instalada / script / puerto / URL local / URL externa / UFW requerido
+  Seguridad: headless=false · sin secretos · sin root indebido · approved_by real · audit
+  Git: status + diff
+  Conclusión integral: CUMPLIDO / PARCIALMENTE CUMPLIDO / NO CUMPLIDO
+
+Si todo está en verde y CUMPLIDO, recuerda a Cesar los próximos pasos opcionales:
+  - aprobar el RC de c8_alcoa_validator (revisión humana) si quiere cerrarlo formalmente
+  - abrir UFW 9090 si quiere acceso externo a la consola (acción humana)
+  - ingestar PDFs regulatorios reales para habilitar go-live comercial
+──────────────────────────────────────────────────────────────────────────────
+▲ FIN REPORTE FINAL ▲

@@ -1,0 +1,125 @@
+============================================================
+PALANCA A — QWEN 14B — FIXTURE CANONICO 7P+2N
+============================================================
+
+=== MODELO ===
+MODEL  = qwen2.5:14b-instruct-q4_K_M
+DIGEST = 7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6
+STATUS = QUALIFIED
+
+=== PILOT EXECUTION ===
+SELECTED  = PILOT_EXECUTION-2026-020
+MAX_CALLS = 12
+
+=== FIXTURE ===
+UNITS          = 9
+EXPECTED_CALLS = 9
+
+============================================================
+INICIO DE LAS 9 LLAMADAS REALES — QWEN 14B
+============================================================
+
+============================================================
+PALANCA A — RESULTADO OPERACIONAL
+============================================================
+{'co_covering_pilot_instances': ['PILOT_EXECUTION-2026-004',
+                                 'PILOT_EXECUTION-2026-010'],
+ 'evaluation_profile': 'H2H4',
+ 'manifest_path': '/home/ing_cpmo/factory/regulatory/pilot_run/palanca_a_14b_7p2n_20260815/manifests/corpus_run_20260815T234532Z.json',
+ 'pilot_selection_rule': 'vigente ∧ cubre TODOS los documentos del lote ∧ '
+                         'presupuesto>0 ∧ decision_date más reciente '
+                         '(desempate estable)',
+ 'selected_pilot_instance_id': 'PILOT_EXECUTION-2026-020',
+ 'stop_reason': 'CORPUS_COMPLETE',
+ 'total_calls_made': 9,
+ 'total_wall_seconds': 893.9492281260009,
+ 'units': [{'agent_id': 'fda_part11_agent',
+            'calls_made_this_invocation': 1,
+            'document_id': 'RW-0005',
+            'error': None,
+            'resumed_chunk_count': 0,
+            'run_id': 'chunked-4289e754ed28',
+            'status': 'COMPLETED',
+            'technical_execution_failures': 0,
+            'wall_seconds': 397.97600130699993},
+           {'agent_id': 'fda_part11_agent',
+            'calls_made_this_invocation': 1,
+            'document_id': 'RW-0005',
+            'error': None,
+            'resumed_chunk_count': 0,
+            'run_id': 'chunked-d5f924b41932',
+            'status': 'COMPLETED',
+            'technical_execution_failures': 0,
+            'wall_seconds': 45.184205642999586},
+           {'agent_id': 'eu_annex11_agent',
+            'calls_made_this_invocation': 1,
+            'document_id': 'RW-0005',
+            'error': None,
+            'resumed_chunk_count': 0,
+            'run_id': 'chunked-a40d6c4c0065',
+            'status': 'COMPLETED',
+            'technical_execution_failures': 0,
+            'wall_seconds': 57.262847441000304},
+           {'agent_id': 'alcoa_plus_agent',
+            'calls_made_this_invocation': 1,
+            'document_id': 'RW-0011',
+            'error': None,
+            'resumed_chunk_count': 0,
+            'run_id': 'chunked-f5491290b1c5',
+            'status': 'COMPLETED',
+            'technical_execution_failures': 0,
+            'wall_seconds': 65.2528482079997},
+           {'agent_id': 'alcoa_plus_agent',
+            'calls_made_this_invocation': 1,
+            'document_id': 'RW-0005',
+            'error': None,
+            'resumed_chunk_count': 0,
+            'run_id': 'chunked-6faaf9b56ed1',
+            'status': 'COMPLETED',
+            'technical_execution_failures': 0,
+            'wall_seconds': 55.40398878100041},
+           {'agent_id': 'fda_cgmp_211_agent',
+            'calls_made_this_invocation': 1,
+            'document_id': 'RW-0011',
+            'error': None,
+            'resumed_chunk_count': 0,
+            'run_id': 'chunked-f93c11afd5cc',
+            'status': 'COMPLETED',
+            'technical_execution_failures': 0,
+            'wall_seconds': 78.70591884900023},
+           {'agent_id': 'fda_cgmp_211_agent',
+            'calls_made_this_invocation': 1,
+            'document_id': 'RW-0012',
+            'error': None,
+            'resumed_chunk_count': 0,
+            'run_id': 'chunked-91f4efaf59e6',
+            'status': 'COMPLETED',
+            'technical_execution_failures': 0,
+            'wall_seconds': 70.96981651799979},
+           {'agent_id': 'eu_annex11_agent',
+            'calls_made_this_invocation': 1,
+            'document_id': 'RW-0005',
+            'error': None,
+            'resumed_chunk_count': 0,
+            'run_id': 'chunked-30f0d9613e74',
+            'status': 'COMPLETED',
+            'technical_execution_failures': 0,
+            'wall_seconds': 41.30311602600068},
+           {'agent_id': 'fda_part11_agent',
+            'calls_made_this_invocation': 1,
+            'document_id': 'RW-0005',
+            'error': None,
+            'resumed_chunk_count': 0,
+            'run_id': 'chunked-f7d601b512f3',
+            'status': 'COMPLETED',
+            'technical_execution_failures': 0,
+            'wall_seconds': 81.89048535300026}]}
+
+STOP_REASON       = CORPUS_COMPLETE
+TOTAL_CALLS       = 9
+TOTAL_WALL_SEC    = 893.9492281260009
+SELECTED_PILOT    = PILOT_EXECUTION-2026-020
+MANIFEST          = /home/ing_cpmo/factory/regulatory/pilot_run/palanca_a_14b_7p2n_20260815/manifests/corpus_run_20260815T234532Z.json
+
+ARTIFACT_DIR      = /home/ing_cpmo/factory/regulatory/pilot_run/palanca_a_14b_7p2n_20260815
+RUN_LOG           = /home/ing_cpmo/PALANCA_A_14B_7P2N_RUN.log

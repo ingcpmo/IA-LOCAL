@@ -1,0 +1,1231 @@
+commit a2cabb856b304af8bcca9c6d4b53006f5e7e9e5f
+Author: ing_cpmo <ing_cpmo@ivr-ia>
+Date:   Wed Aug 12 17:39:13 2026 +0000
+
+    feat(r3-t1.7): superficie unica de validez de candidato (cierra B3/B4/B5 de raiz)
+    
+    B3, B4 y B5 no eran tres defectos -- eran el mismo defecto en sitios
+    distintos (agregacion D, anclaje del Finding, anclaje de
+    verified_records_by_req). Auditoria exhaustiva (bloque 1) encontro 4
+    rutas reales que decidian anclaje de forma independiente, mas una
+    divergencia interna en la Ruta B (dos algoritmos de anclaje distintos
+    apilados) y un consumidor latente (gap_assessment_finding_mapper, sin
+    llamador de produccion hoy) que se habria roto igual al activarse.
+    
+    factory/regulatory/candidate_validity.py (nuevo): resolve_candidate_evidence(),
+    la UNICA decision de si un candidato ancla y que texto lo representa.
+    chunked_engine.py la llama una vez por (chunk, requisito), antes de
+    bifurcar a Ruta A (Finding) y Ruta B (verified_records_by_req -- la que
+    realmente decide el bucket Tier-1). _is_anchored()/_apply_headline_rescue_b4()
+    eliminados (codigo muerto, absorbidos en la superficie unica).
+    
+    Dos hallazgos encontrados y corregidos al validar en la SALIDA FINAL
+    (no en una capa intermedia -- la leccion central de esta fase):
+    - _is_topically_relevant (propio de la Ruta A, R1.7 lo dejo fuera de la
+      Ruta B a proposito) se aplica solo a una variable local, nunca al
+      objeto compartido -- un intento inicial de fusionarlo rompio 3 tests
+      reales.
+    - verify_llm_output() (Ruta B) re-verifica la cita de forma independiente
+      (match_citation) -- el texto derivado (prefijo + citas unidas) nunca
+      existe literalmente en el chunk. CandidateEvidence.verifiable_quote
+      separa el texto de presentacion (Ruta A) del texto re-verificable
+      (Ruta B, una unica cita literal).
+    
+    Gap adicional expuesto por el propio fix (autorizado por Cesar, corregido
+    en esta misma corrida): ninguna de las 3 condiciones de despacho a la
+    cola de revision cubria EVALUATION_INCOMPLETE/ABCD_D_NOT_ASSESSABLE --
+    antes del fix este caso nunca llegaba a "observed", asi que el gap nunca
+    se manifestaba con datos reales. Nueva _dispatch_contradiction_blocked_review()
+    + condicion de despacho, con su propio guardian end-to-end.
+    
+    Guardian de no-bypass (test_candidate_validity_no_bypass.py, 4 tests):
+    falla si algun modulo reimplementa la logica en vez de llamar a
+    resolve_candidate_evidence().
+    
+    Validado en la SALIDA FINAL del informe Tier-1 (replay sobre el
+    checkpoint historico chunked-943a62bcbb85, cero llamadas LLM,
+    SHA-256 de documento/checkpoint verificados intactos): 21_CFR_11.10(e)
+    pasa de PROVISIONAL_GAP a CONFIRMED/PROVISIONALLY_PARTIALLY_DOCUMENTED
+    con su evidencia real anclada visible; 21_CFR_11.10(d) sigue bloqueado
+    por contradiccion genuina Y ahora tiene su entrada en cola. Los 6
+    criterios de aceptacion de F2-DRY (a-f) pasan. 182 tests en verde.
+    
+    Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+diff --git a/docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md b/docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md
+index af744e7..39c0475 100644
+--- a/docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md
++++ b/docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md
+@@ -178,3 +178,442 @@ guardianes, y la decisión de Cesar en la UI. Si la auditoría §1 revela más
+ rutas de las esperadas, eso NO es un fracaso — es exactamente lo que esta
+ corrida existe para encontrar de una vez, en vez de descubrirlas de a una
+ por sesión.
++
++──────────────────────────────────────────────────────────────────────────────
++EJECUCIÓN 2026-08-12 — BLOQUE 1: AUDITORÍA EXHAUSTIVA
++──────────────────────────────────────────────────────────────────────────────
++
++Método: grep sistemático de `_is_anchored`, `verify_anchor`, `match_citation`,
++`valid_candidate`, `valid_candidate_verified`, `evidencia_exacta`,
++`build_finding_record`, `chunks_observed`, seguido de trazado manual del
++flujo de datos de cada resultado hasta su consumidor final (nunca un solo
++grep aislado).
++
++## MAPA DE RUTAS — 4 sitios reales encontrados (no 2)
++
++### RUTA A — "Finding" (reporte técnico/auditoría)
++```
++chunked_engine.py:611   _is_anchored() -- normalize+substring, SIN fuzzy
++chunked_engine.py:1424  anchored = _is_anchored(evidencia, chunk["text"])
++chunked_engine.py:1426  valid_candidate = anchored if requires_anchor else True
++chunked_engine.py:1433  + _is_topically_relevant() (heuristica lexica, "legacy")
++chunked_engine.py:1493  candidate["anchored"] = valid_candidate
++chunked_engine.py:~1527 fix B4: _apply_headline_rescue_b4() -- UNICO punto rescatado hoy
++chunked_engine.py:~1712 best = candidates[0] (primero en orden, no "el mejor")
++chunked_engine.py:~1729 D via sev.verify_sufficiency_aggregated() (fix B3) -- SOLO si "a_anchor" in best
++  -> Finding.d_sufficiency / Finding.evidencia_exacta
++  -> result["findings"] -> tier1_report: SOLO visible si bucket==CONFIRMED
++```
++B3 corrige D aquí. B4 corrige el anclaje del candidato aquí. Ninguno de
++los dos llega a la Ruta B.
++
++### RUTA B — "verified_records_by_req" → conclusion (LA QUE DECIDE EL BUCKET REAL)
++```
++chunked_engine.py:1468  valid_candidate_verified = anchored and not
++                         sev.detect_reference_list_context(evidencia, chunk["text"])
++                         if requires_anchor else True
++                         -- usa el MISMO `anchored` crudo de la Ruta A (linea 1424),
++                         pero calculado ANTES de que exista el candidate dict --
++                         el rescate B4 (que muta candidate["anchored"] mas abajo,
++                         linea ~1527) nunca puede llegar aqui: ya paso.
++chunked_engine.py:1476  v_candidate["estado"] = estado if valid_candidate_verified
++                         else "evidencia_insuficiente"  (blanqueo si no ancla)
++chunked_engine.py:1477  v_candidate["evidencia_exacta"] = evidencia if
++                         valid_candidate_verified else ""
++chunked_engine.py:1479  build_finding_record() -> verified_pipeline_adapter.py:55
++verified_pipeline_adapter.py:41  estado_to_chunk_observation() -- "observed"/
++                         "not_observed_in_chunk"
++verified_pipeline_adapter.py:65  verify_llm_output() -> evidence_verifier.py:192
++evidence_verifier.py:217  match_citation(quote, src) -- SEGUNDO anclaje
++                         INDEPENDIENTE, con fuzzy matching -- diferente
++                         algoritmo que _is_anchored() de la Ruta A (que NO
++                         hace fuzzy). Puede DISCREPAR con la Ruta A sobre
++                         si la MISMA cita ancla.
++  -> verified_records_by_req[req_id] -> absence_consolidator.consolidate()
++  -> verified_conclusions[req_id]["conclusion"] -> tier1_report: bucket REAL
++     (el que efectivamente se muestra para NEEDS_HUMAN_REVIEW/PROVISIONAL_GAP/etc.)
++```
++**Esta es la ruta que el informe Tier-1 realmente usa para decidir el
++bucket.** B4 nunca la toca -- causa raíz exacta del hallazgo "B5" de
++R3-T1.6. Dentro de esta misma ruta hay ADEMÁS una segunda divergencia
++interna: dos algoritmos de anclaje distintos apilados
++(`_is_anchored` en `valid_candidate_verified`, luego `match_citation`
++otra vez dentro de `verify_llm_output`) que podrían no coincidir entre sí.
++
++### RUTA C — Evidence Pack Governance (catálogo, DISTINTA preocupación)
++```
++evidence_pack_governance.py:185  verify_anchor(citation_text, full_text)
++```
++Valida que la cita del CATÁLOGO ancle contra el texto CANÓNICO de la
++fuente regulatoria (integridad del catálogo, tiempo de gobernanza) — NO
++evalúa evidencia de un documento bajo análisis en tiempo de ejecución.
++**Fuera de la familia de defectos B3/B4/B5** — preocupación distinta,
++sin relación con el candidato de un chunk. No requiere cambios.
++
++### RUTA D — `gap_assessment_finding_mapper.py` (LATENTE, sin llamador de producción hoy)
++```
++gap_assessment_finding_mapper.py:378-384  _derive_citation_anchor_status()
++  -> from factory.regulatory.semantic_evidence_verification import verify_anchor
++  -> verify_anchor(finding["evidencia_exacta"], source_text)  -- TERCER
++     algoritmo de anclaje aplicado sobre el MISMO texto que ya paso por
++     Rutas A y B, para mapear el Finding a un "cambio de remediacion"
++     (CLAUDE.md: "version corregida como borrador controlado").
++```
++El propio docstring del módulo (línea ~399) lo confirma: *"Ningun
++llamador de produccion existe todavia (chunked_engine.py no genera
++chunk-level records), asi que el default None preserva el comportamiento
++actual."* Confirmado con grep: `map_finding_to_remediation_change`/
++`map_findings` no tienen NINGÚN llamador fuera del propio módulo (ni en
++`corpus_runner.py`, ni `tier1_report.py`, ni `judgment.py`). **Dormido,
++no forma parte del flujo F2-DRY actual** — pero si se activa, recibiría
++directamente `Finding.evidencia_exacta`, que con B4 ahora puede venir con
++el prefijo `"[headline derivado de citas por criterio verificadas] "` y
++múltiples citas unidas con `" | "` — el mismo patrón que ya rompió el
++chequeo de `detect_reference_list_context` en B4 (§2.3 de
++`R3_T1_6_FIX_B4_Y_CIERRE.md`) rompería aquí también `verify_anchor()`
++sobre el texto ya unido. **Hallazgo preventivo**: si esta ruta se activa
++sin pasar por la superficie única, reintroduce la misma familia de
++defecto en un QUINTO sitio.
++
++### Código muerto encontrado (no es una ruta viva)
++```
++verified_pipeline.py:90  _build_finding_record()  -- legacy, CERO
++                         llamadores de produccion (confirmado por grep en
++                         todo factory/, excluyendo tests) -- solo
++                         verified_pipeline_adapter.build_finding_record()
++                         (Ruta B) esta realmente en uso.
++```
++
++## 1.3 — Conteo de rutas independientes
++
++```
++ROUTE_MAP = 4 rutas reales encontradas:
++  Ruta A (Finding/reporte)         -- B4 la corrige HOY
++  Ruta B (verified_records/bucket) -- B4 NO la toca -- decide el bucket REAL
++  Ruta C (catalogo, distinta preocupacion) -- fuera de alcance, sin cambios
++  Ruta D (remediacion, LATENTE)    -- sin llamador hoy, pero re-rompible
++  + 1 pieza de codigo muerto (verified_pipeline.py, no es una ruta)
++
++DIVERGENCES_FOUND:
++  B3 = agregacion D (Ruta A, ya corregido, commit e823015)
++  B4 = anclaje headline en el Finding (Ruta A, ya corregido, commit f629959)
++  B5 = anclaje headline en verified_records_by_req (Ruta B, SIN corregir --
++       root cause de por que 11.10(e) sigue en PROVISIONAL_GAP)
++  + divergencia interna en Ruta B: _is_anchored() vs match_citation()
++    (dos algoritmos de anclaje distintos apilados en la misma ruta)
++  + riesgo latente en Ruta D: reventaria con el formato de texto derivado
++    de B4 si se activa sin pasar por la superficie unica
++
++Son MAS de las 2-3 rutas conocidas (contando solo A y B) -- ese numero
++(4 rutas + 1 divergencia interna + codigo muerto) es exactamente lo que
++explica por que el defecto goloseaba de sitio en sitio sesion tras sesion:
++cada fix (B3, B4) corrigio Y VALIDO una ruta real, pero SIEMPRE quedaba
++al menos otra ruta sin tocar.
++```
++
++──────────────────────────────────────────────────────────────────────────────
++BLOQUE 2 — CENTRALIZACIÓN EN SUPERFICIE ÚNICA
++──────────────────────────────────────────────────────────────────────────────
++
++Módulo nuevo: `factory/regulatory/candidate_validity.py` --
++`resolve_candidate_evidence()` decide, en un solo lugar, si un candidato
++ancla (headline directo + `detect_reference_list_context`, o rescate B4/B5
++por citas de criterio ya ancladas) y qué texto lo representa.
++
++**Ambas rutas del mapa (A y B) llaman a la misma función** --
++`chunked_engine.py` la invoca UNA vez por (chunk, requisito), antes de
++bifurcar a Ruta A/Ruta B. `_is_anchored()` y `_apply_headline_rescue_b4()`
++se eliminaron (código muerto); `_is_anchored()` quedó como alias delgado
++de `candidate_validity.is_literally_anchored()` (tests existentes que lo
++llaman directamente siguen funcionando sin cambios).
++
++## Divergencia intencional preservada (NO fusionada -- descubierto durante la implementación)
++
++Un intento inicial fusionó también el filtro `_is_topically_relevant`
++(propio de la Ruta A/legacy) dentro de la superficie única. Esto rompió
++**3 tests reales**: `test_topically_irrelevant_citation_is_rejected`
++(Ruta A dejó de rechazar citas fuera de tema) y
++`test_p5_real_evidence_reaches_observed_flagged_for_review` /
++`test_wrong_topic_same_language_flagged_not_silently_verified` (Ruta B
++empezó a heredar ese filtro que R1.7 -2026-08-09- había retirado
++deliberadamente de ahí, porque tiene un consumidor downstream mejor).
++Corregido: `_is_topically_relevant` se aplica SOLO a una variable local
++de la Ruta A (`route_a_anchored`), nunca al objeto `resolved` compartido.
++Esta divergencia entre rutas es intencional y pre-existente (R1.7) — R3-T1.7
++unifica el anclaje/rescate, no toda heurística que alguna ruta use.
++
++## Cuarto punto de anclaje encontrado al validar (no estaba en el mapa del bloque 1)
++
++`evidence_verifier.verify_llm_output()` (dentro de la Ruta B) hace su
++**propia** re-verificación independiente de la cita (`match_citation`, V1)
++contra `chunk_text`. El texto derivado de B4/B5
++(`"[headline derivado...] cita1 | cita2"`) nunca existe como substring
++literal del chunk (el prefijo y el separador `" | "` no están en el
++documento) -- `verify_llm_output` lo rechazaba (`citation_not_found`),
++aunque cada cita individual sí ancla. Corregido agregando
++`CandidateEvidence.verifiable_quote` (una única cita literal,
++re-verificable) separado de `evidencia_exacta` (texto de presentación
++humana, con prefijo/join). Ruta B usa `verifiable_quote`; Ruta A usa
++`evidencia_exacta`.
++
++## Guardián de no-bypass (§2.3)
++
++`factory/tests/test_candidate_validity_no_bypass.py` -- 4 tests:
++1. el módulo y sus funciones existen;
++2. el marcador literal del headline derivado NO aparece en ningún otro
++   archivo de producción (detecta reimplementación del rescate);
++3. `evaluate_chunked()` importa y llama a `resolve_candidate_evidence()`
++   (no reimplementa inline);
++4. `_is_anchored()` delega en la superficie única, no reimplementa
++   normalize+substring por su cuenta.
++
++## Suite completa relevante tras el fix + limpieza
++
++```
++factory/tests/test_gmpai_chunked_engine.py
++factory/tests/test_semantic_evidence_verification.py
++factory/tests/test_tier1_report.py
++factory/tests/test_r1_7_soft_relevance_verified_pipeline.py
++factory/tests/test_r1_6_topically_relevant_language.py
++factory/tests/test_verified_pipeline.py
++factory/tests/test_evidence_verifier_v2.py
++factory/tests/test_checkpoint_fingerprint_invalidation.py
++factory/tests/test_candidate_validity_no_bypass.py
++= 181 passed, 0 failed
++```
++
++Suite completa del host (background) lanzada tras estos cambios, en curso
++al momento de escribir este reporte -- ver `GATE0_COUNT` en la entrega.
++
++──────────────────────────────────────────────────────────────────────────────
++BLOQUE 3 — VALIDACIÓN EN LA SALIDA FINAL (replay_f2_dry.py actualizado)
++──────────────────────────────────────────────────────────────────────────────
++
++`replay_f2_dry.py` se actualizó para reconstruir TAMBIÉN
++`verified_records_by_req` (Ruta B) usando la superficie única -- antes
++solo se corregía la Ruta A (Finding), por eso R3-T1.6 nunca vio cambiar
++el bucket real. Se reconstruye iterando `_criterion_assessments_for_d`
++(cubre TODOS los chunks que respondieron, incluidos los
++`evidencia_insuficiente` que `_by_req_candidates` nunca guardó) -- no se
++reusan los `verified_records_by_req` guardados en el checkpoint (esos
++son de la lógica PRE-fix).
++
++## Tabla ANTES/DESPUÉS -- a nivel de BUCKET del informe (el único criterio que cuenta)
++
++| Requisito | ANTES (R3-T1.6, solo Ruta A corregida) | DESPUÉS (R3-T1.7, superficie única) |
++|---|---|---|
++| `21_CFR_11.10(e)` | `NEEDS_HUMAN_REVIEW` / `PROVISIONAL_GAP` | **`CONFIRMED`** / `PROVISIONALLY_PARTIALLY_DOCUMENTED` (flags: `ABCD_D_PARTIALLY_MET`, `SOURCE_PENDING_REVERIFICATION`) |
++| `21_CFR_11.10(d)` | `NEEDS_HUMAN_REVIEW` / `PROVISIONAL_GAP` | `NEEDS_HUMAN_REVIEW` / **`EVALUATION_INCOMPLETE`** (flag `ABCD_D_NOT_ASSESSABLE` -- contradicción genuina, ahora correctamente bloqueando una conclusión que SÍ hubiera sido positiva) |
++| `21_CFR_11.10(g)` | `NEEDS_HUMAN_REVIEW` / `PROVISIONAL_GAP` | sin cambios |
++| `21_CFR_11.50_11.70` | `OPTIONAL_NOT_OBSERVED` | sin cambios |
++
++**11.10(e) ya NO está en `PROVISIONAL_GAP`** -- el objetivo central del
++bloque 3 se cumple: la evidencia real y anclada (2/9 criterios, citas
++verificadas) llega hasta el bucket del informe, no solo hasta una capa
++intermedia.
++
++**Matiz honesto sobre el string exacto**: el criterio 3.2 del plan
++predecía `SUPPORTING_EVIDENCE_UNDER_REVIEW`. El código real
++(`absence_consolidator.apply_conclusion_preconditions()`) mapea
++`d_sufficiency=PARTIALLY_MET` a `PARTIALLY_DOCUMENTED` (degradado a
++`PROVISIONALLY_PARTIALLY_DOCUMENTED` por B1/`positive_conclusion_eligibility=
++PROVISIONAL_ONLY`) -- `SUPPORTING_EVIDENCE_UNDER_REVIEW` es la ruta
++específica para `d_sufficiency=NOT_MET` (cero criterios confirmados), no
++para `PARTIALLY_MET`. El resultado real es MEJOR de lo predicho en
++espíritu (bucket `CONFIRMED`, "anclado, pendiente de sign-off humano",
++con la cita real visible y el flag de fuente pendiente) aunque el string
++de conclusión difiera del literal que el plan anticipaba -- no fue un
++error del fix, fue una imprecisión en la predicción original.
++
++## HALLAZGO NUEVO (fuera de la familia B3/B4/B5): gap en las condiciones de despacho a cola
++
++`21_CFR_11.10(d)` ahora aparece como `EVALUATION_INCOMPLETE` (correcto,
++contradicción genuina preservada) pero **sin entrada en la cola de
++revisión** -- confirmado en el informe: *"sin entrada en cola (ver
++governed_exceptions del run)"*, y `governed_exceptions=0` (no es un error
++silenciado, es que nunca se intentó despachar).
++
++Causa raíz (`chunked_engine.py`, las 3 condiciones de despacho tras
++`verified_conclusions[req_id]`):
++```
++if conclusion == "SUPPORTING_EVIDENCE_UNDER_REVIEW": dispatch_review_finding()
++elif not full_document_coverage and conclusion == "EVALUATION_INCOMPLETE"
++     and "ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE" in flags: dispatch_partial_coverage_review()
++elif full_document_coverage and conclusion in ("DOCUMENTATION_GAP", "PROVISIONAL_GAP"): dispatch_baseline_gap_review()
++```
++Ninguna cubre `EVALUATION_INCOMPLETE` con flag `ABCD_D_NOT_ASSESSABLE`
++(modo BASELINE). Antes de este fix, este caso siempre caía en
++`PROVISIONAL_GAP` (que SÍ se despacha) -- la superficie única, al hacer
++que la contradicción genuina se exprese correctamente como su propio tipo
++de conclusión, expone un gap de despacho que existía desde antes pero
++nunca se manifestaba con datos reales. **No es un defecto de
++candidate_validity.py ni de la familia B3/B4/B5** -- es un consumidor
++downstream (la lógica de despacho) con cobertura incompleta de tipos de
++conclusión.
++
++## Re-evaluación de criterios F2-DRY (a-f), medidos en la salida final
++
++```
++a) informe se genera sin error, buckets validos:                    PASA
++b) 11.10(e) con estado honesto, evidencia anclada visible, NO
++   PROVISIONAL_GAP:                                                 PASA
++   (bucket CONFIRMED, PROVISIONALLY_PARTIALLY_DOCUMENTED -- string
++   distinto al predicho, meta real cumplida)
++c) 11.10(d) sigue bloqueado por contradiccion genuina:               PASA
++   (EVALUATION_INCOMPLETE/ABCD_D_NOT_ASSESSABLE -- nunca se cuela como
++   conclusion positiva)
++d) cada requisito NEEDS_HUMAN_REVIEW tiene entrada en cola:          FALLA
++   -- 11.10(d) queda sin entrada (hallazgo nuevo arriba, gap de despacho,
++   fuera de la familia B3/B4/B5)
++e) ningun bucket huerfano (NOT_OBSERVED_OPTIONAL de F0.5):           PASA
++   para OPTIONAL_NOT_OBSERVED; PERO ver (d) -- NEEDS_HUMAN_REVIEW sin
++   cola es tambien un bucket "huerfano" en la practica
++f) original en disco intacto (SHA-256 antes/despues):                PASA
++```
++
++Criterio (d) FALLA -- por instrucción explícita del plan ("si alguno
++sigue parcial, DETENERSE"), no se declara F2-DRY cerrado ni se avanza a
++bloque 4 (ciclo humano)/bloque 5 (cierre de R3-T1).
++
++## ANNEX11_4 y guardianes (§3.3)
++
++- `test_b4_annex11_4_reference_list_still_rejected_end_to_end`: PASA (sin
++  cambios, ver suite arriba).
++- Cita no anclada nunca aparece como evidencia: PASA
++  (`test_b4_unanchored_criterion_quote_never_rescues`,
++  `test_b4_reference_list_criterion_quote_never_rescues`).
++- Ausencia honesta preservada: PASA
++  (`test_b4_absence_preserved_when_no_criterion_anchors`, y en el replay
++  real: `21_CFR_11.50_11.70` sigue `NOT_OBSERVED_OPTIONAL`).
++
++──────────────────────────────────────────────────────────────────────────────
++DETENERSE
++──────────────────────────────────────────────────────────────────────────────
++
++```
++B4_COMMITTED =                 SI (f629959) -- absorbido en la superficie unica
++DIRTY_TREE / GATE0 =           limpio desde e026cdb; suite completa relanzada
++                                tras estos cambios, en curso (background)
++ROUTE_MAP =                    4 rutas reales (A, B, C-distinta, D-latente) +
++                                1 codigo muerto + 1 divergencia interna en B
++                                (_is_anchored vs match_citation) -- ver bloque 1
++DIVERGENCES_FOUND =            B3 (agregacion D), B4 (anclaje Ruta A), B5
++                                (anclaje Ruta B) + hallazgo nuevo: 4to punto de
++                                anclaje (verify_llm_output/match_citation,
++                                resuelto con verifiable_quote) + riesgo latente
++                                en Ruta D (documentado, no activo)
++SINGLE_SURFACE =                factory/regulatory/candidate_validity.py
++                                (resolve_candidate_evidence) -- consumida por
++                                Ruta A y Ruta B en chunked_engine.py
++NO_BYPASS_TEST =               test_candidate_validity_no_bypass.py, 4 tests,
++                                PASA
++UNANCHORED_NEVER_RESCUES =     true (confirmado, 2 guardianes dedicados)
++FINAL_OUTPUT_11_10_e =         CONFIRMED / PROVISIONALLY_PARTIALLY_DOCUMENTED
++                                (NO PROVISIONAL_GAP -- meta cumplida, string
++                                distinto al predicho por el plan, justificado)
++FINAL_OUTPUT_11_10_d =         NEEDS_HUMAN_REVIEW / EVALUATION_INCOMPLETE
++                                (contradiccion genuina preservada) -- PERO sin
++                                entrada en cola (hallazgo nuevo, ver arriba)
++ANNEX11_4_END_TO_END =         rechazado (sin cambios)
++F2_DRY_CRITERIA =              a,b,c,e,f PASA; d FALLA (gap de despacho,
++                                fuera de la familia B3/B4/B5)
++HUMAN_CYCLE =                  NO iniciado -- bloqueado por (d)
++R3_T1_CLOSURE =                NO evaluado -- bloqueado por (d)
++F2_LIVE_JUSTIFIED =            no evaluado -- bloqueado por (d)
++LESSON_RECORDED =              pendiente -- se registra solo tras cierre real
++CORPUS_READY = false
++PRODUCTION_ENABLEMENT = BLOCKED
++```
++
++**DETENERSE.** La superficie única funciona -- confirmado en la salida
++final del informe, no solo en una capa intermedia (la lección central de
++esta corrida, aplicada a sí misma). El criterio (d) de F2-DRY falla por
++un gap real pero DISTINTO a la familia B3/B4/B5: las condiciones de
++despacho a la cola de revisión no cubren `EVALUATION_INCOMPLETE` en modo
++BASELINE. Nada de esto se commiteó (`candidate_validity.py`,
++`chunked_engine.py`, `test_candidate_validity_no_bypass.py`,
++`replay_f2_dry.py`) -- diff pendiente de tu revisión, y pendiente tu
++decisión sobre si el gap de despacho se corrige en esta misma corrida o
++se abre como su propio punto (con dueño, sin nombre de defecto asignado
++todavía).
++
++──────────────────────────────────────────────────────────────────────────────
++GAP DE DESPACHO — CORREGIDO (autorizado por Cesar)
++──────────────────────────────────────────────────────────────────────────────
++
++Nueva función `_dispatch_contradiction_blocked_review()`
++(`chunked_engine.py`, junto a `_dispatch_baseline_gap_review`) + nueva
++condición de despacho:
++
++```python
++elif (full_document_coverage and conclusion.conclusion == "EVALUATION_INCOMPLETE"
++      and "ABCD_D_NOT_ASSESSABLE" in conclusion.review_flags):
++    _dispatch_contradiction_blocked_review(...)
++```
++
++Semántica deliberadamente DISTINTA de `_dispatch_baseline_gap_review`
++(ese es sobre el límite de paráfrasis / posible ausencia real -- aquí SÍ
++hay evidencia positiva observada, en desacuerdo real con otra sección).
++Flag propio: `CONTRADICTION_BLOCKED_POSITIVE_CONCLUSION`.
++
++**Guardián nuevo**: `test_b4_contradiction_blocked_conclusion_reaches_review_queue`
++-- reproduce el escenario de dos chunks contradictorios (mismo que
++`test_b4_genuine_contradiction_still_blocks_with_both_headlines_empty`,
++con `_ANCHORED_QUOTE` como `evidence_quote` en vez del texto crudo del
++criterio del catálogo, para que `verify_llm_output`/V5 no marque
++`RELEVANCE_REVIEW_REQUIRED` y el registro SÍ llegue a `status=verified`
++-- de lo contrario `consolidate()` resuelve `SUPPORTING_EVIDENCE_UNDER_
++REVIEW`/`OBSERVED_ONLY_UNVERIFIED` directamente, sin pasar por D, un
++camino real pero distinto al que este guardián quiere ejercitar).
++Confirma `conclusion == EVALUATION_INCOMPLETE`, flag `ABCD_D_NOT_
++ASSESSABLE`, `chunks_observed >= 1`, y **exactamente una** entrada en la
++cola real con el flag `CONTRADICTION_BLOCKED_POSITIVE_CONCLUSION`.
++
++`replay_f2_dry.py` actualizado con la misma condición de despacho.
++
++## Resultado final tras el fix (replay contra el checkpoint histórico real)
++
++```
++21_CFR_11.10(d): bucket=NEEDS_HUMAN_REVIEW conclusion=EVALUATION_INCOMPLETE
++                 rc='finding-chunked-943a62bcbb85-21_CFR_11.10(d)'   ← YA TIENE ENTRADA
++                 flags=['ABCD_D_NOT_ASSESSABLE', 'SOURCE_PENDING_REVERIFICATION']
++                 cola: review_flags incluye 'CONTRADICTION_BLOCKED_POSITIVE_CONCLUSION'
++```
++
++## Suite tras el fix del gap de despacho
++
++```
++factory/tests/test_gmpai_chunked_engine.py (+1 guardian nuevo)
++factory/tests/test_semantic_evidence_verification.py
++factory/tests/test_tier1_report.py
++factory/tests/test_r1_7_soft_relevance_verified_pipeline.py
++factory/tests/test_r1_6_topically_relevant_language.py
++factory/tests/test_verified_pipeline.py
++factory/tests/test_evidence_verifier_v2.py
++factory/tests/test_checkpoint_fingerprint_invalidation.py
++factory/tests/test_candidate_validity_no_bypass.py
++= 182 passed, 0 failed
++```
++
++Suite completa del host (background, lanzada antes de este último fix
++pero cubre candidate_validity.py y la mayoría de B4/B5): **2427 passed,
++6 failed, 5 skipped, 1 xfailed, 2 errors** (17:59 min) -- los 6
++fallos/2 errores son el mismo patrón ambiental ya caracterizado en
++bloques anteriores (Playwright/endpoint vivo + `test_runtime_identity`
++detectando código sin commitear, correcto y esperado mientras el fix siga
++pendiente de aprobación). Cero fallos nuevos o inesperados.
++
++## Re-evaluación FINAL de criterios F2-DRY (a-f)
++
++```
++a) informe se genera sin error, buckets validos:                    PASA
++b) 11.10(e) con estado honesto, evidencia anclada visible, NO
++   PROVISIONAL_GAP:                                                 PASA
++c) 11.10(d) sigue bloqueado por contradiccion genuina:               PASA
++d) cada requisito NEEDS_HUMAN_REVIEW tiene entrada en cola:          PASA
++   (11.10(d) y 11.10(g), ambos con entrada real y flags correctos)
++e) ningun bucket huerfano:                                            PASA
++f) original en disco intacto (SHA-256 antes/despues):                PASA
++```
++
++**LOS 6 CRITERIOS DE F2-DRY PASAN.** F2-DRY queda cerrado.
+diff --git a/factory/engines/gmpai_integrity/chunked_engine.py b/factory/engines/gmpai_integrity/chunked_engine.py
+index 9823953..19c8114 100644
+--- a/factory/engines/gmpai_integrity/chunked_engine.py
++++ b/factory/engines/gmpai_integrity/chunked_engine.py
+@@ -604,93 +604,13 @@ def _join_kerning_split_words(text: str) -> str:
+     return _KERNING_SPLIT_RE.sub(_join, text or "")
+ 
+ 
+-def _normalize(s: str) -> str:
+-    return re.sub(r"\s+", " ", s).strip().lower()
+-
+-
+ def _is_anchored(evidencia: str, source_text: str) -> bool:
+-    if not evidencia or not evidencia.strip():
+-        return False
+-    return _normalize(evidencia) in _normalize(source_text)
+-
+-
+-def _apply_headline_rescue_b4(
+-    candidate: dict, *, evidencia: str, requires_anchor: bool,
+-    criterion_assessments: "list | None", chunk_text: str, d_detail: "dict | None",
+-) -> None:
+-    """Fix B4 (R3-T1.6, 2026-08-12, docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md):
+-    el candidato headline (`evidencia_exacta`, la cita RESUMEN de todo el
+-    requisito) puede venir vacia aunque el modelo SI haya citado evidencia
+-    real y anclada por criterio individual (`criterion_assessments`) en la
+-    MISMA respuesta -- confirmado con datos reales (checkpoint
+-    `chunked-943a62bcbb85`, chunk 20, `21_CFR_11.10(e)`: evidencia_exacta=''
+-    pero 2/9 criterios MET con cita real que SI ancla). Sin este ajuste, D
+-    (ya corregido por B3) se calcula (`d_detail`, via `verify_evidence_abcd`
+-    o `verify_sufficiency` directo) pero nunca se adjunta al Finding, porque
+-    solo un candidato con `anchored=True` puede ganar (`best = candidates[0]`).
+-
+-    Muta `candidate` in-place (evidencia_exacta/anchored/has_evidence/
+-    headline_source) SOLO si aplica el rescate; en cualquier otro caso solo
+-    fija `headline_source='model_headline'` si aun no estaba, sin tocar
+-    nada mas -- comportamiento previo intacto.
+-
+-    Extraida como funcion de modulo (R3-T1.6) para que tanto el bucle en
+-    vivo de `evaluate_chunked()` COMO cualquier reconstruccion/replay sobre
+-    datos ya guardados (checkpoints historicos, sin llamar de nuevo al
+-    modelo) apliquen EXACTAMENTE la misma regla -- nunca dos
+-    implementaciones que puedan divergir (el mismo gap de instrumentacion
+-    que motivo el fix B3 original).
+-
+-    Regla: si `evidencia` (headline) viene vacia pero `d_detail['met']`
+-    (calculado por `verify_sufficiency()`, Nivel B ya aplica `verify_anchor`
+-    por criterio) trae al menos un criterio, el candidato se considera
+-    anclado -- DERIVADO de esas citas YA verificadas, nunca inventado.
+-    `d_detail['met']` por construccion solo puede contener criterios con
+-    cita real y anclada -- este rescate NUNCA puede colarse con una cita
+-    fabricada o de otro chunk. Si NINGUN criterio ancla o `evidencia` SI
+-    tenia texto (solo fallo su propio anclaje), el candidato sigue sin
+-    ganar -- ausencia/descarte honesto preservado.
+-
+-    Guardia adicional (encontrada al disenar este fix, no pedida
+-    explicitamente pero necesaria): `_classify_criteria_for_chunk()`
+-    (Nivel B de `verify_sufficiency`, la fuente de `d_detail`) SOLO aplica
+-    `verify_anchor()` por criterio -- a diferencia del headline normal
+-    (`valid_candidate_verified` en `evaluate_chunked()`), NUNCA llama a
+-    `detect_reference_list_context()`. Sin este chequeo adicional, una cita
+-    que ancla literalmente pero vive dentro de una lista de referencias
+-    numeradas (el falso positivo real de ANNEX11_4, ej. "GAMP5" dentro de
+-    "[8] Good Automated Manufacturing Practice, GAMP5") podria colarse por
+-    esta ruta derivada aunque el headline normal la hubiera rechazado. Se
+-    aplica el MISMO chequeo que ya protege el headline normal -- nunca un
+-    umbral mas bajo para el camino derivado. Se revisa CADA cita
+-    individualmente (no el texto unido con " | "): ese separador nunca
+-    existe literalmente en el chunk, asi que `detect_reference_list_context()`
+-    sobre el texto ya unido jamas encontraria la posicion y el chequeo
+-    quedaria mudo en silencio para el caso de 2+ citas -- una sola cita
+-    sospechosa invalida el rescate completo."""
+-    if not evidencia.strip() and requires_anchor:
+-        from factory.regulatory import semantic_evidence_verification as sev
+-        met_criteria = set((d_detail or {}).get("met") or [])
+-        derived_quotes = [
+-            str(ca.get("evidence_quote") or "").strip()
+-            for ca in (criterion_assessments or [])
+-            if ca.get("status") == "MET" and ca.get("criterion_text") in met_criteria
+-            and str(ca.get("evidence_quote") or "").strip()
+-        ] if met_criteria else []
+-        derived_quotes = list(dict.fromkeys(derived_quotes))  # dedupe, orden estable
+-        any_reference_list = any(
+-            sev.detect_reference_list_context(q, chunk_text) for q in derived_quotes
+-        )
+-        if derived_quotes and not any_reference_list:
+-            candidate["evidencia_exacta"] = (
+-                "[headline derivado de citas por criterio verificadas] "
+-                + " | ".join(derived_quotes)
+-            )
+-            candidate["anchored"] = True
+-            candidate["has_evidence"] = True
+-            candidate["headline_source"] = "derived_from_criterion_quotes"
+-    if "headline_source" not in candidate:
+-        candidate["headline_source"] = "model_headline"
++    """Reexportada desde candidate_validity.is_literally_anchored() --
++    R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md): esa es
++    ahora la UNICA definicion; este alias existe solo para no romper
++    imports/tests existentes que llaman ce._is_anchored() directamente."""
++    from factory.regulatory.candidate_validity import is_literally_anchored
++    return is_literally_anchored(evidencia, source_text)
+ 
+ 
+ _LABEL_STOPWORDS = {
+@@ -1421,20 +1341,39 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
+                     "chunk_text": chunk["text"], "estado": estado,
+                 })
+                 evidencia = str(entry.get("evidencia_exacta") or "")
+-                anchored = _is_anchored(evidencia, chunk["text"]) if evidencia else False
+                 requires_anchor = estado in ("cumple", "cumple_parcialmente")
+-                valid_candidate = anchored if requires_anchor else True
+-                # Fix 2026-07-16: anclaje literal no basta para cumple/
+-                # cumple_parcialmente — la cita debe ademas ser tematicamente
+-                # relevante al checkpoint (ver _is_topically_relevant). Este
+-                # gate (legacy, result["findings"]) se queda igual: no tiene
+-                # ningun consumidor downstream capaz de manejar una senal
+-                # suave -- ver R1.7 mas abajo para el pipeline verificado.
+-                topically_relevant = (
+-                    _is_topically_relevant(evidencia, cp_label_by_req.get(req_id, ""))
+-                    if (requires_anchor and evidencia) else True
++                criterion_assessments = entry.get("criterion_assessments")
++
++                # W5 V2 Fase F (ampliacion D, 2026-07-25): criterion_assessments
++                # de la respuesta del modelo NUNCA se ignora en silencio --
++                # se extrae y se pasa a verify_evidence_abcd() (A/B/C/D
++                # completo, no solo D). Ausente (None) -> D queda
++                # NOT_ASSESSABLE explicito (semantic_evidence_verification.py),
++                # nunca un campo vacio sin explicacion. Se calcula ANTES de
++                # decidir Ruta A/Ruta B (R3-T1.7) porque ambas rutas
++                # necesitan el mismo `d_detail` para la superficie unica de
++                # abajo.
++                abcd = sev.verify_evidence_abcd(
++                    evidencia, chunk["text"], req_id, requirement_terms_by_req.get(req_id, []),
++                    criterion_assessments=criterion_assessments,
++                )
++
++                # R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md):
++                # superficie UNICA de validez/anclaje -- antes, esta decision
++                # vivia fragmentada en 2 rutas independientes (la de abajo,
++                # "verified_records_by_req"/Ruta B verificada, y la de
++                # "candidate"/Ruta A/Finding, mas abajo), cada una con su
++                # propia logica y su propio bug (B4 corrigio solo la Ruta A;
++                # el hallazgo "B5" era exactamente que la Ruta B nunca recibia
++                # ese mismo rescate). Ahora AMBAS llaman a la MISMA funcion.
++                # `resolve_candidate_evidence()` documenta la regla completa
++                # (headline directo + chequeo de lista de referencias +
++                # rescate por criterios anclados) -- no se reimplementa aqui.
++                from factory.regulatory.candidate_validity import resolve_candidate_evidence
++                resolved = resolve_candidate_evidence(
++                    evidencia=evidencia, requires_anchor=requires_anchor, chunk_text=chunk["text"],
++                    criterion_assessments=criterion_assessments, d_detail=abcd.d_detail,
+                 )
+-                valid_candidate = valid_candidate and topically_relevant
+ 
+                 # Fase 3 (document_remediation_evolution): a diferencia del
+                 # camino legacy de abajo, el pipeline verificado necesita UN
+@@ -1442,39 +1381,18 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
+                 # los 'evidencia_insuficiente', que el camino legacy descarta
+                 # (nunca aportaron un Finding propio) pero que SÍ cuentan para
+                 # que coverage_complete de absence_consolidator sea real, no
+-                # inventado.
+-                #
+-                # R1.7 (2026-08-09, docs_plan/R1_6_VALIDADOR_RELEVANCIA_IDIOMA.md):
+-                # el pipeline verificado (el que usa corpus_runner/produccion)
+-                # deja de usar _is_topically_relevant -- es un pre-filtro propio,
+-                # mas crudo que la validacion C real y ya probada del sistema
+-                # (semantic_evidence_verification.verify_semantic_relevance /
+-                # detect_reference_list_context, language-agnostic via
+-                # requirement_terms.yaml, que ademas NUNCA rechaza duro por
+-                # relevancia lexica -- solo marca NOT_VERIFIABLE/review_required).
+-                # build_finding_record() -> verify_llm_output() ya calcula esa
+-                # misma relevancia lexica (V5, sin tocar aqui) y la traduce a
+-                # status='review_required' cuando es debil; absence_consolidator
+-                # ya sabe tratar ese status de forma segura (SUPPORTING_EVIDENCE_
+-                # UNDER_REVIEW, nunca lo promueve a una conclusion positiva
+-                # confirmada) -- pero esa maquinaria nunca llegaba a ejecutarse
+-                # de verdad porque este pre-filtro ya blanqueaba la evidencia
+-                # antes. Se mantiene UNICAMENTE el componente estructural y
+-                # deterministico de la validacion C real (deteccion de listas de
+-                # referencias numeradas, el mecanismo que de verdad rechaza
+-                # ANNEX11_4 -- antes se rechazaba por coincidencia accidental de
+-                # idioma, no por esto). `sev` ya esta importado mas arriba en
+-                # esta funcion.
+-                valid_candidate_verified = (
+-                    anchored and not sev.detect_reference_list_context(evidencia, chunk["text"])
+-                    if requires_anchor else True
+-                )
++                # inventado. `resolved` (superficie unica) se usa TAL CUAL --
++                # NUNCA mutado -- esta es la Ruta B verificada, que R1.7
++                # (2026-08-09) dejo deliberadamente SIN el filtro crudo de
++                # relevancia lexica (ver mas abajo) porque tiene un consumidor
++                # downstream mejor (verify_llm_output V5 + status
++                # 'review_required').
+                 if use_verified_pipeline and req_id in verified_records_by_req:
+                     from factory.regulatory.verified_pipeline_adapter import build_finding_record
+                     v_candidate = {
+                         "page_start": chunk["page_start"], "page_end": chunk["page_end"],
+-                        "estado": estado if valid_candidate_verified else "evidencia_insuficiente",
+-                        "evidencia_exacta": evidencia if valid_candidate_verified else "",
++                        "estado": estado if resolved.anchored else "evidencia_insuficiente",
++                        "evidencia_exacta": resolved.verifiable_quote if resolved.anchored else "",
+                     }
+                     verified_records_by_req[req_id].append(build_finding_record(
+                         f"vrec-{task_id}-{req_id}", v_candidate, req_id, chunk,
+@@ -1483,35 +1401,48 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
+ 
+                 if estado == "evidencia_insuficiente":
+                     continue
+-                has_evidence = bool(evidencia.strip())
++
++                # Fix 2026-07-16 (post-mortem C1-FDA-11.10d / C3-ANNEX11-12):
++                # anclaje literal no basta para cumple/cumple_parcialmente --
++                # la cita debe ademas ser tematicamente relevante al
++                # checkpoint. Heuristica PROPIA de la Ruta A/Finding (legacy,
++                # `result["findings"]`) -- se aplica SOLO a `route_a_anchored`
++                # (variable local, NUNCA muta `resolved`) para no filtrar
++                # tambien hacia la Ruta B de arriba, que R1.7 (2026-08-09)
++                # dejo deliberadamente sin este filtro (tiene un consumidor
++                # downstream mejor). R3-T1.7 solo unifica el anclaje/rescate;
++                # esta divergencia de relevancia entre rutas es intencional y
++                # ya documentada -- mutar `resolved` aqui (como paso en un
++                # intento inicial de esta corrida) filtraba tambien la Ruta B
++                # y rompia test_p5_real_evidence_reaches_observed_flagged_for_review/
++                # test_wrong_topic_same_language_flagged_not_silently_verified.
++                # Quitar el filtro de la Ruta A directamente (en vez de
++                # aislarlo) aflojaria un validador real, confirmado por
++                # test_topically_irrelevant_citation_is_rejected.
++                route_a_anchored = resolved.anchored
++                if resolved.headline_source == "model_headline" and requires_anchor and evidencia:
++                    if not _is_topically_relevant(evidencia, cp_label_by_req.get(req_id, "")):
++                        route_a_anchored = False  # has_evidence NO cambia: el texto SI existe, solo es de otro tema
++
+                 candidate = {
+                     "chunk_index": chunk["chunk_index"], "page_start": chunk["page_start"],
+                     "page_end": chunk["page_end"], "estado": estado,
+-                    "evidencia_exacta": evidencia if (anchored or not requires_anchor) else "(no anclado en el chunk, descartado)",
++                    "evidencia_exacta": resolved.evidencia_exacta,
+                     "brecha": str(entry.get("brecha") or ""),
+                     "recomendacion": str(entry.get("recomendacion") or ""),
+-                    "anchored": valid_candidate,
+-                    "has_evidence": has_evidence,
++                    "anchored": route_a_anchored,
++                    "has_evidence": resolved.has_evidence,
++                    "headline_source": resolved.headline_source,
+                 }
+-
+-                # W5 V2 Fase F (ampliacion D, 2026-07-25): criterion_assessments
+-                # de la respuesta del modelo NUNCA se ignora en silencio --
+-                # se extrae y se pasa a verify_evidence_abcd() (A/B/C/D
+-                # completo, no solo D), y el resultado se persiste en el
+-                # candidate. Ausente (None) -> D queda NOT_ASSESSABLE
+-                # explicito (ver semantic_evidence_verification.py), nunca
+-                # un campo vacio sin explicacion.
+-                criterion_assessments = entry.get("criterion_assessments")
+-                abcd = sev.verify_evidence_abcd(
+-                    evidencia, chunk["text"], req_id, requirement_terms_by_req.get(req_id, []),
+-                    criterion_assessments=criterion_assessments,
+-                )
+                 candidate["d_sufficiency"] = abcd.d_sufficiency
+                 candidate["d_reason"] = abcd.d_reason
+                 candidate["d_detail"] = abcd.d_detail
+                 candidate["substantive_evidence_accepted"] = abcd.substantive_evidence_accepted
+                 candidate["operational_result"] = abcd.operational_result
+-                # R2.1 Opcion C: A/B/C crudos del candidato, para poder
++                # R2.1 Opcion C: A/B/C crudos del candidato (calculados sobre
++                # la evidencia ORIGINAL del modelo, no la derivada -- son
++                # diagnostico, no el gate real; el gate real es
++                # `candidate["anchored"]`, ya resuelto arriba), para poder
+                 # recombinar con el D AGREGADO del requisito (ver
+                 # verify_sufficiency_aggregated mas abajo) sin re-evaluar
+                 # anclaje/fuente/relevancia semantica -- esos tres siguen
+@@ -1523,19 +1454,6 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
+                 candidate["c_semantic"] = abcd.c_semantic
+                 candidate["c_flags"] = abcd.c_flags
+ 
+-                # Fix B4 (R3-T1.6, docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md):
+-                # ver docstring de _apply_headline_rescue_b4() -- extraida a
+-                # funcion de modulo (no inline) para que tanto este bucle en
+-                # vivo COMO cualquier replay/reconstruccion sobre datos ya
+-                # guardados (checkpoints historicos, sin volver a llamar al
+-                # modelo) apliquen EXACTAMENTE la misma regla, nunca dos
+-                # implementaciones que puedan divergir.
+-                _apply_headline_rescue_b4(
+-                    candidate, evidencia=evidencia, requires_anchor=requires_anchor,
+-                    criterion_assessments=criterion_assessments, chunk_text=chunk["text"],
+-                    d_detail=abcd.d_detail,
+-                )
+-
+                 by_req.setdefault(req_id, []).append(candidate)
+                 by_req_candidates.append({"req_id": req_id, "candidate": candidate})
+ 
+@@ -2042,6 +1960,30 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
+                 _dispatch_baseline_gap_review(
+                     run_id, req_id, documento, agent_id, conclusion.conclusion,
+                     list(conclusion.review_flags), governed_exceptions)
++            # R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md,
++            # bloque 3, hallazgo de despacho): apply_conclusion_preconditions()
++            # degrada a EVALUATION_INCOMPLETE/ABCD_D_NOT_ASSESSABLE cuando
++            # D=NOT_ASSESSABLE sobre una conclusion que consolidate() YA
++            # habia decidido como support-asserting (es decir, SI hubo un
++            # registro "observed" real) -- el caso central es una
++            # contradiccion genuina entre chunks (verify_sufficiency_aggregated,
++            # fix B3), pero cubre cualquier motivo de D=NOT_ASSESSABLE sobre
++            # evidencia ya observada. Ninguna de las 3 ramas de arriba lo
++            # cubria: antes de la superficie unica (R3-T1.7, fix B4/B5), este
++            # caso nunca llegaba a "observed" en absoluto (el candidato se
++            # perdia en la rama de ausencia), asi que el gap nunca se
++            # manifestaba con datos reales -- confirmado con el checkpoint
++            # historico chunked-943a62bcbb85, 21_CFR_11.10(d): quedaba
++            # NEEDS_HUMAN_REVIEW en el informe pero SIN entrada en la cola.
++            # Semantica DISTINTA de _dispatch_baseline_gap_review (limite de
++            # parafrasis, ausencia posible): aqui SI hay evidencia positiva
++            # observada, en desacuerdo real con otra seccion -- un humano
++            # debe decidir cual seccion es la vigente, no ampliar la busqueda.
++            elif (full_document_coverage and conclusion.conclusion == "EVALUATION_INCOMPLETE"
++                  and "ABCD_D_NOT_ASSESSABLE" in conclusion.review_flags):
++                _dispatch_contradiction_blocked_review(
++                    run_id, req_id, documento, agent_id,
++                    list(conclusion.review_flags), governed_exceptions)
+ 
+     result = {
+         "run_id": run_id,
+@@ -2266,6 +2208,44 @@ def _dispatch_baseline_gap_review(run_id: str, req_id: str, documento: str, agen
+         })
+ 
+ 
++def _dispatch_contradiction_blocked_review(run_id: str, req_id: str, documento: str, agent_id: str,
++                                            review_flags: list[str],
++                                            governed_exceptions: list[dict]) -> None:
++    """R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md, bloque 3):
++    encola en la MISMA cola R1.8 un `EVALUATION_INCOMPLETE` con
++    `ABCD_D_NOT_ASSESSABLE` -- D no pudo resolverse (el caso central: una
++    contradicción genuina entre chunks, `verify_sufficiency_aggregated`,
++    fix B3) sobre un requisito que SI llegó a tener un registro "observed"
++    real (`consolidate()` ya lo habia decidido support-asserting antes de
++    que `apply_conclusion_preconditions()` lo degradara). Semántica
++    DISTINTA de `_dispatch_baseline_gap_review` (limite de parafrasis,
++    posible ausencia real): aquí SI hay evidencia positiva observada, en
++    desacuerdo real con otra sección del documento -- un humano debe
++    decidir cuál sección es la vigente, no ampliar la búsqueda ni asumir
++    ausencia. Hallazgo real que motiva este despacho: antes de la
++    superficie única (B4/B5), este candidato nunca llegaba a "observed" en
++    absoluto (se perdía en la rama de ausencia), así que el requisito
++    aparecía como `NEEDS_HUMAN_REVIEW` en el informe pero SIN entrada en
++    la cola -- confirmado con el checkpoint histórico
++    `chunked-943a62bcbb85`, `21_CFR_11.10(d)`. Mismo principio de
++    no-bloqueo que el resto de los despachos: un fallo de encolado nunca
++    tumba el run, se registra en governed_exceptions."""
++    try:
++        from factory.layer9.human_review_queue import enqueue_finding_for_review
++        enqueue_finding_for_review(
++            run_id=run_id, requirement_id=req_id, document_id=documento,
++            page=None, evidence_quote="",
++            conclusion="EVALUATION_INCOMPLETE",
++            review_flags=[*review_flags, "CONTRADICTION_BLOCKED_POSITIVE_CONCLUSION"],
++            agent_id=agent_id,
++        )
++    except Exception as exc:  # noqa: BLE001 -- ver docstring: no bloqueante, pero registrado
++        governed_exceptions.append({
++            "req_id": req_id, "stage": "review_queue_dispatch",
++            "exception": type(exc).__name__, "detail": str(exc),
++        })
++
++
+ def _write_audit_event(result: dict) -> None:
+     try:
+         from factory.core import audit_writer
+diff --git a/factory/regulatory/candidate_validity.py b/factory/regulatory/candidate_validity.py
+new file mode 100644
+index 0000000..c237e3a
+--- /dev/null
++++ b/factory/regulatory/candidate_validity.py
+@@ -0,0 +1,170 @@
++"""R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md) -- superficie
++UNICA de validez/anclaje de un candidato de chunk para un requisito.
++
++Antes de este modulo, "¿este candidato aporta evidencia valida?" se
++decidia de forma FRAGMENTADA en al menos 2 rutas independientes dentro de
++`chunked_engine.evaluate_chunked()` -- Ruta A (`by_req`/`Finding`, el
++registro tecnico) y Ruta B (`verified_records_by_req`, la que realmente
++alimenta `absence_consolidator.consolidate()` y decide el bucket Tier-1
++real) -- cada una con su propia logica de anclaje, calculada en puntos
++distintos del mismo bucle. B3 (agregacion D, commit `e823015`), B4
++(rescate de headline vacio en la Ruta A, commit `f629959`) y el hallazgo
++"B5" (el mismo rescate nunca llegaba a la Ruta B) fueron el MISMO defecto
++reapareciendo en sitios distintos -- ver el mapa de 4 rutas en
++`R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md` bloque 1 (incluye ademas Ruta C,
++distinta preocupacion de catalogo, y Ruta D, latente/sin llamador de
++produccion hoy).
++
++Mismo patron ya aplicado en el proyecto para evitar superficies paralelas:
++`factory/core/path_policy.py` (rutas), `factory/core/
++decision_scope_resolver.py` (lectura de decisiones de gobernanza). Esta
++es la tercera superficie que se unifica.
++
++TODA ruta que necesite decidir si un candidato ancla, y que texto
++representa su evidencia, llama a `resolve_candidate_evidence()`. Ninguna
++reimplementa su propia version."""
++from __future__ import annotations
++
++import re
++from dataclasses import dataclass
++
++_HEADLINE_SOURCE_MODEL = "model_headline"
++_HEADLINE_SOURCE_DERIVED = "derived_from_criterion_quotes"
++_HEADLINE_SOURCE_NONE = "none"
++
++_UNANCHORED_PLACEHOLDER = "(no anclado en el chunk, descartado)"
++_REFERENCE_LIST_PLACEHOLDER = "(no anclado en el chunk, descartado -- lista de referencias)"
++_DERIVED_PREFIX = "[headline derivado de citas por criterio verificadas] "
++
++
++def _normalize(s: str) -> str:
++    return re.sub(r"\s+", " ", s).strip().lower()
++
++
++def is_literally_anchored(quote: str, source_text: str) -> bool:
++    """Verificacion de anclaje simple (normalize + substring, sin fuzzy) --
++    identica a la que `chunked_engine._is_anchored()` usaba antes de
++    R3-T1.7 (movida aqui como la UNICA definicion; ese modulo la
++    reexporta para no romper imports existentes). Deliberadamente mas
++    estricta que `semantic_evidence_verification.verify_anchor()`
++    (que si acepta `fuzzy`) -- ese es un chequeo DISTINTO (validacion A
++    formal, ABCD), no se reemplaza aqui, solo se documenta la diferencia
++    para que quede explicita, no accidental."""
++    if not quote or not quote.strip():
++        return False
++    return _normalize(quote) in _normalize(source_text)
++
++
++@dataclass
++class CandidateEvidence:
++    anchored: bool
++    evidencia_exacta: str
++    has_evidence: bool
++    headline_source: str  # model_headline | derived_from_criterion_quotes | none
++    # R3-T1.7 (hallazgo durante el bloque 3 -- re-ejecucion de F2-DRY):
++    # `evidencia_exacta` cuando headline_source='derived_from_criterion_quotes'
++    # lleva un PREFIJO humano ("[headline derivado...]") y puede unir VARIAS
++    # citas con " | " -- ese texto compuesto NUNCA existe literalmente en el
++    # chunk como una sola cadena, asi que un consumidor que vuelva a verificar
++    # el anclaje de forma independiente (evidence_verifier.verify_llm_output,
++    # Ruta B -- un CUARTO punto de anclaje encontrado al validar este fix,
++    # fuera del mapa original del bloque 1) lo rechaza (`citation_not_found`)
++    # aunque cada cita individual SI ancle. `verifiable_quote` es SIEMPRE
++    # una unica cita literal, re-verificable tal cual contra `chunk_text`
++    # (la primera cita derivada si hay varias; identica a `evidencia_exacta`
++    # cuando el headline es directo, sin cambios). Los consumidores que
++    # vuelven a verificar anclaje (Ruta B) DEBEN usar este campo, nunca
++    # `evidencia_exacta` -- ese es para presentacion humana (Ruta A/Finding).
++    verifiable_quote: str
++
++
++def resolve_candidate_evidence(
++    *, evidencia: str, requires_anchor: bool, chunk_text: str,
++    criterion_assessments: "list | None", d_detail: "dict | None",
++) -> CandidateEvidence:
++    """LA decision unica: ¿este candidato (un chunk, para un requisito)
++    aporta evidencia valida, y que texto la representa?
++
++    `requires_anchor`: False para estados que no exigen cita (no_cumple,
++    no_aplica, etc.) -- ese candidato cuenta como valido trivialmente
++    (comportamiento historico, sin cambios).
++
++    Regla, en orden (nunca afloja, solo puede RECHAZAR mas de lo que
++    `is_literally_anchored()` solo ya rechazaba):
++
++    1. Headline directo (`evidencia` no vacio): ancla si
++       `is_literally_anchored()` PASA Y no vive dentro de una lista de
++       referencias numeradas (`detect_reference_list_context` -- MISMO
++       chequeo que ya protegia unicamente a la Ruta B verificada antes de
++       R3-T1.7; ahora aplica por igual a cualquier ruta que consuma esta
++       funcion, cerrando el gap donde un headline directo podia colarse
++       por una ruta que nunca corria ese chequeo).
++    2. Fix B4/B5 (R3-T1.6/R3-T1.7): si el headline viene VACIO pero
++       `d_detail['met']` (ya calculado por `verify_sufficiency()`, Nivel B
++       ya aplica `verify_anchor` por criterio -- nunca puede contener una
++       cita fabricada o no anclada) trae al menos un criterio, se DERIVA
++       el headline de esas citas ya verificadas -- nunca se inventa texto.
++       Cada cita derivada se revisa individualmente contra
++       `detect_reference_list_context` (el texto unido con " | " nunca
++       existe literalmente en el chunk, revisarlo unido dejaria el
++       chequeo mudo para 2+ citas) -- una sola cita sospechosa invalida
++       el rescate completo.
++    3. Si ninguna de las dos aplica: sin evidencia -- ausencia honesta
++       preservada, nunca se rescata con datos inventados.
++
++    Retorna `CandidateEvidence` con el veredicto final; el llamador NUNCA
++    vuelve a evaluar anclaje por su cuenta."""
++    from factory.regulatory import semantic_evidence_verification as sev
++
++    original = evidencia or ""
++
++    if not requires_anchor:
++        return CandidateEvidence(
++            anchored=True, evidencia_exacta=original, has_evidence=bool(original.strip()),
++            headline_source=_HEADLINE_SOURCE_MODEL if original.strip() else _HEADLINE_SOURCE_NONE,
++            verifiable_quote=original,
++        )
++
++    if original.strip():
++        anchored = is_literally_anchored(original, chunk_text) and not sev.detect_reference_list_context(
++            original, chunk_text)
++        if anchored:
++            return CandidateEvidence(
++                anchored=True, evidencia_exacta=original, has_evidence=True,
++                headline_source=_HEADLINE_SOURCE_MODEL, verifiable_quote=original,
++            )
++        return CandidateEvidence(
++            anchored=False,
++            evidencia_exacta=(
++                _REFERENCE_LIST_PLACEHOLDER
++                if sev.detect_reference_list_context(original, chunk_text)
++                else _UNANCHORED_PLACEHOLDER
++            ),
++            has_evidence=bool(original.strip()), headline_source=_HEADLINE_SOURCE_MODEL,
++            verifiable_quote="",
++        )
++
++    # Headline vacio -- unico caso donde el rescate B4/B5 puede aplicar.
++    met_criteria = set((d_detail or {}).get("met") or [])
++    derived_quotes = [
++        str(ca.get("evidence_quote") or "").strip()
++        for ca in (criterion_assessments or [])
++        if ca.get("status") == "MET" and ca.get("criterion_text") in met_criteria
++        and str(ca.get("evidence_quote") or "").strip()
++    ] if met_criteria else []
++    derived_quotes = list(dict.fromkeys(derived_quotes))  # dedupe, orden estable
++    any_reference_list = any(sev.detect_reference_list_context(q, chunk_text) for q in derived_quotes)
++
++    if derived_quotes and not any_reference_list:
++        return CandidateEvidence(
++            anchored=True, evidencia_exacta=_DERIVED_PREFIX + " | ".join(derived_quotes),
++            has_evidence=True, headline_source=_HEADLINE_SOURCE_DERIVED,
++            # UNA sola cita, literal, re-verificable -- nunca el texto
++            # compuesto (prefijo + join) que verify_llm_output/match_citation
++            # jamas encontraria como substring del chunk.
++            verifiable_quote=derived_quotes[0],
++        )
++    return CandidateEvidence(
++        anchored=False, evidencia_exacta=_UNANCHORED_PLACEHOLDER if not derived_quotes else _REFERENCE_LIST_PLACEHOLDER,
++        has_evidence=False, headline_source=_HEADLINE_SOURCE_NONE, verifiable_quote="",
++    )
+diff --git a/factory/tests/test_candidate_validity_no_bypass.py b/factory/tests/test_candidate_validity_no_bypass.py
+new file mode 100644
+index 0000000..0632cb3
+--- /dev/null
++++ b/factory/tests/test_candidate_validity_no_bypass.py
+@@ -0,0 +1,94 @@
++"""R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md, bloque 2.3):
++guardian de NO-BYPASS -- la decision de "¿este candidato ancla / aporta
++evidencia valida?" vive en UNA sola superficie
++(factory/regulatory/candidate_validity.py). Antes de R3-T1.7 esta decision
++estaba fragmentada en al menos 2 rutas independientes dentro de
++chunked_engine.py, cada una con su propia logica de anclaje y su propio
++bug (B3/B4/B5 fueron el MISMO defecto reapareciendo en sitios distintos).
++Este test falla si algun modulo reimplementa esa logica en vez de llamar
++a `resolve_candidate_evidence()` -- mismo espiritu que
++test_refresh_readonly.py (invariante estructural, no de negocio)."""
++from __future__ import annotations
++
++import ast
++from pathlib import Path
++
++FACTORY_ROOT = Path(__file__).parent.parent
++CANDIDATE_VALIDITY_PATH = FACTORY_ROOT / "regulatory" / "candidate_validity.py"
++
++# Marcador literal del headline derivado por rescate B4/B5 -- si aparece
++# hardcodeado en OTRO archivo de produccion, alguien reimplemento el
++# rescate en vez de llamar a resolve_candidate_evidence().
++_DERIVED_HEADLINE_MARKER = "headline derivado de citas por criterio verificadas"
++
++# Archivos de produccion (excluye tests, docs_plan, scripts de replay
++# fuera de factory/) que podrian, en teoria, decidir anclaje de candidato.
++_PRODUCTION_PY_FILES = [
++    p for p in FACTORY_ROOT.rglob("*.py")
++    if "/tests/" not in str(p) and "__pycache__" not in str(p)
++]
++
++
++def test_candidate_validity_module_exists_and_exports_the_single_surface():
++    assert CANDIDATE_VALIDITY_PATH.exists(), (
++        "factory/regulatory/candidate_validity.py no existe -- la superficie "
++        "unica de R3-T1.7 fue movida o eliminada")
++    source = CANDIDATE_VALIDITY_PATH.read_text(encoding="utf-8")
++    tree = ast.parse(source)
++    top_level_funcs = {n.name for n in tree.body if isinstance(n, ast.FunctionDef)}
++    assert "resolve_candidate_evidence" in top_level_funcs
++    assert "is_literally_anchored" in top_level_funcs
++
++
++def test_derived_headline_marker_lives_only_in_the_single_surface():
++    """Si el marcador del headline derivado aparece en CUALQUIER otro
++    archivo de produccion, ese archivo reimplemento el rescate B4/B5 en
++    vez de llamar a resolve_candidate_evidence() -- exactamente el patron
++    que causo que el mismo defecto reapareciera 3 veces (B3, B4, B5)."""
++    offenders = []
++    for path in _PRODUCTION_PY_FILES:
++        if path == CANDIDATE_VALIDITY_PATH:
++            continue
++        text = path.read_text(encoding="utf-8", errors="ignore")
++        if _DERIVED_HEADLINE_MARKER in text:
++            offenders.append(str(path.relative_to(FACTORY_ROOT.parent)))
++    assert offenders == [], (
++        f"El marcador de headline derivado aparece fuera de candidate_validity.py "
++        f"en: {offenders} -- reimplementacion del rescate B4/B5 detectada, "
++        f"debe llamar a resolve_candidate_evidence() en su lugar")
++
++
++def test_chunked_engine_calls_the_single_surface_not_its_own_logic():
++    """evaluate_chunked() debe importar y llamar a
++    resolve_candidate_evidence() -- no debe redefinir su propia funcion
++    de anclaje/rescate a nivel de modulo (ver _is_anchored, que ahora es
++    solo un alias/reexport, verificado por separado)."""
++    chunked_engine_path = FACTORY_ROOT / "engines" / "gmpai_integrity" / "chunked_engine.py"
++    source = chunked_engine_path.read_text(encoding="utf-8")
++    assert "from factory.regulatory.candidate_validity import resolve_candidate_evidence" in source, (
++        "chunked_engine.py ya no importa resolve_candidate_evidence() -- "
++        "¿alguien reimplemento la decision de anclaje inline?")
++    assert source.count("resolve_candidate_evidence(") >= 2, (
++        "resolve_candidate_evidence() debe llamarse desde evaluate_chunked() -- "
++        "si aparece menos de 2 veces (import + al menos 1 llamada), la "
++        "superficie unica dejo de estar conectada")
++
++
++def test_is_anchored_is_a_thin_reexport_not_a_reimplementation():
++    """chunked_engine._is_anchored() debe ser un alias de
++    candidate_validity.is_literally_anchored() -- nunca una segunda
++    implementacion del mismo chequeo (eso fue exactamente el defecto que
++    R3-T1.7 vino a cerrar)."""
++    from factory.engines.gmpai_integrity import chunked_engine as ce
++    source = ce.__file__ and Path(ce.__file__).read_text(encoding="utf-8")
++    # La funcion debe delegar explicitamente -- nunca reimplementar
++    # normalize+substring por su cuenta.
++    start = source.index("def _is_anchored(")
++    end = source.index("\n\n\n", start)
++    body = source[start:end]
++    assert "is_literally_anchored" in body, (
++        "_is_anchored() ya no delega en candidate_validity.is_literally_anchored() -- "
++        "reimplementacion detectada")
++    assert "_normalize(" not in body, (
++        "_is_anchored() volvio a implementar su propia normalizacion -- "
++        "debe delegar en la superficie unica, no duplicarla")
+diff --git a/factory/tests/test_gmpai_chunked_engine.py b/factory/tests/test_gmpai_chunked_engine.py
+index 875d650..6d5e730 100644
+--- a/factory/tests/test_gmpai_chunked_engine.py
++++ b/factory/tests/test_gmpai_chunked_engine.py
+@@ -924,6 +924,82 @@ def test_b4_genuine_contradiction_still_blocks_with_both_headlines_empty(monkeyp
+     assert finding["evidencia_exacta"].startswith("[headline derivado de citas por criterio verificadas]")
+ 
+ 
++def test_b4_contradiction_blocked_conclusion_reaches_review_queue(monkeypatch, isolated_review_queue):
++    """R3-T1.7 (docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md, bloque 3):
++    hallazgo real encontrado al validar la superficie unica en la salida
++    final -- antes de B4/B5, un candidato con headline vacio nunca llegaba
++    a 'observed', asi que una contradiccion genuina jamas llegaba a
++    EVALUATION_INCOMPLETE/ABCD_D_NOT_ASSESSABLE con evidencia real
++    observada -- quedaba huerfano (NEEDS_HUMAN_REVIEW en el informe, SIN
++    entrada en la cola, ninguna de las 3 condiciones de despacho lo
++    cubria). Con B4/B5 corregido, este caso SI ocurre -- este test
++    confirma que ahora SI se despacha, con la superficie unica activa
++    (mismo escenario de dos chunks contradictorios de
++    test_b4_genuine_contradiction_still_blocks_with_both_headlines_empty,
++    verificado end-to-end contra verified_conclusions y la cola real).
++
++    _ANCHORED_QUOTE (no el texto crudo del criterio del catalogo) como
++    evidence_quote: relevance_score(_ANCHORED_QUOTE, ...) = 0.875, muy
++    por encima del umbral -- evita que verify_llm_output (V5) marque
++    RELEVANCE_REVIEW_REQUIRED y el registro quede status='review_required'
++    (lo que haria que consolidate() resolviera SUPPORTING_EVIDENCE_UNDER_
++    REVIEW/OBSERVED_ONLY_UNVERIFIED directamente, SIN pasar por D en
++    absoluto -- un camino real pero DISTINTO al que este test quiere
++    ejercitar: contradiccion genuina sobre evidencia YA verificada)."""
++    page1 = f"Introduccion. {_ANCHORED_QUOTE} " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500
++    page2 = f"Seccion contradictoria del mismo documento. {_ANCHORED_QUOTE} " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500
++    pages = [page1, page2]
++
++    def _assessments_anchored_quote(met_indices):
++        return [
++            {"criterion_index": i + 1, "criterion_text": text,
++             "status": "MET" if (i + 1) in met_indices else "NOT_MET",
++             "evidence_quote": _ANCHORED_QUOTE if (i + 1) in met_indices else "",
++             "evidence_location": "pag X" if (i + 1) in met_indices else "",
++             "justification": "test", "limitations": ""}
++            for i, text in enumerate(_D_CRITERIA_11_10_D)
++        ]
++
++    assessments_chunk1 = _assessments_anchored_quote({1, 2, 3, 4, 5})
++    assessments_chunk2 = _assessments_anchored_quote({2, 3, 4, 5})  # criterio 1 queda NOT_MET (contradice)
++
++    responses = [
++        _all_insufficient({"21_CFR_11.10(d)": {
++            "req_id": "21_CFR_11.10(d)", "estado": "cumple_parcialmente", "evidencia_exacta": "",
++            "brecha": "n/a", "recomendacion": "n/a", "criterion_assessments": assessments_chunk1,
++        }}),
++        _all_insufficient({"21_CFR_11.10(d)": {
++            "req_id": "21_CFR_11.10(d)", "estado": "cumple_parcialmente", "evidencia_exacta": "",
++            "brecha": "n/a", "recomendacion": "n/a", "criterion_assessments": assessments_chunk2,
++        }}),
++    ]
++    call_count = {"n": 0}
++
++    def _fake_generate(*a, **k):
++        idx = call_count["n"]
++        call_count["n"] += 1
++        return _ollama_response(responses[idx])
++
++    monkeypatch.setattr(ollama_client, "generate", _fake_generate)
++    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
++    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
++    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
++                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
++                                  run_context="production", use_verified_pipeline=True, document_type="FS")
++
++    c = result["verified_conclusions"]["21_CFR_11.10(d)"]
++    assert c["conclusion"] == "EVALUATION_INCOMPLETE", c
++    assert "ABCD_D_NOT_ASSESSABLE" in c["review_flags"], c
++    assert c["chunks_observed"] >= 1, "debe haber al menos un registro observed real, no ausencia"
++
++    from factory.layer9.human_review_queue import list_pending
++    pending = [e for e in list_pending()
++               if e.get("summary", {}).get("run_id") == result["run_id"]
++               and e.get("summary", {}).get("requirement_id") == "21_CFR_11.10(d)"]
++    assert len(pending) == 1, "el requisito debe tener EXACTAMENTE una entrada en la cola -- antes de este fix no tenia ninguna"
++    assert "CONTRADICTION_BLOCKED_POSITIVE_CONCLUSION" in pending[0]["summary"]["review_flags"]
++
++
+ def test_b4_annex11_4_reference_list_still_rejected_end_to_end(monkeypatch):
+     """ANNEX11_4 end-to-end tras B4: el caso real conocido (GAMP5 citado
+     dentro de una lista de referencias numeradas) sigue rechazado -- ruta

@@ -1,0 +1,248 @@
+================================================================================
+GMP AI FACTORY — ANALISIS DEL DISEÑO PROPUESTO (CAPAS 7-9)
+Documento: 01_ANALISIS_DEL_DISENO.txt
+Fecha: 2026-06-10
+Autor del analisis: Claude (revision arquitectonica para Cesar)
+================================================================================
+
+VEREDICTO GENERAL
+--------------------------------------------------------------------------------
+El diseño propuesto es CORRECTO en su concepto central y SE APRUEBA con ajustes.
+
+Fortalezas confirmadas:
+1. Separacion total base / fabrica / soluciones custom: correcta y necesaria.
+2. Flujo obligatorio con aprobacion humana (Capa 9): alineado con GMP y con
+   el principio de "human in the loop" exigible en entornos regulados.
+3. Manifest.yaml por solucion: excelente; convierte cada solucion en un
+   artefacto trazable y auditable (espiritu 21 CFR Part 11).
+4. Workspaces aislados + diff + quality gates antes de release: correcto.
+5. Criterios agente existente / perfil derivado / agente nuevo: bien definidos
+   (regla 70-80% para perfil derivado es razonable).
+6. Restricciones duras sobre el producto base: correctas y completas.
+7. Politicas en YAML: buena practica documental.
+
+El diseño NO cambia de objetivo con los ajustes propuestos. Los ajustes
+mejoran viabilidad tecnica, consumo de recursos y trazabilidad GMP.
+
+================================================================================
+HALLAZGOS Y MEJORAS (ordenados por impacto)
+================================================================================
+
+M1. PLANTILLA POR GIT TAG, NO POR COPIA VIVA  [CRITICO]
+--------------------------------------------------------------------------------
+Problema: la estructura propuesta incluye factory/templates/client_6_layer/
+como copia fisica del producto base. Una copia viva se desactualiza (drift)
+respecto al base y duplica codigo dificil de mantener.
+
+Mejora:
+- Antes de crear la fabrica: etiquetar el producto base con git tag
+  (ej. base-v1.0.0). Ese tag es la "plantilla congelada" oficial.
+- Crear script factory/core/template_export.sh que genere la plantilla
+  bajo demanda con: git archive base-v1.0.0 | tar -x -C <workspace>
+- El manifest ya tiene el campo source.base_product_commit: se llena
+  automaticamente con el hash del tag usado. Trazabilidad perfecta.
+- factory/templates/ queda solo para archivos de parametrizacion
+  (docker-compose.template.yml, manifest.template.yaml, env.example.template),
+  NO para una copia del codigo.
+
+Beneficio GMP: cada solucion declara exactamente de que version del base
+fue derivada. Evidencia inmutable.
+
+M2. FACTORY MVP SIN POSTGRES NI REDIS PROPIOS  [ALTO — RECURSOS]
+--------------------------------------------------------------------------------
+Problema: el servidor es CPU-only y ya corre mistral:7b (20-120 s/query),
+gmp-postgres, gmp-redis, aria-* y hotelbot-*. Agregar factory-postgres y
+factory-redis consume RAM sin necesidad real en fase inicial.
+
+Mejora:
+- Fase inicial: la fabrica gestiona estado con archivos:
+  factory/projects/projects.json + manifests + audit JSONL (mismo patron
+  hash-chain SHA-256 que ya funciona en el base, reutilizar app/audit.py
+  como referencia).
+- Docker 2 (Factory) arranca solo con: factory-api (FastAPI, puerto 9000)
+  sirviendo tambien la UI estatica (igual que el base sirve index.html).
+- Postgres/Redis de fabrica se agregan SOLO si una fase posterior lo
+  justifica (multiusuario, colas de trabajo).
+
+M3. OLLAMA COMPARTIDO: CORREGIR EL MECANISMO DE CONEXION  [ALTO — TECNICO]
+--------------------------------------------------------------------------------
+Problema: el prompt sugiere OLLAMA_BASE_URL=http://host.docker.internal:11434.
+En Linux (Debian 12) host.docker.internal NO existe por defecto.
+
+Mejora (en orden de preferencia):
+a) En cada docker-compose custom agregar:
+     extra_hosts:
+       - "host.docker.internal:host-gateway"
+   y usar http://host.docker.internal:11434 (aria-ollama ya publica 11434
+   en el host).
+b) Alternativa: usar la IP del bridge docker0 (tipicamente 172.17.0.1).
+   Menos portable; documentar si se usa.
+c) PROHIBIDO: conectar redes nuevas al contenedor aria-ollama o modificar
+   su compose (regla existente: no tocar aria-* ni hotelbot-*).
+
+Riesgo a documentar: Ollama central en CPU atiende UNA cola. Con N
+soluciones activas la latencia se multiplica. Ver M4.
+
+M4. POLITICA DE RECURSOS Y CONCURRENCIA  [ALTO — FALTANTE EN EL DISEÑO]
+--------------------------------------------------------------------------------
+Problema: el diseño no limita cuantas soluciones custom pueden estar
+levantadas a la vez. En este servidor, 3+ stacks simultaneos + Ollama CPU
+degradan todo (incluido el producto base en produccion).
+
+Mejora: agregar a docker_policy.yaml:
+- max_active_custom_solutions: 2 (ajustable)
+- mem_limit y cpus obligatorios en cada servicio del template
+  (ej. api: mem_limit 768m / cpus 1.0; postgres: 512m; redis: 128m)
+- Obligacion de "docker stats" en el quality gate de deploy.
+- Las soluciones custom no productivas deben quedar en estado "stopped"
+  (docker compose stop) cuando no se demuestran.
+
+M5. REGISTRO CENTRAL DE PUERTOS Y NOMBRES  [MEDIO-ALTO]
+--------------------------------------------------------------------------------
+Problema: el diseño asigna puertos por convencion (8101, 8102...) pero no
+define quien lleva el registro ni como se valida colision.
+
+Mejora: crear factory/registry/ports.yaml:
+  reserved:
+    8000: gmp-api (base)        # NO TOCAR
+    9000: factory-api
+    11434: aria-ollama          # NO TOCAR
+    5432: gmp-postgres          # NO TOCAR
+    6379: gmp-redis             # NO TOCAR
+  ranges:
+    custom_api:      8101-8199
+    custom_postgres: 5433-5499
+    custom_redis:    6380-6449
+La fabrica asigna el siguiente puerto libre del rango y valida con
+ss -tlnp antes de cualquier deploy. El registro es la unica fuente de verdad.
+
+Nota de naming: usar snake_case en project names de compose
+(cliente_a_gmp, no cliente-a-gmp) para evitar inconsistencias entre
+nombre de proyecto, contenedores y redes.
+
+M6. ENFORCEMENT REAL DE POLITICAS SOBRE CLAUDE CODE  [ALTO — SEGURIDAD]
+--------------------------------------------------------------------------------
+Problema: las politicas YAML son declarativas; Claude Code no las "obedece"
+automaticamente por existir en una carpeta. Se necesita enforcement nativo.
+
+Mejora: el bridge debe generar, por cada workspace, un "task package" con
+mecanismos nativos de Claude Code:
+- <workspace>/CLAUDE.md          → contexto + reglas + restricciones duras
+                                    (Claude Code lo lee automaticamente)
+- <workspace>/.claude/settings.json → permisos: deny de Read/Edit/Write
+                                    fuera del workspace; deny de comandos
+                                    peligrosos (docker compose up del base,
+                                    rm -rf, git push, etc.)
+- <workspace>/task.md            → el requerimiento concreto + criterios
+                                    de aceptacion + formato de reporte
+- Skills del proyecto en .claude/skills/ (ver documento 03) para que
+  Claude Code conozca la arquitectura, los criterios de agentes y los
+  quality gates sin re-explicarlos en cada tarea.
+Las politicas YAML se mantienen como FUENTE DOCUMENTAL (auditoria GMP);
+CLAUDE.md y settings.json son su materializacion ejecutable. El bridge
+debe generarlos DESDE los YAML para que nunca diverjan.
+
+M7. DOS MODOS DE OPERACION DE LA CAPA 8  [MEDIO]
+--------------------------------------------------------------------------------
+El diseño asume integracion directa fabrica→Claude Code. Recomendacion:
+- MODO A (Fase inicial, manual-asistido): la fabrica genera el task package
+  y Cesar abre Claude Code en el workspace (cd workspace && claude).
+  Control humano total. Es lo que ya funciona hoy.
+- MODO B (Fase posterior, headless): claude_bridge.py invoca
+  claude -p "$(cat task.md)" --output-format json con allowed-tools
+  restringidos. Solo cuando el Modo A este maduro y auditado.
+No saltar directo al Modo B: en GMP primero se valida el proceso manual.
+
+M8. RELEASES COMO ARTEFACTOS INMUTABLES  [MEDIO — GMP]
+--------------------------------------------------------------------------------
+Problema: el diseño dice "release propio" pero no define el formato.
+
+Mejora: cada release debe ser:
+  factory/releases/<project_id>/v0.1.0/
+    ├── <project_id>_v0.1.0.tar.gz   (codigo completo de la solucion)
+    ├── manifest.yaml                 (copia congelada)
+    ├── SHA256SUMS                    (checksum del tar.gz)
+    ├── quality_gates_report.json     (resultado de los 14 gates)
+    └── approval.json                 (quien aprobo, cuando, que commit)
+Inmutable: nunca se edita un release; se genera v0.1.1. Esto es evidencia
+de validacion al estilo GMP (equivalente a un paquete de release CSV).
+
+M9. SEGURIDAD — API KEYS  [ALTO]
+--------------------------------------------------------------------------------
+- Cada solucion custom genera su propia key: openssl rand -hex 16, escrita
+  solo en .env (nunca commiteada; .gitignore obligatorio en template).
+- PROHIBIDO repetir el patron actual del base (key hardcodeada en el JS de
+  index.html). Para soluciones custom: la UI pide la key al usuario o la
+  recibe por configuracion de despliegue, nunca embebida.
+- Anotar como DEUDA TECNICA del producto base la key visible en su frontend.
+  No corregirla desde la fabrica (regla: no tocar el base sin autorizacion);
+  registrarla en el backlog del base para una iteracion autorizada.
+- security_policy.yaml debe incluir gate automatico:
+  grep -r "<valor de GMP_API_KEY>" en el frontend custom debe dar vacio.
+
+M10. AUDITORIA DE FABRICA CON HASH CHAIN  [MEDIO — GMP]
+--------------------------------------------------------------------------------
+El diseño menciona factory/audit/ pero sin formato. Reutilizar el patron ya
+validado del base: JSONL con cadena SHA-256 encadenada. Eventos minimos:
+project_created, requirement_registered, workspace_created, task_dispatched,
+gates_executed, diff_presented, approval_granted/rejected, release_created,
+deployment_created, deployment_started. Mismo verificador logico que
+/api/v1/audit/verify del base, adaptado a la fabrica.
+
+M11. CAPA 7 (UI) — ALCANCE MVP REALISTA  [MEDIO]
+--------------------------------------------------------------------------------
+La lista de funciones de la consola es la vision completa. Para el MVP de
+la consola basta:
+  v0.1: ver proyectos / crear proyecto / registrar requerimiento /
+        ver estado de workspace / ver reporte de gates / aprobar-rechazar /
+        ver auditoria de fabrica.
+  v0.2+: diffs embebidos, gestion visual de perfiles, deployments live.
+Mismo patron del base: SPA estatica servida por factory-api (sin framework).
+
+M12. ESTRUCTURA FISICA — AJUSTES PUNTUALES
+--------------------------------------------------------------------------------
+Se conserva la estructura propuesta con estos cambios:
++ factory/registry/            (ports.yaml, agents_catalog.yaml)
++ factory/core/template_export.sh
+- factory/templates/client_6_layer/app|data|knowledge  → ELIMINAR
+  (la plantilla de codigo sale de git archive; templates/ guarda solo
+  archivos .template parametrizables)
++ factory/.gitignore           (workspaces/*, deployments/*/.env, logs/*)
+~ workspaces/ y deployments/ NO se versionan en git (solo releases y
+  manifests); evita repos gigantes y mezclas de historia.
++ Cada deployment final puede inicializar su PROPIO git (git init) para
+  historia independiente por cliente. Recomendado, opcional en MVP.
+
+M13. ROADMAP — COHERENCIA CON FASE 3 EXISTENTE
+--------------------------------------------------------------------------------
+La Fase 3 pendiente del producto base (memoria Redis compartida, cross-agent,
+MES/SCADA, PDF reports, RBAC) es independiente de la fabrica. Recomendacion:
+no mezclar ambos frentes en los mismos commits. La fabrica se desarrolla en
+carpeta factory/ con commits propios prefijados "factory:".
+
+================================================================================
+RIESGOS RESIDUALES (aceptados y documentados)
+================================================================================
+R1. Ollama CPU compartido = cuello de botella conocido. Mitigacion: M4 +
+    upgrade futuro a GPU (ya en roadmap: Llama 3.1 70B).
+R2. Claude Code en Modo A depende de disciplina operativa (trabajar solo en
+    workspace). Mitigacion: M6 (settings.json deny) + auditoria M10.
+R3. Espacio en disco: clones por workspace + releases tar.gz. Mitigacion:
+    politica de limpieza de workspaces cerrados (con backup previo) y
+    df -h en gates.
+
+================================================================================
+CONCLUSION
+================================================================================
+Arquitectura Docker 1 + Docker 2 + Docker N: VIABLE y APROBADA.
+Con los ajustes M1-M13 el diseño queda mas liviano para el servidor actual,
+mas seguro, y con mejor evidencia de trazabilidad GMP, sin cambiar el
+objetivo: fabrica que convierte requerimientos humanos en soluciones
+independientes, gobernadas por aprobacion humana.
+
+Ver:
+  02_ARQUITECTURA_AJUSTADA.txt   → diseño final consolidado
+  03_SKILLS_CLAUDE_CODE.txt      → skills y prompts de soporte
+  04_PLAN_DE_TRABAJO_FASES.txt   → fases F0-F6 con criterios de salida
+  05_PROMPTS_CLAUDE_CODE.txt     → bloques listos para pegar, en orden
+================================================================================

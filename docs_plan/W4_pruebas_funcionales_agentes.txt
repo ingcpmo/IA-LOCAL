@@ -1,0 +1,418 @@
+============================================================
+W4 — CONSOLA DE PRUEBAS FUNCIONALES POR AGENTE
+GMP AI Factory · Mission Control · Post W3
+============================================================
+
+OBJETIVO
+  Convertir Mission Control de visor de evidencia a consola de operación:
+  permitir PROBAR cada agente desde el browser contra el deployment real,
+  ver qué respondió, si pasó o falló, qué endpoint usó, y dejar evidencia
+  auditada SOLO cuando se ejecuta una prueba explícita.
+
+PRINCIPIO ARQUITECTÓNICO CENTRAL
+  "Probar un agente" = enviar un CASO DE PRUEBA CONTROLADO a su endpoint
+  funcional real del deployment (ej. POST http://localhost:8102/oos/records)
+  y evaluar la respuesta contra un resultado esperado.
+
+  Separación estricta (regla U5):
+    - Ver catálogo / ver resultados previos = READER (GET, no audita)
+    - Ejecutar una prueba                   = EXECUTOR (POST, audita)
+  La evidencia se escribe SOLO al pulsar "Probar", nunca al abrir la sección.
+
+REGLAS DURAS
+  - No generar código nuevo de misión. No headless. No deploy. No Docker nuevo.
+  - No tocar app/, .env base, docker-compose base, data/, backups/, aria-*, hotelbot-*.
+  - Casos de prueba SOLO desde catálogo curado (no texto libre que permita
+    inyectar datos productivos o lotes reales).
+  - Datos de prueba 100% SINTÉTICOS (sample_id ficticio, sin PII).
+  - Las pruebas corren contra el deployment de la misión (su puerto propio),
+    NUNCA contra el producto base 8000 ni contra otra misión.
+  - Timeout por prueba: 15s. Si el endpoint no responde → FAIL claro, no cuelga.
+  - *** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+------------------------------------------------------------
+PASO 0 — Estado base y mapa funcional del deployment
+------------------------------------------------------------
+cd /home/ing_cpmo
+export FK="$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)"
+export HDR="X-API-Key"
+
+echo "=== Confirmar deployment OOS vivo ==="
+docker ps --filter "name=oos_hplc" --format "{{.Names}} {{.Ports}} {{.Status}}"
+curl -s -m 5 http://localhost:8102/health | python3 -m json.tool
+
+echo "=== Descubrir endpoints funcionales reales del deployment (OpenAPI) ==="
+curl -s http://localhost:8102/openapi.json | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+print(f'Título: {d.get(\"info\",{}).get(\"title\",\"?\")}')
+for p in sorted(d.get('paths',{})):
+    for m in d['paths'][p]:
+        print(f'  {m.upper():6} {p}')
+"
+  >> Esto es la FUENTE DE VERDAD de qué se puede probar. Anota cada
+     endpoint POST funcional: /oos/records, /hplc/sst/validate,
+     /audit/alcoa/validate (y los que aparezcan).
+
+echo "=== Mapear agentes del diseño a endpoints funcionales ==="
+curl -s -H "$HDR: $FK" \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/agents \
+  | python3 -m json.tool
+  >> Cada agente del agent_design_proposal debe poder mapearse a uno o
+     más endpoints reales. Si un agente no tiene endpoint funcional,
+     marcarlo "sin endpoint probable" (no inventar).
+
+------------------------------------------------------------
+TAREA 1 — CATÁLOGO DE CASOS DE PRUEBA (curado, versionado)
+------------------------------------------------------------
+# Crear factory/test_catalogs/oos_hplc_investigator.yaml
+# Define los casos de prueba controlados por agente. NO texto libre.
+# Cada caso: agente, endpoint, payload sintético, aserción esperada.
+
+cat > /tmp/catalog_example.yaml <<'EOF'
+project_id: oos_hplc_investigator
+deployment_base: "http://localhost:8102"
+catalog_version: "1.0"
+agents:
+  - agent_id: oos_workflow_agent
+    description: "Gestión del flujo OOS bifásico FDA 2006"
+    tests:
+      - test_id: oos_create_in_spec
+        title: "Resultado dentro de especificación → no OOS"
+        endpoint: "POST /oos/records"
+        payload:
+          sample_id: "SYNTH-0001"
+          test_method: "HPLC-ASSAY"
+          analyst_id: "analyst_test"
+          result_value: 99.5
+          spec_min: 95.0
+          spec_max: 105.0
+        expect:
+          status_code: 200
+          json_path: "$.is_oos"
+          equals: false
+      - test_id: oos_create_out_of_spec
+        title: "Resultado fuera de especificación → OOS detectado"
+        endpoint: "POST /oos/records"
+        payload:
+          sample_id: "SYNTH-0002"
+          test_method: "HPLC-ASSAY"
+          analyst_id: "analyst_test"
+          result_value: 108.0
+          spec_min: 95.0
+          spec_max: 105.0
+        expect:
+          status_code: 200
+          json_path: "$.is_oos"
+          equals: true
+  - agent_id: hplc_data_review_agent
+    description: "Validación SST cromatográfica"
+    tests:
+      - test_id: sst_fail_low_plates
+        title: "Platos teóricos bajos → SST FAIL"
+        endpoint: "POST /hplc/sst/validate"
+        payload:
+          theoretical_plates: 1500
+          tailing_factor: 1.2
+          rsd_percent: 0.8
+        expect:
+          status_code: 200
+          json_path: "$.sst_pass"
+          equals: false
+  - agent_id: alcoa_audit_agent
+    description: "Validación ALCOA+ del registro"
+    tests:
+      - test_id: alcoa_all_present
+        title: "Registro completo → ALCOA compliant"
+        endpoint: "POST /audit/alcoa/validate"
+        payload:
+          attributable: true
+          legible: true
+          contemporaneous: true
+          original: true
+          accurate: true
+          complete: true
+          consistent: true
+          enduring: true
+          available: true
+        expect:
+          status_code: 200
+          json_path: "$.alcoa_compliant"
+          equals: true
+EOF
+cat /tmp/catalog_example.yaml
+
+  >> IMPORTANTE: el catálogo real debe construirse leyendo el OpenAPI del
+     PASO 0 y el código generado (app/*.py) para que los payloads y los
+     json_path coincidan con la implementación real. NO inventar campos
+     que el endpoint no acepta. Si un campo no existe en el código, no se
+     incluye en el catálogo.
+
+  >> *** PAUSA 1: revisar el catálogo contra el OpenAPI real antes de seguir. ***
+
+------------------------------------------------------------
+TAREA 2 — ENDPOINTS BACKEND DE PRUEBA
+------------------------------------------------------------
+# Agregar en factory/api/routes/layer9.py (o un nuevo routes/testing.py):
+
+# READER (no audita) — lista el catálogo:
+# GET /api/v1/layer9/missions/{project_id}/test-catalog
+#   → devuelve el catálogo curado (agentes + casos), SIN ejecutar nada.
+#   → si no hay deployment activo: incluye "deployment_ready": false.
+
+# READER (no audita) — historial de pruebas previas:
+# GET /api/v1/layer9/missions/{project_id}/test-results?limit=50
+#   → lee factory/test_results/{project_id}.jsonl
+#   → devuelve resultados de pruebas ya ejecutadas (read-only).
+
+# EXECUTOR (audita) — ejecuta UN caso de prueba:
+# POST /api/v1/layer9/missions/{project_id}/test/run
+#   Body: {"test_id": "oos_create_out_of_spec", "run_by": "Cesar"}
+#   Flujo:
+#     1) Validar run_by no genérico (human/agent/system → 422)
+#     2) Buscar test_id en el catálogo curado (404 si no existe)
+#     3) Verificar deployment activo y health OK (409 si no está vivo)
+#     4) Construir request al endpoint del deployment (base + endpoint)
+#        - SOLO desde el catálogo. El usuario NO envía payload arbitrario.
+#        - timeout 15s
+#     5) Ejecutar la llamada HTTP real al deployment
+#     6) Evaluar aserción (status_code + json_path + equals)
+#     7) Resultado: PASS / FAIL / ERROR (con detalle)
+#     8) Persistir en factory/test_results/{project_id}.jsonl:
+#        {test_id, agent_id, endpoint, payload, response_status,
+#         response_excerpt, assertion, result, run_by, run_at, latency_ms}
+#     9) AUDITAR evento agent_functional_test_executed con:
+#        {project_id, test_id, agent_id, result, run_by,
+#         decision_origin: "human_confirmed"}
+#     10) Devolver el resultado completo al browser
+
+# EXECUTOR (audita) — ejecuta toda la suite de un agente:
+# POST /api/v1/layer9/missions/{project_id}/test/run-suite
+#   Body: {"agent_id": "oos_workflow_agent", "run_by": "Cesar"}
+#   → ejecuta todos los test del agente en secuencia
+#   → un solo evento de auditoría agent_suite_tested con resumen N/M PASS
+#   → NO ejecuta si deployment no está vivo
+
+# Reglas de seguridad del executor:
+#   - El payload SIEMPRE viene del catálogo, NUNCA del body del request.
+#     El body solo trae test_id + run_by. Esto impide inyección de datos.
+#   - El endpoint destino SIEMPRE es del deployment de ESA misión (su puerto).
+#     Validar que el puerto pertenece a la misión (registry/ports.yaml).
+#   - NUNCA permitir base_url arbitraria (no SSRF).
+#   - Sanitizar response_excerpt (máx 2 KB, sin volcar secretos si los hubiera).
+
+  >> *** PAUSA 2: revisar la lógica del executor (sobre todo que el payload
+       viene del catálogo y el puerto se valida) antes de aplicar. ***
+
+------------------------------------------------------------
+TAREA 3 — CORREGIR ESTADO OBSOLETO DEL PANEL GENERAL
+------------------------------------------------------------
+# Problema reportado: el panel general muestra estados de otra misión o
+# stale ("Código GENERANDO" cuando ya terminó).
+
+# Causa: el flujo gobernado (8 nodos) muestra una misión fija o el último
+# job, no la misión seleccionada.
+
+# Corrección en frontend renderFlow():
+#   - El flujo gobernado debe reflejar la MISIÓN SELECCIONADA, no una global.
+#   - Fuente de verdad por misión: GET /layer9/missions/{id}/summary (de W3).
+#   - Reglas de estado de cada nodo:
+#       Misión:     status de la misión
+#       Diseño:     design.files_count > 0 → GENERADO
+#       Headless:   headless.returncode==0 → COMPLETADO (no GENERANDO)
+#       Código:     workspace.py_files > 0 → GENERADO
+#       Tests:      tests.passed > 0 && failed==0 → PASS
+#       Gates:      según reporte (PASS/WARN/skip)
+#       RC:         rcs.canonical existe → APROBADO
+#       Aprobación: rc canónico aprobado → HUMANO ✓
+#   - Si jobs.running==0 (de /layer8/status): NINGÚN nodo en "EN CURSO".
+#   - Banner "Misión en curso: X" debe mostrar la misión SELECCIONADA o
+#     decir "Selecciona una misión" si no hay ninguna abierta.
+
+# Test visual: abrir oos_hplc_investigator → todos los nodos en estado
+# final correcto (ningún "GENERANDO").
+
+------------------------------------------------------------
+TAREA 4 — FRONTEND: SECCIÓN "PRUEBAS FUNCIONALES"
+------------------------------------------------------------
+mkdir -p backups/frontend
+cp factory/ui/mission_control.html backups/frontend/mission_control.html.pre_W4
+
+# Agregar al panel lateral por misión (junto a Estado/Evidencia/Agentes/Acciones
+# de W3) una sección nueva: PRUEBAS FUNCIONALES.
+
+# Al expandir:
+#   1) Llama GET /test-catalog (reader, no audita)
+#   2) Muestra deployment status: vivo/no vivo (si no vivo, deshabilita botones)
+#   3) Por cada agente: tarjeta con sus casos de prueba
+#      Cada caso muestra: title, endpoint, payload (colapsado), expect
+#   4) Botón "Probar" por caso + botón "Probar suite" por agente
+#   5) Al pulsar "Probar":
+#      - Pide confirmación con nombre real del operador (run_by)
+#      - Llama POST /test/run (executor, audita)
+#      - Muestra spinner (timeout 15s)
+#      - Renderiza resultado:
+#          PASS (verde) / FAIL (rojo) / ERROR (ámbar)
+#          + endpoint usado
+#          + status code recibido
+#          + respuesta del deployment (read-only, scroll, copiar)
+#          + aserción evaluada (esperado vs recibido)
+#          + latencia ms
+#   6) Historial: GET /test-results muestra pruebas previas con su resultado
+#      y quién las corrió (run_by) y cuándo.
+
+# Reglas UI:
+#   - El botón "Probar" SIEMPRE pide nombre real antes de ejecutar.
+#   - Rechaza run_by genérico (human/agent/system) en frontend antes de llamar.
+#   - Nunca permite editar el payload (viene del catálogo). Solo se ejecuta.
+#   - Indicador claro de que ejecutar una prueba DEJA EVIDENCIA AUDITADA.
+
+------------------------------------------------------------
+TAREA 5 — TESTS NUEVOS
+------------------------------------------------------------
+# factory/tests/test_functional_testing.py
+#   - GET /test-catalog devuelve catálogo, NO audita (delta cadena=0)
+#   - GET /test-results read-only, NO audita
+#   - POST /test/run con run_by genérico → 422
+#   - POST /test/run con test_id inexistente → 404
+#   - POST /test/run con deployment caído → 409 (mock health fail)
+#   - POST /test/run exitoso → audita exactamente 1 evento
+#   - POST /test/run NO acepta payload arbitrario en el body (solo test_id+run_by)
+#   - POST /test/run valida que el puerto pertenece a la misión (anti-SSRF)
+#   - Evidencia persistida en test_results/{id}.jsonl con run_by real
+
+# factory/tests/test_refresh_readonly.py (extender)
+#   - /test-catalog y /test-results en la lista de readers que NO crecen cadena
+
+------------------------------------------------------------
+TAREA 6 — VALIDACIONES
+------------------------------------------------------------
+echo "=== py_compile ==="
+PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile \
+  factory/api/routes/layer9.py factory/api/routes/layer8.py \
+  factory/core/path_policy.py
+
+echo "=== JS check (extraer script del HTML) ==="
+python3 - <<'PYEOF'
+import re,subprocess,tempfile,pathlib,os,sys
+html=pathlib.Path("factory/ui/mission_control.html").read_text()
+js="\n".join(re.findall(r"<script[^>]*>(.*?)</script>",html,re.S))
+f=tempfile.NamedTemporaryFile("w",suffix=".js",delete=False); f.write(js); f.close()
+r=subprocess.run(["node","--check",f.name],capture_output=True,text=True)
+print("JS:", "OK" if r.returncode==0 else "FAIL"); print(r.stderr[:600])
+os.unlink(f.name); sys.exit(r.returncode)
+PYEOF
+
+echo "=== Tests ==="
+python3 -m pytest factory/tests/test_functional_testing.py -q
+python3 -m pytest factory/tests/test_refresh_readonly.py -q
+python3 -m pytest factory/tests/test_path_policy.py -q
+python3 -m pytest factory/tests/ -q --tb=no
+
+echo "=== Selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "Gate 0|PASS|FAIL"
+
+echo "=== READER: catálogo (no debe auditar) ==="
+curl -s -H "$HDR: $FK" \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/test-catalog \
+  | python3 -m json.tool | head -40
+
+echo "=== Invariante: catálogo NO crece la cadena ==="
+AUDIT="$(find factory -name '*.jsonl' | grep -E 'audit.*jsonl$' | head -1)"
+C0=$(wc -l < "$AUDIT")
+for i in 1 2 3; do
+  curl -s -H "$HDR: $FK" \
+    http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/test-catalog -o /dev/null
+done
+C1=$(wc -l < "$AUDIT")
+echo "delta tras 3 GET test-catalog: $((C1-C0))   (DEBE ser 0)"
+
+echo "=== EXECUTOR: ejecutar una prueba real (SÍ audita, +1) ==="
+C2=$(wc -l < "$AUDIT")
+curl -s -w "\nHTTP:%{http_code}\n" \
+  -X POST -H "$HDR: $FK" -H "Content-Type: application/json" \
+  -d '{"test_id":"oos_create_out_of_spec","run_by":"Cesar"}' \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/test/run \
+  | python3 -m json.tool
+C3=$(wc -l < "$AUDIT")
+echo "delta tras 1 prueba ejecutada: $((C3-C2))   (DEBE ser exactamente 1)"
+
+echo "=== Seguridad: run_by genérico debe dar 422 ==="
+curl -s -o /dev/null -w "HTTP:%{http_code}\n" \
+  -X POST -H "$HDR: $FK" -H "Content-Type: application/json" \
+  -d '{"test_id":"oos_create_out_of_spec","run_by":"human"}' \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/test/run
+
+echo "=== Seguridad: test_id inexistente debe dar 404 ==="
+curl -s -o /dev/null -w "HTTP:%{http_code}\n" \
+  -X POST -H "$HDR: $FK" -H "Content-Type: application/json" \
+  -d '{"test_id":"no_existe","run_by":"Cesar"}' \
+  http://localhost:9000/api/v1/layer9/missions/oos_hplc_investigator/test/run
+
+------------------------------------------------------------
+PAUSA FINAL — REPORTE Y CLASIFICACIÓN
+------------------------------------------------------------
+git status --short
+git diff --stat
+git diff -- factory/ui/mission_control.html factory/api/routes factory/tests \
+            factory/test_catalogs
+
+Clasificar:
+
+  | Item | Estado | Evidencia |
+  |---|---|---|
+  | Catálogo de pruebas curado creado                  | sí/no | yaml |
+  | Payloads del catálogo coinciden con OpenAPI real   | sí/no | revisión |
+  | GET /test-catalog (reader, no audita)              | sí/no | delta=0 |
+  | GET /test-results (reader, no audita)              | sí/no | delta=0 |
+  | POST /test/run ejecuta contra deployment real      | sí/no | curl PASS |
+  | POST /test/run audita exactamente 1 evento         | sí/no | delta=1 |
+  | run_by genérico rechazado (422)                    | sí/no | curl |
+  | test_id inexistente rechazado (404)                | sí/no | curl |
+  | deployment caído rechazado (409)                   | sí/no | test |
+  | Payload NO editable por el usuario (anti-inyección)| sí/no | test |
+  | Puerto validado contra misión (anti-SSRF)          | sí/no | test |
+  | Panel general muestra misión SELECCIONADA          | sí/no | UI |
+  | Estado "GENERANDO" obsoleto corregido              | sí/no | UI |
+  | Sección Pruebas Funcionales en browser             | sí/no | UI |
+  | Resultado muestra endpoint+status+respuesta+aserción| sí/no | UI |
+  | Historial de pruebas con run_by                    | sí/no | UI |
+  | JS check                                           | PASS/FAIL | |
+  | Tests suite                                        | N/N | |
+  | Gate 0 selfcheck                                   | PASS/FAIL | |
+  | No headless, no deploy, no Docker nuevo, no código nuevo | confirmar | |
+  | No secretos expuestos                              | confirmar | |
+
+>> "W4 listo. ¿Apruebas el commit?"
+>> Sugerido:
+>>   factory: W4 — consola de pruebas funcionales por agente
+>>            (catálogo curado, executor auditado, panel por misión corregido)
+
+*** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+============================================================
+NOTAS — QUÉ HACE W4 Y QUÉ NO
+============================================================
+QUÉ HACE:
+  ✓ Probar cada agente desde el browser contra su endpoint funcional REAL
+  ✓ Ver respuesta, PASS/FAIL, endpoint usado, status, latencia, aserción
+  ✓ Evidencia auditada SOLO al ejecutar una prueba explícita (run_by real)
+  ✓ Catálogo curado de casos (sin texto libre que permita inyección)
+  ✓ Panel general por misión seleccionada (sin estados obsoletos)
+  ✓ Historial de pruebas read-only con quién las corrió
+  ✓ Separación estricta reader (no audita) / executor (audita)
+
+QUÉ NO HACE:
+  ✗ No genera código nuevo de misión
+  ✗ No ejecuta headless
+  ✗ No hace deploy ni crea Docker
+  ✗ No acepta payloads arbitrarios (solo catálogo)
+  ✗ No llama URLs arbitrarias (solo el deployment de la misión, anti-SSRF)
+  ✗ No expone secretos en respuestas
+
+SIGUIENTE TRAS W4
+  Con pruebas funcionales verdes por agente, la misión OOS queda validada
+  end-to-end desde el browser. Próximo bloque natural: ingesta de corpus
+  regulatorio real (bloqueador go-live) o replicar el patrón para una
+  segunda misión cliente.
+============================================================

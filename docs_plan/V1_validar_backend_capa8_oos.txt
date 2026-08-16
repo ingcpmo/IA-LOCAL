@@ -1,0 +1,364 @@
+============================================================
+V1 — VALIDAR BACKEND + EJECUTAR CAPA 8 OOS_HPLC_INVESTIGATOR
+GMP AI Factory · Misión oos_hplc_investigator · Post serie U
+============================================================
+
+OBJETIVO
+  1) Descartar que el problema sea del browser vs backend (validación API directa)
+  2) Verificar autenticación de Claude CLI en el host (cuenta ing.cpmo@gmail.com)
+  3) Ejecutar el ciclo Capa 8 completo para oos_hplc_investigator:
+     diseño → task package → validación de seguridad → PAUSA → headless → código
+  4) Limpiar el puerto zombie 8102
+
+MODO
+  - Diagnóstico primero, ejecución después
+  - Pausas en: (a) resultado del task.md, (b) autorización headless
+  - Sin deploy, sin headless automático
+  - No tocar app/, .env base, data/, backups/, aria-*, hotelbot-*
+  - NO COMMIT SIN APROBACIÓN DE CESAR
+
+------------------------------------------------------------
+PASO 0 — Entorno y línea base
+------------------------------------------------------------
+cd /home/ing_cpmo
+
+export FK="$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)"
+export HDR="X-API-Key"
+
+echo "=== Confirmar misión oos_hplc_investigator ==="
+curl -s -H "$HDR: $FK" http://localhost:9000/api/v1/layer9/missions \
+  | python3 -c "
+import json,sys
+ms=json.load(sys.stdin)
+# aceptar lista o dict con 'missions'
+if isinstance(ms,dict): ms=ms.get('missions',ms.get('items',[]))
+for m in ms:
+    if 'oos' in m.get('project_id','').lower():
+        print(json.dumps(m, indent=2))
+"
+
+  >> Resultado esperado: JSON con status=approved, approved_by=Cesar,
+     decision_origin=human_confirmed. Si no aparece → el browser creó
+     la misión pero la API no la persistió → problema de backend real.
+
+------------------------------------------------------------
+PASO 1 — DESCARTE BROWSER VS BACKEND (test API directo)
+------------------------------------------------------------
+echo "=== Test 1: crear misión idéntica vía curl (sin browser) ==="
+curl -s -X POST -H "$HDR: $FK" -H "Content-Type: application/json" \
+  -d '{
+    "project_id": "oos_hplc_api_test",
+    "name": "Test API directo OOS HPLC",
+    "objective": "Prueba de equivalencia browser vs API directa. Sin headless.",
+    "client_type": "factory_selftest",
+    "domains": ["DATA_INTEGRITY"],
+    "regulatory_scope": ["21_CFR_PART_11"],
+    "autonomy_level": "manual_assisted",
+    "allowed_actions": ["analyze_requirement"],
+    "exit_criteria": ["test_only"]
+  }' \
+  http://localhost:9000/api/v1/layer9/missions | python3 -m json.tool
+
+echo "=== Test 2: verificar que ambas misiones están en la lista ==="
+curl -s -H "$HDR: $FK" http://localhost:9000/api/v1/layer9/missions \
+  | python3 -c "
+import json,sys
+ms=json.load(sys.stdin)
+if isinstance(ms,dict): ms=ms.get('missions',ms.get('items',[ms]))
+for m in (ms if isinstance(ms,list) else [ms]):
+    pid=m.get('project_id','')
+    if 'oos' in pid.lower() or 'hplc' in pid.lower():
+        print(f\"  {pid}: status={m.get('status')} approved_by={m.get('approved_by','—')}\")
+"
+
+  >> Si Test 1 devuelve HTTP 201/200 y aparece en Test 2: backend OK,
+     browser también OK. El problema no es de comunicación.
+  >> Si Test 1 devuelve error: hay un bug en el endpoint POST /layer9/missions.
+     Anotar el error exacto y reportar antes de continuar.
+
+------------------------------------------------------------
+PASO 2 — VALIDAR AUTENTICACIÓN CLAUDE CLI
+------------------------------------------------------------
+echo "=== Verificar claude CLI en host ==="
+which claude && claude --version || echo "claude CLI no encontrado en PATH"
+
+echo "=== Estado de autenticación ==="
+# El CLI guarda credenciales en ~/.claude/ o ~/.config/claude/
+ls -la ~/.claude/ 2>/dev/null || echo "~/.claude/ no existe"
+ls -la ~/.config/claude/ 2>/dev/null || echo "~/.config/claude/ no existe"
+
+echo "=== Test de autenticación real (sin --dangerously-skip-permissions) ==="
+echo "Hola, responde solo: OK" | timeout 30 claude -p \
+  --output-format json \
+  --no-session-persistence \
+  2>&1 | head -20 || echo "CLI no autenticado o timeout"
+
+  >> Resultado esperado A (autenticado): JSON con {"type":"result","result":"OK",...}
+  >> Resultado esperado B (sin auth): error de autenticación
+  >> Si B: ir a PASO 2b para configurar auth
+
+------------------------------------------------------------
+PASO 2b — CONFIGURAR AUTH CLAUDE CLI (solo si PASO 2 falló)
+------------------------------------------------------------
+# La autenticación del CLI usa tu cuenta de Anthropic (ing.cpmo@gmail.com).
+# NUNCA se hardcodea en el código — el CLI la gestiona en ~/.claude/
+
+echo "=== Opciones de autenticación ==="
+echo ""
+echo "OPCIÓN A — Interactive login (requiere browser en tu máquina local):"
+echo "  claude auth login"
+echo "  (abrirá URL; completa en tu browser con cuenta ing.cpmo@gmail.com)"
+echo ""
+echo "OPCIÓN B — API key de Anthropic (si tienes una en console.anthropic.com):"
+echo "  export ANTHROPIC_API_KEY='sk-ant-...tu-clave-real...'"
+echo "  echo 'Prueba' | claude -p --output-format json --no-session-persistence"
+echo ""
+echo "OPCIÓN C — Verificar si ya hay sesión activa en otra ubicación:"
+find /home/ing_cpmo -name "*.json" -path "*claude*" 2>/dev/null | head -10
+find /root -name "*.json" -path "*claude*" 2>/dev/null | head -10
+
+  >> IMPORTANTE: La cuenta ing.cpmo@gmail.com debe tener Claude Pro o Team
+     activo para que el CLI funcione. Si no tiene suscripción activa,
+     el headless NO puede correr. Verificar en console.anthropic.com.
+  >>
+  >> NO guardar ANTHROPIC_API_KEY en ningún archivo del repo — solo
+     como variable de entorno en la sesión actual o en ~/.bashrc (no en git).
+
+------------------------------------------------------------
+PASO 3 — LIMPIAR PUERTO ZOMBIE 8102
+------------------------------------------------------------
+echo "=== Estado del puerto 8102 ==="
+docker ps -a --filter "publish=8102" --format "{{.Names}}\t{{.Status}}\t{{.Ports}}"
+sudo ss -tulpen | grep 8102 || echo "(nada escuchando en 8102)"
+
+echo "=== Verificar registry ==="
+python3 -c "
+import yaml,pathlib
+p=pathlib.Path('registry/ports.yaml')
+d=yaml.safe_load(p.read_text())
+a=d.get('assignments',{})
+for k,v in a.items():
+    if '8102' in str(v): print(f'{k}: {v}')
+" 2>/dev/null || echo "registry/ports.yaml no encontrado"
+
+echo "=== Limpiar asignación zombie si no hay contenedor activo ==="
+python3 - <<'PY'
+import yaml,pathlib
+p=pathlib.Path('registry/ports.yaml')
+if not p.exists():
+    print("registry/ports.yaml no encontrado"); exit()
+d=yaml.safe_load(p.read_text())
+a=d.get('assignments',{})
+zombies=[k for k,v in a.items() if '8102' in str(v)]
+if zombies:
+    print(f"Zombies en 8102: {zombies}")
+    print("Para limpiar ejecutar: del d['assignments']['<nombre>']")
+    print("NO eliminar sin confirmar que no hay contenedor activo")
+else:
+    print("Sin zombies en 8102")
+PY
+
+  >> Si hay zombie: reportar y PEDIR APROBACIÓN a Cesar antes de limpiar.
+  >> Si el puerto 8102 está libre y la asignación es stale, limpiarla del
+     registry y actualizar status/risks.
+
+------------------------------------------------------------
+PASO 4 — DISEÑO PLAN-ONLY PARA OOS_HPLC_INVESTIGATOR
+------------------------------------------------------------
+# Solo si: misión existe (PASO 0 OK) + CLI autenticado (PASO 2 OK)
+
+echo "=== Generar diseño Capa 8 (sin headless, sin escribir código) ==="
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+from factory.layer8.autonomous_build_orchestrator import AutoBuildOrchestrator
+
+orch = AutoBuildOrchestrator()
+result = orch.design_plan_only("oos_hplc_investigator")
+import json
+print(json.dumps(result, indent=2, ensure_ascii=False))
+PY
+
+  >> El diseño debe incluir:
+  >>   - agents: lista de agentes con nombre + dominio + perfil
+  >>   - workspace: factory/workspaces/oos_hplc_investigator/
+  >>   - documents_pending: FDA OOS Guidance 2006, FDA DI 2018, USP 1058
+  >>   - regulatory_text_fabricated: false (REGLA DURA)
+  >>   - autonomy_level: controlled_full
+  >>
+  >> Si regulatory_text_fabricated=true → PARAR inmediatamente.
+
+------------------------------------------------------------
+PASO 5 — CONSTRUIR TASK PACKAGE Y REVISAR
+------------------------------------------------------------
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+from factory.layer8.autonomous_build_orchestrator import AutoBuildOrchestrator
+
+orch = AutoBuildOrchestrator()
+result = orch.build_task_package("oos_hplc_investigator")
+print("Resultado:", result.get('status'))
+print("task.md path:", result.get('task_md_path','—'))
+PY
+
+echo "=== Leer task.md generado ==="
+cat factory/workspaces/oos_hplc_investigator/task.md 2>/dev/null \
+  || echo "task.md no generado aún"
+
+echo "=== Validar seguridad del task ==="
+python3 -c "
+import sys; sys.path.insert(0,'.')
+from factory.layer8.claude_runtime import validate_task_safety
+r = validate_task_safety('factory/workspaces/oos_hplc_investigator/task.md')
+print('task_safe:', r.get('safe'))
+print('violations:', r.get('violations',[]))
+"
+
+------------------------------------------------------------
+PAUSA 1 — REVISIÓN DEL TASK.MD
+------------------------------------------------------------
+Mostrar el contenido COMPLETO del task.md y clasificar:
+
+  | Item | Estado |
+  | Documentos regulatorios como PENDING_DOCUMENT | sí/no |
+  | Sin texto normativo FDA/USP fabricado | sí/no |
+  | Paths prohibidos (app/, .env, data/) ausentes | sí/no |
+  | Comandos prohibidos (git push, rm -rf) ausentes | sí/no |
+  | task_safe=True, violations=[] | sí/no |
+  | 4 agentes definidos (oos, hplc, alcoa, disposition) | sí/no |
+
+>> "task.md listo para revisión. ¿Apruebas el task.md y autorizas el headless?
+    Responde: 'autoriza headless como Cesar' para continuar."
+
+*** NO EJECUTAR HEADLESS SIN AUTORIZACIÓN EXPLÍCITA DE CESAR ***
+
+------------------------------------------------------------
+PASO 6 — HEADLESS (solo tras autorización)
+------------------------------------------------------------
+# Habilitar headless de forma controlada
+python3 - <<'PY'
+import sys, yaml, pathlib; sys.path.insert(0,'.')
+rc = pathlib.Path('factory/runtime/runtime_config.yaml')
+d = yaml.safe_load(rc.read_text())
+d['headless_enabled'] = True
+d['headless_scope'] = 'oos_hplc_investigator'
+rc.write_text(yaml.safe_dump(d, sort_keys=False))
+print("headless habilitado para oos_hplc_investigator")
+PY
+
+# Encolar y ejecutar el job headless
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+from factory.layer8.autonomous_build_orchestrator import AutoBuildOrchestrator
+
+orch = AutoBuildOrchestrator()
+job = orch.run_headless_build("oos_hplc_investigator")
+print("job_id:", job.get('job_id'))
+print("status:", job.get('status'))
+# El host_worker.py lo ejecutará en background
+PY
+
+echo "=== Monitorear progreso (polling cada 30s, máx 10 min) ==="
+python3 - <<'PY'
+import sys, time, json; sys.path.insert(0,'.')
+from factory.layer8.host_worker import get_job_status
+
+# Esperar hasta completed o failed
+for i in range(20):  # 20 x 30s = 10 min
+    status = get_job_status("oos_hplc_investigator")
+    print(f"  [{i*30}s] status={status.get('status')} rc={status.get('returncode','—')}")
+    if status.get('status') in ('completed','failed','error'):
+        print(json.dumps(status, indent=2))
+        break
+    time.sleep(30)
+PY
+
+  >> Resultado esperado: status=completed, returncode=0
+  >> Si returncode!=0: mostrar el log del job y PARAR para diagnóstico
+
+------------------------------------------------------------
+PASO 7 — VERIFICAR CÓDIGO GENERADO
+------------------------------------------------------------
+echo "=== Archivos generados en workspace ==="
+find factory/workspaces/oos_hplc_investigator/ -type f \
+  | grep -v __pycache__ | grep -v ".pyc" | sort
+
+echo "=== Verificar que headless volvió a OFF ==="
+python3 -c "
+import yaml,pathlib
+d=yaml.safe_load(pathlib.Path('factory/runtime/runtime_config.yaml').read_text())
+print('headless_enabled:', d.get('headless_enabled'))
+"
+
+echo "=== Tests del código generado ==="
+cd factory/workspaces/oos_hplc_investigator && \
+  python3 -m pytest tests/ -v --tb=short 2>&1 | tail -30
+cd /home/ing_cpmo
+
+echo "=== Gates estáticos ==="
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+from factory.layer8.gate_execution_manager import run_static_gates
+r = run_static_gates("oos_hplc_investigator", fast=True)
+print(f"PASS={r.get('pass_count')} FAIL={r.get('fail_count')} SKIP={r.get('skip_count')}")
+for g in r.get('gates',[]): 
+    print(f"  {g.get('status')} {g.get('gate_id')}")
+PY
+
+------------------------------------------------------------
+PASO 8 — RC Y PAUSA FINAL
+------------------------------------------------------------
+# Solo si tests PASS y gates FAIL=0
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+from factory.layer8.release_candidate_builder import create_release_candidate
+rc = create_release_candidate("oos_hplc_investigator")
+print("RC:", rc.get('rc_id'))
+print("Status:", rc.get('status'))
+PY
+
+------------------------------------------------------------
+PAUSA 2 — REPORTE FINAL Y COMMIT
+------------------------------------------------------------
+Reportar:
+
+  | Item | Estado |
+  | Misión confirmada en API (descarte browser vs backend) | sí/no |
+  | Claude CLI autenticado en host | sí/no / pendiente auth |
+  | Puerto zombie 8102 limpiado | sí/no |
+  | task.md seguro (sin texto fabricado, sin paths prohibidos) | sí/no |
+  | Headless completado rc=0 | sí/no |
+  | Código generado (archivos .py en workspace) | lista |
+  | Tests: PASS/FAIL | N/N |
+  | Gates: PASS=? FAIL=? SKIP=? | números |
+  | RC creado pending_human_confirmation | sí/no |
+  | headless_enabled=false al terminar | sí/no |
+
+>> "Ciclo Capa 8 completo. ¿Apruebas el commit?"
+>> Sugerido: factory: V1 — oos_hplc_investigator Capa 8 completo (código generado, tests, RC)
+
+*** NO COMMIT SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+============================================================
+NOTAS SOBRE LA AUTENTICACIÓN DEL CLI
+============================================================
+
+El CLI de Claude Code (claude -p) en el host se autentica con:
+  - Sesión de claude.ai (si hiciste 'claude auth login' en el host)
+  - Variable de entorno ANTHROPIC_API_KEY (si tienes API key de Anthropic)
+
+Para usar tu cuenta ing.cpmo@gmail.com:
+  1) En tu máquina local: abrir https://console.anthropic.com
+  2) Generar una API key en "API Keys"
+  3) En el servidor: export ANTHROPIC_API_KEY='sk-ant-...'
+     (o agregar a ~/.bashrc sin comitear al repo)
+  4) Verificar: echo "OK" | claude -p --output-format json
+
+La API key de la FACTORY (b20a5e5bc90fceaa76703a53b5e09be4) es diferente:
+  - Es la clave de factory-api (autoriza acceso a los endpoints de Mission Control)
+  - NO es la clave de Anthropic para el CLI de Claude Code
+  - Son dos sistemas de autenticación completamente distintos
+
+El host_worker.py ejecuta claude en el HOST como usuario ing_cpmo.
+Si la API key de Anthropic no está disponible en el entorno del host,
+el headless fallará con error de autenticación aunque el CLI esté instalado.
+============================================================

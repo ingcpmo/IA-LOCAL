@@ -1,0 +1,47 @@
+[
+  {
+    "schema_version": "finding_review_v2",
+    "rc_id": "finding-chunked-943a62bcbb85-21_CFR_11.10(d)",
+    "entry_type": "finding_review",
+    "project_id": "RW-0005",
+    "enqueued_at": "2026-08-12T17:37:36.444513+00:00",
+    "status": "pending",
+    "summary": {
+      "run_id": "chunked-943a62bcbb85",
+      "requirement_id": "21_CFR_11.10(d)",
+      "document_id": "RW-0005",
+      "page": null,
+      "evidence_quote": "",
+      "conclusion": "EVALUATION_INCOMPLETE",
+      "review_flags": [
+        "ABCD_D_NOT_ASSESSABLE",
+        "SOURCE_PENDING_REVERIFICATION",
+        "CONTRADICTION_BLOCKED_POSITIVE_CONCLUSION"
+      ],
+      "agent_id": "fda_part11_agent",
+      "candidates": []
+    }
+  },
+  {
+    "schema_version": "finding_review_v2",
+    "rc_id": "finding-chunked-943a62bcbb85-21_CFR_11.10(g)",
+    "entry_type": "finding_review",
+    "project_id": "RW-0005",
+    "enqueued_at": "2026-08-12T17:37:36.544769+00:00",
+    "status": "pending",
+    "summary": {
+      "run_id": "chunked-943a62bcbb85",
+      "requirement_id": "21_CFR_11.10(g)",
+      "document_id": "RW-0005",
+      "page": null,
+      "evidence_quote": "",
+      "conclusion": "PROVISIONAL_GAP",
+      "review_flags": [
+        "SOURCE_PENDING_REVERIFICATION",
+        "BASELINE_GAP_PENDING_HUMAN_REVIEW_KNOWN_PARAPHRASE_LIMIT"
+      ],
+      "agent_id": "fda_part11_agent",
+      "candidates": []
+    }
+  }
+]

@@ -1,0 +1,326 @@
+================================================================================
+GMP AI FACTORY — PROMPTS LISTOS PARA CLAUDE CODE (NUEVO PLAN, EN ORDEN)
+Documento: 03_PROMPTS_CLAUDE_CODE.txt
+
+USO:
+1. Sube los 4 .txt de este paquete a /home/ing_cpmo/docs_factory/.
+2. cd /home/ing_cpmo && claude
+3. Primero pega el BLOQUE DIAGNOSTICO del documento 00 (solo lectura).
+4. Luego pega UN bloque por sesion, en orden: F5-R → F4.5a → F4.5b → F4.5c
+   → F4.5d → F6. Revisa diff y aprueba antes de cada commit.
+Reglas duras en todos los bloques: no tocar app/, docker-compose.yml base,
+.env base, data/, backups/pre_factory, contenedores aria-*/hotelbot-*;
+no --dangerously-skip-permissions; no guardar credenciales/tokens; no
+fabricar texto regulatorio; no commit/release/deploy sin mi aprobacion.
+================================================================================
+
+──────────────────────────────────────────────
+BLOQUE F5-R — RECUPERAR Y CERRAR F5
+──────────────────────────────────────────────
+F5-R — RECUPERACION CONTROLADA DEL PILOTO lab_qc_project
+
+Lee primero /home/ing_cpmo/docs_factory/01_EVALUACION_DEL_PAQUETE.txt y
+02_NUEVO_PLAN_FASES.txt (fase F5-R). Usa los skills gmp-factory,
+gmp-agent-design y gmp-quality-gates.
+
+PASO 1 — Clasificar el estado parcial (no borrar nada):
+  git diff --stat -- factory/profiles factory/registry factory/api factory/core factory/claude factory/ui || true
+  git diff --stat -- factory/workspaces/lab_qc_project || true
+  git status --short | grep -E "factory/|.claude/" || true
+Clasifica en: A) globales de Factory, B) workspace lab_qc, C) temporales,
+D) peligrosos. Reporta la tabla y espera mi confirmacion antes del PASO 2.
+
+PASO 2 — Corpus como PENDING_DOCUMENT (CERO texto normativo):
+En factory/workspaces/lab_qc_project/knowledge/ (o donde corresponda) crea
+SOLO estructura de ingesta y placeholders:
+  - PENDING_DOCUMENTS.txt
+  - README_INGESTION.md
+  - corpus_manifest.yaml         (colecciones del manifest, vacias, con fuente
+                                   esperada y estado pending)
+  - regulatory_matrix.yaml       (requisito → documento fuente → estado)
+  - pending_documents.yaml       (FDA OOS Guidance 2022, FDA DI Guidance 2018,
+                                   USP <621>, USP <1058>, ICH Q2 → pending)
+  - compliance_assessment.json   (claims soportados/no soportados, limitaciones)
+NO copies texto de CFR/FDA/USP/ICH. Si encuentras seed normativo del intento
+anterior, conviertelo a placeholder y marca el documento como PENDING.
+
+PASO 3 — Completar artefactos tecnicos del workspace:
+  - app custom: routing solo con los agentes/perfiles aprobados (heredar capa;
+    perfiles qa_oos_profile e integrity_lims_profile; evaluar agente nuevo
+    hplc_data_review_agent — si lo creas, cumple el checklist del skill
+    gmp-agent-design y documenta por que qa/integrity directos no se heredan
+    para evitar ruido en detect_agent, o justifica heredarlos marcando riesgo).
+  - manifest.yaml completo, docker-compose generado, .env.example (key vacia
+    con comentario openssl rand -hex 16), baterias de prueba (>=3 por perfil,
+    +heredadas de capa).
+
+PASO 4 — Gates (levantar temporal, validar, detener):
+  Asigna puertos con port_registry, levanta la solucion en sus puertos, corre
+  quality_gate_runner G01-G13 (G14 pendiente), guarda quality_gates_report.json,
+  detén la solucion (docker compose stop). Las colecciones en PENDING se
+  reportan como LIMITACION declarada, no como fallo de gate.
+
+PASO 5 — Diff y cierre:
+  git -C factory/workspaces/lab_qc_project diff --stat y diff completo;
+  muestra el reporte de gates. NO crees el release todavia.
+Salida: veredicto de F5-R + clasificacion A/B/C/D + ubicacion de placeholders
++ reporte de gates. Espera mi aprobacion para: (a) decision de agentes y
+(b) crear release v0.1.0 (pending_approval). NO COMMIT sin mi aprobacion.
+
+──────────────────────────────────────────────
+BLOQUE F4.5a — CAPA 9 MISSION CONTROL
+──────────────────────────────────────────────
+F4.5a — CAPA 9 COMO MISSION CONTROL (plano de control, sin ejecucion)
+
+Prerrequisito: F5-R cerrada y commiteada. Usa skill gmp-factory.
+
+1. Crear factory/layer9/:
+   - requirement_schema.py  (dataclasses/validacion del payload de mision y
+     de requerimiento)
+   - mission_control.py     (create_mission, approve_mission, get_mission,
+     list_missions, close_mission). approve_mission soporta autonomy_level
+     controlled_full, allowed_actions [analyze_requirement, design_agents,
+     create_profiles, create_custom_agents, create_workspace, run_claude_code,
+     generate_code, generate_tests, create_rag_structure, run_temp_docker,
+     run_quality_gates, create_release, deploy_docker_if_gates_pass],
+     stop_conditions [product_base_change_detected, forbidden_path_detected,
+     regulatory_source_missing_for_required_claim, quality_gate_fail,
+     docker_runtime_fail, resource_limit_exceeded, claude_execution_failed,
+     content_filter_blocked], final_human_decision [keep_docker_running,
+     expose_external_access].
+   - instruction_center.py  (submit_requirement, get_requirement,
+     list_requirements)
+   - approval_matrix.py     (acciones aprobables: mission, agent_design,
+     new_agent, claude_execution, recovery_plan, port_exposure, release,
+     deploy, keep_running, external_exposure)
+   - decision_log.py        (write_decision, list_decisions,
+     get_project_decisions)
+   - risk_acceptance.py     (accept_risk, list_risks)
+   - README.md
+   Almacenamiento en archivos: factory/layer9/missions/<id>.yaml; decisiones y
+   riesgos en JSON/JSONL bajo factory/layer9/. Sin postgres/redis.
+
+2. Ampliar factory/core/audit_writer.py con eventos:
+   layer9_mission_created, layer9_mission_approved, layer9_requirement_submitted,
+   layer9_decision_recorded, layer9_risk_accepted. Mantener verify_chain()
+   compatible y sin romper la auditoria existente.
+
+3. Crear la mision piloto factory/layer9/missions/lab_qc_project.yaml con:
+   project_id lab_qc_project; client_type lab_qc_dual_use; objective LIMS/HPLC/
+   OOS/Data Integrity/CAPA; regulatory_scope [21 CFR 211, 21 CFR 820, 21 CFR 11,
+   ALCOA+]; documents (los 5 como pending); constraints (no inventar regulatorio,
+   no tocar base, docker independiente, trazabilidad); mission_approval con
+   autonomy_level controlled_full, allowed_actions hasta create_release,
+   deploy_docker_if_gates_pass: false, final_human_decision_required:
+   [deploy_docker, keep_docker_running, expose_external_access].
+   ENLAZA esta mision al release v0.1.0 de F5-R (campo linked_release), sin
+   regenerar nada.
+
+VALIDACION: python3 -m py_compile factory/layer9/*.py ;
+prueba en seco crear/aprobar/listar mision + escribir/leer decision y riesgo ;
+python3 -c "from factory.core.audit_writer import verify_chain; print(verify_chain())".
+Muestra find factory/layer9 -type f | sort, git status --short, git diff --stat.
+NO COMMIT sin mi aprobacion.
+
+──────────────────────────────────────────────
+BLOQUE F4.5b — CAPA 8 TIER-1 (diseño/plan, sin ejecutar Claude Code)
+──────────────────────────────────────────────
+F4.5b — CAPA 8 TIER-1: INTERPRETACION Y DISEÑO (plan-only)
+
+Prerrequisito: F4.5a commiteada. Usa skills gmp-factory y gmp-agent-design.
+IMPORTANTE: en esta fase Capa 8 NO ejecuta Claude Code ni regenera el
+workspace cerrado de lab_qc. Solo produce artefactos de diseño/plan.
+
+1. Crear factory/layer8/ (Tier-1):
+   - requirement_interpreter.py (parse_requirement, extract_domains,
+     extract_regulatory_scope, extract_client_needs, extract_constraints,
+     generate_requirement_spec). Para lab_qc debe detectar LIMS, HPLC, OOS,
+     Data Integrity, CAPA, dual-use 211+820, Part 11, ALCOA+ y documentos
+     pendientes.
+   - agent_design_engine.py (load_agent_creation_policy, analyze_agent_fit,
+     decide_inherited_profiles_custom, generate_agent_design_proposal). Aplica
+     el arbol heredar/perfil/nuevo; para lab_qc propone heredar capa, perfiles
+     qa_oos_profile e integrity_lims_profile, y agente nuevo
+     hplc_data_review_agent; documenta la decision de routing.
+   - regulatory_compliance_engine.py (generate_regulatory_matrix,
+     generate_corpus_manifest, generate_pending_documents,
+     generate_compliance_assessment, validate_no_unsupported_regulatory_claims).
+     REGLA: nunca emite texto normativo; si falta fuente → PENDING_DOCUMENT.
+     validate_no_unsupported_regulatory_claims actua como GATE: si un texto
+     contiene parrafos largos tipo CFR/FDA/USP/ICH, ABORTA y marca PENDING.
+   - workspace_builder.py (create_workspace_from_mission) IDEMPOTENTE: si el
+     workspace existe, entra en modo resume (valida y completa faltantes, no
+     sobrescribe) y registra workspace_resumed.
+   - validation_manager.py (run_static_validation, run_quality_gates,
+     fail_on_critical_gates) — envuelve quality_gate_runner existente.
+   - diff_manager.py (collect_diff, collect_diff_stat, archive_diff).
+   - recovery_manager.py (detect_partial_f5, create_recovery_plan,
+     recover_from_content_filter_block, recover_from_gate_fail,
+     recover_from_claude_failure). content_filter → convertir corpus a
+     placeholders + PENDING, no reintentar seed.
+   - job_queue.py (create_job, get_job, list_jobs, move_job, fail_job,
+     complete_job) con JSON en factory/jobs/{pending,running,completed,failed}.
+   - layer8_orchestrator.py en modo PLAN-ONLY: run_mission ejecuta hasta
+     generate_task_package y se DETIENE antes de run_claude_code (que se
+     implementa en F4.5c). Implementa los stop conditions de lectura:
+     stop_on_forbidden_path, stop_on_product_base_change,
+     stop_on_missing_regulatory_source_for_required_claim.
+
+2. Crear factory/jobs/{pending,running,completed,failed}/.gitkeep
+
+3. Ampliar audit con eventos layer8_mission_started,
+   layer8_requirement_interpreted, layer8_agent_design_generated,
+   layer8_regulatory_matrix_generated, layer8_workspace_created (y _resumed).
+   verify_chain compatible.
+
+4. PRUEBA EN SECO sobre lab_qc (que YA existe): interpreta el requerimiento de
+   la mision y genera requirement_spec + agent_design_proposal +
+   regulatory_matrix + corpus_manifest como artefactos en un directorio de
+   diseño (NO en el release ni sobrescribiendo el workspace cerrado).
+   workspace_builder debe reportar "resume" para lab_qc. Demuestra el gate
+   anti-texto-normativo pasandole un parrafo de prueba tipo CFR (debe ABORTAR
+   y marcar PENDING).
+
+VALIDACION: python3 -m py_compile factory/layer8/*.py ; verify_chain OK ;
+find factory/layer8 factory/jobs -maxdepth 2 -type f | sort ;
+git status --short ; git diff --stat. NO COMMIT sin mi aprobacion.
+
+──────────────────────────────────────────────
+BLOQUE F4.5c — CAPA 8 TIER-2 (runtime controlado, HEADLESS OFF)
+──────────────────────────────────────────────
+F4.5c — CAPA 8 TIER-2: RUNTIME CONTROLADO (headless deshabilitado)
+
+Prerrequisito: F4.5b commiteada. Usa skill gmp-factory.
+IMPORTANTE: el headless queda DESHABILITADO por defecto. En esta fase NO se
+ejecuta claude -p de verdad; solo se instala y se prueba que esta bloqueado.
+
+1. factory/runtime/:
+   - runtime_config.yaml con: headless_enabled: false ; default_mode:
+     manual_assisted ; headless_timeout_seconds: 1800.
+   - claude_status.json.example (sin datos sensibles).
+
+2. claude_account_status.py: check_claude_cli() (busca el binario y version),
+   write_status() escribe factory/runtime/claude_status.json con SOLO:
+   cli_found, cli_path, version, linux_user, auth_status (available/unknown),
+   mode (manual_assisted / controlled_headless_available), checked_at.
+   NUNCA guardar credenciales, token ni password.
+
+3. claude_runtime.py:
+   - validate_workspace(project_id): exige CLAUDE.md, task.md,
+     .claude/settings.json.
+   - validate_task_safety(project_id): RECHAZA si task.md referencia
+     /home/ing_cpmo/app, /home/ing_cpmo/.env, /home/ing_cpmo/docker-compose.yml,
+     /home/ing_cpmo/data, /home/ing_cpmo/backups/pre_factory, o contiene
+     --dangerously-skip-permissions, git push, rm -rf.
+   - prepare_manual_command(project_id): devuelve el comando para que yo lo
+     ejecute manualmente (cd workspace && claude). MODO POR DEFECTO.
+   - run_controlled_headless(project_id, timeout=1800): ejecuta SOLO si
+     headless_enabled true Y la mision permite run_claude_code Y task_safety
+     pasa; corre dentro del workspace con  claude -p "$(cat task.md)" ; captura
+     stdout/stderr en workspace/logs/claude_execution_<ts>.log ; registra en
+     audit. Si headless_enabled false → devuelve {"status":"disabled"} sin
+     ejecutar. NUNCA usar --dangerously-skip-permissions.
+
+4. code_generation_manager.py: prepare_generation_plan, run_generation
+   (modo manual_assisted por defecto → usa prepare_manual_command),
+   collect_generation_outputs. Registra auditoria.
+
+5. Ampliar audit con: layer8_claude_status_checked,
+   layer8_claude_execution_started, layer8_claude_execution_completed,
+   layer8_claude_execution_failed, layer8_stop_condition_triggered,
+   layer8_recovery_required. verify_chain compatible.
+
+6. PRUEBAS (sin ejecucion real de claude -p):
+   - claude_account_status.write_status() → muestra claude_status.json.
+   - validate_task_safety con un task.md de prueba que referencia /app →
+     debe RECHAZAR.
+   - prepare_manual_command devuelve el comando correcto.
+   - run_controlled_headless con headless_enabled false → status disabled.
+
+VALIDACION: python3 -m py_compile factory/layer8/*.py factory/runtime no aplica ;
+verify_chain OK ; git status --short ; git diff --stat. NO COMMIT sin mi
+aprobacion. Confirma explicitamente en tu reporte que headless quedo OFF.
+
+──────────────────────────────────────────────
+BLOQUE F4.5d — API + UI CAPAS 8/9 + PILOTO MANUAL END-TO-END
+──────────────────────────────────────────────
+F4.5d — API, CONSOLA Y PILOTO MANUAL DE MISION
+
+Prerrequisito: F4.5c commiteada. Usa skill gmp-factory.
+
+1. factory/api/routes/layer9.py:
+   POST /api/v1/layer9/missions ; POST /api/v1/layer9/missions/{id}/approve ;
+   GET /api/v1/layer9/missions ; GET /api/v1/layer9/missions/{id} ;
+   POST /api/v1/layer9/requirements/{id} ; GET /api/v1/layer9/decisions ;
+   GET /api/v1/layer9/decisions/{id} ; POST /api/v1/layer9/risks/{id}/accept.
+   factory/api/routes/layer8.py:
+   GET /api/v1/layer8/status ; GET /api/v1/layer8/claude/status ;
+   POST /api/v1/layer8/claude/status/check ; GET /api/v1/layer8/jobs ;
+   GET /api/v1/layer8/jobs/{job_id} ; POST /api/v1/layer8/missions/{id}/run ;
+   POST /api/v1/layer8/missions/{id}/recover ;
+   POST /api/v1/layer8/missions/{id}/gates ;
+   POST /api/v1/layer8/missions/{id}/deploy-if-authorized.
+   Registrar ambos routers en factory/api/main.py. /run opera en plan-only +
+   manual_assisted (no dispara headless). /deploy-if-authorized exige release
+   aprobado (G14) y final_human_decision.
+
+2. factory/ui/index.html — pestañas nuevas: Capa 9 (Misiones, Aprobaciones,
+   Decisiones), Capa 8 (Ejecucion autonoma, Claude Status, Jobs), Cumplimiento
+   regulatorio, Recovery/Pendientes. La API key se ingresa en frontend y NO se
+   persiste ni se hardcodea. Backup de index.html antes de modificar.
+
+3. Si hace falta activar rutas, PIDEME aprobacion antes de:
+   "docker compose -f factory/docker-compose.factory.yml restart factory-api".
+   No reiniciar gmp-api base.
+
+4. PILOTO end-to-end de lab_qc en manual_assisted (sin deploy):
+   crear/aprobar mision (Capa 9) → /layer8/missions/lab_qc_project/run
+   (plan-only: interpreta, diseña, valida regulatorio, resume workspace,
+   genera task package) → te entrego el comando manual → ejecutas Claude Code
+   a mano en el workspace si hay algo que completar → collect_diff → gates.
+   El release v0.1.0 ya existe (F5-R): se ENLAZA y valida, no se duplica.
+
+VALIDACION FINAL (salida obligatoria):
+  python3 -m py_compile factory/api/routes/layer8.py factory/api/routes/layer9.py
+  docker compose -f factory/docker-compose.factory.yml config -q
+  curl -s http://localhost:8000/health   (base intacto)
+  curl -s http://localhost:9000/health   (factory)
+  python3 -c "from factory.core.audit_writer import verify_chain; print(verify_chain())"
+  find factory/layer8 factory/layer9 factory/jobs factory/runtime -maxdepth 3 -type f | sort
+  git status --short ; git diff --stat
+Reporte: veredicto (que quedo implementado / pendiente; Capa 8 con autonomia
+controlada si/no; Capa 9 Mission Control si/no), riesgos (cambios globales,
+workspace, headless OFF, documentos pendientes, gates), proximo paso. NO COMMIT,
+NO release, NO deploy. Detente y espera mi aprobacion.
+
+──────────────────────────────────────────────
+BLOQUE F6 — DEPLOYMENT lab_qc_project (Docker 3)
+──────────────────────────────────────────────
+F6 — DEPLOYMENT INDEPENDIENTE lab_qc_project
+
+Prerrequisito: release v0.1.0 con approval.status=approved (G14) y
+final_human_decision de Capa 9. Usa skills gmp-factory y gmp-quality-gates.
+
+1. Verificaciones previas (mostrar evidencia): approval.json aprobado;
+   SHA256SUMS del tar.gz verificado; soluciones custom activas < 2 (docker ps);
+   puertos del manifest libres (ss -tlnp) y consistentes con registry;
+   free -m y df -h con margen.
+2. Desempaquetar release → factory/deployments/lab_qc_project/.
+3. Generar .env real: GMP_API_KEY nueva (openssl rand -hex 16, no la imprimas
+   completa), OLLAMA_BASE_URL al Ollama central (host.docker.internal vía
+   extra_hosts).
+4. docker compose up -d del proyecto custom.
+5. Gates de runtime G03-G10 en caliente + 3 consultas smoke (una por agente
+   principal) verificando respuesta y routing.
+6. Convivencia: health base 8000, factory 9000, custom 8101; docker stats
+   --no-stream vs baseline F0.
+7. Registrar deployment_created y deployment_started en audit.
+Resumen final: URLs, puertos, consumo, estado de los 3 stacks. Decidire dejar
+corriendo o docker compose stop. NO COMMIT sin mi aprobacion. No tocar base,
+aria-*, hotelbot-*.
+
+================================================================================
+FIN — Ejecutar en orden: DIAGNOSTICO → F5-R → F4.5a → F4.5b → F4.5c → F4.5d
+→ F6. Una fase por sesion, con aprobacion y commit entre fases. Headless solo
+en F7 (futuro), tras piloto manual exitoso.
+================================================================================

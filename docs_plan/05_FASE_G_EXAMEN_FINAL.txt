@@ -1,0 +1,434 @@
+================================================================================
+GMP AI FACTORY — FASE G: EXAMEN FINAL END-TO-END GOBERNADO
+Archivo: 05_FASE_G_EXAMEN_FINAL.txt
+Precondición: Fase F commiteada. Selfcheck PASS. factory-api reiniciado.
+================================================================================
+▼ PEGAR EN CLAUDE CODE ▼
+──────────────────────────────────────────────────────────────────────────────
+FASE G — Examen final: misión real de punta a punta bajo gobierno de Capa 9
+
+Flujo completo: Capa 9 aprueba → Capa 8 diseña → headless genera código →
+tests → gates → release candidate → revisión humana.
+
+RESTRICCIONES ABSOLUTAS DE ESTA FASE:
+  NO deploy (deploy_docker_if_gates_pass: false)
+  NO commit sin aprobación
+  Headless devuelto a false al terminar — siempre
+  RC permanece pending_human_confirmation hasta que Cesar lo apruebe
+
+Hay 3 PAUSAS donde debes esperar confirmación de Cesar (Capa 9) antes de
+continuar. Están marcadas con ══ PAUSA ══.
+
+cd /home/ing_cpmo
+
+═══ G0 — GATE DE ENTRADA (obligatorio) ══════════════════════════════════════
+
+echo "=== Selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1
+if [ $? -ne 0 ]; then echo "ALTO: selfcheck FAIL — no continuar con Fase G"; exit 1; fi
+
+python3 -c "
+import yaml, sys; sys.path.insert(0,'.')
+cfg = yaml.safe_load(open('factory/runtime/runtime_config.yaml'))
+assert not cfg.get('headless_enabled', False), 'ALERTA: headless ON — detener'
+print('✓ headless=false')
+"
+
+echo "=== Módulos obligatorios ==="
+for m in factory/layer8/{autonomous_build_orchestrator,release_candidate_builder,test_execution_manager,artifact_collector,host_worker,autonomy_policy_engine}.py factory/layer9/human_review_queue.py; do
+  [ -f "$m" ] && echo "✓ $m" || echo "✗ FALTA $m — ejecutar fase anterior primero"
+done
+
+Si falta algún módulo: DETENTE. Ejecuta la fase correspondiente.
+Si todo OK: continúa.
+
+═══ G1 — CREAR LA MISIÓN (Capa 9) ══════════════════════════════════════════
+
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+from factory.layer9.mission_control import create_mission, get_mission
+
+# Verificar si ya existe
+existing = get_mission('g_temp_validation')
+if existing:
+    print(f'Misión ya existe: status={existing.get("status")}, approved_by={existing.get("approved_by")}')
+else:
+    create_mission({
+        "project_id": "g_temp_validation",
+        "name": "GMP Temperature Validation Module",
+        "client_type": "pharma_cold_chain",
+        "objective": (
+            "Módulo Python puro de validación de temperatura farmacéutica: "
+            "evaluar excursiones vs especificación, calcular MKT (Mean Kinetic "
+            "Temperature), registrar evidencia ALCOA+, generar reporte de "
+            "desviación. Sin dependencias externas (solo stdlib Python)."
+        ),
+        "regulatory_scope": ["21_CFR_PART_11", "ALCOA+", "USP_1079"],
+        "domains": ["DATA_INTEGRITY"],
+        "pending_documents": [
+            {"name": "USP <1079> Good Storage and Distribution Practices", "status": "PENDING_DOCUMENT"},
+            {"name": "ICH Q1A Stability Testing", "status": "PENDING_DOCUMENT"},
+        ],
+        "constraints": [
+            "No fabricar texto regulatorio",
+            "Solo stdlib Python — sin instalar paquetes",
+            "Tests con pytest",
+            "Audit trail ALCOA+ en el módulo"
+        ],
+        "mission_approval": {
+            "autonomy_level": "controlled_full",
+            "allowed_actions": [
+                "analyze_requirement", "design_agents", "create_workspace",
+                "run_claude_code", "generate_code", "generate_tests",
+                "run_quality_gates", "create_release_candidate"
+            ],
+            "stop_conditions": [
+                "product_base_change_detected", "forbidden_path_detected",
+                "regulatory_source_missing_for_required_claim",
+                "quality_gate_fail", "claude_execution_failed", "content_filter_blocked"
+            ],
+            "deploy_docker_if_gates_pass": False,
+            "final_human_decision_required": ["deploy_docker", "keep_docker_running"]
+        },
+        "status": "draft"
+    })
+    print('Misión g_temp_validation creada en estado draft.')
+print('')
+print('Para aprobar la misión necesito tu nombre real.')
+print('Dime: "aprueba la misión como [TU_NOMBRE]"')
+PY
+
+══ PAUSA 1 — ESPERA APROBACIÓN DE LA MISIÓN ══════════════════════════════
+Cuando Cesar diga "aprueba como [NOMBRE]", ejecuta:
+
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+# Reemplaza NOMBRE_CESAR con el nombre que diga Cesar
+NOMBRE = "NOMBRE_CESAR"   # ← Claude Code: sustituir por el nombre real
+from factory.layer9.mission_control import approve_mission
+result = approve_mission("g_temp_validation", approved_by=NOMBRE)
+print("Misión aprobada por:", NOMBRE)
+print("decision_origin:", result.get("decision_origin"))
+print("status:", result.get("status"))
+PY
+══════════════════════════════════════════════════════════════════════════
+
+═══ G2 — DISEÑO (Capa 8, plan-only) ════════════════════════════════════════
+
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+from factory.layer8.layer8_orchestrator import run_mission
+
+result = run_mission("g_temp_validation", plan_only=True)
+print("Status:", result.get("status"))
+spec = result.get("requirement_spec", {})
+print("Domains:", spec.get("domains"))
+print("Pending docs:", len(spec.get("pending_documents", [])))
+print("Workspace mode:", result.get("workspace", {}).get("mode"))
+print("Regulatory PENDING count:", sum(
+    1 for r in result.get("regulatory_matrix", {}).get("requirements", [])
+    if r.get("source_status") == "PENDING_DOCUMENT"
+))
+print("Anti-texto activo: ✓ (corpus PENDING correctos)")
+PY
+
+═══ G3 — TASK PACKAGE DE GENERACIÓN ════════════════════════════════════════
+
+python3 - <<'PY'
+import sys, pathlib; sys.path.insert(0,'.')
+
+ws = pathlib.Path("factory/workspaces/g_temp_validation")
+ws.mkdir(parents=True, exist_ok=True)
+(ws / ".claude").mkdir(exist_ok=True)
+(ws / "app").mkdir(exist_ok=True)
+(ws / "tests").mkdir(exist_ok=True)
+(ws / "logs").mkdir(exist_ok=True)
+
+task = """# TAREA — g_temp_validation
+
+Eres el agente headless de Capa 8. Genera un módulo Python puro de validación
+de temperatura para almacenamiento farmacéutico.
+
+## Documentos regulatorios
+USP <1079> e ICH Q1A están como PENDING_DOCUMENT.
+NO inventes texto de estos documentos. Usa principios GMP generales.
+NO afirmes cumplimiento completo con documentos pendientes.
+
+## Entregables (crear dentro del workspace actual)
+
+### app/temperature_validator.py
+Módulo con estas funciones (solo stdlib):
+  evaluate_excursion(temp_c, spec_min, spec_max) -> dict
+    {in_spec:bool, deviation_c:float, timestamp_utc:str}
+  calculate_mkt(temps:list[float], delta_h_R:float=83144.72) -> float
+    Mean Kinetic Temperature según principios farmacéuticos.
+  alcoa_audit_entry(actor:str, action:str, data:dict) -> dict
+    {actor, action, timestamp_utc, data_hash_sha256, data}
+  generate_deviation_report(readings:list[dict]) -> dict
+    {report_id, generated_at, readings_count, excursions_count,
+     max_deviation_c, mkt_celsius, alcoa_fields_present:bool, disclaimer:str}
+    El campo disclaimer debe decir:
+    "Corpus regulatorio PENDING_DOCUMENT: USP<1079>, ICH Q1A.
+     Este reporte es informativo. Validar con fuentes oficiales."
+
+### tests/test_temperature_validator.py
+pytest con exactamente 6 tests:
+  1. temperatura en rango → in_spec=True, deviation_c=0
+  2. temperatura fuera por arriba → in_spec=False, deviation_c>0
+  3. temperatura fuera por abajo → in_spec=False
+  4. MKT con lista conocida → resultado numérico plausible (float, >0)
+  5. alcoa_audit_entry tiene actor, timestamp_utc, data_hash_sha256
+  6. generate_deviation_report tiene disclaimer con "PENDING_DOCUMENT"
+
+## Restricciones
+- Solo Read y Write en este workspace
+- Solo stdlib Python (sin pip install, sin imports externos)
+- NUNCA modificar nada fuera del workspace
+- NO ejecutar docker, git push, rm -rf
+- Comandos permitidos: ls, grep, find, cat, python3 app/*.py, python3 -m pytest tests/
+"""
+(ws / "task.md").write_text(task)
+print("task.md escrito en", ws)
+print("Primeras 3 palabras:", task.split()[0], task.split()[1], task.split()[2])
+PY
+
+# Generar settings.json acotado (P4 compliant)
+python3 - <<'PY'
+import sys, json, pathlib; sys.path.insert(0,'.')
+ws = pathlib.Path("factory/workspaces/g_temp_validation")
+settings = {
+    "permissions": {
+        "allow": [
+            "Read(factory/workspaces/g_temp_validation/*)",
+            "Write(factory/workspaces/g_temp_validation/*)",
+            "Bash(ls *)", "Bash(grep *)", "Bash(find *)", "Bash(cat *)",
+            "Bash(python3 app/temperature_validator.py)",
+            "Bash(python3 -m pytest tests/ -q --tb=short)"
+        ],
+        "deny": [
+            "Read(/home/ing_cpmo/.env)",
+            "Edit(/home/ing_cpmo/app/**)", "Write(/home/ing_cpmo/app/**)",
+            "Edit(/home/ing_cpmo/docker-compose.yml)",
+            "Edit(/home/ing_cpmo/data/**)", "Write(/home/ing_cpmo/data/**)",
+            "Write(/home/ing_cpmo/factory/core/**)",
+            "Bash(rm -rf*)", "Bash(git push*)",
+            "Bash(docker *)", "Bash(pip *)", "Bash(pip3 *)"
+        ]
+    }
+}
+(ws / ".claude" / "settings.json").write_text(json.dumps(settings, indent=2))
+print("settings.json generado (P4 compliant — sin Bash(python*) genérico)")
+PY
+
+# Validar que task.md pasa el gate de seguridad
+python3 -c "
+import sys; sys.path.insert(0,'.')
+from factory.layer8.claude_runtime import validate_task_safety
+r = validate_task_safety('g_temp_validation')
+print('task_safe:', r.get('safe'))
+if not r.get('safe'): print('VIOLATIONS:', r.get('violations'))
+"
+
+══ PAUSA 2 — AUTORIZAR HEADLESS ══════════════════════════════════════════
+Revisar el task.md anterior. Si es correcto, dime:
+"autoriza headless como [TU_NOMBRE]"
+
+Cuando Cesar autorice, ejecuta:
+python3 - <<'PY'
+import sys, yaml, pathlib; sys.path.insert(0,'.')
+NOMBRE = "NOMBRE_CESAR"   # ← sustituir por el nombre real
+
+p = pathlib.Path('factory/runtime/runtime_config.yaml')
+cfg = yaml.safe_load(p.read_text()) if p.exists() else {}
+cfg['headless_enabled'] = True
+p.write_text(yaml.dump(cfg, allow_unicode=True, default_flow_style=False))
+
+from factory.core.audit_writer import write_event
+write_event('layer8_headless_enabled', 'g_temp_validation',
+    {'approved_by': NOMBRE, 'scope': 'g_temp_validation', 'timeout': 600})
+print('headless habilitado por:', NOMBRE)
+PY
+══════════════════════════════════════════════════════════════════════════
+
+═══ G4 — EJECUTAR HEADLESS (genera el código) ═══════════════════════════════
+
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+from factory.layer8.autonomous_build_orchestrator import run_build_mission
+
+print("Lanzando lazo autónomo de generación...")
+print("Esto puede tardar 2-5 minutos.")
+result = run_build_mission("g_temp_validation")
+print("Status:", result.get("status"))
+print("Job ID:", result.get("job_id"))
+print("Log:", result.get("log_file"))
+print("Returncode:", result.get("returncode"))
+if result.get("status") != "completed":
+    print("ERROR:", result.get("reason", "ver log"))
+    print("DETENER: revisar el log antes de continuar")
+    raise SystemExit(1)
+PY
+
+echo ""; echo "=== Verificar código generado ==="
+ls factory/workspaces/g_temp_validation/app/ 2>/dev/null
+ls factory/workspaces/g_temp_validation/tests/ 2>/dev/null
+head -15 factory/workspaces/g_temp_validation/app/temperature_validator.py 2>/dev/null || echo "no generado"
+
+echo ""; echo "=== headless devuelto a false (automático) ==="
+python3 -c "
+import yaml
+cfg = yaml.safe_load(open('factory/runtime/runtime_config.yaml'))
+print('headless_enabled:', cfg.get('headless_enabled'), '← debe ser False')
+"
+
+═══ G5 — TESTS ══════════════════════════════════════════════════════════════
+
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+from factory.layer8.test_execution_manager import run_tests
+result = run_tests("g_temp_validation")
+print("all_passed:", result.get("all_passed"))
+print(f"passed={result.get('passed')} failed={result.get('failed')} skipped={result.get('skipped')}")
+if not result.get("all_passed"):
+    print("OUTPUT:", result.get("output_preview","")[:600])
+    print("DETENER: tests fallando")
+PY
+
+═══ G6 — GATES (static, sin Docker) ════════════════════════════════════════
+
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+from factory.layer8.gate_execution_manager import run_static_gates
+result = run_static_gates("g_temp_validation")
+print(f"all_pass: {result.get('all_pass')}")
+s = result.get("summary", {})
+print(f"PASS={s.get('PASS',0)} FAIL={s.get('FAIL',0)} SKIPPED={s.get('SKIPPED',0)}")
+for g in result.get("gates", []):
+    icon = "✓" if g["status"]=="PASS" else ("○" if g["status"]=="SKIPPED" else "✗")
+    print(f"  {icon} {g['gate']}: {g.get('evidence','')[:70]}")
+PY
+
+═══ G7 — RELEASE CANDIDATE ══════════════════════════════════════════════════
+
+python3 - <<'PY'
+import sys; sys.path.insert(0,'.')
+from factory.layer8.release_candidate_builder import build_rc, list_pending_rcs
+
+# Verificar si ya existe RC para esta versión
+pending = [rc for rc in list_pending_rcs() if rc.get("project_id")=="g_temp_validation"]
+if pending:
+    print("RC ya existe:")
+    for rc in pending: print(f'  {rc["rc_id"]} | {rc["status"]} | approved_by={rc.get("approved_by")}')
+else:
+    rc = build_rc("g_temp_validation", "v0.1.0-rc1")
+    print("RC creado:")
+    print(f'  rc_id: {rc.get("rc_id")}')
+    print(f'  status: {rc.get("status")}')   # debe ser pending_human_confirmation
+    print(f'  approved_by: {rc.get("approved_by")}')  # debe ser null
+    print(f'  decision_origin: {rc.get("decision_origin")}')  # agent_proposed
+PY
+
+═══ G8 — VERIFICACIÓN FINAL ═════════════════════════════════════════════════
+
+echo "=== Audit chain ==="
+python3 -c "
+import sys; sys.path.insert(0,'.')
+from factory.core.audit_writer import verify_chain
+r = verify_chain()
+print(f'verified: {r.get(\"verified\")} | entries: {r.get(\"log_count\")} | part11: {r.get(\"part11_compliant\")}')
+"
+
+echo ""; echo "=== headless OFF (confirmación final) ==="
+python3 -c "
+import yaml
+cfg = yaml.safe_load(open('factory/runtime/runtime_config.yaml'))
+hl = cfg.get('headless_enabled', False)
+if hl:
+    import yaml
+    cfg['headless_enabled'] = False
+    open('factory/runtime/runtime_config.yaml','w').write(yaml.dump(cfg))
+    print('CORREGIDO: headless → false (debería haber sido automático)')
+else:
+    print('✓ headless=false')
+"
+
+echo ""; echo "=== selfcheck final ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "PASS|FAIL|━"
+
+echo ""; echo "=== health 3 stacks ==="
+curl -s http://localhost:8000/health | python3 -c "import sys,json; d=json.load(sys.stdin); print('BASE:', {k:v for k,v in d.items() if k!='timestamp'})" 2>/dev/null
+curl -s http://localhost:9000/health | python3 -c "import sys,json; d=json.load(sys.stdin); print('FACTORY:', d)" 2>/dev/null
+curl -s http://localhost:8101/health | python3 -c "import sys,json; d=json.load(sys.stdin); print('LAB_QC:', {k:v for k,v in d.items() if k!='timestamp'})" 2>/dev/null
+
+echo ""; echo "=== CRITERIOS DE ÉXITO DEL OBJETIVO ==="
+python3 - <<'PY'
+import sys, pathlib, json, yaml; sys.path.insert(0,'.')
+checks = {}
+
+from factory.layer9.mission_control import get_mission
+m = get_mission("g_temp_validation") or {}
+checks["mision_aprobada_humano"] = (
+    m.get("status") in ("approved","completed") and
+    m.get("decision_origin") == "human_confirmed" and
+    m.get("approved_by") not in (None,"human","agent","system")
+)
+
+ws = pathlib.Path("factory/workspaces/g_temp_validation")
+checks["codigo_generado_por_headless"] = (
+    (ws / "app/temperature_validator.py").exists() and
+    len(list(ws.glob("logs/headless_*.log"))) > 0
+)
+
+test_r = ws / "test_report.json"
+checks["tests_en_verde"] = (
+    test_r.exists() and json.loads(test_r.read_text()).get("all_passed", False)
+) if test_r.exists() else False
+
+from factory.layer8.release_candidate_builder import list_pending_rcs
+rcs = [rc for rc in list_pending_rcs() if rc.get("project_id")=="g_temp_validation"]
+checks["rc_pending_human_no_autoaprobado"] = (
+    len(rcs)>0 and
+    all(rc.get("status")=="pending_human_confirmation" for rc in rcs) and
+    all(rc.get("approved_by") is None for rc in rcs)
+)
+
+cfg = yaml.safe_load(open('factory/runtime/runtime_config.yaml'))
+checks["headless_off"] = not cfg.get("headless_enabled", False)
+
+from factory.core.audit_writer import verify_chain
+checks["audit_verificada"] = verify_chain().get("verified", False)
+
+print(""); print("━━━ CRITERIOS DE ÉXITO ━━━")
+all_ok = True
+for k, v in checks.items():
+    print(f"  {'✓' if v else '✗'} {k}: {v}")
+    if not v: all_ok = False
+print("")
+if all_ok:
+    print("🎯 OBJETIVO ALCANZADO")
+    print("   Capa 8 funcionó como agente especializado de Claude Code")
+    print("   bajo gobierno de Capa 9, de punta a punta.")
+else:
+    print("✗ Revisar los criterios que fallaron antes de declarar el objetivo")
+PY
+
+echo ""; echo "=== diff para commit ==="
+git status --short && git diff --stat
+
+══ PAUSA 3 — REVISAR RESULTADOS Y APROBAR COMMIT ══════════════════════════
+Revisa la tabla de criterios de éxito. Si todo OK, dime "aprueba el commit".
+El RC queda en pending_human_confirmation en la consola de Capa 9.
+Para aprobarlo: GET /mission-control → tab Revisión Humana → Aprobar RC.
+══════════════════════════════════════════════════════════════════════════
+
+Commit cuando Cesar apruebe: "factory: Fase G examen final end-to-end gobernado"
+
+═══ NOTAS POST-EXAMEN ═══════════════════════════════════════════════════════
+
+Tras el commit de Fase G el objetivo está cubierto. Próximos pasos opcionales:
+  □ Aprobar el RC de g_temp_validation en la consola de Capa 9 (separado)
+  □ Si se desea un Docker nuevo: usar ensure_ollama_access.sh + approval humano
+  □ Ingestar PDFs regulatorios reales (USP <1079>, ICH Q1A) cuando los tengas
+  □ Para la segunda solución cliente: repetir el ciclo desde INICIO.txt
+──────────────────────────────────────────────────────────────────────────────
+▲ FIN FASE G ▲

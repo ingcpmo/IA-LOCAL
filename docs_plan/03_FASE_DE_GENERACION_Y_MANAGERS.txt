@@ -1,0 +1,167 @@
+================================================================================
+GMP AI FACTORY — FASE D+E: LAZO AUTÓNOMO + MANAGERS
+Archivo: 03_FASE_DE_GENERACION_Y_MANAGERS.txt
+Precondición: Fase B+C commiteada. Selfcheck PASS.
+================================================================================
+▼ PEGAR EN CLAUDE CODE ▼
+──────────────────────────────────────────────────────────────────────────────
+FASE D+E — Lazo autónomo de generación + managers de tests/gates/artefactos
+
+Resuelve B2: headless GENERA el código (no solo lo valida).
+Crea los managers que empaquetan la evidencia como artefactos del RC.
+
+cd /home/ing_cpmo
+
+═══ PRE — LEER ESTADO ═══════════════════════════════════════════════════════
+
+echo "=== layer8 existente ==="
+find factory/layer8 -name "*.py" | sort
+
+echo ""; echo "=== leer orchestrator actual ==="
+grep -n "def run_mission\|plan_only\|run_claude_code\|headless" factory/layer8/layer8_orchestrator.py 2>/dev/null | head -20
+
+echo ""; echo "=== managers que faltan ==="
+for m in autonomous_build_orchestrator test_execution_manager gate_execution_manager artifact_collector; do
+  [ -f "factory/layer8/${m}.py" ] && echo "  EXISTE: $m" || echo "  FALTA:  $m"
+done
+
+Lee lo anterior. Si algún módulo ya existe con contenido real, léelo y solo
+completa lo que le falte. No reemplaces código que funcione.
+
+═══ D — AUTONOMOUS_BUILD_ORCHESTRATOR.PY ═══════════════════════════════════
+
+Crea o completa factory/layer8/autonomous_build_orchestrator.py:
+
+  run_build_mission(project_id: str) -> dict
+    1. Lee misión de Capa 9 (mission_control.get_mission)
+    2. Valida: status=approved, run_claude_code en allowed_actions
+       (usa autonomy_policy_engine.validate_action)
+    3. Verifica headless_enabled=True → si no: return {status:"error", reason:"headless_disabled"}
+    4. apply_policy: genera settings.json acotado para el workspace
+    5. validate_workspace + validate_task_safety (de claude_runtime)
+    6. Crea job en factory/jobs/pending/ (job_type="headless_run")
+    7. Registra layer8_autobuild_started en audit (añadir a VALID_EVENTS)
+    8. Llama a host_worker.poll_and_execute(once=True)
+    9. Lee el resultado: si returncode != 0 → layer8_autobuild_failed + return error
+    10. Registra layer8_autobuild_completed
+    11. Return {status:"completed", job_id, log_file, returncode}
+
+  check_and_stop(event: str, project_id: str, mission_approval: dict) -> bool
+    Llama a autonomy_policy_engine.check_stop_condition.
+    Si True: layer8_stop_condition_triggered + host_worker.reset_headless_after_job.
+
+═══ E — TEST_EXECUTION_MANAGER.PY ══════════════════════════════════════════
+
+Crea factory/layer8/test_execution_manager.py:
+
+  run_tests(project_id: str,
+            cmd: str = "python3 -m pytest tests/ -q --tb=short",
+            timeout: int = 120) -> dict
+    - subprocess.run(cmd.split(), cwd=workspace, capture_output=True, timeout=timeout)
+    - parsea stdout para extraer passed/failed/skipped/errors
+    - guarda workspace/test_report.json
+    - registra tests_executed en audit (añadir a VALID_EVENTS si falta)
+    - return {project_id, all_passed, passed, failed, skipped, errors,
+              output_preview(primeros 600 chars), cmd, duration_seconds, timestamp}
+
+═══ E — GATE_EXECUTION_MANAGER.PY ══════════════════════════════════════════
+
+Crea factory/layer8/gate_execution_manager.py:
+
+  run_gates_for_mission(project_id: str, api_port: int,
+                        api_key: str, fast: bool = True) -> dict
+    - llama quality_gate_runner.run_deployment_gates (ya existe en core/)
+    - si all_pass=False → layer8_stop_condition_triggered con event=gate_fail
+    - return {all_pass, summary:{PASS,FAIL,SKIPPED}, gates, report_hash}
+
+  run_static_gates(project_id: str) -> dict
+    Para misiones sin deployment Docker: corre solo G01(compose config),
+    G11(key no en UI), G12(git status). Útil para módulos que no levantan Docker.
+    - return {all_pass, gates, summary}
+
+═══ E — ARTIFACT_COLLECTOR.PY ═══════════════════════════════════════════════
+
+Crea factory/layer8/artifact_collector.py:
+
+  collect(project_id: str, rc_id: str) -> dict
+    Crea factory/release_candidates/<project_id>/<rc_id>/artifacts/
+    Copia (si existen):
+      - workspace/manifest.yaml
+      - workspace/test_report.json
+      - workspace/quality_gates_report.json
+      - workspace/logs/headless_*.log (el más reciente)
+      - diff.txt (genera con git diff del workspace si tiene git propio,
+                  o diff del factory/ filtrado al workspace)
+    Verifica obligatorios: test_report.json y al menos un log de headless.
+    Si falta algún obligatorio → return {ok:False, missing:[...]}
+    Registra artifacts_collected en audit (añadir a VALID_EVENTS).
+    Return {ok:True, artifacts_path, artifact_list}
+
+═══ AÑADIR EVENTOS A VALID_EVENTS ══════════════════════════════════════════
+
+python3 - <<'PY'
+import pathlib
+p = pathlib.Path('factory/core/audit_writer.py')
+src = p.read_text()
+nuevos = [
+    'tests_executed', 'artifacts_collected',
+    'layer8_autobuild_started', 'layer8_autobuild_completed', 'layer8_autobuild_failed',
+]
+to_add = [e for e in nuevos if f'"{e}"' not in src]
+if to_add:
+    anchor = '"knowledge_ingested",'
+    insert = anchor + '\n    ' + '\n    '.join(f'"{e}",' for e in to_add)
+    src = src.replace(anchor, insert)
+    p.write_text(src)
+    print('Añadidos:', to_add)
+else:
+    print('OK: ya presentes')
+PY
+
+═══ TESTS PARA NUEVOS MÓDULOS ═══════════════════════════════════════════════
+
+Añade factory/tests/test_new_managers.py con pruebas para:
+  - test_execution_manager: all_passed=True cuando pytest pasa; False cuando falla
+  - artifact_collector: retorna ok=False si falta test_report.json
+  - autonomous_build_orchestrator: retorna error si headless_enabled=False
+  - gate_execution_manager.run_static_gates: retorna estructura correcta
+
+Usa fixtures del conftest.py existente (isolated_audit, tmp_workspace, etc.)
+
+═══ VALIDACIÓN ══════════════════════════════════════════════════════════════
+
+echo "=== py compile ==="
+python3 -c "
+files = [
+    'factory/layer8/autonomous_build_orchestrator.py',
+    'factory/layer8/test_execution_manager.py',
+    'factory/layer8/gate_execution_manager.py',
+    'factory/layer8/artifact_collector.py',
+]
+for f in files:
+    try: compile(open(f).read(),f,'exec'); print('OK:',f)
+    except Exception as e: print('FALLO:',f,e)
+"
+
+echo ""; echo "=== pytest completo ==="
+python3 -m pytest factory/tests/ -q --tb=short 2>&1 | tail -8
+
+echo ""; echo "=== selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "PASS|FAIL|━"
+
+echo ""; echo "=== VALID_EVENTS nuevos ==="
+python3 -c "
+import sys; sys.path.insert(0,'.')
+from factory.core.audit_writer import VALID_EVENTS
+for e in ['tests_executed','artifacts_collected','layer8_autobuild_started']:
+    print(e+':', '✓' if e in VALID_EVENTS else '✗ FALTA')
+"
+
+echo ""; echo "=== diff ==="
+git status --short && git diff --stat
+
+NO hagas commit. Muestra resumen: módulos creados, tests pasando, VALID_EVENTS.
+Espera mi aprobación.
+Commit cuando apruebe: "factory: Fases D+E lazo autónomo + managers de tests/gates/artefactos"
+──────────────────────────────────────────────────────────────────────────────
+▲ FIN FASE D+E ▲

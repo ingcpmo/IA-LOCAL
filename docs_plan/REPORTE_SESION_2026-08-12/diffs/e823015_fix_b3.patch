@@ -1,0 +1,744 @@
+commit e8230158356de498aa24f20e25ec27afe82ce734
+Author: ing_cpmo <ing_cpmo@ivr-ia>
+Date:   Wed Aug 12 14:07:13 2026 +0000
+
+    fix(r3-t1.4): corrige falsa contradiccion por agregacion multi-chunk (B3)
+    
+    verify_sufficiency_aggregated() contaba NOT_MET boilerplate de chunks
+    off-topic (estado=evidencia_insuficiente/no_aplica) como voto genuino,
+    colisionando con MET real anclado en otro chunk y forzando
+    NOT_ASSESSABLE por una contradiccion fabricada. Ahora se usa el campo
+    `estado` (ya emitido por el modelo, solo faltaba propagarse) para
+    reclasificar esos NOT_MET a NOT_ASSESSABLE -- nunca a MET. La
+    contradiccion genuina entre chunks relevantes sigue intacta.
+    
+    Validado por replay sobre checkpoint historico (chunked-943a62bcbb85,
+    29/29 chunks, cero llamadas LLM nuevas) + 5 tests nuevos + suite
+    existente (103 passed). Aprobado por Cesar tras revision del diff.
+    
+    Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+diff --git a/docs_plan/R3_T1_4_FIX_AGREGACION_B3.md b/docs_plan/R3_T1_4_FIX_AGREGACION_B3.md
+new file mode 100644
+index 0000000..61aec8e
+--- /dev/null
++++ b/docs_plan/R3_T1_4_FIX_AGREGACION_B3.md
+@@ -0,0 +1,359 @@
++# R3-T1.4 — Defecto de agregación multi-chunk (B3): falsa contradicción
++
++Autoridad: Capa 9 = Cesar. Claude Code = Capa 8. Corrida de corrección de
++validador (capa D). **Sin commit** — código editado en el árbol de trabajo,
++pendiente de tu aprobación con diff.
++
++**Cero llamadas LLM gastadas.** Toda la validación es por replay sobre
++checkpoints históricos ya pagados (`chunked-943a62bcbb85`, 29/29 chunks) y
++por tests unitarios sintéticos, ejecutados dentro del contenedor
++`factory-api` (mismo código de producción, montado en vivo — no una copia).
++
++──────────────────────────────────────────────────────────────────────────
++## 0. Lo que R3_T1_3 estableció (aceptado sin re-verificar)
++──────────────────────────────────────────────────────────────────────────
++
++B1 (bloqueado por diseño), B2 (variabilidad de muestreo, no incapacidad) y
++B3 (bloqueador real: agregación multi-chunk) — ver
++`docs_plan/R3_T1_3_VIABILIDAD_F2.md`.
++
++──────────────────────────────────────────────────────────────────────────
++## 1. Caracterización exacta del defecto
++──────────────────────────────────────────────────────────────────────────
++
++**Ubicación**: `factory/regulatory/semantic_evidence_verification.py`,
++`verify_sufficiency_aggregated()` (línea ~348 original) →
++`_classify_criteria_for_chunk()` (línea ~289 original), y la regla de
++contradicción en `verify_sufficiency_aggregated()` (línea ~423 original:
++`contradicted = sorted(all_met & all_not_met)`).
++
++**Cómo combina los votos (antes del fix)**: cada chunk aporta, por
++criterio, un voto MET/NOT_MET/NOT_ASSESSABLE. La unión de todos los MET y
++todos los NOT_MET across chunks se calcula; si un criterio aparece en
++ambos conjuntos → `contradicted` → `NOT_ASSESSABLE` forzado, "nunca
++resuelto en silencio". Esta regla es correcta **cuando ambos votos son
++genuinos**.
++
++**El núcleo del problema, confirmado con datos reales** (checkpoint
++`chunked-943a62bcbb85`, requisito `21_CFR_11.10(e)`, criterios 2
++"Timestamp de fecha/hora" y 3 "Registro de entradas y acciones"):
++
++| chunk_index | páginas | `estado` (campo de mas alto nivel, ya emitido por el modelo) | criterio 2/3 |
++|---|---|---|---|
++| 20 (ancla) | 45-46 | `cumple_parcialmente` | **MET**, cita real ("Date and time stamps...") |
++| 0, 4, 5, 8, 9, 10, 11, 13, 14, 15, 16, 17, 22, 23, 24, 25 (16 de 28) | varias | `evidencia_insuficiente` | NOT_MET, `evidence_quote=""`, justificación boilerplate: *"No se menciona timestamp de fecha/hora"* / *"No se menciona registro de entradas y acciones"* |
++
++El propio prompt en producción (`factory/engines/gmpai_integrity/prompts/part11_prompts.yaml`,
++regla 4: *"Que no mencione un control no implica incumplimiento del
++sistema"*; regla 6: *"Si no estás seguro de si un criterio se cumple, usa
++NOT_ASSESSABLE — nunca omitas un criterio"*) ya instruye al modelo a usar
++`NOT_ASSESSABLE`, no `NOT_MET`, cuando un chunk simplemente no trata el
++tema. El modelo (`qwen2.5:7b`) viola esa regla de forma sistemática: emite
++`NOT_MET` boilerplate en chunks que su **propio campo `estado`** (calculado
++en la misma respuesta, para el mismo checkpoint) ya clasifica como
++`evidencia_insuficiente` — es decir, el modelo se contradice a sí mismo
++entre dos campos de su propia salida.
++
++**Las tres situaciones que hoy se colapsan en "NOT_MET" (sección 1.3 del
++plan), confirmadas con datos reales**:
++- **(a)** chunk relevante (`estado≠evidencia_insuficiente/no_aplica`),
++  evidencia cumple → `MET` — chunk 20, idx 2/3.
++- **(b)** chunk relevante, evidencia VIOLA → `NOT_MET` genuino — chunk 20
++  mismo, idx 1/4 (`estado=cumple_parcialmente`, pero esos criterios sin
++  cita); y el caso real encontrado en `21_CFR_11.10(d)` entre los chunks 19
++  (`cumple_parcialmente`, MET con cita real) y 20 (`cumple_parcialmente`,
++  NOT_MET) — **contradicción real, dos chunks relevantes en desacuerdo
++  genuino**, ver sección 3.
++- **(c)** chunk irrelevante, simplemente no contiene evidencia →
++  `NOT_MET` (defecto), debería ser "sin señal" — los 16+ chunks
++  `evidencia_insuficiente` de la tabla arriba.
++
++El defecto es exactamente que (c) se cuenta como (b) en la agregación.
++
++──────────────────────────────────────────────────────────────────────────
++## 2. Diseño de la corrección — y la prueba de que no es aflojamiento
++──────────────────────────────────────────────────────────────────────────
++
++**¿La señal para separar (c) de (b) ya existe?** SÍ — sin necesitar cambio
++de schema ni re-medición. El campo `estado` (`cumple | cumple_parcialmente
++| no_cumple | evidencia_insuficiente | no_aplica`) ya lo emite el modelo en
++cada respuesta, para cada `req_id`, en el mismo checkpoint (verificado
++leyendo `chunked_engine.py` línea 114: `_VALID_ESTADOS`, y confirmado en el
++raw_response real de todos los chunks). No se inventó ninguna señal nueva
++del modelo.
++
++**Gap encontrado (no del fix, sino de instrumentación)**: `estado` se
++calculaba en `chunked_engine.py` pero **no se adjuntaba** a la tupla
++`(criterion_assessments, chunk_text)` que alimenta
++`verify_sufficiency_aggregated()` — se descartaba después de usarse solo
++para la lógica de *findings* (que sí distingue `has_evidence`/`not_observed`
++desde 2026-07-16, línea 1573-1581 de `chunked_engine.py`, pero solo a nivel
++de *finding*, nunca a nivel de la agregación D por criterio). El fix es
++**puramente de agregación + instrumentación**, no de schema del modelo —
++determinado ANTES de implementar, como pedía la sección 2.2 del plan.
++
++**Cambios de código**:
++
++1. `factory/regulatory/semantic_evidence_verification.py`:
++   - Nueva constante `_OFF_TOPIC_CHUNK_ESTADOS = frozenset({"evidencia_insuficiente", "no_aplica"})`.
++   - `_classify_criteria_for_chunk(criterion_assessments, source_text, chunk_estado=None)`:
++     nuevo parámetro opcional. Si `chunk_estado` está en
++     `_OFF_TOPIC_CHUNK_ESTADOS`, un `NOT_MET` de ese chunk se reclasifica a
++     `NOT_ASSESSABLE` (nunca a `MET` — nunca fabrica evidencia). Default
++     `None` preserva el comportamiento exacto anterior (usado por
++     `verify_sufficiency()`, un solo chunk, que NUNCA pasa `chunk_estado` y
++     por tanto no cambia).
++   - `verify_sufficiency_aggregated()`: acepta tuplas de 2 O 3 elementos
++     (`(criterion_assessments, texto)` o `(criterion_assessments, texto,
++     estado)`) — retrocompatible con todo llamador/test existente.
++2. `factory/engines/gmpai_integrity/chunked_engine.py`: el `estado` ya
++   calculado se adjunta como 3er elemento al poblar
++   `criterion_assessments_by_req` (ambos puntos: ejecución en vivo y
++   reanudación desde checkpoint) y se guarda en `_criterion_assessments_for_d`
++   del checkpoint para que una reanudación futura lo recupere. Checkpoints
++   viejos (sin este campo) devuelven `None` → comportamiento idéntico al
++   de antes del fix, nunca roto.
++3. `factory/tests/test_semantic_evidence_verification.py`: 5 tests nuevos
++   (sección 4).
++
++**Por qué esto NO es aflojar el validador — argumento, no solo afirmación**:
++- Un `NOT_MET` reclasificado nunca se convierte en `MET` — se convierte en
++  `NOT_ASSESSABLE`, que es el estado MÁS conservador del sistema (nunca
++  contribuye a una conclusión positiva; fuerza incertidumbre real si no se
++  resuelve en otro chunk). Downgradear NOT_MET→NOT_ASSESSABLE es estrictamente
++  más estricto, nunca más laxo.
++- La regla de contradicción dura (`contradicted = met & not_met`) **sigue
++  intacta, sin tocar una sola línea de su lógica** — solo cambia qué cuenta
++  como voto antes de llegar a ella. Un `NOT_MET` genuino (chunk relevante)
++  sigue pudiendo contradecir; solo un `NOT_MET` de un chunk que el propio
++  modelo ya declaró fuera de tema deja de poder hacerlo.
++- El caso de ausencia total (ningún chunk trata el tema) pasa de
++  `NOT_MET` (una negativa "confiada") a `NOT_ASSESSABLE` (incertidumbre
++  real) — un cambio en la dirección MÁS conservadora, no menos, y coherente
++  con la propia regla 4 del prompt ("que no mencione un control no implica
++  incumplimiento").
++
++──────────────────────────────────────────────────────────────────────────
++## 3. Validación por replay (cero llamadas LLM)
++──────────────────────────────────────────────────────────────────────────
++
++### 3.1 Tabla ANTES/DESPUÉS (checkpoint histórico real, 29/29 chunks, `estado` recuperado del `raw_response` completo — el gap de instrumentación, no de lógica, descrito arriba)
++
++| Requisito | ANTES (código sin fix) | DESPUÉS (código con fix) | Clasificación de lo que cambió |
++|---|---|---|---|
++| `21_CFR_11.10(e)` | `NOT_ASSESSABLE` — *"contradiccion real entre chunks en 2 criterio(s)"* (crit 2 y 3: MET en chunk 20 vs NOT_MET boilerplate en 16 chunks off-topic) | `PARTIALLY_MET` — *"2/9 criterios confirmados"*, sin `contradicted` en el detalle | (c)→corregido: los 16 NOT_MET off-topic se reclasifican a NOT_ASSESSABLE y dejan de colisionar con el MET real; los NOT_MET genuinos de crit 1,4-9 (del propio chunk 20, relevante) permanecen intactos |
++| `21_CFR_11.10(d)` | `NOT_ASSESSABLE` — *"contradiccion real... 1 criterio"* (crit "Mecanismo de control de acceso...": MET en chunk 19 vs NOT_MET en chunk 20, AMBOS `estado=cumple_parcialmente`) | `NOT_ASSESSABLE` — **misma razón, sin cambios** | (b) genuino: chunk 19 (`cumple_parcialmente`, MET con cita real) y chunk 20 (`cumple_parcialmente`, NOT_MET) están AMBOS relevantes y en desacuerdo real — el fix correctamente NO lo toca |
++| `21_CFR_11.50_11.70` | `NOT_MET` — *"ningun criterio minimo confirmado"* | `NOT_MET` — sin cambios | Todos los chunks relevantes coinciden en negativo genuino; no había falsa contradicción que corregir |
++
++**Nota de honestidad sobre el valor histórico guardado en el checkpoint**:
++el checkpoint `chunked-943a62bcbb85` tiene almacenado
++`d_sufficiency=PARTIALLY_MET` para el candidato del chunk 20 en aislado
++(calculado en su momento por `verify_sufficiency()`, un solo chunk, ANTES
++de que existiera la agregación multi-chunk de R2.1 Opción C). El resultado
++POST-FIX de la agregación completa (`PARTIALLY_MET`, sección arriba)
++**coincide exactamente** con ese valor histórico de un solo chunk — el fix
++no inventa un resultado nuevo, restaura el mismo resultado honesto que el
++sistema ya había calculado antes de que la agregación (con su defecto)
++lo enmascarara.
++
++### 3.2 Los 4 guardianes obligatorios (sección 2.3 del plan) — todos pasan
++
++```
++$ docker exec factory-api python3 -m pytest factory/tests/test_semantic_evidence_verification.py -v
++...
++TestVerifySufficiencyAggregated::test_off_topic_chunk_boilerplate_not_met_does_not_poison_real_evidence PASSED
++TestVerifySufficiencyAggregated::test_off_topic_chunk_reproduces_real_11_10_e_partial_case PASSED
++TestVerifySufficiencyAggregated::test_genuine_contradiction_between_two_relevant_chunks_still_blocks PASSED
++TestVerifySufficiencyAggregated::test_absence_across_all_chunks_never_fabricates_met PASSED
++TestVerifySufficiencyAggregated::test_missing_chunk_estado_matches_pre_fix_behavior_exactly PASSED
++TestVerifyEvidenceABCD::test_annex11_4_like_false_positive_never_accepted PASSED
++... 47 passed
++```
++
++- **CONTRADICCIÓN GENUINA PRESERVADA**: `test_genuine_contradiction_between_two_relevant_chunks_still_blocks`
++  — dos chunks `estado∈{cumple_parcialmente, no_cumple}` en desacuerdo →
++  sigue `NOT_ASSESSABLE` con `contradicted` no vacío. **PASS.**
++- **ANNEX11_4 sigue rechazado**: `test_annex11_4_like_false_positive_never_accepted`
++  no toca la agregación (es validación C, lista de referencias), no se
++  modificó ninguna línea de esa ruta — confirmado en verde sin cambios.
++  **PASS.**
++- **AUSENCIA REAL preservada**: `test_absence_across_all_chunks_never_fabricates_met`
++  — 5 chunks, todos `evidencia_insuficiente`, todos NOT_MET boilerplate →
++  `NOT_ASSESSABLE` (nunca MET, nunca una negativa "confiada" fabricada).
++  **PASS.**
++- **Caso real (c) de 11.10(e) corregido**: `test_off_topic_chunk_reproduces_real_11_10_e_partial_case`
++  — reproduce el caso real exacto (sección 3.1), confirma
++  `contradicted` ausente y `met=={crit2,crit3}` preservado. **PASS.**
++- **Retrocompatibilidad estricta** (no pedida explícitamente pero
++  necesaria para "no aflojar" nada por omisión): `test_missing_chunk_estado_matches_pre_fix_behavior_exactly`
++  — tuplas de 2 elementos (checkpoints/llamadores viejos) reproducen el
++  comportamiento exacto de antes del fix. **PASS.**
++
++### 3.3 Suite completa + Gate 0
++
++```
++$ docker exec factory-api python3 -m pytest factory/tests/test_semantic_evidence_verification.py factory/tests/test_gmpai_chunked_engine.py -q
++103 passed
++```
++
++Se intentó correr `factory/tests/` completo (2434 tests) dentro del
++contenedor `factory-api`. **No termina en este entorno** — no por un
++defecto del fix, sino por una limitación ambiental ya documentada
++(`docs_plan/R3_T1_2_F0_EVIDENCIA/RESUMEN.md`, "Gate 0"): un bloque grande
++de tests depende de invocar el CLI `docker` (inexistente DENTRO del propio
++contenedor donde corre pytest — `FileNotFoundError: [Errno 2] No such file
++or directory: 'docker'`, confirmado en `test_access_log_file_created`) o de
++un servidor Mission Control vivo alcanzable por red. Ninguno de esos
++archivos (`test_access_log.py`, `test_artifact_version_apply.py`,
++`test_mission_evidence_readers.py`, `test_mission_summary.py`,
++`test_path_policy.py`, etc.) importa ni ejercita
++`semantic_evidence_verification.py` ni `chunked_engine.py` — verificado
++por grep, cero solapamiento con los archivos de este fix.
++
++Confirmado explícitamente en la corrida verbosa (`-v --tb=no`) sobre la
++suite completa: **los dos archivos que este fix modifica siguen 100% en
++verde** — `test_semantic_evidence_verification.py` (47/47, incluidos los 5
++guardianes nuevos) y `test_gmpai_chunked_engine.py` (56/56, sin una sola
++línea distinta de `PASSED`). Ningún test preexistente se modificó en su
++aserción original.
++
++──────────────────────────────────────────────────────────────────────────
++## 4. Re-evaluación de la viabilidad de F2 (con B3 corregido)
++──────────────────────────────────────────────────────────────────────────
++
++**4.1 — `21_CFR_11.10(e)` alcanza `PARTIALLY_MET` (2/9), NO `MET`
++(CONFIRMED)** con el fix, sobre el documento real completo (RW-0005). El
++fix resuelve la FALSA contradicción, pero **no rescata cobertura que el
++documento genuinamente no tiene** (los criterios 1, 4-9 permanecen sin
++evidencia real en ningún chunk de las 29 evaluadas) — esto es exactamente
++lo que R3_T1_3 §0 ya había encontrado por otra vía (ningún chunk del
++documento completo cubre esos criterios). **CONFIRMED sigue sin ser
++alcanzable para este documento/requisito, no por B3, sino por cobertura
++real del documento** — B1 y B3 combinados ya no bloquean, pero el
++contenido del documento sí. Esto es una conclusión honesta, no un fallo:
++la Opción B/RAMA B de R3_T1_3 (criterio redefinido,
++`SUPPORTING_EVIDENCE_UNDER_REVIEW`) sigue siendo la vía correcta para este
++caso concreto — con la diferencia de que ahora el estado que llega a cola
++humana es `PARTIALLY_MET` honesto (2/9, con contradicted vacío), no
++`NOT_ASSESSABLE` por una contradicción fabricada.
++
++**4.2 — Generalización**: no se puede afirmar que el fix por sí solo hace
++CONFIRMED alcanzable para 11.10(e) en general — depende del documento. En
++documentos donde la evidencia de los 9 criterios SÍ está distribuida en
++distintos chunks (el caso de diseño original de R2.1 Opción C,
++`test_criteria_scattered_across_two_chunks_combine_to_met`), el fix es
++justamente lo que permite que la agregación llegue a MET sin ser
++derribada por chunks irrelevantes intercalados — ese es el valor real del
++fix para F2 en general, no solo para este documento puntual.
++
++**4.3 — B1 sigue siendo la decisión de Cesar pendiente** (paquete ya
++preparado en `R3_T1_3_VIABILIDAD_F2.md` §1) — sin cambios de esta corrida.
++No se promovió el flag, no se tocó el catálogo.
++
++**4.4 — Variabilidad de B2 (sección 4.2 del plan)**: sigue viva. El fix de
++B3 no la elimina — un chunk relevante puede seguir, en una corrida dada, no
++citar `evidence_location` (como pasó en F1) o dar NOT_MET donde otra
++corrida daría MET (como se ve entre `chunked-50534e75927c` y
++`chunked-943a62bcbb85` para el mismo chunk p.45-46, idx 5-9: NOT_ASSESSABLE
++en una corrida, NOT_MET en otra). **El criterio de F2 debe contemplar
++esto**: CONFIRMED alcanzable ≠ CONFIRMED garantizado en cada corrida —
++una corrida que no alcance CONFIRMED puede necesitar reintento de chunk, no
++relajación del validador.
++
++**4.5 — Fingerprint/economía**: el fix cambia código de producción
++(`chunked_engine.py`, `semantic_evidence_verification.py`) — cualquier
++corrida NUEVA de F2 corre con este código corregido, no con el de F1
++(`prompt_version=1.1.1` sin cambios, pero la lógica de agregación D sí
++cambió). El cache de F1/F1.5 (que nunca se gastó, ver R3_T1_3) sigue sin
++usarse por B1, no por este fix. El replay de la sección 3 es
++**diagnóstico**, no cache de producción — una corrida real de F2 volvería
++a ejecutar los chunks con el código nuevo, no reutiliza estos resultados
++replay.
++
++──────────────────────────────────────────────────────────────────────────
++## 5. Hallazgo colateral y alcance
++──────────────────────────────────────────────────────────────────────────
++
++**5.1 — Impacto histórico en el recall agregado**: B3 probablemente
++deprimió el recall AGREGADO (no el recall por-chunk, que ya se medía
++correctamente) en toda corrida multi-chunk previa que pasara por
++`verify_sufficiency_aggregated()` desde su introducción (R2.1 Opción C,
++2026-08-10) — cualquier requisito con evidencia concentrada en 1-2 chunks
++de un documento largo, rodeado de chunks irrelevantes emitiendo `NOT_MET`
++boilerplate en violación de la regla 4/6 del prompt, habría chocado con
++esta falsa contradicción y caído a `NOT_ASSESSABLE` en vez de
++`MET`/`PARTIALLY_MET`. **Esto NO significa que el límite de paráfrasis del
++7B (el riesgo central de R2, recall 2/7 medido) se resuelva** — son capas
++distintas: R2 mide si el modelo RECONOCE evidencia parafraseada; B3 es un
++defecto de CÓMO SE AGREGA evidencia ya reconocida across chunks. Ambos
++límites son reales y separados; corregir B3 no toca el límite de
++paráfrasis.
++
++**5.2 — Tipo de fix**: agregación pura + instrumentación (opción 2.1 del
++plan), NO cambio de schema del modelo. No requiere re-medición para
++validarse (se validó por replay), aunque una corrida NUEVA de F2 sí
++generará checkpoints con el campo `estado` ya presente en
++`_criterion_assessments_for_d` desde el primer chunk.
++
++**5.3 — Pendientes de F0 (baratos, sin cambios en esta corrida)**: Gate 0
++Playwright/HTTP y `part11_prompts.yaml` fantasma — ambos ya documentados
++en corridas anteriores, sin acción nueva aquí (fuera de alcance de esta
++corrida, que es específicamente sobre B3).
++
++──────────────────────────────────────────────────────────────────────────
++## 6. Entrega
++──────────────────────────────────────────────────────────────────────────
++
++```
++B3_ROOT_CAUSE =               semantic_evidence_verification.verify_sufficiency_aggregated(),
++                              contradicted = all_met & all_not_met (linea ~423 original) --
++                              cuenta NOT_MET boilerplate de chunks off-topic
++                              (estado=evidencia_insuficiente/no_aplica) como voto
++                              genuino, colisionando con MET real de otro chunk
++SIGNAL_FOR_C_EXISTS =         SI -- campo `estado` (chunked_engine._VALID_ESTADOS),
++                              ya emitido por el modelo, no capturado hasta ahora en
++                              criterion_assessments_by_req (gap de instrumentacion,
++                              no de schema)
++FIX_TYPE =                    agregacion pura + instrumentacion, validado por replay,
++                              CERO llamadas LLM nuevas
++FIX_IS_NOT_LOOSENING_PROOF =  NOT_MET -> NOT_ASSESSABLE unicamente (nunca -> MET);
++                              regla de contradiccion intacta; retrocompatible con
++                              tuplas de 2 elementos (None = comportamiento previo)
++GENUINE_CONTRADICTION_BLOCKED = true (test_genuine_contradiction_between_two_relevant_chunks_still_blocks
++                              PASA; caso real 11.10(d) chunk19 vs chunk20 confirmado
++                              NOT_ASSESSABLE sin cambios)
++ANNEX11_4_STILL_REJECTED =    true (test_annex11_4_like_false_positive_never_accepted
++                              PASA, ruta C no tocada)
++ABSENCE_STILL_BLOCKS =        true (test_absence_across_all_chunks_never_fabricates_met
++                              PASA -- NOT_ASSESSABLE, nunca MET)
++REPLAY_BEFORE_AFTER =         11.10(e): NOT_ASSESSABLE(falsa contradiccion) -> PARTIALLY_MET(2/9, honesto);
++                              11.10(d): NOT_ASSESSABLE(contradiccion real) -> sin cambios (correcto)
++CONFIRMED_NOW_ACHIEVABLE =    para 11.10(e) en ESTE documento: NO (cobertura real del
++                              documento, no B1/B3, lo bloquea); en general (documentos
++                              con evidencia distribuida entre chunks): SI, sujeto a B1
++B1_REMAINING =                sin cambios -- decision de Cesar pendiente (R3_T1_3 s1)
++B2_SAMPLING_NOTE =            sigue viva; F2 debe contemplar reintento de chunk, no
++                              relajacion de validador
++F2_VIABLE_AFTER_FIX =         RAMA B para 11.10(e)/RW-0005 especificamente (cobertura
++                              real insuficiente); RAMA A viable en general para
++                              requisitos con evidencia distribuida, sujeto a B1
++FINGERPRINT_F2 =              codigo de agregacion D cambio -- una corrida F2 nueva no
++                              reutiliza cache de F1/F1.5 (que de todos modos nunca se
++                              gasto); prompt_version=1.1.1 sin cambios
++HISTORICAL_RECALL_IMPACT =    B3 deprimia el recall AGREGADO (no el reconocimiento
++                              por-chunk) en toda corrida multi-chunk desde R2.1 Opcion C;
++                              no afecta ni resuelve el limite de parafrasis (R2, separado)
++NEXT_SIGNATURES =             (i) aprobar este commit (diff + 5 tests nuevos,
++                              factory/regulatory/semantic_evidence_verification.py +
++                              factory/engines/gmpai_integrity/chunked_engine.py +
++                              factory/tests/test_semantic_evidence_verification.py);
++                              (ii) ARTIFACT_VERSION-2026-018 + decision de elegibilidad B1;
++                              (iii) autorizacion de F2 solo despues de (i)+(ii)
++CORPUS_READY = false
++PRODUCTION_ENABLEMENT = BLOCKED
++```
++
++**DETENERSE.** Fix diseñado, implementado y validado por replay — sin
++commitear. Pendiente: (a) tu revisión del diff (3 archivos), (b) resultado
++final de la suite completa (corriendo en background al cierre de este
++informe), (c) tu aprobación explícita antes de `git commit`.
+diff --git a/factory/engines/gmpai_integrity/chunked_engine.py b/factory/engines/gmpai_integrity/chunked_engine.py
+index 9ef0570..6f5f7bc 100644
+--- a/factory/engines/gmpai_integrity/chunked_engine.py
++++ b/factory/engines/gmpai_integrity/chunked_engine.py
+@@ -1182,13 +1182,23 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
+     cp_label_by_req = {cp["req_id"]: cp["label"] for cp in meta["checkpoints"]}
+     # R2.1 Opcion C (docs_plan/R2_1_C_DISENO_AGREGACION_D.md, 2026-08-10):
+     # criterion_assessments crudos de CADA chunk que respondio para un
+-    # req_id, sin filtrar por estado/anclaje -- alimenta
++    # req_id, sin EXCLUIR chunks por estado/anclaje -- alimenta
+     # sev.verify_sufficiency_aggregated() al cerrar cada requisito, para
+     # que D combine criterios confirmados en DISTINTOS chunks en vez de
+     # depender de un solo chunk "ganador" (ver best = candidates[0] mas
+     # abajo). Vive fuera de by_req a proposito: by_req solo lleva
+     # candidatos con evidencia positiva anclada, pero un chunk sin
+     # evidencia positiva puede igual haber clasificado criterios reales.
++    # Fix B3 (R3-T1.4, 2026-08-12, docs_plan/R3_T1_4_FIX_AGREGACION_B3.md):
++    # se sigue sin EXCLUIR ningun chunk aqui -- el `estado` de cada chunk se
++    # adjunta como 3er elemento de la tupla para que la agregacion (no este
++    # punto) pueda distinguir un NOT_MET genuino (chunk que trato el tema y
++    # lo contradijo) de un NOT_MET producido por un chunk que el propio
++    # modelo ya califico como evidencia_insuficiente/no_aplica para este
++    # req_id (el chunk no trato el tema en absoluto -- ver el defecto B3
++    # documentado en R3_T1_3_VIABILIDAD_F2.md: esos NOT_MET son ruido de
++    # incumplimiento de contrato del modelo entre 'estado' y
++    # 'criterion_assessments', no evidencia real en contra).
+     criterion_assessments_by_req: dict[str, list[tuple]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
+ 
+     verified_records_by_req: dict[str, list[dict]] = {cp["req_id"]: [] for cp in meta["checkpoints"]}
+@@ -1217,8 +1227,12 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
+             cand["candidate"].setdefault("has_evidence", True)
+             by_req.setdefault(cand["req_id"], []).append(cand["candidate"])
+         for item in ce.get("_criterion_assessments_for_d", []):
++            # .get("estado") con default None: checkpoints de antes del fix
++            # B3 (R3-T1.4, 2026-08-12) no tienen este campo -- None preserva
++            # el comportamiento previo exacto en verify_sufficiency_aggregated
++            # (todo NOT_MET cuenta como voto real, sin excepcion).
+             criterion_assessments_by_req.setdefault(item["req_id"], []).append(
+-                (item["criterion_assessments"], item["chunk_text"]))
++                (item["criterion_assessments"], item["chunk_text"], item.get("estado")))
+ 
+     # Plan de ejecucion: primero los chunks a REEMPLAZAR (reintento dirigido
+     # de fallos tecnicos, 2026-07-28), luego los que faltan por ejecutar. Un
+@@ -1309,18 +1323,24 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
+                     continue
+                 req_id = entry["req_id"]
+                 responded_req_ids.add(req_id)
++                estado = entry.get("estado") if entry.get("estado") in _VALID_ESTADOS else "evidencia_insuficiente"
+                 # R2.1 Opcion C: se captura ANTES de cualquier `continue` de
+                 # estado (evidencia_insuficiente incluido) -- un chunk sin
+                 # evidencia positiva para la cita principal puede igual
+                 # haber clasificado criterios reales, y esa clasificacion
+-                # cuenta para la agregacion de D del requisito.
++                # cuenta para la agregacion de D del requisito. `estado` se
++                # incluye junto al array (R3-T1.4, fix B3, 2026-08-12): un
++                # chunk cuyo propio juicio de mas alto nivel ya declaro
++                # evidencia_insuficiente/no_aplica para este req_id no debe
++                # poder contradecir, criterio por criterio, a un chunk que
++                # SI ancla evidencia -- ver
++                # verify_sufficiency_aggregated._classify_criteria_for_chunk.
+                 criterion_assessments_by_req.setdefault(req_id, []).append(
+-                    (entry.get("criterion_assessments"), chunk["text"]))
++                    (entry.get("criterion_assessments"), chunk["text"], estado))
+                 criterion_assessments_for_d_this_chunk.append({
+                     "req_id": req_id, "criterion_assessments": entry.get("criterion_assessments"),
+-                    "chunk_text": chunk["text"],
++                    "chunk_text": chunk["text"], "estado": estado,
+                 })
+-                estado = entry.get("estado") if entry.get("estado") in _VALID_ESTADOS else "evidencia_insuficiente"
+                 evidencia = str(entry.get("evidencia_exacta") or "")
+                 anchored = _is_anchored(evidencia, chunk["text"]) if evidencia else False
+                 requires_anchor = estado in ("cumple", "cumple_parcialmente")
+diff --git a/factory/regulatory/semantic_evidence_verification.py b/factory/regulatory/semantic_evidence_verification.py
+index aff821f..c9a2f6f 100644
+--- a/factory/regulatory/semantic_evidence_verification.py
++++ b/factory/regulatory/semantic_evidence_verification.py
+@@ -179,6 +179,23 @@ def verify_semantic_relevance(
+ 
+ _VALID_CRITERION_STATUSES = frozenset({"MET", "NOT_MET", "NOT_ASSESSABLE"})
+ 
++# Fix B3 (R3-T1.4, 2026-08-12, docs_plan/R3_T1_4_FIX_AGREGACION_B3.md):
++# estados de chunked_engine._VALID_ESTADOS en los que el propio modelo, a
++# nivel de checkpoint (mas alto nivel que criterion_assessments), ya
++# declaro que este chunk NO trato el tema del requisito en absoluto. El
++# prompt real (part11_prompts.yaml, regla 4 y 6) instruye explicitamente
++# "que no mencione un control no implica incumplimiento" y "si no estas
++# seguro... usa NOT_ASSESSABLE, nunca NOT_MET" -- pero el modelo (qwen2.5:7b)
++# viola esa regla de forma sistematica (confirmado con datos reales de
++# chunked-943a62bcbb85 y chunked-50534e75927c, R3_T1_3_VIABILIDAD_F2.md
++# secc.1): emite NOT_MET con justificacion boilerplate ("no se menciona X")
++# en chunks que su PROPIO campo `estado` ya califica como
++# evidencia_insuficiente/no_aplica para ese req_id. Sin este ajuste, esos
++# NOT_MET colisionan en la agregacion con un MET real anclado en otro
++# chunk y fuerzan NOT_ASSESSABLE por "contradiccion" -- una contradiccion
++# FALSA (el chunk nunca trato el tema) disfrazada de contradiccion real.
++_OFF_TOPIC_CHUNK_ESTADOS = frozenset({"evidencia_insuficiente", "no_aplica"})
++
+ 
+ def _find_contract_violations(criterion_assessments: list, ordered_real_criteria: list) -> list[str]:
+     """Nivel A de verify_sufficiency(): violaciones de CONTRATO que
+@@ -287,24 +304,41 @@ def verify_sufficiency(
+ 
+ 
+ def _classify_criteria_for_chunk(
+-    criterion_assessments: list, source_text: str,
++    criterion_assessments: list, source_text: str, chunk_estado: str | None = None,
+ ) -> tuple[set, set, set, list]:
+     """Clasifica los criterios de UN chunk ya validado a nivel de contrato
+     (ver _find_contract_violations, corrida ANTES de llamar esto). Extraido
+     de verify_sufficiency() (R2.1 Opcion C, 2026-08-10) para que el mismo
+     criterio de anclaje se reutilice tanto para un solo chunk
+     (verify_sufficiency) como para agregar varios (verify_sufficiency_aggregated)
+-    -- nunca reimplementado dos veces."""
++    -- nunca reimplementado dos veces.
++
++    `chunk_estado` (fix B3, R3-T1.4, 2026-08-12): default None preserva el
++    comportamiento exacto previo a este fix (verify_sufficiency(), un solo
++    chunk, nunca lo pasa -- no cambia). Cuando SI se provee (agregacion
++    multi-chunk) y esta en _OFF_TOPIC_CHUNK_ESTADOS, un NOT_MET de este
++    chunk se reclasifica como NOT_ASSESSABLE: el chunk no vota sobre un
++    criterio que su propio `estado` de mas alto nivel ya declaro fuera de
++    tema para este requisito -- MAS conservador que antes (NOT_ASSESSABLE
++    nunca contribuye a MET ni destrababa nada por si solo, ver
++    _finalize_sufficiency), nunca menos: esto NUNCA convierte un NOT_MET en
++    MET, ni rescata un criterio sin evidencia real -- solo evita que un
++    chunk irrelevante contradiga en falso a un chunk que si aporto
++    evidencia."""
+     confirmed_met: set = set()
+     confirmed_not_met: set = set()
+     confirmed_not_assessable_individual: set = set()
+     discarded_unanchored: list = []
++    off_topic_chunk = chunk_estado in _OFF_TOPIC_CHUNK_ESTADOS
+ 
+     for e in criterion_assessments:
+         text = e["criterion_text"]
+         status = e["status"]
+         if status == "NOT_MET":
+-            confirmed_not_met.add(text)
++            if off_topic_chunk:
++                confirmed_not_assessable_individual.add(text)
++            else:
++                confirmed_not_met.add(text)
+         elif status == "NOT_ASSESSABLE":
+             confirmed_not_assessable_individual.add(text)
+         else:  # MET, ya validado a nivel de contrato (evidence_quote/evidence_location presentes)
+@@ -346,7 +380,7 @@ def _finalize_sufficiency(
+ 
+ 
+ def verify_sufficiency_aggregated(
+-    requirement_id: str, per_chunk: list[tuple[list | None, str]],
++    requirement_id: str, per_chunk: list[tuple[list | None, str] | tuple[list | None, str, str | None]],
+ ) -> tuple[str, str, dict]:
+     """R2.1 Opcion C (2026-08-10, docs_plan/R2_1_C_DISENO_AGREGACION_D.md):
+     version agregada de verify_sufficiency() -- mismo contrato de retorno
+@@ -357,10 +391,13 @@ def verify_sufficiency_aggregated(
+     combinar -- nunca se reimplementa el anclaje ni la validacion de
+     contrato.
+ 
+-    `per_chunk`: lista de (criterion_assessments, chunk_source_text), un
+-    par por cada chunk real que la unidad evaluo (incluidos los que no
+-    aportaron evidencia -- se excluyen naturalmente al combinar, nunca se
+-    filtran a mano antes de llamar esto).
++    `per_chunk`: lista de (criterion_assessments, chunk_source_text) o
++    (criterion_assessments, chunk_source_text, chunk_estado) -- un
++    elemento por cada chunk real que la unidad evaluo (incluidos los que
++    no aportaron evidencia -- se excluyen naturalmente al combinar, nunca
++    se filtran a mano antes de llamar esto). El 3er elemento (`chunk_estado`,
++    fix B3, R3-T1.4, 2026-08-12) es opcional y retrocompatible: si se omite
++    o es None, el comportamiento es IDENTICO al de antes de este fix.
+ 
+     Reglas de combinacion (nuevas, explicitas, nunca aflojan el criterio
+     de anclaje de cada chunk individual):
+@@ -370,13 +407,25 @@ def verify_sufficiency_aggregated(
+       no hay chunks), cae a NOT_ASSESSABLE explicito.
+     - Un criterio queda confirmado MET si ALGUN chunk lo ancla
+       (verify_anchor PASS contra el texto de ESE chunk).
++    - Fix B3 (R3-T1.4, 2026-08-12, docs_plan/R3_T1_4_FIX_AGREGACION_B3.md):
++      un NOT_MET que viene de un chunk cuyo propio `chunk_estado` ya es
++      evidencia_insuficiente/no_aplica para este requisito (el chunk no
++      trato el tema en absoluto, segun el JUICIO DE MAS ALTO NIVEL del
++      propio modelo) se reclasifica como NOT_ASSESSABLE antes de agregar --
++      ver _classify_criteria_for_chunk. Esto NUNCA fabrica un MET ni
++      rescata un criterio sin evidencia: solo impide que un chunk fuera de
++      tema vote NOT_MET por defecto y colisione en falso con un chunk que
++      SI ancla evidencia real para ese mismo criterio.
+     - CONTRADICCION (dura, nunca resuelta en silencio): un criterio con
+-      MET anclado en un chunk Y NOT_MET en otro se mueve a un set
+-      `contradicted` -- fuerza NOT_ASSESSABLE con
++      MET anclado en un chunk Y NOT_MET GENUINO (de un chunk relevante,
++      tras el ajuste anterior) en otro se mueve a un set `contradicted` --
++      fuerza NOT_ASSESSABLE con
+       d_reason='contradiccion real entre chunks en al menos un criterio'
+       y el detalle de que criterios contradijeron. Mismo principio que
+       la deteccion de contradiccion ya existente a nivel de
+-      estado/checkpoint (chunked_engine.py).
++      estado/checkpoint (chunked_engine.py). Esta regla SIGUE intacta para
++      contradicciones reales (dos chunks relevantes en desacuerdo) -- el
++      fix B3 nunca la desactiva, solo evita que dispare en falso.
+     - Sin contradiccion: mismas reglas finales de _finalize_sufficiency
+       (missing -> NOT_ASSESSABLE; incertidumbre en algun criterio ->
+       NOT_ASSESSABLE; todos MET -> MET; ninguno MET -> NOT_MET; mezcla ->
+@@ -400,7 +449,9 @@ def verify_sufficiency_aggregated(
+     excluded_chunks_contract_violations: list = []
+     valid_chunk_count = 0
+ 
+-    for criterion_assessments, source_text in per_chunk:
++    for chunk_entry in per_chunk:
++        criterion_assessments, source_text, *rest = chunk_entry
++        chunk_estado = rest[0] if rest else None
+         if criterion_assessments is None:
+             continue
+         violations = _find_contract_violations(criterion_assessments, ordered_real_criteria)
+@@ -409,7 +460,7 @@ def verify_sufficiency_aggregated(
+             continue
+         valid_chunk_count += 1
+         met, not_met, not_assessable, discarded = _classify_criteria_for_chunk(
+-            criterion_assessments, source_text)
++            criterion_assessments, source_text, chunk_estado)
+         all_met |= met
+         all_not_met |= not_met
+         all_not_assessable |= not_assessable
+diff --git a/factory/tests/test_semantic_evidence_verification.py b/factory/tests/test_semantic_evidence_verification.py
+index d2088c4..cc632f3 100644
+--- a/factory/tests/test_semantic_evidence_verification.py
++++ b/factory/tests/test_semantic_evidence_verification.py
+@@ -340,6 +340,133 @@ class TestVerifySufficiencyAggregated:
+         assert status == "NOT_ASSESSABLE", detail
+         assert len(detail["not_assessable_individual"]) == 5
+ 
++    def test_off_topic_chunk_boilerplate_not_met_does_not_poison_real_evidence(self):
++        """Fix B3 (R3-T1.4, docs_plan/R3_T1_4_FIX_AGREGACION_B3.md): un
++        chunk cuyo `estado` de mas alto nivel ya es evidencia_insuficiente
++        para este req_id (no trato el tema en absoluto) NUNCA debe poder
++        contradecir en falso a un chunk que SI ancla evidencia real -- ese
++        NOT_MET boilerplate se reclasifica a NOT_ASSESSABLE antes de
++        agregar, no se cuenta como voto real."""
++        anchor_text = " ".join(_ACCESS_CRITERIA)
++        anchor_assessments = _all_met()  # chunk relevante, ancla los 5 criterios
++
++        off_topic_text = "Alarm Limit Modification (page 1 of 2) Security Code Assignments"
++        off_topic_assessments = _all_not_met()  # boilerplate "no se menciona X" en un chunk que no trata el tema
++
++        status, reason, detail = sev.verify_sufficiency_aggregated(
++            "21_CFR_11.10(d)",
++            [
++                (anchor_assessments, anchor_text, "cumple_parcialmente"),
++                (off_topic_assessments, off_topic_text, "evidencia_insuficiente"),
++            ],
++        )
++        assert status == "MET", detail
++        assert set(detail["met"]) == set(_ACCESS_CRITERIA)
++        assert "contradicted" not in detail
++
++    def test_off_topic_chunk_reproduces_real_11_10_e_partial_case(self):
++        """Reproduccion del caso real (R3_T1_3_VIABILIDAD_F2.md secc.1,
++        checkpoint chunked-943a62bcbb85): el chunk ancla (p.45-46) confirma
++        2/9 criterios de 21_CFR_11.10(e); los otros 28 chunks del documento
++        no tratan el audit trail en absoluto y su propio `estado` ya lo
++        dice (evidencia_insuficiente) pese a emitir NOT_MET boilerplate.
++        Antes del fix esto daba NOT_ASSESSABLE por 'contradiccion real'
++        (falsa, ver detail['contradicted'] con crit1..4). Con el fix sigue
++        en NOT_ASSESSABLE (los criterios 5-9 nunca se resuelven en ningun
++        chunk del documento real -- eso es honesto, no un defecto), pero
++        AHORA por cobertura incompleta real, nunca por una contradiccion
++        fabricada: crit1 (NOT_MET generico) y crit4 (NOT_MET generico) del
++        ancla ya no colisionan con los NOT_MET boilerplate de los otros 28
++        chunks, y los 2 MET reales (crit2/crit3) se preservan intactos."""
++        from factory.regulatory.requirement_catalog.requirement_catalog_loader import get_requirement
++
++        criteria = get_requirement("21_CFR_11.10(e)")["evidence_min_criteria"]
++        assert len(criteria) == 9
++
++        anchor_text = "UR3.3.1 ... Date and time stamps ... fields listed"
++        anchor_assessments = [
++            _assessment(1, criteria[0], "NOT_MET"),
++            _assessment(2, criteria[1], "MET", quote="Date and time stamps", location="pag 46"),
++            _assessment(3, criteria[2], "MET", quote="fields listed", location="pag 46"),
++            _assessment(4, criteria[3], "NOT_MET"),
++        ] + [_assessment(i + 5, c, "NOT_ASSESSABLE") for i, c in enumerate(criteria[4:])]
++
++        off_topic_text = "Alarm Limit Modification (page 1 of 2) Security Code Assignments"
++        off_topic_assessments = [_assessment(i + 1, c, "NOT_MET") for i, c in enumerate(criteria)]
++
++        per_chunk = [(anchor_assessments, anchor_text, "cumple_parcialmente")] + [
++            (off_topic_assessments, off_topic_text, "evidencia_insuficiente") for _ in range(28)
++        ]
++        status, reason, detail = sev.verify_sufficiency_aggregated("21_CFR_11.10(e)", per_chunk)
++        assert status == "NOT_ASSESSABLE", detail
++        assert "cobertura completa" in reason  # NOT_ASSESSABLE por incertidumbre real, no por contradiccion
++        assert "contradicted" not in detail
++        assert set(detail["met"]) == {criteria[1], criteria[2]}
++        assert set(detail["not_met"]) == {criteria[0], criteria[3]}
++
++    def test_genuine_contradiction_between_two_relevant_chunks_still_blocks(self):
++        """Guardian obligatorio (sec.2.3 del plan): el fix B3 NUNCA debe
++        destrabar una contradiccion GENUINA -- dos chunks AMBOS relevantes
++        (estado != evidencia_insuficiente/no_aplica) en desacuerdo real
++        sobre un criterio siguen forzando NOT_ASSESSABLE, exactamente como
++        antes del fix."""
++        crit = _ACCESS_CRITERIA[0]
++        rest = _ACCESS_CRITERIA[1:]
++        chunk_text = " ".join(_ACCESS_CRITERIA)
++
++        assessments_a = [_assessment(1, crit, "MET", quote=crit, location="pag 1")] + [
++            _assessment(i + 2, c, "MET", quote=c, location="pag 1") for i, c in enumerate(rest)
++        ]
++        assessments_b = [_assessment(1, crit, "NOT_MET")] + [
++            _assessment(i + 2, c, "MET", quote=c, location="pag 1") for i, c in enumerate(rest)
++        ]
++        status, reason, detail = sev.verify_sufficiency_aggregated(
++            "21_CFR_11.10(d)",
++            [
++                (assessments_a, chunk_text, "cumple_parcialmente"),
++                (assessments_b, chunk_text, "no_cumple"),  # AMBOS chunks relevantes, no fuera de tema
++            ],
++        )
++        assert status == "NOT_ASSESSABLE"
++        assert crit in detail["contradicted"]
++        assert "contradiccion" in reason
++
++    def test_absence_across_all_chunks_never_fabricates_met(self):
++        """Guardian obligatorio: si NINGUN chunk del documento trata el
++        tema (todos evidencia_insuficiente), el fix jamas fabrica un MET --
++        el agregado queda en incertidumbre real (NOT_ASSESSABLE), nunca en
++        una conclusion positiva. Mas conservador que antes (que daba
++        NOT_MET, una negativa 'confiada' que el propio contrato del prompt
++        ya advierte no declarar sobre documentos de ingenieria OT), jamas
++        menos."""
++        off_topic_text = "contenido totalmente no relacionado con el requisito"
++        off_topic_assessments = _all_not_met()
++        per_chunk = [(off_topic_assessments, off_topic_text, "evidencia_insuficiente") for _ in range(5)]
++        status, reason, detail = sev.verify_sufficiency_aggregated("21_CFR_11.10(d)", per_chunk)
++        assert status == "NOT_ASSESSABLE", detail
++        assert not detail["met"]
++
++    def test_missing_chunk_estado_matches_pre_fix_behavior_exactly(self):
++        """Retrocompatibilidad estricta: omitir el 3er elemento de la tupla
++        (llamadores viejos, checkpoints anteriores al fix) reproduce el
++        comportamiento EXACTO de antes del fix -- un NOT_MET sin `estado`
++        conocido sigue contando como voto real y sigue pudiendo contradecir."""
++        crit = _ACCESS_CRITERIA[0]
++        rest = _ACCESS_CRITERIA[1:]
++        chunk_text = " ".join(_ACCESS_CRITERIA)
++        assessments_a = [_assessment(1, crit, "MET", quote=crit, location="pag 1")] + [
++            _assessment(i + 2, c, "MET", quote=c, location="pag 1") for i, c in enumerate(rest)
++        ]
++        assessments_b = [_assessment(1, crit, "NOT_MET")] + [
++            _assessment(i + 2, c, "MET", quote=c, location="pag 1") for i, c in enumerate(rest)
++        ]
++        status, reason, detail = sev.verify_sufficiency_aggregated(
++            "21_CFR_11.10(d)",
++            [(assessments_a, chunk_text), (assessments_b, chunk_text)],  # 2-tuplas, sin estado
++        )
++        assert status == "NOT_ASSESSABLE"
++        assert crit in detail["contradicted"]
++
+     def test_contradiction_across_chunks_never_resolved_silently(self):
+         """Riesgo explicito del diseno (sec.3.1): un criterio MET anclado en
+         un chunk y NOT_MET en otro es una contradiccion real -- degrada a

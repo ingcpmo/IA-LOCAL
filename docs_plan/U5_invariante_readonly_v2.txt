@@ -1,0 +1,264 @@
+============================================================
+U5 — INVARIANTE READ-ONLY + RAÍZ DE AUDITORÍA  (retomar plan)
+GMP AI Factory · Capa 9 · Post W1/W2/W3 (commits 78dc605, 278ae6e, c902355)
+============================================================
+
+CONTEXTO
+  Los últimos commits W1/W2/W3 cablearon los fakeSubmit() del frontend a
+  la API real (RC review, approve mission, headless OFF, crear misión).
+  Trabajo legítimo, pero el plan original de diagnóstico (U5-U11) NO se
+  ejecutó. El problema crítico sigue vivo: la cadena de auditoría creció
+  203 → 209 (+6) en una sesión sin ejecuciones deliberadas de gates. Es
+  la firma del bug write-on-read en endpoints de observación.
+
+OBJETIVO
+  Probar y cortar la escritura de auditoría disparada por la observación
+  (refresh() / page load). Volver la consola 100% read-only para leer.
+
+PRINCIPIOS
+  - Diagnóstico primero (probar el bug con evidencia), fix mínimo después.
+  - NO borrar entradas de auditoría (romper la cadena = violación Part-11).
+  - NO modificar el endpoint EJECUTOR de gates: correr gates seguirá
+    siendo una acción deliberada y auditada. Solo se AGREGA un endpoint
+    de lectura y se REPUNTA el refresh.
+  - Las entradas espurias ya generadas quedan en la cadena (son auténticas
+    aunque indeseadas). Se documentan en una nota de remediación.
+
+REGLAS DURAS
+  - No tocar app/, .env base, docker-compose base, data/, backups/
+  - No tocar aria-*, hotelbot-*
+  - No headless, no deploy, no reinicio de contenedores
+  - No commit sin diff y aprobación de Cesar
+
+------------------------------------------------------------
+PASO 0 — Entorno, clave y línea base de auditoría (read-only)
+------------------------------------------------------------
+cd /home/ing_cpmo
+
+export FK="$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null || echo '')"
+export HDR="X-API-Key"     # ajustar si tu API usa otro header
+
+echo "=== Localizar archivo(s) de la cadena de auditoría ==="
+find factory -name "*.jsonl" 2>/dev/null | grep -i audit
+
+# Tomar el principal (ajustar si hay varios):
+export AUDIT="$(find factory -name '*.jsonl' 2>/dev/null | grep -i audit | head -1)"
+echo "AUDIT=$AUDIT"
+read_count(){ wc -l < "$AUDIT" 2>/dev/null || echo 0; }
+echo "Línea base (ground truth por archivo): $(read_count)"
+
+  >> Esta es la verdad de terreno. NUNCA contar la cadena vía endpoint
+     durante este diagnóstico (podría escribir).
+
+------------------------------------------------------------
+PASO 1 — Probar el write-on-read con evidencia
+------------------------------------------------------------
+echo "=== URLs que dispara refresh() (autoritativo, desde el HTML) ==="
+grep -oE "fetch\(\s*[\"'\`][^\"'\`]+" factory/ui/mission_control.html \
+  | sed -E "s/fetch\(\s*[\"'\`]//" | sort -u > /tmp/refresh_urls.txt
+cat /tmp/refresh_urls.txt
+
+echo "=== Medir delta por endpoint individual ==="
+python3 - <<'PY'
+import os,subprocess,urllib.request,urllib.error,time
+KEY=os.environ.get("FK",""); HDR=os.environ.get("HDR","X-API-Key")
+AUDIT=os.environ.get("AUDIT","")
+def n():
+    try: return sum(1 for _ in open(AUDIT))
+    except: return 0
+def call(url):
+    req=urllib.request.Request("http://localhost:9000"+url)
+    if KEY: req.add_header(HDR,KEY)
+    try: urllib.request.urlopen(req,timeout=20).read(64)
+    except Exception as e: pass
+urls=[l.strip() for l in open("/tmp/refresh_urls.txt") if l.strip().startswith("/")]
+print(f"Probando {len(urls)} endpoints…")
+suspects=[]
+for u in urls:
+    b=n(); call(u); time.sleep(0.5); a=n()
+    d=a-b
+    print(f"  delta={d:+d}  GET {u}")
+    if d>0: suspects.append((u,d))
+print("\nSOSPECHOSOS (delta>0):")
+for u,d in suspects: print(f"  +{d}  {u}")
+PY
+
+  >> Resultado: cada endpoint con delta>=1 ESCRIBE en lectura. Ese es el
+     bug. Espero al menos uno de la familia /deployments/{id}/quality-gates
+     o equivalente. Anótalos todos.
+
+------------------------------------------------------------
+PASO 2 — Localizar la causa en el código
+------------------------------------------------------------
+echo "=== Handlers candidatos a write-on-read ==="
+grep -rInE "quality.?gates|gates_executed|deployment_gates_validated|run_static_gates|run_deployment_gates" \
+  factory/api/routes/ factory/layer*/ 2>/dev/null | head -60
+
+# Para cada endpoint sospechoso, abrir su handler y confirmar:
+#  (a) ejecuta los gates en un GET
+#  (b) escribe en la cadena (write_event / append / record_event)
+
+echo "=== ¿Por qué creció +6 sin acción deliberada esta sesión? ==="
+echo "Últimas entradas (10) — patrón esperado: pares gates_executed + deployment_gates_validated"
+tail -10 "$AUDIT" | python3 -c "
+import json,sys
+for ln in sys.stdin:
+    try:
+        e=json.loads(ln); print(' ', e.get('timestamp',''), e.get('event_type',e.get('event','')), '·', e.get('project_id',''))
+    except: print('  (no JSON)')
+"
+
+  >> Si las últimas entradas son pares gates_executed/deployment_gates_validated
+     del mismo project_id en timestamps muy cercanos, el bug está confirmado.
+
+------------------------------------------------------------
+PASO 3 — PAUSA 1: reporte y aprobación del enfoque
+------------------------------------------------------------
+Reporta:
+  - AUDIT path, conteo actual, entradas espurias estimadas en esta sesión
+  - Lista de endpoints sospechosos con su delta
+  - Archivos:línea de los handlers culpables
+  - Confirmación de que chain_errors=1 es compatible con carrera de
+    fetches concurrentes (no corrupción de contenido — hash_errors=0)
+
+Enfoque de fix (a aprobar antes de tocar código):
+  (1) Crear endpoint(s) de SOLO LECTURA paralelo(s) a los ejecutores:
+        GET /api/v1/deployments/{id}/gates-report
+        (y los que aparezcan en el paso 1, con sufijo "-report" o "-status")
+      - Lee el último JSON cacheado del deployment/workspace.
+      - NO ejecuta nada. NO escribe auditoría. 404 limpio si no hay reporte.
+      - Shape compatible con renderPipelineGates (gate_id + PASS/FAIL/SKIP).
+  (2) Repuntar fetch() del refresh() en mission_control.html: del endpoint
+      ejecutor al endpoint de lectura.
+  (3) Dejar intacto el endpoint EJECUTOR (acción deliberada, sí audita).
+  (4) NO borrar nada de la cadena. Documentar en factory/docs/REMEDIATION.md
+      el periodo afectado por write-on-read y el commit que lo corta.
+
+  >> "U5 diagnóstico listo. ¿Confirmas la causa raíz y apruebas el enfoque
+      (endpoints de lectura + repuntar refresh, sin tocar ejecutores ni
+      borrar auditoría)?"
+
+  *** NO CONTINUAR SIN APROBACIÓN EXPLÍCITA DE CESAR ***
+
+------------------------------------------------------------
+PASO 4 — Fix mínimo (tras aprobación)
+------------------------------------------------------------
+a) Backend — crear endpoint(s) de lectura
+   Para cada handler ejecutor identificado, agregar el de lectura
+   equivalente en el MISMO router. Ejemplo canónico:
+
+   GET /api/v1/deployments/{id}/gates-report
+     - lee factory/deployments/{id}/quality_gates_report.json
+     - devuelve JSON tal cual
+     - 404 si no existe; SIN ejecutar gates; SIN audit append
+     - mismo schema/shape que renderPipelineGates ya consume
+
+   Reglas de seguridad:
+     - Validar {id} contra projects.json (allowlist)
+     - Path canonicalizado contenido en factory/deployments/{id}/
+     - Read-only
+
+b) Frontend — repuntar refresh()
+   Backup primero:
+     mkdir -p backups/frontend
+     cp factory/ui/mission_control.html backups/frontend/mission_control.html.pre_U5
+
+   Cambiar todos los fetch() del refresh hacia los endpoints "-report".
+   No tocar los botones de acción (W1/W2/W3 ya cablearon esos a POST y
+   esos sí deben auditar — son deliberados).
+
+c) Nota de remediación
+   Crear factory/docs/REMEDIATION_U5.md con:
+     - descripción del write-on-read
+     - rango de entradas afectadas (estimado en paso 1)
+     - commits W1/W2/W3 que cablearon acciones (no relacionados pero útiles para timeline)
+     - commit de U5 que corta el bug
+     - declaración Part-11: ninguna entrada se borró; las afectadas son
+       auténticas (ocurrieron) aunque generadas por un disparo no deseado;
+       contenido íntegro (hash_errors=0).
+
+------------------------------------------------------------
+PASO 5 — Guard de regresión (test bloqueador)
+------------------------------------------------------------
+Crear factory/tests/test_refresh_readonly.py:
+
+  - Lee la lista de endpoints del refresh() desde mission_control.html.
+  - Snapshot del conteo de la cadena (líneas del AUDIT real).
+  - Llama cada endpoint 3 veces (total = 3 * N llamadas).
+  - Assert: conteo final == conteo inicial.
+  - Marcar como guard CRÍTICO en factory_selfcheck.sh (si rompe → FAIL,
+    no warning).
+
+Este test impide que un futuro cambio re-introduzca write-on-read.
+
+------------------------------------------------------------
+PASO 6 — Validación
+------------------------------------------------------------
+echo "=== Invariante: refresh NO debe crecer la cadena ==="
+C0=$(read_count)
+python3 - <<'PY'
+import os,urllib.request,time
+KEY=os.environ["FK"]; HDR=os.environ.get("HDR","X-API-Key")
+urls=[l.strip() for l in open("/tmp/refresh_urls.txt") if l.strip().startswith("/")]
+# Reemplazar mentalmente los ejecutores por los "-report" recién creados
+# (los URLs vienen del HTML ya repuntado en Paso 4)
+for _ in range(3):
+    for u in urls:
+        req=urllib.request.Request("http://localhost:9000"+u)
+        req.add_header(HDR,KEY)
+        try: urllib.request.urlopen(req,timeout=15).read(64)
+        except: pass
+    time.sleep(0.3)
+PY
+C1=$(read_count)
+echo "delta tras fix (DEBE ser 0): $((C1 - C0))"
+
+echo "=== Sintaxis ==="
+python3 - <<'PY'
+import re,subprocess,tempfile,os,pathlib
+html=pathlib.Path("factory/ui/mission_control.html").read_text()
+js="\n".join(re.findall(r"<script[^>]*>(.*?)</script>", html, re.S))
+f=tempfile.NamedTemporaryFile("w",suffix=".js",delete=False); f.write(js); f.close()
+r=subprocess.run(["node","--check",f.name],capture_output=True,text=True)
+print("JS:", "OK" if r.returncode==0 else "FAIL", r.stderr[:300])
+os.unlink(f.name)
+PY
+python3 -m py_compile factory/api/main.py factory/api/routes/deployments.py
+python3 -m pytest factory/tests/test_refresh_readonly.py -q
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "Gate 0|FAIL|PASS"
+
+echo "=== Diff para revisión ==="
+git status --short
+git diff --stat
+git diff -- factory/ui/mission_control.html factory/api/routes/deployments.py factory/tests/test_refresh_readonly.py
+
+------------------------------------------------------------
+PASO 7 — PAUSA 2: clasificación + commit
+------------------------------------------------------------
+Reporta y clasifica:
+
+  | Item | Estado |
+  | Write-on-read cortado (delta tras fix == 0)         | SÍ / NO |
+  | Endpoints de lectura creados                        | n / m   |
+  | refresh() repuntado a endpoints "-report"           | sí/no   |
+  | Guard de regresión PASS                             | sí/no   |
+  | JS / py_compile / selfcheck Gate 0                  | sí/no   |
+  | Entradas de auditoría borradas                      | NINGUNA |
+  | REMEDIATION_U5.md creado                            | sí/no   |
+  | W1/W2/W3 intactos (acciones siguen auditando)       | sí/no   |
+
+  >> "U5 listo. delta tras fix = 0, guard verde. ¿Apruebas el commit?
+      Sugerido: factory: U5 — corta write-on-read en refresh; endpoints
+      -report read-only; guard de regresión; remediación documentada"
+
+  *** NO COMMIT SIN APROBACIÓN EXPLÍCITA ***
+
+============================================================
+SIGUIENTE TRAS U5
+  U6 — semántica Part-11 WARN(fork) vs FAIL(corrupción) en /audit/summary
+  U7 — política de rutas server-side compartida (diff+tree+file)
+  U8 — panel remediación r6 + exponer zombie 8102 (lectura)
+  U9 — visor read-only endurecido sobre U7
+  U10 — afinar form Crear misión (parte ya cubierta por W3)
+  U11 — cierre + validaciones finales
+============================================================

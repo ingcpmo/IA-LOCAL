@@ -1,0 +1,141 @@
+{
+  "run_id": "chunked-f93c11afd5cc",
+  "document_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
+  "agent_id": "fda_cgmp_211_agent",
+  "documento": "RW-0011",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/MCCPDC EMS Control Block Narrative revB.pdf",
+  "total_chunks": 1,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-f93c11afd5cc",
+      "task_id": "task-c6e4507f92b9",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 2514,
+      "started_at": "2026-08-15T23:40:59.146840+00:00",
+      "finished_at": "2026-08-15T23:42:17.677785+00:00",
+      "wall_clock_ms": 78530.9,
+      "model": "qwen2.5:14b-instruct-q4_K_M",
+      "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"21_CFR_211.68(b)\",\n      \"estado\": \"evidencia_insuficiente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"El documento no proporciona detalles sobre controles específicos para cambios en registros maestros de producción y control, verificación de exactitud de datos I/O ni mecanismos de respaldo.\",\n      \"recomendacion\": \"Se requiere un análisis más detallado del sistema OT (PLC/SCADA/HMI) para identificar los controles necesarios sobre cambios en registros maestros y otros sistemas computarizados, así como la verificación de exactitud de datos I/O y mecanismos de respaldo.\",\n      \"criterion_assessments\": [\n        {\"criterion_index\": 1, \"criterion_text\": \"Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información sobre controles específicos para cambios en registros maestros.\", \"limitations\": \"\"},\n        {\"criterion_index\": 2, \"criterion_text\": \"Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información sobre controles específicos para cambios en registros maestros.\", \"limitations\": \"\"},\n        {\"criterion_index\": 3, \"criterion_text\": \"Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información sobre la verificación de exactitud de datos I/O.\", \"limitations\": \"\"},\n        {\"criterion_index\": 4, \"criterion_text\": \"Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información sobre la verificación de exactitud de datos I/O.\", \"limitations\": \"\"},\n        {\"criterion_index\": 5, \"criterion_text\": \"Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información sobre el respaldo de datos.\", \"limitations\": \"\"},\n        {\"criterion_index\": 6, \"criterion_text\": \"Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información sobre el respaldo de datos.\", \"limitations\": \"\"},\n        {\"criterion_index\": 7, \"criterion_text\": \"Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información sobre el respaldo de datos.\", \"limitations\": \"\"}\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-f93c11afd5cc/task-c6e4507f92b9.txt.gz",
+      "raw_response_full_sha256": "2dfd0c3b254e9496788d47b2bd07711500b348bc45d40c3f1347ef83c3255d9b",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_211.68(b)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre controles específicos para cambios en registros maestros.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre controles específicos para cambios en registros maestros.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre la verificación de exactitud de datos I/O.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre la verificación de exactitud de datos I/O.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre el respaldo de datos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre el respaldo de datos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre el respaldo de datos.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": " Environmental Monitoring System \nControl Block Narrative \nMAVERICK Project # 215115305 \nMark Cuban Cost Plus Drug Company \nSCADA-PCS Misc. PLC  Document No.  Page:  \nRevision: \nDate: EMS CN \n13 of 14 \nB \nDecember 15, 2022 \n \nMAVERICK TECHNOLOGIES®, MAVERICK® , PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFO RMANCE® are registered trademarks of MAVERI CK Technologies, LLC. \n©2012 MAVERICK Technologies, LLC \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed. \nThe only current copy of this document is maintained electronically. Field I/O Point Type Description \nALH-33002-03 DO Filler VHP High Alarm - Corr. 037 High VHP \nAlarm Strobe (Red) \nAIT-33002-01 AI VHP concentration sensor  \nTable 4-8: Vaporized Hy drogen Peroxide Signals \n \n4.3 Tasks/Routines/Functions \nThe analog inputs and outputs will be scaled wi th MapIn and MapOut routines as described \naccording to the MCCPDC Controller Guidelin es document and using the values in the \nMCCPDC Alarms Hard Soft IO Listing.xlsx.  For this work the following sp ecific routines are expected: \n R105_EMS  R110_MapInLAD  R111_MapInFBD  R120_MapOutLAD  R121_MapOutFBD \n4.4 Operator Interface \nEach of the EMS input signals is displayed in  engineering units on th e HMI.  As mentioned \npreviously, with the proper credentials, the input points can be simulated for calibration or other \nmaintenance activities.  Similarly, given the pr oper credentials, the alarm limits for the EMS \nsignals are also available for revi ew and adjustment  via the HMI. \nThe visual and audible annunciators  (light trees and audible aler ts) also provide feedback to \npersonnel in the area without the need to actively view an HMI screen.   \n4.5 Messages and Alarming \nThe EMS messages and alarms, together with other system alarms, are de scribed in the overall \nPCS system document named MCCPDC PCS-CP01 Al arms Hard Soft IO Listing.xlsx.  That \ndocument provides, among other de tails, the alarm text, the input point tag identifier, the alarm \nsetpoint, and any time-delay associated with the alarm.  For the alarms listed here, alarm limit \nprocessing, time delay, etc. is handled in the PL C and not in the FactoryTalk Alarm and Events \nServer.  The alarm setpoints are not calcu lated but are static, user-adjus table values via the HMI as \ndetailed in the MCCPDC PCS-CP01 Alarms  Hard Soft IO Listing.xlsx document. \n See Section 4.1.6.1 Alarms/Beacons to see the de scription of acknowledging and resetting of \nalarms. \n ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.0.0",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "document_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "21_CFR_211.68(b)"
+    ]
+  },
+  "verified_records_by_req": {
+    "21_CFR_211.68(b)": [
+      {
+        "record_id": "vrec-task-c6e4507f92b9-21_CFR_211.68(b)",
+        "llm_output": {
+          "requirement_id": "21_CFR_211.68(b)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

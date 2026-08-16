@@ -1,0 +1,226 @@
+================================================================================
+GMP AI FACTORY — SKILLS PARA CLAUDE CODE
+Documento: 03_SKILLS_CLAUDE_CODE.txt
+
+Estos 3 skills se instalan en el servidor en:
+  /home/ing_cpmo/.claude/skills/<nombre-skill>/SKILL.md
+Claude Code los carga automaticamente y los consulta cuando el contexto
+coincide con su descripcion. Asi no hay que re-explicar la arquitectura,
+los criterios de agentes ni los quality gates en cada tarea.
+
+El prompt F1 del documento 05 incluye la instruccion para crearlos.
+A continuacion el CONTENIDO COMPLETO de cada SKILL.md.
+================================================================================
+
+--------------------------------------------------------------------------------
+SKILL 1 de 3
+Ruta: /home/ing_cpmo/.claude/skills/gmp-factory/SKILL.md
+--------------------------------------------------------------------------------
+---
+name: gmp-factory
+description: Arquitectura, reglas y restricciones duras de GMP AI Factory (capas 7-9) y del producto base GMP AI Copilot (capas 1-6). USAR SIEMPRE que la tarea mencione factory, fabrica, workspace, release, deployment, solucion custom, cliente nuevo, manifest, plantilla base, Docker independiente, capa 7, capa 8, capa 9, o cualquier trabajo dentro de /home/ing_cpmo/factory/. Tambien usar antes de tocar cualquier archivo del servidor para verificar si la ruta esta permitida o prohibida.
+---
+
+# GMP AI Factory — Reglas operativas
+
+## Mapa del sistema
+- DOCKER 1 (base, puerto 8000): gmp-api, gmp-postgres, gmp-redis,
+  aria-ollama. Capas 1-6. PRODUCTO ESTABLE EN MODO REAL. NO MODIFICAR.
+- DOCKER 2 (factory, puerto 9000): factory-api + UI. Capas 7-9.
+- DOCKER 3..N (custom, puertos 8101+): soluciones independientes generadas
+  por la fabrica desde el tag base.
+
+## Restricciones DURAS (violarlas invalida la tarea)
+NUNCA modificar: /home/ing_cpmo/app/, docker-compose.yml base, Dockerfile
+base, .env base, data/chroma, data/audit_logs, backups/.
+NUNCA tocar contenedores aria-* ni hotelbot-*.
+NUNCA hacer commit, release o deploy sin aprobacion humana explicita.
+NUNCA exponer API keys en frontend ni commitear .env.
+NUNCA borrar workspaces sin backup previo (tar.gz en backups/factory/).
+Trabajar UNICAMENTE dentro del workspace asignado:
+  /home/ing_cpmo/factory/workspaces/<project_id>/
+
+## Flujo obligatorio
+requerimiento → registro de proyecto → analisis de alcance →
+propuesta tecnica → workspace aislado → generacion → quality gates →
+diff presentado → aprobacion humana → release inmutable → deployment.
+Cada paso se registra en factory/audit/factory_audit.jsonl (hash chain
+SHA-256, mismo patron que app/audit.py del base).
+
+## Plantilla base
+La plantilla de codigo se obtiene SIEMPRE de un git tag del base:
+  git archive base-vX.Y.Z | tar -x -C <workspace>
+Nunca copiar app/ en vivo. Registrar tag y commit en manifest.source.
+
+## Puertos
+Fuente unica de verdad: factory/registry/ports.yaml.
+Reservados intocables: 8000, 9000, 11434, 5432, 6379.
+Rangos custom: api 8101-8199, postgres 5433-5499, redis 6380-6449.
+Validar con ss -tlnp antes de asignar y antes de deploy.
+
+## Ollama compartido
+Las soluciones custom usan aria-ollama central via:
+  extra_hosts: ["host.docker.internal:host-gateway"]
+  OLLAMA_BASE_URL=http://host.docker.internal:11434
+Maximo 2 soluciones custom activas a la vez (resource_policy.yaml).
+Limites obligatorios: api 768m/1cpu, postgres 512m, redis 128m.
+
+## Releases
+Inmutables: tar.gz + manifest.yaml + SHA256SUMS + quality_gates_report.json
++ approval.json en factory/releases/<id>/vX.Y.Z/. Nunca editar un release;
+correcciones generan nueva version.
+
+## Al terminar cualquier tarea de fabrica, mostrar SIEMPRE:
+tree factory -L 4 (o de la subcarpeta tocada), git status --short,
+git diff --stat, y esperar aprobacion antes de commitear.
+
+--------------------------------------------------------------------------------
+SKILL 2 de 3
+Ruta: /home/ing_cpmo/.claude/skills/gmp-agent-design/SKILL.md
+--------------------------------------------------------------------------------
+---
+name: gmp-agent-design
+description: Criterios y requisitos para decidir entre usar un agente GMP existente, crear un perfil derivado o crear un agente nuevo, y checklist completo de creacion. USAR SIEMPRE que la tarea implique agentes, perfiles, system prompts de agentes, corpus RAG nuevo, colecciones ChromaDB nuevas, routing de agentes, o disenar la parte de agentes de una solucion custom de la fabrica.
+---
+
+# Diseño de agentes y perfiles GMP
+
+## Agentes base disponibles (DOCKER 1, heredables)
+csv (CSV/CSA Validation), qa (Quality Assurance), audit (FDA 483 Inspector),
+automation (PLC/SCADA ISA-88/95), integrity (ALCOA+ Part 11),
+capa (Root Cause/Closure). Colecciones: gmp_fda_regulations, gmp_iq_oq_pq,
+gmp_qa_system, gmp_data_integrity, gmp_automation, gmp_capa.
+
+## Arbol de decision (aplicar en este orden)
+1. USAR AGENTE EXISTENTE si el requerimiento cabe 100% en un agente actual,
+   sin corpus nuevo, sin reglas nuevas, sin salida diferente.
+2. CREAR PERFIL DERIVADO si el agente base cubre 70-80% del alcance y solo
+   se necesita prompt especializado y/o corpus especializado, sin logica
+   backend nueva. El perfil hereda agent_id base + sufijo
+   (ej. qa_oos_profile) y se define en factory/profiles/<base>_profiles.yaml.
+3. CREAR AGENTE NUEVO si el dominio es nuevo, requiere corpus propio,
+   reglas propias, pruebas propias o salida distinta, o si mezclarlo con
+   agentes actuales reduce precision.
+
+## Ejemplos calibrados
+OOS laboratorio → perfil de qa. Excel sin control → perfil de integrity.
+SCADA firmware → perfil de automation (o automation+csv).
+Validacion de limpieza → agente nuevo. Farmacovigilancia → agente nuevo.
+Produccion esteril → agente nuevo o paquete de agentes.
+
+## Checklist obligatorio de agente nuevo (todo o nada)
+[ ] agent_id (snake_case) y nombre visible
+[ ] descripcion de alcance y limites
+[ ] system_prompt (idioma dinamico, formato de salida definido)
+[ ] coleccion RAG propia con >= 60 chunks de fuentes regulatorias citables
+[ ] reglas asociadas (extension del Rule Engine si aplica)
+[ ] >= 5 preguntas de prueba con criterios de aceptacion verificables
+[ ] entrada en manifest.yaml (agents.custom) y en
+    factory/registry/agents_catalog.yaml
+[ ] evidencia de validacion (respuestas reales archivadas en el release)
+[ ] aprobacion humana registrada (approval_policy)
+
+## Checklist de perfil derivado
+[ ] perfil_id, agente base, % de cobertura estimado y justificacion
+[ ] system_prompt especializado (delta sobre el base)
+[ ] coleccion RAG propia o compartida (declararlo en manifest)
+[ ] >= 3 preguntas de prueba con criterios de aceptacion
+[ ] entrada en profiles/<base>_profiles.yaml y en manifest (agents.profiles)
+
+## Leccion aprendida del base
+La calidad depende del corpus: el refuerzo dirigido de corpus es la
+palanca principal (caso ALCOA+ / FDA 483). Todo corpus nuevo debe citar
+fuente y fecha del documento regulatorio de origen.
+
+--------------------------------------------------------------------------------
+SKILL 3 de 3
+Ruta: /home/ing_cpmo/.claude/skills/gmp-quality-gates/SKILL.md
+--------------------------------------------------------------------------------
+---
+name: gmp-quality-gates
+description: Los 14 quality gates obligatorios para validar cualquier solucion custom de GMP AI Factory antes de release o deploy, con los comandos exactos. USAR SIEMPRE que la tarea mencione quality gates, validacion de solucion, release, deploy, pruebas de solucion custom, o verificacion previa a aprobacion humana.
+---
+
+# Quality Gates GMP AI Factory (14 obligatorios)
+
+Ejecutar via factory/core/quality_gate_runner.py o manualmente en orden.
+Salida: quality_gates_report.json con {gate, status, evidence, timestamp}.
+Registrar hash del reporte en factory/audit/factory_audit.jsonl.
+
+G01 Sintaxis compose:   docker compose -f <compose> config -q
+G02 Puertos:            validar contra factory/registry/ports.yaml y
+                        ss -tlnp | grep <puerto>  (debe estar libre o ser
+                        el propio servicio)
+G03 Health:             curl -s http://localhost:<api_port>/health
+G04 RAG stats:          curl -s -H "X-Api-Key: $KEY"
+                        http://localhost:<api_port>/api/v1/knowledge/stats
+G05 Min chunks:         cada coleccion del manifest >= 60 chunks (de G04)
+G06 Routing:            POST /api/v1/query con preguntas de prueba y
+                        verificar effective agent correcto
+G07 Preguntas heredadas: baterias base de cada agente heredado responden
+                        con contenido valido (no vacio, cita corpus)
+G08 Preguntas nuevas:   baterias de agentes/perfiles creados cumplen sus
+                        criterios de aceptacion del manifest
+G09 Audit chain:        curl -s -H "X-Api-Key: $KEY"
+                        http://localhost:<api_port>/api/v1/audit/verify
+G10 UI carga:           curl -s -o /dev/null -w "%{http_code}"
+                        http://localhost:<api_port>/  → 200
+G11 Key no expuesta:    grep -r "$KEY" <workspace>/app/static/ → vacio
+G12 Git limpio:         git -C <workspace> status --short (todo añadido)
+G13 Diff archivado:     git -C <workspace> diff (y diff --stat) guardados
+                        en el reporte y mostrados al humano
+G14 Aprobacion:         approval.json existe y status=approved
+                        (OBLIGATORIO solo para deploy; release puede
+                        generarse en estado pending_approval)
+
+Gates adicionales de recursos antes de deploy:
+- soluciones custom activas < max_active_custom_solutions (docker ps)
+- free -m y df -h dentro de umbrales razonables (documentar en reporte)
+
+Regla final: si CUALQUIER gate falla → no hay release ni deploy; se
+reporta el fallo, se corrige en workspace y se re-ejecuta TODO el set.
+
+================================================================================
+PROMPTS ADICIONALES RECOMENDADOS (complemento a los skills)
+================================================================================
+
+P1. claude_task_template.md (plantilla del bridge — resumen de secciones):
+  # TAREA FACTORY — <project_id>
+  ## Requerimiento  (texto de Capa 9)
+  ## Alcance        (agentes a heredar / perfiles / agentes nuevos)
+  ## Restricciones  (referencia a skills gmp-factory; rutas permitidas =
+                     SOLO este workspace; prohibidas = base completo)
+  ## Criterios de aceptacion (medibles, por agente y por solucion)
+  ## Pruebas obligatorias    (los 14 gates + baterias de preguntas)
+  ## Entregables    (manifest, compose, .env.example, corpus, pruebas)
+  ## Formato de reporte      (resumen + tree + git status + diff)
+  ## Prohibiciones  (no commit, no deploy, no tocar base)
+
+P2. claude_md_template.md (CLAUDE.md generado por workspace):
+  Contiene: identificacion del proyecto, manifest resumido, recordatorio de
+  los 3 skills, restricciones duras, y la frase obligatoria:
+  "Trabajas UNICAMENTE en este workspace. Todo cambio fuera de el es una
+  violacion. No commitear sin aprobacion humana. Mostrar diff siempre."
+
+P3. settings_template.json (.claude/settings.json por workspace):
+  {
+    "permissions": {
+      "deny": [
+        "Read(/home/ing_cpmo/.env)",
+        "Edit(/home/ing_cpmo/app/**)",
+        "Write(/home/ing_cpmo/app/**)",
+        "Edit(/home/ing_cpmo/docker-compose.yml)",
+        "Edit(/home/ing_cpmo/data/**)",
+        "Write(/home/ing_cpmo/data/**)",
+        "Bash(rm -rf*)",
+        "Bash(git push*)",
+        "Bash(docker compose -f /home/ing_cpmo/docker-compose.yml*)"
+      ]
+    }
+  }
+  (Claude Code aplica estos deny de forma nativa; el bridge los genera
+  desde code_agent_policy.yaml para que politica y enforcement no diverjan.)
+
+================================================================================
+FIN DEL DOCUMENTO 03
+================================================================================

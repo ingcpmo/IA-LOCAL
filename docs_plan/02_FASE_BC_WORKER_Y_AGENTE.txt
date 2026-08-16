@@ -1,0 +1,197 @@
+================================================================================
+GMP AI FACTORY — FASE B+C: WORKER HOST-SIDE + AGENTE FORMAL
+Archivo: 02_FASE_BC_WORKER_Y_AGENTE.txt
+Precondición: Fase A commiteada. Selfcheck PASS.
+================================================================================
+▼ PEGAR EN CLAUDE CODE ▼
+──────────────────────────────────────────────────────────────────────────────
+FASE B+C — Worker host-side + Autonomy Policy Engine + Skill Capa 8
+
+Resuelve la Brecha B1: el contenedor factory-api no tiene el CLI de claude.
+El endpoint /headless debe ENCOLAR jobs; un worker en el HOST los ejecuta.
+También formaliza Capa 8 con su skill y su motor de políticas (B4).
+
+cd /home/ing_cpmo
+
+═══ PRE — LEER LO QUE YA EXISTE ════════════════════════════════════════════
+
+echo "=== Módulos layer8 actuales ==="
+find factory/layer8 -name "*.py" | sort
+
+echo ""; echo "=== CLI de claude ==="
+which claude 2>/dev/null || ls /home/ing_cpmo/.local/bin/claude 2>/dev/null || echo "NO ENCONTRADO"
+docker exec factory-api which claude 2>/dev/null || echo "NO en contenedor (esperado)"
+
+echo ""; echo "=== job_queue implementación ==="
+grep -n "def create_job\|def move_job\|def list_jobs" factory/layer8/job_queue.py 2>/dev/null || echo "job_queue.py no encontrado o sin esas funciones"
+
+echo ""; echo "=== endpoint headless actual ==="
+grep -n "headless\|enqueued\|create_job" factory/api/routes/layer8.py 2>/dev/null | head -20
+
+Lee lo anterior antes de continuar. Si host_worker.py o autonomy_policy_engine.py
+ya existen con contenido real, léelos primero y solo completa lo que falte.
+
+═══ B — HOST_WORKER.PY ══════════════════════════════════════════════════════
+
+Crea o completa factory/layer8/host_worker.py.
+Si ya existe, léelo primero y añade solo lo que falte.
+
+El módulo debe implementar estas funciones (compila sin error, lógica real):
+
+  is_headless_enabled() -> bool
+    Lee factory/runtime/runtime_config.yaml → headless_enabled.
+
+  reset_headless_after_job(project_id: str)
+    Escribe headless_enabled: false en runtime_config.yaml.
+    Registra layer8_stop_condition_triggered en audit.
+
+  poll_and_execute(once: bool = True) -> dict
+    Lógica:
+    1. Si not is_headless_enabled() → return {status:"disabled"}
+    2. Busca el job más antiguo en factory/jobs/pending/ con job_type=headless_run
+    3. Si no hay → return {status:"no_jobs"}
+    4. validate_workspace(project_id) → si falla → mover a failed/ + return error
+    5. validate_task_safety(project_id) → si falla → mover a failed/ + return error
+    6. Mueve job a factory/jobs/running/
+    7. Ejecuta en el host (cwd = workspace):
+         claude -p "$(cat task.md)" --output-format json
+                --no-session-persistence --permission-mode auto
+    8. Captura stdout+stderr en workspace/logs/headless_<timestamp>.log
+    9. Registra layer8_claude_execution_started/_completed/_failed en audit
+    10. Mueve job a completed/ o failed/
+    11. Llama a reset_headless_after_job
+    12. Return {status, job_id, log_file, returncode}
+    NUNCA usa --dangerously-skip-permissions.
+    NUNCA guarda credenciales.
+    Rechaza si task.md referencia rutas prohibidas (usa validate_task_safety existente).
+
+═══ B — ACTUALIZAR ENDPOINT /headless ══════════════════════════════════════
+
+En factory/api/routes/layer8.py, el endpoint POST /missions/{id}/headless:
+
+ANTES (probablemente): intentaba ejecutar el CLI dentro del contenedor.
+AHORA debe:
+  1. Leer headless_enabled de runtime_config.yaml → si false: return 400 "headless disabled"
+  2. Crear un job en factory/jobs/pending/ con job_type="headless_run", project_id
+  3. Registrar layer8_claude_execution_started en audit con source="api_enqueue"
+  4. Return {status:"enqueued", job_id:..., note:"worker host-side ejecuta el CLI"}
+
+NO ejecutar el CLI desde el contenedor. NO llamar subprocess desde el contenedor.
+
+═══ C — AUTONOMY_POLICY_ENGINE.PY ══════════════════════════════════════════
+
+Crea o completa factory/layer8/autonomy_policy_engine.py:
+
+  apply_policy(mission_approval: dict, project_id: str) -> dict
+    Genera para el workspace:
+    - headless_allowed: True solo si "run_claude_code" en allowed_actions
+    - deploy_allowed: True solo si deploy_docker_if_gates_pass=True y
+                      no hay final_human_decision_required con "deploy_docker"
+    - settings_path: ruta donde escribe el settings.json resultante
+    El settings.json resultante tiene:
+      allow: Write en workspace, Read en workspace, Bash(ls *), Bash(grep *),
+             Bash(find *), Bash(cat *), Bash(python3 app/*.py) si generate_code,
+             Bash(python3 -m pytest tests/*) si run_tests
+      deny: todas las rutas prohibidas del skill gmp-factory
+    NO incluir Bash(python*) genérico — solo comandos concretos.
+    Registra layer8_autonomy_policy_applied en audit (añadir a VALID_EVENTS si falta).
+
+  validate_action(action: str, mission_approval: dict) -> bool
+    True si action está en allowed_actions.
+
+  check_stop_condition(event: str, mission_approval: dict) -> bool
+    True si event está en stop_conditions.
+
+═══ C — SKILL GMP-LAYER8-AGENT ══════════════════════════════════════════════
+
+Crea .claude/skills/gmp-layer8-agent/SKILL.md con este contenido exacto:
+
+---
+name: gmp-layer8-agent
+description: Definición formal de Capa 8 como agente especializado de Claude Code en GMP AI Factory. USAR cuando la tarea sea construir una solución dentro de un workspace de la fábrica, o cuando necesites entender qué puede y no puede hacer Capa 8.
+---
+
+# Capa 8 — Agente Especializado de Claude Code
+
+"La Capa 8 es el agente especializado de Claude Code de GMP AI Factory. Opera
+bajo autorización de Capa 9 y solo puede actuar dentro de los límites definidos
+por misión, política de autonomía, workspace seguro, auditoría y aprobación
+humana."
+
+## Ciclo
+Misión aprobada (Capa 9) → diseño → workspace → task package →
+headless controlado (si autorizado, en HOST no en contenedor) →
+código generado → tests → quality gates → release candidate →
+revisión humana → (deploy solo con aprobación explícita)
+
+## Límites ABSOLUTOS
+- Workspace: ÚNICAMENTE factory/workspaces/<project_id>/
+- NUNCA: app/ · docker-compose.yml base · .env base · data/ · backups/ · aria-* · hotelbot-*
+- NUNCA: --dangerously-skip-permissions · credenciales en disco · texto regulatorio fabricado
+- NUNCA: commit/release/deploy/headless sin aprobación humana explícita
+
+## Headless
+Triple condición: (1) headless_enabled=true en runtime_config, (2) run_claude_code
+en allowed_actions de la misión, (3) validate_task_safety OK.
+Se ejecuta en el HOST (no en el contenedor factory-api).
+Se devuelve a false automáticamente al terminar cada job.
+
+## Aprobación humana (Part 11)
+approved_by = nombre real (no "human"). decision_origin: human_confirmed.
+Todo RC queda en pending_human_confirmation hasta revisión humana.
+
+═══ AÑADIR EVENTOS A VALID_EVENTS ══════════════════════════════════════════
+
+python3 - <<'PY'
+import pathlib, re
+p = pathlib.Path('factory/core/audit_writer.py')
+src = p.read_text()
+nuevos = ['layer8_autonomy_policy_applied']
+to_add = [e for e in nuevos if f'"{e}"' not in src]
+if to_add:
+    # Insertar antes del cierre del set VALID_EVENTS
+    marker = '# Eventos F9'
+    insert = '\n    # Fase B+C\n' + '\n'.join(f'    "{e}",' for e in to_add)
+    if marker in src:
+        src = src.replace(marker, insert + '\n    ' + marker)
+    else:
+        src = src.replace('"knowledge_ingested",', '"knowledge_ingested",\n' + '\n'.join(f'    "{e}",' for e in to_add))
+    p.write_text(src)
+    print('VALID_EVENTS añadidos:', to_add)
+else:
+    print('OK: eventos ya presentes')
+PY
+
+═══ VALIDACIÓN ══════════════════════════════════════════════════════════════
+
+echo "=== py compile ==="
+python3 -c "
+files = ['factory/layer8/host_worker.py','factory/layer8/autonomy_policy_engine.py','factory/api/routes/layer8.py']
+for f in files:
+    try: compile(open(f).read(),f,'exec'); print('OK:',f)
+    except Exception as e: print('FALLO:',f,e)
+"
+
+echo ""; echo "=== pytest ==="
+python3 -m pytest factory/tests/ -q --tb=line 2>&1 | tail -5
+
+echo ""; echo "=== skill instalado ==="
+[ -f .claude/skills/gmp-layer8-agent/SKILL.md ] && echo "✓ gmp-layer8-agent" || echo "✗ FALTA"
+
+echo ""; echo "=== endpoint /headless encola (no ejecuta CLI) ==="
+python3 -c "
+src = open('factory/api/routes/layer8.py').read()
+print('encola job:', '✓' if 'enqueued' in src or 'create_job' in src else '✗')
+print('sin subprocess en ruta headless:', '✓' if 'subprocess' not in src else 'REVISAR (puede ser del host_worker importado)')
+"
+
+echo ""; echo "=== selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "PASS|FAIL|━"
+
+echo ""; echo "=== diff ==="
+git status --short && git diff --stat
+
+NO hagas commit. Muestra resumen y espera mi aprobación.
+Commit cuando apruebe: "factory: Fase B+C worker host-side + autonomy policy + skill Capa 8"
+──────────────────────────────────────────────────────────────────────────────
+▲ FIN FASE B+C ▲

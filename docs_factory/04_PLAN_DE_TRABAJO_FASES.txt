@@ -1,0 +1,173 @@
+================================================================================
+GMP AI FACTORY — PLAN DE TRABAJO POR FASES (F0 a F6)
+Documento: 04_PLAN_DE_TRABAJO_FASES.txt
+
+Cada fase tiene: objetivo, actividades, entregables, criterio de salida y
+punto de aprobacion humana (Capa 9). Los bloques listos para pegar en
+Claude Code estan en 05_PROMPTS_CLAUDE_CODE.txt, uno por fase, en orden.
+Regla transversal: ninguna fase modifica el producto base; commits propios
+de fabrica con prefijo "factory:"; commit SOLO tras aprobacion de Cesar.
+================================================================================
+
+FASE F0 — PROTECCION Y LINEA BASE (sin crear nada nuevo)
+--------------------------------------------------------------------------------
+Objetivo: congelar y proteger el producto base antes de construir encima.
+Actividades:
+  1. Verificar salud del base: /health, agentes, RAG stats, audit verify.
+  2. Backup completo: app/, docker-compose.yml, .env (solo copia local
+     segura), data/chroma, data/audit_logs → backups/pre_factory_<fecha>/.
+  3. Confirmar git status limpio del repo base.
+  4. Crear tag inmutable: git tag base-v1.0.0 (la plantilla oficial).
+  5. Registrar consumo actual: free -m, df -h, docker stats (linea base).
+Entregables: backup verificado + tag base-v1.0.0 + reporte de linea base.
+Criterio de salida: tag creado, backup integro (listado + tamaños), base
+funcionando igual que antes.
+Aprobacion Capa 9: confirmar que el tag base-v1.0.0 es la version plantilla.
+Duracion estimada: 1 sesion corta.
+
+FASE F1 — ESTRUCTURA, POLITICAS, REGISTRY Y SKILLS
+--------------------------------------------------------------------------------
+Objetivo: crear el esqueleto de la fabrica (solo archivos nuevos).
+Actividades:
+  1. Claude Code lee memoria/estructura/prompts y EVALUA la arquitectura
+     ajustada (documento 02); propone mejoras si las ve, sin cambiar
+     el objetivo.
+  2. Crear factory/ completo segun documento 02 (carpetas + archivos
+     placeholder donde aplique).
+  3. Crear las 6 politicas YAML con contenido real (doc 02, seccion 7).
+  4. Crear registry/ports.yaml y registry/agents_catalog.yaml (poblado
+     con los 6 agentes base).
+  5. Crear los 3 skills de Claude Code en /home/ing_cpmo/.claude/skills/
+     (contenido exacto en documento 03).
+  6. Crear factory/.gitignore y README.md.
+Entregables: tree factory -L 4, find factory -type f | sort, git status,
+git diff. SIN COMMIT.
+Criterio de salida: estructura completa, politicas con contenido, skills
+instalados, cero cambios fuera de factory/ y .claude/.
+Aprobacion Capa 9: revisar diff → autorizar commit "factory: F1 estructura,
+politicas, registry y skills".
+
+FASE F2 — TEMPLATE ENGINE Y EXPORT DESDE TAG
+--------------------------------------------------------------------------------
+Objetivo: poder generar el esqueleto de una solucion custom desde base-v1.0.0.
+Actividades:
+  1. template_export.sh: git archive base-v1.0.0 → workspace destino.
+  2. Plantillas parametrizables: docker-compose.template.yml (con
+     extra_hosts host-gateway, mem_limit/cpus, red y volumenes por
+     proyecto), Dockerfile.template, env.example.template,
+     manifest.template.yaml (doc 02 seccion 6), gitignore.template.
+  3. template_engine.py: sustituye variables {{project_id}}, {{api_port}},
+     etc. desde el manifest.
+  4. port_registry.py: asignacion automatica + validacion ss -tlnp +
+     escritura en registry/ports.yaml.
+  5. Prueba en seco: generar workspace de prueba "demo_smoke", verificar
+     que compose config pasa (G01) SIN levantar contenedores. Borrar
+     workspace de prueba con backup.
+Criterio de salida: export + parametrizacion + asignacion de puertos
+funcionando en seco; base intacto.
+Aprobacion Capa 9: revisar diff → commit "factory: F2 template engine".
+
+FASE F3 — BRIDGE CLAUDE CODE Y QUALITY GATE RUNNER
+--------------------------------------------------------------------------------
+Objetivo: materializar la Capa 8 en Modo A (manual-asistido).
+Actividades:
+  1. claude_bridge.py: genera task package por workspace (task.md,
+     CLAUDE.md, .claude/settings.json) DESDE las politicas YAML
+     (plantillas P1-P3 del documento 03).
+  2. claude_policy.yaml + claude_task_template.md + claude_md_template.md
+     + settings_template.json + README del bridge.
+  3. quality_gate_runner.py: implementa G01-G14 (doc 03, skill 3) con
+     reporte JSON y registro en audit de fabrica.
+  4. audit_writer.py: JSONL hash-chain (replicar patron de app/audit.py
+     LEYENDOLO, sin modificarlo) + verificador.
+Criterio de salida: bridge genera un task package valido para un proyecto
+ficticio; gate runner ejecuta y reporta (gates de runtime pueden quedar
+SKIPPED si no hay solucion levantada); audit de fabrica verifica OK.
+Aprobacion Capa 9: revisar diff → commit "factory: F3 bridge y gates".
+
+FASE F4 — FACTORY API + CONSOLA UI (CAPA 7 MVP)
+--------------------------------------------------------------------------------
+Objetivo: levantar Docker 2 (puerto 9000) con consola minima.
+Actividades:
+  1. api/main.py + rutas: projects, workspaces, agents, releases,
+     deployments, approvals. Auth X-Api-Key propia de fabrica (generada
+     con openssl, solo en factory/.env, gitignored).
+  2. ui/index.html (MVP v0.1): listar/crear proyectos, registrar
+     requerimiento, estado de workspace, ver reporte de gates,
+     aprobar/rechazar, ver auditoria de fabrica.
+  3. docker-compose.factory.yml: solo factory-api (512m/0.5cpu),
+     puerto 9000, volumenes hot-reload (mismo patron del base).
+  4. Levantar y validar: health, UI carga, auth funciona, audit registra.
+Criterio de salida: consola operativa en http://<ip>:9000, base intacto y
+funcionando en 8000, consumo de recursos dentro de linea base + margen.
+Aprobacion Capa 9: aprobar exposicion del puerto 9000 (approval_policy) →
+commit "factory: F4 consola y API".
+
+FASE F5 — PROYECTO PILOTO END-TO-END (SIN DEPLOY)
+--------------------------------------------------------------------------------
+Objetivo: validar el flujo completo de la fabrica con un caso real.
+Caso piloto sugerido (del prompt original): laboratorio QC — LIMS, HPLC,
+OOS, Data Integrity, CAPA.
+Actividades (flujo de 12 pasos del diseño):
+  1. Registrar proyecto lab_qc_project en la consola (Capa 9 define
+     requerimiento).
+  2. Capa 8 analiza alcance con skill gmp-agent-design:
+     heredar qa, integrity, capa; crear perfiles qa_oos_profile e
+     integrity_lims_profile; evaluar hplc_data_review_agent (nuevo) —
+     decision documentada y aprobada.
+  3. Generar workspace (export tag + task package).
+  4. Sesion Claude Code Modo A dentro del workspace: app custom, perfiles,
+     corpus custom (>=60 chunks por coleccion), manifest, compose, .env
+     ejemplo, baterias de prueba.
+  5. Ejecutar quality gates G01-G13 (G14 pendiente; gates de runtime se
+     ejecutan levantando la solucion TEMPORALMENTE en sus puertos
+     asignados y deteniendola al final — cuenta dentro del limite de 2).
+  6. Presentar diff completo a Capa 9.
+  7. Generar release v0.1.0 (estado pending_approval) con todos los
+     artefactos inmutables.
+Criterio de salida: release v0.1.0 completo con reporte de gates en verde
+(salvo G14), evidencias archivadas, base intacto.
+Aprobacion Capa 9: aprobar el release (approval.json) → commit
+"factory: F5 piloto lab_qc release v0.1.0".
+
+FASE F6 — PRIMER DEPLOYMENT INDEPENDIENTE (DOCKER 3)
+--------------------------------------------------------------------------------
+Objetivo: desplegar la solucion piloto aprobada como Docker independiente.
+Actividades:
+  1. Verificar approval.json aprobado (G14) y resource_policy
+     (max 2 activas, free -m, df -h).
+  2. release_manager → deployments/lab_qc_project/ (desempaquetar tar.gz
+     verificando SHA256SUMS).
+  3. docker compose up -d del proyecto custom (puertos asignados:
+     ej. 8101/5433/6380).
+  4. Re-ejecutar gates de runtime (G03-G10) en caliente + smoke test de
+     los 3 flujos principales del piloto.
+  5. Verificar que el base (8000) y la fabrica (9000) siguen sanos y
+     registrar consumo (docker stats) contra la linea base de F0.
+  6. Registrar deployment_started en audit de fabrica.
+Criterio de salida: 3 stacks conviviendo estables (base + factory +
+lab_qc), gates en verde, evidencia archivada.
+Aprobacion Capa 9: aprobar operacion continua o detener la solucion
+(compose stop) → commit "factory: F6 primer deployment".
+
+================================================================================
+DESPUES DE F6 (backlog, no comprometido)
+--------------------------------------------------------------------------------
+- Modo B headless del bridge (claude -p) tras auditar el Modo A.
+- Consola v0.2: diffs embebidos, gestion visual de perfiles.
+- Postgres/Redis de fabrica si el volumen de proyectos lo exige.
+- Limpieza automatizada de workspaces cerrados (con backup).
+- Coordinacion con Fase 3 del producto base (RBAC Keycloak podria
+  compartirse entre base, fabrica y customs en el futuro).
+================================================================================
+
+MATRIZ RAPIDA DE APROBACIONES (Capa 9 = Cesar)
+--------------------------------------------------------------------------------
+F0: tag base-v1.0.0 como plantilla oficial          → aprobar
+F1: diff estructura+politicas+skills                → aprobar commit
+F2: diff template engine                            → aprobar commit
+F3: diff bridge+gates                               → aprobar commit
+F4: exposicion puerto 9000 + diff                   → aprobar ambos
+F5: decision de agentes del piloto + release v0.1.0 → aprobar ambos
+F6: deployment Docker 3                             → aprobar deploy
+================================================================================

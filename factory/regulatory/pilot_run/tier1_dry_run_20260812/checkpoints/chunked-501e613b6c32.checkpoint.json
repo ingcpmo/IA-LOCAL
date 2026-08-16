@@ -1,0 +1,1804 @@
+{
+  "run_id": "chunked-501e613b6c32",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "fda_part11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 29,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-8319f4caa97b",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 3,
+      "has_overlap_prefix": false,
+      "text_chars": 2973,
+      "started_at": "2026-08-12T15:44:04.834834+00:00",
+      "finished_at": "2026-08-12T15:44:04.835192+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-b7346c4c0ac4",
+      "chunk_index": 1,
+      "page_start": 4,
+      "page_end": 4,
+      "has_overlap_prefix": true,
+      "text_chars": 4584,
+      "started_at": "2026-08-12T15:44:04.836510+00:00",
+      "finished_at": "2026-08-12T15:44:04.836694+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-384c6495b7f9",
+      "chunk_index": 2,
+      "page_start": 5,
+      "page_end": 6,
+      "has_overlap_prefix": true,
+      "text_chars": 5682,
+      "started_at": "2026-08-12T15:44:04.837417+00:00",
+      "finished_at": "2026-08-12T15:44:04.837588+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-b3ed27d232bd",
+      "chunk_index": 3,
+      "page_start": 7,
+      "page_end": 8,
+      "has_overlap_prefix": true,
+      "text_chars": 3847,
+      "started_at": "2026-08-12T15:44:04.838477+00:00",
+      "finished_at": "2026-08-12T15:44:04.838664+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-124b3ff72237",
+      "chunk_index": 4,
+      "page_start": 9,
+      "page_end": 12,
+      "has_overlap_prefix": true,
+      "text_chars": 6312,
+      "started_at": "2026-08-12T15:44:04.839513+00:00",
+      "finished_at": "2026-08-12T15:44:04.839740+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-3a8f3eae1cf3",
+      "chunk_index": 5,
+      "page_start": 13,
+      "page_end": 14,
+      "has_overlap_prefix": true,
+      "text_chars": 5685,
+      "started_at": "2026-08-12T15:44:04.840661+00:00",
+      "finished_at": "2026-08-12T15:44:04.840933+00:00",
+      "wall_clock_ms": 0.3,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-cdf9208a27c0",
+      "chunk_index": 6,
+      "page_start": 15,
+      "page_end": 16,
+      "has_overlap_prefix": true,
+      "text_chars": 6460,
+      "started_at": "2026-08-12T15:44:04.841795+00:00",
+      "finished_at": "2026-08-12T15:44:04.841954+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-366bc305284f",
+      "chunk_index": 7,
+      "page_start": 17,
+      "page_end": 17,
+      "has_overlap_prefix": true,
+      "text_chars": 3589,
+      "started_at": "2026-08-12T15:44:04.842781+00:00",
+      "finished_at": "2026-08-12T15:44:04.842911+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-44f80e412fcb",
+      "chunk_index": 8,
+      "page_start": 18,
+      "page_end": 19,
+      "has_overlap_prefix": true,
+      "text_chars": 5988,
+      "started_at": "2026-08-12T15:44:04.844220+00:00",
+      "finished_at": "2026-08-12T15:44:04.844368+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-84e9cc91091d",
+      "chunk_index": 9,
+      "page_start": 20,
+      "page_end": 21,
+      "has_overlap_prefix": true,
+      "text_chars": 5602,
+      "started_at": "2026-08-12T15:44:04.845430+00:00",
+      "finished_at": "2026-08-12T15:44:04.845581+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-c1d9db243a81",
+      "chunk_index": 10,
+      "page_start": 22,
+      "page_end": 23,
+      "has_overlap_prefix": true,
+      "text_chars": 5460,
+      "started_at": "2026-08-12T15:44:04.846612+00:00",
+      "finished_at": "2026-08-12T15:44:04.846759+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-e4c290e2d6fb",
+      "chunk_index": 11,
+      "page_start": 24,
+      "page_end": 25,
+      "has_overlap_prefix": true,
+      "text_chars": 5166,
+      "started_at": "2026-08-12T15:44:04.848201+00:00",
+      "finished_at": "2026-08-12T15:44:04.848402+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-303fd08c4b15",
+      "chunk_index": 12,
+      "page_start": 26,
+      "page_end": 28,
+      "has_overlap_prefix": true,
+      "text_chars": 6069,
+      "started_at": "2026-08-12T15:44:04.849746+00:00",
+      "finished_at": "2026-08-12T15:44:04.849922+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-d5bba62af540",
+      "chunk_index": 13,
+      "page_start": 29,
+      "page_end": 31,
+      "has_overlap_prefix": true,
+      "text_chars": 5855,
+      "started_at": "2026-08-12T15:44:04.851233+00:00",
+      "finished_at": "2026-08-12T15:44:04.851400+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-e91b6c893215",
+      "chunk_index": 14,
+      "page_start": 32,
+      "page_end": 34,
+      "has_overlap_prefix": true,
+      "text_chars": 5576,
+      "started_at": "2026-08-12T15:44:04.853678+00:00",
+      "finished_at": "2026-08-12T15:44:04.853980+00:00",
+      "wall_clock_ms": 0.3,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-ad4ff15034dc",
+      "chunk_index": 15,
+      "page_start": 35,
+      "page_end": 36,
+      "has_overlap_prefix": true,
+      "text_chars": 4677,
+      "started_at": "2026-08-12T15:44:04.855956+00:00",
+      "finished_at": "2026-08-12T15:44:04.856138+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-c8bf7c6b0c64",
+      "chunk_index": 16,
+      "page_start": 37,
+      "page_end": 38,
+      "has_overlap_prefix": true,
+      "text_chars": 5236,
+      "started_at": "2026-08-12T15:44:04.857929+00:00",
+      "finished_at": "2026-08-12T15:44:04.858092+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-edc9ba3bd648",
+      "chunk_index": 17,
+      "page_start": 39,
+      "page_end": 40,
+      "has_overlap_prefix": true,
+      "text_chars": 5420,
+      "started_at": "2026-08-12T15:44:04.859698+00:00",
+      "finished_at": "2026-08-12T15:44:04.859859+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-fb0341e832fc",
+      "chunk_index": 18,
+      "page_start": 41,
+      "page_end": 42,
+      "has_overlap_prefix": true,
+      "text_chars": 5756,
+      "started_at": "2026-08-12T15:44:04.861506+00:00",
+      "finished_at": "2026-08-12T15:44:04.861656+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-a794305a35c9",
+      "chunk_index": 19,
+      "page_start": 43,
+      "page_end": 44,
+      "has_overlap_prefix": true,
+      "text_chars": 4334,
+      "started_at": "2026-08-12T15:44:04.863445+00:00",
+      "finished_at": "2026-08-12T15:44:04.863652+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-254b2fcb2cb2",
+      "chunk_index": 20,
+      "page_start": 45,
+      "page_end": 46,
+      "has_overlap_prefix": true,
+      "text_chars": 5060,
+      "started_at": "2026-08-12T15:44:04.865488+00:00",
+      "finished_at": "2026-08-12T15:44:04.865636+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-80049dfafd0d",
+      "chunk_index": 21,
+      "page_start": 47,
+      "page_end": 48,
+      "has_overlap_prefix": true,
+      "text_chars": 4556,
+      "started_at": "2026-08-12T15:44:04.867442+00:00",
+      "finished_at": "2026-08-12T15:44:04.867646+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-0d432fa6978b",
+      "chunk_index": 22,
+      "page_start": 49,
+      "page_end": 50,
+      "has_overlap_prefix": true,
+      "text_chars": 4504,
+      "started_at": "2026-08-12T15:44:04.869539+00:00",
+      "finished_at": "2026-08-12T15:44:04.869683+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-d4a61bb64e2b",
+      "chunk_index": 23,
+      "page_start": 51,
+      "page_end": 52,
+      "has_overlap_prefix": true,
+      "text_chars": 5826,
+      "started_at": "2026-08-12T15:44:04.871659+00:00",
+      "finished_at": "2026-08-12T15:44:04.871820+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-f1bdfb1d0f53",
+      "chunk_index": 24,
+      "page_start": 53,
+      "page_end": 54,
+      "has_overlap_prefix": true,
+      "text_chars": 4785,
+      "started_at": "2026-08-12T15:44:04.873911+00:00",
+      "finished_at": "2026-08-12T15:44:04.874071+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-f449392b32f0",
+      "chunk_index": 25,
+      "page_start": 55,
+      "page_end": 55,
+      "has_overlap_prefix": true,
+      "text_chars": 5135,
+      "started_at": "2026-08-12T15:44:04.876208+00:00",
+      "finished_at": "2026-08-12T15:44:04.876361+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-02939f65d08d",
+      "chunk_index": 26,
+      "page_start": 56,
+      "page_end": 56,
+      "has_overlap_prefix": true,
+      "text_chars": 6574,
+      "started_at": "2026-08-12T15:44:04.878627+00:00",
+      "finished_at": "2026-08-12T15:44:04.878799+00:00",
+      "wall_clock_ms": 0.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-ef2be4fafced",
+      "chunk_index": 27,
+      "page_start": 57,
+      "page_end": 57,
+      "has_overlap_prefix": true,
+      "text_chars": 5847,
+      "started_at": "2026-08-12T15:44:04.881126+00:00",
+      "finished_at": "2026-08-12T15:44:04.881286+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    },
+    {
+      "run_id": "chunked-501e613b6c32",
+      "task_id": "task-4f9b7adcd130",
+      "chunk_index": 28,
+      "page_start": 58,
+      "page_end": 58,
+      "has_overlap_prefix": true,
+      "text_chars": 3644,
+      "started_at": "2026-08-12T15:44:04.883639+00:00",
+      "finished_at": "2026-08-12T15:44:04.883793+00:00",
+      "wall_clock_ms": 0.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": false,
+      "error": "technical_execution_failure: fallo de llamada al modelo (RuntimeError: REPLAY GUARD: se intento una llamada NUEVA al modelo durante el dry-run F2-DRY (R3-T1.5 bloque 1) -- esto viola la regla dura de CERO llamadas LLM. El checkpoint no se reanudo limpio (fingerprint mismatch) y evaluate_chunked() intento ejecutar un chunk real.)",
+      "technical_execution_failure": true,
+      "failure_reason": "provider_call_failed",
+      "num_predict": 4096,
+      "raw_response": "",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": null,
+      "raw_response_full_sha256": null,
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": []
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "BASELINE",
+    "target_requirement_ids": null
+  },
+  "verified_records_by_req": {
+    "21_CFR_11.10(a)": [
+      {
+        "record_id": "vrec-task-8319f4caa97b-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b7346c4c0ac4-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-384c6495b7f9-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b3ed27d232bd-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-124b3ff72237-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-3a8f3eae1cf3-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-cdf9208a27c0-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-366bc305284f-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-44f80e412fcb-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-84e9cc91091d-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-c1d9db243a81-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-e4c290e2d6fb-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-303fd08c4b15-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-d5bba62af540-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-e91b6c893215-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-ad4ff15034dc-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-c8bf7c6b0c64-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-edc9ba3bd648-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-fb0341e832fc-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-a794305a35c9-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-254b2fcb2cb2-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-80049dfafd0d-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-0d432fa6978b-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-d4a61bb64e2b-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-f1bdfb1d0f53-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-f449392b32f0-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-02939f65d08d-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-ef2be4fafced-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-4f9b7adcd130-21_CFR_11.10(a)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      }
+    ],
+    "21_CFR_11.10(d)": [
+      {
+        "record_id": "vrec-task-8319f4caa97b-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b7346c4c0ac4-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-384c6495b7f9-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b3ed27d232bd-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-124b3ff72237-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-3a8f3eae1cf3-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-cdf9208a27c0-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-366bc305284f-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-44f80e412fcb-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-84e9cc91091d-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-c1d9db243a81-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-e4c290e2d6fb-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-303fd08c4b15-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-d5bba62af540-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-e91b6c893215-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-ad4ff15034dc-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-c8bf7c6b0c64-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-edc9ba3bd648-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-fb0341e832fc-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-a794305a35c9-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-254b2fcb2cb2-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-80049dfafd0d-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-0d432fa6978b-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-d4a61bb64e2b-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-f1bdfb1d0f53-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-f449392b32f0-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-02939f65d08d-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-ef2be4fafced-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-4f9b7adcd130-21_CFR_11.10(d)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      }
+    ],
+    "21_CFR_11.10(e)": [
+      {
+        "record_id": "vrec-task-8319f4caa97b-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b7346c4c0ac4-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-384c6495b7f9-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b3ed27d232bd-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-124b3ff72237-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-3a8f3eae1cf3-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-cdf9208a27c0-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-366bc305284f-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-44f80e412fcb-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-84e9cc91091d-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-c1d9db243a81-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-e4c290e2d6fb-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-303fd08c4b15-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-d5bba62af540-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-e91b6c893215-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-ad4ff15034dc-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-c8bf7c6b0c64-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-edc9ba3bd648-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-fb0341e832fc-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-a794305a35c9-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-254b2fcb2cb2-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-80049dfafd0d-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-0d432fa6978b-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-d4a61bb64e2b-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-f1bdfb1d0f53-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-f449392b32f0-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-02939f65d08d-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-ef2be4fafced-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-4f9b7adcd130-21_CFR_11.10(e)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      }
+    ],
+    "21_CFR_11.10(g)": [
+      {
+        "record_id": "vrec-task-8319f4caa97b-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b7346c4c0ac4-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-384c6495b7f9-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b3ed27d232bd-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-124b3ff72237-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-3a8f3eae1cf3-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-cdf9208a27c0-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-366bc305284f-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-44f80e412fcb-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-84e9cc91091d-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-c1d9db243a81-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-e4c290e2d6fb-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-303fd08c4b15-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-d5bba62af540-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-e91b6c893215-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-ad4ff15034dc-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-c8bf7c6b0c64-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-edc9ba3bd648-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-fb0341e832fc-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-a794305a35c9-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-254b2fcb2cb2-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-80049dfafd0d-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-0d432fa6978b-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-d4a61bb64e2b-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-f1bdfb1d0f53-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-f449392b32f0-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-02939f65d08d-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-ef2be4fafced-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-4f9b7adcd130-21_CFR_11.10(g)",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      }
+    ],
+    "21_CFR_11.50_11.70": [
+      {
+        "record_id": "vrec-task-8319f4caa97b-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b7346c4c0ac4-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-384c6495b7f9-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b3ed27d232bd-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-124b3ff72237-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-3a8f3eae1cf3-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-cdf9208a27c0-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-366bc305284f-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-44f80e412fcb-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-84e9cc91091d-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-c1d9db243a81-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-e4c290e2d6fb-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-303fd08c4b15-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-d5bba62af540-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-e91b6c893215-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-ad4ff15034dc-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-c8bf7c6b0c64-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-edc9ba3bd648-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-fb0341e832fc-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-a794305a35c9-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-254b2fcb2cb2-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-80049dfafd0d-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-0d432fa6978b-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-d4a61bb64e2b-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-f1bdfb1d0f53-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-f449392b32f0-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-02939f65d08d-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-ef2be4fafced-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-4f9b7adcd130-21_CFR_11.50_11.70",
+        "llm_output": null,
+        "status": "rejected_by_verifier",
+        "rejection_reason": "technical_execution_failure",
+        "review_flags": []
+      }
+    ]
+  }
+}

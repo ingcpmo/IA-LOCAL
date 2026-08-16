@@ -1,0 +1,145 @@
+{
+  "run_id": "chunked-6faaf9b56ed1",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "alcoa_plus_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 1,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-6faaf9b56ed1",
+      "task_id": "task-c8527cec5b4e",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 1944,
+      "started_at": "2026-08-15T23:40:03.732678+00:00",
+      "finished_at": "2026-08-15T23:40:58.956132+00:00",
+      "wall_clock_ms": 55223.4,
+      "model": "qwen2.5:14b-instruct-q4_K_M",
+      "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"ALCOA_CONTEMPORANEOUS\",\n      \"estado\": \"cumple_parcialmente\",\n      \"evidencia_exacta\": \"With the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View SE activity log is identified with: \\n time and date the action occurred, \\n name of the logged-in operator who performed the action, \\n terminal the action was performed from, \\n type of operation that was performed, and \\n value of the changed item before and after the change.\",\n      \"brecha\": \"El documento no proporciona evidencia explícita de que los registros se realicen en el momento de la actividad para todos los casos y no menciona claramente las condiciones bajo las cuales una contrafirma tardía sería aceptable.\",\n      \"recomendacion\": \"Se recomienda incluir detalles específicos sobre cómo se garantiza la contemporaneidad del registro en todas las actividades relevantes, así como definir claramente los casos permitidos para contrafirmas tardías con motivos reales y plazos máximos.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Registro en el momento de la actividad como regla general.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"El documento no proporciona evidencia clara sobre si los registros se realizan en el momento de la actividad para todas las actividades relevantes.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"El documento no proporciona evidencia clara sobre si los registros se realizan en el momento de la actividad para todas las actividades relevantes y identifica al ejecutor real.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardia del ejecutor es aceptable, con motivo real, plazo maximo y revision.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"El documento no proporciona detalles sobre los casos permitidos para contrafirmas tardías con motivos reales y plazos máximos.\",\n          \"limitations\": \"\"\n        }\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-6faaf9b56ed1/task-c8527cec5b4e.txt.gz",
+      "raw_response_full_sha256": "5d3d45d952a658f746cb3f7b2308426a9d6457ccf6a54e0fdd42bb51b49a8da3",
+      "_by_req_candidates": [
+        {
+          "req_id": "ALCOA_CONTEMPORANEOUS",
+          "candidate": {
+            "chunk_index": 0,
+            "page_start": 1,
+            "page_end": 1,
+            "estado": "cumple_parcialmente",
+            "evidencia_exacta": "With the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View SE activity log is identified with: \n time and date the action occurred, \n name of the logged-in operator who performed the action, \n terminal the action was performed from, \n type of operation that was performed, and \n value of the changed item before and after the change.",
+            "brecha": "El documento no proporciona evidencia explícita de que los registros se realicen en el momento de la actividad para todos los casos y no menciona claramente las condiciones bajo las cuales una contrafirma tardía sería aceptable.",
+            "recomendacion": "Se recomienda incluir detalles específicos sobre cómo se garantiza la contemporaneidad del registro en todas las actividades relevantes, así como definir claramente los casos permitidos para contrafirmas tardías con motivos reales y plazos máximos.",
+            "anchored": false,
+            "has_evidence": true,
+            "headline_source": "model_headline",
+            "d_sufficiency": "NOT_ASSESSABLE",
+            "d_reason": "cobertura completa pero con incertidumbre real en al menos un criterio",
+            "d_detail": {
+              "met": [],
+              "not_met": [],
+              "not_assessable_individual": [
+                "Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardia del ejecutor es aceptable, con motivo real, plazo maximo y revision.",
+                "Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.",
+                "Registro en el momento de la actividad como regla general."
+              ],
+              "discarded_unanchored": [],
+              "missing": []
+            },
+            "substantive_evidence_accepted": false,
+            "operational_result": "EVALUATION_INCOMPLETE",
+            "a_anchor": "PASS",
+            "a_match_type": "normalized",
+            "b_source": "PASS",
+            "c_semantic": "NOT_VERIFIABLE",
+            "c_flags": [
+              "RELEVANCE_REVIEW_REQUIRED"
+            ]
+          }
+        }
+      ],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ALCOA_CONTEMPORANEOUS",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Registro en el momento de la actividad como regla general.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "El documento no proporciona evidencia clara sobre si los registros se realizan en el momento de la actividad para todas las actividades relevantes.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "El documento no proporciona evidencia clara sobre si los registros se realizan en el momento de la actividad para todas las actividades relevantes y identifica al ejecutor real.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardia del ejecutor es aceptable, con motivo real, plazo maximo y revision.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "El documento no proporciona detalles sobre los casos permitidos para contrafirmas tardías con motivos reales y plazos máximos.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": " UR3.3.3 Audit trail records shall be archived.  \nUR3.3.3 Audit trail records shall be archived.   \nUR5.2.3 [URS-PCS-SR-009] Logins, logouts, and login attempts must be recorded in the Audit Trail.   \nUR5.4.2 [URS-PCS-SR-036] All manual interactions  (parameter changes, device mode changes, etc.) \nshall be sent to a database for event logging,  including user name, action and timestamp.   \n \nFactoryTalk View SE provides an electronic signature feature for capturing operator actions \nperformed in the production system.  This feature is  available in an E-Signature control, as well \nas the native button, numeric, and string input objects. \nWith the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View \nSE activity log is identified with: \n time and date the action occurred, \n name of the logged-in operator who performed the action, \n terminal the action was performed from, \n type of operation that was performed, and \n value of the changed item before and after the change. \nWhen electronic signatures are used, the operator’s username and full name are also included. \n The Critical Alarm Threshold Change Audit Trail entry will contain the following information: \n Date and time stamps of the change \n Original threshold value \n Threshold value after change \n User ID of the individual who has changed the threshold value (performer) \n Full name of the individual who has changed the threshold value (performer) \n Meaning of signature (performer) \n User ID of the individual who has approved the change (approver) \n Full name of the individual who has approved the change (approver) \n Meaning of signature (approver). \n \nThe Critical Alarm Audit Trail entry will contain the following information: \n Alarm date and time stamps \n Alarm tag \n Alarm value \n Alarm description \n A similar record shall be generated whenever a critical alarm condition returns to \nnormal condition. \n ",
+          "estado": "cumple_parcialmente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "ALCOA_CONTEMPORANEOUS"
+    ]
+  },
+  "verified_records_by_req": {
+    "ALCOA_CONTEMPORANEOUS": [
+      {
+        "record_id": "vrec-task-c8527cec5b4e-ALCOA_CONTEMPORANEOUS",
+        "llm_output": {
+          "requirement_id": "ALCOA_CONTEMPORANEOUS",
+          "chunk_observation": "observed",
+          "evidence_quote": "With the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View SE activity log is identified with: \n time and date the action occurred, \n name of the logged-in operator who performed the action, \n terminal the action was performed from, \n type of operation that was performed, and \n value of the changed item before and after the change.",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "review_required",
+        "rejection_reason": "",
+        "review_flags": [
+          "RELEVANCE_REVIEW_REQUIRED"
+        ]
+      }
+    ]
+  }
+}

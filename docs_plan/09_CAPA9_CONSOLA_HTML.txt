@@ -1,0 +1,130 @@
+================================================================================
+GMP AI FACTORY — FASE 9: CONSOLA HTML DE MISSION CONTROL (CAPA 9)
+Archivo: 09_CAPA9_CONSOLA_HTML.txt
+Precondición: Fase 0 ejecutada. Cesar confirmó esta fase.
+La API de Capa 9 ya CUMPLE; aquí se instala la interfaz HTML.
+================================================================================
+▼ PEGAR EN CLAUDE CODE ▼
+──────────────────────────────────────────────────────────────────────────────
+FASE 9 — Instalar la consola HTML de Mission Control y su script de arranque.
+No modificar la API sin mostrar diff. No abrir UFW sin aprobación.
+
+cd /home/ing_cpmo
+
+═══ 9.1 — VERIFICAR API DE CAPA 9 (ya debería CUMPLIR) ═════════════════════
+
+FK=$(docker exec factory-api printenv FACTORY_API_KEY 2>/dev/null)
+echo "=== Endpoints Capa 9 ==="
+for ep in "missions" "review-queue" "decisions"; do
+  code=$(curl -s -o /dev/null -w "%{http_code}" -H "X-Api-Key: $FK" http://localhost:9000/api/v1/layer9/$ep)
+  echo "  GET /layer9/$ep → $code"
+done
+echo "=== Bloqueo de approved_by reservado (debe rechazar) ==="
+python3 -c "
+import sys; sys.path.insert(0,'.')
+from factory.layer9.mission_control import approve_mission
+for bad in ['human','agent','system']:
+    try:
+        approve_mission('__nope__', approved_by=bad); print(f'  ✗ NO bloqueó {bad}')
+    except Exception:
+        print(f'  ✓ bloqueó {bad}')
+"
+
+═══ 9.2 — INSTALAR mission_control.html ════════════════════════════════════
+
+mkdir -p factory/ui backups/frontend
+
+if [ -f docs_plan/09_consola_capa9_mission_control.html ]; then
+  # backup del index actual por si acaso
+  [ -f factory/ui/index.html ] && cp factory/ui/index.html backups/frontend/index_$(date +%Y%m%d_%H%M%S).html
+  cp docs_plan/09_consola_capa9_mission_control.html factory/ui/mission_control.html
+  echo "✓ mission_control.html instalada en factory/ui/"
+  # verificar que NO contiene secretos ni localStorage
+  grep -q "localStorage" factory/ui/mission_control.html && echo "⚠ contiene localStorage — revisar" || echo "✓ sin localStorage"
+  grep -qiE "GMP_API_KEY|FACTORY_API_KEY|b20a5e5b|d4b08d0d" factory/ui/mission_control.html && echo "⚠ posible secreto embebido — revisar" || echo "✓ sin secretos embebidos"
+else
+  echo "✗ docs_plan/09_consola_capa9_mission_control.html NO existe."
+  echo "  Cesar debe subirla:  scp 09_consola_capa9_mission_control.html ing_cpmo@35.243.160.0:/home/ing_cpmo/docs_plan/"
+  echo "  (Detener Fase 9 hasta tenerla, o continuar solo con el script.)"
+fi
+
+═══ 9.3 — CREAR run_mission_control_ui.sh ══════════════════════════════════
+
+cat > factory/scripts/ops/run_mission_control_ui.sh << 'SCRIPT'
+#!/usr/bin/env bash
+set -euo pipefail
+PROJECT_ROOT="/home/ing_cpmo"
+UI_FILE="$PROJECT_ROOT/factory/ui/mission_control.html"
+PORT="${1:-9090}"
+
+if [ ! -f "$UI_FILE" ]; then
+  echo "ERROR: No existe $UI_FILE"
+  echo "Primero copia 09_consola_capa9_mission_control.html a factory/ui/mission_control.html"
+  exit 1
+fi
+
+echo "GMP AI Factory - Mission Control UI"
+echo "Archivo: $UI_FILE"
+echo "Puerto:  $PORT"
+echo ""
+echo "Abrir en navegador:"
+echo "  http://35.243.160.0:$PORT/mission_control.html"
+echo ""
+echo "IMPORTANTE:"
+echo "- Esta UI es solo interfaz de control."
+echo "- Las acciones reales pasan por la API factory en el puerto 9000."
+echo "- No se guardan API keys en el navegador."
+echo ""
+cd "$(dirname "$UI_FILE")"
+python3 -m http.server "$PORT"
+SCRIPT
+chmod +x factory/scripts/ops/run_mission_control_ui.sh
+echo "✓ run_mission_control_ui.sh creado y con permisos de ejecución"
+
+═══ 9.4 — VERIFICAR LA RUTA /mission-control EN EL PUERTO 9000 ═════════════
+
+# La ruta GET /mission-control ya fue añadida en Fase F (main.py). Con la UI
+# instalada en factory/ui/, ahora debería servir el HTML en vez del JSON de error.
+echo "=== GET /mission-control (vía factory-api 9000) ==="
+curl -s -o /dev/null -w "HTTP %{http_code} | content-type: %{content_type}\n" http://localhost:9000/mission-control
+# Si devuelve JSON de error y el contenedor no ve el archivo nuevo, puede requerir
+# reinicio de factory-api (hot-reload cubre .py, no siempre archivos nuevos de ui/).
+echo "Si devuelve JSON de error pese a estar el archivo, factory-api necesita reinicio:"
+echo "  docker compose -f factory/docker-compose.factory.yml up -d --force-recreate factory-api"
+echo "  (NO reiniciar sin tu aprobación)"
+
+═══ 9.5 — VALIDACIÓN LOCAL DEL SERVIDOR ESTÁTICO (opcional, en background) ══
+
+echo "=== Prueba local del script (5s) ==="
+( bash factory/scripts/ops/run_mission_control_ui.sh 9090 >/tmp/mc_ui.log 2>&1 & echo $! > /tmp/mc_ui.pid )
+sleep 2
+curl -s -o /dev/null -w "GET :9090/mission_control.html → HTTP %{http_code}\n" http://localhost:9090/mission_control.html || echo "no respondió"
+kill "$(cat /tmp/mc_ui.pid)" 2>/dev/null && echo "(servidor de prueba detenido)"
+
+echo ""
+echo "NOTA UFW: el puerto 9090 NO se abre automáticamente. Para acceso externo"
+echo "Cesar debe aprobar:  sudo ufw allow 9090/tcp"
+echo "Alternativa sin abrir puerto nuevo: servir por /mission-control en 9000 (ya expuesto)."
+
+═══ 9.6 — VALIDACIÓN Y DIFF ════════════════════════════════════════════════
+
+echo ""; echo "=== selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "Gate 0|FAIL"
+echo ""; echo "=== diff ==="
+git status --short && git diff --stat
+
+Entrega el reporte de Capa 9:
+  - API review-queue/missions/decisions: HTTP 200
+  - bloqueo approved_by reservado: ✓
+  - mission_control.html instalada: sí/no
+  - run_mission_control_ui.sh creado y ejecutable: sí
+  - URL local: http://localhost:9090/mission_control.html
+  - URL externa sugerida: http://35.243.160.0:9090/mission_control.html (requiere UFW)
+  - alternativa: http://35.243.160.0:9000/mission-control (sin abrir puerto)
+  - sin secretos, sin localStorage
+  - Clasificación final Capa 9: CUMPLE / PARCIAL / NO CUMPLE
+
+NO hagas commit ni reinicies factory-api ni abras UFW sin mi aprobación.
+Commit cuando apruebe: "factory: Capa 9 UI — consola mission_control.html + run_mission_control_ui.sh"
+──────────────────────────────────────────────────────────────────────────────
+▲ FIN FASE 9 ▲

@@ -1,0 +1,196 @@
+{
+  "run_id": "chunked-4289e754ed28",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "fda_part11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 1,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-4289e754ed28",
+      "task_id": "task-146d947d44f7",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 1944,
+      "started_at": "2026-08-15T23:30:37.859731+00:00",
+      "finished_at": "2026-08-15T23:37:12.816427+00:00",
+      "wall_clock_ms": 394956.7,
+      "model": "qwen2.5:14b-instruct-q4_K_M",
+      "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"21_CFR_11.10(e)\",\n      \"estado\": \"cumple_parcialmente\",\n      \"evidencia_exacta\": \"FactoryTalk View SE provides an electronic signature feature for capturing operator actions performed in the production system. This feature is available in an E-Signature control, as well as the native button, numeric, and string input objects.\",\n      \"brecha\": \"El documento menciona la generación de registros auditivos con fecha y hora, pero no proporciona detalles sobre los controles de acceso privilegiado ni la prohibición de modificación silenciosa del registro auditivo.\",\n      \"recomendacion\": \"Se recomienda incluir en el documento información adicional sobre controles de acceso privilegiado para el registro auditivo y medidas para prevenir modificaciones silenciosas.\",\n      \"criterion_assessments\": [\n        {\"criterion_index\": 1, \"criterion_text\": \"Generacion automatica, independiente del operador.\", \"status\": \"MET\", \"evidence_quote\": \"FactoryTalk View SE provides an electronic signature feature for capturing operator actions performed in the production system. This feature is available in an E-Signature control, as well as the native button, numeric, and string input objects.\", \"evidence_location\": \"\", \"justification\": \"Se menciona la generación automática de registros auditivos.\", \"limitations\": \"\"},\n        {\"criterion_index\": 2, \"criterion_text\": \"Timestamp de fecha/hora.\", \"status\": \"MET\", \"evidence_quote\": \"time and date the action occurred\", \"evidence_location\": \"\", \"justification\": \"Se menciona la inclusión de fecha y hora en los registros auditivos.\", \"limitations\": \"\"},\n        {\"criterion_index\": 3, \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\", \"status\": \"MET\", \"evidence_quote\": \"Critical Alarm Threshold Change Audit Trail entry will contain the following information: Date and time stamps of the change, Original threshold value, Threshold value after change, User ID of the individual who has changed the threshold value (performer), Full name of the individual who has changed the threshold value (performer)\", \"evidence_location\": \"\", \"justification\": \"Se menciona la inclusión de acciones y cambios en los registros auditivos.\", \"limitations\": \"\"},\n        {\"criterion_index\": 4, \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\", \"status\": \"MET\", \"evidence_quote\": \"value of the changed item before and after the change\", \"evidence_location\": \"\", \"justification\": \"Se menciona la inclusión de valores antes y después del cambio en los registros auditivos.\", \"limitations\": \"\"},\n        {\"criterion_index\": 5, \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información específica sobre controles de acceso privilegiado para el registro auditivo.\", \"limitations\": \"\"},\n        {\"criterion_index\": 6, \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información específica sobre trazabilidad o detección de manipulación del registro auditivo.\", \"limitations\": \"\"},\n        {\"criterion_index\": 7, \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información específica sobre prohibición o detección de modificaciones silenciosas del registro auditivo.\", \"limitations\": \"\"},\n        {\"criterion_index\": 8, \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información específica sobre la retención del registro auditivo en relación con el período de retención del registro asociado.\", \"limitations\": \"\"},\n        {\"criterion_index\": 9, \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporciona información específica sobre la capacidad de exportación o copia del registro auditivo para inspección.\", \"limitations\": \"\"}\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-4289e754ed28/task-146d947d44f7.txt.gz",
+      "raw_response_full_sha256": "e526bfe681d71100b02c481ad75d6cc8f094c56b509b49ff7f1ea2ec71856897",
+      "_by_req_candidates": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "candidate": {
+            "chunk_index": 0,
+            "page_start": 1,
+            "page_end": 1,
+            "estado": "cumple_parcialmente",
+            "evidencia_exacta": "FactoryTalk View SE provides an electronic signature feature for capturing operator actions performed in the production system. This feature is available in an E-Signature control, as well as the native button, numeric, and string input objects.",
+            "brecha": "El documento menciona la generación de registros auditivos con fecha y hora, pero no proporciona detalles sobre los controles de acceso privilegiado ni la prohibición de modificación silenciosa del registro auditivo.",
+            "recomendacion": "Se recomienda incluir en el documento información adicional sobre controles de acceso privilegiado para el registro auditivo y medidas para prevenir modificaciones silenciosas.",
+            "anchored": false,
+            "has_evidence": true,
+            "headline_source": "model_headline",
+            "d_sufficiency": "NOT_ASSESSABLE",
+            "d_reason": "contrato de criterion_assessments violado: 4 problema(s)",
+            "d_detail": {
+              "contract_violations": [
+                "status=MET sin evidence_quote/evidence_location (criterion_index=1)",
+                "status=MET sin evidence_quote/evidence_location (criterion_index=2)",
+                "status=MET sin evidence_quote/evidence_location (criterion_index=3)",
+                "status=MET sin evidence_quote/evidence_location (criterion_index=4)"
+              ]
+            },
+            "substantive_evidence_accepted": false,
+            "operational_result": "EVALUATION_INCOMPLETE",
+            "a_anchor": "PASS",
+            "a_match_type": "normalized",
+            "b_source": "PASS",
+            "c_semantic": "NOT_VERIFIABLE",
+            "c_flags": [
+              "RELEVANCE_REVIEW_REQUIRED"
+            ]
+          }
+        }
+      ],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Generacion automatica, independiente del operador.",
+              "status": "MET",
+              "evidence_quote": "FactoryTalk View SE provides an electronic signature feature for capturing operator actions performed in the production system. This feature is available in an E-Signature control, as well as the native button, numeric, and string input objects.",
+              "evidence_location": "",
+              "justification": "Se menciona la generación automática de registros auditivos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Timestamp de fecha/hora.",
+              "status": "MET",
+              "evidence_quote": "time and date the action occurred",
+              "evidence_location": "",
+              "justification": "Se menciona la inclusión de fecha y hora en los registros auditivos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Registro de entradas y acciones (crear/modificar/eliminar).",
+              "status": "MET",
+              "evidence_quote": "Critical Alarm Threshold Change Audit Trail entry will contain the following information: Date and time stamps of the change, Original threshold value, Threshold value after change, User ID of the individual who has changed the threshold value (performer), Full name of the individual who has changed the threshold value (performer)",
+              "evidence_location": "",
+              "justification": "Se menciona la inclusión de acciones y cambios en los registros auditivos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Preservacion del valor/informacion previa (no solo el nuevo valor).",
+              "status": "MET",
+              "evidence_quote": "value of the changed item before and after the change",
+              "evidence_location": "",
+              "justification": "Se menciona la inclusión de valores antes y después del cambio en los registros auditivos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Controles de acceso privilegiado sobre el propio audit trail.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información específica sobre controles de acceso privilegiado para el registro auditivo.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Trazabilidad y capacidad de deteccion de manipulacion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información específica sobre trazabilidad o detección de manipulación del registro auditivo.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Prohibicion y deteccion de modificacion silenciosa.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información específica sobre prohibición o detección de modificaciones silenciosas del registro auditivo.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 8,
+              "criterion_text": "Retencion igual o mayor al periodo de retencion del registro asociado.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información específica sobre la retención del registro auditivo en relación con el período de retención del registro asociado.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 9,
+              "criterion_text": "Capacidad de exportar/copiar para inspeccion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información específica sobre la capacidad de exportación o copia del registro auditivo para inspección.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": " UR3.3.3 Audit trail records shall be archived.  \nUR3.3.3 Audit trail records shall be archived.   \nUR5.2.3 [URS-PCS-SR-009] Logins, logouts, and login attempts must be recorded in the Audit Trail.   \nUR5.4.2 [URS-PCS-SR-036] All manual interactions  (parameter changes, device mode changes, etc.) \nshall be sent to a database for event logging,  including user name, action and timestamp.   \n \nFactoryTalk View SE provides an electronic signature feature for capturing operator actions \nperformed in the production system.  This feature is  available in an E-Signature control, as well \nas the native button, numeric, and string input objects. \nWith the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View \nSE activity log is identified with: \n time and date the action occurred, \n name of the logged-in operator who performed the action, \n terminal the action was performed from, \n type of operation that was performed, and \n value of the changed item before and after the change. \nWhen electronic signatures are used, the operator’s username and full name are also included. \n The Critical Alarm Threshold Change Audit Trail entry will contain the following information: \n Date and time stamps of the change \n Original threshold value \n Threshold value after change \n User ID of the individual who has changed the threshold value (performer) \n Full name of the individual who has changed the threshold value (performer) \n Meaning of signature (performer) \n User ID of the individual who has approved the change (approver) \n Full name of the individual who has approved the change (approver) \n Meaning of signature (approver). \n \nThe Critical Alarm Audit Trail entry will contain the following information: \n Alarm date and time stamps \n Alarm tag \n Alarm value \n Alarm description \n A similar record shall be generated whenever a critical alarm condition returns to \nnormal condition. \n ",
+          "estado": "cumple_parcialmente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "21_CFR_11.10(e)"
+    ]
+  },
+  "verified_records_by_req": {
+    "21_CFR_11.10(e)": [
+      {
+        "record_id": "vrec-task-146d947d44f7-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "observed",
+          "evidence_quote": "FactoryTalk View SE provides an electronic signature feature for capturing operator actions performed in the production system. This feature is available in an E-Signature control, as well as the native button, numeric, and string input objects.",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "review_required",
+        "rejection_reason": "",
+        "review_flags": [
+          "RELEVANCE_REVIEW_REQUIRED"
+        ]
+      }
+    ]
+  }
+}

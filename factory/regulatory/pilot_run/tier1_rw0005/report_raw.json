@@ -1,0 +1,67 @@
+{
+  "document_id": "RW-0005",
+  "agent_id": "fda_part11_agent",
+  "run_id": "chunked-943a62bcbb85",
+  "generated_at": "2026-08-11T23:02:41.863760+00:00",
+  "counts_by_bucket": {
+    "CROSS_REFERENCE": 1,
+    "NEEDS_HUMAN_REVIEW": 4
+  },
+  "requirements": [
+    {
+      "requirement_id": "21_CFR_11.10(a)",
+      "bucket": "CROSS_REFERENCE",
+      "conclusion": "CROSS_REFERENCE_MISSING",
+      "review_flags": [
+        "SOURCE_PENDING_REVERIFICATION"
+      ],
+      "evidence_quote": null,
+      "page_or_section": "paginas 1-58 (todo el documento, por chunks)",
+      "review_queue_rc_id": null
+    },
+    {
+      "requirement_id": "21_CFR_11.10(d)",
+      "bucket": "NEEDS_HUMAN_REVIEW",
+      "conclusion": "PROVISIONAL_GAP",
+      "review_flags": [
+        "SOURCE_PENDING_REVERIFICATION"
+      ],
+      "evidence_quote": null,
+      "page_or_section": "paginas 1-58 (todo el documento, por chunks)",
+      "review_queue_rc_id": "finding-chunked-943a62bcbb85-21_CFR_11.10(d)"
+    },
+    {
+      "requirement_id": "21_CFR_11.10(e)",
+      "bucket": "NEEDS_HUMAN_REVIEW",
+      "conclusion": "PROVISIONAL_GAP",
+      "review_flags": [
+        "SOURCE_PENDING_REVERIFICATION"
+      ],
+      "evidence_quote": null,
+      "page_or_section": "paginas 1-58 (todo el documento, por chunks)",
+      "review_queue_rc_id": "finding-chunked-943a62bcbb85-21_CFR_11.10(e)"
+    },
+    {
+      "requirement_id": "21_CFR_11.10(g)",
+      "bucket": "NEEDS_HUMAN_REVIEW",
+      "conclusion": "PROVISIONAL_GAP",
+      "review_flags": [
+        "SOURCE_PENDING_REVERIFICATION"
+      ],
+      "evidence_quote": null,
+      "page_or_section": "pag 13-14, pag 39-40, pag 49-50 (not_observed_in_chunk en todas las secciones evaluadas)",
+      "review_queue_rc_id": "finding-chunked-943a62bcbb85-21_CFR_11.10(g)"
+    },
+    {
+      "requirement_id": "21_CFR_11.50_11.70",
+      "bucket": "NEEDS_HUMAN_REVIEW",
+      "conclusion": "NOT_OBSERVED_OPTIONAL",
+      "review_flags": [
+        "SOURCE_PENDING_REVERIFICATION"
+      ],
+      "evidence_quote": null,
+      "page_or_section": "pag 13-14, pag 39-40, pag 49-50 (not_observed_in_chunk en todas las secciones evaluadas)",
+      "review_queue_rc_id": null
+    }
+  ]
+}

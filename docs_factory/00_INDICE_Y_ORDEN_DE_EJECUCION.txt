@@ -1,0 +1,123 @@
+================================================================================
+GMP AI FACTORY — INDICE MAESTRO Y ORDEN DE EJECUCION PASO A PASO
+Documento: 00_INDICE_Y_ORDEN_DE_EJECUCION.txt
+Proyecto: GMP AI Copilot → GMP AI Factory (capas 7-9)
+Fecha: 2026-06-10
+================================================================================
+
+CONTENIDO DEL PAQUETE (6 archivos .txt)
+--------------------------------------------------------------------------------
+00_INDICE_Y_ORDEN_DE_EJECUCION.txt  → este archivo (como ejecutar todo)
+01_ANALISIS_DEL_DISENO.txt          → evaluacion del plan adjunto: veredicto
+                                       APROBADO CON AJUSTES + 13 mejoras
+                                       (M1-M13) y riesgos residuales
+02_ARQUITECTURA_AJUSTADA.txt        → diseño final consolidado: Dockers,
+                                       estructura fisica, puertos, Ollama,
+                                       recursos, manifest, politicas, gates,
+                                       releases inmutables
+03_SKILLS_CLAUDE_CODE.txt           → 3 skills listos para instalar en
+                                       .claude/skills/ (gmp-factory,
+                                       gmp-agent-design, gmp-quality-gates)
+                                       + 3 plantillas de prompt del bridge
+04_PLAN_DE_TRABAJO_FASES.txt        → fases F0-F6 con objetivos, entregables,
+                                       criterios de salida y matriz de
+                                       aprobaciones de Capa 9
+05_PROMPTS_CLAUDE_CODE.txt          → 7 bloques listos para pegar en Claude
+                                       Code, uno por fase, en orden
+
+RESUMEN EJECUTIVO DEL ANALISIS
+--------------------------------------------------------------------------------
+El diseño propuesto en el adjunto es viable y se conserva integro en su
+objetivo. Los ajustes principales (detalle en 01):
+  M1  Plantilla desde git tag (base-v1.0.0), no copia viva del codigo.
+  M2  Factory MVP sin postgres/redis propios (servidor CPU-only ya cargado).
+  M3  Ollama compartido via extra_hosts host-gateway (host.docker.internal
+      no existe por defecto en Linux). Prohibido tocar aria-ollama.
+  M4  Politica de recursos: max 2 soluciones custom activas + mem/cpu limits.
+  M5  Registro central de puertos (registry/ports.yaml) + snake_case.
+  M6  Enforcement real sobre Claude Code: CLAUDE.md + .claude/settings.json
+      generados desde las politicas YAML (no solo politica documental).
+  M7  Capa 8 en dos modos: A manual-asistido primero, B headless despues.
+  M8  Releases inmutables: tar.gz + SHA256SUMS + reporte de gates + approval.
+  M9  Seguridad de keys: una por solucion, solo en .env, jamas en frontend.
+  M10 Audit de fabrica con hash chain (mismo patron 21 CFR Part 11 del base).
+  M11 Consola Capa 7 con alcance MVP realista.
+  M12 Ajustes de estructura fisica (registry/, .gitignore, no versionar
+      workspaces/deployments).
+  M13 No mezclar commits de fabrica con la Fase 3 pendiente del base.
+
+ORDEN DE EJECUCION PASO A PASO
+--------------------------------------------------------------------------------
+PASO 0 — PREPARACION (tu, manual, 5 min)
+  a) Sube los 6 .txt al servidor:
+     ssh ing_cpmo@<servidor>
+     mkdir -p /home/ing_cpmo/docs_factory
+     (scp de los archivos a esa carpeta)
+  b) Verifica que el base esta sano (UI puerto 8000 responde).
+
+PASO 1 — FASE F0 (1 sesion de Claude Code)
+  cd /home/ing_cpmo && claude
+  Pegar BLOQUE F0 del documento 05.
+  Resultado: backup pre-factory + git tag base-v1.0.0 + linea base de
+  recursos. Nada nuevo creado, nada modificado.
+  TU APRUEBAS: el tag base-v1.0.0 como plantilla oficial.
+
+PASO 2 — FASE F1 (1 sesion)
+  Pegar BLOQUE F1.
+  Claude Code primero EVALUA la arquitectura (Parte A) y espera tu
+  confirmacion; luego crea factory/ completo, las 6 politicas, el registry
+  y los 3 skills (Parte B). Muestra tree + git diff.
+  TU APRUEBAS: el diff → Claude Code commitea "factory: F1 ...".
+
+PASO 3 — FASE F2 (1 sesion)
+  Pegar BLOQUE F2.
+  Resultado: template_export.sh + plantillas + template_engine +
+  port_registry, probados en seco (sin levantar contenedores).
+  TU APRUEBAS: diff → commit.
+
+PASO 4 — FASE F3 (1 sesion)
+  Pegar BLOQUE F3.
+  Resultado: audit de fabrica hash-chain + bridge de Claude Code (task
+  packages con CLAUDE.md y settings.json) + quality_gate_runner (G01-G14).
+  TU APRUEBAS: diff → commit.
+
+PASO 5 — FASE F4 (1 sesion)
+  Pegar BLOQUE F4.
+  Resultado: Docker 2 levantado — factory-api + consola en puerto 9000,
+  con su propia API key (solo en factory/.env). Base intacto en 8000.
+  TU APRUEBAS: exposicion del puerto 9000 + diff → commit.
+
+PASO 6 — FASE F5 (1-2 sesiones)
+  Pegar BLOQUE F5.
+  Piloto lab_qc_project completo hasta release v0.1.0: analisis de alcance
+  (perfiles qa_oos, integrity_lims, evaluacion de agente HPLC), workspace,
+  generacion, gates G01-G13, diff, release inmutable. SIN deploy.
+  TU APRUEBAS dos veces: 1) la decision de agentes/perfiles, 2) el release.
+  Nota: el corpus regulatorio textual lo aportas tu (PDFs/guias); Claude
+  Code prepara la estructura de ingesta y no inventa texto normativo.
+
+PASO 7 — FASE F6 (1 sesion)
+  Pegar BLOQUE F6.
+  Primer deployment independiente (Docker 3, puerto 8101) desde el release
+  aprobado, gates en caliente, verificacion de convivencia de los 3 stacks.
+  TU APRUEBAS: el deploy y si queda corriendo o detenida.
+
+REGLAS TRANSVERSALES (aplican a todas las fases)
+--------------------------------------------------------------------------------
+1. Nunca se modifica el producto base (app/, compose, .env, data/, backups).
+2. Nunca se tocan contenedores aria-* ni hotelbot-*.
+3. Ningun commit, release ni deploy sin tu aprobacion explicita.
+4. Backup antes de cualquier accion destructiva (incluye borrar workspaces).
+5. Una fase por sesion de Claude Code; diff siempre visible antes de aprobar.
+6. Commits de fabrica con prefijo "factory:".
+7. Si un quality gate falla: se corrige en workspace y se re-ejecuta todo
+   el set; no se avanza con gates en rojo.
+
+CRITERIO DE EXITO GLOBAL
+--------------------------------------------------------------------------------
+Al cierre de F6 deben convivir estables en el servidor:
+  Docker 1 — GMP AI Copilot base (8000), identico a antes de F0.
+  Docker 2 — GMP AI Factory (9000) con consola, audit y gates operativos.
+  Docker 3 — lab_qc_project (8101) generado, validado, aprobado y trazable
+             hasta el tag base-v1.0.0 via manifest y release inmutable.
+================================================================================

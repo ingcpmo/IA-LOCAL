@@ -1,0 +1,143 @@
+{
+  "run_id": "chunked-d5f924b41932",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "fda_part11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 1,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-d5f924b41932",
+      "task_id": "task-1b7a3a25f52c",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 2562,
+      "started_at": "2026-08-15T23:37:15.941942+00:00",
+      "finished_at": "2026-08-15T23:38:00.815777+00:00",
+      "wall_clock_ms": 44873.8,
+      "model": "qwen2.5:14b-instruct-q4_K_M",
+      "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"21_CFR_11.10(g)\",\n      \"estado\": \"cumple_parcialmente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"El documento menciona la implementación de niveles de acceso y el uso de contraseñas para iniciar sesión, pero no proporciona detalles sobre una matriz de operaciones con los niveles de autorización requeridos ni evidencia de chequeos técnicos de autoridad en tiempo real.\",\n      \"recomendacion\": \"Se recomienda incluir una matriz detallada de operaciones y sus respectivos niveles de autorización, así como pruebas que demuestren la implementación efectiva de los controles de autoridad.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Matriz de operaciones del sistema con el nivel de autorizacion requerido por cada una (segun aplique).\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se proporciona una matriz detallada en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se proporciona evidencia de chequeos técnicos de autoridad en tiempo real.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se proporcionan detalles sobre pruebas negativas para verificar el bloqueo de operaciones no autorizadas.\",\n          \"limitations\": \"\"\n        }\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-d5f924b41932/task-1b7a3a25f52c.txt.gz",
+      "raw_response_full_sha256": "c7c2a29a889de4cc444b42404b0222926326943e1b2221b45aee821c68b74053",
+      "_by_req_candidates": [
+        {
+          "req_id": "21_CFR_11.10(g)",
+          "candidate": {
+            "chunk_index": 0,
+            "page_start": 1,
+            "page_end": 1,
+            "estado": "cumple_parcialmente",
+            "evidencia_exacta": "(no anclado en el chunk, descartado)",
+            "brecha": "El documento menciona la implementación de niveles de acceso y el uso de contraseñas para iniciar sesión, pero no proporciona detalles sobre una matriz de operaciones con los niveles de autorización requeridos ni evidencia de chequeos técnicos de autoridad en tiempo real.",
+            "recomendacion": "Se recomienda incluir una matriz detallada de operaciones y sus respectivos niveles de autorización, así como pruebas que demuestren la implementación efectiva de los controles de autoridad.",
+            "anchored": false,
+            "has_evidence": false,
+            "headline_source": "none",
+            "d_sufficiency": "NOT_ASSESSABLE",
+            "d_reason": "cobertura completa pero con incertidumbre real en al menos un criterio",
+            "d_detail": {
+              "met": [],
+              "not_met": [],
+              "not_assessable_individual": [
+                "Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.",
+                "Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.",
+                "Matriz de operaciones del sistema con el nivel de autorizacion requerido por cada una (segun aplique)."
+              ],
+              "discarded_unanchored": [],
+              "missing": []
+            },
+            "substantive_evidence_accepted": false,
+            "operational_result": "EVALUATION_INCOMPLETE",
+            "a_anchor": "FAIL",
+            "a_match_type": "not_found",
+            "b_source": "PASS",
+            "c_semantic": "NOT_VERIFIABLE",
+            "c_flags": [
+              "RELEVANCE_NOT_EVALUABLE"
+            ]
+          }
+        }
+      ],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(g)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Matriz de operaciones del sistema con el nivel de autorizacion requerido por cada una (segun aplique).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona una matriz detallada en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona evidencia de chequeos técnicos de autoridad en tiempo real.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporcionan detalles sobre pruebas negativas para verificar el bloqueo de operaciones no autorizadas.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": " F08.02: Recipe Printout \nPer RFI-001, the recipe system requirements do not apply to the SCADA and PCS MISC. PLC System. \n \n \n4 Security \nF09.00: Physical Security \nIt is essential to limit operator access to  the hardware running Windows operating systems and \nFactoryTalk View SE.  In general, an operator’s only access to the computer should be via the keyboard, mouse, or touch screen.  An operator with access to the power switch and bootable media \ncould have direct access to the underlying file syst em and could potentially circumvent many of the \nsecurity measures described in this document.  It is the responsibility of the Mark Cuban Cost Plus \nDrug Company, PBC. to put measures in place to limit operator access and to protect the hardware systems. \nF10.00: Logical Security \nThis function implements the following user requirement(s)  \nUR3.4.1 The system shall implement the security and access control requirements of 21 CFR Part 11 \nrequirements for computerized systems, as they are for this system \n1. [MCCPDC 3.3.5] – Activity data, includi ng username, will be stored in an event log. \n2. HMI to be configured to require operator  username and password for login per 21 CFR \nPart 11.   \nUR5.2.2 [URS-PCS-SR-008] Control and privilege access  shall be assigned to system users based on the \nfollowing operator access levels- Default User, Operator, Supervisor, Maintenance, \nAdministrator.    \nUR5.2.6 [URS-PCS-SR-012] The system must have an  automatic logout function that after a certain \nperiod of inactivity the user is  logged out to Default User.    \n F10.01: System Security Configuration \nSecurity is used to restrict a user’s access to certain parts of the system.  FactoryTalk View SE uses a \ncombination of Microsoft Windows domain security and FactoryTalk View SE security.  While Windows security is used to authenticate users and restrict operating system level actions, FactoryTalk View SE runtime security restricts graphical user interface access and control system function access.  The \nFactoryTalk View SE security is based on a system of letter codes (A-P) which are assigned to the \nindividual users to define their access.   \nFactoryTalk View SE makes efficient use of the security features built into the underlying Microsoft \nWindows operating systems.  For compliance, all FactoryTalk View SE computers in a closed system must be part of the same Windows domain.  Microsoft’s Windows 2019, 2016, 2012, and 10 encrypt passwords using the operating system’s built-in encryption mechanisms.  The FactoryTalk View SE ",
+          "estado": "cumple_parcialmente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "21_CFR_11.10(g)"
+    ]
+  },
+  "verified_records_by_req": {
+    "21_CFR_11.10(g)": [
+      {
+        "record_id": "vrec-task-1b7a3a25f52c-21_CFR_11.10(g)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(g)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

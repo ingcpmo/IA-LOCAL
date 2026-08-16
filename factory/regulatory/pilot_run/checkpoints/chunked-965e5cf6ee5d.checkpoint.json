@@ -1,0 +1,254 @@
+{
+  "run_id": "chunked-965e5cf6ee5d",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "fda_part11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 5,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-965e5cf6ee5d",
+      "task_id": "task-b737fdf292e3",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 5063,
+      "started_at": "2026-08-09T23:25:24.248428+00:00",
+      "finished_at": "2026-08-09T23:35:12.221154+00:00",
+      "wall_clock_ms": 587972.7,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"21_CFR_11.10(e)\",\n      \"estado\": \"cumple_parcialmente\",\n      \"evidencia_exacta\": \"UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated. The record shall contain the following fields 1. Date and time stamps of the change 2. Original threshold value 3. Threshold value after change 4. User ID of the individual who has changed the threshold value (performer) 5. Full name of the individual who has changed the threshold value (performer) 6. Meaning of signature (performer) 7. User ID of the individual who has approved the change (approver) 8. Full name of the individual who has approved the change (approver) 9. Meaning of signature (approver). UR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the following fields 1. Alarm date and time stamps 2. Alarm tag 3. Alarm value 4. Alarm description 5. A similar record shall be generated whenever a critical alarm condition returns to normal condition.\",\n      \"brecha\": \"No se menciona la generación automática, independiente del operador, ni la preservación del valor/información previa (no solo el nuevo valor).\",\n      \"recomendacion\": \"Incluir en el sistema la generación automática y preservación de valores previos.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Generacion automatica, independiente del operador.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la generación automática y/o independiente del operador en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Timestamp de fecha/hora.\",\n          \"status\": \"MET\",\n          \"evidence_quote\": \"UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated. The record shall contain the following fields 1. Date and time stamps of the change UR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the following fields 1. Alarm date and time stamps\",\n          \"evidence_location\": \"\",\n          \"justification\": \"Los campos de fecha y hora están mencionados en los requisitos.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\",\n          \"status\": \"MET\",\n          \"evidence_quote\": \"UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated. The record shall contain the following fields 1. Date and time stamps of the change UR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the following fields 1. Alarm date and time stamps\",\n          \"evidence_location\": \"\",\n          \"justification\": \"Los campos de registro de cambios y condiciones de alarma están mencionados en los requisitos.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 4,\n          \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la preservación de valores previos en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 5,\n          \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan controles de acceso privilegiado en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 6,\n          \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan aspectos de trazabilidad o detección de manipulación en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 7,\n          \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan aspectos de prohibición o detección de modificaciones silenciosas en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 8,\n          \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona el período de retención en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 9,\n          \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan aspectos de exportación o copia en el documento.\",\n          \"limitations\": \"\"\n        }\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-965e5cf6ee5d/task-b737fdf292e3.txt.gz",
+      "raw_response_full_sha256": "4641bd4b25970abd802282c7b7ea62068142cc5234f5d2ed451a258fdfd73bdf",
+      "_by_req_candidates": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "candidate": {
+            "chunk_index": 0,
+            "page_start": 1,
+            "page_end": 1,
+            "estado": "cumple_parcialmente",
+            "evidencia_exacta": "(no anclado en el chunk, descartado)",
+            "brecha": "No se menciona la generación automática, independiente del operador, ni la preservación del valor/información previa (no solo el nuevo valor).",
+            "recomendacion": "Incluir en el sistema la generación automática y preservación de valores previos.",
+            "anchored": false,
+            "has_evidence": true,
+            "d_sufficiency": "NOT_ASSESSABLE",
+            "d_reason": "contrato de criterion_assessments violado: 2 problema(s)",
+            "d_detail": {
+              "contract_violations": [
+                "status=MET sin evidence_quote/evidence_location (criterion_index=2)",
+                "status=MET sin evidence_quote/evidence_location (criterion_index=3)"
+              ]
+            },
+            "substantive_evidence_accepted": false,
+            "operational_result": "EVALUATION_INCOMPLETE"
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-965e5cf6ee5d",
+      "task_id": "task-71f9a6aee95d",
+      "chunk_index": 1,
+      "page_start": 2,
+      "page_end": 2,
+      "has_overlap_prefix": true,
+      "text_chars": 6491,
+      "started_at": "2026-08-09T23:35:12.226729+00:00",
+      "finished_at": "2026-08-09T23:43:42.968512+00:00",
+      "wall_clock_ms": 510741.8,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_11.10(e)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no menciona la generación automática, independiente del operador, ni el registro de entradas y acciones (crear/modificar/eliminar) con timestamps.\",\n            \"recomendacion\": \"Incluir en el sistema un mecanismo que genere audit trails automáticamente, independientemente de las acciones del operador, con timestamps.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Generacion automatica, independiente del operador.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la generación automática de audit trails en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Timestamp de fecha/hora.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la inclusión de timestamps en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona el registro de entradas y acciones en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la preservación de información previa en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se mencionan controles de acceso privilegiado en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la trazabilidad o la capacidad de detección de manipulación en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la prohibición o detección de modificaciones silenciosas en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 8,\n                    \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la retención de audit trails en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 9,\n                    \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la capacidad de exportación o copia en el documento.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-965e5cf6ee5d/task-71f9a6aee95d.txt.gz",
+      "raw_response_full_sha256": "a740bae613a54fbf7d52aac06b0627bbbec9ef7bdad52ae8b82865f94731f37e",
+      "_by_req_candidates": []
+    },
+    {
+      "run_id": "chunked-965e5cf6ee5d",
+      "task_id": "task-b2a57eb01661",
+      "chunk_index": 2,
+      "page_start": 3,
+      "page_end": 3,
+      "has_overlap_prefix": true,
+      "text_chars": 5642,
+      "started_at": "2026-08-09T23:43:42.970667+00:00",
+      "finished_at": "2026-08-09T23:53:06.571729+00:00",
+      "wall_clock_ms": 563601.0,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_11.10(e)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no menciona la generación automática, independiente del operador, ni el registro de entradas y acciones (crear/modificar/eliminar) con timestamps.\",\n            \"recomendacion\": \"Incluir en el sistema un mecanismo para generar audit trails que cumplan con los criterios mencionados.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Generacion automatica, independiente del operador.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la generación automática y/o independiente del operador en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Timestamp de fecha/hora.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la inclusión de timestamps en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona el registro de entradas y acciones en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No hay evidencia de que se trate la preservación del valor/información previa en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No hay evidencia de que se trate la implementación de controles de acceso privilegiado en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No hay evidencia de que se trate la trazabilidad o la capacidad de detección de manipulación en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No hay evidencia de que se trate la prohibición o detección de modificaciones silenciosas en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 8,\n                    \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No hay evidencia de que se trate la retención en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 9,\n                    \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No hay evidencia de que se trate la capacidad de exportación/copia en el documento.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-965e5cf6ee5d/task-b2a57eb01661.txt.gz",
+      "raw_response_full_sha256": "5c510a0211cd0960e9a2237b25ba831aa60cf374469cb90b892fc79fd8e74dd8",
+      "_by_req_candidates": []
+    },
+    {
+      "run_id": "chunked-965e5cf6ee5d",
+      "task_id": "task-bff70a2ace16",
+      "chunk_index": 3,
+      "page_start": 4,
+      "page_end": 4,
+      "has_overlap_prefix": true,
+      "text_chars": 7078,
+      "started_at": "2026-08-09T23:53:06.575492+00:00",
+      "finished_at": "2026-08-10T00:02:35.173368+00:00",
+      "wall_clock_ms": 568597.8,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"21_CFR_11.10(e)\",\n      \"estado\": \"evidencia_insuficiente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"El documento no menciona la generación automática, independiente del operador de un audit trail con timestamp.\",\n      \"recomendacion\": \"Incluir en el sistema una funcionalidad que genere audit trails de manera automática e independiente del operador.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Generacion automatica, independiente del operador.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la generación automática e independiente de audit trails en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Timestamp de fecha/hora.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la inclusión de timestamps en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona el registro de entradas y acciones en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 4,\n          \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la preservación de valores/información previa en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 5,\n          \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se mencionan controles de acceso privilegiado en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 6,\n          \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la trazabilidad o la capacidad de detección de manipulación en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 7,\n          \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la prohibición o detección de modificaciones silenciosas en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 8,\n          \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la retención en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 9,\n          \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la capacidad de exportación o copia en el documento.\",\n          \"limitations\": \"\"\n        }\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-965e5cf6ee5d/task-bff70a2ace16.txt.gz",
+      "raw_response_full_sha256": "8b2068fc6ee5ba27b52f5fe4b7c47751f5273df25054b0ebd1ae8b6166ee661a",
+      "_by_req_candidates": []
+    },
+    {
+      "run_id": "chunked-965e5cf6ee5d",
+      "task_id": "task-3695490c899f",
+      "chunk_index": 4,
+      "page_start": 5,
+      "page_end": 5,
+      "has_overlap_prefix": true,
+      "text_chars": 5056,
+      "started_at": "2026-08-10T00:02:35.176234+00:00",
+      "finished_at": "2026-08-10T00:09:51.337981+00:00",
+      "wall_clock_ms": 436161.7,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_11.10(e)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no menciona la generación automática, independiente del operador de un audit trail seguro con timestamp.\",\n            \"recomendacion\": \"Incluir en el sistema una funcionalidad que genere audit trails seguros con timestamps independientes del operador.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Generacion automatica, independiente del operador.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la generación automática y/o independiente del operador de audit trails seguros con timestamps.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Timestamp de fecha/hora.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la inclusión de timestamps en el audit trail.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona el registro de entradas y acciones en el audit trail.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la preservación de valores/información previa en el audit trail.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se mencionan controles de acceso privilegiado sobre el audit trail.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la trazabilidad o la capacidad de detección de manipulación en el audit trail.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la prohibición o detección de modificaciones silenciosas en el audit trail.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 8,\n                    \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la retención del audit trail en relación con el período de retención del registro asociado.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 9,\n                    \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la capacidad de exportación o copia del audit trail.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-965e5cf6ee5d/task-3695490c899f.txt.gz",
+      "raw_response_full_sha256": "189016d51250f223cff88eb09ffef1b54c0da083b21579c9561251f557426df9",
+      "_by_req_candidates": []
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.0",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "21_CFR_11.10(e)"
+    ]
+  },
+  "verified_records_by_req": {
+    "21_CFR_11.10(e)": [
+      {
+        "record_id": "vrec-task-b737fdf292e3-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-71f9a6aee95d-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 2,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-b2a57eb01661-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 3,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-bff70a2ace16-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 4,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-3695490c899f-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 5,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

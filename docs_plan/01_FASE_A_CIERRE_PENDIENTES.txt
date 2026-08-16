@@ -1,0 +1,171 @@
+================================================================================
+GMP AI FACTORY — FASE A: CIERRE DE PENDIENTES
+Archivo: 01_FASE_A_CIERRE_PENDIENTES.txt
+Precondición: diagnóstico de INICIO.txt ejecutado y Cesar confirmó esta fase.
+================================================================================
+▼ PEGAR EN CLAUDE CODE ▼
+──────────────────────────────────────────────────────────────────────────────
+FASE A — Cierre de pendientes (5 correcciones, sin cambiar arquitectura)
+
+Usa el skill gmp-factory. Lee cada sub-tarea, verifica si aplica según
+lo que encontraste en el diagnóstico, y ejecútala solo si hay algo que corregir.
+Al terminar todas, muestra el diff y espera aprobación para el commit.
+
+cd /home/ing_cpmo
+
+═══ A1 — HEADLESS A FALSE ═══════════════════════════════════════════════════
+
+python3 - <<'PY'
+import yaml, pathlib, sys
+sys.path.insert(0,'.')
+p = pathlib.Path('factory/runtime/runtime_config.yaml')
+cfg = yaml.safe_load(p.read_text()) if p.exists() else {}
+if cfg.get('headless_enabled', False):
+    cfg['headless_enabled'] = False
+    p.write_text(yaml.dump(cfg, allow_unicode=True, default_flow_style=False))
+    from factory.core.audit_writer import write_event
+    write_event('layer8_stop_condition_triggered','factory_cleanup',
+        {'reason':'headless_devuelto_a_false','source':'fase_A1'})
+    print('CORREGIDO: headless → false')
+else:
+    print('OK: headless ya estaba en false')
+PY
+
+═══ A2 — CORPUS: ETIQUETAR INTERNAL_SUMMARY ════════════════════════════════
+
+python3 - <<'PY'
+import pathlib
+
+HEADER = (
+    "[INTERNAL_SUMMARY — NO ES TEXTO REGULATORIO OFICIAL. "
+    "Resumen interno de referencia. Fuente autoritativa PENDIENTE. "
+    "No citar como texto de CFR/FDA/USP/ICH.]\n\n"
+)
+AUTORED = {'hplc_data_integrity.txt','hplc_method_validation.txt','fda_oos_guidance_2022.txt'}
+DIRS = [
+    pathlib.Path('factory/deployments/lab_qc_project/data/regulations'),
+    pathlib.Path('factory/workspaces/lab_qc_project/data/regulations'),
+]
+changed, already, skipped = [], [], []
+for base in DIRS:
+    if not base.exists(): continue
+    for f in base.rglob('*.txt'):
+        txt = f.read_text(errors='replace')
+        if 'INTERNAL_SUMMARY' in txt[:200]:
+            already.append(f.name); continue
+        if f.name in AUTORED or '21 CFR' in txt[:400] or 'ICH Q' in txt[:400]:
+            f.write_text(HEADER + txt)
+            changed.append(str(f))
+        else:
+            skipped.append(f.name)
+print(f'Etiquetados: {len(changed)} | Ya tenían: {len(already)} | Sin cambios: {len(skipped)}')
+for c in changed: print(' →', c)
+PY
+
+═══ A3 — ENSURE_OLLAMA_ACCESS.SH (idempotente) ═════════════════════════════
+
+# Crear solo si no existe
+if [ ! -f factory/scripts/ops/ensure_ollama_access.sh ]; then
+cat > factory/scripts/ops/ensure_ollama_access.sh << 'SCRIPT'
+#!/usr/bin/env bash
+# Garantiza conectividad de un proyecto Docker a Ollama (proceso nativo host).
+# Uso: bash ensure_ollama_access.sh <project_id>
+set -euo pipefail
+PROJECT_ID="${1:-}"; [ -z "$PROJECT_ID" ] && echo "USO: $0 <project_id>" && exit 1
+
+SUBNET=$(docker network ls --format "{{.Name}}" 2>/dev/null | grep "${PROJECT_ID}" | head -1 | \
+  xargs -I{} docker network inspect {} 2>/dev/null | \
+  python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['IPAM']['Config'][0]['Subnet'])" 2>/dev/null || true)
+
+[ -z "$SUBNET" ] && echo "WARN: red Docker de '${PROJECT_ID}' no encontrada" && exit 0
+echo "Proyecto: ${PROJECT_ID} | Subred: ${SUBNET}"
+
+if sudo ufw status 2>/dev/null | grep -q "${SUBNET}"; then
+  echo "OK: regla UFW ya existe — sin cambios"
+else
+  sudo ufw allow from "${SUBNET}" to any port 11434 proto tcp comment "Factory:${PROJECT_ID}→Ollama"
+  python3 -c "
+import sys; sys.path.insert(0,'/home/ing_cpmo')
+from factory.core.audit_writer import write_event
+write_event('network_access_configured','${PROJECT_ID}',
+  {'subnet':'${SUBNET}','port':11434,'source':'ensure_ollama_access.sh'})" 2>/dev/null || true
+  echo "Regla añadida."
+fi
+SCRIPT
+chmod +x factory/scripts/ops/ensure_ollama_access.sh
+echo "Script creado: factory/scripts/ops/ensure_ollama_access.sh"
+else
+  echo "OK: ensure_ollama_access.sh ya existe"
+fi
+
+# Documentar modelo mental correcto de Ollama
+python3 - <<'PY'
+import pathlib
+p = pathlib.Path('factory/policies/docker_policy.yaml')
+note = "\n# OLLAMA: proceso nativo del host en *:11434 (no aria-ollama).\n# Para acceso desde Docker custom: extra_hosts host-gateway + ufw via ensure_ollama_access.sh\n"
+if p.exists():
+    content = p.read_text()
+    if 'proceso nativo' not in content:
+        p.write_text(content + note)
+        print('docker_policy.yaml: nota Ollama añadida')
+    else: print('OK: nota ya presente')
+else: print('docker_policy.yaml no encontrado — skip')
+PY
+
+═══ A4 — APPROVAL.JSON: VERSIÓN v0.1.0 → v0.2.0 ════════════════════════════
+
+python3 - <<'PY'
+import json, pathlib
+ap = pathlib.Path('factory/deployments/lab_qc_project/approval.json')
+if not ap.exists(): print('approval.json no encontrado — skip'); raise SystemExit(0)
+d = json.loads(ap.read_text())
+v = d.get('version','—')
+if v == 'v0.1.0':
+    d['version'] = 'v0.2.0'
+    d['version_note'] = 'Corregido Fase A: deployment redeployado limpio desde v0.2.0 (2026-06-14T17:04Z)'
+    ap.write_text(json.dumps(d, indent=2, ensure_ascii=False))
+    print('CORREGIDO: version → v0.2.0')
+else:
+    print(f'OK: version ya es {v}')
+PY
+
+═══ A5 — MISIÓN R6: MARCAR PARCIAL ═════════════════════════════════════════
+
+python3 - <<'PY'
+import pathlib, yaml, datetime
+m_file = pathlib.Path('factory/layer9/missions/r6_change_control.yaml')
+if not m_file.exists(): print('Misión r6 no existe — skip'); raise SystemExit(0)
+m = yaml.safe_load(m_file.read_text()) or {}
+if m.get('status') not in ('closed','completed','parcial_headless_interrupted'):
+    m['status'] = 'parcial_headless_interrupted'
+    m['status_note'] = 'Código generado en sesión interactiva. Lazo autónomo (B2) se cierra en Fase G.'
+    m['updated_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    m_file.write_text(yaml.dump(m, allow_unicode=True, default_flow_style=False))
+    print('Misión r6 → parcial_headless_interrupted')
+else:
+    print(f'OK: misión r6 ya está en {m.get("status")}')
+PY
+
+═══ VALIDACIÓN ══════════════════════════════════════════════════════════════
+
+echo ""; echo "=== Selfcheck ==="
+bash factory/scripts/ops/factory_selfcheck.sh 2>&1 | grep -E "PASS|FAIL|WARN|━"
+
+echo ""; echo "=== Health ==="
+curl -s http://localhost:8000/health | python3 -c "import sys,json; d=json.load(sys.stdin); print('BASE 8000:', {k:v for k,v in d.items() if k!='timestamp'})" 2>/dev/null
+
+echo ""; echo "=== Diff ==="
+git status --short && echo "" && git diff --stat && echo "" && git diff
+
+Entrega resumen:
+  A1 headless: corregido/ya ok
+  A2 corpus: N etiquetados
+  A3 script: creado/ya existía
+  A4 approval.json: corregido/ya ok
+  A5 r6: marcado/ya ok
+  selfcheck: PASS/FAIL
+
+NO hagas commit. Espera mi aprobación.
+Commit cuando apruebe: "factory: Fase A cierre pendientes R1/R3/approval/headless"
+──────────────────────────────────────────────────────────────────────────────
+▲ FIN FASE A ▲

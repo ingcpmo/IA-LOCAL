@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-08-09T05:10:37+00:00",
+  "stop_reason": "CORPUS_COMPLETE",
+  "total_calls_made": 1,
+  "total_wall_seconds": 1660.8,
+  "units": [
+    {
+      "document_id": "RW-0005",
+      "agent_id": "alcoa_plus_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-2ef3d38d2538",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 1660.819563158002,
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "run_id": "chunked-f7d601b512f3",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "fda_part11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 1,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-f7d601b512f3",
+      "task_id": "task-4635cb1373b1",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 3791,
+      "started_at": "2026-08-15T23:44:10.412781+00:00",
+      "finished_at": "2026-08-15T23:45:32.093169+00:00",
+      "wall_clock_ms": 81680.4,
+      "model": "qwen2.5:14b-instruct-q4_K_M",
+      "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"21_CFR_11.10(e)\",\n      \"estado\": \"evidencia_insuficiente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"El documento menciona el audit trail en la sección F12.00 pero no proporciona detalles suficientes sobre cómo se implementan los requisitos de seguridad, timestamp y registro independiente de operaciones.\",\n      \"recomendacion\": \"Se requiere una revisión detallada del sistema para verificar que cumple con los criterios específicos de 21 CFR Part 11.10(e).\",\n      \"criterion_assessments\": [\n        {\"criterion_index\": 1, \"criterion_text\": \"Generacion automatica, independiente del operador.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No hay detalles sobre la generación automática y el registro independiente de las acciones del operador.\", \"limitations\": \"\"},\n        {\"criterion_index\": 2, \"criterion_text\": \"Timestamp de fecha/hora.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se especifica cómo se maneja el timestamp en las entradas del audit trail.\", \"limitations\": \"\"},\n        {\"criterion_index\": 3, \"criterion_text\": \"Registro de entradas y acciones (crear/modificar/eliminar).\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporcionan detalles sobre qué tipo de entradas y acciones son registradas.\", \"limitations\": \"\"},\n        {\"criterion_index\": 4, \"criterion_text\": \"Preservacion del valor/informacion previa (no solo el nuevo valor).\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se menciona cómo se preserva la información previa en las entradas auditadas.\", \"limitations\": \"\"},\n        {\"criterion_index\": 5, \"criterion_text\": \"Controles de acceso privilegiado sobre el propio audit trail.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se detalla cómo se controlan los accesos al audit trail.\", \"limitations\": \"\"},\n        {\"criterion_index\": 6, \"criterion_text\": \"Trazabilidad y capacidad de deteccion de manipulacion.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se proporcionan detalles sobre la trazabilidad o la detección de manipulación en el audit trail.\", \"limitations\": \"\"},\n        {\"criterion_index\": 7, \"criterion_text\": \"Prohibicion y deteccion de modificacion silenciosa.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se menciona cómo se detecta la modificación silenciosa en el audit trail.\", \"limitations\": \"\"},\n        {\"criterion_index\": 8, \"criterion_text\": \"Retencion igual o mayor al periodo de retencion del registro asociado.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se especifica la política de retención para el audit trail en relación con los registros asociados.\", \"limitations\": \"\"},\n        {\"criterion_index\": 9, \"criterion_text\": \"Capacidad de exportar/copiar para inspeccion.\", \"status\": \"NOT_ASSESSABLE\", \"evidence_quote\": \"\", \"evidence_location\": \"\", \"justification\": \"No se menciona cómo se puede exportar o copiar el audit trail para su revisión.\", \"limitations\": \"\"}\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-f7d601b512f3/task-4635cb1373b1.txt.gz",
+      "raw_response_full_sha256": "6043a197e95de4f1e4ae22728ac7116aa19f97ac144f756d9d0c2944acf469da",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(e)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Generacion automatica, independiente del operador.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No hay detalles sobre la generación automática y el registro independiente de las acciones del operador.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Timestamp de fecha/hora.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se especifica cómo se maneja el timestamp en las entradas del audit trail.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Registro de entradas y acciones (crear/modificar/eliminar).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporcionan detalles sobre qué tipo de entradas y acciones son registradas.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Preservacion del valor/informacion previa (no solo el nuevo valor).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona cómo se preserva la información previa en las entradas auditadas.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Controles de acceso privilegiado sobre el propio audit trail.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se detalla cómo se controlan los accesos al audit trail.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 6,
+              "criterion_text": "Trazabilidad y capacidad de deteccion de manipulacion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporcionan detalles sobre la trazabilidad o la detección de manipulación en el audit trail.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 7,
+              "criterion_text": "Prohibicion y deteccion de modificacion silenciosa.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona cómo se detecta la modificación silenciosa en el audit trail.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 8,
+              "criterion_text": "Retencion igual o mayor al periodo de retencion del registro asociado.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se especifica la política de retención para el audit trail en relación con los registros asociados.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 9,
+              "criterion_text": "Capacidad de exportar/copiar para inspeccion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona cómo se puede exportar o copiar el audit trail para su revisión.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": " Contents \n \n1 Introduction .................................................................................................................. ........... 7 \nPurpose ............................................................................................................................... . 7 \nApplicable Regulations, Standards ...................................................................................... 7 \nDocument Conventions ........................................................................................................ 7 \n2 Project Overview .............................................................................................................. ...... 9 \nKey Objectives and Benefits ................................................................................................ 9 \nProject Assumptions, Conventions and Limitations ............................................................. 9 \nNon-Conformance with User Requirements ...................................................................... 10 \nScope ......................................................................................................................... ........ 11 \n3 Functions and Processes .................................................................................................... 13 \nF01.00: Hardware ..............................................................................................................  13 \nF02.00: System-Level Software Requirements ................................................................. 19 \nF03.00: Water For Injection (WFI) Sequence of Operations .............................................. 21 \nF04.00: EMS (Environmental Monitoring System) Sequence of Operations ..................... 21 \nF05.00: SCADA Process Visualization .............................................................................. 22 \nGraphical Screens .............................................................................................................  25 \nF06.00: Recipe parameter handling ................................................................................... 36 \nF07.00: Alarms, Warning Messages and Error reporting ................................................... 36 \nF08.00: Reporting ............................................................................................................. . 39 \n4 Security ...................................................................................................................... ........... 40 \nF09.00: Physical Security .................................................................................................. 40 \nF10.00: Logical Security .................................................................................................... 40 \n5 Data .......................................................................................................................... .............. 45 \nF11.00: Databases and Historical Logging ........................................................................ 45 \nF12.00: Audit Trail .............................................................................................................. 45 \nF13.00: Long-Term Archiving and Data Retrieval .............................................................. 47 \nF14.00: Backup and recovery ............................................................................................ 47 \nF15.00: Frequency of data point collection ........................................................................ 47 \n6 External Interfaces ........................................................................................................... .... 49 \nF16.00: PLC Interfaces (PCS-CP01 and other Vendor Systems) ..................................... 49 ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "21_CFR_11.10(e)"
+    ]
+  },
+  "verified_records_by_req": {
+    "21_CFR_11.10(e)": [
+      {
+        "record_id": "vrec-task-4635cb1373b1-21_CFR_11.10(e)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(e)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

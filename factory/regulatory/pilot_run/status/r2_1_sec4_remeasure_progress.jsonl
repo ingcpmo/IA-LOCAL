@@ -1,0 +1,2 @@
+{"document_id": "RW-0005", "requirement_id": "21_CFR_11.10(e)", "status": "COMPLETED", "run_id": "chunked-ff6bd88a4987", "calls_made_this_invocation": 5, "wall_seconds": 2791.5414606160193, "chunk_observation": "observed", "conclusion": "EVALUATION_INCOMPLETE", "error": null}
+{"document_id": "RW-0011", "requirement_id": "21_CFR_211.68(b)", "status": "COMPLETED", "run_id": "chunked-04210f062b48", "calls_made_this_invocation": 5, "wall_seconds": 2874.4638065590116, "chunk_observation": "not_observed_in_chunk", "conclusion": "PROVISIONAL_GAP", "error": null}

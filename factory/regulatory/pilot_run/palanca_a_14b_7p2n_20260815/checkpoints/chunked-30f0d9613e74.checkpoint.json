@@ -1,0 +1,105 @@
+{
+  "run_id": "chunked-30f0d9613e74",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "eu_annex11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 1,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-30f0d9613e74",
+      "task_id": "task-26f6c0f5fea3",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 1461,
+      "started_at": "2026-08-15T23:43:28.995743+00:00",
+      "finished_at": "2026-08-15T23:44:10.157659+00:00",
+      "wall_clock_ms": 41161.9,
+      "model": "qwen2.5:14b-instruct-q4_K_M",
+      "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"ANNEX11_4\",\n      \"estado\": \"evidencia_insuficiente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"El documento no contiene información sobre la gestión de riesgos del sistema computarizado ni una evaluación documentada de riesgo.\",\n      \"recomendacion\": \"Incluir en el documento una sección dedicada a la evaluación y gestión de riesgos del sistema.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Documentacion de validacion que cubre las etapas relevantes del ciclo de vida.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No hay evidencia en el documento sobre la documentación de validación y sus etapas del ciclo de vida.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Evaluacion de riesgo real y documentada.\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se encuentra ninguna evaluación de riesgos en el documento proporcionado.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Conexion explicita y trazable entre esa evaluacion de riesgo y las decisiones de validacion tomadas (alcance, protocolos, criterios de aceptacion, procedimientos, registros).\",\n          \"status\": \"NOT_ASSESSABLE\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No hay conexión evidente entre la evaluación de riesgos y las decisiones de validación en el documento.\",\n          \"limitations\": \"\"\n        }\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-30f0d9613e74/task-26f6c0f5fea3.txt.gz",
+      "raw_response_full_sha256": "02a3a0ef25b7bb935a3a837bbc7bb8a57b802597f6bb9e8e2c30434dd48c9cda",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ANNEX11_4",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Documentacion de validacion que cubre las etapas relevantes del ciclo de vida.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No hay evidencia en el documento sobre la documentación de validación y sus etapas del ciclo de vida.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Evaluacion de riesgo real y documentada.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se encuentra ninguna evaluación de riesgos en el documento proporcionado.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Conexion explicita y trazable entre esa evaluacion de riesgo y las decisiones de validacion tomadas (alcance, protocolos, criterios de aceptacion, procedimientos, registros).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No hay conexión evidente entre la evaluación de riesgos y las decisiones de validación en el documento.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": " Revision History and Modification List \n# Relevant chapter / pages Edited by Target version Date \n1 Whole document SAB 1.0 April 15, 2022 \n Generation of the document \n2  SAB 1.1 April 21, 2022 \n Delete unexpected word “unten” page 23. \nChanged screen name from “Alarm History” to “Alarm Details” all occurrences. \n3 Updated based on Change \nOrder # 3  TA 1.2 December 16, \n2022 \n  \nTable 1-1 - Revision History and Modification List \n \nReference Documents \n# Document D code / ID code \n[1]  User Requirement Specifications MCCPDC - SCADA \nand PCS MISC. PLC System 215115305 SCADA-PCS MISC \nPLC System URS  \n[2]  Control System Architecture diagram 215115305_SYS_ARCH \n[3]  Water For Injection (WFI) Sequence of Operations 63FFVL02-P-PD-0001 \n[4]  EMS Sequence of Operations 63FFVL02-P-PD-0002 \n[5]  Material and Personnel Flows diagram 63FFVL02-A-A21-100 \n[6]  21 CFR Part 11 Electronic Records, Electronic \nSignatures 21CFRP11 \n[7]  21 CFR Part 211 Current Good Manufacturing \nPractice for finished Pharmaceuticals 21CFRP211 \n[8]  Good Automated Manufacturing Practice, Guide for \nValidation of Automated Systems 5, ISPE 2008 GAMP5 \n[9]  Control programming specification 215115305 Control \nProgramming Guideline \n[10] HMI programming specification 215115305 HMI Programming \nGuideline \n[11] MCCPDC PCS-CP01 Alarms Hard Soft IO Listing MCCPDC PCS-CP01 Alarms \nHard Soft IO Listing revB.xls \n[12] FactoryTalk View Site Edition User’s Guide VIEWSE-UM006O-EN-E ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "ANNEX11_4"
+    ]
+  },
+  "verified_records_by_req": {
+    "ANNEX11_4": [
+      {
+        "record_id": "vrec-task-26f6c0f5fea3-ANNEX11_4",
+        "llm_output": {
+          "requirement_id": "ANNEX11_4",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

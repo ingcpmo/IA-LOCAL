@@ -1,0 +1,992 @@
+commit f6299595840a549bd7f21de4c2f5f1ddb3815593
+Author: ing_cpmo <ing_cpmo@ivr-ia>
+Date:   Wed Aug 12 17:07:16 2026 +0000
+
+    fix(r3-t1.6): B4 -- rescate de headline vacio via citas por criterio ya ancladas
+    
+    El candidato "headline" (evidencia_exacta, la cita resumen del requisito)
+    podia venir vacio aunque el modelo SI citara evidencia real y anclada por
+    criterio individual (criterion_assessments) en la misma respuesta --
+    confirmado con datos reales (checkpoint chunked-943a62bcbb85, chunk 20,
+    21_CFR_11.10(e): evidencia_exacta='' pero 2/9 criterios MET con cita real
+    anclada). Sin el fix, D (ya corregido por B3) se calculaba pero nunca
+    llegaba al Finding, porque solo un candidato con anchored=True puede
+    ganar (best = candidates[0]).
+    
+    _apply_headline_rescue_b4(): funcion de modulo (no inline) para que el
+    bucle en vivo de evaluate_chunked() y cualquier replay sobre checkpoints
+    historicos apliquen la MISMA regla. Si evidencia_exacta viene vacia pero
+    al menos un criterio MET tiene cita real y anclada (d_detail['met'], ya
+    verificado por verify_anchor dentro de verify_sufficiency), el candidato
+    se considera anclado -- derivado de esas citas, nunca inventado.
+    
+    Guardia adicional encontrada al disenar (no en el plan original):
+    _classify_criteria_for_chunk() solo aplica verify_anchor() por criterio,
+    nunca detect_reference_list_context() -- sin chequeo extra, una cita de
+    una lista de referencias numeradas (patron real de ANNEX11_4) podria
+    colarse por la ruta derivada. Se aplica el mismo chequeo que protege el
+    headline normal, revisando cada cita individualmente.
+    
+    7 tests guardianes (6 del plan + 1 por el hallazgo de arriba):
+    caso real, ausencia preservada, cita no anclada nunca rescata, cita de
+    lista de referencias nunca rescata, contradiccion genuina sigue
+    bloqueando, ANNEX11_4 end-to-end sigue rechazado, retrocompatibilidad.
+    125 tests en verde (chunked_engine + semantic_evidence_verification +
+    tier1_report).
+    
+    Hallazgo pendiente (documentado en R3_T1_6_FIX_B4_Y_CIERRE.md, sin
+    commitear como fix aun): B4 corrige el Finding pero NO la conclusion
+    final del bucket Tier-1 -- verified_records_by_req (via
+    build_finding_record/valid_candidate_verified) es una ruta separada que
+    nunca recibe este rescate. R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md
+    consolida esto en una superficie unica en vez de parchear un tercer sitio.
+    
+    Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+diff --git a/docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md b/docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md
+new file mode 100644
+index 0000000..de1e903
+--- /dev/null
++++ b/docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md
+@@ -0,0 +1,436 @@
++# R3-T1.6 — B4 (GATE DEL HEADLINE) Y CIERRE DE R3-T1
++# Archivo de instrucciones para Claude Code
++# Destino: docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md
++# Ejecutar: cd /home/ing_cpmo && claude
++#
++# AUTORIDAD: Capa 9 = Cesar. Claude Code = Capa 8.
++# CONTEXTO: F2-DRY dio PARCIAL en criterios b y c. Causa: B4 — el candidato
++# "headline" no ancla porque el modelo dejó `evidencia_exacta` vacía, y por
++# eso el D ya corregido por B3 nunca llega al Finding. Es el ÚLTIMO eslabón
++# de la cadena kerning→contrato→B3→B4: el paso final antes de la conclusión.
++#
++# Reglas duras: CERO llamadas LLM (todo por replay sobre datos pagados); no
++# MarkItDown; no cambiar modelo; NO aflojar validadores (el fix debe
++# demostrarlo); no commit sin diff + aprobación.
++#
++# PRODUCTION_ENABLEMENT = BLOCKED. CORPUS_READY = false.
++
++──────────────────────────────────────────────────────────────────────────────
++0. HIGIENE PREVIA (barata, desbloquea señal confiable)
++──────────────────────────────────────────────────────────────────────────────
++
++0.1 Commitear el pendiente ya listo: `pendiente_bloque1_headline_gate.patch`
++    (bloque 1 de R3-T1.5 + investigación de B4). Diff → tu aprobación.
++0.2 ÁRBOL SUCIO: `decisions_v2.jsonl` y `review_queue.jsonl` llevan
++    modificados desde antes de esta sesión, lo que mantiene 4 guardianes de
++    Gate 0 en rojo permanente. Un guardián siempre rojo deja de proteger.
++    Investigar qué contienen esos cambios (¿decisiones legítimas de una
++    sesión previa sin commitear? ¿escrituras de prueba?), y:
++    - si son datos legítimos de gobernanza ⇒ commitearlos con diff y
++      motivo (son append-only; se versionan, no se descartan);
++    - si son residuos de pruebas ⇒ identificar cuáles y proponer su
++      tratamiento (nunca borrar registros de gobernanza reales).
++    Objetivo: que los 4 guardianes vuelvan a verde y vuelvan a significar
++    algo. Reportar el conteo de Gate 0 después.
++
++──────────────────────────────────────────────────────────────────────────────
++1. B4 — CARACTERIZACIÓN (leer código real, con evidencia)
++──────────────────────────────────────────────────────────────────────────────
++
++1.1 Localizar la selección del candidato "headline" en `chunked_engine.py`:
++    dónde se evalúa `_is_anchored(evidencia_exacta, chunk_text)`, cómo se
++    elige `best`, y en qué línea exacta el `Finding.d_sufficiency` queda
++    sin poblar cuando ningún candidato ancla. Citar archivo:línea.
++1.2 Confirmar el caso real con el checkpoint histórico: chunk 20,
++    `21_CFR_11.10(e)` — `evidencia_exacta=''` mientras
++    `criterion_assessments` trae 2 MET con cita real que SÍ ancla
++    (verificado por `verify_anchor` en el mismo chunk). Mismo patrón en
++    `11.10(d)`.
++1.3 Cuantificar el alcance: en las 29 chunk_executions del checkpoint
++    histórico (y en el de F1), ¿en cuántos casos hay citas por criterio
++    ancladas mientras el headline viene vacío? Ese número dice cuánta
++    evidencia real está descartando el producto hoy.
++
++──────────────────────────────────────────────────────────────────────────────
++2. DISEÑO DEL FIX — Y LA PRUEBA DE QUE NO AFLOJA
++──────────────────────────────────────────────────────────────────────────────
++
++PRINCIPIO (idéntico a B3): usar señal que el modelo YA emitió y que YA pasó
++validación; nunca fabricar, nunca bajar umbrales.
++
++2.1 Regla propuesta (evaluar y justificar la elegida):
++    un candidato puede considerarse ANCLADO si:
++    (a) su `evidencia_exacta` ancla (comportamiento actual, sin cambios); O
++    (b) `evidencia_exacta` viene vacía PERO al menos una cita de
++        `criterion_assessments` de ese mismo chunk ancla contra el texto de
++        ESE chunk (verificada con el mismo `verify_anchor`/`_is_anchored`,
++        el mismo umbral, sin excepciones).
++    En el caso (b), la cita de nivel resumen del Finding se DERIVA de las
++    citas por criterio ya ancladas (concatenación/selección determinista,
++    trazable al criterio origen) — no se inventa texto, no se sintetiza
++    con LLM, y queda marcado en el registro que el headline fue derivado
++    (`headline_source=derived_from_criterion_quotes`) para que un revisor
++    lo vea.
++2.2 LO QUE NO CAMBIA: si `evidencia_exacta` está vacía y NINGUNA cita por
++    criterio ancla ⇒ el candidato sigue sin ganar (ausencia honesta
++    preservada). El umbral de anclaje, las validaciones A/B/C/D y la regla
++    de contradicción quedan intactas. `verify_sufficiency()` de un solo
++    chunk, sin cambios.
++2.3 GUARDIANES OBLIGATORIOS (tests bloqueantes; sin ellos no se commitea):
++    - CASO REAL B4: chunk 20 / 11.10(e) — con el fix, el candidato ancla y
++      el D agregado (`PARTIALLY_MET` 2/9) SÍ llega al `Finding`;
++    - AUSENCIA PRESERVADA: headline vacío + cero citas por criterio
++      ancladas ⇒ no gana, conclusión de ausencia intacta;
++    - CITA NO ANCLADA NO RESCATA: headline vacío + citas por criterio que
++      NO anclan (inventadas o de otro chunk) ⇒ no gana. Este es el
++      guardián central contra fabricación;
++    - CONTRADICCIÓN GENUINA (11.10(d)) sigue bloqueando en el Finding;
++    - ANNEX11_4 sigue rechazado end-to-end;
++    - RETROCOMPATIBILIDAD: candidatos con headline anclado se comportan
++      exactamente igual que antes (test de no-cambio).
++
++──────────────────────────────────────────────────────────────────────────────
++3. RE-EJECUCIÓN DE F2-DRY (cero llamadas) — cerrar criterios b y c
++──────────────────────────────────────────────────────────────────────────────
++
++3.1 Re-correr `replay_f2_dry.py` con B4 aplicado, sobre el mismo checkpoint
++    histórico, misma cola aislada, mismas garantías de aislamiento
++    (REVIEW_QUEUE_FILE redirigido; SHA-256 de original y checkpoint
++    verificados antes/después).
++3.2 Tabla ANTES/DESPUÉS a nivel de PRODUCTO (no solo de función):
++    por requisito, `Finding.d_sufficiency` y conclusión final, antes de B4
++    y después. Esperado: 11.10(e) pasa de "D descartado" a
++    `PARTIALLY_MET`→SUPPORTING_EVIDENCE_UNDER_REVIEW (RAMA B ya aceptada);
++    11.10(d) llega al Finding y sigue bloqueado por contradicción genuina.
++3.3 Re-evaluar los 6 criterios de aceptación de F2-DRY (a–f). Objetivo:
++    b y c pasan de PARCIAL a PASA. Si alguno sigue parcial, DETENERSE y
++    reportar la causa — no declararlo cerrado.
++
++──────────────────────────────────────────────────────────────────────────────
++4. DESBLOQUEAR TU VALIDACIÓN DEL CICLO HUMANO (paso 1.3, sin costo LLM)
++──────────────────────────────────────────────────────────────────────────────
++
++Problema: las entradas del dry-run viven en `review_queue_dry_run.jsonl`
++aislado; la UI de producción no las ve, así que no puedes registrar tu
++decisión y el ciclo humano queda sin validar.
++
++4.1 Proponer la vía más limpia (elegir y justificar):
++    (i) apuntar la UI a la cola del dry-run mediante un parámetro/entorno
++        explícito de solo lectura para esta validación; o
++    (ii) promover deliberadamente UNA entrada del dry-run a la cola real,
++        marcada `DRY_RUN_VALIDATION` en su payload (visible en la UI), de
++        modo que tu decisión sea real sobre un ítem declarado de prueba —
++        con su evento de auditoría normal.
++    NO mezclar silenciosamente entradas de dry-run con hallazgos reales:
++    cualquiera que sea la vía, el origen queda declarado en la entrada.
++4.2 Verificar en la UI corregida que la entrada muestra: requisito,
++    conclusión, flags, cobertura, y los candidatos con página y extracto.
++    Confirmar que el campo revisor valida identidad (422 genéricas) y que
++    aprobar/rechazar emite exactamente un evento.
++4.3 DETENERSE aquí para que Cesar registre la decisión real. Ese clic
++    cierra el criterio F2.3.d.
++
++──────────────────────────────────────────────────────────────────────────────
++5. CIERRE DE R3-T1 (acotar la deriva)
++──────────────────────────────────────────────────────────────────────────────
++
++5.1 Declarar la cadena completa de defectos encontrados y cerrados en esta
++    fase: kerning (extracción) → contrato de prompt → B3 (agregación
++    multi-chunk) → B4 (gate del headline). Documentar que B4 es el último
++    eslabón antes del Finding: no hay capa posterior que pueda descartar
++    evidencia ya validada. Si el análisis encuentra que sí la hay,
++    reportarlo — pero no abrir un B5 sin evidencia.
++5.2 Declarar QUÉ DEMUESTRA R3-T1 (con F2-DRY cerrado y tu decisión
++    registrada): el flujo Tier-1 produce informes trazables con anclaje
++    real donde la evidencia existe, estados honestos donde no, cola
++    enriquecida, y decisión humana registrada — sin gastar el presupuesto
++    de F2.
++5.3 Declarar QUÉ NO DEMUESTRA, sin maquillar: paráfrasis automática
++    (límite R2, vivo); CONFIRMED automático (B1 + cobertura real del
++    documento); reproducibilidad estricta entre corridas (variabilidad B2);
++    y que estos resultados provienen de un checkpoint BASELINE — una
++    corrida H2H4 en vivo podría diferir a nivel de chunk.
++5.4 F2-LIVE: con B3+B4 corregidos, re-evaluar si se justifica. Criterio:
++    solo si responde una pregunta que cambie una decisión de producto. Si
++    la respuesta esperada es la misma que el replay ya da, recomendar NO
++    correrlo y decirlo con el razonamiento. Si se justifica, dimensionarlo
++    al mínimo (3-5 chunks, no 29) con su firma.
++5.5 Actualizar memoria/skill/roadmap: la cadena de 4 defectos y su patrón
++    común (el modelo se contradice entre campos de su propia salida; el
++    fix siempre es usar señal ya emitida y ya validada, nunca aflojar);
++    y el patrón de replay sobre datos pagados como paso obligatorio antes
++    de pedir presupuesto.
++5.6 Pendientes con dueño: B1 (`positive_conclusion_eligibility`, tu
++    decisión, ID `ARTIFACT_VERSION-2026-019`); prompt fantasma; tests
++    ambientales de Gate 0.
++
++──────────────────────────────────────────────────────────────────────────────
++6. ENTREGA
++──────────────────────────────────────────────────────────────────────────────
++
++```
++BLOQUE1_COMMITTED =            (patch pendiente, con tu aprobación)
++DIRTY_TREE_RESOLVED =          (4 guardianes de Gate 0 en verde / explicado)
++GATE0_COUNT =                  (passed/failed tras la limpieza)
++B4_ROOT_CAUSE =                (archivo:línea del gate headline)
++B4_SCOPE =                     (nº de casos con criterio anclado y headline vacío)
++B4_FIX_DESIGN =                (regla (b) + headline derivado y marcado)
++GUARDIANS =                    (los 6: PASA/FALLA cada uno)
++UNANCHORED_QUOTE_NEVER_RESCUES = true   ← guardián central anti-fabricación
++F2_DRY_RERUN =                 (tabla ANTES/DESPUÉS a nivel Finding)
++F2_DRY_CRITERIA =              a..f (b y c deben pasar de PARCIAL a PASA)
++HUMAN_CYCLE_PATH =             (vía elegida para tu decisión en UI)
++HUMAN_DECISION_REGISTERED =    (pendiente de Cesar)
++DEFECT_CHAIN_CLOSED =          kerning → contrato → B3 → B4
++R3_T1_DEMOSTRADO / NO_DEMOSTRADO = (§5.2 / §5.3)
++F2_LIVE_JUSTIFIED =            (sí/no + razonamiento; si sí, alcance mínimo)
++OPEN_ITEMS =                   (B1/019, prompt fantasma, tests ambientales)
++CORPUS_READY = false
++PRODUCTION_ENABLEMENT = BLOCKED
++```
++
++DETENERSE en: el commit del pendiente, el diff de B4 con sus guardianes, y
++tu decisión en la UI. B4 se descarta si cualquier guardián cae — en
++particular si una cita NO anclada llegara a rescatar un candidato: eso
++sería fabricar evidencia, y ningún desbloqueo de F2 lo justifica.
++
++──────────────────────────────────────────────────────────────────────────────
++EJECUCIÓN 2026-08-12
++──────────────────────────────────────────────────────────────────────────────
++
++## Bloque 0 — Higiene previa
++
++**0.1 — Commiteado.** `pendiente_bloque1_headline_gate.patch` (bloque 1 de
++R3-T1.5 + investigación del gate headline) commiteado en `98147df`.
++
++**0.2 — Árbol sucio investigado y resuelto.** Los 4 guardianes en rojo eran
++por `decisions_v2.jsonl`/`review_queue.jsonl` sin commitear desde una
++sesión anterior (R3-T1.2/F1). Verificado como **gobernanza legítima, no
++residuo de prueba**: par `PILOT_EXECUTION-2026-015/016` (autorización +
++confirmación por `cesar`) de la micro-validación F1, y el hallazgo real
++que esa corrida despachó a la cola. Checkpoint `chunked-50534e75927c`
++confirmado presente en disco con timestamp coincidente. Commiteado en
++`e026cdb`. **`GATE0_COUNT` tras la limpieza: los 4 guardianes vuelven a
++verde** (`4 passed in 0.40s`, verificado con reintentos aislados). La
++suite completa se relanzó en background para confirmar el conteo agregado
++final, pero arrancó ANTES de los cambios de B4 (bloque 1-2) — no los
++refleja; el objetivo de 0.2 (guardianes verdes) ya está confirmado sin
++depender de esa corrida.
++
++## Bloque 1 — B4, caracterización
++
++**1.1 — Localización exacta** (`factory/engines/gmpai_integrity/chunked_engine.py`):
++- Línea 611-614: `_is_anchored()` — substring literal exacto, sin
++  tolerancia.
++- Línea ~1345: `anchored = _is_anchored(evidencia, chunk["text"]) if evidencia else False`.
++- Línea ~1593 (antes del fix): `all_candidates = [c for c in by_req.get(req_id, []) if c["anchored"]]`.
++- Línea ~1712: `best = candidates[0]` — el primero en orden de chunk que
++  cumple anclaje, no "el mejor" por ninguna métrica de calidad.
++- Línea ~1729 (antes del fix): `if "a_anchor" in best:` — único punto
++  donde `verify_sufficiency_aggregated()` (D, con fix B3) se adjunta al
++  Finding. Si `best` no existe (rama "sin candidatos", líneas 1604-1687),
++  `Finding.d_sufficiency` nunca se asigna — queda `None` por default del
++  dataclass.
++
++**1.2 — Caso real confirmado** con `raw_response` completo (chunk 20,
++`21_CFR_11.10(e)`): `evidencia_exacta=''` (headline vacío, el modelo
++nunca lo llenó) mientras `criterion_assessments` de la MISMA respuesta
++trae 2 criterios `MET` con `evidence_quote` real que SÍ ancla
++(`verify_anchor` PASS). Mismo patrón en `21_CFR_11.10(d)` (chunks 18/19/20).
++
++**1.3 — Alcance cuantificado** (checkpoint histórico + checkpoint F1,
++script ad hoc sobre `raw_response` real, cero llamadas):
++
++```
++B4_SCOPE = 3 casos en 2 chunks del checkpoint baseline (943a62bcbb85):
++  chunk 19, 21_CFR_11.10(d): 1 criterio MET con cita real, headline vacío
++  chunk 20, 21_CFR_11.10(e): 2 criterios MET con cita real, headline vacío
++  chunk 20, 21_CFR_11.50_11.70: 1 criterio MET con cita real, headline vacío
++           (este caso NO bloqueaba el Finding -- otro chunk SÍ anclaba
++           para ese mismo requisito, por eso no apareció en el hallazgo
++           original de R3-T1.5)
++Checkpoint F1 (50534e75927c, H2H4, 5 chunks): 0 casos -- el defecto no
++se manifestó en esa corrida mas pequeña.
++```
++
++## Bloque 2 — Diseño e implementación de B4
++
++**2.1 — Regla implementada**: `_apply_headline_rescue_b4()`, función de
++módulo nueva en `chunked_engine.py` (extraída, no inline, para que el
++bucle en vivo Y cualquier replay sobre datos ya guardados apliquen
++EXACTAMENTE la misma regla). Si `evidencia` (headline) viene vacía y
++`requires_anchor=True`: toma `d_detail['met']` (ya calculado por
++`verify_sufficiency()`/`verify_evidence_abcd()`, Nivel B ya aplica
++`verify_anchor` por criterio), deriva el headline concatenando las citas
++de esos criterios, marca `anchored=True` y `headline_source=
++'derived_from_criterion_quotes'`.
++
++**2.2 — Guardia adicional encontrada al diseñar** (no estaba en el plan
++original, pero es necesaria): `_classify_criteria_for_chunk()` (la fuente
++de `d_detail`) SOLO aplica `verify_anchor()` por criterio — a diferencia
++del headline normal, NUNCA llama a `detect_reference_list_context()`. Sin
++un chequeo explícito, una cita de una lista de referencias numeradas
++(patrón real de ANNEX11_4) que ancla literalmente por criterio podría
++colarse por la ruta derivada aunque el headline normal la hubiera
++rechazado. Se agregó el mismo chequeo, revisando cada cita
++individualmente (el texto unido con `" | "` nunca existe literalmente en
++el chunk, así que revisar el texto ya unido habría dejado el chequeo
++mudo para 2+ citas).
++
++**2.3 — Los 7 guardianes** (6 del plan + 1 adicional por el hallazgo de
++2.2), todos en `factory/tests/test_gmpai_chunked_engine.py`:
++
++```
++GUARDIANS:
++test_b4_headline_empty_but_criterion_quotes_anchored_rescues_candidate  PASA (caso real)
++test_b4_absence_preserved_when_no_criterion_anchors                    PASA (ausencia preservada)
++test_b4_unanchored_criterion_quote_never_rescues                       PASA (guardián central anti-fabricación)
++test_b4_reference_list_criterion_quote_never_rescues                   PASA (hallazgo 2.2, ANNEX11_4-like)
++test_b4_genuine_contradiction_still_blocks_with_both_headlines_empty   PASA (contradicción genuina)
++test_b4_annex11_4_reference_list_still_rejected_end_to_end             PASA (regresión end-to-end)
++test_b4_anchored_headline_unchanged_behavior                           PASA (retrocompatibilidad)
++UNANCHORED_QUOTE_NEVER_RESCUES = true
++```
++
++Suite completa relevante (`test_gmpai_chunked_engine.py` +
++`test_semantic_evidence_verification.py` + `test_tier1_report.py`):
++**125 passed, 0 failed.**
++
++## Bloque 3 — Re-ejecución de F2-DRY (cero llamadas)
++
++Re-corrido `replay_f2_dry.py` sobre el mismo checkpoint histórico, con
++B4 aplicado. Como el checkpoint es de ANTES del fix, el script no puede
++reusar el candidato ya persistido tal cual (colapsaba headline-vacío y
++headline-no-anclado al mismo placeholder) — se actualizó para recuperar
++el `evidencia_exacta` ORIGINAL desde el `raw_response` completo (mismo
++mecanismo ya usado para `estado`) y llamar a la MISMA función
++`_apply_headline_rescue_b4()` que usa el motor en vivo.
++
++**Tabla ANTES/DESPUÉS a nivel de Finding (confirmado con datos reales):**
++
++| Requisito | ANTES: d_sufficiency | DESPUÉS: d_sufficiency | evidencia_exacta |
++|---|---|---|---|
++| `21_CFR_11.10(e)` | `None` (D descartado) | **`PARTIALLY_MET`** | `[headline derivado...] UR3.3.1 Every time a criti...` |
++| `21_CFR_11.10(d)` | `None` (D descartado) | **`NOT_ASSESSABLE`** (contradicción genuina, correcta) | `[headline derivado...] Both Microsoft Windows dom...` |
++| `21_CFR_11.10(g)` | `None` | `None` (sin cambios — nunca tuvo criterios anclados en los chunks relevantes) | sin cambios |
++| `21_CFR_11.50_11.70` | `None` | `None` (sin cambios) | sin cambios |
++
++**B4 funciona exactamente como se diseñó** a nivel de `Finding` — D
++(ya corregido por B3) ahora SÍ llega hasta ahí para 11.10(d)/(e).
++
++## HALLAZGO NUEVO: B4 no cambia la `conclusion` final — un pipeline separado decide
++
++**`verified_conclusions[req_id]['conclusion']` NO cambió** (sigue
++`PROVISIONAL_GAP` para ambos, idéntico antes y después de B4).
++
++Causa raíz confirmada (`chunks_observed: 0` en `verified_conclusions_DRY_RUN.json`
++para ambos requisitos, antes y después): la `conclusion` la decide
++`absence_consolidator.consolidate()` sobre `verified_records_by_req` — una
++estructura de datos **completamente separada** de `by_req`/`Finding`, que
++se construye ANTES en el bucle (líneas ~1393-1403 de `chunked_engine.py`)
++vía `build_finding_record()`, usando `valid_candidate_verified` (el
++chequeo de anclaje headline ORIGINAL, sin rescate). `apply_conclusion_preconditions()`
++(que sí lee `d_sufficiency`) **solo puede DEGRADAR** una conclusión que
++`consolidate()` ya haya decidido como "support-asserting" (línea 240:
++`if c.conclusion in _SUPPORT_ASSERTING`) — nunca puede PROMOVER una
++conclusión de tipo GAP/ausencia a una de tipo soporte. Como
++`consolidate()` nunca vio un registro "observed" (ambos requisitos
++`chunks_observed=0`), la conclusión nace GAP y se queda GAP sin importar
++qué diga `d_sufficiency`.
++
++**Esto significa**: B4, tal como está diseñado y commiteado, corrige el
++`Finding` (el registro técnico/de auditoría) pero NO corrige el
++`verified_conclusions` que alimenta el bucketing Tier-1 real
++(`tier1_report._bucket_for_conclusion`). Para que 11.10(e) efectivamente
++pase a `SUPPORTING_EVIDENCE_UNDER_REVIEW` (RAMA B), el MISMO rescate de
++B4 tendría que aplicarse también a `v_candidate`/`build_finding_record()`
++-- un cambio adicional, no incluido en el diseño original de B4 (que se
++scopeó específicamente al gate de candidato headline para el `Finding`,
++no a `verified_records_by_req`).
++
++## Re-evaluación de criterios F2-DRY (a-f) — POR LITERAL, sin inflar
++
++```
++a) informe se genera sin error, buckets validos:                    PASA (sin cambios)
++b) 11.10(e) con estado honesto, contradicted vacio, PRUEBA de que B3
++   llega al producto final:
++   - llega a Finding.d_sufficiency? SI (PARTIALLY_MET, contradicted
++     vacio) -- MEJORA REAL respecto a R3-T1.5.
++   - llega a verified_conclusions.conclusion (el bucket Tier-1 real)?
++     NO -- sigue PROVISIONAL_GAP, NO SUPPORTING_EVIDENCE_UNDER_REVIEW.
++   VEREDICTO: SIGUE PARCIAL. No cumple el criterio tal como esta escrito
++   (que exige "llega al producto final").
++c) 11.10(d) sigue bloqueado por contradiccion genuina:               PASA a
++   nivel de Finding (NOT_ASSESSABLE, correcto) Y a nivel de conclusion
++   (PROVISIONAL_GAP, que es coherente con "no se puede confirmar" --
++   pero por razones DISTINTAS, no por la contradiccion).
++d) cola de revision con candidatos/paginas/extractos:                PASA
++   (sin cambios respecto a R3-T1.5, sigue funcionando)
++e) ningun bucket huerfano:                                            PASA
++f) original en disco intacto (SHA-256):                               PASA
++   (documento y checkpoint verificados identicos antes/despues)
++```
++
++**Por instrucción explícita del plan ("Si alguno sigue parcial,
++DETENERSE y reportar la causa — no declararlo cerrado"): criterio (b)
++sigue PARCIAL. No se declara F2-DRY cerrado.**
++
++## DETENERSE
++
++```
++BLOQUE1_COMMITTED =            SI (98147df)
++DIRTY_TREE_RESOLVED =          SI (e026cdb) -- 4 guardianes verdes confirmados
++GATE0_COUNT =                  suite completa (host, background) terminada:
++                                2420 passed, 6 failed, 5 skipped, 1 xfailed,
++                                2 errors (1057.21s/17:37min). Los 4 guardianes
++                                de gobernanza que 0.2 arreglo YA NO aparecen
++                                en rojo -- confirmado. Aparecen 2 fallos NUEVOS
++                                pero autoinfligidos y esperados:
++                                test_runtime_identity.py::test_engine_files_
++                                on_disk_match_head y test_assert_passes_on_a_
++                                reproducible_runtime -- ambos detectan
++                                correctamente que chunked_engine.py esta
++                                modificado en disco sin commitear (el fix B4
++                                pendiente de aprobacion). Es el guardian
++                                correcto haciendo su trabajo, no una
++                                regresion -- se resuelve solo al commitear
++                                B4. Los otros 4 fallos/2 errores restantes
++                                (Playwright/live endpoint) son los mismos
++                                ambientales ya caracterizados en 0.2.
++B4_ROOT_CAUSE =                chunked_engine.py:1593 (all_candidates filtrado
++                                por anchored), :1712 (best=candidates[0]),
++                                :1729 (unico punto que adjunta D al Finding)
++B4_SCOPE =                     3 casos / 2 chunks (checkpoint baseline); 0 en F1/H2H4
++B4_FIX_DESIGN =                _apply_headline_rescue_b4(), funcion de modulo
++                                compartida entre evaluate_chunked() y el replay
++GUARDIANS =                    7/7 PASA (6 del plan + 1 hallazgo propio: cita
++                                de lista de referencias no debe rescatar)
++UNANCHORED_QUOTE_NEVER_RESCUES = true (confirmado, test dedicado)
++F2_DRY_RERUN =                 tabla ANTES/DESPUES en bloque 3 -- Finding.
++                                d_sufficiency mejora real, verified_conclusions
++                                sin cambio
++F2_DRY_CRITERIA =              a,c,d,e,f PASA; b SIGUE PARCIAL
++HUMAN_CYCLE_PATH =             NO decidido -- bloqueado hasta resolver (b)
++HUMAN_DECISION_REGISTERED =    pendiente
++DEFECT_CHAIN_CLOSED =          NO -- kerning -> contrato -> B3 -> B4 (Finding)
++                                -> [NUEVO, sin nombre asignado] (verified_records_
++                                by_req/build_finding_record, no wireado a B4)
++R3_T1_DEMOSTRADO / NO_DEMOSTRADO = pendiente de bloque 5 -- no evaluado, cierre
++                                de R3-T1 bloqueado por (b)
++F2_LIVE_JUSTIFIED =            no evaluado -- bloqueado por (b)
++OPEN_ITEMS =                   B1/019, prompt fantasma, tests ambientales de
++                                Gate 0, + el nuevo hallazgo de esta seccion
++CORPUS_READY = false
++PRODUCTION_ENABLEMENT = BLOCKED
++```
++
++**DETENERSE.** B4 está diseñado, implementado, commiteado-pendiente (diff
++sin aprobar todavía: `factory/engines/gmpai_integrity/chunked_engine.py`
+++92 líneas, `factory/tests/test_gmpai_chunked_engine.py` +198 líneas, 125
++tests en verde) y demuestra una mejora real y verificada a nivel de
++`Finding`. Pero el criterio (b) de F2-DRY sigue PARCIAL: el mismo rescate
++tendría que extenderse a `verified_records_by_req`/`build_finding_record()`
++para que la `conclusion` final (el bucket Tier-1 real) refleje el
++resultado corregido. No se declara F2-DRY cerrado, no se avanza a bloque
++4 (ciclo humano) ni bloque 5 (cierre de R3-T1) sin tu decisión sobre este
++hallazgo nuevo.
+diff --git a/docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md b/docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md
+new file mode 100644
+index 0000000..af744e7
+--- /dev/null
++++ b/docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md
+@@ -0,0 +1,180 @@
++# R3-T1.7 — SUPERFICIE ÚNICA DE VALIDEZ DE CANDIDATO (cierra B3/B4/B5 de raíz)
++# Archivo de instrucciones para Claude Code
++# Destino: docs_plan/R3_T1_7_SUPERFICIE_UNICA_CANDIDATO.md
++# Ejecutar: cd /home/ing_cpmo && claude
++#
++# AUTORIDAD: Capa 9 = Cesar. Claude Code = Capa 8.
++#
++# CAMBIO DE MÉTODO (instrucción central de esta corrida): B3, B4 y B5 NO
++# son tres defectos — son EL MISMO defecto en tres call-sites distintos,
++# descubiertos de uno en uno. Parchear un cuarto sitio repetiría el ciclo.
++# Esta corrida NO parchea: audita todos los sitios de una vez y los
++# centraliza en UNA superficie compartida, igual que ya se hizo con
++# `path_policy.py` (sin superficies de path paralelas) y
++# `decision_scope_resolver` (ningún consumidor implementa su propia
++# lectura). La validez/anclaje de candidato es la tercera superficie que
++# se fragmentó; se cierra con el mismo patrón.
++#
++# SEGUNDO CAMBIO DE MÉTODO: el criterio de aceptación se mide SOLO en la
++# salida final (bucket del informe Tier-1). "Llega a la función" o "llega
++# al Finding" NO cuentan como cerrado — ya nos equivocamos tres veces así.
++#
++# Reglas duras: CERO llamadas LLM; no MarkItDown; no cambiar modelo; NO
++# aflojar validadores; no commit sin diff + aprobación.
++# PRODUCTION_ENABLEMENT = BLOCKED. CORPUS_READY = false.
++
++──────────────────────────────────────────────────────────────────────────────
++0. CONSERVAR LO YA GANADO
++──────────────────────────────────────────────────────────────────────────────
++
++0.1 El fix B4 es correcto y está validado (guardianes en verde, rescate por
++    criterios anclados llega al Finding). Presentar su diff pendiente y
++    commitearlo con aprobación de Cesar — NO se descarta ni se rehace; se
++    absorberá dentro de la superficie única del §2 sin perder su lógica ni
++    sus tests.
++0.2 Higiene del árbol sucio (§0.2 de R3-T1.6, si sigue pendiente): que los
++    4 guardianes de Gate 0 vuelvan a verde y vuelvan a significar algo.
++
++──────────────────────────────────────────────────────────────────────────────
++1. AUDITORÍA EXHAUSTIVA — TODOS LOS SITIOS, DE UNA VEZ (cero llamadas)
++──────────────────────────────────────────────────────────────────────────────
++
++Objetivo: que al terminar este bloque NO pueda existir un B6 desconocido.
++
++1.1 Enumerar EXHAUSTIVAMENTE cada punto del código que decide alguna de
++    estas preguntas, con archivo:línea:
++    - ¿este candidato/chunk cuenta como evidencia válida?
++    - ¿esta cita ancla?
++    - ¿este candidato "gana" para el requisito?
++    - ¿qué estructura de datos recibe el resultado (Finding,
++      verified_records_by_req, checkpoints, informe, cola de revisión)?
++    Método: grep sistemático de `_is_anchored`, `verify_anchor`,
++    `valid_candidate`, `valid_candidate_verified`, `evidencia_exacta`,
++    `build_finding_record`, `chunks_observed`, y seguimiento de cada
++    estructura hasta su consumidor final. No confiar en un solo grep:
++    trazar el flujo de datos completo desde el raw_response hasta el
++    bucket del informe.
++1.2 Producir el MAPA DE RUTAS: para cada ruta (Finding / verified_records /
++    cualquier otra que aparezca), qué lógica de validez aplica hoy, y en
++    qué difiere de las demás. Las divergencias encontradas son el
++    inventario completo del defecto — B3, B4 y B5 deben aparecer en este
++    mapa como casos particulares.
++1.3 Confirmar cuántas rutas independientes existen. Si son más de las 2-3
++    conocidas, reportarlo: ese número es el que explica por qué el defecto
++    reaparecía.
++
++──────────────────────────────────────────────────────────────────────────────
++2. CENTRALIZACIÓN EN UNA SUPERFICIE ÚNICA
++──────────────────────────────────────────────────────────────────────────────
++
++2.1 Diseñar UNA función/módulo compartido — p. ej.
++    `candidate_validity.resolve_candidate_evidence(...)` — que decida, en
++    un solo lugar y con una sola lógica:
++    - si el candidato ancla (headline directo, o rescate por citas de
++      criterio ya ancladas — la regla de B4, sin cambios);
++    - qué cita representa la evidencia (con `headline_source` marcado
++      cuando es derivada);
++    - qué señal entrega a cada consumidor.
++    TODAS las rutas del mapa §1.2 la llaman. Ninguna reimplementa nada.
++2.2 REGLAS INVARIANTES (idénticas a las ya aprobadas, sin aflojar nada):
++    - cita no anclada NUNCA rescata un candidato (guardián central
++      anti-fabricación);
++    - headline vacío + cero citas ancladas ⇒ sin evidencia (ausencia
++      honesta preservada);
++    - umbral de anclaje, validaciones A/B/C/D y regla de contradicción
++      genuina: intactos;
++    - el rescate deriva de citas YA validadas; nunca sintetiza texto.
++2.3 TEST DE NO-BYPASS (el que impide un B6): un test que falle si algún
++    módulo decide validez de candidato sin pasar por la superficie única
++    — mismo espíritu que `test_refresh_readonly.py` para Reader/Executor.
++    Integrarlo a Gate 0.
++2.4 `apply_conclusion_preconditions()` solo degrada, nunca promueve (hoy
++    correcto). Verificar que con la superficie única la conclusión positiva
++    se origina donde corresponde y no necesita "promoción" posterior — si
++    el diseño exigiera promover desde GAP, DETENERSE y reportar: eso sería
++    un cambio de semántica que requiere decisión de Cesar, no un fix.
++
++──────────────────────────────────────────────────────────────────────────────
++3. VALIDACIÓN — MEDIDA SOLO EN LA SALIDA FINAL
++──────────────────────────────────────────────────────────────────────────────
++
++3.1 Re-correr `replay_f2_dry.py` (cero llamadas, checkpoint histórico,
++    cola aislada, SHA-256 verificados) con la superficie única aplicada.
++3.2 CRITERIO ÚNICO DE ÉXITO (nada intermedio cuenta):
++    en el INFORME TIER-1 GENERADO, `21_CFR_11.10(e)` aparece en el bucket
++    de revisión humana con estado SUPPORTING_EVIDENCE_UNDER_REVIEW (RAMA B
++    ya aceptada por Cesar) y con su evidencia anclada visible — NO
++    `PROVISIONAL_GAP`. Si sigue en PROVISIONAL_GAP, el trabajo no está
++    hecho, sin importar qué muestren las capas internas.
++3.3 GUARDIANES en la MISMA salida final:
++    - `21_CFR_11.10(d)` sigue bloqueado por contradicción genuina;
++    - ANNEX11_4 sigue rechazado end-to-end;
++    - un requisito sin evidencia real sigue reportando ausencia honesta;
++    - ninguna cita no anclada aparece como evidencia en el informe.
++3.4 Tabla ANTES/DESPUÉS por requisito, a nivel de bucket del informe.
++3.5 Suite completa desde el host + Gate 0; los 6 criterios a–f de F2-DRY
++    re-evaluados. Si alguno sigue parcial: DETENERSE y reportar la causa
++    exacta con el mapa §1.2 en la mano — pero ahora la causa debería estar
++    YA en el mapa, no ser un descubrimiento nuevo.
++
++──────────────────────────────────────────────────────────────────────────────
++4. CIERRE (solo si §3 pasa)
++──────────────────────────────────────────────────────────────────────────────
++
++4.1 Ciclo humano en la UI (bloque 4 de R3-T1.6): ahora sí tiene sentido —
++    la entrada que Cesar revisará estará en el bucket correcto. Elegir la
++    vía de acceso (cola dry-run visible en modo lectura, o UNA entrada
++    promovida marcada `DRY_RUN_VALIDATION`), verificar la vista de
++    evidencia y la validación de identidad, y DETENERSE para su decisión.
++4.2 Cierre de R3-T1 (bloque 5 de R3-T1.6): declarar demostrado /
++    no-demostrado, la cadena completa de defectos, y los pendientes con
++    dueño (B1 con ID `ARTIFACT_VERSION-2026-019`, prompt fantasma, tests
++    ambientales).
++4.3 F2-LIVE: decidir si se justifica bajo el criterio ya fijado (solo si
++    cambia una decisión de producto); si no, recomendar no correrlo.
++
++──────────────────────────────────────────────────────────────────────────────
++5. LECCIÓN A MEMORIA Y SKILL (para que no se repita)
++──────────────────────────────────────────────────────────────────────────────
++
++Registrar como principio permanente del proyecto:
++- "Cuando un defecto reaparece en un segundo lugar, NO se parchea el
++  segundo lugar: se audita exhaustivamente y se centraliza en una
++  superficie única con test de no-bypass" — igual que path_policy y
++  decision_scope_resolver. La lógica de validez/anclaje de candidato es
++  ahora la tercera superficie unificada.
++- "El criterio de aceptación se mide en la salida final del producto, no
++  en capas intermedias" — declarar cerrado en una capa intermedia produjo
++  tres falsos cierres consecutivos en esta fase.
++- El patrón de replay sobre datos ya pagados como paso obligatorio antes
++  de pedir presupuesto (ya demostrado cuatro veces en este arco).
++
++──────────────────────────────────────────────────────────────────────────────
++6. ENTREGA
++──────────────────────────────────────────────────────────────────────────────
++
++```
++B4_COMMITTED =                (diff aprobado; lógica absorbida en §2)
++DIRTY_TREE / GATE0 =          (guardianes en verde / explicado)
++ROUTE_MAP =                   (nº de rutas independientes + archivo:línea c/u)
++DIVERGENCES_FOUND =           (B3/B4/B5 + cualquier otra nueva)
++SINGLE_SURFACE =              (módulo/función; rutas que la consumen)
++NO_BYPASS_TEST =              (en Gate 0)
++UNANCHORED_NEVER_RESCUES =    true
++FINAL_OUTPUT_11_10_e =        (bucket real en el informe: SUPPORTING_… / GAP)
++FINAL_OUTPUT_11_10_d =        (bloqueado por contradicción genuina)
++ANNEX11_4_END_TO_END =        rechazado
++F2_DRY_CRITERIA =             a..f (todos PASA / cuál sigue parcial y por qué)
++HUMAN_CYCLE =                 (vía + pendiente de decisión de Cesar)
++R3_T1_CLOSURE =               (demostrado / no demostrado)
++F2_LIVE_JUSTIFIED =           (sí/no + razonamiento)
++LESSON_RECORDED =             (memoria + skill)
++CORPUS_READY = false
++PRODUCTION_ENABLEMENT = BLOCKED
++```
++
++DETENERSE en: el commit de B4, el diff de la superficie única con sus
++guardianes, y la decisión de Cesar en la UI. Si la auditoría §1 revela más
++rutas de las esperadas, eso NO es un fracaso — es exactamente lo que esta
++corrida existe para encontrar de una vez, en vez de descubrirlas de a una
++por sesión.
+diff --git a/factory/engines/gmpai_integrity/chunked_engine.py b/factory/engines/gmpai_integrity/chunked_engine.py
+index 6f5f7bc..9823953 100644
+--- a/factory/engines/gmpai_integrity/chunked_engine.py
++++ b/factory/engines/gmpai_integrity/chunked_engine.py
+@@ -614,6 +614,85 @@ def _is_anchored(evidencia: str, source_text: str) -> bool:
+     return _normalize(evidencia) in _normalize(source_text)
+ 
+ 
++def _apply_headline_rescue_b4(
++    candidate: dict, *, evidencia: str, requires_anchor: bool,
++    criterion_assessments: "list | None", chunk_text: str, d_detail: "dict | None",
++) -> None:
++    """Fix B4 (R3-T1.6, 2026-08-12, docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md):
++    el candidato headline (`evidencia_exacta`, la cita RESUMEN de todo el
++    requisito) puede venir vacia aunque el modelo SI haya citado evidencia
++    real y anclada por criterio individual (`criterion_assessments`) en la
++    MISMA respuesta -- confirmado con datos reales (checkpoint
++    `chunked-943a62bcbb85`, chunk 20, `21_CFR_11.10(e)`: evidencia_exacta=''
++    pero 2/9 criterios MET con cita real que SI ancla). Sin este ajuste, D
++    (ya corregido por B3) se calcula (`d_detail`, via `verify_evidence_abcd`
++    o `verify_sufficiency` directo) pero nunca se adjunta al Finding, porque
++    solo un candidato con `anchored=True` puede ganar (`best = candidates[0]`).
++
++    Muta `candidate` in-place (evidencia_exacta/anchored/has_evidence/
++    headline_source) SOLO si aplica el rescate; en cualquier otro caso solo
++    fija `headline_source='model_headline'` si aun no estaba, sin tocar
++    nada mas -- comportamiento previo intacto.
++
++    Extraida como funcion de modulo (R3-T1.6) para que tanto el bucle en
++    vivo de `evaluate_chunked()` COMO cualquier reconstruccion/replay sobre
++    datos ya guardados (checkpoints historicos, sin llamar de nuevo al
++    modelo) apliquen EXACTAMENTE la misma regla -- nunca dos
++    implementaciones que puedan divergir (el mismo gap de instrumentacion
++    que motivo el fix B3 original).
++
++    Regla: si `evidencia` (headline) viene vacia pero `d_detail['met']`
++    (calculado por `verify_sufficiency()`, Nivel B ya aplica `verify_anchor`
++    por criterio) trae al menos un criterio, el candidato se considera
++    anclado -- DERIVADO de esas citas YA verificadas, nunca inventado.
++    `d_detail['met']` por construccion solo puede contener criterios con
++    cita real y anclada -- este rescate NUNCA puede colarse con una cita
++    fabricada o de otro chunk. Si NINGUN criterio ancla o `evidencia` SI
++    tenia texto (solo fallo su propio anclaje), el candidato sigue sin
++    ganar -- ausencia/descarte honesto preservado.
++
++    Guardia adicional (encontrada al disenar este fix, no pedida
++    explicitamente pero necesaria): `_classify_criteria_for_chunk()`
++    (Nivel B de `verify_sufficiency`, la fuente de `d_detail`) SOLO aplica
++    `verify_anchor()` por criterio -- a diferencia del headline normal
++    (`valid_candidate_verified` en `evaluate_chunked()`), NUNCA llama a
++    `detect_reference_list_context()`. Sin este chequeo adicional, una cita
++    que ancla literalmente pero vive dentro de una lista de referencias
++    numeradas (el falso positivo real de ANNEX11_4, ej. "GAMP5" dentro de
++    "[8] Good Automated Manufacturing Practice, GAMP5") podria colarse por
++    esta ruta derivada aunque el headline normal la hubiera rechazado. Se
++    aplica el MISMO chequeo que ya protege el headline normal -- nunca un
++    umbral mas bajo para el camino derivado. Se revisa CADA cita
++    individualmente (no el texto unido con " | "): ese separador nunca
++    existe literalmente en el chunk, asi que `detect_reference_list_context()`
++    sobre el texto ya unido jamas encontraria la posicion y el chequeo
++    quedaria mudo en silencio para el caso de 2+ citas -- una sola cita
++    sospechosa invalida el rescate completo."""
++    if not evidencia.strip() and requires_anchor:
++        from factory.regulatory import semantic_evidence_verification as sev
++        met_criteria = set((d_detail or {}).get("met") or [])
++        derived_quotes = [
++            str(ca.get("evidence_quote") or "").strip()
++            for ca in (criterion_assessments or [])
++            if ca.get("status") == "MET" and ca.get("criterion_text") in met_criteria
++            and str(ca.get("evidence_quote") or "").strip()
++        ] if met_criteria else []
++        derived_quotes = list(dict.fromkeys(derived_quotes))  # dedupe, orden estable
++        any_reference_list = any(
++            sev.detect_reference_list_context(q, chunk_text) for q in derived_quotes
++        )
++        if derived_quotes and not any_reference_list:
++            candidate["evidencia_exacta"] = (
++                "[headline derivado de citas por criterio verificadas] "
++                + " | ".join(derived_quotes)
++            )
++            candidate["anchored"] = True
++            candidate["has_evidence"] = True
++            candidate["headline_source"] = "derived_from_criterion_quotes"
++    if "headline_source" not in candidate:
++        candidate["headline_source"] = "model_headline"
++
++
+ _LABEL_STOPWORDS = {
+     "y", "de", "del", "la", "el", "los", "las", "en", "a", "un", "una", "para", "con",
+     "quien", "que", "es", "su", "sus", "o", "sin", "no", "al", "por",
+@@ -1444,6 +1523,19 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
+                 candidate["c_semantic"] = abcd.c_semantic
+                 candidate["c_flags"] = abcd.c_flags
+ 
++                # Fix B4 (R3-T1.6, docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md):
++                # ver docstring de _apply_headline_rescue_b4() -- extraida a
++                # funcion de modulo (no inline) para que tanto este bucle en
++                # vivo COMO cualquier replay/reconstruccion sobre datos ya
++                # guardados (checkpoints historicos, sin volver a llamar al
++                # modelo) apliquen EXACTAMENTE la misma regla, nunca dos
++                # implementaciones que puedan divergir.
++                _apply_headline_rescue_b4(
++                    candidate, evidencia=evidencia, requires_anchor=requires_anchor,
++                    criterion_assessments=criterion_assessments, chunk_text=chunk["text"],
++                    d_detail=abcd.d_detail,
++                )
++
+                 by_req.setdefault(req_id, []).append(candidate)
+                 by_req_candidates.append({"req_id": req_id, "candidate": candidate})
+ 
+diff --git a/factory/tests/test_gmpai_chunked_engine.py b/factory/tests/test_gmpai_chunked_engine.py
+index 9358dbc..875d650 100644
+--- a/factory/tests/test_gmpai_chunked_engine.py
++++ b/factory/tests/test_gmpai_chunked_engine.py
+@@ -768,6 +768,204 @@ def test_verified_pipeline_d_contradiction_across_chunks_stays_not_assessable(mo
+     assert finding["substantive_support"] != "SUPPORTED"
+ 
+ 
++# ── Fix B4 (R3-T1.6, 2026-08-12, docs_plan/R3_T1_6_FIX_B4_Y_CIERRE.md) ─────
++# el candidato "headline" (evidencia_exacta, la cita RESUMEN del requisito)
++# puede venir vacio aunque criterion_assessments SI traiga citas MET reales
++# y ancladas -- sin rescate, D (ya corregido por B3) se calcula pero nunca
++# llega al Finding, porque solo un candidato con anchored=True puede ganar.
++
++def _d_assessments_partial(met_indices: set[int]) -> list:
++    """Como _d_assessments_subset, pero los indices fuera de met_indices
++    quedan NOT_MET (desacuerdo genuino, no NOT_ASSESSABLE) -- reproduce el
++    patron real encontrado en el checkpoint historico (21_CFR_11.10(e),
++    chunk 20: 2 MET anclados + 7 NOT_MET genericos, PARTIALLY_MET, nunca
++    NOT_ASSESSABLE por incertidumbre)."""
++    return [
++        {"criterion_index": i + 1, "criterion_text": text,
++         "status": "MET" if (i + 1) in met_indices else "NOT_MET",
++         "evidence_quote": text if (i + 1) in met_indices else "",
++         "evidence_location": "pag X" if (i + 1) in met_indices else "",
++         "justification": "test", "limitations": ""}
++        for i, text in enumerate(_D_CRITERIA_11_10_D)
++    ]
++
++
++def _run_b4(monkeypatch, estado, criterion_assessments, evidencia_exacta="", pages=None):
++    page = pages or [f"Introduccion. " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500]
++    entry = {"req_id": "21_CFR_11.10(d)", "estado": estado,
++             "evidencia_exacta": evidencia_exacta, "brecha": "n/a", "recomendacion": "n/a"}
++    if criterion_assessments is not None:
++        entry["criterion_assessments"] = criterion_assessments
++    payload = _all_insufficient({"21_CFR_11.10(d)": entry})
++    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
++    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
++    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
++    return ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", page,
++                                "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
++                                run_context="production", use_verified_pipeline=True, document_type="FS")
++
++
++def test_b4_headline_empty_but_criterion_quotes_anchored_rescues_candidate(monkeypatch):
++    """CASO REAL: reproduce chunk 20 / 21_CFR_11.10(e) del checkpoint
++    historico chunked-943a62bcbb85. evidencia_exacta vacia, pero 2 de 5
++    criterios MET con cita real que SI ancla -- el candidato debe ganar
++    (headline derivado) y D (PARTIALLY_MET) debe llegar al Finding, en vez
++    de perderse en la rama 'sin candidatos'."""
++    result = _run_b4(monkeypatch, "cumple_parcialmente", _d_assessments_partial({1, 2}))
++    finding = next(f for f in result["findings"]
++                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
++    assert finding["d_sufficiency"] == "PARTIALLY_MET", finding
++    assert finding["evidencia_exacta"].startswith("[headline derivado de citas por criterio verificadas]")
++    assert _D_CRITERIA_11_10_D[0] in finding["evidencia_exacta"]
++
++
++def test_b4_absence_preserved_when_no_criterion_anchors(monkeypatch):
++    """AUSENCIA PRESERVADA: headline vacio Y cero criterios MET -- el
++    candidato NUNCA gana, la conclusion de ausencia queda intacta (mismo
++    comportamiento que antes del fix)."""
++    result = _run_b4(monkeypatch, "cumple_parcialmente", _d_assessments_partial(set()))
++    finding = next(f for f in result["findings"]
++                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
++    assert finding["d_sufficiency"] is None, finding
++    assert "derivado" not in finding["evidencia_exacta"]
++
++
++def test_b4_unanchored_criterion_quote_never_rescues(monkeypatch):
++    """GUARDIAN CENTRAL anti-fabricacion: headline vacio, y el unico
++    criterio 'MET' trae un evidence_quote que NO existe en el chunk (texto
++    inventado/de otro chunk) -- Nivel B de verify_sufficiency() ya lo
++    descarta de d_detail['met'], asi que el rescate B4 nunca lo ve. El
++    candidato sigue sin ganar."""
++    assessments = _d_assessments_partial({1})
++    assessments[0]["evidence_quote"] = "Este texto jamas aparece en el chunk evaluado, es inventado."
++    result = _run_b4(monkeypatch, "cumple_parcialmente", assessments)
++    finding = next(f for f in result["findings"]
++                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
++    assert finding["d_sufficiency"] is None, finding
++    assert "derivado" not in finding["evidencia_exacta"]
++
++
++def test_b4_reference_list_criterion_quote_never_rescues(monkeypatch):
++    """Hallazgo adicional durante el diseno (no en el plan original, pero
++    necesario): _classify_criteria_for_chunk() solo aplica verify_anchor()
++    por criterio, NUNCA detect_reference_list_context() -- a diferencia
++    del headline normal. Sin el chequeo explicito que este fix agrega, una
++    cita que ancla literalmente pero vive dentro de una lista de
++    referencias numeradas ('[N]', el patron real de ANNEX11_4) se colaria
++    por la ruta derivada aunque el headline normal la hubiera rechazado."""
++    # Indice 3 (no 1): build_page_chunks() re-junta palabras separadas por
++    # kerning artificial (ver test_annex11_4_reference_list_still_rejected_
++    # after_kerning_fix), y algunos criterios de _D_CRITERIA_11_10_D
++    # contienen una "o"/"y" suelta que ese mecanismo fusiona con la palabra
++    # vecina ("propio o federado" -> "propioo federado") -- corrompiendo el
++    # texto literal antes de llegar a este chequeo. El indice 3 no tiene ese
++    # patron y sobrevive intacto; el fenomeno es ortogonal a B4.
++    quote = _D_CRITERIA_11_10_D[2]
++    page = [f"Referencias: [6] Standard ABC [7] {quote} [8] Standard XYZ [9] Otro documento."]
++    assessments = _d_assessments_partial({3})
++    result = _run_b4(monkeypatch, "cumple_parcialmente", assessments, pages=page)
++    finding = next(f for f in result["findings"]
++                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
++    assert finding["d_sufficiency"] is None, finding
++    assert "derivado" not in finding["evidencia_exacta"]
++
++
++def test_b4_genuine_contradiction_still_blocks_with_both_headlines_empty(monkeypatch):
++    """CONTRADICCION GENUINA sigue bloqueando: dos chunks, AMBOS con
++    headline vacio (ambos rescatados por B4 via sus propios criterios
++    anclados), en desacuerdo real sobre el criterio 1 (MET en un chunk,
++    NOT_MET en el otro) -- D agregado degrada a NOT_ASSESSABLE, exactamente
++    igual que si los headlines hubieran venido anclados normalmente. B4
++    NUNCA debe destrabar una contradiccion real."""
++    page1 = f"Introduccion. " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500
++    page2 = "Seccion contradictoria del mismo documento. " + " ".join(_D_CRITERIA_11_10_D) + " Relleno. " * 500
++    pages = [page1, page2]
++
++    assessments_chunk1 = _d_assessments_partial({1, 2, 3, 4, 5})
++    assessments_chunk2 = _d_assessments_partial({2, 3, 4, 5})  # criterio 1 queda NOT_MET (contradice)
++
++    # Mismo estado en ambos chunks a proposito: si difieren (p.ej. "cumple"
++    # vs "cumple_parcialmente"), dispara el contradiction check de headline
++    # (distinct_estados, linea ~1689 -- un mecanismo DISTINTO, anterior a la
++    # agregacion D) antes de llegar siquiera a D -- ese Finding nunca puebla
++    # d_sufficiency, por diseno, y no es lo que este test quiere ejercitar.
++    responses = [
++        _all_insufficient({"21_CFR_11.10(d)": {
++            "req_id": "21_CFR_11.10(d)", "estado": "cumple_parcialmente", "evidencia_exacta": "",
++            "brecha": "n/a", "recomendacion": "n/a", "criterion_assessments": assessments_chunk1,
++        }}),
++        _all_insufficient({"21_CFR_11.10(d)": {
++            "req_id": "21_CFR_11.10(d)", "estado": "cumple_parcialmente", "evidencia_exacta": "",
++            "brecha": "n/a", "recomendacion": "n/a", "criterion_assessments": assessments_chunk2,
++        }}),
++    ]
++    call_count = {"n": 0}
++
++    def _fake_generate(*a, **k):
++        idx = call_count["n"]
++        call_count["n"] += 1
++        return _ollama_response(responses[idx])
++
++    monkeypatch.setattr(ollama_client, "generate", _fake_generate)
++    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
++    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
++    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
++                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
++                                  run_context="production", use_verified_pipeline=True, document_type="FS")
++
++    finding = next(f for f in result["findings"]
++                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
++    assert finding["d_sufficiency"] == "NOT_ASSESSABLE", finding
++    assert finding["substantive_support"] != "SUPPORTED"
++    # ambos candidatos SI ganaron gracias a B4 (headline derivado) -- la
++    # contradiccion se detecta en la agregacion D (verify_sufficiency_
++    # aggregated), visible en d_reason, no un candidato descartado en
++    # silencio por falta de headline.
++    assert finding["evidencia_exacta"].startswith("[headline derivado de citas por criterio verificadas]")
++
++
++def test_b4_annex11_4_reference_list_still_rejected_end_to_end(monkeypatch):
++    """ANNEX11_4 end-to-end tras B4: el caso real conocido (GAMP5 citado
++    dentro de una lista de referencias numeradas) sigue rechazado -- ruta
++    completa via evaluate_chunked(), no solo la funcion aislada
++    (test_annex11_4_reference_list_still_rejected_after_kerning_fix ya
++    cubre esa). El chunk NUNCA emite criterion_assessments para ANNEX11_4
++    en este escenario (fuera del contrato de fda_part11_agent) -- lo que
++    se prueba es que el headline vacio + evidencia solo en la lista de
++    referencias no produce una conclusion positiva via el candidato
++    headline normal (valid_candidate_verified), que B4 no toca ni afloja."""
++    page = ("REFERENCES [6] ISPE Baseline Guide [7] ISA-88 [8] Good Automated "
++            "Manufacturing Practice, GAMP5 [9] 21 CFR Part 11 [10] EU Annex 11")
++    entry = {"req_id": "21_CFR_11.10(d)", "estado": "cumple",
++             "evidencia_exacta": "Good Automated Manufacturing Practice, GAMP5",
++             "brecha": "n/a", "recomendacion": "n/a"}
++    payload = _all_insufficient({"21_CFR_11.10(d)": entry})
++    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(payload))
++    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
++    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
++    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", [page],
++                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
++                                  run_context="production", use_verified_pipeline=True, document_type="FS")
++    c = result["verified_conclusions"]["21_CFR_11.10(d)"]
++    assert c["conclusion"] != "DOCUMENTED_AND_SUPPORTED"
++    assert c["conclusion"] != "PARTIALLY_DOCUMENTED"
++
++
++def test_b4_anchored_headline_unchanged_behavior(monkeypatch):
++    """RETROCOMPATIBILIDAD: un candidato con headline YA anclado (caso
++    normal, mayoria de las corridas) se comporta EXACTAMENTE igual que
++    antes del fix -- B4 nunca se activa (evidencia.strip() no esta vacio),
++    headline_source='model_headline', evidencia_exacta sin el marcador de
++    derivado."""
++    result = _run_verified_pipeline_with_positive_citation(
++        monkeypatch, _d_assessments(["MET"] * 5))
++    finding = next(f for f in result["findings"]
++                    if f["requisito_regulatorio"].startswith("21_CFR_11.10(d)"))
++    assert finding["evidencia_exacta"] == _ANCHORED_QUOTE
++    assert "derivado" not in finding["evidencia_exacta"]
++    assert finding["d_sufficiency"] == "MET"
++
++
+ # ── W5 V2 Fase F: cierre del hueco de verified_conclusions (2026-07-25) ────
+ # absence_consolidator decide sobre chunk records y NO conoce D. Sin este
+ # cableado, una cita positiva anclada concluia DOCUMENTED_AND_SUPPORTED

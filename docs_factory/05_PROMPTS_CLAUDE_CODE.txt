@@ -1,0 +1,298 @@
+================================================================================
+GMP AI FACTORY — PROMPTS LISTOS PARA CLAUDE CODE (EN ORDEN DE EJECUCION)
+Documento: 05_PROMPTS_CLAUDE_CODE.txt
+
+USO:
+1. Subir antes al servidor los documentos 01 a 04 de este paquete a:
+     /home/ing_cpmo/docs_factory/
+   (scp o copiar/pegar). Los prompts los referencian.
+2. Abrir Claude Code:  cd /home/ing_cpmo && claude
+3. Pegar UN bloque por sesion/fase, en orden F0 → F6.
+4. Entre fases: revisar diff y aprobar (Capa 9 = Cesar) antes del commit.
+================================================================================
+
+──────────────────────────────────────────────
+BLOQUE F0 — PROTECCION Y LINEA BASE
+──────────────────────────────────────────────
+F0 — PROTECCION DEL PRODUCTO BASE Y LINEA BASE GMP AI FACTORY
+
+Contexto: vamos a construir GMP AI Factory (capas 7-9) SIN tocar el producto
+base GMP AI Copilot (capas 1-6). Antes, hay que proteger y congelar el base.
+Lee /home/ing_cpmo/docs_factory/01_ANALISIS_DEL_DISENO.txt y
+04_PLAN_DE_TRABAJO_FASES.txt (fase F0) para contexto completo.
+
+Tareas, en orden, mostrando salida de cada una:
+
+1. Verificar salud del base SIN modificar nada:
+   - curl -s http://localhost:8000/health
+   - curl -s http://localhost:8000/api/v1/agents
+   - curl -s -H "X-Api-Key: $GMP_API_KEY" http://localhost:8000/api/v1/knowledge/stats
+   - curl -s -H "X-Api-Key: $GMP_API_KEY" http://localhost:8000/api/v1/audit/verify
+   (toma la key del .env del base, no la imprimas completa en pantalla)
+
+2. Crear backup completo pre-factory:
+   mkdir -p backups/pre_factory_$(date +%Y%m%d)
+   Copiar: app/, docker-compose.yml, Dockerfile (si existe), knowledge/,
+   data/chroma, data/audit_logs. NO mover, solo copiar.
+   Mostrar du -sh del backup y listado de primer nivel.
+
+3. Verificar git: git status --short (debe estar limpio; si hay pendientes,
+   detente, listalos y espera mi decision).
+
+4. Crear tag inmutable de plantilla: git tag base-v1.0.0
+   Mostrar: git tag -l y git log -1 --oneline base-v1.0.0
+
+5. Registrar linea base de recursos en backups/pre_factory_*/baseline.txt:
+   free -m, df -h, docker ps, docker stats --no-stream
+
+Restricciones: no modificar ningun archivo existente, no commit, no tocar
+contenedores aria-* ni hotelbot-*, no reiniciar servicios.
+Al final: resumen de evidencias y confirmacion de que el base quedo intacto.
+
+──────────────────────────────────────────────
+BLOQUE F1 — EVALUACION + ESTRUCTURA + POLITICAS + SKILLS
+──────────────────────────────────────────────
+F1 — GMP AI FACTORY: EVALUACION DE ARQUITECTURA Y CREACION DE ESQUELETO
+
+Fase previa F0 completada (tag base-v1.0.0 existe; verifica con git tag -l).
+
+PARTE A — ANALISIS (obligatoria antes de crear archivos):
+1. Lee completos:
+   /home/ing_cpmo/docs_factory/01_ANALISIS_DEL_DISENO.txt
+   /home/ing_cpmo/docs_factory/02_ARQUITECTURA_AJUSTADA.txt
+   /home/ing_cpmo/docs_factory/03_SKILLS_CLAUDE_CODE.txt
+2. Revisa la estructura actual del repo (tree -L 2, app/, docker-compose.yml)
+   y la memoria del proyecto que tengas disponible.
+3. Evalua la arquitectura ajustada del documento 02: indica si la apruebas,
+   la ajustas o la mejoras. Puedes proponer mejoras SOLO si mejoran lo
+   propuesto sin cambiar el objetivo (fabrica capas 7-9, separacion total
+   base/fabrica/customs, aprobacion humana obligatoria).
+4. Presenta tu veredicto y espera mi confirmacion antes de la Parte B.
+
+PARTE B — CREACION (tras mi confirmacion):
+5. Crea la estructura factory/ EXACTAMENTE segun la seccion 2 del documento
+   02 (carpetas, archivos placeholder con docstring/TODO donde aun no haya
+   logica, README.md y .gitignore con: workspaces/*, deployments/*/.env,
+   logs/*, *.tar.gz, .env).
+6. Crea las 6 politicas en factory/policies/ con el contenido minimo de la
+   seccion 7 del documento 02 (code_agent, docker, agent_creation, approval,
+   security, resource). Contenido real, no placeholders.
+7. Crea factory/registry/ports.yaml (seccion 3 del doc 02) y
+   factory/registry/agents_catalog.yaml poblado con los 6 agentes base
+   (csv, qa, audit, automation, integrity, capa) con su coleccion ChromaDB.
+8. Crea los 3 skills de Claude Code en /home/ing_cpmo/.claude/skills/
+   (gmp-factory, gmp-agent-design, gmp-quality-gates) con el contenido
+   EXACTO del documento 03.
+
+VALIDACION FINAL (mostrar todo):
+tree factory -L 4
+find factory -type f | sort
+ls -R /home/ing_cpmo/.claude/skills
+git status --short
+git diff --stat
+NO HAGAS COMMIT. Espera mi aprobacion. Restricciones duras: no tocar app/,
+docker-compose.yml base, .env base, data/, backups/, aria-*, hotelbot-*.
+
+──────────────────────────────────────────────
+BLOQUE F2 — TEMPLATE ENGINE Y EXPORT DESDE TAG
+──────────────────────────────────────────────
+F2 — GMP AI FACTORY: TEMPLATE ENGINE
+
+Prerrequisito: F1 commiteada (verifica git log --oneline -3). Usa el skill
+gmp-factory como marco de restricciones.
+
+1. Crea factory/core/template_export.sh:
+   - Recibe <tag_base> y <workspace_dir>.
+   - Valida que el tag existe; ejecuta git archive <tag> | tar -x -C dir.
+   - Registra tag + commit hash en <workspace_dir>/.source_info.
+2. Crea las plantillas en factory/templates/ segun doc 02:
+   - docker-compose.template.yml: servicios {{project_id}}_api/_postgres/
+     _redis, red {{project_id}}_net, volumenes propios, mem_limit y cpus
+     segun resource_policy.yaml, extra_hosts host.docker.internal:host-gateway,
+     OLLAMA_BASE_URL=http://host.docker.internal:11434, puertos {{api_port}},
+     {{postgres_port}}, {{redis_port}}.
+   - Dockerfile.template, env.example.template (incluye GMP_API_KEY vacia
+     con comentario "generar con: openssl rand -hex 16"),
+     manifest.template.yaml (seccion 6 del doc 02 completa),
+     gitignore.template (.env, data/, logs/).
+3. Crea factory/core/template_engine.py: carga manifest, sustituye
+   variables {{...}} en todas las plantillas, escribe resultado en el
+   workspace. Sin dependencias nuevas pesadas (string/Template o regex).
+4. Crea factory/core/port_registry.py: lee registry/ports.yaml, asigna el
+   siguiente puerto libre por rango validando con ss -tlnp, escribe la
+   asignacion en allocations con project_id y fecha.
+5. PRUEBA EN SECO (sin levantar contenedores):
+   - Crea manifest de prueba demo_smoke (puertos asignados por el registry).
+   - Exporta tag base-v1.0.0 a factory/workspaces/demo_smoke/.
+   - Genera compose/env/manifest con el engine.
+   - Valida: docker compose -f <generado> config -q (G01).
+   - Muestra tree del workspace de prueba.
+   - Haz backup tar.gz del workspace de prueba en backups/factory/ y
+     borralo; revierte la asignacion demo_smoke del registry.
+Validacion final: git status --short, git diff --stat. NO COMMIT sin mi
+aprobacion. No tocar el producto base.
+
+──────────────────────────────────────────────
+BLOQUE F3 — BRIDGE CLAUDE CODE + QUALITY GATES + AUDIT
+──────────────────────────────────────────────
+F3 — GMP AI FACTORY: CAPA 8 MODO A (BRIDGE) Y QUALITY GATES
+
+Prerrequisito: F2 commiteada. Usa skills gmp-factory y gmp-quality-gates.
+
+1. factory/core/audit_writer.py:
+   - LEE app/audit.py como referencia (NO lo modifiques) y replica el
+     patron JSONL + hash chain SHA-256 para factory/audit/factory_audit.jsonl.
+   - Eventos: project_created, requirement_registered, workspace_created,
+     task_dispatched, gates_executed, diff_presented, approval_granted,
+     approval_rejected, release_created, deployment_created,
+     deployment_started.
+   - Incluye funcion verify_chain().
+2. factory/claude/:
+   - claude_policy.yaml: espejo operativo de code_agent_policy.yaml.
+   - claude_task_template.md, claude_md_template.md y
+     settings_template.json segun las plantillas P1, P2 y P3 del documento
+     /home/ing_cpmo/docs_factory/03_SKILLS_CLAUDE_CODE.txt.
+   - claude_bridge.py: dado un project_id y su manifest, genera en el
+     workspace: task.md, CLAUDE.md y .claude/settings.json, rellenando las
+     plantillas DESDE las politicas YAML (que nunca diverjan). Registra
+     task_dispatched en audit.
+   - README.md explicando Modo A (manual) y Modo B (futuro, claude -p).
+3. factory/core/quality_gate_runner.py:
+   - Implementa G01-G14 segun el skill gmp-quality-gates (comandos exactos).
+   - Gates de runtime (G03-G10) deben poder marcarse SKIPPED si la solucion
+     no esta levantada, con motivo en el reporte.
+   - Salida: quality_gates_report.json {gate, status: PASS/FAIL/SKIPPED,
+     evidence, timestamp} + registro gates_executed en audit con hash del
+     reporte.
+4. PRUEBAS:
+   - Genera un task package de prueba para demo_smoke (puede reusar un
+     manifest ficticio sin workspace real) y muestra los 3 archivos.
+   - Ejecuta el gate runner contra un objetivo inexistente para validar
+     manejo de SKIPPED/FAIL.
+   - Ejecuta verify_chain() del audit de fabrica → OK.
+Validacion final: tree factory/claude factory/core -L 2, git status --short,
+git diff --stat. NO COMMIT sin mi aprobacion. Base intacto.
+
+──────────────────────────────────────────────
+BLOQUE F4 — FACTORY API + CONSOLA UI (PUERTO 9000)
+──────────────────────────────────────────────
+F4 — GMP AI FACTORY: DOCKER 2, API Y CONSOLA (CAPA 7 MVP)
+
+Prerrequisito: F3 commiteada. Usa skill gmp-factory.
+
+1. factory/api/main.py (FastAPI):
+   - Sirve factory/ui/index.html en GET /.
+   - GET /health publico.
+   - Auth por header X-Api-Key para el resto. La key se genera con
+     openssl rand -hex 16 y vive SOLO en factory/.env (gitignored).
+     NUNCA hardcodear la key en la UI: la consola la pide al usuario y la
+     guarda en memoria de sesion del navegador (variable JS, no embebida).
+2. Rutas (factory/api/routes/): projects (CRUD + requerimientos),
+   workspaces (crear via template_export+engine+bridge, listar, estado),
+   agents (catalogo desde registry/agents_catalog.yaml y profiles/),
+   releases (listar, crear via release_manager), deployments (generar;
+   levantar SOLO si G14 aprobado), approvals (aprobar/rechazar → escribe
+   approval.json + audit). Toda accion relevante registra evento en audit.
+3. factory/core/release_manager.py: empaqueta workspace → tar.gz +
+   manifest.yaml + SHA256SUMS + quality_gates_report.json + approval.json
+   en factory/releases/<id>/vX.Y.Z/ (inmutable: si la version existe, error).
+4. factory/core/project_manager.py y workspace_manager.py: logica sobre
+   projects/projects.json y workspaces/ (crear, estado, cerrar con backup).
+5. factory/docker-compose.factory.yml:
+   - Servicio unico factory-api, puerto 9000:8000 interno, mem_limit 512m,
+     cpus 0.5, volumenes hot-reload (./factory/api:/app/api,
+     ./factory/ui:/app/ui, ./factory:/app/factory segun convenga),
+     restart unless-stopped, nombre de proyecto factory.
+6. factory/ui/index.html (MVP v0.1, mismo estilo oscuro del base):
+   proyectos (lista/crear), registrar requerimiento, estado de workspaces,
+   ver reporte de gates, botones aprobar/rechazar, vista de auditoria de
+   fabrica. Sin frameworks; fetch a la API con la key ingresada por el
+   usuario.
+7. LEVANTAR Y VALIDAR:
+   - docker compose -f factory/docker-compose.factory.yml config -q
+   - Verificar puerto 9000 libre (ss -tlnp).
+   - up -d; curl http://localhost:9000/health; UI carga (200); auth
+     rechaza sin key y acepta con key; audit registra los eventos.
+   - Verificar base intacto: curl http://localhost:8000/health.
+   - docker stats --no-stream comparado con backups/pre_factory_*/baseline.txt.
+Validacion final: git status --short, git diff --stat, resumen. NO COMMIT
+sin mi aprobacion. La exposicion del puerto 9000 requiere mi aprobacion
+explicita (approval_policy): registrala en approval.json de fabrica.
+
+──────────────────────────────────────────────
+BLOQUE F5 — PROYECTO PILOTO LAB QC (SIN DEPLOY)
+──────────────────────────────────────────────
+F5 — GMP AI FACTORY: PILOTO lab_qc_project HASTA RELEASE v0.1.0
+
+Prerrequisito: F4 commiteada y consola operativa. Usa skills gmp-factory,
+gmp-agent-design y gmp-quality-gates.
+
+Requerimiento (Capa 9): "Crear solucion GMP para laboratorio QC enfocada en
+LIMS, HPLC, OOS, Data Integrity y CAPA."
+
+1. Registrar proyecto lab_qc_project (via API o project_manager) con el
+   requerimiento textual. Audit: project_created + requirement_registered.
+2. ANALISIS DE ALCANCE (Capa 8) con el arbol de decision del skill
+   gmp-agent-design:
+   - Heredar: qa, integrity, capa.
+   - Perfiles propuestos: qa_oos_profile, integrity_lims_profile.
+   - Evaluar agente nuevo hplc_data_review_agent: justifica con el criterio
+     (dominio/corpus/reglas/salida) y PRESENTAME la decision. Espera mi
+     aprobacion de diseño antes de continuar.
+3. Crear workspace: template_export base-v1.0.0 + template_engine con
+   manifest real (puertos asignados por port_registry) + task package del
+   bridge.
+4. GENERACION dentro del workspace UNICAMENTE:
+   - Adaptar app custom: solo agentes heredados + perfiles aprobados
+     (retirar agentes no incluidos del routing y la UI).
+   - System prompts de perfiles (delta sobre el base, idioma dinamico).
+   - Corpus custom: colecciones del manifest con >= 60 chunks cada una,
+     citando fuente regulatoria (LIMS/OOS: FDA OOS Guidance 2022, 21 CFR
+     211.160/165/194; HPLC/DI: FDA DI 2018, ALCOA+, USP <1058>; CAPA:
+     21 CFR 820.100). Si no tienes el texto fuente, genera la estructura
+     de ingesta y marca los documentos que YO debo aportar — no inventes
+     contenido regulatorio textual.
+   - Baterias de prueba: >=3 preguntas por perfil con criterios de
+     aceptacion; baterias heredadas de qa/integrity/capa.
+   - manifest.yaml completo, docker-compose generado, .env.example.
+5. Levantar la solucion TEMPORALMENTE en sus puertos para gates de runtime,
+   ejecutar quality_gate_runner (G01-G13; G14 quedara pendiente), detener
+   la solucion (compose stop) al terminar.
+6. Mostrar diff completo (git -C workspace diff y diff --stat) y el
+   quality_gates_report.json.
+7. Tras MI aprobacion del release: release_manager → v0.1.0 con todos los
+   artefactos (estado pending_approval→approved segun mi decision en la
+   consola o approval.json).
+NO DEPLOY en esta fase. NO COMMIT sin mi aprobacion. Base y fabrica
+intactos fuera del workspace.
+
+──────────────────────────────────────────────
+BLOQUE F6 — PRIMER DEPLOYMENT (DOCKER 3)
+──────────────────────────────────────────────
+F6 — GMP AI FACTORY: DEPLOYMENT lab_qc_project
+
+Prerrequisito: release v0.1.0 aprobado (approval.json status=approved).
+Usa skills gmp-factory y gmp-quality-gates.
+
+1. Verificaciones previas (todas obligatorias, mostrar evidencia):
+   - approval.json aprobado (G14) y SHA256SUMS del tar.gz verificado.
+   - Soluciones custom activas < 2 (docker ps).
+   - Puertos del manifest libres (ss -tlnp) y consistentes con registry.
+   - free -m y df -h con margen razonable.
+2. Desempaquetar release → factory/deployments/lab_qc_project/.
+3. Generar .env real: GMP_API_KEY nueva con openssl rand -hex 16 (no la
+   imprimas completa), OLLAMA_BASE_URL al Ollama central.
+4. docker compose up -d del proyecto custom.
+5. Re-ejecutar gates de runtime G03-G10 en caliente + 3 consultas smoke
+   (una por agente principal del piloto) verificando respuesta y routing.
+6. Verificar convivencia: health del base (8000), de la fabrica (9000) y
+   del custom (8101); docker stats --no-stream vs baseline F0.
+7. Registrar deployment_created y deployment_started en audit de fabrica.
+8. Resumen final con URLs, puertos, consumo y estado de los 3 stacks.
+Tras mi revision decidire: dejarla corriendo o docker compose stop.
+NO COMMIT sin mi aprobacion. No tocar base, aria-*, hotelbot-*.
+
+================================================================================
+FIN — Ejecutar en orden estricto F0 → F6, una fase por sesion, con
+aprobacion y commit entre fases segun la matriz del documento 04.
+================================================================================

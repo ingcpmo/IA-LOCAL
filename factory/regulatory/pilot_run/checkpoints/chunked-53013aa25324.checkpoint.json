@@ -1,0 +1,63 @@
+{
+  "run_id": "chunked-53013aa25324",
+  "document_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
+  "agent_id": "fda_cgmp_211_agent",
+  "documento": "RW-0011",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/MCCPDC EMS Control Block Narrative revB.pdf",
+  "total_chunks": 1,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-53013aa25324",
+      "task_id": "task-acac76e0c089",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 2516,
+      "started_at": "2026-08-08T03:43:46.897643+00:00",
+      "finished_at": "2026-08-08T03:53:16.969866+00:00",
+      "wall_clock_ms": 570072.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1536,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_211.68(b)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona evidencia de un mecanismo tecnico que restrinja quién puede modificar registros maestros de producción y control, ni detalles sobre la identificación del personal autorizado.\",\n            \"recomendacion\": \"Incluir un mecanismo tecnico para controlar los cambios en registros maestros de producción y control, así como una identificación clara del personal autorizado.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Control de cambios: mecanismo tecnico (no solo politica) que restringe quien puede modificar registros maestros de produccion y control.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo tecnico para controlar los cambios en registros maestros de producción y control.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Control de cambios: identificacion de que la modificacion la realizo personal con autorizacion vigente para ese registro.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna identificación del personal autorizado para realizar modificaciones en registros maestros de producción y control.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Exactitud I/O: mecanismo descrito de verificacion de exactitud de datos de entrada/salida del sistema.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo para verificar la exactitud de los datos de entrada/salida del sistema.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Exactitud I/O: el grado o frecuencia de esa verificacion esta justificado por la complejidad/confiabilidad del sistema (no declarado sin criterio).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna justificación para el grado o frecuencia de verificación de la exactitud de los datos de entrada/salida del sistema.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Respaldo: mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo de respaldo para los datos ingresados en el sistema.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 6,\n                    \"criterion_text\": \"Respaldo: proteccion descrita contra alteracion, borrado accidental o perdida del respaldo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna protección contra la alteración, el borrado accidental o la pérdida del respaldo de los datos.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 7,\n                    \"criterion_text\": \"Respaldo (caso excepcional): si algun dato se elimina por diseno del proceso automatizado, registro escrito del programa + datos de validacion que lo sustenten, en lugar del respaldo.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún caso excepcional donde un dato sea eliminado por diseño del proceso automatizado y cómo se manejaría este escenario.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "_by_req_candidates": []
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.0.0",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true
+  },
+  "verified_records_by_req": {
+    "21_CFR_211.68(b)": [
+      {
+        "record_id": "vrec-task-acac76e0c089-21_CFR_211.68(b)",
+        "llm_output": {
+          "requirement_id": "21_CFR_211.68(b)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

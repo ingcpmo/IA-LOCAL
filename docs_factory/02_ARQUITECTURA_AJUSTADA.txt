@@ -1,0 +1,287 @@
+================================================================================
+GMP AI FACTORY — ARQUITECTURA AJUSTADA (DISEÑO FINAL CONSOLIDADO)
+Documento: 02_ARQUITECTURA_AJUSTADA.txt
+Incluye los ajustes M1-M13 del documento 01. Este es el diseño a implementar.
+================================================================================
+
+1. VISION DOCKER (sin cambios de objetivo)
+--------------------------------------------------------------------------------
+DOCKER 1 — GMP AI COPILOT BASE (capas 1-6)        puerto 8000   [NO TOCAR]
+  gmp-api / gmp-postgres / gmp-redis / aria-ollama (compartido)
+
+DOCKER 2 — GMP AI FACTORY (capas 7-9)             puerto 9000
+  factory-api (FastAPI + UI estatica)  ← MVP sin postgres/redis propios
+  Estado en archivos: projects.json + manifests + audit JSONL hash-chain
+
+DOCKER 3..N — SOLUCIONES CUSTOM                   puertos 8101+ / 5433+ / 6380+
+  <cliente>_api / <cliente>_postgres / <cliente>_redis / chroma propio
+  OLLAMA_BASE_URL via extra_hosts host-gateway → aria-ollama central
+
+REGLA CENTRAL (sin cambios):
+Requerimiento → consola → analisis Capa 8 → propuesta → workspace aislado →
+generacion → pruebas → diff → APROBACION HUMANA → release inmutable →
+deployment Docker independiente.
+
+2. ESTRUCTURA FISICA FINAL
+--------------------------------------------------------------------------------
+/home/ing_cpmo
+├── app/                          # producto base — INTACTO
+├── docker-compose.yml            # base — INTACTO
+├── .claude/
+│   └── skills/                  # skills de Claude Code (ver doc 03)
+│       ├── gmp-factory/SKILL.md
+│       ├── gmp-agent-design/SKILL.md
+│       └── gmp-quality-gates/SKILL.md
+│
+└── factory/
+    ├── README.md
+    ├── .gitignore                # workspaces/* deployments/*/.env logs/* *.tar.gz
+    ├── docker-compose.factory.yml
+    │
+    ├── ui/
+    │   └── index.html            # consola SPA (mismo patron del base)
+    │
+    ├── api/
+    │   ├── main.py               # FastAPI puerto 9000, sirve ui/
+    │   └── routes/
+    │       ├── projects.py       # CRUD proyectos + requerimientos
+    │       ├── workspaces.py     # crear/listar/estado workspaces
+    │       ├── agents.py         # catalogo agentes/perfiles
+    │       ├── releases.py       # listar/crear releases
+    │       ├── deployments.py    # generar/levantar deployments (con gate)
+    │       └── approvals.py      # NUEVO: aprobar/rechazar (Capa 9)
+    │
+    ├── core/
+    │   ├── project_manager.py
+    │   ├── workspace_manager.py
+    │   ├── template_engine.py    # rellena *.template con manifest
+    │   ├── template_export.sh    # git archive <tag-base> → workspace
+    │   ├── port_registry.py      # asigna/valida puertos (registry/ports.yaml)
+    │   ├── docker_generator.py
+    │   ├── quality_gate_runner.py# ejecuta los 14 gates → report JSON
+    │   ├── release_manager.py    # tar.gz + SHA256SUMS + approval.json
+    │   └── audit_writer.py       # JSONL hash-chain (patron del base)
+    │
+    ├── agents/
+    │   ├── layer8_code_agent.py  # orquesta el ciclo de la Capa 8
+    │   ├── agent_designer.py     # decide existente/perfil/nuevo
+    │   ├── prompt_designer.py
+    │   ├── rag_designer.py
+    │   └── test_designer.py
+    │
+    ├── claude/
+    │   ├── claude_bridge.py      # genera task packages desde los YAML
+    │   ├── claude_policy.yaml
+    │   ├── claude_task_template.md
+    │   ├── claude_md_template.md       # NUEVO: plantilla de CLAUDE.md
+    │   ├── settings_template.json      # NUEVO: plantilla .claude/settings.json
+    │   └── README.md
+    │
+    ├── templates/                # SOLO archivos parametrizables (no codigo)
+    │   ├── docker-compose.template.yml
+    │   ├── Dockerfile.template
+    │   ├── env.example.template
+    │   ├── manifest.template.yaml
+    │   └── gitignore.template
+    │
+    ├── profiles/
+    │   ├── qa_profiles.yaml
+    │   ├── integrity_profiles.yaml
+    │   ├── csv_profiles.yaml
+    │   ├── automation_profiles.yaml
+    │   ├── audit_profiles.yaml
+    │   └── capa_profiles.yaml
+    │
+    ├── registry/                 # NUEVO
+    │   ├── ports.yaml            # fuente unica de verdad de puertos
+    │   └── agents_catalog.yaml   # agentes base + perfiles + customs creados
+    │
+    ├── projects/projects.json
+    ├── workspaces/<project_id>/      # NO versionado
+    ├── releases/<project_id>/vX.Y.Z/ # inmutable
+    ├── deployments/<project_id>/     # NO versionado (salvo manifest)
+    │
+    ├── policies/
+    │   ├── code_agent_policy.yaml
+    │   ├── docker_policy.yaml
+    │   ├── agent_creation_policy.yaml
+    │   ├── approval_policy.yaml
+    │   ├── security_policy.yaml
+    │   └── resource_policy.yaml  # NUEVO (M4)
+    │
+    ├── audit/factory_audit.jsonl
+    └── logs/
+
+3. REGISTRO DE PUERTOS (registry/ports.yaml)
+--------------------------------------------------------------------------------
+reserved:
+  8000:  gmp-api            # base, NO TOCAR
+  9000:  factory-api
+  11434: aria-ollama        # compartido, NO TOCAR
+  5432:  gmp-postgres       # base, NO TOCAR
+  6379:  gmp-redis          # base, NO TOCAR
+ranges:
+  custom_api:      {start: 8101, end: 8199}
+  custom_postgres: {start: 5433, end: 5499}
+  custom_redis:    {start: 6380, end: 6449}
+allocations: {}              # la fabrica escribe aqui cada asignacion
+rule: validar con `ss -tlnp` antes de asignar y antes de cada deploy.
+
+4. CONEXION A OLLAMA COMPARTIDO (M3)
+--------------------------------------------------------------------------------
+En docker-compose.template.yml de cada solucion custom:
+  services:
+    api:
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
+      environment:
+        - OLLAMA_BASE_URL=http://host.docker.internal:11434
+PROHIBIDO modificar o conectar redes al contenedor aria-ollama.
+La fabrica (factory-api) NO necesita Ollama en su MVP.
+
+5. LIMITES DE RECURSOS (resource_policy.yaml — M4)
+--------------------------------------------------------------------------------
+max_active_custom_solutions: 2
+limits_per_custom_solution:
+  api:      {mem_limit: 768m, cpus: "1.0"}
+  postgres: {mem_limit: 512m, cpus: "0.5"}
+  redis:    {mem_limit: 128m, cpus: "0.25"}
+factory_api: {mem_limit: 512m, cpus: "0.5"}
+rules:
+  - soluciones no demostrandose deben quedar "docker compose stop"
+  - gate de deploy incluye docker stats + free -m + df -h
+  - latencia esperada se multiplica por soluciones activas (Ollama CPU unico)
+
+6. MANIFEST DE SOLUCION (ajustes sobre el propuesto)
+--------------------------------------------------------------------------------
+Se conserva la estructura sugerida en el prompt original, con estos campos
+adicionales/ajustados:
+
+source:
+  base_product_tag: "base-v1.0.0"        # NUEVO: tag, no solo commit
+  base_product_commit: "<hash>"           # llenado automatico
+  factory_commit: "<hash>"
+  generated_by: "factory_layer_8_claude_code_agent"
+  generation_mode: "manual_assisted"      # NUEVO: manual_assisted | headless
+
+deployment:
+  docker_project_name: cliente_a_gmp     # snake_case obligatorio
+  api_port: 8101                          # asignado por port_registry
+  postgres_port: 5433
+  redis_port: 6380
+  use_shared_ollama: true
+  ollama_url: "http://host.docker.internal:11434"
+  resource_limits_applied: true           # NUEVO (gate)
+
+security:                                 # NUEVO bloque
+  api_key_in_env_only: true
+  api_key_not_in_frontend: true           # validado por gate
+  env_gitignored: true
+
+quality_gates:  (se conservan los propuestos) + 
+  max_active_solutions_respected: true
+  ports_validated_in_registry: true
+
+7. POLITICAS — CONTENIDO MINIMO (se conservan las 5 + 1 nueva)
+--------------------------------------------------------------------------------
+code_agent_policy.yaml
+  read_allowed:  [factory/**, app/** (solo lectura), .claude/skills/**]
+  write_allowed: [factory/workspaces/<project_id>/** UNICAMENTE]
+  forbidden:     [app/, docker-compose.yml, Dockerfile, .env, data/chroma,
+                  data/audit_logs, backups/, contenedores aria-*, hotelbot-*]
+  requires_human_approval: [commit, release, deploy, crear agente nuevo,
+                            exponer puerto, borrar workspace]
+  mandatory_validations: [quality_gate_runner antes de proponer release]
+  enforcement: claude_bridge genera CLAUDE.md + .claude/settings.json
+               (deny rules) desde esta politica. (M6)
+
+docker_policy.yaml
+  ports: segun registry/ports.yaml; container_names: <project_id>_<servicio>;
+  red propia por proyecto: <project_id>_net; volumenes propios por proyecto;
+  ollama: compartido via host-gateway; validacion: docker compose config
+  obligatoria antes de cualquier up.
+
+agent_creation_policy.yaml
+  (criterios del prompt original se conservan integros: existente si cabe
+  100%; perfil si base cubre 70-80%; nuevo si dominio nuevo/corpus propio/
+  reglas propias/salida distinta). Requisitos minimos de agente nuevo:
+  agent_id, nombre, descripcion, system_prompt, coleccion RAG >= 60 chunks,
+  reglas asociadas, >= 5 preguntas de prueba con criterios de aceptacion,
+  entrada en manifest y en registry/agents_catalog.yaml, evidencia.
+
+approval_policy.yaml
+  acciones que exigen Capa 9: aprobar diseño, crear agente nuevo, exponer
+  puerto, release, deploy. Formato: approval.json
+  {action, project_id, version, approved_by, approved_at, base_commit,
+   gates_report_hash}. Registro espejo en audit JSONL. Deploy bloqueado
+  sin approval.status=approved.
+
+security_policy.yaml
+  - API key por solucion: openssl rand -hex 16, solo en .env
+  - .env en .gitignore (gate verifica)
+  - gate: grep de la key en frontend custom debe dar vacio
+  - no exponer puertos fuera de rangos del registry
+  - no borrar workspaces sin backup tar.gz previo en backups/factory/
+  - deuda tecnica registrada: key hardcodeada en UI del base (corregir solo
+    en iteracion autorizada del base, NO desde la fabrica)
+
+resource_policy.yaml  → ver seccion 5.
+
+8. CLAUDE CODE BRIDGE — TASK PACKAGE (M6/M7)
+--------------------------------------------------------------------------------
+Por cada tarea, claude_bridge.py genera en el workspace:
+  workspace/<project_id>/
+    ├── CLAUDE.md            # contexto: arquitectura, restricciones duras,
+    │                          rutas permitidas/prohibidas, obligacion de
+    │                          diff y de no commitear sin aprobacion
+    ├── .claude/settings.json# permisos deny fuera del workspace y de
+    │                          comandos peligrosos
+    ├── task.md              # requerimiento + alcance + criterios de
+    │                          aceptacion + pruebas obligatorias + formato
+    │                          de reporte
+    └── (codigo exportado del tag base + archivos generados)
+
+MODO A (inicial): Cesar ejecuta  cd workspace && claude  y pega/refiere task.md.
+MODO B (futuro):  claude -p "$(cat task.md)" --output-format json, solo tras
+                  validar el Modo A en al menos 1 proyecto piloto completo.
+
+9. QUALITY GATES (14, formalizados como script)
+--------------------------------------------------------------------------------
+quality_gate_runner.py ejecuta y reporta JSON:
+ G01 docker compose config (sintaxis OK)
+ G02 puertos libres y registrados (port_registry + ss -tlnp)
+ G03 /health OK de la solucion
+ G04 /api/v1/knowledge/stats responde
+ G05 min_chunks_per_collection >= 60 por coleccion del manifest
+ G06 routing de agentes correcto (detect_agent con preguntas de prueba)
+ G07 preguntas base heredadas: respuestas validas
+ G08 preguntas nuevas por agente/perfil creado: criterios de aceptacion
+ G09 /api/v1/audit/verify OK (hash chain de la solucion)
+ G10 UI carga (HTTP 200 en /)
+ G11 API key NO presente en frontend (grep vacio)
+ G12 git status limpio en workspace (todo registrado)
+ G13 git diff presentado y archivado en el reporte
+ G14 approval.json presente y status=approved (solo para deploy)
+Reporte: factory/releases/<id>/vX.Y.Z/quality_gates_report.json
++ hash del reporte registrado en factory_audit.jsonl.
+
+10. RELEASES INMUTABLES (M8)
+--------------------------------------------------------------------------------
+factory/releases/<project_id>/vX.Y.Z/
+  <project_id>_vX.Y.Z.tar.gz + manifest.yaml + SHA256SUMS +
+  quality_gates_report.json + approval.json
+Nunca se edita un release publicado; correcciones → nueva version.
+
+11. FLUJO OPERATIVO (se conserva el de 12 pasos del prompt original)
+--------------------------------------------------------------------------------
+Identico al propuesto, con dos precisiones:
+  Paso 5: "Claude Code trabaja solo en workspace" se materializa con el
+          task package (CLAUDE.md + settings.json), no solo por politica.
+  Paso 12: el deploy ademas valida resource_policy (max 2 activas) y
+          registra deployment_started en audit de fabrica.
+
+================================================================================
+FIN — Este diseño conserva el objetivo original al 100% y solo ajusta
+mecanismos de implementacion (plantilla por tag, recursos, enforcement,
+puertos, releases inmutables, seguridad de keys, auditoria de fabrica).
+================================================================================

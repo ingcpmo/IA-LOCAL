@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-08-12T21:47:45+00:00",
+  "stop_reason": "CORPUS_COMPLETE",
+  "total_calls_made": 3,
+  "total_wall_seconds": 1657.2,
+  "units": [
+    {
+      "document_id": "RW-0005",
+      "agent_id": "fda_part11_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-2678358a06b3",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 887.408152960008,
+      "error": null
+    },
+    {
+      "document_id": "RW-0005",
+      "agent_id": "fda_part11_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-e6994ea8e953",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 392.6682359690021,
+      "error": null
+    },
+    {
+      "document_id": "RW-0005",
+      "agent_id": "fda_part11_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-d9b5bc77c9db",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 377.1304565809987,
+      "error": null
+    }
+  ]
+}

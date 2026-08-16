@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-08-15T00:53:41+00:00",
+  "stop_reason": "CORPUS_COMPLETE",
+  "total_calls_made": 2,
+  "total_wall_seconds": 1130.0,
+  "units": [
+    {
+      "document_id": "RW-0011",
+      "agent_id": "alcoa_plus_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-5a439f3fde11",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 583.3790227160007,
+      "error": null
+    },
+    {
+      "document_id": "RW-0011",
+      "agent_id": "fda_cgmp_211_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-554544f4090f",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 546.6616146979995,
+      "error": null
+    }
+  ]
+}

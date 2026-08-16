@@ -1,0 +1,96 @@
+{
+  "generated_at": "2026-08-08T03:58:43+00:00",
+  "stop_reason": "CORPUS_COMPLETE",
+  "total_calls_made": 8,
+  "total_wall_seconds": 7778.1,
+  "units": [
+    {
+      "document_id": "RW-0005",
+      "agent_id": "fda_part11_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-853b1482c353",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 1477.9946347500008,
+      "error": null
+    },
+    {
+      "document_id": "RW-0005",
+      "agent_id": "fda_part11_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-04c431b29c1a",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 1,
+      "wall_seconds": 399.20119811900076,
+      "error": null
+    },
+    {
+      "document_id": "RW-0005",
+      "agent_id": "eu_annex11_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-c236cc9d107c",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 1260.2909759120012,
+      "error": null
+    },
+    {
+      "document_id": "RW-0005",
+      "agent_id": "eu_annex11_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-bf30eaa353aa",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 884.7564725949997,
+      "error": null
+    },
+    {
+      "document_id": "RW-0011",
+      "agent_id": "alcoa_plus_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-f12d568bba01",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 1596.0996347170003,
+      "error": null
+    },
+    {
+      "document_id": "RW-0005",
+      "agent_id": "alcoa_plus_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-7eb4086d32d4",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 1263.5847250419974,
+      "error": null
+    },
+    {
+      "document_id": "RW-0011",
+      "agent_id": "fda_cgmp_211_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-53013aa25324",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 570.3490195519989,
+      "error": null
+    },
+    {
+      "document_id": "RW-0012",
+      "agent_id": "fda_cgmp_211_agent",
+      "status": "COMPLETED",
+      "run_id": "chunked-2114e7f403b2",
+      "calls_made_this_invocation": 1,
+      "resumed_chunk_count": 0,
+      "technical_execution_failures": 0,
+      "wall_seconds": 325.84455340500426,
+      "error": null
+    }
+  ]
+}
