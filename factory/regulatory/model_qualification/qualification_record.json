@@ -1,9 +1,9 @@
 {
   "status": "QUALIFIED",
-  "evaluated_at": "2026-08-15T22:41:54+00:00",
+  "evaluated_at": "2026-08-17T18:27:24+00:00",
   "fingerprint": {
-    "model_name": "qwen2.5:14b-instruct-q4_K_M",
-    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "model_name": "qwen2.5:7b-instruct-q4_K_M",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
     "prompt_versions": {
       "alcoa_prompts.yaml": "1.1.1",
       "annex11_prompts.yaml": "1.1.1",
@@ -27,8 +27,8 @@
     }
   },
   "previous_fingerprint": {
-    "model_name": "qwen2.5:14b-instruct-q4_K_M",
-    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "model_name": "qwen2.5:7b-instruct-q4_K_M",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
     "prompt_versions": {
       "alcoa_prompts.yaml": "1.1.1",
       "annex11_prompts.yaml": "1.1.1",
@@ -126,27 +126,27 @@
     },
     {
       "name": "latency_p50",
-      "value": 471.23881098749996,
+      "value": 292.64366801599954,
       "threshold": null,
       "measured": true,
       "passed": true,
-      "basis": "corrida real de calibracion 'chunked-217229ce88fe' (2 llamadas, 2026-08-15T22:02:23+00:00)"
+      "basis": "corrida real de calibracion 'chunked-abb0e483fcbd' (2 llamadas, 2026-08-17T18:26:43+00:00)"
     },
     {
       "name": "latency_p95",
-      "value": 650.2282895758499,
+      "value": 345.63499812979944,
       "threshold": null,
       "measured": true,
       "passed": true,
-      "basis": "corrida real de calibracion 'chunked-217229ce88fe' (2 llamadas, 2026-08-15T22:02:23+00:00)"
+      "basis": "corrida real de calibracion 'chunked-abb0e483fcbd' (2 llamadas, 2026-08-17T18:26:43+00:00)"
     },
     {
       "name": "tokens_per_task",
-      "value": 2899.5,
+      "value": 3170.5,
       "threshold": null,
       "measured": true,
       "passed": true,
-      "basis": "corrida real de calibracion 'chunked-217229ce88fe' (2 llamadas, 2026-08-15T22:02:23+00:00)"
+      "basis": "corrida real de calibracion 'chunked-abb0e483fcbd' (2 llamadas, 2026-08-17T18:26:43+00:00)"
     },
     {
       "name": "retry_rate",
@@ -154,7 +154,7 @@
       "threshold": null,
       "measured": true,
       "passed": true,
-      "basis": "corrida real de calibracion 'chunked-217229ce88fe' (2 llamadas, 2026-08-15T22:02:23+00:00)"
+      "basis": "corrida real de calibracion 'chunked-abb0e483fcbd' (2 llamadas, 2026-08-17T18:26:43+00:00)"
     }
   ],
   "golden_dataset": {

@@ -1,0 +1,315 @@
+{
+  "run_id": "chunked-194352714f4d",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "eu_annex11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 3,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-194352714f4d",
+      "task_id": "task-49925d201eb2",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 4839,
+      "started_at": "2026-08-17T18:35:52.347956+00:00",
+      "finished_at": "2026-08-17T18:36:29.505623+00:00",
+      "wall_clock_ms": 37157.6,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"ANNEX11_17\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona detalles sobre el proceso de archivo, la verificación documentada de accesibilidad, legibilidad e integridad de los datos archivados, ni la frecuencia definida según el riesgo y procedimiento.\",\n            \"recomendacion\": \"Incluir un plan detallado para el archivo y retención de registros en el documento de ingeniería.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Proceso de archivo descrito.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún proceso de archivo en el documento proporcionado.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Verificación documentada de accesibilidad, legibilidad e integridad de los datos archivados.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna verificación documentada en el documento proporcionado.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Frecuencia de verificacion definida segun riesgo y procedimiento, cuando el riesgo del sistema archivado lo justifique.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna frecuencia de verificación en el documento proporcionado.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Ante cambios relevantes al sistema: evidencia de que la capacidad de recuperacion de los datos archivados fue asegurada Y PROBADA (por cualquier medio real, no exclusivamente un plan de migracion).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna prueba o evidencia de recuperación en el documento proporcionado.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-194352714f4d/task-49925d201eb2.txt.gz",
+      "raw_response_full_sha256": "b719710113f04798804b8436e82804bf01946e5f47e6d0a4ceff33d49c455370",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ANNEX11_17",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Proceso de archivo descrito.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún proceso de archivo en el documento proporcionado.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Verificación documentada de accesibilidad, legibilidad e integridad de los datos archivados.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna verificación documentada en el documento proporcionado.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Frecuencia de verificacion definida segun riesgo y procedimiento, cuando el riesgo del sistema archivado lo justifique.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna frecuencia de verificación en el documento proporcionado.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Ante cambios relevantes al sistema: evidencia de que la capacidad de recuperacion de los datos archivados fue asegurada Y PROBADA (por cualquier medio real, no exclusivamente un plan de migracion).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna prueba o evidencia de recuperación en el documento proporcionado.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "System-Level Software Requirements \nF05.00: SCADA Process Visualization \nF07.00: Alarms, Warning Messages and Error reporting \nF10.00: Logical Security \nF11.00: Databases and Historical Logging \nF12.00: Audit Trail \nF13.00: Long-Term Archiving and Data Retrieval \nF14.00: Backup and recovery \nF15.00: Frequency of data point collection \nF16.00: PLC Interfaces (PCS-CP 01 and other Vendor Systems) \nF17.00: Non-PLC Interfaces \nF19.00: Availability \nF21.00: Maintainability \nF23.00: System Performance  Traceability URS - Require ments to FS-Functions \nNone.-* N/A *, 10 \nUR3.1.1 The system shall measure the critical process paramete rs for the process, which incl ude flow, humidity, dew point, pres sure, \nand temperature.-F16.00, 49 \nUR3.2.1 Mode of operations- Re ady for WFI Sampling, WFI Samp ling, Sanitization.-F02.02, 20 \nUR3.2.2 Failure/Recovery-F14.00, 47 \nUR3.2.2 Failure/Recovery-F19.00, 51 \nUR3.2.3 The Equipment shall have critical alarms and warnings as  listed in (URS) Table 1- List of Critical-to-Quality Alarms.-\nF07.01, 37 \nUR3.2.4 Capacity and speed of data acquisition from MCCPDC-F15.00, 47 \nUR3.2.5 System must implement electronic signatures.-F02.01, 19 \nUR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated.  The record shall contain the \nfollowing fields-F12.00, 45 \nUR3.3.2 Every time a critical alarm condition occurs an audit tr ail record shall be generated with the following fields-F12.00,  45 \nUR3.3.3 Audit trail records shall be archived.-F12.00, 46 \nUR3.3.4 Frequency of data point collection-F15.00, 47 \nUR3.3.5 Hardcopy/electronic data colle ction requirements-F01.03, 13, 14 \nUR3.3.6 Data retention time  on the system-F11.00, 45 \nUR3.3.7 Data archiving requirements and data storage media.-F13.00, 47 \nUR3.4.1 The system shall implement the security and access cont rol requirements of 21 CFR Part 11 requirements for computerized  \nsystems, as they are for this system-F10.00, 40 \nUR3.5.1 Language requirements for operator and non-operator dialogs boxes (administrators) .  Information will be displayed in \nEnglish.-F02.01, 20 \nUR3.5.2 [MCCPDC 1.4.2.4] - The SI shall imp lement thin client archit ecture for the SCADA/HMI to allow process control in a \nsustainable and scalable platform and to seamlessly integrate sk ids PLC’s and OIT’s while providing features, tools, and methods \nof a-F01.01, 13, 49 \nUR3.5.3 [MCCPDC 2.1.3.2] - The system shall have the ability to wirelessly communicate with tablet PCs for HMI display and \ncontrol.-F01.04, 14 \nUR3.6.1 Stick-Build PCS I/O shall be directly wired to the PCS miscellaneous PLC Panel to facili tate control and GMP monitoring .  \n(reference document- 63FFVL02-J-IO-0001)-F01.06, 15 \nUR3.6.2 [MCCPDC 1.4.2.7] - The Environmental Monitoring System  (EMS) instruments shall be part of the project stick-build \ninstrumentation and shall be directly wired to the PCS Miscella neous PLC Panel to facilitate GMP monitoring. No independent \nEMS wille-F01.06, 15 \nUR3.6.3 [MCCPDC 3.3.1] - The system shall interface with an OEM ve ndor supplied equipment named WFI Generation, Storage, \nand Distribution system.  The OEM vendor on-skid control system  platform is Allen-Bradley CompactLogix with 1769 Remote \nI/O.-F16.00, 49 \nUR3.6.4 [MCCPDC 3.3.1] - The system shall interface with an OEM ve ndor supplied equipment named Filler System.  The OEM \nvendor on-skid control system platform is Al len-Bradley GuardLogix (1756-L72S).-F16.00, 49 \nUR3.6.5 [MCCPDC 3.3.1] - The system shall interface with an OEM vendor supplied equi pment named Vial/Syringe Labeler.  The \nOEM vendor on-skid control system platform is A llen-Bradley CompactLogix (5380 series).-F16.00, 49 \nUR3.6.6 [MCCPDC 3.3.1] - The system shall interface with  an OEM vendor supplied equi pment named Waste Lift and \nNeutralization System.  The OE M vendor on-skid control system platform is  Allen-Bradley MicroLogix or CompactLogix.-\nF16.00, 49 \nUR3.6.7 [MCCPDC 3.3.1] - The system shall interface with an OEM vendor supplied eq uipment named Washer/Sterilizer with Clean \nSteam Generator.  The OEM vendor on-skid control system platform is Fedegari THEMA4 & Siemens S7-1512 PLC, with \nNanoBox IPC227E, an-F16.00, 49 \nUR3.6.8 [MCCPDC 3.3.1] - The system shall interface with an OEM ve ndor supplied equipment named Serialization.  The OEM \nvendor on-skid control system platfo rm is Beckhoff IPC (Windows 10 w ith Bosch Rexroth HMI).-F16.00, 49 \nUR4.1.1 [MCCPDC 3.2.3] - The physical servers shall be two (2) redundant Rockwell VersaVirtu al™ Appliances suitable for \ninstallation in the Data Center racks provided by VDS (Voice-Data-Security). System provided is one system that has two \nredundant server-F01.01, 13 \nUR4.10.1 [URS-PCS-HR-022] The field inputs and outputs to the PCS Miscellaneous PL C shall be hardwired I/O-F01.06, 15 ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-194352714f4d",
+      "task_id": "task-fcc69b446281",
+      "chunk_index": 1,
+      "page_start": 2,
+      "page_end": 2,
+      "has_overlap_prefix": true,
+      "text_chars": 4911,
+      "started_at": "2026-08-17T18:36:29.507464+00:00",
+      "finished_at": "2026-08-17T18:37:09.096964+00:00",
+      "wall_clock_ms": 39589.5,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"ANNEX11_17\",\n      \"estado\": \"cumple_parcialmente\",\n      \"evidencia_exacta\": \"F11.00: Databases and Historical Logging\\nThis function implements the following user requirement(s)\\nUR3.3.6 Data retention time on the system\\n1. The system shall have provision for retaining 1 year of historical data locally before it is archived in an alternate location for safe keeping.\",\n      \"brecha\": \"No se especifica la frecuencia de verificación ni el proceso de archivo, y no hay evidencia de pruebas de recuperación de datos después de cambios relevantes al sistema.\",\n      \"recomendacion\": \"Documentar el proceso de archivo y definir la frecuencia de verificación según el riesgo del sistema. Realizar pruebas de recuperación de datos después de cambios relevantes al sistema.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Proceso de archivo descrito.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona un proceso de archivo en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Verificación documentada de accesibilidad, legibilidad e integridad de los datos archivados.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona ninguna verificación documentada en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Frecuencia de verificacion definida segun riesgo y procedimiento, cuando el riesgo del sistema archivado lo justifique.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona la frecuencia de verificación en el documento.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 4,\n          \"criterion_text\": \"Ante cambios relevantes al sistema: evidencia de que la capacidad de recuperacion de los datos archivados fue asegurada Y PROBADA (por cualquier medio real, no exclusivamente un plan de migracion).\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se menciona pruebas de recuperación de datos después de cambios relevantes al sistema en el documento.\",\n          \"limitations\": \"\"\n        }\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-194352714f4d/task-fcc69b446281.txt.gz",
+      "raw_response_full_sha256": "2e343b008868bbd10528aa603320730bea5a113ce1b49e621419db03b9a2e427",
+      "_by_req_candidates": [
+        {
+          "req_id": "ANNEX11_17",
+          "candidate": {
+            "chunk_index": 1,
+            "page_start": 2,
+            "page_end": 2,
+            "estado": "cumple_parcialmente",
+            "evidencia_exacta": "F11.00: Databases and Historical Logging\nThis function implements the following user requirement(s)\nUR3.3.6 Data retention time on the system\n1. The system shall have provision for retaining 1 year of historical data locally before it is archived in an alternate location for safe keeping.",
+            "brecha": "No se especifica la frecuencia de verificación ni el proceso de archivo, y no hay evidencia de pruebas de recuperación de datos después de cambios relevantes al sistema.",
+            "recomendacion": "Documentar el proceso de archivo y definir la frecuencia de verificación según el riesgo del sistema. Realizar pruebas de recuperación de datos después de cambios relevantes al sistema.",
+            "anchored": false,
+            "has_evidence": true,
+            "headline_source": "model_headline",
+            "d_sufficiency": "NOT_ASSESSABLE",
+            "d_reason": "contrato de criterion_assessments violado: 1 problema(s)",
+            "d_detail": {
+              "contract_violations": [
+                "criterion_text no coincide EXACTO con el criterio real en la posicion 2: 'Verificación documentada de accesibilidad, legibilidad e integridad de los datos archivados.'"
+              ]
+            },
+            "substantive_evidence_accepted": false,
+            "operational_result": "EVALUATION_INCOMPLETE",
+            "a_anchor": "PASS",
+            "a_match_type": "normalized",
+            "b_source": "PASS",
+            "c_semantic": "PASS",
+            "c_flags": []
+          }
+        }
+      ],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ANNEX11_17",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Proceso de archivo descrito.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona un proceso de archivo en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Verificación documentada de accesibilidad, legibilidad e integridad de los datos archivados.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna verificación documentada en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Frecuencia de verificacion definida segun riesgo y procedimiento, cuando el riesgo del sistema archivado lo justifique.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la frecuencia de verificación en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Ante cambios relevantes al sistema: evidencia de que la capacidad de recuperacion de los datos archivados fue asegurada Y PROBADA (por cualquier medio real, no exclusivamente un plan de migracion).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona pruebas de recuperación de datos después de cambios relevantes al sistema en el documento.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "M \nvendor on-skid control system platfo rm is Beckhoff IPC (Windows 10 w ith Bosch Rexroth HMI).-F16.00, 49 \nUR4.1.1 [MCCPDC 3.2.3] - The physical servers shall be two (2) redundant Rockwell VersaVirtu al™ Appliances suitable for \ninstallation in the Data Center racks provided by VDS (Voice-Data-Security). System provided is one system that has two \nredundant server-F01.01, 13 \nUR4.10.1 [URS-PCS-HR-022] The field inputs and outputs to the PCS Miscellaneous PL C shall be hardwired I/O-F01.06, 15 ller B \nSerialization B \nVial Syringe Labeler  B \nParts Washer / Sterilizer  B \nClean Steam Generator B \nWaste Lift and Neutralization  B \nWater for Injection  B \nWeigh / Dispense B \nAlarm Details B \nAlarm Limit Modification (page 1 of 2) E \nAlarm Limit Modification2 (page 2 of 2) E \n3Table 4-2: Security Code Assignments for Graphic Displays \n \n2 Screen access is defined by the first code (least rest rictive), additional codes indicate objects on screen are \nsubject to additional restrictions \n  5 Data \nF11.00: Databases and Historical Logging \nThis function implements the following user requirement(s)  \nUR3.3.6 Data retention time on the system \n1. The system shall have provision for retaining 1 year of historical data locally before it is \narchived in an alternate location for safe keeping.   \nUR5.4.7 [URS-PCS-SR-041] The PLC system shall co mmunicate with a plant historian (collect and \ntransfer data).   \n F11.01: Process Historian \nThis system contains the Rockwell FactoryTalk Historian SE software and server which \nsatisfies the requirement to collect and transfer data. \n F11.02: Critical Data Records \nThis system maintains the following critical runtime data records: \n FactoryTalk View SE alarm log and activity log data are stored in the corresponding \ndatabases as analog, digital and string values.     \n Analog, digital and string device tags that are transferred from the PLC to the \nFactoryTalk View SE system. \nF12.00: Audit Trail \nThis function implements the following user requirement(s)  \nUR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated.  The \nrecord shall contain the following fields  \n1. Date and time stamps of the change \n2. Original threshold value \n3. Threshold value after change \n4. User ID of the individual who has changed the threshold value (performer) \n5. Full name of the individual who has changed the threshold value (performer) \n6. Meaning of signature (performer) \n7. User ID of the individual who has approved the change (approver) \n8. Full name of the individual who has approved the change (approver) \n9. Meaning of signature (approver).  \nUR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the \nfollowing fields  \n1. Alarm date and time stamps  \n2. Alarm tag 3. Alarm value \n4. Alarm description \n5. A similar record shall be generated whenever a critical alarm condition returns to normal \ncondition.  \n\f\n UR3.3.3 Audit trail records shall be archived.  \nUR3.3.3 Audit trail records shall be archived.   \nUR5.2.3 [URS-PCS-SR-009] Logins, logouts, and login attempts must be recorded in the Audit Trail.   \nUR5.4.2 [URS-PCS-SR-036] All manual interactions  (parameter changes, device mode changes, etc.) \nshall be sent to a database for event logging,  including user name, action and timestamp.   \n \nFactoryTalk View SE provides an electronic signature feature for capturing operator actions \nperformed in the production system.  This feature is  available in an E-Signature control, as well \nas the native button, numeric, and string input objects. \nWith the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View \nSE activity log is identified with: \n time and date the action occurred, \n name of the logged-in operator who performed the action, \n terminal the action was performed from, \n type of operation that was performed, and \n value of the changed item before and after the change. \nWhen electronic signatures are used, the operator’s username and full name are also included. \n The Critical Alarm Threshold Change Audit Trail entry will contain the following information: \n Date and time stamps of the change \n Original threshold value \n Threshold value after change \n User ID of the individual who has changed the threshold value (performer) \n Full name of the individual who has changed the threshold value (performer) \n Meaning of signature (performer) \n User ID of the individual who has approved the change (approver) \n Full name of the individual who has approved the change (approver) \n Meaning of signature (approver). \n \nThe Critical Alarm Audit Trail entry will contain the following information: \n Alarm date and time stamps \n Alarm tag \n Alarm value \n Alarm description \n A similar record shall be generated whenever a critical alarm condition returns to \nnormal condition. \n ",
+          "estado": "cumple_parcialmente"
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-194352714f4d",
+      "task_id": "task-9769ab2df166",
+      "chunk_index": 2,
+      "page_start": 3,
+      "page_end": 3,
+      "has_overlap_prefix": true,
+      "text_chars": 4466,
+      "started_at": "2026-08-17T18:37:09.133956+00:00",
+      "finished_at": "2026-08-17T18:38:07.332910+00:00",
+      "wall_clock_ms": 58198.9,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"ANNEX11_17\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no menciona un proceso de archivo ni verifica documentada la accesibilidad, legibilidad e integridad de los datos archivados. Además, no se especifica una frecuencia definida para las verificaciones según el riesgo y procedimiento.\",\n            \"recomendacion\": \"Incluir un proceso detallado de archivo y verificar documentadamente la accesibilidad, legibilidad e integridad de los datos archivados, junto con una definición de la frecuencia de verificación basada en el riesgo del sistema.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Proceso de archivo descrito.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona un proceso de archivo en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Verificación documentada de accesibilidad, legibilidad e integridad de los datos archivados.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna verificación documentada en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Frecuencia de verificacion definida segun riesgo y procedimiento, cuando el riesgo del sistema archivado lo justifique.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona una frecuencia de verificación en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Ante cambios relevantes al sistema: evidencia de que la capacidad de recuperacion de los datos archivados fue asegurada Y PROBADA (por cualquier medio real, no exclusivamente un plan de migracion).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna prueba de recuperación en el documento.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-194352714f4d/task-9769ab2df166.txt.gz",
+      "raw_response_full_sha256": "586e49c78a68267ad9b51ab9965cb2784c51f60d0d6a1214845e30c16768da30",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ANNEX11_17",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Proceso de archivo descrito.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona un proceso de archivo en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Verificación documentada de accesibilidad, legibilidad e integridad de los datos archivados.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna verificación documentada en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Frecuencia de verificacion definida segun riesgo y procedimiento, cuando el riesgo del sistema archivado lo justifique.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona una frecuencia de verificación en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Ante cambios relevantes al sistema: evidencia de que la capacidad de recuperacion de los datos archivados fue asegurada Y PROBADA (por cualquier medio real, no exclusivamente un plan de migracion).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna prueba de recuperación en el documento.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "shold value (performer) \n Meaning of signature (performer) \n User ID of the individual who has approved the change (approver) \n Full name of the individual who has approved the change (approver) \n Meaning of signature (approver). \n \nThe Critical Alarm Audit Trail entry will contain the following information: \n Alarm date and time stamps \n Alarm tag \n Alarm value \n Alarm description \n A similar record shall be generated whenever a critical alarm condition returns to \nnormal condition. \n shold value (performer) \n Meaning of signature (performer) \n User ID of the individual who has approved the change (approver) \n Full name of the individual who has approved the change (approver) \n Meaning of signature (approver). \n \nThe Critical Alarm Audit Trail entry will contain the following information: \n Alarm date and time stamps \n Alarm tag \n Alarm value \n Alarm description \n A similar record shall be generated whenever a critical alarm condition returns to \nnormal condition. \n  F13.00: Long-Term Archiv ing and Data Retrieval \nThis function implements the following user requirement(s)  \nUR3.3.7 Data archiving requirements and data storage media. \n1. MCCPDC will be responsible for archiving histor ical data per their internal procedures at \na location of their choosing.  Regular archiving is recommended.   \n \nMCCPDC will be responsible for long-term archiving of historical data per their internal procedures at a location of their choosing.  Regular archiving is recommended. \nF14.00: Backup and recovery \nThis function implements the following user requirement(s)  \nUR3.2.2 Failur e/Recovery \nPLC/HMI \nThe system shall have the means to reco ver from a hardware fault by means of \nreconfiguration and/or replacem ent and then reconfiguration. \nA list of hardware settings for each device shall be maintained as applicable. \nA list of software settings or suitable configurat ion file(s) for each device shall be maintained \nas applicable. \nProcess Automation Control Server System \nThe System shall have a means to recover from  software corruption or loss of configuration \ninformation by reprogramming or reloading of  the appropriate parameters. (Restore from \nbackup)   \n \n A back-up of the PLC program shall be maintained to allow for the restoration of the PLC in the \nevent it is needed.    A list of hardware settings for the SCADA and PCS Misc. PLC System components shall be maintained for the restoration of hardware devices.  A list of software settings or suitable configuration file(s) for each device shall be maintained for the restoration of software-related settings on devices. \n A back-up of the FactoryTalk View SE application shall be maintained to allow for the \nrestoration of the user application in the event it is needed. \nF15.00: Frequency of data point collection \nThis function implements the following user requirement(s)  \nUR3.2.4 Capacity and speed of data acquisition from MCCPDC  \n1. The system shall be capable of acquiring a data sample consis ting of a combination of at \nleast 100 data points of analog and/or digital every 15 seconds.   \nUR3.3.4 Frequency of data point collection \n1. The system shall be configur able allowing for differing logg ing rates depending on signal \ntype.  A table indicating the measurement ty pe and the logging frequency required can be \nfound in the Functional Specification.  (e.g., Temperature sampled every 60 sec.).   \n \nThis FactoryTalk Historian SE license permits up to 250 points to be logged based on a configurable \nrate.  One hundred points once every 15 seconds can be accommodated. \n This FactoryTalk Historian SE is capable of logging data at different rates based on its configuration.   \n\f\n The data shall be logged according to rates show in Table 5-1 below.  \nData Point Type Frequency of Logging Comment \nRelativity Humidity 60 seconds  \nPressure (compressed air system) 15 seconds  \nDifferential Pressure (Room) 60 seconds  \nDew Point 60 seconds  \nHydrocarbons 60 seconds  \nPump Speed (RPM) (soft I/O) 5 seconds  \nSurge Bag Weight (soft I/O) 15 seconds  \nVaporous Hydrogen Peroxide \nConcentration (VHP) 15 seconds  \nType not listed above 60 seconds  \nTable 5-1: Data point collection frequency by type \n \nThe customer representative has recently informed us of their interest in changing their requirement from time-based to event-based logging.  Once agreed upon and formalized, the response to that change will be reflected here as required. ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "ANNEX11_17"
+    ],
+    "retrieval_mode": "full_chunk"
+  },
+  "verified_records_by_req": {
+    "ANNEX11_17": [
+      {
+        "record_id": "vrec-task-49925d201eb2-ANNEX11_17",
+        "llm_output": {
+          "requirement_id": "ANNEX11_17",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-fcc69b446281-ANNEX11_17",
+        "llm_output": {
+          "requirement_id": "ANNEX11_17",
+          "chunk_observation": "observed",
+          "evidence_quote": "F11.00: Databases and Historical Logging\nThis function implements the following user requirement(s)\nUR3.3.6 Data retention time on the system\n1. The system shall have provision for retaining 1 year of historical data locally before it is archived in an alternate location for safe keeping.",
+          "evidence_page": 2,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-9769ab2df166-ANNEX11_17",
+        "llm_output": {
+          "requirement_id": "ANNEX11_17",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 3,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "authorization": "PILOT_EXECUTION-2026-022 + EMBED_EXECUTION-2026-004",
+  "build_log": [
+    {
+      "document_id": "RW-0005",
+      "agent_id": "fda_part11_agent",
+      "requirement_id": "21_CFR_11.10(e)",
+      "labels": "P1+N2",
+      "pool_size": 3,
+      "expected_calls": 3
+    },
+    {
+      "document_id": "RW-0005",
+      "agent_id": "fda_part11_agent",
+      "requirement_id": "21_CFR_11.10(g)",
+      "labels": "P2",
+      "pool_size": 3,
+      "expected_calls": 3
+    },
+    {
+      "document_id": "RW-0005",
+      "agent_id": "eu_annex11_agent",
+      "requirement_id": "ANNEX11_17",
+      "labels": "P3",
+      "pool_size": 3,
+      "expected_calls": 3
+    },
+    {
+      "document_id": "RW-0011",
+      "agent_id": "alcoa_plus_agent",
+      "requirement_id": "ALCOA_ATTRIBUTABLE",
+      "labels": "P4",
+      "pool_size": 3,
+      "expected_calls": 3
+    },
+    {
+      "document_id": "RW-0005",
+      "agent_id": "alcoa_plus_agent",
+      "requirement_id": "ALCOA_CONTEMPORANEOUS",
+      "labels": "P5",
+      "pool_size": 3,
+      "expected_calls": 3
+    },
+    {
+      "document_id": "RW-0011",
+      "agent_id": "fda_cgmp_211_agent",
+      "requirement_id": "21_CFR_211.68(b)",
+      "labels": "P6",
+      "pool_size": 3,
+      "expected_calls": 3
+    },
+    {
+      "document_id": "RW-0012",
+      "agent_id": "fda_cgmp_211_agent",
+      "requirement_id": "21_CFR_211.68(b)",
+      "labels": "P7",
+      "pool_size": 3,
+      "expected_calls": 3
+    },
+    {
+      "document_id": "RW-0005",
+      "agent_id": "eu_annex11_agent",
+      "requirement_id": "ANNEX11_4",
+      "labels": "N1",
+      "pool_size": 3,
+      "expected_calls": 3
+    }
+  ],
+  "results": [
+    {
+      "labels": "P1+N2",
+      "document_id": "RW-0005",
+      "requirement_id": "21_CFR_11.10(e)",
+      "status": "COMPLETED",
+      "run_id": "chunked-15e188f036da",
+      "chunk_observation": "observed",
+      "conclusion": "EVALUATION_INCOMPLETE",
+      "calls_made": 3,
+      "error": null
+    },
+    {
+      "labels": "P2",
+      "document_id": "RW-0005",
+      "requirement_id": "21_CFR_11.10(g)",
+      "status": "COMPLETED",
+      "run_id": "chunked-ead024e9ec9a",
+      "chunk_observation": "not_observed_in_chunk",
+      "conclusion": "EVALUATION_INCOMPLETE",
+      "calls_made": 3,
+      "error": null
+    },
+    {
+      "labels": "P3",
+      "document_id": "RW-0005",
+      "requirement_id": "ANNEX11_17",
+      "status": "COMPLETED",
+      "run_id": "chunked-194352714f4d",
+      "chunk_observation": "observed",
+      "conclusion": "EVALUATION_INCOMPLETE",
+      "calls_made": 3,
+      "error": null
+    },
+    {
+      "labels": "P4",
+      "document_id": "RW-0011",
+      "requirement_id": "ALCOA_ATTRIBUTABLE",
+      "status": "COMPLETED",
+      "run_id": "chunked-3c61bff03dcd",
+      "chunk_observation": "not_observed_in_chunk",
+      "conclusion": "EVALUATION_INCOMPLETE",
+      "calls_made": 3,
+      "error": null
+    },
+    {
+      "labels": "P5",
+      "document_id": "RW-0005",
+      "requirement_id": "ALCOA_CONTEMPORANEOUS",
+      "status": "COMPLETED",
+      "run_id": "chunked-e857bb63e15b",
+      "chunk_observation": "not_observed_in_chunk",
+      "conclusion": "EVALUATION_INCOMPLETE",
+      "calls_made": 3,
+      "error": null
+    },
+    {
+      "labels": "P6",
+      "document_id": "RW-0011",
+      "requirement_id": "21_CFR_211.68(b)",
+      "status": "COMPLETED",
+      "run_id": "chunked-13b0c79be584",
+      "chunk_observation": "not_observed_in_chunk",
+      "conclusion": "EVALUATION_INCOMPLETE",
+      "calls_made": 3,
+      "error": null
+    },
+    {
+      "labels": "P7",
+      "document_id": "RW-0012",
+      "requirement_id": "21_CFR_211.68(b)",
+      "status": "COMPLETED",
+      "run_id": "chunked-ced9f8de62e7",
+      "chunk_observation": "not_observed_in_chunk",
+      "conclusion": "EVALUATION_INCOMPLETE",
+      "calls_made": 3,
+      "error": null
+    },
+    {
+      "labels": "N1",
+      "document_id": "RW-0005",
+      "requirement_id": "ANNEX11_4",
+      "status": "COMPLETED",
+      "run_id": "chunked-78f2975a9b58",
+      "chunk_observation": "not_observed_in_chunk",
+      "conclusion": "CROSS_REFERENCE_MISSING",
+      "calls_made": 3,
+      "error": null
+    }
+  ],
+  "stop_reason": "BATCH_COMPLETE",
+  "total_calls_made": 24,
+  "total_wall_seconds": 1261.0235572189995,
+  "selected_pilot_instance_id": "PILOT_EXECUTION-2026-022",
+  "total_embed_calls_used_this_run": 8
+}

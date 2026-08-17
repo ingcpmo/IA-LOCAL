@@ -1,0 +1,312 @@
+{
+  "run_id": "chunked-3c61bff03dcd",
+  "document_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
+  "agent_id": "alcoa_plus_agent",
+  "documento": "RW-0011",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/MCCPDC EMS Control Block Narrative revB.pdf",
+  "total_chunks": 3,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-3c61bff03dcd",
+      "task_id": "task-5b6b74c5d233",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 6494,
+      "started_at": "2026-08-17T18:38:07.556373+00:00",
+      "finished_at": "2026-08-17T18:38:53.394147+00:00",
+      "wall_clock_ms": 45837.7,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"ALCOA_ATTRIBUTABLE\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona información sobre la identificación única e individual de los datos, ni sobre el mecanismo tecnico que sostiene la atribución.\",\n            \"recomendacion\": \"Incluir detalles específicos sobre quién generó cada dato y cómo se mantiene esa atribución en el sistema.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Para accion humana - Identificacion unica e individual por dato.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona quién generó cada dato ni cómo se mantiene la atribución de manera única y individual.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Para accion humana - Mecanismo tecnico que sostiene esa atribucion de forma confiable (no solo un campo de texto libre).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se describe ningún mecanismo técnico para asegurar la atribución de manera confiable.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Para accion humana - Atribucion sostenida para crear/modificar/eliminar, no solo creacion.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la atribución sostenida para modificaciones o eliminaciones de datos.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Para dato autogenerado - Identificador de instrumento/sistema/fuente tecnica especifico y trazable (no una categoria generica de equipo).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona información sobre identificadores específicos para datos autogenerados.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Para dato autogenerado - Trazabilidad de que ese instrumento/sistema fue el que efectivamente genero el dato (no solo que existe en el area).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la trazabilidad del proceso de generación de datos autogenerados.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-3c61bff03dcd/task-5b6b74c5d233.txt.gz",
+      "raw_response_full_sha256": "eef5b3cd1bba0cd736ed40c72ecd8e0c124ed5db5a88f4cd5fc8ff3c89d9c818",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ALCOA_ATTRIBUTABLE",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Para accion humana - Identificacion unica e individual por dato.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona quién generó cada dato ni cómo se mantiene la atribución de manera única y individual.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Para accion humana - Mecanismo tecnico que sostiene esa atribucion de forma confiable (no solo un campo de texto libre).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se describe ningún mecanismo técnico para asegurar la atribución de manera confiable.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Para accion humana - Atribucion sostenida para crear/modificar/eliminar, no solo creacion.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la atribución sostenida para modificaciones o eliminaciones de datos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Para dato autogenerado - Identificador de instrumento/sistema/fuente tecnica especifico y trazable (no una categoria generica de equipo).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre identificadores específicos para datos autogenerados.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Para dato autogenerado - Trazabilidad de que ese instrumento/sistema fue el que efectivamente genero el dato (no solo que existe en el area).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la trazabilidad del proceso de generación de datos autogenerados.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "midity - Rm. 050 – \nAmbient Storage Column B5-High  \nHIT-99001-50B AI EMS Relative Humidity - Rm. 050 – \nAmbient Storage Column B5-Low \nHIT-99001-50C AI EMS Relative Humidity - Rm. 050 – \nAmbient Storage Column B6-high \nHIT-99001-50D AI EMS Relative Humidity - Rm. 050 – \nAmbient Storage Column B6-Low \nHIT-99001-50E AI EMS Relative Humidity - Rm. 050 – \nAmbient Storage Column C6-high \nHIT-99001-50F AI EMS Relative Humidity - Rm. 050 – \nAmbient Storage Column C6-Low \nTable 4-6: Humidity Signals \n  Environmental Monitoring System \nControl Block Narrative \nMAVERICK Project # 215115305 \nMark Cuban Cost Plus Drug Company \nSCADA-PCS Misc. PLC  Document No.  Page:  \nRevision: \nDate: EMS CN \n12 of 14 \nB \nDecember 15, 2022 \n \nMAVERICK TECHNOLOGIES®, MAVERICK® , PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFO RMANCE® are registered trademarks of MAVERI CK Technologies, LLC. \n©2012 MAVERICK Technologies, LLC \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed. \nThe only current copy of this document is maintained electronically. General EMS signaling devices consist of the following hardwired points. \nField I/O Point Type Description \nXS-00001-03 DI BMS Common Trouble Signal \nXI-00001-01 DO PCS Common Trouble Signal to BMS \nXI-00001-02 DO EMS Common Trouble Signal to BMS \nXI-99001-24A DO EMS Status Indicator - Corr. 024 EMS \nAlarm Status Light (Red) \nXI-99001-24B DO EMS Status Indicator - Corr. 024 EMS \nNormal Status Light (Green) \nXI-99001-37A DO EMS Status Indicator - Corr. 037 EMS \nAlarm Status Light (Red) \nXI-99001-37B DO EMS Status Indicator - Corr. 037 EMS \nNormal Status Light (Green) \nXI-00001-04 DO PCS Status Indicator  on PCS-CP-01 PCS \nNormal Status Light (Green) \nXI-00001-05 DO PCS Status Indicator  on PCS-CP-01 PCS \nWarning Status Light (Yellow) \nXI-00001-06 DO PCS Status Indicat or on PCS-CP-01 PCS \nAlarm Status Light (Red) \nXAH-00001-06 DO PCS Status Indicator  on PCS-CP-01 PCS \nAlarm Horn \nTable 4-7: Annunciating Device Signals \n \nVaporized Hydrogen Peroxide si gnaling devices consist of th e following hardwired points. \nField I/O Point Type Description \nAAHH-33002-02 DO Filler VHP Hi-Hi Alarm – Room 034 High-High \nVHP Alarm Horn  \nALH-33002-02 DO Filler VHP High Alarm – Room 034 High VHP \nAlarm Strobe (Red)  \nAAHH-33002-03 DO Filler VHP Hi-Hi Alarm - Corr. 037 High-High \nVHP Alarm Horn \n\f\n Environmental Monitoring System \nControl Block Narrative \nMAVERICK Project # 215115305 \nMark Cuban Cost Plus Drug Company \nSCADA-PCS Misc. PLC  Document No.  Page:  \nRevision: \nDate: EMS CN \n13 of 14 \nB \nDecember 15, 2022 \n \nMAVERICK TECHNOLOGIES®, MAVERICK® , PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFO RMANCE® are registered trademarks of MAVERI CK Technologies, LLC. \n©2012 MAVERICK Technologies, LLC \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed. \nThe only current copy of this document is maintained electronically. Field I/O Point Type Description \nALH-33002-03 DO Filler VHP High Alarm - Corr. 037 High VHP \nAlarm Strobe (Red) \nAIT-33002-01 AI VHP concentration sensor  \nTable 4-8: Vaporized Hy drogen Peroxide Signals \n \n4.3 Tasks/Routines/Functions \nThe analog inputs and outputs will be scaled wi th MapIn and MapOut routines as described \naccording to the MCCPDC Controller Guidelin es document and using the values in the \nMCCPDC Alarms Hard Soft IO Listing.xlsx.  For this work the following sp ecific routines are expected: \n R105_EMS  R110_MapInLAD  R111_MapInFBD  R120_MapOutLAD  R121_MapOutFBD \n4.4 Operator Interface \nEach of the EMS input signals is displayed in  engineering units on th e HMI.  As mentioned \npreviously, with the proper credentials, the input points can be simulated for calibration or other \nmaintenance activities.  Similarly, given the pr oper credentials, the alarm limits for the EMS \nsignals are also available for revi ew and adjustment  via the HMI. \nThe visual and audible annunciators  (light trees and audible aler ts) also provide feedback to \npersonnel in the area without the need to actively view an HMI screen.   \n4.5 Messages and Alarming \nThe EMS messages and alarms, together with other system alarms, are de scribed in the overall \nPCS system document named MCCPDC PCS-CP01 Al arms Hard Soft IO Listing.xlsx.  That \ndocument provides, among other de tails, the alarm text, the input point tag identifier, the alarm \nsetpoint, and any time-delay associated with the alarm.  For the alarms listed here, alarm limit \nprocessing, time delay, etc. is handled in the PL C and not in the FactoryTalk Alarm and Events \nServer.  The alarm setpoints are not calcu lated but are static, user-adjus table values via the HMI as \ndetailed in the MCCPDC PCS-CP01 Alarms  Hard Soft IO Listing.xlsx document. \n See Section 4.1.6.1 Alarms/Beacons to see the de scription of acknowledging and resetting of \nalarms. \n \n\f\n Environmental Monitoring System \nControl Block Narrative \nMAVERICK Project # 215115305 \nMark Cuban Cost Plus Drug Company \nSCADA-PCS Misc. PLC  Document No.  Page:  \nRevision: \nDate: EMS CN \n14 of 14 \nB \nDecember 15, 2022 \n \nMAVERICK TECHNOLOGIES®, MAVERICK® , PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFO RMANCE® are registered trademarks of MAVERI CK Technologies, LLC. \n©2012 MAVERICK Technologies, LLC \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed. \nThe only current copy of this document is maintained electronically. 4.6 Calculations \nThere are no special calculations for this control strategy.     \n \n4.7 Sequencers \nThe Environmental Monitoring portion of system does not have any sequencers. \n5. SOFTWARE PERMISSIVES \nThe Environmental Monitoring portion of system  does not have any software permissives. \n6. INTER-NETWORK RELATIONSHIPS \nThe PCS PLC does not receive any vendor skid signa ls as it relates to th e EMS system.  The VHP \nconcentration which was a software I/O signal (revi sion A) has been changed to a hardwired signal \n(revision B). \n7. HARDWARE INTERLOCKS \nThe Environmental Monitoring portion of the syst em does not have any hardware interlocks. \n8. REFERENCES \n215115305 SCADA-PCS Misc. PLC System  FS (Functional Specification) \nMCCPDC PCS-CP01 Alarms Ha rd Soft IO Listing.xlsx \nMCCPDC PCS Signal Interface Control Block Narrative.docx 63FFVL02-P-PD-0002 (EMS Sequence of Operations) MCCPDC HMI Programming Guidelines MCCPDC Controller Programming Guidelines 63FFVL02-J-II-0002.pdf (EMS Instrument Index) ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-3c61bff03dcd",
+      "task_id": "task-5e40a069aa5f",
+      "chunk_index": 1,
+      "page_start": 2,
+      "page_end": 2,
+      "has_overlap_prefix": true,
+      "text_chars": 5777,
+      "started_at": "2026-08-17T18:38:53.396066+00:00",
+      "finished_at": "2026-08-17T18:39:39.724136+00:00",
+      "wall_clock_ms": 46328.0,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"ALCOA_ATTRIBUTABLE\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona evidencia de atribución para acciones humanas o datos autogenerados.\",\n            \"recomendacion\": \"Incluir identificación única e individual por dato y mecanismo tecnico que sostenga la atribución.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Para accion humana - Identificacion unica e individual por dato.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna identificación única e individual para acciones humanas en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Para accion humana - Mecanismo tecnico que sostiene esa atribucion de forma confiable (no solo un campo de texto libre).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún mecanismo técnico para la atribución en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Para accion humana - Atribucion sostenida para crear/modificar/eliminar, no solo creacion.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna atribución sostenida en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Para dato autogenerado - Identificador de instrumento/sistema/fuente tecnica especifico y trazable (no una categoria generica de equipo).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún identificador específico para datos autogenerados en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Para dato autogenerado - Trazabilidad de que ese instrumento/sistema fue el que efectivamente genero el dato (no solo que existe en el area).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna trazabilidad para datos autogenerados en el documento.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-3c61bff03dcd/task-5e40a069aa5f.txt.gz",
+      "raw_response_full_sha256": "a3a609af5f418c808ceb116a0dc06995d8c713942f4360a442dacff2ad2dc98d",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ALCOA_ATTRIBUTABLE",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Para accion humana - Identificacion unica e individual por dato.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna identificación única e individual para acciones humanas en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Para accion humana - Mecanismo tecnico que sostiene esa atribucion de forma confiable (no solo un campo de texto libre).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún mecanismo técnico para la atribución en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Para accion humana - Atribucion sostenida para crear/modificar/eliminar, no solo creacion.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna atribución sostenida en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Para dato autogenerado - Identificador de instrumento/sistema/fuente tecnica especifico y trazable (no una categoria generica de equipo).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún identificador específico para datos autogenerados en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Para dato autogenerado - Trazabilidad de que ese instrumento/sistema fue el que efectivamente genero el dato (no solo que existe en el area).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna trazabilidad para datos autogenerados en el documento.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "signal \n(revision B). \n7. HARDWARE INTERLOCKS \nThe Environmental Monitoring portion of the syst em does not have any hardware interlocks. \n8. REFERENCES \n215115305 SCADA-PCS Misc. PLC System  FS (Functional Specification) \nMCCPDC PCS-CP01 Alarms Ha rd Soft IO Listing.xlsx \nMCCPDC PCS Signal Interface Control Block Narrative.docx 63FFVL02-P-PD-0002 (EMS Sequence of Operations) MCCPDC HMI Programming Guidelines MCCPDC Controller Programming Guidelines 63FFVL02-J-II-0002.pdf (EMS Instrument Index) ....... 8  \nTable 4-4: Differentia l Pressure Signals ...................................................................................... ........................... 9  \nTable 4-5: Temperature Signals ................................................................................................ ............................ 10  \nTable 4-6: Humidity Signals ................................................................................................... .............................. 11  \n  Environmental Monitoring System \nControl Block Narrative \nMAVERICK Project # 215115305 \nMark Cuban Cost Plus Drug Company \nSCADA-PCS Misc. PLC  Document No.  Page:  \nRevision: \nDate: EMS CN \n3 of 14 \nB \nDecember 15, 2022 \n \nMAVERICK TECHNOLOGIES®, MAVERICK® , PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFO RMANCE® are registered trademarks of MAVERI CK Technologies, LLC. \n©2012 MAVERICK Technologies, LLC \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed. \nThe only current copy of this document is maintained electronically. 1. OBJECTIVE \nThis document describes th e functions of the Envir onmental Monitoring System in the Mark Cuban Cost \nPlus Drug Company, PBC SCADA-PCS Misc. PLC proj ect.  This document de scribes the necessary \ncontrol logic blocks for the project and is supplemented by the Functional Specification.   \n2. TERMINOLOGY \nConfiguration – Setting the control software to match the hard ware modules and communication \nmethods \nDCS - Distributed Control System  \nEMS – Environmental Monitoring System  \nHMI - Human Machine Interface \nI/O - Input / Output \nP&ID - Piping and Inst rumentation Diagram  \nPID - Proportional, Integral, Deri vative (control methodology) \nPAC - Programmable Automation Controller (used for higher-level, process-type  control functionality \ncompared to PLCs, approaching or equal to DCS functionality.  Sometimes the PAC and PLC \nterminology is used interchangeably.) \nPCS – Process Control System (T his project’s panel is named PC S-CP01, Process Control System \nControl Panel 01) \nPLC - Programmable Logic Controller  (used for lower-level logicc ontrol; sometimes the PAC and PLC \nterminology is used interchangeably.) \nProgramming - Developing softwa re logic or source code  \nSCADA – Supervisory Contro l and Data Acquisition  \nVHP – Vaporized Hydrogen Peroxide  \nWFI – Water for Injection \n3. INPUT CONSIDERATIONS \nPrior to generating this Control Block Narrative cust omer documentation and pr oject deliverables were \nreviewed.   \n\f\n Environmental Monitoring System \nControl Block Narrative \nMAVERICK Project # 215115305 \nMark Cuban Cost Plus Drug Company \nSCADA-PCS Misc. PLC  Document No.  Page:  \nRevision: \nDate: EMS CN \n4 of 14 \nB \nDecember 15, 2022 \n \nMAVERICK TECHNOLOGIES®, MAVERICK® , PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFO RMANCE® are registered trademarks of MAVERI CK Technologies, LLC. \n©2012 MAVERICK Technologies, LLC \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed. \nThe only current copy of this document is maintained electronically. The following was received from Mark Cuban Cost  Plus Drug Company, PBC as design input:  \n P&IDs \n Instrument Index and I/O Database  \n Control Block Narratives  \n Alarm Definition \n Historical Data Collection Requirements \n \nThe following were generated by MAVERICK  for this project as design input: \n Functional Specification  \n Control System Architecture \n4. EMS CONTROL DESCRIPTION \nThe Environmental Monitoring System (EMS) consists  of many sensors and indicators, some of which \nare connected to the PCS PLC.  Th e PCS PLC portion of th e system includes temperature, pressure, \nhumidity, hydrocarbon measurements, and VHP con centration alarm information.  Additionally, \nfeedback mechanisms consisting of visual indicator lights, strobe lig hts, and audible horns are also \nincluded.      Since an Administrator or Mainte nance person may put any input poi nt in SIMULATE and change its \nvalue, it is the responsibility of this person to supervise and adjust the manually inserted value for any \npoints placed in SIMULATE.  Failure to properlys upervise and adjust manually  inserted values may \ncause incorrect control functions an d may lead to e quipment damage.  \n The PCS EMS sub-system operates in only one mode: Monitoring. \n The scaling of analog values shall follow the ranges listed in the Al arms, Hard, and Soft IO Listing \ndocument (MCCPDC PCS-CP01 Alarms  Hard Soft IO Listing.xlsx) \n4.1 Process Description and Strategy Design \n4.1.1 Differential Pressure Measurements \nFor differential pressure, a space static pressu re sensor (PE) and a pressure differential \nindicating transmitter (PDIT) m ounted in the room, shall mon itor the space pressure.  The \nPDIT reference is measured against the Refe rence Air header to ne ar zero conditions (0 \ninches of water column). \n4.1.2 Temperature Measurements \nFor temperature, temperature se nsor/transmitters (TE/TIT) mount ed in the process critical \nrooms shall monitor the space temperature condition.   \n4.1.3 Humidity Measurements \nFor humidity, humidity sensor/t ransmitters (HE/HIT), mounted  in the process critical \nrooms shall monitor the space humidity condition. ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-3c61bff03dcd",
+      "task_id": "task-7de01b3867b9",
+      "chunk_index": 2,
+      "page_start": 3,
+      "page_end": 3,
+      "has_overlap_prefix": true,
+      "text_chars": 6979,
+      "started_at": "2026-08-17T18:39:39.726548+00:00",
+      "finished_at": "2026-08-17T18:40:23.735898+00:00",
+      "wall_clock_ms": 44009.3,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"ALCOA_ATTRIBUTABLE\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona información sobre la identificación única e individual de los datos, ni sobre el mecanismo tecnico que sostiene la atribución.\",\n            \"recomendacion\": \"Incluir detalles específicos sobre quién generó cada dato y cómo se mantiene esa atribución en el sistema.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Para accion humana - Identificacion unica e individual por dato.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona información sobre la identificación única e individual de los datos generados por acciones humanas.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Para accion humana - Mecanismo tecnico que sostiene esa atribucion de forma confiable (no solo un campo de texto libre).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se describe ningún mecanismo técnico para asegurar la atribución de forma confiable.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Para accion humana - Atribucion sostenida para crear/modificar/eliminar, no solo creacion.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la atribución sostenida para acciones de modificación o eliminación de datos.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 4,\n                    \"criterion_text\": \"Para dato autogenerado - Identificador de instrumento/sistema/fuente tecnica especifico y trazable (no una categoria generica de equipo).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona información sobre identificadores específicos para datos autogenerados.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 5,\n                    \"criterion_text\": \"Para dato autogenerado - Trazabilidad de que ese instrumento/sistema fue el que efectivamente genero el dato (no solo que existe en el area).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona la trazabilidad para confirmar que los datos autogenerados provienen del sistema especificado.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-3c61bff03dcd/task-7de01b3867b9.txt.gz",
+      "raw_response_full_sha256": "f24184b31a8557a0cf687abde2cf1d9d44e0bdd6849f7553ca3a7990a7b35b2b",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ALCOA_ATTRIBUTABLE",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Para accion humana - Identificacion unica e individual por dato.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre la identificación única e individual de los datos generados por acciones humanas.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Para accion humana - Mecanismo tecnico que sostiene esa atribucion de forma confiable (no solo un campo de texto libre).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se describe ningún mecanismo técnico para asegurar la atribución de forma confiable.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Para accion humana - Atribucion sostenida para crear/modificar/eliminar, no solo creacion.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la atribución sostenida para acciones de modificación o eliminación de datos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 4,
+              "criterion_text": "Para dato autogenerado - Identificador de instrumento/sistema/fuente tecnica especifico y trazable (no una categoria generica de equipo).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre identificadores específicos para datos autogenerados.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 5,
+              "criterion_text": "Para dato autogenerado - Trazabilidad de que ese instrumento/sistema fue el que efectivamente genero el dato (no solo que existe en el area).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona la trazabilidad para confirmar que los datos autogenerados provienen del sistema especificado.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": " mon itor the space pressure.  The \nPDIT reference is measured against the Refe rence Air header to ne ar zero conditions (0 \ninches of water column). \n4.1.2 Temperature Measurements \nFor temperature, temperature se nsor/transmitters (TE/TIT) mount ed in the process critical \nrooms shall monitor the space temperature condition.   \n4.1.3 Humidity Measurements \nFor humidity, humidity sensor/t ransmitters (HE/HIT), mounted  in the process critical \nrooms shall monitor the space humidity condition.  mon itor the space pressure.  The \nPDIT reference is measured against the Refe rence Air header to ne ar zero conditions (0 \ninches of water column). \n4.1.2 Temperature Measurements \nFor temperature, temperature se nsor/transmitters (TE/TIT) mount ed in the process critical \nrooms shall monitor the space temperature condition.   \n4.1.3 Humidity Measurements \nFor humidity, humidity sensor/t ransmitters (HE/HIT), mounted  in the process critical \nrooms shall monitor the space humidity condition.  Environmental Monitoring System \nControl Block Narrative \nMAVERICK Project # 215115305 \nMark Cuban Cost Plus Drug Company \nSCADA-PCS Misc. PLC  Document No.  Page:  \nRevision: \nDate: EMS CN \n5 of 14 \nB \nDecember 15, 2022 \n \nMAVERICK TECHNOLOGIES®, MAVERICK® , PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFO RMANCE® are registered trademarks of MAVERI CK Technologies, LLC. \n©2012 MAVERICK Technologies, LLC \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed. \nThe only current copy of this document is maintained electronically. 4.1.4 Data Logging \nThe PCS shall historically record quality da ta and system alarms.  All data shall be \navailable to user via displays.  The logging of data points is not set in the PLC but rather \nin the FactoryTalk Historian Site Edition (SE) software product.  See MCCPDC PCS-\nCP01 Alarms Hard Soft IO Listing.xlsx to determine which input, output, and internal \npoints shall be configured to be logged in the FactoryTalk Historian software product.   \n4.1.5 Hardwired Signals to/from Building Management System (BMS) \n4.1.5.1  BMS Common Trouble Signal (Input) \nThe PCS system has an input signal from the BMS system which indicates the status of \nthe BMS.  The signal is named: “BMS Common Trouble Signal” (XS-00001-03).  When \nthis signal goes into the alarm state (OFF, logic 0, no voltage at the PCS-CP01 PLC input \npin), the PCS Light Tree Amber light shall be  illuminated and an alarm banner shall be \ndisplayed on the PCS HMI screens.  This is  a fail-safe design which also detects a \nbroken/disconnected wire or other interrupti on in the wiring connection between the PCS \nand the BMS.  4.1.5.2  PCS Common Trouble Signal to BMS (Output) \nThe PCS system has a dry contact output conne ction to the BMS which alerts the BMS of \na PCS ‘trouble’ condition.  Th e signal is named: “PCS Common Trouble Signal to BMS” \n(XI-00001-01) and will be energized in the normal condition and de-energized in the \nalarm/trouble condition.  This is a fail -safe design which also detects a \nbroken/disconnected wire or other interrupti on in the wiring connection between the PCS \nand the BMS.    The PCS Common Trouble Signal to BMS w ill change from “OK” (energized) to \n“Trouble” (de-energized) when any issues arise with the PCS system itself.  This includes \nthe following events: \nPCS I/O module fault PCS Analog I/O open wi re fault detected \nFactoryTalk Historian server unreachable \n (Which would be an indicator that da ta is not being logged as expected.) \n 4.1.5.3  EMS Common Trouble Sign al to BMS (Output) \nThe PCS system has a second dr y contact output connection to  the BMS which alerts the \nBMS of an EMS ‘trouble’ condition.  Th e signal named: “EMS Common Trouble Signal \nto BMS” (XI-00001-02) will be energized in the normal condition and de-energized in \nthe alarm/trouble condition.  This is a fail-safe design which also detects a \nbroken/disconnected wire or other interrupti on in the wiring connection between the PCS \nand BMS.  If any EMS alarm condition is present this output will de-energize.  In this \nway, the output will mimic the re d alarm beacons indicating that one or more of the EMS \nparameters have deviated from their normal operating range.  This signal does not \ninclude the status of the Vapo rized Hydrogen Peroxide alarms.    \n\f\n Environmental Monitoring System \nControl Block Narrative \nMAVERICK Project # 215115305 \nMark Cuban Cost Plus Drug Company \nSCADA-PCS Misc. PLC  Document No.  Page:  \nRevision: \nDate: EMS CN \n6 of 14 \nB \nDecember 15, 2022 \n \nMAVERICK TECHNOLOGIES®, MAVERICK® , PROJECT COMPLETE® and WHERE POTENTIAL MEETS PERFO RMANCE® are registered trademarks of MAVERI CK Technologies, LLC. \n©2012 MAVERICK Technologies, LLC \nThis is an uncontrolled document and shall be considered obsolete at the end of the day printed. \nThe only current copy of this document is maintained electronically. 4.1.6 Visual and Audio Indicators \n4.1.6.1  Alarms/Beacons \nWhen an alarm condition occurs, the PCS system will sense it based on its hardware inputs or it shall be notified based on softwa re inputs.  Alarms w ill trigger visual and \naudible alarm outcomes as de scribed next.  The operator  can acknowledge an alarm \ncondition at any time regardless of the curr ent process value, however the point will \nremain in alarm.  Points in alarm will return to the normal state only once the alarm \ncondition is no longer present (i.e., analog value has returned to within  normal limits) and \nthe operator has acknowledged the alarm.  Thes e alarms are configur ed in the PCS PLC. \n \n4.1.6.2  Stack Lights \nIn addition to the on-screen alarming, the PCS will illuminate the three system stack \nlights to indicate status. \n NORMAL – GREEN light \nWhen all monitored room parameters (i .e., room temperature, room humidity, \nand/or differential pressure) are within the adjustable normal range, the green visual beacon shall illuminate.  \n QUALITY (alarm) – RED light \nWhen, after a configurablet ime delay, a room parameter (i.e., room temperature, \nroom humidity, and/or differe ntial pressure) deviate fr om the normal range by the \nalarm setpoints (thresholds), the red beacon shall illuminate.  \n PCS (and BMS) SYSTEM - AMBER light  \nThis lamp will illuminate when  any issues arise with the PCS system itself.  This \nincludes the following events: \nPCS I/O module fault PCS Analog I/O open wi re fault detected \nA stuck open/closed fault is detect ed with any of the four valves \nFactoryTalk Historian server unreachable  (Which would indicate data loggi ng is has likely been interrupted.) \n \nAdditionally, the lamp will illuminate based on the description found in Section \n4.1.5.1 BMS Common Trouble Si gnal (Input).   \n  \n PCS (and BMS) SYSTEM Alarm Horn  \nThe Alarm Status Light Horn will sound when the PCS SYSTEM is encountering \na fault condition.  These are the samer easons the Amber light illuminates (see \nAmber light above).  ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "ALCOA_ATTRIBUTABLE"
+    ],
+    "retrieval_mode": "full_chunk"
+  },
+  "verified_records_by_req": {
+    "ALCOA_ATTRIBUTABLE": [
+      {
+        "record_id": "vrec-task-5b6b74c5d233-ALCOA_ATTRIBUTABLE",
+        "llm_output": {
+          "requirement_id": "ALCOA_ATTRIBUTABLE",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-5e40a069aa5f-ALCOA_ATTRIBUTABLE",
+        "llm_output": {
+          "requirement_id": "ALCOA_ATTRIBUTABLE",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 2,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-7de01b3867b9-ALCOA_ATTRIBUTABLE",
+        "llm_output": {
+          "requirement_id": "ALCOA_ATTRIBUTABLE",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 3,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

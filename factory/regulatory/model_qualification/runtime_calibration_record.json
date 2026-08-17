@@ -1,10 +1,10 @@
 {
-  "measured_at": "2026-08-15T22:02:23+00:00",
+  "measured_at": "2026-08-17T18:26:43+00:00",
   "run_context": "model_requalification",
   "target": "factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py",
   "fingerprint": {
-    "model_name": "qwen2.5:14b-instruct-q4_K_M",
-    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "model_name": "qwen2.5:7b-instruct-q4_K_M",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
     "prompt_versions": {
       "alcoa_prompts.yaml": "1.1.1",
       "annex11_prompts.yaml": "1.1.1",
@@ -29,36 +29,37 @@
   },
   "n_calls": 2,
   "metrics": {
-    "latency_p50": 471.23881098749996,
-    "latency_p95": 650.2282895758499,
-    "tokens_per_task": 2899.5,
+    "latency_p50": 292.64366801599954,
+    "latency_p95": 345.63499812979944,
+    "tokens_per_task": 3170.5,
     "retry_rate": 0.0
   },
   "raw_calls": [
     {
-      "wall_clock_ms": 670116.009419,
+      "wall_clock_ms": 351522.92369799945,
       "prompt_eval_count": 4407,
-      "eval_count": 2993,
+      "eval_count": 2974,
       "done_reason": "stop"
     },
     {
-      "wall_clock_ms": 272361.61255599995,
+      "wall_clock_ms": 233764.41233399964,
       "prompt_eval_count": 4404,
-      "eval_count": 2806,
+      "eval_count": 3367,
       "done_reason": "stop"
     }
   ],
   "run_fingerprint": {
     "prompt_version": "1.1.1",
     "schema_version": "checkpoint_llm_response_v1",
-    "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
     "document_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
     "agent_version": "v-calibration",
     "catalog_version": "2.1",
     "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
     "use_verified_pipeline": false,
     "evaluation_profile": "BASELINE",
-    "target_requirement_ids": null
+    "target_requirement_ids": null,
+    "retrieval_mode": "full_chunk"
   },
-  "run_id": "chunked-217229ce88fe"
+  "run_id": "chunked-abb0e483fcbd"
 }

@@ -1,0 +1,258 @@
+{
+  "run_id": "chunked-ead024e9ec9a",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "fda_part11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 3,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-ead024e9ec9a",
+      "task_id": "task-5b9e9e4961e4",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 5557,
+      "started_at": "2026-08-17T18:34:17.629206+00:00",
+      "finished_at": "2026-08-17T18:34:50.452959+00:00",
+      "wall_clock_ms": 32823.7,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_11.10(g)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona evidencia de que se realicen verificaciones de autoridad para asegurar que solo individuos autorizados puedan usar el sistema, firmar electrónicamente un registro, acceder a la operación o dispositivo de entrada/salida del sistema de computadoras, alterar un registro o realizar la operación en curso.\",\n            \"recomendacion\": \"Incluir evidencia de verificaciones de autoridad en el documento de ingeniería.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Matriz de operaciones del sistema con el nivel de autorización requerido por cada una (segun aplique).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona información sobre la matriz de operaciones y los niveles de autorización.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún chequeo de autoridad en tiempo real durante las operaciones.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona evidencia de pruebas negativas para verificar que las operaciones no autorizadas sean bloqueadas.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-ead024e9ec9a/task-5b9e9e4961e4.txt.gz",
+      "raw_response_full_sha256": "414ff88c336bf04c67749b16b79f06b80c5ac421d3a584c07ec0f14aebc3e013",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(g)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Matriz de operaciones del sistema con el nivel de autorización requerido por cada una (segun aplique).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre la matriz de operaciones y los niveles de autorización.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún chequeo de autoridad en tiempo real durante las operaciones.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona evidencia de pruebas negativas para verificar que las operaciones no autorizadas sean bloqueadas.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "l continue operating.  \n \nPCS MISC PLC logic will check for the status of an output tag from the FactoryTalk Historian Server.  \nThe alarm will become active when the process historian data link is disconnected and will reset \nwhen the process historian system is connected.   \n \nF08.00: Reporting \n \n F08.01: End of Batch Report \nThe PCS MISC. PLC System is a monitoring and utility system and does not participate in batch \noperations.  End of Batch reporting is  not implemented for this system.   F08.02: Recipe Printout \nPer RFI-001, the recipe system requirements do not apply to the SCADA and PCS MISC. PLC System. \n \n \n4 Security \nF09.00: Physical Security \nIt is essential to limit operator access to  the hardware running Windows operating systems and \nFactoryTalk View SE.  In general, an operator’s only access to the computer should be via the keyboard, mouse, or touch screen.  An operator with access to the power switch and bootable media \ncould have direct access to the underlying file syst em and could potentially circumvent many of the \nsecurity measures described in this document.  It is the responsibility of the Mark Cuban Cost Plus \nDrug Company, PBC. to put measures in place to limit operator access and to protect the hardware systems. \nF10.00: Logical Security \nThis function implements the following user requirement(s)  \nUR3.4.1 The system shall implement the security and access control requirements of 21 CFR Part 11 \nrequirements for computerized systems, as they are for this system \n1. [MCCPDC 3.3.5] – Activity data, includi ng username, will be stored in an event log. \n2. HMI to be configured to require operator  username and password for login per 21 CFR \nPart 11.   \nUR5.2.2 [URS-PCS-SR-008] Control and privilege access  shall be assigned to system users based on the \nfollowing operator access levels- Default User, Operator, Supervisor, Maintenance, \nAdministrator.    \nUR5.2.6 [URS-PCS-SR-012] The system must have an  automatic logout function that after a certain \nperiod of inactivity the user is  logged out to Default User.    \n F10.01: System Security Configuration \nSecurity is used to restrict a user’s access to certain parts of the system.  FactoryTalk View SE uses a \ncombination of Microsoft Windows domain security and FactoryTalk View SE security.  While Windows security is used to authenticate users and restrict operating system level actions, FactoryTalk View SE runtime security restricts graphical user interface access and control system function access.  The \nFactoryTalk View SE security is based on a system of letter codes (A-P) which are assigned to the \nindividual users to define their access.   \nFactoryTalk View SE makes efficient use of the security features built into the underlying Microsoft \nWindows operating systems.  For compliance, all FactoryTalk View SE computers in a closed system must be part of the same Windows domain.  Microsoft’s Windows 2019, 2016, 2012, and 10 encrypt passwords using the operating system’s built-in encryption mechanisms.  The FactoryTalk View SE \n\f\n server in this system uses Windows Server 2016 while the Engineering Workstation uses Remote \nDesktop Client and will be viewing Windows Server 2016 desktops.  (see 2.1.1 Software). \nBefore you can add users and user groups to the a ccounts list in the FactoryTalk View SE Runtime \nSecurity editor, you have to create accounts for them in FactoryTalk Security services. Add only a subset of the Microsoft Windows users to FactoryTalk View SE, as needed.  \nThe Windows-linked All Users group is automatically added to the FactoryTalk Runtime Security \naccounts.  By default, this gives all users access to  all FactoryTalk View SE runtime security codes (A-\nP), and all FactoryTalk Security actions. \n F10.02: FactoryTalk View SE Security \n Use a password-protected screen saver.  To ensure that only operators with the proper \ncredentials are accessing workstations in a closed system, a password-protected screen \nsaver can be used on the FactoryTalk View SE Client terminals.  This system will take the recommended exception to this rule when critical process data must be displayed at all times.  In this case, a ‘view only’ user account will be logged in to display the status of production and alarm information.  \n Use the included DeskLock software feature to restrict operators’ access to the client’s \noperating system.  \n Disable switch to other applications since this opens access to other programs.  \n Disable ‘Allow display code debugging’  since this allows launching of the VBA editor, \nwhich is not secure. \n Change the window properties of the FactoryTalk View SE Client to disable the title \nbar, the system menu, the close button, and the show diagnostics list.  Set the window to be maximized. \n F10.03: Configure FactoryTalk View SE clients automatically login as DEFAULT user \nafter a period of inactivity \nSince the system requires that critical operations  information be displayed at all times, the DEFAULT \nUser (a user with ‘view only’ access) shall be logged in when a period of inactivity occurs.  This allows the read-only display of production and alarm information.  \nFactoryTalk View SE clients can be configured to automatically log out after a specified \nperiod of time, however this feature does not subsequently permit the immediate and automatic login of another user (DEFAULT) as required.  To achieve the required actions, idle conditions will be detected and then the DEFAULT user will be logged in effectively logging out the current user.    ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-ead024e9ec9a",
+      "task_id": "task-46886924a808",
+      "chunk_index": 1,
+      "page_start": 2,
+      "page_end": 2,
+      "has_overlap_prefix": true,
+      "text_chars": 6360,
+      "started_at": "2026-08-17T18:34:50.454227+00:00",
+      "finished_at": "2026-08-17T18:35:19.899708+00:00",
+      "wall_clock_ms": 29445.5,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_11.10(g)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona evidencia de que se realicen chequeos de autoridad en tiempo real durante las operaciones del sistema.\",\n            \"recomendacion\": \"Incluir un mecanismo para realizar chequeos de autoridad en tiempo real durante las operaciones del sistema.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Matriz de operaciones del sistema con el nivel de autorización requerido por cada una (segun aplique).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna matriz de operaciones ni niveles de autorización específicos.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún chequeo de autoridad en tiempo real durante las operaciones del sistema.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna evidencia de prueba negativa o chequeos de autoridad fallidos.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-ead024e9ec9a/task-46886924a808.txt.gz",
+      "raw_response_full_sha256": "5ee1a921031d8c60503de464864cfb2115730f08330d947b8acbd838717a75c2",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(g)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Matriz de operaciones del sistema con el nivel de autorización requerido por cada una (segun aplique).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna matriz de operaciones ni niveles de autorización específicos.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún chequeo de autoridad en tiempo real durante las operaciones del sistema.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna evidencia de prueba negativa o chequeos de autoridad fallidos.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "d in when a period of inactivity occurs.  This allows the read-only display of production and alarm information.  \nFactoryTalk View SE clients can be configured to automatically log out after a specified \nperiod of time, however this feature does not subsequently permit the immediate and automatic login of another user (DEFAULT) as required.  To achieve the required actions, idle conditions will be detected and then the DEFAULT user will be logged in effectively logging out the current user.    d in when a period of inactivity occurs.  This allows the read-only display of production and alarm information.  \nFactoryTalk View SE clients can be configured to automatically log out after a specified \nperiod of time, however this feature does not subsequently permit the immediate and automatic login of another user (DEFAULT) as required.  To achieve the required actions, idle conditions will be detected and then the DEFAULT user will be logged in effectively logging out the current user.     F10.04: Security/Access Levels \nThe access and manipulation of this system is prot ected through the FactoryTalk Security software \nmodule which integrates with FactoryTalk View SE.  FactoryTalk Security software provides access \nbased on the system user level.  The following security levels are identified for this SCADA project: \n \nSecurity level Allowed access/action level Security Code \nAssignment \nDEFAULT User  View/Read only access to graphi cs with DEFAULT user access A \nOperator  All privileges of the DEFAULT User \n Ability to acknowledge alarms \n Ability to interact with stan dard equipment control buttons \n Ability to select and activate recipes (N/A for this system) A, B \nSupervisor  All privileges of Operator A, B, C \nMaintenance  All privileges of Operator \n Ability to view PLC and OIT revision \n Ability to change input values via simulation feature A, B, C, D \nAdministrator  All privileges \n Ability to view PLC and OIT revision \n Ability to change input values via simulation feature \n Ability to modify alarm limits (Level 1 and Level 2 alarms) \n Ability add, modify, delete recipes (N/A for this system) A, B, C, D, E \nTable 4-1: Security levels for this system \nUser account controls are in compliance with: \nUR5.3.3 [URS-PCS-SR-032] All inputs shall provide state and simulation features. This shall be \ncaptured on a separate maintenance screen, ac cessible by Admin and Maintenance personnel. \nUR5.2.17 [USR-PCS-SR-023] The PLC revision will be addressed to a PLC register, and hard \ncoded OIT revision shall be accessible via a main menu selection to users with Administrator or Engineer (Maintenance) security level privileges. \nUR5.3.5 [URS-PCS-SR-034] Alarm functionality is to include the ability to change alarm limit \nvalues via user input from the OIT display.  This functionality shall be secured level access for level \n1 and level 2 alarms only.  Changes shall only be capable from Administrator level access.  \n \n F10.05: User account configuration \nThis function implements the following user requirement(s)  \nUR5.2.4 [URS-PCS-SR-010] The user identification mu st consist of two parts, username and password.  \n\f\n UR5.2.5 [URS-PCS-SR-011] System must be capable of utilizing active directory. It must be possible to \nconfigure the required password strength of the user’s password  with items such as # of \ncapital letters, # of special characters,  and length of the password itself.     \n \nBoth Microsoft Windows domain security and the FactoryTalk System Administration tool can enable the \ncreation of a unique login and password for each user. \nFactoryTalk View SE can use Microsoft Windows security to manage user accounts. Password \nexpiration, password aging, password complexity  requirements, account expiration, disabling of \naccounts, lockout aftern invalid login attempts, and forcing a change of password on first login are all security features provided by both Microso ft Windows security and FactoryTalk Security. \nProcedures should be implemented to ensure that user IDs do not get deleted or reassigned.  It is \nrecommended to disable user IDs rather than deleting them as a best practice. \nThe customer’s management procedure should include the verification of the identity of an individual \nbefore sanctioning an individual’s electronic signature. \nOnce a user has been sanctioned and a unique account with password has been created in the \nFactoryTalk View SE system, the user is required to enter his/ her login and password to access FactoryTalk View SE. This process validates the identity of the user to FactoryTalk View SE. \nFactoryTalk View SE requires two components for us er identification: a unique login ID and password. \nWhen using the FactoryTalk View SE electronic signature feature, both the user login ID and password \nare required to perform an action.  The FactoryTalk View SE electronic signature feature can be configured to display and record the meaning of the signature. It also allows for separate performer and approval signatures, and for comments to be added regarding the meaning of the signature. \nIf the user logs out of FactoryTalk View SE and again requires access, the user must reenter the login ID \nand password. \n F10.06: Security Code Assignments for Graphic Displays \nTable 4-2: Security Code Assignments for Graphic Display s defines the security codes assigned to each \ngraphic display.  Referencing Table 4-1, one can determine the user access to each of the screens by group name. \n \nGraphic Filename Security Code ( A-P) 0F1 \nOverview *, D \nEnvironmental Readings B \nTrends B \nInput Point Statuses and Simulation 1F2 B, D \n \n1 The Security Code “ * ” indicates all codes (A to P inclusive) are assigned. \n1 The Security Code “ * ” indicates all codes (A to P inclusive) are assigned. \n\f\n Graphic Filename Security Code ( A-P) 0F1 \nFiller B \nSerialization B \nVial Syringe Labeler  B \nParts Washer / Sterilizer  B \nClean Steam Generator B \nWaste Lift and Neutralization  B \nWater for Injection  B \nWeigh / Dispense B \nAlarm Details B \nAlarm Limit Modification (page 1 of 2) E \nAlarm Limit Modification2 (page 2 of 2) E \n3Table 4-2: Security Code Assignments for Graphic Displays \n \n2 Screen access is defined by the first code (least rest rictive), additional codes indicate objects on screen are \nsubject to additional restrictions \n ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-ead024e9ec9a",
+      "task_id": "task-05134dc19fa6",
+      "chunk_index": 2,
+      "page_start": 3,
+      "page_end": 3,
+      "has_overlap_prefix": true,
+      "text_chars": 6780,
+      "started_at": "2026-08-17T18:35:19.902018+00:00",
+      "finished_at": "2026-08-17T18:35:51.932528+00:00",
+      "wall_clock_ms": 32030.5,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"21_CFR_11.10(g)\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona evidencia de que se realicen verificaciones de autoridad en el sistema.\",\n            \"recomendacion\": \"Incluir mecanismos de verificación de autoridad para asegurar que solo individuos autorizados puedan usar el sistema, firmar registros electrónicamente, acceder a la operación o los dispositivos de entrada/salida del sistema, alterar un registro o realizar la operación en curso.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Matriz de operaciones del sistema con el nivel de autorización requerido por cada una (segun aplique).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna matriz de operaciones ni niveles de autorización en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ningún chequeo de autoridad en tiempo real o en el momento de la operación.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna evidencia de pruebas negativas o resultados de bloqueo por falta de autorización.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-ead024e9ec9a/task-05134dc19fa6.txt.gz",
+      "raw_response_full_sha256": "0997416030c39166d3d73caec78f54090d7370482cb2ed233e9c7a42b934e6f0",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "21_CFR_11.10(g)",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Matriz de operaciones del sistema con el nivel de autorización requerido por cada una (segun aplique).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna matriz de operaciones ni niveles de autorización en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ningún chequeo de autoridad en tiempo real o en el momento de la operación.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Evidencia de prueba negativa: intento de operacion sin autoridad suficiente resulta bloqueado.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna evidencia de pruebas negativas o resultados de bloqueo por falta de autorización.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "ller B \nSerialization B \nVial Syringe Labeler  B \nParts Washer / Sterilizer  B \nClean Steam Generator B \nWaste Lift and Neutralization  B \nWater for Injection  B \nWeigh / Dispense B \nAlarm Details B \nAlarm Limit Modification (page 1 of 2) E \nAlarm Limit Modification2 (page 2 of 2) E \n3Table 4-2: Security Code Assignments for Graphic Displays \n \n2 Screen access is defined by the first code (least rest rictive), additional codes indicate objects on screen are \nsubject to additional restrictions \n M \nvendor on-skid control system platfo rm is Beckhoff IPC (Windows 10 w ith Bosch Rexroth HMI).-F16.00, 49 \nUR4.1.1 [MCCPDC 3.2.3] - The physical servers shall be two (2) redundant Rockwell VersaVirtu al™ Appliances suitable for \ninstallation in the Data Center racks provided by VDS (Voice-Data-Security). System provided is one system that has two \nredundant server-F01.01, 13 \nUR4.10.1 [URS-PCS-HR-022] The field inputs and outputs to the PCS Miscellaneous PL C shall be hardwired I/O-F01.06, 15  UR4.10.2 [MCCPDC 3.2.2] All stick-build field instrumentation will be powered from the PCS PLC Panel (2-wire loop-powered and \n4-wire instruments).-F01.06, 15 \nUR4.2.1 System shall include a de dicated engineering workstation PC suitable for installation in a dedicated PC & Print room/of fice \nwith general purpose area classification.-F01.03, 13 \nUR4.2.2 Engineering workstation PC sh all include a method to annunciate audi ble alarms (speakers).-F01.03, 13 \nUR4.2.3 System shall include a color duplex printer suitable for installation in a dedi cated PC & Print room/office with general \npurpose area classifi cation.-F01.03, 13 \nUR4.2.4 System shall include three portable Microsoft Surface Pro wireless tablets, each with 12.3” screen, charger, IP65 stain less \nsteel housing with carrying handle suitable for operation in GMP cleanrooms.-F01.04, 14 \nUR4.2.5 System shall include a 15” touchscreen HMI in th e face of the PCS Miscella neous PLC panel.-F01.05, 15 \nUR4.3.1 [URS-PCS-HR-001] The PCS Miscella neous Programmable Logic Controller (PLC) platform shall be Rockwell Automation \nControlLogix.-F01.06, 15 \nUR4.3.2 [URS-PCS-HR-002] The mach ine control system must have sufficient network conne ctions to allow for the connection to \nhigher level SCADA systems such as  virtual active directory, ne twork time protocol server, data  historian, etc.-F01.06, 15 \nUR4.3.2 [URS-PCS-HR-002] The mach ine control system must have sufficient network conne ctions to allow for the connection to \nhigher level SCADA systems such as  virtual active directory, ne twork time protocol server, data  historian, etc.-F01.07, 16 \nUR4.3.3 [URS-PCS-HR-003] The PCS Miscella neous PLC Panel shall have no powers ource greater than 50V except in the \ndedicated UPS compartment. The PLC pa nel shall not require  Personal Protection Equipment (PPE) for arc flash during \nmaintenance and calibrati-F01.08, 17 \nUR4.3.4 [MCCPDC 3.2.2] The PCS Miscella neous PLC panel shall have a UPS battery back-up system installed.-F01.09, 17 \nUR4.3.5 [MCCPDC 3.2.2] The PCS Miscellaneou s PLC panel UPS shall be capable of suppl ying the connected system power for at \nleast fifteen (15) minutes of operation after lo ss of facility electric al power.-F01.09, 17 \nUR4.4.1 [URS-PCS-HR-006] Operator Interface Te rminals (OIT’s) shall be provided for the operator to perform process monitoring \nand process control.-F01.05, 15 \nUR4.4.1 Operator Interface Terminals (OIT’s ) shall be provided for the operator to perfo rm process monitoring and process contr ol.-\nF01.04, 14 \nUR4.4.2 [URS-PCS-HR-007] Ethern et switch shall be provided for communications  connectivity between the PCS Miscellaneous \nPLC and its OIT, and external systems. Ethernet  switch shall be powered by 24VDC.-F01.07, 16 \nUR4.5.1 [URS-PCS-HR-013] All wiri ng inside the machine must be separated into power, signal, and network channels.-F01.10, 18 \nUR4.5.2 [URS-PCS-HR-014] El ectrical enclosures shall be washdown  duty, NEMA 4X rated.-F01.08, 17 \nUR4.5.3 [URS-PCS-HR-015] All electrical components shall be UL listed.-F01.10, 18 \nUR4.5.4 [URS-PCS-HR-016] A lockable disconn ect switch shall be provided on each main feed to the PCS Miscellaneous PLC Panel \nenclosure.  The disconnect switch shall be rated per NEC guidelines of supplied volta ge and current ratings (minimum 600VAC / \n30A /-F01.11, 18 \nUR4.5.5 [MCCPDC 3.2.2] Comple ted, assembled panel shall be  UL certified.-F01.10, 18 \nUR4.5.6 [MCCPDC 3.2.2] Completed,  assembled panel shall be UL listed for the a ppropriate electrical ar ea classification.-F01.10 , 18 \nUR4.5.7 [MCCPDC 7.2.3] The SI shall provide  PCS Miscellaneous PLC Panel Heat Load Calculation & Electrical Loading Calcs. \nThese calculations shall be maintained through to  the final validated state As-Builts.-F01.08, 17 \nUR4.6.1 [URS-PCS-HR-017] All indi cator lights shall be suitable for operation on 24 VDC. Lamps (LED preferred) and caps shall be  \nreplaceable from the outside front of the pa nel. For lamp caps specified as colored in hardware design specifications, the lamp -\nF01.12, 18 \nUR4.7.1 [URS-PCS-HR-018] All com ponents of the system shall be specified with  a mean-time between fa ilures of more than 2 \nyears.-F01.13, 19 \nUR4.8.1 [URS-PCS-HR-019] System shall have  the ability to alert users with an audible alert… (see below)-F01.14, 19 \nUR4.9.1 [URS-PCS-HR-020] Communication be tween SCADA and plant PLC’s shall be vi a Ethernet protocol. All communication \ncabling shall be CAT6/CAT6A and in compliance  with ANSI/TIA/EIA-568-B standards.-F01.06, 15 \nUR4.9.1 [URS-PCS-HR-020] Communication be tween SCADA and plant PLC’s shall be vi a Ethernet protocol. All communication \ncabling shall be CAT6/CAT6A and in compliance  with ANSI/TIA/EIA-568-B standards.-F01.07, 16 \nUR4.9.2 [URS-PCS-HR-021] All switc hing and cabling shall be capable of gigabit data transfer, where applicable.-F01.02, 13 \nUR4.9.2 [URS-PCS-HR-021] All switc hing and cabling shall be capable of gigabit data transfer, where applicable.-F01.06, 15 \nUR4.9.2 [URS-PCS-HR-021] All switc hing and cabling shall be capable of gigabit data transfer, where applicable.-F01.07, 16 \nUR5.1.1 [URS-PCS-SR-001] A SI provided Engi neering Workstation perform online and offline changes to the PCS Miscellaneous \nPLC configuration and shall be  capable of being connected  to the OIT’s.-F01.03, 14 \nUR5.1.1 [URS-PCS-SR-001] A SI provided Engi neering Workstation perform online and offline changes to the PCS Miscellaneous \nPLC configuration and shall be  capable of being connected  to the OIT’s.-F01.05, 15 \nUR5.1.1 [URS-PCS-SR-001] A SI provided Engi neering Workstation perform online and offline changes to the PCS Miscellaneous \nPLC configuration and shall be  capable of being connected  to the OIT’s.-F01.07, 16 ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "21_CFR_11.10(g)"
+    ],
+    "retrieval_mode": "full_chunk"
+  },
+  "verified_records_by_req": {
+    "21_CFR_11.10(g)": [
+      {
+        "record_id": "vrec-task-5b9e9e4961e4-21_CFR_11.10(g)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(g)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-46886924a808-21_CFR_11.10(g)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(g)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 2,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-05134dc19fa6-21_CFR_11.10(g)",
+        "llm_output": {
+          "requirement_id": "21_CFR_11.10(g)",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 3,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,258 @@
+{
+  "run_id": "chunked-78f2975a9b58",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "eu_annex11_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 3,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-78f2975a9b58",
+      "task_id": "task-e13d7e9eb44a",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 3966,
+      "started_at": "2026-08-17T18:47:40.291439+00:00",
+      "finished_at": "2026-08-17T18:48:10.639636+00:00",
+      "wall_clock_ms": 30348.2,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"ANNEX11_4\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona evidencia de una evaluación de riesgo real y documentada, ni la conexión explicita entre dicha evaluación y las decisiones de validación tomadas.\",\n            \"recomendacion\": \"Incluir una evaluación de riesgo detallada y su conexión con las decisiones de validación en el documento de validación.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Documentacion de validacion que cubre las etapas relevantes del ciclo de vida.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona ninguna evaluación de riesgo ni documentación que cubra el ciclo de vida del sistema.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Evaluacion de riesgo real y documentada.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona ninguna evaluación de riesgo real o documentada en el documento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Conexion explicita y trazable entre esa evaluacion de riesgo y las decisiones de validacion tomadas (alcance, protocolos, criterios de aceptacion, procedimientos, registros).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se muestra ninguna conexión explicita entre la evaluación de riesgo y las decisiones de validación.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-78f2975a9b58/task-e13d7e9eb44a.txt.gz",
+      "raw_response_full_sha256": "22cf559a35a361562f9013bafea75f4b67cc50381fd7d97c661c7ea6e25520bb",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ANNEX11_4",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Documentacion de validacion que cubre las etapas relevantes del ciclo de vida.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona ninguna evaluación de riesgo ni documentación que cubra el ciclo de vida del sistema.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Evaluacion de riesgo real y documentada.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona ninguna evaluación de riesgo real o documentada en el documento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Conexion explicita y trazable entre esa evaluacion de riesgo y las decisiones de validacion tomadas (alcance, protocolos, criterios de aceptacion, procedimientos, registros).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se muestra ninguna conexión explicita entre la evaluación de riesgo y las decisiones de validación.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "shold value (performer) \n Meaning of signature (performer) \n User ID of the individual who has approved the change (approver) \n Full name of the individual who has approved the change (approver) \n Meaning of signature (approver). \n \nThe Critical Alarm Audit Trail entry will contain the following information: \n Alarm date and time stamps \n Alarm tag \n Alarm value \n Alarm description \n A similar record shall be generated whenever a critical alarm condition returns to \nnormal condition. \n  F13.00: Long-Term Archiv ing and Data Retrieval \nThis function implements the following user requirement(s)  \nUR3.3.7 Data archiving requirements and data storage media. \n1. MCCPDC will be responsible for archiving histor ical data per their internal procedures at \na location of their choosing.  Regular archiving is recommended.   \n \nMCCPDC will be responsible for long-term archiving of historical data per their internal procedures at a location of their choosing.  Regular archiving is recommended. \nF14.00: Backup and recovery \nThis function implements the following user requirement(s)  \nUR3.2.2 Failur e/Recovery \nPLC/HMI \nThe system shall have the means to reco ver from a hardware fault by means of \nreconfiguration and/or replacem ent and then reconfiguration. \nA list of hardware settings for each device shall be maintained as applicable. \nA list of software settings or suitable configurat ion file(s) for each device shall be maintained \nas applicable. \nProcess Automation Control Server System \nThe System shall have a means to recover from  software corruption or loss of configuration \ninformation by reprogramming or reloading of  the appropriate parameters. (Restore from \nbackup)   \n \n A back-up of the PLC program shall be maintained to allow for the restoration of the PLC in the \nevent it is needed.    A list of hardware settings for the SCADA and PCS Misc. PLC System components shall be maintained for the restoration of hardware devices.  A list of software settings or suitable configuration file(s) for each device shall be maintained for the restoration of software-related settings on devices. \n A back-up of the FactoryTalk View SE application shall be maintained to allow for the \nrestoration of the user application in the event it is needed. \nF15.00: Frequency of data point collection \nThis function implements the following user requirement(s)  \nUR3.2.4 Capacity and speed of data acquisition from MCCPDC  \n1. The system shall be capable of acquiring a data sample consis ting of a combination of at \nleast 100 data points of analog and/or digital every 15 seconds.   \nUR3.3.4 Frequency of data point collection \n1. The system shall be configur able allowing for differing logg ing rates depending on signal \ntype.  A table indicating the measurement ty pe and the logging frequency required can be \nfound in the Functional Specification.  (e.g., Temperature sampled every 60 sec.).   \n \nThis FactoryTalk Historian SE license permits up to 250 points to be logged based on a configurable \nrate.  One hundred points once every 15 seconds can be accommodated. \n This FactoryTalk Historian SE is capable of logging data at different rates based on its configuration.   \n\f\n The data shall be logged according to rates show in Table 5-1 below.  \nData Point Type Frequency of Logging Comment \nRelativity Humidity 60 seconds  \nPressure (compressed air system) 15 seconds  \nDifferential Pressure (Room) 60 seconds  \nDew Point 60 seconds  \nHydrocarbons 60 seconds  \nPump Speed (RPM) (soft I/O) 5 seconds  \nSurge Bag Weight (soft I/O) 15 seconds  \nVaporous Hydrogen Peroxide \nConcentration (VHP) 15 seconds  \nType not listed above 60 seconds  \nTable 5-1: Data point collection frequency by type \n \nThe customer representative has recently informed us of their interest in changing their requirement from time-based to event-based logging.  Once agreed upon and formalized, the response to that change will be reflected here as required. ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-78f2975a9b58",
+      "task_id": "task-c6316fb24588",
+      "chunk_index": 1,
+      "page_start": 2,
+      "page_end": 2,
+      "has_overlap_prefix": true,
+      "text_chars": 6687,
+      "started_at": "2026-08-17T18:48:10.640665+00:00",
+      "finished_at": "2026-08-17T18:48:43.323239+00:00",
+      "wall_clock_ms": 32682.5,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"ANNEX11_4\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona evidencia de la documentación de validación que cubre las etapas relevantes del ciclo de vida, ni de una evaluación de riesgo real y documentada. Además, no hay conexión explicita entre esa evaluación de riesgo y las decisiones de validación tomadas (alcance, protocolos, criterios de aceptacion, procedimientos, registros).\",\n            \"recomendacion\": \"Incluir la documentación de validación que cubra el ciclo de vida del sistema y una evaluación de riesgo real.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Documentacion de validacion que cubre las etapas relevantes del ciclo de vida.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona documentación de validación en el documento proporcionado.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Evaluacion de riesgo real y documentada.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona evaluación de riesgo en el documento proporcionado.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Conexion explicita y trazable entre esa evaluacion de riesgo y las decisiones de validacion tomadas (alcance, protocolos, criterios de aceptacion, procedimientos, registros).\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona conexión entre la evaluación de riesgo y las decisiones de validación en el documento proporcionado.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-78f2975a9b58/task-c6316fb24588.txt.gz",
+      "raw_response_full_sha256": "b7f6ae1a18fa08b2f137745b882fd979d4a4ac2c0b3449dba567d44ebda172f6",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ANNEX11_4",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Documentacion de validacion que cubre las etapas relevantes del ciclo de vida.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona documentación de validación en el documento proporcionado.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Evaluacion de riesgo real y documentada.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona evaluación de riesgo en el documento proporcionado.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Conexion explicita y trazable entre esa evaluacion de riesgo y las decisiones de validacion tomadas (alcance, protocolos, criterios de aceptacion, procedimientos, registros).",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona conexión entre la evaluación de riesgo y las decisiones de validación en el documento proporcionado.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "s  \nHydrocarbons 60 seconds  \nPump Speed (RPM) (soft I/O) 5 seconds  \nSurge Bag Weight (soft I/O) 15 seconds  \nVaporous Hydrogen Peroxide \nConcentration (VHP) 15 seconds  \nType not listed above 60 seconds  \nTable 5-1: Data point collection frequency by type \n \nThe customer representative has recently informed us of their interest in changing their requirement from time-based to event-based logging.  Once agreed upon and formalized, the response to that change will be reflected here as required.  energized, \nvalve is open.). \n3. Yellow – General meaning is “Warning” or “Take Note” (e.g., device is in a mode \nother than normal such as manual mode, valve is in an intermediate state such as \nmanual mode, valve is in an intermediate state such as traveling between closed and open).  \n4. Red – General meaning is “Alarm” or “Lockout” (e.g., an alarm is active on a device or \nOperation, lockout is activated).  \nThe color palette is applied to dynamic objects to reflect the colors shown above.  F05.03: Print Screen Function \nThis function implements the following user requirement(s)  \nUR5.2.21 [URS-PCS-SR-027] The capability to generate an electronic or hard copy of any active display \nmust be available via the Print Screen function.  \n \nA Print Screen button visible on each display allows for the capture of that display for later review. \n F05.04: Overview Screen \nThis function implements the following user requirement(s)  \nUR5.2.23 [URS-PCS-SR-029] The system shall provi de an “Overview” screen on all physical OITs. The \noverview screen will display “view-only” da ta for all critical parameters, values and \ninformation across the system. De tails of the required overview  information to be determined \nduring detailed design.  \n \nAn Overview Screen (Main) is provided which displays the critical parameters, values, and \ninformation as described in Section 3.1.12 Overview Screen below.  \n \n F05.05: Input State and Simulation Review Screen \nThis function implements the following user requirement(s)  \nUR5.3.3 [URS-PCS-SR-032] All inputs shall provide st ate and simulation features . This shall be captured \non a separate maintenance screen, accessible by Admin and Maintenance personnel.  \n \nAn Input State and Simulation Review screens are present which are only accessible to the \nAdministrator and Maintenance login security levels.  These screens displays the state of the wired input (actual input) and the state of the simulated input and if the simulation function is active for that particular input (simulated state is what controller sees).    \nSince an Administrator or Maintenance person may put any input point in SIMULATE and change its \nvalue, it is the responsibility of this person to supervise and adjust the manually inserted value for any \npoints placed in SIMULATE.  Failure to properly supervise and adjust manually inserted values may cause incorrect control functions and may lead to equipment damage. \n F05.06: PLC firmware version and OIT version available via HMI \nThis function implements the following user requirement(s)  \nUR5.2.17 [USR-PCS-SR-023] The PLC revision will be addressed to a PLC register, and hard coded OIT \nrevision shall be accessible via a main menu  selection to users with Administrator or \nEngineer security level privileges.  \n \n\f\n The PLC application revision is populated into a tag in the PCS-CP01 PLC.  The OIT software \napplication revision is populated into a tag in the PCS-CP01 PLC.  Both of these tags are visible via the main menu selection to any user in the Administrator or Maintenance Engineer security level \ngroups.   (Engineer security level group is not a valid group on this system). \n F05.07: Display Access and Navigation \nAll the HMI screens in this project are contained wi thin a FactoryTalk View SE project which exists on \nthe FactoryTalk View SE server.  As such, all screens will be available to all clients both wired and wireless, which have access to the server, depending on their security access level.   \nGraphical Screens \nA menu bar available near the top of each screen provides the ability to navigate to the screens in the list below.  These are available on every screen but for readability of this document, they are not listed in each screen’s object list. \n Overview \n Input Point Statuses and Simulation \n Environmental Readings \n Waste Lift and Neutralization \n Water for Injection (WFI) \n Weigh / Dispense \n Parts Washer / Sterilizer  \n Filling System \n Vial Labeler / Serialization \n Clean Steam Generator \n Trends \n An Alarm Banner near the top of each screen displays alarms and a button is provided which displays \nthe Alarm Details screen.  This is available on every scr een but for readability of this document, it is not \nlisted in each screen’s object list. \n Alarm Details \n \nPer the specification a Print Screen button is available on each screen to capture the current screen \ncontents.  This is available on every screen but for readability of this document, it is not listed in each screen’s object list. \n Print Screen Button \n\f\n Overview Screen \nThe project start-up screen is the Overview screen,  which gives an overview of the critical process \nparameters and navigation options to each of the sub-screens including the vendor screens. \n \nFrom the Overview screen, one also has the ability to perform the following actions: \n Login \n Logout \n Change password \n Print Screen \n Shutdown PanelView (exit to configure mode) \n At minimum, this screen displays the following items: \nNumber Information to \ndisplay Description \n1 XI-00001-04, 05, 06 PCS Overall Status Indicator \n2 XAH-00001-06 PCS Overall Status (Horn) Indicator \n3 XS-30001-8 BMS Common Trouble Input Signal Indicator \n4 AAHH-33002-02, 03 Filler VHP Hi -Hi Alarm Horn Indicator  \n5 ALH-33002-02, 03 Filler VHP Hi gh Alarm Strobe Indicator  \n6 XI-99001-24A, B EMS Status Light (Alarm/Normal) Corridor 24 Indicator \n7 XI-99001-37A, B EMS Status Light (Alarm/Normal) Corridor 37 Indicator \n8 Software signal Water For Injection System Common Trouble Indicator \n9 Software signal Parts Washer Sterilizer / Clean Steam Generator Common \nTrouble Alarm indicator \n10 XA-33002-04 \nSoftware signal Filler System Common Trouble Alarm Indicator \n11 Software signal Vial labeler Common Trouble Indicator \n12 UI 36210-01 \nSoftware signal Serialization Common Trouble Indicator \n13 Software signal Waste Lift / Neutralization Station Common Trouble Indicator \n14 XI-00001-01 PCS Common Trouble Output Signal to BMS Indicator \n15 XI-00001-02 EMS Common Trouble Output Signal to BMS Indicator \n16 AIT-08001-02 Compressed Air Supply to Filters Dew Point numeric display \ndeg F (Td) ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-78f2975a9b58",
+      "task_id": "task-9248d7092f49",
+      "chunk_index": 2,
+      "page_start": 3,
+      "page_end": 3,
+      "has_overlap_prefix": true,
+      "text_chars": 6444,
+      "started_at": "2026-08-17T18:48:43.325174+00:00",
+      "finished_at": "2026-08-17T18:49:14.048256+00:00",
+      "wall_clock_ms": 30723.1,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"ANNEX11_4\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona evidencia de que la documentación de validación cubra las etapas relevantes del ciclo de vida.\",\n            \"recomendacion\": \"Incluir una descripción detallada en el plan de validación que aborde todas las fases del ciclo de vida.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Documentacion de validacion que cubre las etapas relevantes del ciclo de vida.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se menciona en el documento ninguna documentación de validación que aborde todas las fases del ciclo de vida.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Evaluacion de riesgo real y documentada.\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se encuentra información sobre una evaluación de riesgos realizada o documentada en el documento proporcionado.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Conexion explicita y trazable entre esa evaluacion de riesgo y las decisiones de validacion tomadas (alcance, protocolos, criterios de aceptacion, procedimientos, registros).\",\n                    \"status\": \"NOT_ASSESSABLE\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona información sobre la conexión entre la evaluación de riesgos y las decisiones de validación en el documento.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-78f2975a9b58/task-9248d7092f49.txt.gz",
+      "raw_response_full_sha256": "6945c169149bc175a9bd99805c423a09a21dd8f1373f809653ef81c6de1d97b5",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ANNEX11_4",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Documentacion de validacion que cubre las etapas relevantes del ciclo de vida.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se menciona en el documento ninguna documentación de validación que aborde todas las fases del ciclo de vida.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Evaluacion de riesgo real y documentada.",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se encuentra información sobre una evaluación de riesgos realizada o documentada en el documento proporcionado.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Conexion explicita y trazable entre esa evaluacion de riesgo y las decisiones de validacion tomadas (alcance, protocolos, criterios de aceptacion, procedimientos, registros).",
+              "status": "NOT_ASSESSABLE",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona información sobre la conexión entre la evaluación de riesgos y las decisiones de validación en el documento.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "002-04 \nSoftware signal Filler System Common Trouble Alarm Indicator \n11 Software signal Vial labeler Common Trouble Indicator \n12 UI 36210-01 \nSoftware signal Serialization Common Trouble Indicator \n13 Software signal Waste Lift / Neutralization Station Common Trouble Indicator \n14 XI-00001-01 PCS Common Trouble Output Signal to BMS Indicator \n15 XI-00001-02 EMS Common Trouble Output Signal to BMS Indicator \n16 AIT-08001-02 Compressed Air Supply to Filters Dew Point numeric display \ndeg F (Td) s  \nHydrocarbons 60 seconds  \nPump Speed (RPM) (soft I/O) 5 seconds  \nSurge Bag Weight (soft I/O) 15 seconds  \nVaporous Hydrogen Peroxide \nConcentration (VHP) 15 seconds  \nType not listed above 60 seconds  \nTable 5-1: Data point collection frequency by type \n \nThe customer representative has recently informed us of their interest in changing their requirement from time-based to event-based logging.  Once agreed upon and formalized, the response to that change will be reflected here as required.  6 External Interfaces \nF16.00: PLC Interfaces (PCS-CP01 and other Vendor Systems) \nThis function implements the following user requirement(s)  \nUR3.1.1 The system shall measure the critical proc ess parameters for the process, which include flow, \nhumidity, dew point, pressure, and temperature.   \nUR3.5.2 [MCCPDC 1.4.2.4] - The SI shall implement thin client archit ecture for the SCADA/HMI to allow \nprocess control in a sustainable and scalable platform and to seamlessly integrate skids \nPLC’s and OIT’s while providing features, to ols, and methods of access which make it \nsimple to monitor and adjust user sessions.  \nUR3.6.3 [MCCPDC 3.3.1] - The system shall interf ace with an OEM vendor supplied equipment named \nWFI Generation, Storage, and Dis tribution system.  The OEM vendor on-skid control system \nplatform is Allen-Bradley Com pactLogix with 1769 Remote I/O.   \nUR3.6.4 [MCCPDC 3.3.1] - The system shall interf ace with an OEM vendor supplied equipment named \nFiller System.  The OEM vendor on-skidc ontrol system platform is Allen-Bradley \nGuardLogix (1756-L72S).   \nUR3.6.5 [MCCPDC 3.3.1] - The system shall interf ace with an OEM vendor supplied equipment named \nVial/Syringe Labeler.  The OEM vendor on-skid control system platform is Allen-Bradley \nCompactLogix (5380 series).   \nUR3.6.6 [MCCPDC 3.3.1] - The system shall interf ace with an OEM vendor supplied equipment named \nWaste Lift and Neutralization System.  The OEM vendor on-skid control system platform is \nAllen-Bradley MicroLogix or CompactLogix.   \nUR3.6.7 [MCCPDC 3.3.1] - The system shall interf ace with an OEM vendor supplied equipment named \nWasher/Sterilizer with Clean Steam Generator .  The OEM vendor on-skid control system \nplatform is Fedegari THEMA4 & Siemens S7-1512 PLC, with NanoBox IPC227E, and \nNanoPanel IPC277E HMI.   \nUR3.6.8 [MCCPDC 3.3.1] - The system shall interf ace with an OEM vendor supplied equipment named \nSerialization.  The OEM vendor on-skid cont rol system platform is Beckhoff IPC (Windows \n10 with Bosch Rexroth HMI).   \n \nThis system is comprised of both a local PLC panel (PCS-CP01), which has instruments wired to it, and \nvendor systems which also record process parameters.  All of these systems will report their data to a \nFactoryTalk View SE system with Historian.  The connec tion to all of these systems is what is described \nhere. \nThe Rockwell Automation FactoryTalk Linx Enterprise software provides the connection between the \nFactoryTalk View SE system and the PLCs (PCS-CP 01 and the other vendor systems).  This standard \nOPC server for Rockwell Controllers provides the means  to read/write values from/to the controller.  The \nrelevant OPC tags are listed in the corresponding Vendor Interface Document as shown in Section 8 Appendix, Table 8-1: Vendor Interface Specification Documents. \nRockwell Automation/MAVERICK is aware of addi tional vendor systems which are expected to be \nadded to the requirements list and this specification will be updated to include those as required.     \n\f\n F17.00: Non-PLC Interfaces \nThis function implements the following user requirement(s)  \nUR5.4.6 [URS-PCS-SR-040] The syst em shall communicate via OPC st andard communication protocol for \ndata transfer outside of t he PLC control system layer.   \n \nThe Rockwell Automation FactoryTalk Linx Enterpri se software is an OPC server and provides the \nconnections to non-PLC systems.   \n\f\n 7 Non-Functional Attributes \nThis function implements the following user requirement(s)  \nUR6.1.1 [MCCPDC 3.3.3] - The project shall utilize the GAMP methodology when developing the system \nand documentation.  \nUR6.1.2 System is documented via entriesf ound in URS Table 2- List of Documents.  \n \nF18.00: System Design \nThis system and its documentation are designed according to the GAMP methodology.   \nF19.00: Availability \nThis function implements the following user requirement(s)  \nUR3.2.2 Failur e/Recovery \nPLC/HMI \nThe system shall have the means to reco ver from a hardware fault by means of \nreconfiguration and/or replacem ent and then reconfiguration. \nA list of hardware settings for each device shall be maintained as applicable. \nA list of software settings or suitable configurat ion file(s) for each device shall be maintained \nas applicable. \nProcess Automation Control Server System \nThe System shall have a means to recover from  software corruption or loss of configuration \ninformation by reprogramming or reloading of  the appropriate parameters. (Restore from \nbackup)   \n \nPLC/HMI \n The PLC and HMI Systems store their programs onboard and, if configured to do so, recover \nfrom power failures and begin running again without the need for user intervention. \n Recovery from software corruption is implemented via offline storage of the PLC and HMI \nsoftware programs that is re-loaded to the devices should they become corrupted.  This is a restore from backup solution. \n Process Automation Control Server System \n The Process Automation Control Server System requires user action to start up the system \nafter a shutdown.  Refer to the Rockwell Automation VersaVirtual™ Appliance User Manual (Publication GMSN-UM001_-EN-P) for instructions on the Start-Up procedure. \nF20.00: Redundancy \nThe PLC logic program and the HMI program shall be stored in discrete memory devices which \ncan be isolated (either physically or  electronically) from the rest of  the system to provide offline \nredundancy. ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "ANNEX11_4"
+    ],
+    "retrieval_mode": "full_chunk"
+  },
+  "verified_records_by_req": {
+    "ANNEX11_4": [
+      {
+        "record_id": "vrec-task-e13d7e9eb44a-ANNEX11_4",
+        "llm_output": {
+          "requirement_id": "ANNEX11_4",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-c6316fb24588-ANNEX11_4",
+        "llm_output": {
+          "requirement_id": "ANNEX11_4",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 2,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-9248d7092f49-ANNEX11_4",
+        "llm_output": {
+          "requirement_id": "ANNEX11_4",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 3,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}

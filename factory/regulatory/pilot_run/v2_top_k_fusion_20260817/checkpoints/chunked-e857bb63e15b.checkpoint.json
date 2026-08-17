@@ -1,0 +1,258 @@
+{
+  "run_id": "chunked-e857bb63e15b",
+  "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+  "agent_id": "alcoa_plus_agent",
+  "documento": "RW-0005",
+  "archivo": "/home/ing_cpmo/GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+  "total_chunks": 3,
+  "chunk_executions": [
+    {
+      "run_id": "chunked-e857bb63e15b",
+      "task_id": "task-3786cbb846ca",
+      "chunk_index": 0,
+      "page_start": 1,
+      "page_end": 1,
+      "has_overlap_prefix": false,
+      "text_chars": 5551,
+      "started_at": "2026-08-17T18:40:23.980564+00:00",
+      "finished_at": "2026-08-17T18:40:57.771618+00:00",
+      "wall_clock_ms": 33791.0,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"ALCOA_CONTEMPORANEOUS\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona evidencia de que el registro se realice en el momento de la actividad como regla general, ni detalles sobre cómo se registra o quién registra las actividades.\",\n            \"recomendacion\": \"Incluir una descripción detallada del proceso de registro contemporáneo y quién realiza dichos registros.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Registro en el momento de la actividad como regla general.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona evidencia de que el registro se realice en el momento de la actividad como regla general.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona evidencia de que el registro se realice en el momento de la actividad por el escribiente y no retrospectivamente, ni quién registra las actividades.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona evidencia de un procedimiento gobernado que defina cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo máximo y revisión.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-e857bb63e15b/task-3786cbb846ca.txt.gz",
+      "raw_response_full_sha256": "58c3a1037850bbdf0a56f28dd47106a3066099331ca44c880ee212667c7550c7",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ALCOA_CONTEMPORANEOUS",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Registro en el momento de la actividad como regla general.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad como regla general.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad por el escribiente y no retrospectivamente, ni quién registra las actividades.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona evidencia de un procedimiento gobernado que defina cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo máximo y revisión.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "figuration and shall be  capable of being connected  to the OIT’s.-F01.03, 14 \nUR5.1.1 [URS-PCS-SR-001] A SI provided Engi neering Workstation perform online and offline changes to the PCS Miscellaneous \nPLC configuration and shall be  capable of being connected  to the OIT’s.-F01.05, 15 \nUR5.1.1 [URS-PCS-SR-001] A SI provided Engi neering Workstation perform online and offline changes to the PCS Miscellaneous \nPLC configuration and shall be  capable of being connected  to the OIT’s.-F01.07, 16  UR5.1.1 [URS-PCS-SR-001] A SI provided Engi neering Workstation perform online and offline changes to the PCS Miscellaneous \nPLC configuration and shall be  capable of being connected  to the OIT’s.-F21.01, 52 \nUR5.1.2 [URS-PCS-SR-002] Distinct ion shall be drawn between, process interlocks , and safety interlocks  lock out conditions.-\nF07.00, 36 \nUR5.1.3 [URS-PCS-SR-005] All software source  code shall be commented by the SI to convey intent and function of the code.-\nF21.02, 53 \nUR5.1.4 [URS-PCS-SR-006] Revision history ne eded from initiation of SFAT, all revisions  shall be approved and tracked.-F22.00, \n53 \nUR5.2.1 [URS-PCS-SR-007] The system shall be configured to host an operat or interface applic ation.-F02.01, 19 \nUR5.2.10 [URS-PCS-SR-016] Alarm presentation shall be visual and audible.-F07.00, 36 \nUR5.2.11 [URS-PCS-SR-017] Alarms shall be displayed at the OIT as they occur. An alarm summary shall be available as a \nnavigable screen at the OIT.-F07.00, 36 \nUR5.2.12 [URS-PCS-SR-018] Each alarm should ha ve its own description that  is traceable for troubleshooting by a line operatoror \nmaintenance person.-F07.00, 36 \nUR5.2.13 [URS-PCS-SR-019] Alarm acknowledgem ent and silencing of audible alarms sh all be done from the OIT.-F07.00, 37 \nUR5.2.14 [URS-PCS-SR-020] Alarms shall be  in one of the following categories- Unacknowledged (active or inactive), \nAcknowledged (active), and Acknow ledged (cleared).-F07.03, 37 \nUR5.2.15 [URS-PCS-SR-021] The system must  be compatible with Windows 10 on laptop/ desktop clients and/or Windows Terminal \nServices.-F23.01, 53 \nUR5.2.16 [URS-PCS-SR-022] The system  must detect and inform the operator of fail ures or errors in ha rdware and non-responsive \nequipment.-F07.00, 37 \nUR5.2.17 [USR-PCS-SR-023] The PLC revision will be addressed to a PLC register, and hard coded OI T revision shall be accessible  \nvia a main menu selection to users with Administrat or or Engineer security level privileges.-F05.06, 24 \nUR5.2.18 [URS-PCS-SR-024] All soft key buttons shall be of suffic ient size to allow finger touch of the object to activate it a nd have \nadequate space between objects to ensure the correct object is be ing selected.  Soft key button sizing and locations shal-F05.0 0, 22 \nUR5.2.19 [URS-PCS-SR-025] Real-time multi-pen trends for all analog and defined discrete signals.  Also, PID loop controller \nscreens to include trending for PV, SP and CV as applicable.-F05.01, 23 \nUR5.2.2 [URS-PCS-SR-008] Control and privil ege access shall be assigned to system us ers based on the following operator access \nlevels- Default User, Operator, Supervisor , Maintenance, Administrator.-F10.00, 40 \nUR5.2.20 [URS-PCS-SR-026] The following colors  shall be utilized when indicating stat es of dynamic objects …(see below)-F05.02, \n23 \nUR5.2.21 [URS-PCS-SR-027] The capability to ge nerate an electr onic or hard copy of any active di splay must be available via the  \nPrint Screen function.-F05.03, 24 \nUR5.2.22 [URS-PCS-SR-028] Alarms shall be stored / available to view on an alarm history screen.-F07.00, 37 \nUR5.2.23 [URS-PCS-SR-029] The system shall pr ovide an “Overview” screen on all physical OITs. The ove rview screen will display \n“view-only” data for all critical parameters, values and information across the system. Details of the required overview inform at-\nF05.04, 24 \nUR5.2.3 [URS-PCS-SR-009] Logins, logouts , and login attempts must be record ed in the Audit Trail.-F12.00, 46 \nUR5.2.4 [URS-PCS-SR-010] The user iden tification must consist of two parts,  username and password.-F10.05, 42 \nUR5.2.5 [URS-PCS-SR-011] System must be cap able of utilizing active dire ctory. It must be possible to configure the required \npassword strength of the user’s password with items such as # of  capital letters, # of special characters, and length of the pa sswo-\nF10.05, 43 \nUR5.2.6 [URS-PCS-SR-012] The system must have  an automatic logout function that after a certain period of inactivity the user i s \nlogged out to Default User.-F10.00, 40 \nUR5.2.7 [URS-PCS-SR-013] Interlock shall have associated alarms.-F07.00, 36 \nUR5.2.8 [URS-PCS-SR-014] Bypassed interlock conditions shall be clearly indicated  at the OIT.-F07.00, 36 \nUR5.2.9 [URS-PCS-SR-015] The system shall provide display of analog signal status, numerical values, engineering units, and \nalarming.-F05.00, 22 \nUR5.2.9 [URS-PCS-SR-015] The system shall provide display of analog signal status, numerical values, engineering units, and \nalarming.-F07.00, 36 \nUR5.3.1 [URS-PCS-SR-030] The control sy stem programming shall use Control Modul es and standard programming per ISA \nS88/S95 as applicable.-F02.01, 19 \nUR5.3.2 [URS-PCS-SR-031] Operations shall contain steps (series of actions) and tran sitions (conditions required for sequenceto \nprogress) to perform required process sequences.-F02.01, 20 \nUR5.3.3 [URS-PCS-SR-032] All inputs shall provide state and simulation features. This shall be captured on a separate maintenan ce \nscreen, accessible by Admin and Maintenance personnel.-F02.03, 21 ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-e857bb63e15b",
+      "task_id": "task-ab95c8852d80",
+      "chunk_index": 1,
+      "page_start": 2,
+      "page_end": 2,
+      "has_overlap_prefix": true,
+      "text_chars": 4911,
+      "started_at": "2026-08-17T18:40:57.773007+00:00",
+      "finished_at": "2026-08-17T18:41:28.917417+00:00",
+      "wall_clock_ms": 31144.4,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n  \"checkpoints\": [\n    {\n      \"req_id\": \"ALCOA_CONTEMPORANEOUS\",\n      \"estado\": \"evidencia_insuficiente\",\n      \"evidencia_exacta\": \"\",\n      \"brecha\": \"El documento no proporciona evidencia de que el registro se realice en el momento de la actividad como regla general, ni detalles sobre cómo se registra el escribiente y el ejecutor.\",\n      \"recomendacion\": \"Incluir una descripción detallada del proceso de registro contemporáneo en el documento.\",\n      \"criterion_assessments\": [\n        {\n          \"criterion_index\": 1,\n          \"criterion_text\": \"Registro en el momento de la actividad como regla general.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se proporciona evidencia de que el registro se realice en el momento de la actividad como regla general.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 2,\n          \"criterion_text\": \"Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se proporciona evidencia de que el escribiente registre en el momento de la actividad o identifique al ejecutor real.\",\n          \"limitations\": \"\"\n        },\n        {\n          \"criterion_index\": 3,\n          \"criterion_text\": \"Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.\",\n          \"status\": \"NOT_MET\",\n          \"evidence_quote\": \"\",\n          \"evidence_location\": \"\",\n          \"justification\": \"No se proporciona evidencia de un procedimiento gobernado para contrafirmaciones tardías del ejecutor.\",\n          \"limitations\": \"\"\n        }\n      ]\n    }\n  ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-e857bb63e15b/task-ab95c8852d80.txt.gz",
+      "raw_response_full_sha256": "29ff3decde8f823fa87621685a0c5189d692f8fdd233f1889fbc57749236af63",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ALCOA_CONTEMPORANEOUS",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Registro en el momento de la actividad como regla general.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad como regla general.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona evidencia de que el escribiente registre en el momento de la actividad o identifique al ejecutor real.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona evidencia de un procedimiento gobernado para contrafirmaciones tardías del ejecutor.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "em programming shall use Control Modul es and standard programming per ISA \nS88/S95 as applicable.-F02.01, 19 \nUR5.3.2 [URS-PCS-SR-031] Operations shall contain steps (series of actions) and tran sitions (conditions required for sequenceto \nprogress) to perform required process sequences.-F02.01, 20 \nUR5.3.3 [URS-PCS-SR-032] All inputs shall provide state and simulation features. This shall be captured on a separate maintenan ce \nscreen, accessible by Admin and Maintenance personnel.-F02.03, 21 ller B \nSerialization B \nVial Syringe Labeler  B \nParts Washer / Sterilizer  B \nClean Steam Generator B \nWaste Lift and Neutralization  B \nWater for Injection  B \nWeigh / Dispense B \nAlarm Details B \nAlarm Limit Modification (page 1 of 2) E \nAlarm Limit Modification2 (page 2 of 2) E \n3Table 4-2: Security Code Assignments for Graphic Displays \n \n2 Screen access is defined by the first code (least rest rictive), additional codes indicate objects on screen are \nsubject to additional restrictions \n  5 Data \nF11.00: Databases and Historical Logging \nThis function implements the following user requirement(s)  \nUR3.3.6 Data retention time on the system \n1. The system shall have provision for retaining 1 year of historical data locally before it is \narchived in an alternate location for safe keeping.   \nUR5.4.7 [URS-PCS-SR-041] The PLC system shall co mmunicate with a plant historian (collect and \ntransfer data).   \n F11.01: Process Historian \nThis system contains the Rockwell FactoryTalk Historian SE software and server which \nsatisfies the requirement to collect and transfer data. \n F11.02: Critical Data Records \nThis system maintains the following critical runtime data records: \n FactoryTalk View SE alarm log and activity log data are stored in the corresponding \ndatabases as analog, digital and string values.     \n Analog, digital and string device tags that are transferred from the PLC to the \nFactoryTalk View SE system. \nF12.00: Audit Trail \nThis function implements the following user requirement(s)  \nUR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated.  The \nrecord shall contain the following fields  \n1. Date and time stamps of the change \n2. Original threshold value \n3. Threshold value after change \n4. User ID of the individual who has changed the threshold value (performer) \n5. Full name of the individual who has changed the threshold value (performer) \n6. Meaning of signature (performer) \n7. User ID of the individual who has approved the change (approver) \n8. Full name of the individual who has approved the change (approver) \n9. Meaning of signature (approver).  \nUR3.3.2 Every time a critical alarm condition occurs an audit trail record shall be generated with the \nfollowing fields  \n1. Alarm date and time stamps  \n2. Alarm tag 3. Alarm value \n4. Alarm description \n5. A similar record shall be generated whenever a critical alarm condition returns to normal \ncondition.  \n\f\n UR3.3.3 Audit trail records shall be archived.  \nUR3.3.3 Audit trail records shall be archived.   \nUR5.2.3 [URS-PCS-SR-009] Logins, logouts, and login attempts must be recorded in the Audit Trail.   \nUR5.4.2 [URS-PCS-SR-036] All manual interactions  (parameter changes, device mode changes, etc.) \nshall be sent to a database for event logging,  including user name, action and timestamp.   \n \nFactoryTalk View SE provides an electronic signature feature for capturing operator actions \nperformed in the production system.  This feature is  available in an E-Signature control, as well \nas the native button, numeric, and string input objects. \nWith the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View \nSE activity log is identified with: \n time and date the action occurred, \n name of the logged-in operator who performed the action, \n terminal the action was performed from, \n type of operation that was performed, and \n value of the changed item before and after the change. \nWhen electronic signatures are used, the operator’s username and full name are also included. \n The Critical Alarm Threshold Change Audit Trail entry will contain the following information: \n Date and time stamps of the change \n Original threshold value \n Threshold value after change \n User ID of the individual who has changed the threshold value (performer) \n Full name of the individual who has changed the threshold value (performer) \n Meaning of signature (performer) \n User ID of the individual who has approved the change (approver) \n Full name of the individual who has approved the change (approver) \n Meaning of signature (approver). \n \nThe Critical Alarm Audit Trail entry will contain the following information: \n Alarm date and time stamps \n Alarm tag \n Alarm value \n Alarm description \n A similar record shall be generated whenever a critical alarm condition returns to \nnormal condition. \n ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    },
+    {
+      "run_id": "chunked-e857bb63e15b",
+      "task_id": "task-839d4cec54ff",
+      "chunk_index": 2,
+      "page_start": 3,
+      "page_end": 3,
+      "has_overlap_prefix": true,
+      "text_chars": 3849,
+      "started_at": "2026-08-17T18:41:28.919518+00:00",
+      "finished_at": "2026-08-17T18:41:59.557197+00:00",
+      "wall_clock_ms": 30637.7,
+      "model": "qwen2.5:7b-instruct-q4_K_M",
+      "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "ollama_version": "0.21.2",
+      "ok": true,
+      "error": null,
+      "technical_execution_failure": false,
+      "failure_reason": null,
+      "num_predict": 1024,
+      "raw_response": "{\n    \"checkpoints\": [\n        {\n            \"req_id\": \"ALCOA_CONTEMPORANEOUS\",\n            \"estado\": \"evidencia_insuficiente\",\n            \"evidencia_exacta\": \"\",\n            \"brecha\": \"El documento no proporciona evidencia de que el registro se realice en el momento de la actividad como regla general, ni detalles sobre cómo se registra o quién registra.\",\n            \"recomendacion\": \"Incluir una descripción detallada del proceso de registro contemporáneo y quién realiza el registro.\",\n            \"criterion_assessments\": [\n                {\n                    \"criterion_index\": 1,\n                    \"criterion_text\": \"Registro en el momento de la actividad como regla general.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona evidencia de que el registro se realice en el momento de la actividad.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 2,\n                    \"criterion_text\": \"Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona evidencia de que el registro se realice en el momento de la actividad o quién registra el evento.\",\n                    \"limitations\": \"\"\n                },\n                {\n                    \"criterion_index\": 3,\n                    \"criterion_text\": \"Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.\",\n                    \"status\": \"NOT_MET\",\n                    \"evidence_quote\": \"\",\n                    \"evidence_location\": \"\",\n                    \"justification\": \"No se proporciona evidencia de un procedimiento gobernado para contrafirmaciones tardías o sus detalles.\",\n                    \"limitations\": \"\"\n                }\n            ]\n        }\n    ]\n}",
+      "raw_response_truncated_in_log": false,
+      "raw_response_full_path": "raw_responses/chunked-e857bb63e15b/task-839d4cec54ff.txt.gz",
+      "raw_response_full_sha256": "223c1939bd9e3f4d9aa7995df0aff1ec62c007179f9b8e3be6e7abb1052a2d4f",
+      "_by_req_candidates": [],
+      "_criterion_assessments_for_d": [
+        {
+          "req_id": "ALCOA_CONTEMPORANEOUS",
+          "criterion_assessments": [
+            {
+              "criterion_index": 1,
+              "criterion_text": "Registro en el momento de la actividad como regla general.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 2,
+              "criterion_text": "Caso escribiente: el escribiente registra en el momento de la actividad (no retrospectivamente) e identifica al ejecutor real.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona evidencia de que el registro se realice en el momento de la actividad o quién registra el evento.",
+              "limitations": ""
+            },
+            {
+              "criterion_index": 3,
+              "criterion_text": "Caso contrafirma: procedimiento gobernado que define cuando una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo maximo y revision.",
+              "status": "NOT_MET",
+              "evidence_quote": "",
+              "evidence_location": "",
+              "justification": "No se proporciona evidencia de un procedimiento gobernado para contrafirmaciones tardías o sus detalles.",
+              "limitations": ""
+            }
+          ],
+          "chunk_text": "shold value (performer) \n Meaning of signature (performer) \n User ID of the individual who has approved the change (approver) \n Full name of the individual who has approved the change (approver) \n Meaning of signature (approver). \n \nThe Critical Alarm Audit Trail entry will contain the following information: \n Alarm date and time stamps \n Alarm tag \n Alarm value \n Alarm description \n A similar record shall be generated whenever a critical alarm condition returns to \nnormal condition. \n m programming shall use Control Modul es and standard programming per ISA \nS88/S95 as applicable.-F02.01, 19 \nUR5.3.2 [URS-PCS-SR-031] Operations shall contain steps (series of actions) and tran sitions (conditions required for sequenceto \nprogress) to perform required process sequences.-F02.01, 20 \nUR5.3.3 [URS-PCS-SR-032] All inputs shall provide state and simulation features. This shall be captured on a separate maintenan ce \nscreen, accessible by Admin and Maintenance personnel.-F02.03, 21  UR5.3.3 [URS-PCS-SR-032] All inputs shall provide state and simulation features. This shall be captured on a separate maintenan ce \nscreen, accessible by Admin and Maintenance personnel.-F05.05, 24 \nUR5.3.4 [URS-PCS-SR-033] Alarms shall be classified into three priority categories unless alternative is approved by MCCPDC. \nLevel 1, Level 2, and Level 3 as described below.-F07.04, 38 \nUR5.3.5 [URS-PCS-SR-034] Alarm func tionality is to include the ability to change alarm limit values via user input from the OIT  \ndisplay. This functionality shall be secured level access for level 1 and level 2 alarms only. Changes shall only be capable fr o-\nF07.04, 38 \nUR5.4.1 [URS-PCS-SR-035] The system shall provide for an interf ace for the collection and archival of continuous process data, \nalarms, alarm acknowledgement, events, para meters, and ancillary data.-F02.01, 20 \nUR5.4.2 [URS-PCS-SR-036] All manual interactions (paramet er changes, device mode changes, et c.) shall be sent to a database for  \nevent logging, including user name, action and timestamp.-F12.00, 46 \nUR5.4.3 [URS-PCS-SR-037] All data  communication shall be via Ethernet (protocol).-F01.02, 13 \nUR5.4.3 [URS-PCS-SR-037] All data  communication shall be via Ethernet (protocol).-F01.05, 15 \nUR5.4.3 [URS-PCS-SR-037] All data  communication shall be via Ethernet (protocol).-F01.06, 15 \nUR5.4.3 [URS-PCS-SR-037] All data  communication shall be via Ethernet (protocol).-F01.07, 16 \nUR5.4.4 [URS-PCS-SR-038] The system must provide tools to automa tically adjust for daylight and standard time changes without \nloss of data or operation.-F02.01, 20 \nUR5.4.5 [URS-PCS-SR-039] The system shall monitor and alarm th e status of all dependent ex ternal interfaces.-F07.05, 39 \nUR5.4.6 [URS-PCS-SR-040] The system shall communicate via OPC standard communication protocol for data transfer outside of \nthe PLC control system layer.-F17.00, 50 \nUR5.4.7 [URS-PCS-SR-041] The PLC system sh all communicate with a plant historian (collect and transfer data).-F02.01, 20 \nUR5.4.7 [URS-PCS-SR-041] The PLC system sh all communicate with a plant historian (collect and transfer data).-F11.00, 45 \nUR5.4.8 [URS-PCS-SR-042] The control system shall have a historian heartbeat alarm to  monitor the health of control system \ncommunication with the process historian. In absence of an active connection, this heartbeat alarm will be triggered, howevert he \nPLC-F07.06, 39 \nUR5.4.9 [URS-PCS-SR-043] A secured level access manual override shall be required  / available to start a new batch without acti ve \nheartbeat connection to the plant historian.-F02.04, 21 \nUR6.1.1 [MCCPDC 3.3.3] - The project sh all utilize the GAMP methodology when deve loping the system and documentation.-\nF17.00, 51 \nUR6.1.2 System is documented via entries found in  URS Table 2- List of Documents.-F17.00, 51 \n ",
+          "estado": "evidencia_insuficiente"
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "fingerprint": {
+    "prompt_version": "1.1.1",
+    "schema_version": "checkpoint_llm_response_v1",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "document_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+    "agent_version": "v1-pilot-2026-08",
+    "catalog_version": "2.1",
+    "catalog_sha256": "1c4c71a29a53f9e9611ba0cdfd014782088566a2bb1a533295c35721233a6e11",
+    "use_verified_pipeline": true,
+    "evaluation_profile": "H2H4",
+    "target_requirement_ids": [
+      "ALCOA_CONTEMPORANEOUS"
+    ],
+    "retrieval_mode": "full_chunk"
+  },
+  "verified_records_by_req": {
+    "ALCOA_CONTEMPORANEOUS": [
+      {
+        "record_id": "vrec-task-3786cbb846ca-ALCOA_CONTEMPORANEOUS",
+        "llm_output": {
+          "requirement_id": "ALCOA_CONTEMPORANEOUS",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 1,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-ab95c8852d80-ALCOA_CONTEMPORANEOUS",
+        "llm_output": {
+          "requirement_id": "ALCOA_CONTEMPORANEOUS",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 2,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      },
+      {
+        "record_id": "vrec-task-839d4cec54ff-ALCOA_CONTEMPORANEOUS",
+        "llm_output": {
+          "requirement_id": "ALCOA_CONTEMPORANEOUS",
+          "chunk_observation": "not_observed_in_chunk",
+          "evidence_quote": "",
+          "evidence_page": 3,
+          "confidence": 0.7,
+          "rationale": "Traducido desde 'estado' real de chunked_engine.evaluate_chunked() (ver docstring del adaptador).",
+          "flags": []
+        },
+        "status": "verified",
+        "rejection_reason": "",
+        "review_flags": []
+      }
+    ]
+  }
+}
