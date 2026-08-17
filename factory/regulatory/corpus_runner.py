@@ -125,6 +125,14 @@ class UnitOutcome:
     technical_execution_failures: int = 0
     wall_seconds: float = 0.0
     error: str | None = None
+    # Fase M3 (2026-08-17): en retrieval_mode='top_k_fusion' una unidad
+    # dispara N llamadas a evaluate_chunked (una por requirement_id
+    # admitido, cada una con su propio run_id) en vez de una sola -- los
+    # campos de arriba quedan AGREGADOS (suma de calls/wall/failures) para
+    # no romper ningún consumidor existente de UnitOutcome, y run_ids trae
+    # la lista completa para trazabilidad. [] para 'full_chunk' (el
+    # run_id singular de siempre ya cubre ese caso).
+    run_ids: list = field(default_factory=list)
 
 
 @dataclass
@@ -141,6 +149,11 @@ class CorpusRunSummary:
     co_covering_pilot_instances: list = field(default_factory=list)
     pilot_selection_rule: str | None = None
     evaluation_profile: str = "BASELINE"
+    # Fase M3 (2026-08-17), default 'full_chunk' -- cero cambio de
+    # comportamiento para todo llamador existente. Ver
+    # run_corpus_batch(retrieval_mode=...).
+    retrieval_mode: str = "full_chunk"
+    total_embed_calls_made: int = 0
 
 
 def _load_allowlist_entry(document_id: str) -> dict:
@@ -461,18 +474,199 @@ def _check_corpus_authorization(document_ids: list[str], *,
             f"({instances!r}) -- nunca se ejecuta un lote con cobertura mixta o parcial")
 
 
+class EmbedBudgetInsufficientError(Exception):
+    """Fase M3: el lote en retrieval_mode='top_k_fusion' necesitaría más
+    llamadas de embedding que las que quedan en la EMBED_EXECUTION
+    vigente -- fail-closed ANTES de gastar una sola llamada de JUICIO."""
+
+
+def _admitted_requirement_ids(prompt_path: Path) -> list[str]:
+    """Requisitos que `build_prompt`/`evidence_pack_gate` realmente le
+    preguntarían al modelo para este agente (Evidence Pack completo, gate
+    4) -- mismo criterio que usa la corrida 'full_chunk' de siempre, solo
+    que aquí se necesita la LISTA antes de llamar a evaluate_chunked (una
+    unidad de retrieval_mode='top_k_fusion' es 1 llamada POR requisito, no
+    una sola llamada con todos adentro)."""
+    meta = ce.load_prompt_meta(prompt_path)
+    admitted, _blocked = ce.evidence_pack_gate(meta)
+    return [cp["req_id"] for cp in admitted]
+
+
+def _preflight_embed_budget(units: list["CorpusRunUnit"], *,
+                            calls_already_used_for_embed: int,
+                            decision_store_file: Path | None = None) -> dict:
+    """Calcula, SIN gastar una sola llamada, cuántas llamadas de embedding
+    necesitaría el lote completo en modo 'top_k_fusion': chunks pendientes
+    de embeber (índice `structure_aware=True`, ver M2) por documento +
+    1 consulta por par (document_id, requirement_id admitido) único --
+    `embed_runner`/`judgment_candidate_pool` nunca cachean la consulta
+    entre llamadas (confirmado en V1: cada invocación reincide el costo),
+    así que asumir menos sería optimista, no medido.
+
+    Resuelve la MISMA EMBED_EXECUTION vigente que `judgment_candidate_
+    pool.build_fusion_candidate_pool()` usará en la práctica (reutiliza
+    `embed_runner._select_embed_execution_instance`, nunca duplica la
+    lógica de selección) para conocer `max_calls` real -- nunca asume un
+    número.
+
+    Devuelve {"needed": int, "max_calls": int, "remaining": int, "fits": bool,
+    "selected_embed_instance_id": str, "per_document_pending_chunks": dict}."""
+    from factory.regulatory.retrieval import embed_index, indexer
+    from factory.regulatory.retrieval.embed_runner import _select_embed_execution_instance
+
+    document_ids = sorted({u.document_id for u in units})
+    selection = _select_embed_execution_instance(document_ids, decision_store_file=decision_store_file)
+    max_calls = selection["payload"]["max_calls"]
+
+    per_document_pending_chunks = {}
+    needed = 0
+    for unit in {u.document_id: u for u in units}.values():
+        idx = indexer.build_index(unit.document_path, structure_aware=True)
+        pending = embed_index.chunks_pending_embedding(idx["document_sha256"], structure_aware=True)
+        per_document_pending_chunks[unit.document_id] = len(pending)
+        needed += len(pending)
+
+    unique_query_pairs = set()
+    for unit in units:
+        for req_id in _admitted_requirement_ids(unit.prompt_path):
+            unique_query_pairs.add((unit.document_id, req_id))
+    needed += len(unique_query_pairs)
+
+    remaining = max_calls - calls_already_used_for_embed
+    return {
+        "needed": needed,
+        "max_calls": max_calls,
+        "remaining": remaining,
+        "fits": needed <= remaining,
+        "selected_embed_instance_id": selection["selected_instance_id"],
+        "per_document_pending_chunks": per_document_pending_chunks,
+        "unique_query_pairs": len(unique_query_pairs),
+    }
+
+
+def _expected_calls_top_k_fusion(unit: "CorpusRunUnit", *, k: int = 5) -> int:
+    """Estimación de `expected_calls` para el hard-stop POR UNIDAD en modo
+    'top_k_fusion', sin gastar ninguna llamada real: usa recuperación BM25
+    sola (0 costo, 0 embedding) como proxy del tamaño del pool fusionado
+    real -- mismo patrón que `judgment.expected_calls_for_unit`, aplicado
+    por requisito y sumado. Conservador por construcción: el pool
+    fusionado real (BM25+embeddings) nunca trae MÁS texto que la unión que
+    esta estimación ya cubre a través de max_chars/build_page_chunks."""
+    from factory.engines.gmpai_integrity.chunked_engine import build_page_chunks
+    from factory.regulatory.retrieval import indexer, retriever
+
+    idx = indexer.build_index(unit.document_path, structure_aware=True)
+    total = 0
+    for req_id in _admitted_requirement_ids(unit.prompt_path):
+        results = retriever.retrieve_top_k(idx["document_sha256"], req_id, k=k, structure_aware=True)
+        texts = [r["text"] for r in results]
+        total += len(build_page_chunks(texts)) if texts else 0
+    return total
+
+
+def _run_unit_top_k_fusion(unit: "CorpusRunUnit", *, checkpoint_store, provider: ModelProvider,
+                           calls_already_used_for_embed: int, decision_store_file: Path | None,
+                           k: int = 5) -> tuple["UnitOutcome", int]:
+    """Ejecuta UNA unidad en modo 'top_k_fusion': 1 llamada a
+    `evaluate_chunked` POR requirement_id admitido, cada una alimentada
+    con el candidate pool fusionado (BM25+embeddings) top-k de
+    `judgment_candidate_pool.build_fusion_candidate_pool()`, en vez de 1
+    sola llamada barriendo el documento completo. Devuelve (UnitOutcome
+    agregado, calls_already_used_for_embed actualizado)."""
+    from factory.regulatory.retrieval import indexer
+    from factory.regulatory.retrieval.embed_runner import run_embed_batch
+    from factory.regulatory.retrieval.judgment_candidate_pool import build_fusion_candidate_pool
+
+    idx = indexer.build_index(unit.document_path, structure_aware=True)
+    document_sha256 = idx["document_sha256"]
+
+    embed_summary = run_embed_batch(
+        [unit.document_id], calls_already_used=calls_already_used_for_embed,
+        decision_store_file=decision_store_file, structure_aware=True)
+    calls_already_used_for_embed += embed_summary.total_calls_made
+    if embed_summary.stop_reason != "BATCH_COMPLETE":
+        raise EmbedBudgetInsufficientError(
+            f"embebiendo chunks de {unit.document_id!r} en modo top_k_fusion: "
+            f"stop_reason={embed_summary.stop_reason!r} -- el preflight del lote debió "
+            "haber detenido esto antes de empezar")
+
+    run_ids: list[str] = []
+    total_new_calls = 0
+    total_resumed = 0
+    total_failures = 0
+    t0 = time.monotonic()
+    for req_id in _admitted_requirement_ids(unit.prompt_path):
+        pool = build_fusion_candidate_pool(
+            unit.document_id, document_sha256, req_id, k=k,
+            calls_already_used=calls_already_used_for_embed, structure_aware=True)
+        calls_already_used_for_embed += 1  # 1 llamada de consulta por (documento, requisito)
+        if not pool:
+            continue
+
+        result = ce.evaluate_chunked(
+            unit.prompt_path, agent_id=unit.agent_id,
+            agent_version=CORPUS_RUN_AGENT_VERSION,
+            per_unit_text=[c["text"] for c in pool],
+            sistema="corpus_run", documento=unit.document_id,
+            version="v1", archivo=str(unit.document_path),
+            document_sha256=unit.document_sha256,
+            run_context="production", checkpoint_store=checkpoint_store,
+            use_verified_pipeline=True, document_type=unit.document_type,
+            retry_technical_failures=True, provider=provider,
+            full_document_coverage=False, evaluation_profile="H2H4",
+            target_requirement_ids=[req_id], candidate_metadata=pool,
+            page_numbers=[c["page_start"] for c in pool],
+            retrieval_mode="top_k_fusion",
+        )
+        preflight = result["preflight_metadata"]
+        resumed_at_start = preflight.get("resumed_chunk_count", 0)
+        retried = len(preflight.get("retried_chunk_indices") or [])
+        total_new_calls += (len(result["chunk_executions"]) - resumed_at_start) + retried
+        total_resumed += resumed_at_start - retried
+        total_failures += len(result.get("technical_execution_failures") or [])
+        run_ids.append(result["run_id"])
+
+    wall = time.monotonic() - t0
+    outcome = UnitOutcome(
+        document_id=unit.document_id, agent_id=unit.agent_id, status="COMPLETED",
+        run_id=run_ids[-1] if run_ids else None, run_ids=run_ids,
+        calls_made_this_invocation=total_new_calls, resumed_chunk_count=total_resumed,
+        technical_execution_failures=total_failures, wall_seconds=wall,
+    )
+    return outcome, calls_already_used_for_embed
+
+
 def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
                      provider: ModelProvider | None = None,
                      checkpoint_dir: Path = DEFAULT_CHECKPOINT_DIR,
                      manifest_dir: Path = DEFAULT_MANIFEST_DIR,
                      decision_store_file: Path | None = None,
-                     persist_manifest: bool = True) -> CorpusRunSummary:
+                     persist_manifest: bool = True,
+                     retrieval_mode: str = "full_chunk",
+                     calls_already_used_for_embed: int = 0) -> CorpusRunSummary:
     """Ejecuta unidades (documento, agente) en orden hasta agotar el
     corpus o un hard stop de D4-A. Nunca arranca una unidad cuyo costo
     esperado no cabe en el presupuesto restante -- el corte real es SIEMPRE
     entre unidades. Cada unidad reintentada/retomada usa el mismo
     `checkpoint_dir`: una invocación interrumpida se retoma sin repetir
-    llamadas ya hechas."""
+    llamadas ya hechas.
+
+    retrieval_mode (Fase M3, 2026-08-17, default 'full_chunk' -- cero
+    cambio de comportamiento para todo llamador existente): 'top_k_fusion'
+    reemplaza el barrido completo del documento por 1 llamada de JUICIO
+    por requirement_id admitido, alimentada con el candidate pool
+    fusionado (BM25+embeddings, `judgment_candidate_pool.
+    build_fusion_candidate_pool()`, ya medido 7/7 en V1) en vez del
+    documento entero -- ver `docs_plan/GMP_AI_FACTORY_ARQUITECTURA_
+    OBJETIVO.md` Fase M3. Requiere selección EXPLÍCITA, mismo patrón que
+    `evaluation_profile`: nunca se activa por defecto.
+
+    calls_already_used_for_embed: reconciliación manual del consumo YA
+    hecho contra la EMBED_EXECUTION vigente antes de esta invocación --
+    mismo principio que `embed_runner.run_embed_batch`/
+    `judgment_candidate_pool.build_fusion_candidate_pool` (sin checkpoint
+    propio de presupuesto de embedding todavía). Ignorado en modo
+    'full_chunk' (no gasta embeddings)."""
     provider = provider or DEFAULT_PROVIDER
     units = units if units is not None else plan_corpus_units()
     if not units:
@@ -489,12 +683,39 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
     hard_stop_calls = d4a["hard_stop_calls"]
     hard_stop_wall_seconds = d4a["hard_stop_wall_time_hours"] * 3600
 
+    summary = CorpusRunSummary(retrieval_mode=retrieval_mode)
+
+    if retrieval_mode == "top_k_fusion":
+        # Preflight del presupuesto de EMBED_EXECUTION -- familia de
+        # gobernanza SEPARADA del presupuesto de JUICIO (D4-A) que el resto
+        # de esta función ya protege. Se resuelve y se verifica ANTES de la
+        # primera llamada real de cualquier tipo (ni de juicio ni de
+        # embedding) -- mismo principio fail-closed que
+        # _check_corpus_authorization arriba, aplicado a la dimensión de
+        # costo que D4-A no conoce.
+        embed_preflight = _preflight_embed_budget(
+            units, calls_already_used_for_embed=calls_already_used_for_embed,
+            decision_store_file=decision_store_file)
+        if not embed_preflight["fits"]:
+            for unit in units:
+                summary.units.append(UnitOutcome(
+                    document_id=unit.document_id, agent_id=unit.agent_id,
+                    status="NOT_STARTED_HARD_STOP"))
+            summary.stop_reason = "HARD_STOP_EMBED_CALLS"
+            if persist_manifest:
+                summary.manifest_path = _persist_manifest(summary, manifest_dir)
+            _write_batch_event(summary, document_ids)
+            return summary
+
     checkpoint_store = ce.CheckpointStore(checkpoint_dir)
     page_cache: dict[str, list[str]] = {}
 
-    summary = CorpusRunSummary()
     for unit in units:
-        if summary.total_calls_made + unit.expected_calls > hard_stop_calls:
+        expected_calls = (
+            _expected_calls_top_k_fusion(unit) if retrieval_mode == "top_k_fusion"
+            else unit.expected_calls
+        )
+        if summary.total_calls_made + expected_calls > hard_stop_calls:
             summary.units.append(UnitOutcome(
                 document_id=unit.document_id, agent_id=unit.agent_id,
                 status="NOT_STARTED_HARD_STOP"))
@@ -506,6 +727,27 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
                 status="NOT_STARTED_HARD_STOP"))
             summary.stop_reason = "HARD_STOP_WALL_TIME"
             break
+
+        if retrieval_mode == "top_k_fusion":
+            try:
+                outcome, calls_already_used_for_embed = _run_unit_top_k_fusion(
+                    unit, checkpoint_store=checkpoint_store, provider=provider,
+                    calls_already_used_for_embed=calls_already_used_for_embed,
+                    decision_store_file=decision_store_file)
+            except Exception as e:  # noqa: BLE001 -- nunca se traga: se registra y se relanza
+                outcome = UnitOutcome(
+                    document_id=unit.document_id, agent_id=unit.agent_id, status="FAILED",
+                    error=f"{type(e).__name__}: {e}")
+                summary.units.append(outcome)
+                summary.stop_reason = "TECHNICAL_FAILURE"
+                if persist_manifest:
+                    summary.manifest_path = _persist_manifest(summary, manifest_dir)
+                _write_batch_event(summary, document_ids)
+                raise
+            summary.units.append(outcome)
+            summary.total_calls_made += outcome.calls_made_this_invocation
+            summary.total_wall_seconds += outcome.wall_seconds
+            continue
 
         if unit.document_id not in page_cache:
             page_cache[unit.document_id] = _default_extractor(unit.document_path)
@@ -575,6 +817,7 @@ def _persist_manifest(summary: CorpusRunSummary, manifest_dir: Path) -> str:
         "stop_reason": summary.stop_reason,
         "total_calls_made": summary.total_calls_made,
         "total_wall_seconds": round(summary.total_wall_seconds, 1),
+        "retrieval_mode": summary.retrieval_mode,
         "units": [vars(u) for u in summary.units],
     }
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -599,4 +842,5 @@ def _write_batch_event(summary: CorpusRunSummary, document_ids: list[str], *,
         "co_covering_pilot_instances": summary.co_covering_pilot_instances,
         "pilot_selection_rule": summary.pilot_selection_rule,
         "evaluation_profile": summary.evaluation_profile,
+        "retrieval_mode": summary.retrieval_mode,
     })

@@ -769,7 +769,8 @@ def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS
 def build_run_fingerprint(meta: dict, *, model_digest: str, document_sha256: str, agent_version: str,
                           use_verified_pipeline: bool,
                           evaluation_profile: str = "BASELINE",
-                          target_requirement_ids: tuple[str, ...] | None = None) -> dict:
+                          target_requirement_ids: tuple[str, ...] | None = None,
+                          retrieval_mode: str = "full_chunk") -> dict:
     """W5 V2 Fase F (invalidacion de checkpoint, 2026-07-25). Combina todo
     lo que, si cambia, vuelve un checkpoint viejo no confiable para
     reanudar: contrato del prompt (prompt_version/schema_version), modelo,
@@ -795,7 +796,18 @@ def build_run_fingerprint(meta: dict, *, model_digest: str, document_sha256: str
     tiempo de ejecucion, no en el archivo gobernado). Sin esto, resumir un
     run BASELINE con perfil H2H4 (o viceversa) mezclaria chunk_executions
     de dos contratos de prompt distintos -- el mismo defecto que este
-    fingerprint ya existe para impedir en las demas dimensiones."""
+    fingerprint ya existe para impedir en las demas dimensiones.
+
+    retrieval_mode (Fase M3, 2026-08-17, default 'full_chunk' -- cero
+    cambio de comportamiento para todo llamador existente): un checkpoint
+    de modo 'top_k_fusion' (per_unit_text = candidate pool top-k de
+    judgment_candidate_pool.build_fusion_candidate_pool(), NO el documento
+    completo, ver corpus_runner.run_corpus_batch()) NUNCA debe poder
+    reanudarse como si fuera un checkpoint 'full_chunk' del mismo
+    documento/agente -- el texto que vio el modelo en cada chunk_execution
+    es literalmente distinto (candidatos recuperados vs. barrido completo
+    por tamaño), aunque prompt_version/schema_version no cambien. Mismo
+    principio que evaluation_profile arriba."""
     from factory.regulatory.requirement_catalog.requirement_catalog_loader import catalog_fingerprint
     cat = catalog_fingerprint()
     return {
@@ -809,6 +821,7 @@ def build_run_fingerprint(meta: dict, *, model_digest: str, document_sha256: str
         "use_verified_pipeline": bool(use_verified_pipeline),
         "evaluation_profile": evaluation_profile,
         "target_requirement_ids": sorted(target_requirement_ids) if target_requirement_ids else None,
+        "retrieval_mode": retrieval_mode,
     }
 
 
@@ -969,7 +982,8 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                       target_requirement_ids: "list[str] | tuple[str, ...] | None" = None,
                       full_document_coverage: bool = True,
                       candidate_metadata: "list[dict] | None" = None,
-                      page_numbers: "list[int] | None" = None) -> dict:
+                      page_numbers: "list[int] | None" = None,
+                      retrieval_mode: str = "full_chunk") -> dict:
     """Procesa TODO el documento (todas las páginas reales) en chunks
     acotados, con metadata de runtime completa por chunk, checkpoints de
     reanudación opcionales, y consolida un Finding final por checkpoint.
@@ -1008,6 +1022,16 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     pool visto -- porque este llamador pasaba `coverage_complete=True`
     hardcodeado, violando la precondición que la propia función ya
     protegía. No es una regla nueva: es hacer cumplir una que ya existía.
+
+    retrieval_mode (Fase M3, 2026-08-17, default 'full_chunk' -- cero
+    cambio de comportamiento para todo llamador existente): puramente
+    declarativo aquí, entra al `build_run_fingerprint` (invalidación de
+    checkpoint, ver esa función) para que un checkpoint 'top_k_fusion' no
+    se confunda con uno 'full_chunk'. Quien arma el candidate pool top-k y
+    pasa `full_document_coverage=False`/`per_unit_text` recortado es el
+    LLAMADOR (`corpus_runner.run_corpus_batch(retrieval_mode=
+    'top_k_fusion')`, vía `judgment_candidate_pool.build_fusion_
+    candidate_pool()`) -- esta función no construye el pool ella misma.
 
     Si checkpoint_store se provee: intenta reanudar un run incompleto del
     mismo documento+agente (find_resumable) antes de empezar de cero, y
@@ -1153,6 +1177,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         meta, model_digest=model_digest, document_sha256=document_sha256, agent_version=agent_version,
         use_verified_pipeline=use_verified_pipeline,
         evaluation_profile=evaluation_profile, target_requirement_ids=target_requirement_ids,
+        retrieval_mode=retrieval_mode,
     )
 
     chunks = build_page_chunks(per_unit_text, page_numbers=page_numbers)
