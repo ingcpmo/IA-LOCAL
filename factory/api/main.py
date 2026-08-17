@@ -26,6 +26,16 @@ from factory.core.audit_writer import verify_chain
 from factory.core.rate_limit import RateLimitCounter
 
 FACTORY_API_KEY = os.getenv("FACTORY_API_KEY", "")
+if not FACTORY_API_KEY:
+    # Fase M0 (2026-08-17): fail-closed en el arranque. Antes, verify_api_key
+    # con FACTORY_API_KEY vacia dejaba pasar CUALQUIER x_api_key sin auth real
+    # (fail-open). El servicio ahora se niega a arrancar sin la key -- no un
+    # 401 silencioso en runtime, una excepcion en el import/arranque.
+    raise RuntimeError(
+        "FACTORY_API_KEY no esta definida o esta vacia -- el servicio se "
+        "niega a arrancar sin autenticacion real configurada (fail-closed, "
+        "Fase M0)."
+    )
 UI_FILE = Path(__file__).parent.parent / "ui" / "mission_control.html"
 _ACCESS_LOG = Path(__file__).parent.parent / "logs" / "access.jsonl"
 

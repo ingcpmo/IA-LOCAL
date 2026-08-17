@@ -390,6 +390,13 @@ def run_pilot_sample_batch(units: list[PilotSampleUnit], *,
                 retry_technical_failures=True, provider=provider,
                 evaluation_profile=evaluation_profile,
                 target_requirement_ids=[unit.requirement_id] if evaluation_profile == "H2H4" else None,
+                # Fix runner exact-page (Fase M1, 2026-08-17): unit.page_indices
+                # es 0-based (docstring de PilotSampleUnit); +1 da la pagina real
+                # 1-indexada que build_page_chunks()/evidence_page deben grabar
+                # -- sin esto, todo extracto de paginas no contiguas quedaba
+                # renumerado 1..N por posicion y evidence_page mentia (siempre 1
+                # para una unidad de 1 pagina, sin importar cual pagina real era).
+                page_numbers=[i + 1 for i in unit.page_indices],
             )
         except Exception as e:  # noqa: BLE001 -- nunca se traga: se registra y se relanza
             wall = time.monotonic() - t0

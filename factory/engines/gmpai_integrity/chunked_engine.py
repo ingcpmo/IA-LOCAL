@@ -673,10 +673,30 @@ def _is_topically_relevant(evidencia: str, label: str) -> bool:
 
 
 def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS,
-                       overlap_chars: int = CHUNK_OVERLAP_CHARS) -> list[dict]:
+                       overlap_chars: int = CHUNK_OVERLAP_CHARS,
+                       page_numbers: "list[int] | None" = None) -> list[dict]:
     """Agrupa páginas reales (1 entrada por página) en chunks de hasta
     max_chars, con solapamiento real (cola del chunk anterior). Cada chunk
-    declara su rango real de páginas (1-indexado)."""
+    declara su rango real de páginas.
+
+    page_numbers (fix runner exact-page, Fase M1 2026-08-17): opcional,
+    mismo largo que `per_unit_text` -- números de página REALES a asociar
+    con cada entrada, en el mismo orden. Default None preserva el
+    comportamiento anterior (1..N por posición, 1-indexado), correcto
+    solo cuando `per_unit_text` trae TODAS las páginas del documento en
+    orden desde la página 1 (el caso de siempre: `_default_extractor`/
+    `CorpusRunUnit`). Cuando `per_unit_text` es un extracto de páginas
+    concretas no contiguas (runner exact-page de Palanca A,
+    `corpus_runner._extract_pilot_excerpt`), 1..N por posición mentía:
+    una unidad con `page_indices=(44,)` (página real 45) quedaba grabada
+    como página 1 en `evidence_page`/`page_start` -- el excerpt en sí
+    seguía siendo el input correcto al modelo, pero la metadata de
+    procedencia era falsa. `page_numbers` deja pasar el número real sin
+    tocar el excerpt."""
+    if page_numbers is not None and len(page_numbers) != len(per_unit_text):
+        raise ValueError(
+            f"page_numbers ({len(page_numbers)}) debe tener el mismo largo que "
+            f"per_unit_text ({len(per_unit_text)})")
     chunks: list[dict] = []
     current_pages: list[int] = []
     current_text = ""
@@ -699,13 +719,14 @@ def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS
         current_pages = []
         current_text = ""
 
-    for i, page_text in enumerate(per_unit_text, start=1):
+    numbered_pages = page_numbers if page_numbers is not None else range(1, len(per_unit_text) + 1)
+    for page_number, page_text in zip(numbered_pages, per_unit_text):
         page_text = _join_kerning_split_words(page_text or "")
         from factory.regulatory.evidence_verifier import strip_page_furniture
         page_text = strip_page_furniture(page_text)
         if current_text and len(current_text) + len(page_text) > max_chars:
             _flush()
-        current_pages.append(i)
+        current_pages.append(page_number)
         current_text += ("\n\f\n" if current_text else "") + page_text
     _flush()
     return chunks
@@ -913,10 +934,20 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                       evaluation_profile: str = "BASELINE",
                       target_requirement_ids: "list[str] | tuple[str, ...] | None" = None,
                       full_document_coverage: bool = True,
-                      candidate_metadata: "list[dict] | None" = None) -> dict:
+                      candidate_metadata: "list[dict] | None" = None,
+                      page_numbers: "list[int] | None" = None) -> dict:
     """Procesa TODO el documento (todas las páginas reales) en chunks
     acotados, con metadata de runtime completa por chunk, checkpoints de
     reanudación opcionales, y consolida un Finding final por checkpoint.
+
+    page_numbers (fix runner exact-page, Fase M1, 2026-08-17): opcional,
+    mismo largo/orden que `per_unit_text` -- pasa directo a
+    `build_page_chunks()`, ver su docstring. Corrige `evidence_page`/
+    `page_start` para llamadores cuyo `per_unit_text` es un extracto de
+    páginas concretas no contiguas (corpus_runner._extract_pilot_excerpt,
+    runner exact-page de Palanca A), donde la renumeración 1..N por
+    posición grababa la página real como 1. None (default) preserva el
+    comportamiento anterior para todo llamador existente.
 
     candidate_metadata (R2.3 §4, 2026-08-11, docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md):
     opcional, mismo largo/orden que `per_unit_text` -- metadata de
@@ -1090,7 +1121,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         evaluation_profile=evaluation_profile, target_requirement_ids=target_requirement_ids,
     )
 
-    chunks = build_page_chunks(per_unit_text)
+    chunks = build_page_chunks(per_unit_text, page_numbers=page_numbers)
 
     # Presupuesto de salida derivado del contrato REAL del prompt + guardia
     # de contexto, ambos ANTES de la primera inferencia (2026-07-28). Ningun
