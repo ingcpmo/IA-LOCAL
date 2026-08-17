@@ -1,0 +1,17 @@
+# Delta de composicion para fda_cgmp_211_agent -- orden de bloques y sha256 esperado
+# del common_contract compuesto. Ver common_contract_base.yaml (biblioteca
+# compartida) y common_contract_composer.py (ensamblador). Regenerar solo
+# via el mismo ciclo de gobernanza que cgmp211_prompts.yaml.
+
+agent_id: fda_cgmp_211_agent
+intro_key: fda_cgmp_211_agent
+rule_layout:
+  - rule_evidencia
+  - rule_nunca_declares_requisito_plain
+  - rule_cita_literal
+  - rule_dominio_cgmp211
+  - rule_alcance_cgmp211
+  - rule_no_confianza
+  - rule_criterion_assessments
+  - rule_json_response
+expected_sha256: "4217e6d2f5838681b9999bf4046b88d8d9e10cf29182300bb7f1a5f2bd523340"

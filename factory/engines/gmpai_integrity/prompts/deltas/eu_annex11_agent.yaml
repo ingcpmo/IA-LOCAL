@@ -1,0 +1,16 @@
+# Delta de composicion para eu_annex11_agent -- orden de bloques y sha256 esperado
+# del common_contract compuesto. Ver common_contract_base.yaml (biblioteca
+# compartida) y common_contract_composer.py (ensamblador). Regenerar solo
+# via el mismo ciclo de gobernanza que annex11_prompts.yaml.
+
+agent_id: eu_annex11_agent
+intro_key: eu_annex11_agent
+rule_layout:
+  - rule_evidencia
+  - rule_nunca_declares_requisito
+  - rule_cita_literal
+  - rule_dominio_annex11
+  - rule_no_confianza
+  - rule_criterion_assessments
+  - rule_json_response
+expected_sha256: "aeb93e954bc89c5f61bccd343a00fb454f9c86c9bc38cb83bfbdd1876b9f1b32"

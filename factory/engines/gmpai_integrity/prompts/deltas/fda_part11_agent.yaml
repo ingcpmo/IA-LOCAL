@@ -1,0 +1,16 @@
+# Delta de composicion para fda_part11_agent -- orden de bloques y sha256 esperado
+# del common_contract compuesto. Ver common_contract_base.yaml (biblioteca
+# compartida) y common_contract_composer.py (ensamblador). Regenerar solo
+# via el mismo ciclo de gobernanza que part11_prompts.yaml.
+
+agent_id: fda_part11_agent
+intro_key: fda_part11_agent
+rule_layout:
+  - rule_evidencia
+  - rule_nunca_declares_requisito
+  - rule_cita_literal
+  - rule_dominio_part11
+  - rule_no_confianza
+  - rule_criterion_assessments
+  - rule_json_response
+expected_sha256: "89be46ca22981d6bb751405f9e4282451e7542ad1c7a2f0d360ec41572bc1667"

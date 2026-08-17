@@ -674,7 +674,8 @@ def _is_topically_relevant(evidencia: str, label: str) -> bool:
 
 def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS,
                        overlap_chars: int = CHUNK_OVERLAP_CHARS,
-                       page_numbers: "list[int] | None" = None) -> list[dict]:
+                       page_numbers: "list[int] | None" = None,
+                       structure: "dict | None" = None) -> list[dict]:
     """Agrupa páginas reales (1 entrada por página) en chunks de hasta
     max_chars, con solapamiento real (cola del chunk anterior). Cada chunk
     declara su rango real de páginas.
@@ -692,15 +693,40 @@ def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS
     como página 1 en `evidence_page`/`page_start` -- el excerpt en sí
     seguía siendo el input correcto al modelo, pero la metadata de
     procedencia era falsa. `page_numbers` deja pasar el número real sin
-    tocar el excerpt."""
+    tocar el excerpt.
+
+    structure (Fase M2, 2026-08-17, `document_structure_extractor.
+    extract_structure()`/`extract_structure_from_pdf()`): opcional. Cuando
+    se provee Y `structure["toc_anchored"] is True`, agrega un flush
+    FORZADO cada vez que una página real (1-indexada, coincide con
+    `pagina_inicio` de alguna sección de nivel 1) abre una sección nueva
+    -- ademas del flush por tamaño ya existente, nunca en su lugar. Un
+    chunk nunca mezcla contenido de dos secciones de nivel 1 distintas,
+    aunque ambas quepan juntas bajo `max_chars` (mejora la cohesion
+    tematica -- caso real medido: P3/RW-0005, pagina 44 0-based, seccion
+    'Security' y 'Data' compartian chunk bajo el chunking anterior). Si
+    `structure["toc_anchored"] is False` (documento sin Tabla de
+    Contenido parseable), el comportamiento es identico al chunking por
+    tamaño de siempre -- fail-visible ya declarado por el extractor, no
+    silencioso: no hay limite de seccion que hacer cumplir porque no hay
+    seccion confiable que declarar. El chunk resultante gana el campo
+    `section_numero`/`section_titulo` (None cuando no aplica) para
+    trazabilidad -- aditivo, ningun llamador existente que ignore esas
+    claves se rompe."""
     if page_numbers is not None and len(page_numbers) != len(per_unit_text):
         raise ValueError(
             f"page_numbers ({len(page_numbers)}) debe tener el mismo largo que "
             f"per_unit_text ({len(per_unit_text)})")
+    section_start_pages: dict[int, dict] = {}
+    if structure is not None and structure.get("toc_anchored"):
+        for seccion in structure.get("secciones", []):
+            section_start_pages[seccion["pagina_inicio"]] = seccion
+
     chunks: list[dict] = []
     current_pages: list[int] = []
     current_text = ""
     overlap_prefix = ""
+    current_section: dict | None = None
 
     def _flush():
         nonlocal current_pages, current_text, overlap_prefix
@@ -714,6 +740,8 @@ def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS
             "text": text,
             "text_chars": len(text),
             "has_overlap_prefix": bool(overlap_prefix),
+            "section_numero": current_section["numero"] if current_section else None,
+            "section_titulo": current_section["titulo"] if current_section else None,
         })
         overlap_prefix = current_text[-overlap_chars:] if len(current_text) > overlap_chars else current_text
         current_pages = []
@@ -724,8 +752,14 @@ def build_page_chunks(per_unit_text: list[str], max_chars: int = CHUNK_MAX_CHARS
         page_text = _join_kerning_split_words(page_text or "")
         from factory.regulatory.evidence_verifier import strip_page_furniture
         page_text = strip_page_furniture(page_text)
-        if current_text and len(current_text) + len(page_text) > max_chars:
+        new_section = section_start_pages.get(page_number)
+        if current_text and (
+            len(current_text) + len(page_text) > max_chars
+            or (new_section is not None and new_section is not current_section)
+        ):
             _flush()
+        if new_section is not None:
+            current_section = new_section
         current_pages.append(page_number)
         current_text += ("\n\f\n" if current_text else "") + page_text
     _flush()

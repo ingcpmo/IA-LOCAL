@@ -1,0 +1,16 @@
+# Delta de composicion para alcoa_plus_agent -- orden de bloques y sha256 esperado
+# del common_contract compuesto. Ver common_contract_base.yaml (biblioteca
+# compartida) y common_contract_composer.py (ensamblador). Regenerar solo
+# via el mismo ciclo de gobernanza que alcoa_prompts.yaml.
+
+agent_id: alcoa_plus_agent
+intro_key: alcoa_plus_agent
+rule_layout:
+  - rule_evidencia
+  - rule_nunca_declares_atributo
+  - rule_cita_literal
+  - rule_dominio_alcoa
+  - rule_no_confianza
+  - rule_criterion_assessments
+  - rule_json_response
+expected_sha256: "f2f76fecbb40744d41d98b6e24c4f83fd0989c9358e07edbbe0cf42e8af9829c"
