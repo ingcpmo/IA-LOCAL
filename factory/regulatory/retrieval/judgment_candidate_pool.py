@@ -34,7 +34,8 @@ class FusionCandidatePoolError(Exception):
 
 
 def build_fusion_candidate_pool(document_id: str, document_sha256: str, req_id: str, *,
-                                 k: int = 5, calls_already_used: int = 0) -> list[dict]:
+                                 k: int = 5, calls_already_used: int = 0,
+                                 structure_aware: bool = False) -> list[dict]:
     """Reemplazo directo, mismo contrato de retorno, de
     `retriever.retrieve_top_k(document_sha256, req_id, k)`: hasta `k`
     candidatos `{chunk_index, page_start, page_end, text, bm25_rank,
@@ -56,17 +57,19 @@ def build_fusion_candidate_pool(document_id: str, document_sha256: str, req_id: 
     usa para chunks, ahora también para la consulta). Los chunks del
     documento deben estar YA embebidos por una corrida previa -- esta
     función NUNCA los embebe (ver `FusionCandidatePoolError` si faltan)."""
-    eidx = embed_index.load_embed_index(document_sha256)
+    eidx = embed_index.load_embed_index(document_sha256, structure_aware=structure_aware)
     if eidx is None:
         raise FusionCandidatePoolError(
             f"documento {document_sha256!r} sin índice de embeddings -- correr "
             "embed_runner.run_embed_batch() primero (gobernado por EMBED_EXECUTION)")
 
-    bm25_results = retriever.retrieve_top_k(document_sha256, req_id, k=10_000)
+    bm25_results = retriever.retrieve_top_k(document_sha256, req_id, k=10_000,
+                                             structure_aware=structure_aware)
 
     query_text = query_builder.build_retrieval_query(req_id)
     embed_summary = run_embed_batch(
-        [document_id], queries={req_id: query_text}, calls_already_used=calls_already_used)
+        [document_id], queries={req_id: query_text}, calls_already_used=calls_already_used,
+        structure_aware=structure_aware)
     if embed_summary.stop_reason != "BATCH_COMPLETE" or req_id not in embed_summary.query_vectors:
         raise FusionCandidatePoolError(
             f"embedding de la consulta de {req_id!r} no se pudo calcular -- "

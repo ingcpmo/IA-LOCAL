@@ -79,7 +79,8 @@ def _select_embed_execution_instance(document_ids: list[str], *,
 
 def run_embed_batch(document_ids: list[str], *, queries: dict[str, str] | None = None,
                     decision_store_file: Path | None = None,
-                    calls_already_used: int = 0) -> "EmbedBatchSummary":
+                    calls_already_used: int = 0,
+                    structure_aware: bool = False) -> "EmbedBatchSummary":
     """Embebe los chunks pendientes de cada documento en `document_ids`
     (delta contra lo ya indexado -- idempotente, nunca re-embebe lo que ya
     tiene vector) y, si se pasa `queries` (`{requirement_id: query_text}`),
@@ -103,7 +104,7 @@ def run_embed_batch(document_ids: list[str], *, queries: dict[str, str] | None =
     for doc_id in document_ids:
         from factory.regulatory.corpus_runner import _resolve_document_path
         _, doc_sha256 = _resolve_document_path(doc_id)
-        pending = chunks_pending_embedding(doc_sha256)
+        pending = chunks_pending_embedding(doc_sha256, structure_aware=structure_aware)
         made = 0
         for chunk in pending:
             if remaining <= 0:
@@ -118,6 +119,7 @@ def run_embed_batch(document_ids: list[str], *, queries: dict[str, str] | None =
                     "embedding": vector,
                 }],
                 embedding_model=model, embedding_model_digest=model_digest,
+                structure_aware=structure_aware,
             )
             made += 1
             remaining -= 1

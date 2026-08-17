@@ -26,41 +26,49 @@ class EmbedIndexNotBuiltError(Exception):
     (evita dos rutas de chunking divergentes)."""
 
 
-def _embed_index_path(document_sha256: str) -> Path:
-    return EMBED_INDEX_DIR / f"{document_sha256}.json"
+def _embed_index_path(document_sha256: str, *, structure_aware: bool = False) -> Path:
+    suffix = "__section_aware" if structure_aware else ""
+    return EMBED_INDEX_DIR / f"{document_sha256}{suffix}.json"
 
 
-def load_embed_index(document_sha256: str) -> dict | None:
-    path = _embed_index_path(document_sha256)
+def load_embed_index(document_sha256: str, *, structure_aware: bool = False) -> dict | None:
+    path = _embed_index_path(document_sha256, structure_aware=structure_aware)
     if not path.exists():
         return None
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def chunks_pending_embedding(document_sha256: str) -> list[dict]:
+def chunks_pending_embedding(document_sha256: str, *, structure_aware: bool = False) -> list[dict]:
     """Chunks del índice BM25 que todavía NO tienen embedding calculado --
     lo que `embed_runner.py` necesita para calcular el costo real de
     llamadas ANTES de gastar presupuesto de EMBED_EXECUTION (mismo
     principio que `judgment.expected_calls_for_unit`: nunca arrancar sin
-    saber el costo)."""
-    bm25_index = load_index(document_sha256)
+    saber el costo).
+
+    structure_aware (Fase M2+V1, 2026-08-17, default False): lee/escribe
+    bajo la clave `__section_aware` (ver `indexer._index_path`) -- nunca
+    mezcla embeddings del chunking por tamaño legacy con los del chunking
+    por sección nuevo bajo el mismo `chunk_index` (significarían pasajes
+    de texto distintos)."""
+    bm25_index = load_index(document_sha256, structure_aware=structure_aware)
     if bm25_index is None:
         raise EmbedIndexNotBuiltError(
             f"documento {document_sha256!r} sin índice BM25 -- correr "
             "indexer.build_index() primero (embed_index.py nunca chunkea un PDF)")
-    existing = load_embed_index(document_sha256)
+    existing = load_embed_index(document_sha256, structure_aware=structure_aware)
     already = {e["chunk_index"] for e in existing["chunks"]} if existing else set()
     return [c for c in bm25_index["chunks"] if c["chunk_index"] not in already]
 
 
 def add_chunk_embeddings(document_sha256: str, embedded_chunks: list[dict], *,
-                         embedding_model: str, embedding_model_digest: str) -> dict:
+                         embedding_model: str, embedding_model_digest: str,
+                         structure_aware: bool = False) -> dict:
     """Persiste embeddings YA calculados (nunca llama a Ollama -- eso es
     trabajo exclusivo de `embed_runner.py`, que es quien está gobernado
     por EMBED_EXECUTION). `embedded_chunks`: lista de
     `{chunk_index, page_start, page_end, embedding}`, apendeada al índice
     existente (idempotente por `chunk_index`)."""
-    existing = load_embed_index(document_sha256) or {
+    existing = load_embed_index(document_sha256, structure_aware=structure_aware) or {
         "document_sha256": document_sha256,
         "embedding_model": embedding_model,
         "embedding_model_digest": embedding_model_digest,
@@ -71,7 +79,7 @@ def add_chunk_embeddings(document_sha256: str, embedded_chunks: list[dict], *,
         by_index[c["chunk_index"]] = c
     existing["chunks"] = sorted(by_index.values(), key=lambda c: c["chunk_index"])
     EMBED_INDEX_DIR.mkdir(parents=True, exist_ok=True)
-    _embed_index_path(document_sha256).write_text(
+    _embed_index_path(document_sha256, structure_aware=structure_aware).write_text(
         json.dumps(existing, ensure_ascii=False), encoding="utf-8")
     return existing
 

@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 
 from factory.engines.gmpai_integrity.chunked_engine import build_page_chunks
+from factory.regulatory.document_structure_extractor import extract_structure
 from factory.regulatory.retrieval.bm25 import term_counts, tokenize
 
 INDEX_DIR = Path(__file__).parent.parent / "retrieval_index"
@@ -38,21 +39,35 @@ def extract_per_page_text(pdf_path: Path) -> list[str]:
     return [(p.extract_text() or "") for p in reader.pages]
 
 
-def _index_path(document_sha256: str) -> Path:
-    return INDEX_DIR / f"{document_sha256}.json"
+def _index_path(document_sha256: str, *, structure_aware: bool = False) -> Path:
+    suffix = "__section_aware" if structure_aware else ""
+    return INDEX_DIR / f"{document_sha256}{suffix}.json"
 
 
-def build_index(pdf_path: Path, *, force: bool = False) -> dict:
+def build_index(pdf_path: Path, *, force: bool = False, structure_aware: bool = False) -> dict:
     """Indexa pdf_path si no existe ya un índice con el mismo
     document_sha256 (idempotente, determinista). force=True reindexa de
-    todos modos (para tests o si el chunking cambió)."""
+    todos modos (para tests o si el chunking cambió).
+
+    structure_aware (Fase M2+V1, 2026-08-17, default False -- CERO cambio
+    de comportamiento para todo llamador existente, incluido
+    test_r2_retrieval.py que fija ranks exactos contra el chunking por
+    tamaño de siempre): cuando True, calcula
+    `document_structure_extractor.extract_structure()` sobre el MISMO
+    `per_page_text` ya extraído aquí (pypdf, no pdfplumber -- el
+    extractor de estructura es agnóstico al extractor de texto) y lo pasa
+    a `build_page_chunks(structure=...)`. Se persiste bajo una clave de
+    índice DISTINTA (`{sha256}__section_aware.json`) -- nunca pisa el
+    índice legacy, para que ambos convivan mientras V1 (medición) no ha
+    decidido si M3 (producción) adopta este modo."""
     document_sha256 = sha256_file(pdf_path)
-    index_path = _index_path(document_sha256)
+    index_path = _index_path(document_sha256, structure_aware=structure_aware)
     if index_path.exists() and not force:
         return json.loads(index_path.read_text(encoding="utf-8"))
 
     per_page_text = extract_per_page_text(pdf_path)
-    page_chunks = build_page_chunks(per_page_text)
+    structure = extract_structure(per_page_text) if structure_aware else None
+    page_chunks = build_page_chunks(per_page_text, structure=structure)
 
     indexed_chunks = []
     total_tokens = 0
@@ -81,8 +96,8 @@ def build_index(pdf_path: Path, *, force: bool = False) -> dict:
     return index
 
 
-def load_index(document_sha256: str) -> dict | None:
-    index_path = _index_path(document_sha256)
+def load_index(document_sha256: str, *, structure_aware: bool = False) -> dict | None:
+    index_path = _index_path(document_sha256, structure_aware=structure_aware)
     if not index_path.exists():
         return None
     return json.loads(index_path.read_text(encoding="utf-8"))

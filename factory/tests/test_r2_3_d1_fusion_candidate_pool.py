@@ -114,7 +114,7 @@ def test_calls_already_used_forwarded_to_run_embed_batch(monkeypatch):
     captured = {}
 
     def _fake_run_embed_batch(document_ids, *, queries=None, decision_store_file=None,
-                               calls_already_used=0):
+                               calls_already_used=0, structure_aware=False):
         captured["calls_already_used"] = calls_already_used
         return EmbedBatchSummary(query_vectors={"21_CFR_11.10(e)": [1.0, 0.0]})
 

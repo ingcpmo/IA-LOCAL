@@ -10,15 +10,20 @@ from factory.regulatory.retrieval.indexer import load_index
 from factory.regulatory.retrieval.query_builder import build_retrieval_query
 
 
-def retrieve_top_k(document_sha256: str, req_id: str, k: int = 5) -> list[dict]:
+def retrieve_top_k(document_sha256: str, req_id: str, k: int = 5, *,
+                    structure_aware: bool = False) -> list[dict]:
     """Retorna hasta k chunks candidatos: {chunk_index, page_start,
     page_end, text, bm25_score}, ordenados descendente por score. []
     (nunca una excepción) si el documento no está indexado -- el llamador
     decide si eso es un error real o simplemente "todavía no indexado".
     La query se construye internamente vía build_retrieval_query(req_id)
     -- nunca acepta texto libre de un llamador (evita que alguien pase
-    weak_keywords sueltas por fuera de la regla dura de query_builder)."""
-    index = load_index(document_sha256)
+    weak_keywords sueltas por fuera de la regla dura de query_builder).
+
+    structure_aware (Fase M2+V1, default False): lee el índice construido
+    con `indexer.build_index(..., structure_aware=True)` en vez del
+    legacy -- ver `indexer._index_path`."""
+    index = load_index(document_sha256, structure_aware=structure_aware)
     if index is None:
         return []
     query = build_retrieval_query(req_id)
