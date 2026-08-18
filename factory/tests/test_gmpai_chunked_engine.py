@@ -1721,10 +1721,20 @@ def test_judgment_mode_gap_still_never_uses_baseline_dispatch(monkeypatch, isola
 
 
 # ===========================================================================
-# M4 (2026-08-18, docs_plan/M4_IMPLEMENTACION.md, AD-3): retrieval_mode=
-# 'top_k_fusion' con candidate_metadata >= M4_ABSENCE_RANK_THRESHOLD
-# promueve coverage_complete a True para absence_consolidator -- 0 LLM,
-# mismos escenarios de arriba, contrastados linea por linea.
+# M4 (2026-08-18, docs_plan/M4_IMPLEMENTACION.md, AD-3), corregido por M4.1
+# (2026-08-18, docs_plan/M4_1_CORRECCION_SEGUNDA_SENAL.md): retrieval_mode=
+# 'top_k_fusion' con candidate_metadata >= M4_ABSENCE_RANK_THRESHOLD YA NO
+# es suficiente por sí solo -- promover coverage_complete a True exige
+# ADEMÁS que ningún candidato comparta términos léxicos gobernados del
+# requisito (_lexical_evidence_absent). CAMBIO DE EXPECTATIVA explícito
+# respecto a la versión anterior de estos tests (commit 9718fd7): antes,
+# el umbral de rango solo bastaba para emitir DOCUMENTATION_GAP; ahora
+# hace falta AND con la ausencia léxica -- los escenarios de abajo siguen
+# usando texto sin relación ("Pagina X sin relacion...") precisamente
+# porque ESE es el caso que M4 sí puede automatizar con confianza; el
+# caso con solapamiento léxico (análogo real a P2/P5) tiene su propio
+# test nuevo más abajo y confirma que ahora se queda en
+# EVALUATION_INCOMPLETE, no en DOCUMENTATION_GAP.
 # ===========================================================================
 
 def _candidate_metadata(n: int) -> list[dict]:
@@ -1735,26 +1745,79 @@ def _candidate_metadata(n: int) -> list[dict]:
     ]
 
 
+_M4_NO_OVERLAP_PAGES = ["Pagina uno sin relacion. " * 100,
+                        "Pagina dos sin relacion. " * 100,
+                        "Pagina tres sin relacion. " * 100]
+# Términos reales de 21_CFR_11.10(e) (audit trail electrónico, timestamp,
+# generación automática) vía build_retrieval_query() real -- ver
+# docs_plan/M4_1_CORRECCION_SEGUNDA_SENAL.md para la verificación de que
+# "Pagina X sin relacion" arriba NO comparte ninguno de estos términos.
+_M4_LEXICAL_OVERLAP_PAGES = [
+    "El sistema mantiene un audit trail completo de todas las operaciones. " * 40,
+    "Cada entrada registra el timestamp de fecha y hora del evento. " * 40,
+    "Los registros electronicos se generan de forma automatica por el sistema. " * 40,
+]
+
+
 def test_m4_threshold_helper_pure_function():
-    """Unidad pura, sin mocks: _top_k_fusion_coverage_complete()."""
-    assert ce._top_k_fusion_coverage_complete("top_k_fusion", _candidate_metadata(3), 3) is True
-    assert ce._top_k_fusion_coverage_complete("top_k_fusion", _candidate_metadata(5), 3) is True
-    assert ce._top_k_fusion_coverage_complete("top_k_fusion", _candidate_metadata(2), 3) is False
+    """Unidad pura, sin mocks: _top_k_fusion_coverage_complete() -- ahora
+    exige la segunda señal léxica (M4.1), no solo el umbral de rango."""
+    req_id = "21_CFR_11.10(e)"
+    assert ce._top_k_fusion_coverage_complete(
+        "top_k_fusion", _candidate_metadata(3), 3,
+        per_unit_text=_M4_NO_OVERLAP_PAGES, req_id=req_id) is True
+    assert ce._top_k_fusion_coverage_complete(
+        "top_k_fusion", _candidate_metadata(5), 3,
+        per_unit_text=_M4_NO_OVERLAP_PAGES, req_id=req_id) is True
+    # umbral de rango cumplido, pero SIN texto/req_id -- M4.1 falla cerrado
+    assert ce._top_k_fusion_coverage_complete("top_k_fusion", _candidate_metadata(3), 3) is False
+    # umbral de rango cumplido, pero CON solapamiento léxico -- M4.1 bloquea
+    assert ce._top_k_fusion_coverage_complete(
+        "top_k_fusion", _candidate_metadata(3), 3,
+        per_unit_text=_M4_LEXICAL_OVERLAP_PAGES, req_id=req_id) is False
+    assert ce._top_k_fusion_coverage_complete(
+        "top_k_fusion", _candidate_metadata(2), 3,
+        per_unit_text=_M4_NO_OVERLAP_PAGES, req_id=req_id) is False
     assert ce._top_k_fusion_coverage_complete("top_k_fusion", None, 3) is False
     assert ce._top_k_fusion_coverage_complete("top_k_fusion", [], 3) is False
-    assert ce._top_k_fusion_coverage_complete("full_chunk", _candidate_metadata(5), 3) is False
+    assert ce._top_k_fusion_coverage_complete(
+        "full_chunk", _candidate_metadata(5), 3,
+        per_unit_text=_M4_NO_OVERLAP_PAGES, req_id=req_id) is False
+
+
+def test_m4_lexical_overlap_blocks_gap_stays_incomplete(monkeypatch, isolated_review_queue):
+    """M4.1 -- caso análogo real a P2/P5 (docs_plan/
+    M4_1_CORRECCION_SEGUNDA_SENAL.md): mismo umbral de rango cumplido
+    (3 candidatos) que el test de arriba, pero el texto SÍ comparte
+    términos léxicos gobernados del requisito ("audit trail", "timestamp",
+    "electronicos"/"automatica") -- M4 NO debe promover a
+    DOCUMENTATION_GAP/PROVISIONAL_GAP; debe quedarse en
+    EVALUATION_INCOMPLETE/ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE, exactamente
+    la corrección que evita la sobre-afirmación de certeza observada en
+    P2/P5 real."""
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", _M4_LEXICAL_OVERLAP_PAGES,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS",
+                                  full_document_coverage=False, retrieval_mode="top_k_fusion",
+                                  candidate_metadata=_candidate_metadata(3))
+    c = result["verified_conclusions"]["21_CFR_11.10(e)"]
+    assert c["conclusion"] == "EVALUATION_INCOMPLETE"
+    assert "ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE" in c["review_flags"]
 
 
 def test_m4_top_k_fusion_threshold_met_emits_gap_not_incomplete(monkeypatch, isolated_review_queue):
     """Mismo escenario exacto (evidencia_insuficiente en todos los chunks)
     que test_judgment_mode_negative_never_emits_gap_falls_to_evaluation_incomplete,
     pero con retrieval_mode='top_k_fusion' y candidate_metadata de longitud
-    3 (== M4_ABSENCE_RANK_THRESHOLD) -- ahora SÍ debe emitir una conclusión
-    accionable (PROVISIONAL_GAP/DOCUMENTATION_GAP, nunca EVALUATION_INCOMPLETE),
-    exactamente el objetivo de M4."""
-    pages = ["Pagina uno sin relacion. " * 100,
-             "Pagina dos sin relacion. " * 100,
-             "Pagina tres sin relacion. " * 100]
+    3 (== M4_ABSENCE_RANK_THRESHOLD) Y texto sin solapamiento léxico con el
+    requisito (M4.1) -- ahora SÍ debe emitir una conclusión accionable
+    (PROVISIONAL_GAP/DOCUMENTATION_GAP, nunca EVALUATION_INCOMPLETE),
+    exactamente el objetivo de M4 para el caso que sí puede automatizarse
+    con confianza."""
+    pages = _M4_NO_OVERLAP_PAGES
     monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
     monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
     monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")

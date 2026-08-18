@@ -72,6 +72,16 @@ CHUNK_OVERLAP_CHARS = 500
 # de JUICIO (ADR-V2-2), así que el pool que el modelo ya evalúa ES, por construcción,
 # la búsqueda exhaustiva hasta este umbral -- ningún candidate_metadata adicional
 # necesita construirse para que M4 opere (0 llamadas de embedding/LLM nuevas).
+#
+# M4.1 (2026-08-18, docs_plan/M4_1_CORRECCION_SEGUNDA_SENAL.md) -- distinción
+# CRÍTICA que M4 original no hacía explícita: este umbral es una garantía de
+# RECUPERACIÓN (ningún positivo conocido se pierde por no llegar al top-3), NO
+# una garantía de que el JUICIO sobre esos candidatos sea confiable -- son
+# propiedades distintas, y la segunda ya está confirmada NO confiable para
+# evidencia parafraseada (2/7 medido 3 veces: H1-H4, Palanca A, V2). Por eso
+# `_top_k_fusion_coverage_complete()` exige una SEGUNDA señal obligatoria
+# (`_lexical_evidence_absent()`, ver más abajo) antes de promover a
+# `DOCUMENTATION_GAP` -- este umbral por sí solo nunca es suficiente.
 M4_ABSENCE_RANK_THRESHOLD = 3
 
 # Ratio caracteres/token medido en vivo el 2026-07-28 sobre el prompt real de
@@ -2029,7 +2039,8 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             try:
                 app = _applicability(req_id, document_type)
                 m4_coverage_complete = _top_k_fusion_coverage_complete(
-                    retrieval_mode, candidate_metadata, M4_ABSENCE_RANK_THRESHOLD)
+                    retrieval_mode, candidate_metadata, M4_ABSENCE_RANK_THRESHOLD,
+                    per_unit_text=per_unit_text, req_id=req_id)
                 coverage_complete_for_req = full_document_coverage or m4_coverage_complete
                 conclusion = _consolidate(
                     req_id, document_type, app["value"], verified_records_by_req.get(req_id, []),
@@ -2300,27 +2311,89 @@ def _sanitize_excerpt(text: str) -> str:
     return collapsed[:_CANDIDATE_EXCERPT_MAX_CHARS] + "... [truncado]"
 
 
-def _top_k_fusion_coverage_complete(retrieval_mode: str, candidate_metadata: "list[dict] | None",
-                                     threshold: int) -> bool:
-    """M4 (2026-08-18, docs_plan/M4_IMPLEMENTACION.md, AD-3): decide si la
-    señal de cobertura para `absence_consolidator.consolidate()` puede
-    promoverse a `True` bajo `retrieval_mode='top_k_fusion'`, SIN tocar la
-    regla dura de esa función (que sigue exigiendo `coverage_complete`
-    explícito, ver su docstring W5.5).
+def _lexical_evidence_absent(per_unit_text: "list[str] | None", req_id: str | None) -> bool:
+    """M4.1 (2026-08-18, docs_plan/M4_1_CORRECCION_SEGUNDA_SENAL.md):
+    segunda señal OBLIGATORIA antes de que M4 pueda promover
+    `coverage_complete` -- el umbral de rango (M4 original) es una
+    garantía de RECUPERACIÓN, no de confiabilidad de JUICIO sobre
+    evidencia parafraseada (ya confirmada NO confiable 3 veces: H1-H4,
+    Palanca A, V2). `DOCUMENTATION_GAP` solo debe ser alcanzable cuando,
+    ADEMÁS de la cobertura completa, ningún candidato contiene siquiera
+    los términos léxicos gobernados del requisito -- si los contiene, "el
+    juicio no pudo confirmar" es la lectura honesta, no "no hay evidencia".
 
-    Verdadero si y solo si `candidate_metadata` tiene al menos `threshold`
-    candidatos -- que constituye "búsqueda determinística del 100% de los
-    chunks del documento" porque `judgment_candidate_pool.
-    build_fusion_candidate_pool()` YA fusiona BM25 (sobre TODOS los chunks
-    del índice) con embeddings (sobre TODOS los chunks del índice de
-    embeddings) antes de truncar al top-k solicitado -- el truncamiento es
-    lo único parcial, nunca la búsqueda misma (ver docstring de esa
-    función). `retrieval_mode != 'top_k_fusion'` o `candidate_metadata`
-    vacío/None: siempre `False` -- ningún otro modo/llamador cambia de
-    comportamiento por este mecanismo."""
+    Reutiliza, sin reimplementar: `query_builder.build_retrieval_query()`
+    (mismas fuentes gobernadas que ya arman la query de recuperación real
+    -- citation_text + evidence_min_criteria + requirement_terms.yaml,
+    NUNCA weak_keywords solo, ver docstring de esa función) y
+    `bm25.tokenize()` (misma normalización que ya usa toda la capa de
+    recuperación). Import local, no al tope del módulo: evita el ciclo
+    `chunked_engine -> retrieval.query_builder/bm25 -> retrieval.retriever
+    -> chunked_engine.build_page_chunks` -- mismo patrón ya usado por
+    `_is_anchored()` en este archivo para el mismo motivo.
+
+    Filtra tokens de longitud < 4 (mismo umbral ya usado por
+    `_is_topically_relevant()` en este archivo, no un número nuevo
+    inventado) para evitar solapamientos triviales en palabras
+    funcionales cortas. Falla CERRADO hacia el lado seguro: si no hay
+    `per_unit_text`, si `build_retrieval_query()` lanza (requisito sin
+    `evidence_min_criteria` en el catálogo), o si la query gobernada no
+    aporta ningún término útil tras el filtro, devuelve `False` -- la
+    AUSENCIA de señal léxica nunca es evidencia de ausencia; M4 no se
+    activa en ese caso (se queda en `EVALUATION_INCOMPLETE`, el estado ya
+    seguro por defecto)."""
+    if not per_unit_text or not req_id:
+        return False
+    from factory.regulatory.retrieval import bm25 as _bm25
+    from factory.regulatory.retrieval.query_builder import build_retrieval_query
+    try:
+        query = build_retrieval_query(req_id)
+    except Exception:
+        return False
+    query_terms = {t for t in _bm25.tokenize(query) if len(t) >= 4 and t not in _LABEL_STOPWORDS}
+    if not query_terms:
+        return False
+    for text in per_unit_text:
+        if query_terms & set(_bm25.tokenize(text)):
+            return False
+    return True
+
+
+def _top_k_fusion_coverage_complete(retrieval_mode: str, candidate_metadata: "list[dict] | None",
+                                     threshold: int, *, per_unit_text: "list[str] | None" = None,
+                                     req_id: str | None = None) -> bool:
+    """M4 (2026-08-18, docs_plan/M4_IMPLEMENTACION.md, AD-3), corregido por
+    M4.1 (2026-08-18, docs_plan/M4_1_CORRECCION_SEGUNDA_SENAL.md): decide
+    si la señal de cobertura para `absence_consolidator.consolidate()`
+    puede promoverse a `True` bajo `retrieval_mode='top_k_fusion'`, SIN
+    tocar la regla dura de esa función (que sigue exigiendo
+    `coverage_complete` explícito, ver su docstring W5.5).
+
+    Verdadero si y solo si SE CUMPLEN DOS CONDICIONES (AND, no una sola --
+    defecto de diseño de M4 original, corregido aquí):
+    1. `candidate_metadata` tiene al menos `threshold` candidatos -- que
+       constituye "búsqueda determinística del 100% de los chunks del
+       documento" porque `judgment_candidate_pool.
+       build_fusion_candidate_pool()` YA fusiona BM25 (sobre TODOS los
+       chunks del índice) con embeddings (sobre TODOS los chunks del
+       índice de embeddings) antes de truncar al top-k solicitado -- el
+       truncamiento es lo único parcial, nunca la búsqueda misma. Esto
+       garantiza RECUPERACIÓN, no confiabilidad de juicio (ver M4.1).
+    2. `_lexical_evidence_absent(per_unit_text, req_id)` -- ningún
+       candidato contiene siquiera los términos léxicos gobernados del
+       requisito. Sin esta segunda señal, M4 original confundía "el
+       modelo no reconoció la evidencia" (fallo de juicio, ya confirmado
+       3 veces) con "no hay evidencia" (ausencia real) -- exactamente el
+       defecto que produjo la sobre-afirmación de certeza en P2/P5.
+
+    `retrieval_mode != 'top_k_fusion'` o `candidate_metadata` vacío/None:
+    siempre `False` -- ningún otro modo/llamador cambia de comportamiento
+    por este mecanismo."""
     if retrieval_mode != "top_k_fusion" or not candidate_metadata:
         return False
-    return len(candidate_metadata) >= threshold
+    if len(candidate_metadata) < threshold:
+        return False
+    return _lexical_evidence_absent(per_unit_text, req_id)
 
 
 def _dispatch_m4_absence_review(run_id: str, req_id: str, documento: str, agent_id: str,
