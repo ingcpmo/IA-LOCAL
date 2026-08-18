@@ -15,6 +15,7 @@ si el `except` especifico se moviera DESPUES del generico, el 409 se
 degradaria a 400 en silencio. Estos tests fijan el contrato observable.
 """
 import hashlib
+import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,6 +29,7 @@ from fastapi.testclient import TestClient
 from factory.api.routes import remediation_packages
 from factory.core import audit_writer
 from factory.services import paths
+from factory.services import remediation_package_service as svc
 from factory.services.test_console_service import RESERVED_RUN_BY
 
 PROJECT_ID = "gmpai_document_validation_test"
@@ -41,6 +43,13 @@ def _isolated(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, "REMEDIATION_PACKAGES_BASE", tmp_path / "remediation_packages")
     monkeypatch.setattr(audit_writer, "AUDIT_FILE", tmp_path / "audit" / "test_factory_audit.jsonl")
     monkeypatch.setattr(audit_writer, "_last_entry_hash", None)
+    # Resolutor de directivas sintetico (mismo patron/razon que
+    # test_remediation_package_service.py): estos tests prueban el
+    # contrato HTTP de excepciones/lotes/decision/release, no el flujo de
+    # RemediationDirective -- ese cierre real (P0) se prueba end-to-end,
+    # SIN este monkeypatch, en test_create_package_rejects_change_without_
+    # real_submitted_directive de abajo.
+    monkeypatch.setattr(svc, "_resolve_directive", lambda directive_id: {"status": "SUBMITTED"})
     yield
 
 
@@ -81,6 +90,7 @@ def _change(change_id):
         "evaluation_confidence_basis": ["coverage_status"], "schema_validation_status": "PASSED",
         "citation_anchor_status": "VERIFIED", "relevance_status": "CONFIRMED",
         "candidate_application_status": "APPLIED_TO_DRAFT", "limitations": "",
+        "directive_id": f"DIR-{change_id}",
     }
 
 
@@ -168,3 +178,103 @@ def test_generic_reserved_identity_is_rejected_over_http(client, reserved):
     _create(client, f"PKG-HTTP-R-{reserved}")
     r = _decide(client, f"PKG-HTTP-R-{reserved}", decided_by=reserved)
     assert r.status_code in (400, 422), r.text
+
+
+# ── Cierre P0 (2026-08-18, VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md,
+# hallazgo I): el endpoint de creacion de paquetes debia aceptar `changes`
+# arbitrarios sin exigir una RemediationDirective real y SUBMITTED detras.
+# Estos tests NO usan el _resolve_directive sintetico del fixture autouse
+# -- lo reemplazan por el real (remediation_directive.get_directive) y
+# apuntan remediation_directive.DIRECTIVES_FILE a un archivo temporal, para
+# ejercitar el cierre end-to-end exactamente por la ruta HTTP real que
+# tenia el bypass.
+
+def _real_directive(directive_id: str, *, status: str = "SUBMITTED") -> dict:
+    """RemediationDirective minima con forma real (ver
+    remediation_directive._DIRECTIVE_REQUIRED_FIELDS) -- get_directive() no
+    revalida forma, solo busca por directive_id, asi que basta con que sea
+    completa y legible por json.loads, igual que un registro real
+    persistido por propose_remediation_directive()."""
+    return {
+        "directive_id": directive_id, "finding_rc_id": f"RC-{directive_id}",
+        "document_id": "RW-0001", "document_sha256": _sha256("doc"),
+        "requirement_id": "ALCOA_CONTEMPORANEOUS", "change_type": "ADD",
+        "proposed_text": "texto propuesto por un humano real", "target_location":
+            {"page_start": 1, "page_end": 1, "section": None}, "original_text": None,
+        "regulatory_citation": ["ALCOA_CONTEMPORANEOUS"], "rationale": "brecha confirmada por Acto 1",
+        "authored_by_id": "cesar", "authored_by_display_name": "Cesar",
+        "authored_at": datetime.now(timezone.utc).isoformat(), "status": status,
+    }
+
+
+def _use_real_directive_resolver(monkeypatch, tmp_path):
+    from factory.services import remediation_directive
+    monkeypatch.setattr(svc, "_resolve_directive", remediation_directive.get_directive)
+    monkeypatch.setattr(remediation_directive, "DIRECTIVES_FILE", tmp_path / "remediation_directives.jsonl")
+    return remediation_directive
+
+
+def test_create_package_rejects_change_without_directive_id(client, monkeypatch, tmp_path):
+    _use_real_directive_resolver(monkeypatch, tmp_path)
+    change = _change("C1")
+    del change["directive_id"]
+    r = client.post(f"{BASE}/{PROJECT_ID}/PKG-P0-1/1", json={
+        "changes": [change], "artifacts": _artifacts(),
+        "automatic_evaluation_basis": {
+            "requirement_ids": ["REQ-C1"], "regulatory_catalog_version": "v1",
+            "applicability_matrix_version": "v1", "evaluation_run_id": "RUN-TEST-0001",
+        },
+        "generation_commit_sha": "deadbeef",
+    })
+    assert r.status_code == 400, r.text
+    assert "directive_id" in r.text
+
+
+def test_create_package_rejects_unknown_directive_id(client, monkeypatch, tmp_path):
+    _use_real_directive_resolver(monkeypatch, tmp_path)  # remediation_directives.jsonl nunca se escribe
+    r = client.post(f"{BASE}/{PROJECT_ID}/PKG-P0-2/1", json={
+        "changes": [_change("C1")], "artifacts": _artifacts(),
+        "automatic_evaluation_basis": {
+            "requirement_ids": ["REQ-C1"], "regulatory_catalog_version": "v1",
+            "applicability_matrix_version": "v1", "evaluation_run_id": "RUN-TEST-0001",
+        },
+        "generation_commit_sha": "deadbeef",
+    })
+    assert r.status_code == 400, r.text
+    assert "no existe" in r.text
+
+
+def test_create_package_rejects_directive_not_submitted(client, monkeypatch, tmp_path):
+    remediation_directive = _use_real_directive_resolver(monkeypatch, tmp_path)
+    remediation_directive.DIRECTIVES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    remediation_directive.DIRECTIVES_FILE.write_text(
+        json.dumps(_real_directive("DIR-C1", status="SUPERSEDED")) + "\n", encoding="utf-8")
+    r = client.post(f"{BASE}/{PROJECT_ID}/PKG-P0-3/1", json={
+        "changes": [_change("C1")], "artifacts": _artifacts(),
+        "automatic_evaluation_basis": {
+            "requirement_ids": ["REQ-C1"], "regulatory_catalog_version": "v1",
+            "applicability_matrix_version": "v1", "evaluation_run_id": "RUN-TEST-0001",
+        },
+        "generation_commit_sha": "deadbeef",
+    })
+    assert r.status_code == 400, r.text
+    assert "SUBMITTED" in r.text
+
+
+def test_create_package_succeeds_with_real_submitted_directive(client, monkeypatch, tmp_path):
+    """El camino que SI debe funcionar: una RemediationDirective real,
+    SUBMITTED, con directive_id resoluble -- exactamente lo que el bypass
+    (hallazgo I) permitia saltarse."""
+    remediation_directive = _use_real_directive_resolver(monkeypatch, tmp_path)
+    remediation_directive.DIRECTIVES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    remediation_directive.DIRECTIVES_FILE.write_text(
+        json.dumps(_real_directive("DIR-C1", status="SUBMITTED")) + "\n", encoding="utf-8")
+    r = client.post(f"{BASE}/{PROJECT_ID}/PKG-P0-4/1", json={
+        "changes": [_change("C1")], "artifacts": _artifacts(),
+        "automatic_evaluation_basis": {
+            "requirement_ids": ["REQ-C1"], "regulatory_catalog_version": "v1",
+            "applicability_matrix_version": "v1", "evaluation_run_id": "RUN-TEST-0001",
+        },
+        "generation_commit_sha": "deadbeef",
+    })
+    assert r.status_code == 201, r.text

@@ -44,6 +44,9 @@ _CLIENT_ERROR_TYPES = (
     svc.InvalidExceptionError,
     svc.InvalidBatchError,
     svc.IncompleteExceptionCoverageError,
+    svc.MissingDirectiveError,
+    svc.DirectiveNotFoundError,
+    svc.DirectiveNotSubmittedError,
 )
 
 

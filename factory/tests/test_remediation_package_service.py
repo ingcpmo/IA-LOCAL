@@ -35,6 +35,13 @@ def _isolated_remediation_packages_base(tmp_path, monkeypatch):
     # del archivo temporal de este test.
     monkeypatch.setattr(audit_writer, "AUDIT_FILE", tmp_path / "audit" / "test_factory_audit.jsonl")
     monkeypatch.setattr(audit_writer, "_last_entry_hash", None)
+    # Estas pruebas ejercitan invariantes de servicio (versionado, riesgo,
+    # excepciones/lotes, decision, release) desacopladas a proposito de una
+    # RemediationDirective real respaldada por un PDF -- se sustituye el
+    # resolutor por uno sintetico SUBMITTED (mismo patron que el resto de
+    # este fixture). El bypass que create_package() cierra ahora se prueba
+    # aparte en test_create_package_requires_real_submitted_directive.
+    monkeypatch.setattr(svc, "_resolve_directive", lambda directive_id: {"status": "SUBMITTED"})
     yield
 
 
@@ -83,6 +90,7 @@ def _change(change_id, *, risk_factors=None, confidence_factors=None, applicatio
         "evaluation_confidence": confidence, "evaluation_confidence_basis": confidence_basis,
         "schema_validation_status": schema, "citation_anchor_status": anchor, "relevance_status": relevance,
         "candidate_application_status": application_status, "limitations": "",
+        "directive_id": f"DIR-{change_id}",
     }
 
 

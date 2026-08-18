@@ -158,6 +158,11 @@ class TestRealServiceIntegration:
         monkeypatch.setattr(paths, "REMEDIATION_PACKAGES_BASE", tmp_path / "remediation_packages")
         monkeypatch.setattr(audit_writer, "AUDIT_FILE", tmp_path / "audit" / "test_factory_audit.jsonl")
         monkeypatch.setattr(audit_writer, "_last_entry_hash", None)
+        # Cierre P0 (VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md, hallazgo I):
+        # create_package() exige directive_id resoluble -- este test prueba
+        # la resolucion HIGH_RISK real del servicio, no el flujo de
+        # RemediationDirective, asi que se sustituye por un resolutor sintetico.
+        monkeypatch.setattr(svc, "_resolve_directive", lambda directive_id: {"status": "SUBMITTED"})
 
         import hashlib
 
@@ -197,7 +202,7 @@ class TestRealServiceIntegration:
             "evaluation_confidence": confidence, "evaluation_confidence_basis": confidence_basis,
             "schema_validation_status": "PASSED", "citation_anchor_status": "VERIFIED",
             "relevance_status": "CONFIRMED", "candidate_application_status": "APPLIED_TO_DRAFT",
-            "limitations": "",
+            "limitations": "", "directive_id": "DIR-CHG-1",
         }
         assert risk == "HIGH_RISK"
 

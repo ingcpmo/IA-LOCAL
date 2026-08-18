@@ -36,11 +36,22 @@ from pathlib import Path
 
 from factory.core.audit_writer import write_event
 from factory.services import paths
+from factory.services import remediation_directive
 from factory.services.remediation_package_schemas import (
     SchemaValidationError,
     validate_artifact_reference,
     validate_remediation_change,
 )
+
+# Rebindable a nivel de modulo (no un parametro de create_package): permite
+# a los tests inyectar un resolutor sintetico sin acoplar cada RemediationChange
+# de prueba a una RemediationDirective real respaldada por un PDF + entrada de
+# human_review_queue -- mismo patron ya usado en este archivo para
+# paths.REMEDIATION_PACKAGES_BASE/audit_writer.AUDIT_FILE via monkeypatch. En
+# produccion (el llamador real es unicamente el endpoint HTTP, ver
+# factory/api/routes/remediation_packages.py) resuelve siempre contra
+# remediation_directives.jsonl real.
+_resolve_directive = remediation_directive.get_directive
 
 # ── Errores ──────────────────────────────────────────────────────────────
 
@@ -93,6 +104,25 @@ class IncompleteExceptionCoverageError(RemediationPackageError):
 
 class DuplicateReleaseError(RemediationPackageError):
     pass
+
+
+class MissingDirectiveError(RemediationPackageError):
+    """P0 cerrado (verificacion 2026-08-18, hallazgo I de
+    VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md): un RemediationChange sin
+    directive_id no puede persistirse en un paquete -- ningun
+    proposed_content entra al documento candidato sin una
+    RemediationDirective real detras (Acto 2, autoria humana)."""
+
+
+class DirectiveNotFoundError(RemediationPackageError):
+    """El directive_id declarado no resuelve a ninguna RemediationDirective
+    real en remediation_directives.jsonl."""
+
+
+class DirectiveNotSubmittedError(RemediationPackageError):
+    """La RemediationDirective existe pero su status no es SUBMITTED --
+    solo una directiva con proposed_text de autoria humana ya confirmado
+    puede respaldar un RemediationChange en un paquete."""
 
 
 class ReleaseInvariantViolationError(RemediationPackageError):
@@ -344,6 +374,22 @@ def create_package(
     for change in changes:
         validate_remediation_change(change)
         validate_change_application_status(change)
+        directive_id = change.get("directive_id")
+        if not directive_id:
+            raise MissingDirectiveError(
+                f"change '{change.get('change_id')}': falta directive_id -- todo RemediationChange "
+                "debe originarse en una RemediationDirective real (Acto 2, autoria humana) antes de "
+                "poder incluirse en un paquete de remediacion")
+        directive = _resolve_directive(directive_id)
+        if directive is None:
+            raise DirectiveNotFoundError(
+                f"change '{change.get('change_id')}': directive_id '{directive_id}' no existe en "
+                "remediation_directives.jsonl")
+        if directive.get("status") != "SUBMITTED":
+            raise DirectiveNotSubmittedError(
+                f"change '{change.get('change_id')}': directive_id '{directive_id}' tiene "
+                f"status={directive.get('status')!r} -- solo una directiva SUBMITTED (autoria humana "
+                "ya confirmada) puede respaldar un RemediationChange en un paquete")
     for artifact in artifacts.values():
         validate_artifact_reference(artifact)
 

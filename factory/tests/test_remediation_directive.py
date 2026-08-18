@@ -72,6 +72,21 @@ def test_confirmed_documentation_gap_is_a_valid_trigger(isolated_review_queue, i
     assert rd.list_directives(finding_rc_id=rc_id) == [directive]
 
 
+# ── get_directive() -- cierre P0 (2026-08-18, VERIFICACION_ACOTADA_Y_
+# PAQUETES_CIERRE.md, hallazgo I): unica funcion real que
+# remediation_package_service.create_package() usa para exigir una
+# RemediationDirective real y SUBMITTED detras de cada RemediationChange.
+
+def test_get_directive_resolves_by_directive_id(isolated_review_queue, isolated_directives, fake_document):
+    rc_id = _enqueue_confirmed(conclusion="DOCUMENTATION_GAP")
+    directive = rd.propose_remediation_directive(**_base_kwargs(rc_id))
+    assert rd.get_directive(directive["directive_id"]) == directive
+
+
+def test_get_directive_returns_none_for_unknown_id(isolated_directives):
+    assert rd.get_directive("DIR-NO-EXISTE") is None
+
+
 def test_confirmed_provisional_gap_is_a_valid_trigger(isolated_review_queue, isolated_directives, fake_document):
     rc_id = _enqueue_confirmed(conclusion="PROVISIONAL_GAP")
     directive = rd.propose_remediation_directive(**_base_kwargs(rc_id))

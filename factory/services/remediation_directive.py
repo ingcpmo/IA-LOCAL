@@ -240,3 +240,18 @@ def list_directives(*, finding_rc_id: str | None = None) -> list[dict]:
         if finding_rc_id is None or d.get("finding_rc_id") == finding_rc_id:
             out.append(d)
     return out
+
+
+def get_directive(directive_id: str) -> dict | None:
+    """R4-T1.0v2 cierre P0 (verificacion 2026-08-18, docs_plan/
+    VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md, hallazgo I): unica funcion
+    real de resolucion por directive_id -- la usa
+    remediation_package_service.create_package() para exigir que todo
+    RemediationChange tenga una RemediationDirective real y SUBMITTED
+    detras, cerrando el bypass por el que un `change` con
+    proposed_content arbitrario podia llegar al endpoint de creacion de
+    paquetes sin pasar por el Acto 2 (autoria humana)."""
+    for d in list_directives():
+        if d["directive_id"] == directive_id:
+            return d
+    return None

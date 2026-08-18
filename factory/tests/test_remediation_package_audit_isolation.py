@@ -65,6 +65,7 @@ def _change(change_id: str, risk_factors: dict) -> dict:
         "evaluation_confidence": "HIGH_CONFIDENCE", "evaluation_confidence_basis": ["coverage_status"],
         "schema_validation_status": "PASSED", "citation_anchor_status": "VERIFIED",
         "relevance_status": "CONFIRMED", "candidate_application_status": "APPLIED_TO_DRAFT", "limitations": "",
+        "directive_id": f"DIR-{change_id}",
     }
 
 
@@ -105,6 +106,10 @@ def test_real_audit_log_unchanged_after_full_batch_and_exception_lifecycle(tmp_p
     isolated_audit_file = tmp_path / "audit" / "isolated_test_audit.jsonl"
     monkeypatch.setattr(audit_writer, "AUDIT_FILE", isolated_audit_file)
     monkeypatch.setattr(audit_writer, "_last_entry_hash", None)
+    # Resolutor de directivas sintetico (mismo patron/razon que
+    # test_remediation_package_service.py): este test prueba aislamiento de
+    # auditoria, no el flujo de RemediationDirective.
+    monkeypatch.setattr(svc, "_resolve_directive", lambda directive_id: {"status": "SUBMITTED"})
 
     package_id = "PKG-AUDIT-ISOLATION"
     pkg = svc.create_package(

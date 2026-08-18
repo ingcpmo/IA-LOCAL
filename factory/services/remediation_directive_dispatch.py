@@ -166,9 +166,20 @@ def dispatch_directive_to_remediation(directive: dict, *, run_id: str) -> Mapped
         source_text = _extract_target_text(path, location)
 
     try:
-        return map_finding_to_remediation_change(
+        mapped = map_finding_to_remediation_change(
             finding, document_name=document_id, document_sha256=document_sha256,
             run_id=run_id, source_text=source_text,
         )
     except NotMappableToCurrentSchema:
         raise
+
+    # Cierre P0 (2026-08-18, VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md,
+    # hallazgo I/J): remediation_package_service.create_package() exige
+    # directive_id real -- Ruta D (map_finding_to_remediation_change) es
+    # generica y no lo conoce, asi que este unico adaptador del flujo de
+    # directivas lo agrega explicitamente. change_id ya coincide con
+    # directive_id en este camino (via finding["cambio_documental_propuesto"]
+    # arriba), pero el campo debe existir por su propio nombre -- un
+    # consumidor de traceability no deberia tener que asumir esa igualdad.
+    mapped.change["directive_id"] = directive["directive_id"]
+    return mapped

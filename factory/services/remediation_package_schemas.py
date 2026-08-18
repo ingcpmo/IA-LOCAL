@@ -164,6 +164,16 @@ _CHANGE_REQUIRED_FIELDS = {
     "evaluation_confidence", "evaluation_confidence_basis", "schema_validation_status",
     "citation_anchor_status", "relevance_status", "candidate_application_status", "limitations",
 }
+# directive_id es OPCIONAL a nivel de forma (muchos consumidores de
+# validate_remediation_change -- document_quality_gates.py,
+# golden_dataset_criteria.py -- validan RemediationChange sin estar
+# atados al flujo de paquetes). remediation_package_service.create_package()
+# es quien lo EXIGE como precondicion real (verificacion 2026-08-18,
+# hallazgo I de VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md): el punto
+# correcto para cerrar el bypass es el unico llamador de produccion que
+# persiste un paquete, no este validador de forma generico.
+_CHANGE_OPTIONAL_FIELDS = {"directive_id"}
+_CHANGE_ALLOWED_FIELDS = _CHANGE_REQUIRED_FIELDS | _CHANGE_OPTIONAL_FIELDS
 
 
 def validate_remediation_change(change: dict) -> None:
@@ -173,7 +183,10 @@ def validate_remediation_change(change: dict) -> None:
     validate_change_application_status() en remediation_package_service.py
     para la invariante de schema/anchor."""
     name = "RemediationChange"
-    _require_no_unexpected_keys(change, _CHANGE_REQUIRED_FIELDS, name)
+    _require_no_unexpected_keys(change, _CHANGE_ALLOWED_FIELDS, name)
+
+    if "directive_id" in change and not (isinstance(change["directive_id"], str) and change["directive_id"].strip()):
+        raise SchemaValidationError(f"{name}.directive_id: si se provee, debe ser str no vacio")
 
     _require_field(change, "change_id", str, name)
     _require_field(change, "finding_id", str, name)
