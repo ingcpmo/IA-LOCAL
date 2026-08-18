@@ -55,6 +55,25 @@ from .models import Finding
 CHUNK_MAX_CHARS = 6000
 CHUNK_OVERLAP_CHARS = 500
 
+# M4 (AD-3, GMP_AI_FACTORY_ARQUITECTURA_OBJETIVO.md, docs_plan/M4_IMPLEMENTACION.md,
+# 2026-08-18) -- umbral gobernado, versionado (cambiarlo exige el mismo régimen que
+# prompts/catálogo: aprobación de Cesar, nunca un ajuste silencioso para inflar
+# métricas -- ver skill gmp-recall-pipeline). Bajo retrieval_mode='top_k_fusion',
+# un candidate pool con AL MENOS este número de candidatos constituye "búsqueda
+# determinística del 100% de los chunks del documento" para efectos de
+# absence_consolidator.consolidate(coverage_complete=...): build_fusion_candidate_pool()
+# ya fusiona BM25 (sobre TODOS los chunks del índice, retriever.retrieve_top_k(k=10_000))
+# con embeddings (sobre TODOS los chunks del índice de embeddings) ANTES de truncar
+# al top-k solicitado -- el truncamiento es lo único parcial, nunca la búsqueda misma.
+# Calibrado 2026-08-18 contra V1 (docs_plan/V1_RECALL_SECTION_AWARE_CHUNKING_RESULTADO.md)
+# y V2 (docs_plan/DECISION_ARQUITECTONICA_CORRECCION_AD1_DESBLOQUEO_V2/
+# REPORTE_CONSOLIDADO.md): los 7 positivos reales del fixture 7P+2N entran al top-3
+# del ranking de fusión (rank máximo medido = 3, P7) -- mismo k=3 ya usado por la capa
+# de JUICIO (ADR-V2-2), así que el pool que el modelo ya evalúa ES, por construcción,
+# la búsqueda exhaustiva hasta este umbral -- ningún candidate_metadata adicional
+# necesita construirse para que M4 opere (0 llamadas de embedding/LLM nuevas).
+M4_ABSENCE_RANK_THRESHOLD = 3
+
 # Ratio caracteres/token medido en vivo el 2026-07-28 sobre el prompt real de
 # annex11 (15 347 chars -> 3903 tokens de prompt_eval_count reportados por
 # Ollama). Se usa SOLO para la guardia de preflight, que necesita una
@@ -997,16 +1016,21 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     posición grababa la página real como 1. None (default) preserva el
     comportamiento anterior para todo llamador existente.
 
-    candidate_metadata (R2.3 §4, 2026-08-11, docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md):
+    candidate_metadata (R2.3 §4, 2026-08-11, docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md;
+    ampliado por M4, 2026-08-18, docs_plan/M4_IMPLEMENTACION.md):
     opcional, mismo largo/orden que `per_unit_text` -- metadata de
     recuperación (`chunk_index`, `page_start`, `page_end`, `bm25_rank`,
     `embedding_rank`, `fusion_rank`) que `judgment.py` ya tiene (viene
     directo de `fusion.rrf_fuse()`) pero que `build_page_chunks()` pierde
-    al re-numerar internamente "página 1..N" sintéticas. Solo se usa para
+    al re-numerar internamente "página 1..N" sintéticas. Se usa para
     enriquecer el despacho a la cola de revisión humana en modo JUICIO
-    (`_dispatch_partial_coverage_review`) -- nunca influye en el juicio ni
-    en la consolidación. `None` (default) preserva el comportamiento
-    anterior para todo llamador que no lo pase.
+    (`_dispatch_partial_coverage_review`) Y, desde M4, para decidir si
+    `retrieval_mode='top_k_fusion'` alcanza el umbral gobernado
+    (`M4_ABSENCE_RANK_THRESHOLD`) que habilita `coverage_complete=True`
+    para `absence_consolidator.consolidate()` (ver
+    `_top_k_fusion_coverage_complete()`) -- ya NO es puramente decorativo.
+    `None` (default) preserva el comportamiento anterior para todo
+    llamador que no lo pase.
 
     full_document_coverage (R2.2 §2, 2026-08-10, docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md):
     default True -- cero cambio de comportamiento para todo llamador
@@ -1022,6 +1046,16 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
     pool visto -- porque este llamador pasaba `coverage_complete=True`
     hardcodeado, violando la precondición que la propia función ya
     protegía. No es una regla nueva: es hacer cumplir una que ya existía.
+
+    M4 (2026-08-18, docs_plan/M4_IMPLEMENTACION.md): cuando este parámetro
+    llega en `False` (modo JUICIO), la fuente de `coverage_complete` que se
+    pasa a `absence_consolidator.consolidate()` YA NO es únicamente este
+    valor -- ver `_top_k_fusion_coverage_complete()`, que lo reemplaza por
+    `True` cuando `retrieval_mode='top_k_fusion'` y `candidate_metadata`
+    alcanza `M4_ABSENCE_RANK_THRESHOLD`. La regla dura de
+    `absence_consolidator` ("el LLM nunca emite el gap") no se toca --
+    solo cambia de dónde viene la señal de cobertura, exactamente como
+    especifica el diseño AD-3 ya aprobado.
 
     retrieval_mode (Fase M3, 2026-08-17, default 'full_chunk' -- cero
     cambio de comportamiento para todo llamador existente): puramente
@@ -1994,9 +2028,12 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 continue
             try:
                 app = _applicability(req_id, document_type)
+                m4_coverage_complete = _top_k_fusion_coverage_complete(
+                    retrieval_mode, candidate_metadata, M4_ABSENCE_RANK_THRESHOLD)
+                coverage_complete_for_req = full_document_coverage or m4_coverage_complete
                 conclusion = _consolidate(
                     req_id, document_type, app["value"], verified_records_by_req.get(req_id, []),
-                    coverage_complete=full_document_coverage,
+                    coverage_complete=coverage_complete_for_req,
                 )
                 finding = finding_by_req.get(req_id)
                 conclusion = _apply_preconditions(
@@ -2060,6 +2097,25 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     run_id, req_id, documento, agent_id, len(per_unit_text),
                     conclusion.chunks_evaluated, list(conclusion.review_flags), governed_exceptions,
                     per_unit_text=per_unit_text, candidate_metadata=candidate_metadata)
+            # M4 (2026-08-18, docs_plan/M4_IMPLEMENTACION.md, AD-3): cuando
+            # m4_coverage_complete promovió coverage_complete_for_req a True,
+            # consolidate() ya pudo emitir DOCUMENTATION_GAP/PROVISIONAL_GAP
+            # bajo retrieval_mode='top_k_fusion' (antes imposible -- caía
+            # siempre en la rama de arriba). Sigue sin ser cierre automático:
+            # mismo principio de "red de seguridad adicional" que
+            # _dispatch_baseline_gap_review, pero con el ranking completo y
+            # el umbral usado -- auditable, no una caja negra (requisito
+            # explícito de M4). No cubre CROSS_REFERENCE_MISSING: mismo
+            # criterio que el modo BASELINE (línea de abajo), que tampoco lo
+            # despacha -- un rechazo correcto (N1: fuera del pool, sin
+            # evidencia parafraseada plausible) no necesita revisión humana.
+            elif (not full_document_coverage and m4_coverage_complete
+                  and conclusion.conclusion in ("DOCUMENTATION_GAP", "PROVISIONAL_GAP")):
+                _dispatch_m4_absence_review(
+                    run_id, req_id, documento, agent_id, conclusion.conclusion,
+                    list(conclusion.review_flags), governed_exceptions,
+                    per_unit_text=per_unit_text, candidate_metadata=candidate_metadata,
+                    threshold_used=M4_ABSENCE_RANK_THRESHOLD)
             # Tier-1 (2026-08-11, docs_plan/R2_3_CONSOLIDACION_Y_TIER1.md §5
             # D2, .claude/plans/wise-bubbling-toucan.md): el modo BASELINE
             # (full_document_coverage=True) SÍ vio el documento completo --
@@ -2242,6 +2298,83 @@ def _sanitize_excerpt(text: str) -> str:
     if len(collapsed) <= _CANDIDATE_EXCERPT_MAX_CHARS:
         return collapsed
     return collapsed[:_CANDIDATE_EXCERPT_MAX_CHARS] + "... [truncado]"
+
+
+def _top_k_fusion_coverage_complete(retrieval_mode: str, candidate_metadata: "list[dict] | None",
+                                     threshold: int) -> bool:
+    """M4 (2026-08-18, docs_plan/M4_IMPLEMENTACION.md, AD-3): decide si la
+    señal de cobertura para `absence_consolidator.consolidate()` puede
+    promoverse a `True` bajo `retrieval_mode='top_k_fusion'`, SIN tocar la
+    regla dura de esa función (que sigue exigiendo `coverage_complete`
+    explícito, ver su docstring W5.5).
+
+    Verdadero si y solo si `candidate_metadata` tiene al menos `threshold`
+    candidatos -- que constituye "búsqueda determinística del 100% de los
+    chunks del documento" porque `judgment_candidate_pool.
+    build_fusion_candidate_pool()` YA fusiona BM25 (sobre TODOS los chunks
+    del índice) con embeddings (sobre TODOS los chunks del índice de
+    embeddings) antes de truncar al top-k solicitado -- el truncamiento es
+    lo único parcial, nunca la búsqueda misma (ver docstring de esa
+    función). `retrieval_mode != 'top_k_fusion'` o `candidate_metadata`
+    vacío/None: siempre `False` -- ningún otro modo/llamador cambia de
+    comportamiento por este mecanismo."""
+    if retrieval_mode != "top_k_fusion" or not candidate_metadata:
+        return False
+    return len(candidate_metadata) >= threshold
+
+
+def _dispatch_m4_absence_review(run_id: str, req_id: str, documento: str, agent_id: str,
+                                 conclusion_value: str, review_flags: list[str],
+                                 governed_exceptions: list[dict], *,
+                                 per_unit_text: "list[str] | None" = None,
+                                 candidate_metadata: "list[dict] | None" = None,
+                                 threshold_used: int) -> None:
+    """M4 (2026-08-18, docs_plan/M4_IMPLEMENTACION.md, AD-3): encola en la
+    MISMA cola R1.8 un `DOCUMENTATION_GAP`/`PROVISIONAL_GAP` emitido bajo
+    `retrieval_mode='top_k_fusion'` gracias a la promoción de cobertura de
+    `_top_k_fusion_coverage_complete()` -- mismo principio de "red de
+    seguridad adicional, nunca cierre automático" que
+    `_dispatch_baseline_gap_review`, pero requisito explícito de M4:
+    auditable, no una caja negra. Registra el umbral gobernado usado y el
+    ranking COMPLETO de los candidatos evaluados (todos "descartados" por
+    construcción -- si alguno hubiera mostrado evidencia, `consolidate()`
+    nunca habría llegado a la rama de ausencia) -- página, rank por
+    método, extracto sanitizado, mismo formato ya usado por
+    `_dispatch_partial_coverage_review` para que un revisor humano pueda
+    auditar exactamente qué se buscó y qué se descartó, no solo confiar en
+    la conclusión."""
+    candidates = []
+    if candidate_metadata and per_unit_text:
+        for meta, text in zip(candidate_metadata, per_unit_text):
+            candidates.append({
+                "chunk_index": meta.get("chunk_index"),
+                "page_start": meta.get("page_start"),
+                "page_end": meta.get("page_end"),
+                "bm25_rank": meta.get("bm25_rank"),
+                "embedding_rank": meta.get("embedding_rank"),
+                "fusion_rank": meta.get("fusion_rank"),
+                "excerpt": _sanitize_excerpt(text),
+            })
+    try:
+        from factory.layer9.human_review_queue import enqueue_finding_for_review
+        enqueue_finding_for_review(
+            run_id=run_id, requirement_id=req_id, document_id=documento,
+            page=None, evidence_quote="",
+            conclusion=conclusion_value,
+            review_flags=[
+                *review_flags,
+                "M4_ABSENCE_TOP_K_FUSION_COVERAGE_COMPLETE",
+                f"M4_ABSENCE_RANK_THRESHOLD_USED={threshold_used}",
+                f"M4_ABSENCE_CANDIDATES_SEARCHED={len(candidates)}",
+            ],
+            agent_id=agent_id,
+            candidates=candidates,
+        )
+    except Exception as exc:  # noqa: BLE001 -- ver docstring: no bloqueante, pero registrado
+        governed_exceptions.append({
+            "req_id": req_id, "stage": "review_queue_dispatch",
+            "exception": type(exc).__name__, "detail": str(exc),
+        })
 
 
 def _dispatch_partial_coverage_review(run_id: str, req_id: str, documento: str, agent_id: str,

@@ -1718,3 +1718,126 @@ def test_judgment_mode_gap_still_never_uses_baseline_dispatch(monkeypatch, isola
     flags = matches[0]["summary"]["review_flags"]
     assert "BASELINE_GAP_PENDING_HUMAN_REVIEW_KNOWN_PARAPHRASE_LIMIT" not in flags
     assert matches[0]["summary"]["conclusion"] == "EVIDENCE_NOT_LOCATED_IN_CANDIDATES"
+
+
+# ===========================================================================
+# M4 (2026-08-18, docs_plan/M4_IMPLEMENTACION.md, AD-3): retrieval_mode=
+# 'top_k_fusion' con candidate_metadata >= M4_ABSENCE_RANK_THRESHOLD
+# promueve coverage_complete a True para absence_consolidator -- 0 LLM,
+# mismos escenarios de arriba, contrastados linea por linea.
+# ===========================================================================
+
+def _candidate_metadata(n: int) -> list[dict]:
+    return [
+        {"chunk_index": i, "page_start": i + 1, "page_end": i + 1,
+         "bm25_rank": i + 1, "embedding_rank": i + 1, "fusion_rank": i + 1}
+        for i in range(n)
+    ]
+
+
+def test_m4_threshold_helper_pure_function():
+    """Unidad pura, sin mocks: _top_k_fusion_coverage_complete()."""
+    assert ce._top_k_fusion_coverage_complete("top_k_fusion", _candidate_metadata(3), 3) is True
+    assert ce._top_k_fusion_coverage_complete("top_k_fusion", _candidate_metadata(5), 3) is True
+    assert ce._top_k_fusion_coverage_complete("top_k_fusion", _candidate_metadata(2), 3) is False
+    assert ce._top_k_fusion_coverage_complete("top_k_fusion", None, 3) is False
+    assert ce._top_k_fusion_coverage_complete("top_k_fusion", [], 3) is False
+    assert ce._top_k_fusion_coverage_complete("full_chunk", _candidate_metadata(5), 3) is False
+
+
+def test_m4_top_k_fusion_threshold_met_emits_gap_not_incomplete(monkeypatch, isolated_review_queue):
+    """Mismo escenario exacto (evidencia_insuficiente en todos los chunks)
+    que test_judgment_mode_negative_never_emits_gap_falls_to_evaluation_incomplete,
+    pero con retrieval_mode='top_k_fusion' y candidate_metadata de longitud
+    3 (== M4_ABSENCE_RANK_THRESHOLD) -- ahora SÍ debe emitir una conclusión
+    accionable (PROVISIONAL_GAP/DOCUMENTATION_GAP, nunca EVALUATION_INCOMPLETE),
+    exactamente el objetivo de M4."""
+    pages = ["Pagina uno sin relacion. " * 100,
+             "Pagina dos sin relacion. " * 100,
+             "Pagina tres sin relacion. " * 100]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS",
+                                  full_document_coverage=False, retrieval_mode="top_k_fusion",
+                                  candidate_metadata=_candidate_metadata(3))
+    c = result["verified_conclusions"]["21_CFR_11.10(e)"]
+    assert c["conclusion"] in ("DOCUMENTATION_GAP", "PROVISIONAL_GAP")
+    assert "ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE" not in c["review_flags"]
+
+
+def test_m4_top_k_fusion_below_threshold_still_incomplete_no_regression(monkeypatch, isolated_review_queue):
+    """Mismo escenario, pero candidate_metadata de longitud 2
+    (< M4_ABSENCE_RANK_THRESHOLD=3) -- M4 NO aplica, sigue cayendo a
+    EVALUATION_INCOMPLETE/ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE, mismo
+    comportamiento que sin M4. Confirma que el umbral es real, no
+    decorativo."""
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS",
+                                  full_document_coverage=False, retrieval_mode="top_k_fusion",
+                                  candidate_metadata=_candidate_metadata(2))
+    c = result["verified_conclusions"]["21_CFR_11.10(e)"]
+    assert c["conclusion"] == "EVALUATION_INCOMPLETE"
+    assert "ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE" in c["review_flags"]
+
+
+def test_m4_top_k_fusion_without_candidate_metadata_no_regression(monkeypatch, isolated_review_queue):
+    """retrieval_mode='top_k_fusion' pero SIN candidate_metadata (llamador
+    que no lo pasa) -- M4 no puede aplicar (no hay nada que medir contra
+    el umbral), cae al comportamiento de siempre. Mismo escenario que
+    test_judgment_mode_negative_never_emits_gap_falls_to_evaluation_incomplete
+    salvo por retrieval_mode."""
+    pages = ["Pagina uno sin relacion. " * 150, "Pagina dos sin relacion. " * 150]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    result = ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                                  "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                                  run_context="production", use_verified_pipeline=True, document_type="FS",
+                                  full_document_coverage=False, retrieval_mode="top_k_fusion")
+    c = result["verified_conclusions"]["21_CFR_11.10(e)"]
+    assert c["conclusion"] == "EVALUATION_INCOMPLETE"
+    assert "ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE" in c["review_flags"]
+
+
+def test_m4_gap_dispatched_to_review_queue_with_ranking_and_threshold(monkeypatch, isolated_review_queue):
+    """Requisito explícito de M4 (docs_plan/M4_IMPLEMENTACION.md, bloque
+    'QUÉ CONSTRUIR' punto 3): auditable, no una caja negra -- el finding
+    encolado trae el umbral usado, el ranking completo de candidatos
+    evaluados (todos "descartados" por construcción), y el flag que marca
+    que fue M4 quien promovió la cobertura, distinto del despacho de modo
+    JUICIO normal (_dispatch_partial_coverage_review) y del de BASELINE
+    (_dispatch_baseline_gap_review)."""
+    from factory.layer9 import human_review_queue as hrq
+
+    pages = ["Pagina uno sin relacion. " * 100,
+             "Pagina dos sin relacion. " * 100,
+             "Pagina tres sin relacion. " * 100]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                        "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                        run_context="production", use_verified_pipeline=True, document_type="FS",
+                        full_document_coverage=False, retrieval_mode="top_k_fusion",
+                        candidate_metadata=_candidate_metadata(3))
+    pending = hrq.list_pending()
+    matches = [e for e in pending if e["summary"]["requirement_id"] == "21_CFR_11.10(e)"]
+    assert len(matches) == 1
+    entry = matches[0]["summary"]
+    assert entry["conclusion"] in ("DOCUMENTATION_GAP", "PROVISIONAL_GAP")
+    flags = entry["review_flags"]
+    assert "M4_ABSENCE_TOP_K_FUSION_COVERAGE_COMPLETE" in flags
+    assert "M4_ABSENCE_RANK_THRESHOLD_USED=3" in flags
+    assert "M4_ABSENCE_CANDIDATES_SEARCHED=3" in flags
+    assert len(entry["candidates"]) == 3
+    assert entry["candidates"][0]["fusion_rank"] == 1
+    assert "BASELINE_GAP_PENDING_HUMAN_REVIEW_KNOWN_PARAPHRASE_LIMIT" not in flags
+    assert not any(f.startswith("PARTIAL_COVERAGE_CANDIDATES_SEEN=") for f in flags)
