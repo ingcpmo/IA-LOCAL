@@ -46,7 +46,7 @@
 # aprobación debe marcarse # PROPUESTO de nuevo hasta la siguiente
 # confirmación explícita.
 
-matrix_version: "2.2"
+matrix_version: "2.3"
 # v2.1 (2026-07-29): se agregan las filas de 21_CFR_211.68(b) tras la
 # ingesta de ecfr_21cfr_part211. MC-0001 NO las cubre -- estan marcadas
 # PROPUESTO y requieren una confirmacion humana nueva.
@@ -59,6 +59,14 @@ matrix_version: "2.2"
 # documentales ya en uso real, que V6 (evidence_pack_governance.py) exige
 # como subconjunto de esta lista. Pendiente de confirmacion humana nueva,
 # igual que las filas de 211.68(b) en v2.1.
+# v2.3 (2026-08-18, cierre de D/P4 -- docs_plan/VERIFICACION_ACOTADA_20260818/
+# D_BLOQUE_1_3_EJECUCION.md): se agrega ALCOA_ATTRIBUTABLE.DS: expected.
+# Antes de esta fila, (ALCOA_ATTRIBUTABLE, DS) no tenia entrada y caia al
+# default fail-closed (review_required), produciendo EVALUATION_INCOMPLETE/
+# APPLICABILITY_UNRESOLVED para el caso real RW-0011 (chunk
+# chunked-3c61bff03dcd, hallazgo P4). Decision regulatoria de Cesar
+# (human_confirmed, ver decisions_v2.jsonl APPLICABILITY_MATRIX-2026-007):
+# ALCOA_ATTRIBUTABLE SI aplica a documentos DS, con valor expected.
 approval:            # Checkpoint B confirmado — ver factory/layer9/decisions/decisions.jsonl (MC-0001)
   status: "human_confirmed"
   decision_id: "MC-0001"
@@ -155,6 +163,7 @@ requirements:
     URS: expected
     FS: expected
     OQ: optional
+    DS: expected
     evidence_expected_in: [FS]
     default: review_required
 
