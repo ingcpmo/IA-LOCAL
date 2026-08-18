@@ -51,6 +51,11 @@ REVALIDATION_NOT_COVERED = "REVALIDATION_NOT_COVERED"
 REVALIDATION_NOT_COVERED_REASON = (
     "AGT-RVL se ejecuto para este paquete pero su resultado no incluye este change_id."
 )
+# `directive_id` es obligatorio en create_package() desde 77a9b66 -- todo
+# change real lo trae. Este placeholder solo cubre package_state de origen
+# anterior a ese commit (o fixtures de test): declarar explicito, nunca
+# omitir el campo en silencio (mismo patron que REVALIDATION_NOT_EXECUTED).
+DIRECTIVE_ID_MISSING = "DIRECTIVE_ID_MISSING"
 
 
 def _revalidation_index(revalidation) -> dict:
@@ -92,6 +97,7 @@ def _resolve_official_url(source_id: str) -> str:
 class TraceabilityRow:
     requirement_id: str
     change_id: str
+    directive_id: str
     final_status: str
     included_in_clean_candidate: bool
     section_numero: str | None
@@ -123,6 +129,7 @@ def build_traceability_matrix(
         rows.append(TraceabilityRow(
             requirement_id=change["requirement_id"],
             change_id=resolution.change_id,
+            directive_id=change.get("directive_id") or DIRECTIVE_ID_MISSING,
             final_status=resolution.final_status,
             included_in_clean_candidate=resolution.included_in_clean_candidate,
             section_numero=section_by_change_id.get(resolution.change_id),

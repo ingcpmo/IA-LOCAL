@@ -12,8 +12,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from factory.services.remediation_traceability_and_manifest import (
-    build_change_narrative, build_full_change_review, build_package_manifest,
-    build_traceability_matrix,
+    DIRECTIVE_ID_MISSING, build_change_narrative, build_full_change_review,
+    build_package_manifest, build_traceability_matrix,
 )
 
 
@@ -48,13 +48,15 @@ def _citation(citation_id="CIT-1", regulatory_source="ecfr_21cfr_part11"):
     }
 
 
-def _change(change_id, risk="LOW_RISK", requirement_id="21_CFR_11.10(a)", citations=None):
+def _change(change_id, risk="LOW_RISK", requirement_id="21_CFR_11.10(a)", citations=None,
+            directive_id="DIR-1"):
     return {
         "change_id": change_id, "requirement_id": requirement_id, "change_risk": risk,
         "document_location": "seccion 2", "original_content": None,
         "proposed_content": "texto propuesto real", "change_reason": "gap detectado en auditoria",
         "change_type": "CONTENT_ADDITION", "citations": citations or [_citation()],
         "schema_validation_status": "PASSED", "citation_anchor_status": "VERIFIED",
+        "directive_id": directive_id,
     }
 
 
@@ -122,6 +124,23 @@ class TestBuildTraceabilityMatrix:
         revalidation = _fake_revalidation({"C1": ("CLOSED", "ok")})
         rows = {r.change_id: r for r in build_traceability_matrix(state, revalidation=revalidation)}
         assert rows["C2"].revalidation_status == "REVALIDATION_NOT_COVERED"
+
+    def test_directive_id_travels_from_change_to_row(self):
+        """J (VERIFICACION_ACOTADA_20260818): directive_id ya vive en el
+        change desde 77a9b66 (P0), pero la matriz de trazabilidad -- el
+        artefacto que ve QA -- no lo exponia. Debe viajar sin re-derivarse."""
+        change = _change("C1", directive_id="DIR-REAL-42")
+        state = _package_state([change])
+        rows = build_traceability_matrix(state)
+        assert rows[0].directive_id == "DIR-REAL-42"
+
+    def test_missing_directive_id_declares_explicitly_never_silently(self):
+        """package_state de origen anterior a 77a9b66 (o fixture incompleto):
+        nunca se omite el campo en silencio, se declara la ausencia."""
+        change = _change("C1")
+        del change["directive_id"]
+        rows = build_traceability_matrix(_package_state([change]))
+        assert rows[0].directive_id == DIRECTIVE_ID_MISSING
 
     def test_real_agt_rvl_result_object_is_accepted(self):
         """Contra el objeto REAL de Fase O, no solo contra el doble: si el
