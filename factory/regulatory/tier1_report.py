@@ -238,10 +238,16 @@ def generate_tier1_report(document_id: str, agent_id: str, *, document_type: str
     findings_by_req = {f["requisito_regulatorio"].split(" — ")[0]: f for f in result["findings"]}
 
     from factory.layer9.human_review_queue import list_pending
+    # Paquete 1a (2026-08-19): list_pending() ahora también puede traer
+    # entradas entry_type='governance_candidate' para el mismo
+    # requirement_id -- filtrar a 'finding_review' explícitamente, o un
+    # candidato NCR/CAPA sugerido pisaría el rc_id real del finding en
+    # este dict (mismo requirement_id, mismo run_id, entrada posterior).
     pending_by_req = {
         e["summary"]["requirement_id"]: e["rc_id"]
         for e in list_pending()
         if e.get("summary", {}).get("run_id") == result["run_id"]
+        and e.get("entry_type") == "finding_review"
     }
 
     requirements = []

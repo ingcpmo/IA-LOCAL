@@ -1686,7 +1686,10 @@ def test_baseline_gap_dispatched_to_review_queue_conclusion_unchanged(monkeypatc
     assert c["conclusion"] == "PROVISIONAL_GAP"  # sin cambios frente al baseline de siempre
 
     pending = hrq.list_pending()
-    matches = [e for e in pending if e["summary"]["requirement_id"] == "21_CFR_11.10(e)"]
+    # Paquete 1a (2026-08-19): filtrar por entry_type -- ahora tambien se
+    # encola un governance_candidate para el mismo requirement_id.
+    matches = [e for e in pending if e["summary"]["requirement_id"] == "21_CFR_11.10(e)"
+               and e.get("entry_type") == "finding_review"]
     assert len(matches) == 1
     entry = matches[0]["summary"]
     assert entry["conclusion"] == "PROVISIONAL_GAP"
@@ -1892,7 +1895,13 @@ def test_m4_gap_dispatched_to_review_queue_with_ranking_and_threshold(monkeypatc
                         full_document_coverage=False, retrieval_mode="top_k_fusion",
                         candidate_metadata=_candidate_metadata(3))
     pending = hrq.list_pending()
-    matches = [e for e in pending if e["summary"]["requirement_id"] == "21_CFR_11.10(e)"]
+    # Paquete 1a (2026-08-19): un DOCUMENTATION_GAP/PROVISIONAL_GAP real
+    # ahora TAMBIEN encola un governance_candidate para el mismo
+    # requirement_id (ver test_documentation_gap_also_dispatches_a_
+    # governance_candidate abajo) -- filtrar por entry_type para seguir
+    # midiendo especificamente el finding_review de este test.
+    matches = [e for e in pending if e["summary"]["requirement_id"] == "21_CFR_11.10(e)"
+               and e.get("entry_type") == "finding_review"]
     assert len(matches) == 1
     entry = matches[0]["summary"]
     assert entry["conclusion"] in ("DOCUMENTATION_GAP", "PROVISIONAL_GAP")
@@ -1904,3 +1913,36 @@ def test_m4_gap_dispatched_to_review_queue_with_ranking_and_threshold(monkeypatc
     assert entry["candidates"][0]["fusion_rank"] == 1
     assert "BASELINE_GAP_PENDING_HUMAN_REVIEW_KNOWN_PARAPHRASE_LIMIT" not in flags
     assert not any(f.startswith("PARTIAL_COVERAGE_CANDIDATES_SEEN=") for f in flags)
+
+
+def test_documentation_gap_also_dispatches_a_governance_candidate(monkeypatch, isolated_review_queue):
+    """Paquete 1a (VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md): un
+    DOCUMENTATION_GAP/PROVISIONAL_GAP real, ademas del finding_review ya
+    verificado arriba, encola TAMBIEN un candidato NCR (primera aparicion
+    de este requirement_id+document_id) en la MISMA cola R1.8 -- nunca lo
+    crea, nunca lo cierra."""
+    from factory.layer9 import human_review_queue as hrq
+
+    pages = ["Pagina uno sin relacion. " * 100,
+             "Pagina dos sin relacion. " * 100,
+             "Pagina tres sin relacion. " * 100]
+    monkeypatch.setattr(ollama_client, "generate", lambda *a, **k: _ollama_response(_all_insufficient()))
+    monkeypatch.setattr(ollama_client, "show_digest", lambda: None)
+    monkeypatch.setattr(ollama_client, "ollama_version", lambda: "0.0.0-test")
+    ce.evaluate_chunked(PROMPT_PATH, "fda_part11_agent", "1.0.0", pages,
+                        "Rockwell", "doc.pdf", "1.0", "path/doc.pdf", "sha-test",
+                        run_context="production", use_verified_pipeline=True, document_type="FS",
+                        full_document_coverage=False, retrieval_mode="top_k_fusion",
+                        candidate_metadata=_candidate_metadata(3))
+    pending = hrq.list_pending()
+    candidates = [e for e in pending if e.get("entry_type") == "governance_candidate"
+                  and e["summary"]["requirement_id"] == "21_CFR_11.10(e)"]
+    assert len(candidates) == 1
+    summary = candidates[0]["summary"]
+    assert summary["suggested_type"] == "NCR"
+    assert summary["prior_occurrences"] == 0
+    assert summary["conclusion"] in ("DOCUMENTATION_GAP", "PROVISIONAL_GAP")
+    # el finding_review original sigue intacto -- el candidato es ADEMAS, no en vez de
+    findings = [e for e in pending if e.get("entry_type") == "finding_review"
+                and e["summary"]["requirement_id"] == "21_CFR_11.10(e)"]
+    assert len(findings) == 1

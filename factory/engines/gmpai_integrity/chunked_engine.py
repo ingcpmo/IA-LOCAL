@@ -2448,6 +2448,8 @@ def _dispatch_m4_absence_review(run_id: str, req_id: str, documento: str, agent_
             "req_id": req_id, "stage": "review_queue_dispatch",
             "exception": type(exc).__name__, "detail": str(exc),
         })
+    _dispatch_governance_candidate(run_id, req_id, documento, agent_id, conclusion_value,
+                                    governed_exceptions)
 
 
 def _dispatch_partial_coverage_review(run_id: str, req_id: str, documento: str, agent_id: str,
@@ -2530,6 +2532,41 @@ def _dispatch_baseline_gap_review(run_id: str, req_id: str, documento: str, agen
     except Exception as exc:  # noqa: BLE001 -- ver docstring: no bloqueante, pero registrado
         governed_exceptions.append({
             "req_id": req_id, "stage": "review_queue_dispatch",
+            "exception": type(exc).__name__, "detail": str(exc),
+        })
+    _dispatch_governance_candidate(run_id, req_id, documento, agent_id, conclusion_value,
+                                    governed_exceptions)
+
+
+def _dispatch_governance_candidate(run_id: str, req_id: str, documento: str, agent_id: str,
+                                    conclusion_value: str,
+                                    governed_exceptions: list[dict]) -> None:
+    """Paquete 1a (VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md): además del
+    finding_review ya encolado, sugiere (nunca crea, nunca cierra) un
+    candidato NCR/CAPA para la MISMA cola R1.8 -- ver
+    factory.services.governance_candidate_classifier para la regla exacta.
+    Mismo principio de no-bloqueo que el resto de los `_dispatch_*`: un
+    fallo aquí nunca tumba el run, se registra en governed_exceptions y
+    el finding_review ya encolado (la garantía central: humano ve la
+    ausencia) queda intacto."""
+    try:
+        from factory.services.governance_candidate_classifier import (
+            classify_finding_for_governance_candidate,
+        )
+        from factory.layer9.human_review_queue import enqueue_governance_candidate_for_review
+        suggestion = classify_finding_for_governance_candidate(
+            requirement_id=req_id, document_id=documento, run_id=run_id,
+            conclusion=conclusion_value)
+        if suggestion is not None:
+            enqueue_governance_candidate_for_review(
+                run_id=run_id, requirement_id=req_id, document_id=documento,
+                conclusion=conclusion_value, suggested_type=suggestion.suggested_type,
+                rationale=suggestion.rationale, prior_occurrences=suggestion.prior_occurrences,
+                agent_id=agent_id,
+            )
+    except Exception as exc:  # noqa: BLE001 -- no bloqueante, ver docstring
+        governed_exceptions.append({
+            "req_id": req_id, "stage": "governance_candidate_dispatch",
             "exception": type(exc).__name__, "detail": str(exc),
         })
 

@@ -32,7 +32,9 @@ from factory.layer9.mission_control import (
 from factory.layer9.instruction_center import submit_requirement, list_requirements
 from factory.layer9.decision_log import write_decision, list_decisions, get_project_decisions
 from factory.layer9.risk_acceptance import accept_risk, list_risks
-from factory.layer9.human_review_queue import list_pending, get_queue_summary, mark_reviewed, get_entry
+from factory.layer9.human_review_queue import (
+    list_pending, get_queue_summary, mark_reviewed, get_entry, mark_candidate_reviewed,
+)
 from factory.layer8.release_candidate_builder import get_rc, confirm_rc
 from factory.services import case_analysis_service as _case_analysis
 from factory.services import design_mode_service as _design
@@ -407,6 +409,56 @@ def post_decide_finding(rc_id: str, body: FindingReviewDecision,
         return mark_reviewed(
             rc_id, body.decision, identity,
             confirmed_page=body.confirmed_page, confirmed_quote=body.confirmed_quote,
+        )
+    except HTTPException:
+        raise
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+_GOVERNANCE_CANDIDATE_VALID_DECISIONS = {"confirmed", "rejected"}
+
+
+class GovernanceCandidateDecision(BaseModel):
+    """Paquete 1a: decisión humana sobre un candidato NCR/CAPA sugerido
+    (`factory.layer9.human_review_queue.enqueue_governance_candidate_for_review()`).
+    `human_classification` obligatorio cuando `decision='confirmed'` --
+    el humano declara el tipo real (NCR/CAPA/CHANGE_CONTROL), nunca se
+    hereda en silencio la sugerencia de la máquina aunque coincida."""
+    decision: str
+    human_classification: str | None = None
+
+
+@router.post("/review/candidates/{rc_id}/decide")
+def post_decide_governance_candidate(rc_id: str, body: GovernanceCandidateDecision,
+                                      identity: str = Depends(require_identity)):
+    """Paquete 1a (VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md): mismo
+    patrón que `post_decide_finding` -- endpoint separado porque un
+    `governance_candidate` tampoco tiene `rc_manifest.json` real."""
+    try:
+        entry = get_entry(rc_id)
+        if entry is None or entry.get("entry_type") != "governance_candidate":
+            raise HTTPException(404, f"governance_candidate '{rc_id}' no encontrado")
+        if entry.get("status") != "pending":
+            raise HTTPException(409, {
+                "error": "candidate_already_decided",
+                "rc_id": rc_id,
+                "current_status": entry["status"],
+                "previously_decided_by": entry.get("reviewer", "?"),
+                "previously_decided_at": entry.get("reviewed_at", "?"),
+            })
+        if body.decision not in _GOVERNANCE_CANDIDATE_VALID_DECISIONS:
+            raise HTTPException(422, {
+                "error": "invalid_decision",
+                "decision": body.decision,
+                "valid_decisions": sorted(_GOVERNANCE_CANDIDATE_VALID_DECISIONS),
+            })
+        return mark_candidate_reviewed(
+            rc_id, body.decision, identity, human_classification=body.human_classification,
         )
     except HTTPException:
         raise

@@ -248,6 +248,11 @@ VALID_EVENTS = {
     # escritura de auditoría en silencio (capturada como governed_exceptions,
     # nunca crasheaba el run, pero el evento nunca quedaba en la cadena).
     "finding_enqueued_for_review",
+    # Paquete 1a (VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md, 2026-08-19) --
+    # factory/layer9/human_review_queue.py::enqueue_governance_candidate_for_review():
+    # candidato NCR/CAPA SUGERIDO encolado para revisión humana, nunca creado
+    # ni cerrado automáticamente.
+    "governance_candidate_enqueued_for_review",
     # R2 (2026-08-09) — resumen de un lote de la fase de JUICIO
     # (factory/regulatory/retrieval/judgment.py::run_judgment_batch): mismo
     # nivel que corpus_run_batch_completed, pero sobre candidatos recuperados

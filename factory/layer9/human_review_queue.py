@@ -167,6 +167,134 @@ def get_entry(rc_id: str) -> dict | None:
     return next((e for e in _read_all() if e.get("rc_id") == rc_id), None)
 
 
+def count_prior_finding_occurrences(requirement_id: str, document_id: str, *,
+                                     exclude_run_id: str,
+                                     conclusions: frozenset[str]) -> int:
+    """Paquete 1a (VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md, candidatos
+    NCR/CAPA): cuenta en CUANTAS corridas distintas (run_id != exclude_run_id)
+    este (requirement_id, document_id) ya aparecio en la cola con una
+    conclusion en `conclusions` -- la unica fuente real de recurrencia hoy
+    (review_queue.jsonl es append-only, nunca se borra, ver docstrings de
+    mark_reviewed()/supersede_finding() arriba).
+
+    Excluye entradas 'superseded': un superseded es un defecto TECNICO
+    confirmado (evaluation_profile equivocado, etc.), nunca una ausencia
+    real -- contarlo inflaria la recurrencia con corridas invalidas.
+    Cuenta run_id distintos, no entradas -- una misma corrida no puede
+    aportar mas de una ocurrencia real de recurrencia."""
+    run_ids: set[str] = set()
+    for e in _read_all():
+        if e.get("entry_type") != "finding_review":
+            continue
+        if e.get("status") == "superseded":
+            continue
+        s = e.get("summary") or {}
+        if s.get("requirement_id") != requirement_id or s.get("document_id") != document_id:
+            continue
+        if s.get("conclusion") not in conclusions:
+            continue
+        run_id = s.get("run_id")
+        if run_id is None or run_id == exclude_run_id:
+            continue
+        run_ids.add(run_id)
+    return len(run_ids)
+
+
+_GOVERNANCE_CANDIDATE_TYPES = frozenset({"NCR", "CAPA", "CHANGE_CONTROL"})
+
+
+def enqueue_governance_candidate_for_review(*, run_id: str, requirement_id: str, document_id: str,
+                                             conclusion: str, suggested_type: str, rationale: str,
+                                             prior_occurrences: int, agent_id: str) -> dict:
+    """Paquete 1a: encola un candidato NCR/CAPA SUGERIDO -- nunca lo crea,
+    nunca lo cierra. Misma cola append-only (R1.8), mismo locking, mismo
+    patron de evento de auditoria que enqueue_finding_for_review(), un
+    entry_type distinto ('governance_candidate') para que ningun consumidor
+    confunda una sugerencia de clasificacion con un finding de evidencia.
+
+    suggested_type: SOLO informativo -- la decision humana en
+    mark_candidate_reviewed() puede confirmarlo o cambiarlo, nunca se
+    hereda en silencio."""
+    if suggested_type not in _GOVERNANCE_CANDIDATE_TYPES:
+        raise ValueError(f"suggested_type invalido: {suggested_type!r}")
+    item_id = f"candidate-{run_id}-{requirement_id}"
+    summary = {
+        "run_id": run_id, "requirement_id": requirement_id, "document_id": document_id,
+        "conclusion": conclusion, "suggested_type": suggested_type, "rationale": rationale,
+        "prior_occurrences": prior_occurrences, "agent_id": agent_id,
+    }
+    entry = {
+        "schema_version": "governance_candidate_v1",
+        "rc_id": item_id,
+        "entry_type": "governance_candidate",
+        "project_id": document_id,
+        "enqueued_at": _ts(),
+        "status": "pending",
+        "summary": summary,
+    }
+    REVIEW_QUEUE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = REVIEW_QUEUE_FILE.with_suffix(".lock")
+    with open(lock_path, "a") as lock_fh:
+        fcntl.flock(lock_fh, fcntl.LOCK_EX)
+        try:
+            with open(REVIEW_QUEUE_FILE, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        finally:
+            fcntl.flock(lock_fh, fcntl.LOCK_UN)
+
+    write_event("governance_candidate_enqueued_for_review", document_id, {
+        "rc_id": item_id, "requirement_id": requirement_id, "run_id": run_id,
+        "suggested_type": suggested_type, "prior_occurrences": prior_occurrences,
+    })
+    return entry
+
+
+def mark_candidate_reviewed(rc_id: str, decision: str, reviewer: str, *,
+                             human_classification: str | None = None) -> dict:
+    """Decision humana sobre un governance_candidate (Paquete 1a).
+    decision in {'confirmed','rejected'}. Si decision='confirmed',
+    human_classification es OBLIGATORIO -- el humano declara el tipo real
+    (NCR/CAPA/CHANGE_CONTROL), nunca se hereda en silencio la sugerencia de
+    la maquina aunque coincida. Mismo validate_identity que mark_reviewed()
+    (una sola lista de identidades reservadas en toda la fabrica)."""
+    from factory.core.identity_policy import validate_identity
+    reviewer = validate_identity(reviewer, field="reviewer")
+    if decision not in ("confirmed", "rejected"):
+        raise ValueError(f"decision invalida: {decision!r} -- validas: confirmed, rejected")
+    if decision == "confirmed" and human_classification not in _GOVERNANCE_CANDIDATE_TYPES:
+        raise ValueError(
+            f"human_classification={human_classification!r} invalido -- obligatorio y debe ser "
+            f"uno de {sorted(_GOVERNANCE_CANDIDATE_TYPES)} cuando decision='confirmed'")
+
+    entries = _read_all()
+    updated = False
+    project_id = "unknown"
+    for e in entries:
+        if e.get("rc_id") == rc_id:
+            if e.get("entry_type") != "governance_candidate":
+                raise ValueError(f"'{rc_id}' no es un governance_candidate")
+            e["status"] = decision
+            e["reviewer"] = reviewer
+            e["reviewed_at"] = _ts()
+            if decision == "confirmed":
+                e["human_classification"] = human_classification
+            updated = True
+            project_id = e.get("project_id", "unknown")
+            break
+
+    if not updated:
+        raise FileNotFoundError(f"RC '{rc_id}' no encontrado en la cola")
+
+    _rewrite(entries)
+
+    write_event("rc_reviewed", project_id, {
+        "rc_id": rc_id, "decision": decision, "reviewer": reviewer,
+        "human_classification": human_classification,
+    })
+    return {"rc_id": rc_id, "decision": decision, "reviewer": reviewer,
+            "human_classification": human_classification}
+
+
 def get_queue_summary() -> dict:
     """Conteo por estado."""
     entries = _read_all()

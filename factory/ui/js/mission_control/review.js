@@ -198,7 +198,13 @@ export function renderReview(pending){
     return;
   }
   const findings = pending.filter(rc=>rc.entry_type==='finding_review');
-  const rcs = pending.filter(rc=>rc.entry_type!=='finding_review');
+  // Paquete 1a (2026-08-19): governance_candidate (NCR/CAPA sugeridos,
+  // factory/layer9/human_review_queue.py::enqueue_governance_candidate_for_review)
+  // NO es un RC real -- nunca tiene rc_manifest.json/diff. Sin panel propio
+  // todavia (ver docs_plan/PAQUETE_1_INTEGRACION_HALLAZGOS_DISENO.md,
+  // K2 de Paquete 4 cubre la superficie de UI completa); se excluye aqui
+  // en vez de intentar renderizarlo como RC (fetch de diff que 404 seguro).
+  const rcs = pending.filter(rc=>rc.entry_type!=='finding_review' && rc.entry_type!=='governance_candidate');
 
   el.innerHTML = rcs.map(renderRCCard).join('') + findings.map(renderFindingCard).join('');
 
