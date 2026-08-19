@@ -177,6 +177,14 @@ def run_judgment_batch(units: list[JudgmentUnit], *,
                 retry_technical_failures=True, provider=provider,
                 evaluation_profile="H2H4", target_requirement_ids=[unit.requirement_id],
                 candidate_metadata=candidate_metadata,
+                # Hallazgo A (VERIFICACION_ACOTADA_20260818/PAQUETE_1): sin esto,
+                # build_page_chunks() cae al fallback 1..N por posicion dentro del
+                # POOL de candidatos, no la pagina real del documento -- correcto
+                # solo si per_unit_text fuera el documento completo en orden, y
+                # aqui NUNCA lo es (full_document_coverage=False, ver comentario
+                # abajo). Mismo patron que corpus_runner.py:606-620 para el mismo
+                # tipo de entrada (pool de candidatos con page_start real).
+                page_numbers=[c["page_start"] for c in unit.candidate_chunks],
                 # R2.2 §2 (2026-08-10, docs_plan/R2_2_CIERRE_Y_CAPA_SEMANTICA.md):
                 # per_unit_text aqui es SIEMPRE un candidate pool top-k de
                 # BM25 (unit.candidate_chunks), nunca el documento completo

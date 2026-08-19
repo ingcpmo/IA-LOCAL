@@ -17,6 +17,7 @@ import json
 import pytest
 
 from factory.core import decision_scope_resolver as resolver
+from factory.engines.gmpai_integrity import chunked_engine as ce
 from factory.regulatory import corpus_runner as runner
 from factory.regulatory import model_qualification_gate as mqg
 from factory.regulatory.retrieval import judgment
@@ -155,6 +156,39 @@ def test_completed_unit_reports_chunk_observation_from_verified_conclusions(monk
     assert outcome.status == "COMPLETED"
     assert outcome.chunk_observation == "not_observed_in_chunk"
     assert outcome.run_id is not None
+
+
+# ===========================================================================
+# 4.1 Hallazgo A (VERIFICACION_ACOTADA_20260818/PAQUETE_1): page_numbers
+# reales del pool de candidatos, no el fallback 1..N por posicion.
+# ===========================================================================
+
+def test_page_numbers_passed_are_the_real_candidate_page_starts(monkeypatch, tmp_path):
+    """Antes del fix, evaluate_chunked() no recibia page_numbers -- para
+    un candidate pool (no el documento completo), build_page_chunks()
+    caia al fallback 1..N por posicion dentro del pool, no la pagina real
+    del documento. Con 3 candidatos de paginas [5, 5, 12] (no
+    contiguas/no 1..N), page_numbers debe reflejar exactamente eso."""
+    _authorize(monkeypatch, max_calls=60)
+    captured = {}
+    real_evaluate_chunked = ce.evaluate_chunked
+
+    def _spy(*args, **kwargs):
+        captured["page_numbers"] = kwargs.get("page_numbers")
+        return real_evaluate_chunked(*args, **kwargs)
+
+    monkeypatch.setattr(ce, "evaluate_chunked", _spy)
+    unit = judgment.JudgmentUnit(
+        document_id="RW-0011", document_type="DS", agent_id="fda_part11_agent",
+        requirement_id="21_CFR_11.10(e)",
+        candidate_chunks=[
+            _candidate("texto candidato uno " * 10, chunk_index=0, page_start=5, page_end=5),
+            _candidate("texto candidato dos " * 10, chunk_index=7, page_start=5, page_end=5),
+            _candidate("texto candidato tres " * 10, chunk_index=20, page_start=12, page_end=12),
+        ],
+        selection_reason="fixture de test, no un caso real")
+    _run([unit], tmp_path)
+    assert captured["page_numbers"] == [5, 5, 12]
 
 
 # ===========================================================================
