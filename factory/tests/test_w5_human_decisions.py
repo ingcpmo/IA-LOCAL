@@ -108,17 +108,27 @@ class TestIdentityAndIdempotency:
             w5.record_decision("D3_T039", decision="APPROVE", approved_by=identity)
         assert isolated_store == [], "una decisión rechazada no puede auditar"
 
-    def test_generic_identity_returns_422_over_http(self, client, isolated_store):
+    def test_missing_identity_key_returns_401_over_http(self, client, isolated_store):
+        """Paquete 2 (hallazgo M, 2026-08-19): approved_by ya no viaja en
+        el body -- sin X-Identity-Key el rechazo es 401, no 422. Reemplaza
+        el viejo test de identidad generica en el body (ya no existe ese
+        campo)."""
         r = client.post("/api/v1/layer9/w5-decisions/D3_T039",
-                        json={"decision": "APPROVE", "approved_by": "human"})
-        assert r.status_code == 422
+                        json={"decision": "APPROVE"})
+        assert r.status_code == 401
 
-    def test_second_decision_returns_409(self, client, isolated_store):
+    def test_unknown_identity_key_returns_401_over_http(self, client, isolated_store):
+        r = client.post("/api/v1/layer9/w5-decisions/D3_T039",
+                        json={"decision": "APPROVE"},
+                        headers={"X-Identity-Key": "key-no-registrada"})
+        assert r.status_code == 401
+
+    def test_second_decision_returns_409(self, client, isolated_store, identity_headers):
         """Requisito 4: la segunda decisión sobre el mismo id ⇒ 409."""
-        body = {"decision": "APPROVE", "approved_by": "Cesar (ing_cpmo)"}
-        first = client.post("/api/v1/layer9/w5-decisions/D3_T039", json=body)
+        body = {"decision": "APPROVE"}
+        first = client.post("/api/v1/layer9/w5-decisions/D3_T039", json=body, headers=identity_headers)
         assert first.status_code == 200
-        second = client.post("/api/v1/layer9/w5-decisions/D3_T039", json=body)
+        second = client.post("/api/v1/layer9/w5-decisions/D3_T039", json=body, headers=identity_headers)
         assert second.status_code == 409
         assert len(isolated_store) == 1, "el 409 no puede escribir un segundo evento"
 
@@ -197,14 +207,14 @@ class TestHttpSurface:
         assert r.status_code == 200
         assert [d["decision_id"] for d in r.json()["decisions"]] == list(w5.DECISION_IDS)
 
-    def test_unknown_decision_id_is_422_not_500(self, client, isolated_store):
+    def test_unknown_decision_id_is_422_not_500(self, client, isolated_store, identity_headers):
         r = client.post("/api/v1/layer9/w5-decisions/D9_inventada",
-                        json={"decision": "APPROVE", "approved_by": "Cesar (ing_cpmo)"})
+                        json={"decision": "APPROVE"}, headers=identity_headers)
         assert r.status_code == 422
 
-    def test_invalid_decision_value_is_422(self, client, isolated_store):
+    def test_invalid_decision_value_is_422(self, client, isolated_store, identity_headers):
         r = client.post("/api/v1/layer9/w5-decisions/D3_T039",
-                        json={"decision": "MAYBE", "approved_by": "Cesar (ing_cpmo)"})
+                        json={"decision": "MAYBE"}, headers=identity_headers)
         assert r.status_code == 422
 
 

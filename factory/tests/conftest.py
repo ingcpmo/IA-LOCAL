@@ -5,6 +5,7 @@ Cada fixture redirige los paths de persistencia a directorios temporales,
 garantizando que los tests no contaminen datos reales de la fábrica.
 """
 
+import hashlib
 import sys
 from pathlib import Path
 
@@ -13,6 +14,40 @@ import pytest
 # Asegurar que factory/ es importable desde /home/ing_cpmo
 REPO_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
+
+
+# ── Paquete 2 (hallazgo M): registro de identidad de prueba ────────────────────
+# `factory.api.auth.require_identity` ya no acepta identidad de texto libre en
+# el body de los endpoints de gobernanza -- exige X-Identity-Key resuelta
+# contra un registro real. Este es un registro de PRUEBA fijo, nunca el
+# archivo real (`factory/config/identity_keys.yaml`, gitignored, provisionado
+# solo con Cesar). Dos identidades para poder probar negativamente que la key
+# de una persona nunca produce el nombre de otra.
+TEST_IDENTITY_KEY = "test-identity-key-cesar-9f3a"
+TEST_IDENTITY_NAME = "Cesar"
+TEST_IDENTITY_KEY_OTHER = "test-identity-key-otro-revisor-1c2b"
+TEST_IDENTITY_NAME_OTHER = "OtroRevisor"
+
+
+@pytest.fixture(autouse=True)
+def _test_identity_registry(monkeypatch):
+    from factory.api import auth as _auth
+
+    registry = {
+        hashlib.sha256(TEST_IDENTITY_KEY.encode()).hexdigest(): TEST_IDENTITY_NAME,
+        hashlib.sha256(TEST_IDENTITY_KEY_OTHER.encode()).hexdigest(): TEST_IDENTITY_NAME_OTHER,
+    }
+    monkeypatch.setattr(_auth, "_REGISTRY", registry)
+
+
+@pytest.fixture()
+def identity_headers() -> dict:
+    return {"X-Identity-Key": TEST_IDENTITY_KEY}
+
+
+@pytest.fixture()
+def identity_headers_other() -> dict:
+    return {"X-Identity-Key": TEST_IDENTITY_KEY_OTHER}
 
 
 def pytest_configure(config):

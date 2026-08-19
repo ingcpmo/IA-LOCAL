@@ -1,5 +1,6 @@
 .env
 .secrets/
+factory/config/identity_keys.yaml
 .venv/
 data/
 logs/

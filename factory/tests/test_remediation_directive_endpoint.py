@@ -1,6 +1,13 @@
 """R4-T1.0v2 bloque 3 (docs_plan/R4_T1_0v2_DIRECTIVA_REMEDIACION.md) --
 POST /api/v1/layer9/remediation/directives, vía mínima de captura del
-Acto 2. Cero llamadas LLM."""
+Acto 2. Cero llamadas LLM.
+
+Paquete 2 (hallazgo M, 2026-08-19): `authored_by_id` ya NO viaja en el
+body -- el backend lo resuelve desde `X-Identity-Key`
+(`identity_headers`, fixture de conftest.py). `test_post_directive_rejects_reserved_identity`
+se repropuso: antes probaba que "human" en el body fallaba 422; ya no hay
+forma de mandar un nombre por el body, asi que el equivalente real es que
+la peticion SIN identidad autenticada tampoco crea nada (401)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -61,44 +68,55 @@ def _payload(rc_id, **overrides):
         "proposed_text": "El SOP debe registrar timestamp de cada cambio critico.",
         "target_location": {"page_start": 3, "page_end": 3, "section": None},
         "regulatory_citation": [_REAL_ENTRY_ID], "rationale": "Cierra la brecha confirmada.",
-        "authored_by_id": "Cesar",
     }
     body.update(overrides)
     return body
 
 
-def test_post_directive_succeeds_for_confirmed_gap(client, isolated_review_queue, isolated_directives, fake_document):
+def test_post_directive_succeeds_for_confirmed_gap(client, isolated_review_queue, isolated_directives,
+                                                     fake_document, identity_headers):
     rc_id = _enqueue_confirmed(conclusion="DOCUMENTATION_GAP")
-    r = client.post(f"{BASE}/remediation/directives", json=_payload(rc_id))
+    r = client.post(f"{BASE}/remediation/directives", json=_payload(rc_id), headers=identity_headers)
     assert r.status_code == 201, r.text
     body = r.json()
     assert body["status"] == "SUBMITTED"
     assert body["authored_by_id"] == "Cesar"
 
 
-def test_post_directive_rejects_supporting_evidence_trigger(client, isolated_review_queue, isolated_directives, fake_document):
+def test_post_directive_rejects_supporting_evidence_trigger(client, isolated_review_queue, isolated_directives,
+                                                              fake_document, identity_headers):
     rc_id = _enqueue_confirmed(conclusion="SUPPORTING_EVIDENCE_UNDER_REVIEW")
-    r = client.post(f"{BASE}/remediation/directives", json=_payload(rc_id))
+    r = client.post(f"{BASE}/remediation/directives", json=_payload(rc_id), headers=identity_headers)
     assert r.status_code == 422
     assert r.json()["detail"]["error"] == "remediation_directive_rejected"
 
 
-def test_post_directive_rejects_reserved_identity(client, isolated_review_queue, isolated_directives, fake_document):
+def test_post_directive_rejects_missing_identity(client, isolated_review_queue, isolated_directives, fake_document):
     rc_id = _enqueue_confirmed(conclusion="DOCUMENTATION_GAP")
-    r = client.post(f"{BASE}/remediation/directives", json=_payload(rc_id, authored_by_id="human"))
+    r = client.post(f"{BASE}/remediation/directives", json=_payload(rc_id))
+    assert r.status_code == 401
+
+
+def test_post_directive_rejects_unknown_identity_key(client, isolated_review_queue, isolated_directives,
+                                                       fake_document):
+    rc_id = _enqueue_confirmed(conclusion="DOCUMENTATION_GAP")
+    r = client.post(f"{BASE}/remediation/directives", json=_payload(rc_id),
+                     headers={"X-Identity-Key": "key-no-registrada"})
+    assert r.status_code == 401
+
+
+def test_post_directive_rejects_empty_proposed_text(client, isolated_review_queue, isolated_directives,
+                                                      fake_document, identity_headers):
+    rc_id = _enqueue_confirmed(conclusion="DOCUMENTATION_GAP")
+    r = client.post(f"{BASE}/remediation/directives", json=_payload(rc_id, proposed_text="   "),
+                     headers=identity_headers)
     assert r.status_code == 422
-    assert r.json()["detail"]["error"] == "invalid_identity"
 
 
-def test_post_directive_rejects_empty_proposed_text(client, isolated_review_queue, isolated_directives, fake_document):
+def test_get_directives_lists_created_ones(client, isolated_review_queue, isolated_directives, fake_document,
+                                            identity_headers):
     rc_id = _enqueue_confirmed(conclusion="DOCUMENTATION_GAP")
-    r = client.post(f"{BASE}/remediation/directives", json=_payload(rc_id, proposed_text="   "))
-    assert r.status_code == 422
-
-
-def test_get_directives_lists_created_ones(client, isolated_review_queue, isolated_directives, fake_document):
-    rc_id = _enqueue_confirmed(conclusion="DOCUMENTATION_GAP")
-    client.post(f"{BASE}/remediation/directives", json=_payload(rc_id))
+    client.post(f"{BASE}/remediation/directives", json=_payload(rc_id), headers=identity_headers)
     r = client.get(f"{BASE}/remediation/directives", params={"finding_rc_id": rc_id})
     assert r.status_code == 200
     assert len(r.json()["directives"]) == 1

@@ -518,6 +518,11 @@ def test_http_generic_signature_is_422(client):
     el valor correcto ahi, y esta en la lista de reservadas justamente porque
     no puede FIRMAR. Exigirle nombre humano al proponente rechazaria el caso
     legitimo y no cerraria ningun hueco.
+
+    Paquete 2 (hallazgo M, 2026-08-19): `approved_by_id` ya no viaja en el
+    body -- la identidad de la firma se resuelve de X-Identity-Key, no de
+    un nombre de texto libre. El equivalente real de "identidad invalida
+    en la firma" es "sin identidad autenticada": 401, no 422.
     """
     p = client.post("/api/v1/layer9/governance/decisions/D1/propose",
                     json={"target_ids": ["ecfr_21cfr_part211"],
@@ -527,9 +532,8 @@ def test_http_generic_signature_is_422(client):
     state = client.get("/api/v1/layer9/governance/state").json()
 
     r = client.post(f"/api/v1/layer9/governance/decisions/{iid}/confirm",
-                    json={"approved_by_id": "human",
-                          "state_hash": state["state_hash"]})
-    assert r.status_code == 422
+                    json={"state_hash": state["state_hash"]})
+    assert r.status_code == 401
 
 
 def test_http_an_empty_proposer_is_422(client):
@@ -539,7 +543,7 @@ def test_http_an_empty_proposer_is_422(client):
     assert r.status_code == 422
 
 
-def test_http_stale_state_hash_is_409(client):
+def test_http_stale_state_hash_is_409(client, identity_headers):
     p = client.post("/api/v1/layer9/governance/decisions/D1/propose",
                     json={"target_ids": ["ecfr_21cfr_part211"],
                           "proposed_by_id": "layer8_agent"})
@@ -547,19 +551,18 @@ def test_http_stale_state_hash_is_409(client):
     iid = p.json()["decision_instance_id"]
 
     r = client.post(f"/api/v1/layer9/governance/decisions/{iid}/confirm",
-                    json={"approved_by_id": "Cesar", "state_hash": "0" * 64})
+                    json={"state_hash": "0" * 64}, headers=identity_headers)
     assert r.status_code == 409
 
 
-def test_http_confirming_a_missing_proposal_is_404(client):
+def test_http_confirming_a_missing_proposal_is_404(client, identity_headers):
     state = client.get("/api/v1/layer9/governance/state").json()
     r = client.post("/api/v1/layer9/governance/decisions/D1-2026-999/confirm",
-                    json={"approved_by_id": "Cesar",
-                          "state_hash": state["state_hash"]})
+                    json={"state_hash": state["state_hash"]}, headers=identity_headers)
     assert r.status_code == 404
 
 
-def test_http_full_cycle_propose_then_confirm(client):
+def test_http_full_cycle_propose_then_confirm(client, identity_headers):
     p = client.post("/api/v1/layer9/governance/decisions/D1/propose",
                     json={"target_ids": ["ecfr_21cfr_part211"],
                           "proposed_by_id": "layer8_agent", "reason": "alta"})
@@ -567,11 +570,11 @@ def test_http_full_cycle_propose_then_confirm(client):
     state = client.get("/api/v1/layer9/governance/state").json()
 
     r = client.post(f"/api/v1/layer9/governance/decisions/{iid}/confirm",
-                    json={"approved_by_id": "Cesar",
-                          "approved_by_display_name": "Cesar Perez",
-                          "state_hash": state["state_hash"]})
+                    json={"approved_by_display_name": "Cesar Perez",
+                          "state_hash": state["state_hash"]}, headers=identity_headers)
     assert r.status_code == 201
     assert r.json()["decision_origin"] == "human_confirmed"
+    assert r.json()["approved_by_id"] == "Cesar"
 
 
 # ===========================================================================

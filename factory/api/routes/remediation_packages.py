@@ -22,11 +22,12 @@ aqui a proposito.
 import sys
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
+from factory.api.auth import require_identity
 from factory.services import remediation_package_service as svc
 from factory.services.remediation_package_schemas import SchemaValidationError
 
@@ -71,8 +72,8 @@ class MediumRiskBatchBody(BaseModel):
 
 
 class PackageDecisionBody(BaseModel):
+    """decided_by ya NO viaja en el body (Paquete 2, hallazgo M) -- Depends(require_identity)."""
     decision: str
-    decided_by: str
     justification: str
     medium_risk_batch_decision_id: str | None = None
     high_risk_exception_ids: list[str] | None = None
@@ -138,11 +139,12 @@ def create_medium_risk_batch_decision(project_id: str, package_id: str, version:
 
 
 @router.post("/{project_id}/{package_id}/{version}/decision", status_code=201)
-def create_package_decision(project_id: str, package_id: str, version: int, body: PackageDecisionBody):
+def create_package_decision(project_id: str, package_id: str, version: int, body: PackageDecisionBody,
+                             identity: str = Depends(require_identity)):
     try:
         return svc.record_package_decision(
             project_id=project_id, package_id=package_id, package_version=version,
-            decision=body.decision, decided_by=body.decided_by, justification=body.justification,
+            decision=body.decision, decided_by=identity, justification=body.justification,
             medium_risk_batch_decision_id=body.medium_risk_batch_decision_id,
             high_risk_exception_ids=body.high_risk_exception_ids,
         )

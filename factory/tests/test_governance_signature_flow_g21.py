@@ -903,7 +903,7 @@ def test_n17_reusing_a_proposal_answers_200_not_201(tmp_store, monkeypatch):
         "reutilizar una propuesta no crea nada: 201 Created seria mentira")
 
 
-def test_n17_an_already_signed_act_answers_200_not_201(tmp_store, monkeypatch):
+def test_n17_an_already_signed_act_answers_200_not_201(tmp_store, monkeypatch, identity_headers):
     monkeypatch.setattr(store, "STORE_FILE", tmp_store)
     _firmada(tmp_store, iid="D1-2026-002")
     p1 = _correccion_propuesta(tmp_store)
@@ -913,15 +913,16 @@ def test_n17_an_already_signed_act_answers_200_not_201(tmp_store, monkeypatch):
     cli = _cliente()
     res = cli.post(
         f"/api/v1/layer9/governance/decisions/{p2['proposal_id']}/confirm",
-        json={"approved_by_id": "Cesar", "reason": "segundo clic",
+        json={"reason": "segundo clic",
               "family_state_hash": p2["family_state_hash"],
-              "expected_active_instance_id": p2["expected_active_instance_id"]})
+              "expected_active_instance_id": p2["expected_active_instance_id"]},
+        headers=identity_headers)
     assert res.json()["already_signed"] is True
     assert res.status_code == 200, (
         "no se anexo nada: anunciar Created es afirmar una escritura que no ocurrio")
 
 
-def test_n17_a_real_signature_still_answers_201(tmp_store, monkeypatch):
+def test_n17_a_real_signature_still_answers_201(tmp_store, monkeypatch, identity_headers):
     """La otra mitad: cuando SI se crea, sigue siendo 201.
 
     Sin ella, esto lo aprobaria un servidor que respondiera 200 siempre y ningun
@@ -934,8 +935,35 @@ def test_n17_a_real_signature_still_answers_201(tmp_store, monkeypatch):
     cli = _cliente()
     res = cli.post(
         f"/api/v1/layer9/governance/decisions/{p['proposal_id']}/confirm",
-        json={"approved_by_id": "Cesar", "reason": "firma real",
+        json={"reason": "firma real",
               "family_state_hash": p["family_state_hash"],
-              "expected_active_instance_id": p["expected_active_instance_id"]})
+              "expected_active_instance_id": p["expected_active_instance_id"]},
+        headers=identity_headers)
     assert res.status_code == 201, res.text
     assert res.json()["already_signed"] is False
+    assert res.json()["approved_by_id"] == "Cesar"
+
+
+def test_n17_client_authenticated_as_one_identity_cannot_record_the_others_name(
+        tmp_store, monkeypatch, identity_headers_other):
+    """Paquete 2 (hallazgo M): un cliente autenticado con la key de
+    'OtroRevisor' no puede hacer que la decision quede firmada como
+    'Cesar', ni siquiera intentandolo via `approved_by_display_name` (el
+    unico campo de identidad que sigue en el body, y es cosmetico -- la
+    identidad real y unica que cuenta es `approved_by_id`, resuelta del
+    lado del servidor desde X-Identity-Key)."""
+    monkeypatch.setattr(store, "STORE_FILE", tmp_store)
+    _firmada(tmp_store, iid="D1-2026-002")
+    p = _correccion_propuesta(tmp_store)
+
+    cli = _cliente()
+    res = cli.post(
+        f"/api/v1/layer9/governance/decisions/{p['proposal_id']}/confirm",
+        json={"reason": "intento de suplantacion",
+              "approved_by_display_name": "Cesar",  # cosmetico, un cliente podria intentar mentir aqui
+              "family_state_hash": p["family_state_hash"],
+              "expected_active_instance_id": p["expected_active_instance_id"]},
+        headers=identity_headers_other)
+    assert res.status_code == 201, res.text
+    assert res.json()["approved_by_id"] == "OtroRevisor"
+    assert res.json()["approved_by_id"] != "Cesar"

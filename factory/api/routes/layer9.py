@@ -16,11 +16,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+from factory.api.auth import require_identity
 from factory.core import identity_policy as _identity
 from factory.layer9.mission_control import (
     create_mission,
@@ -78,7 +79,8 @@ class MissionApprove(BaseModel):
     stop_conditions: list[str] | None = None
     final_human_decision_required: list[str] | None = None
     deploy_docker_if_gates_pass: bool | None = None
-    approved_by: str                 # nombre real del aprobador humano (obligatorio)
+    # approved_by ya NO viaja en el body (Paquete 2, hallazgo M): lo
+    # resuelve el backend desde X-Identity-Key, Depends(require_identity).
     decision_origin: str = "human_confirmed"
     recorded_by: str = ""            # se hereda de approved_by si vacío
 
@@ -105,17 +107,15 @@ class RiskAccept(BaseModel):
     risk_description: str
     severity: str
     mitigation: str = ""
-    accepted_by: str = "human"
+    # accepted_by ya NO viaja en el body (Paquete 2, hallazgo M) -- Depends(require_identity).
     metadata: dict[str, Any] = {}
 
 
 class ReviewDecision(BaseModel):
-    approved_by: str
     notes: str = ""
 
 
 class ReviewReturn(BaseModel):
-    approved_by: str
     notes: str = ""
     adjustments_needed: str = ""
 
@@ -125,20 +125,18 @@ class FindingReviewDecision(BaseModel):
     `finding_review` -- NUNCA un RC real (esas no tienen `rc_manifest.json`,
     ver `get_entry()` vs `get_rc()`). `confirmed_page`/`confirmed_quote`
     (R2.3 §4.3) opcionales -- cuando el humano señala evidencia real entre
-    los `candidates` de una entrada de modo JUICIO."""
-    reviewer: str
+    los `candidates` de una entrada de modo JUICIO.
+    `reviewer` ya NO viaja en el body (Paquete 2, hallazgo M) -- Depends(require_identity)."""
     decision: str
     confirmed_page: int | None = None
     confirmed_quote: str | None = None
 
 
 class MissionReturn(BaseModel):
-    returned_by: str
     reason: str = ""
 
 
 class MissionReject(BaseModel):
-    rejected_by: str
     reason: str = ""
 
 
@@ -157,7 +155,8 @@ def post_mission(body: MissionCreate):
 
 
 @router.post("/missions/{project_id}/approve")
-def post_approve_mission(project_id: str, body: MissionApprove):
+def post_approve_mission(project_id: str, body: MissionApprove,
+                          identity: str = Depends(require_identity)):
     try:
         return approve_mission(
             project_id,
@@ -166,7 +165,7 @@ def post_approve_mission(project_id: str, body: MissionApprove):
             stop_conditions=body.stop_conditions,
             final_human_decision_required=body.final_human_decision_required,
             deploy_docker_if_gates_pass=body.deploy_docker_if_gates_pass,
-            approved_by=body.approved_by,
+            approved_by=identity,
             decision_origin=body.decision_origin,
             recorded_by=body.recorded_by,
         )
@@ -219,14 +218,15 @@ def get_project_decision_list(project_id: str):
 # ── Riesgos ────────────────────────────────────────────────────────────────────
 
 @router.post("/risks/{project_id}/accept", status_code=201)
-def post_accept_risk(project_id: str, body: RiskAccept):
+def post_accept_risk(project_id: str, body: RiskAccept,
+                      identity: str = Depends(require_identity)):
     try:
         return accept_risk(
             project_id=project_id,
             risk_description=body.risk_description,
             severity=body.severity,
             mitigation=body.mitigation,
-            accepted_by=body.accepted_by,
+            accepted_by=identity,
             metadata=body.metadata,
         )
     except ValueError as e:
@@ -255,7 +255,8 @@ def get_review_detail(rc_id: str):
 
 
 @router.post("/review/{rc_id}/approve")
-def post_approve_rc(rc_id: str, body: ReviewDecision):
+def post_approve_rc(rc_id: str, body: ReviewDecision,
+                     identity: str = Depends(require_identity)):
     try:
         rc = get_rc(rc_id)
         if rc is None:
@@ -268,8 +269,8 @@ def post_approve_rc(rc_id: str, body: ReviewDecision):
                 "previously_decided_by": rc.get("approved_by", "?"),
                 "previously_decided_at": rc.get("decided_at", "?"),
             })
-        result = confirm_rc(rc_id, body.approved_by, "approved", body.notes)
-        mark_reviewed(rc_id, "approved", body.approved_by)
+        result = confirm_rc(rc_id, identity, "approved", body.notes)
+        mark_reviewed(rc_id, "approved", identity)
         return result
     except HTTPException:
         raise
@@ -282,7 +283,8 @@ def post_approve_rc(rc_id: str, body: ReviewDecision):
 
 
 @router.post("/review/{rc_id}/reject")
-def post_reject_rc(rc_id: str, body: ReviewDecision):
+def post_reject_rc(rc_id: str, body: ReviewDecision,
+                    identity: str = Depends(require_identity)):
     try:
         rc = get_rc(rc_id)
         if rc is None:
@@ -295,8 +297,8 @@ def post_reject_rc(rc_id: str, body: ReviewDecision):
                 "previously_decided_by": rc.get("approved_by", "?"),
                 "previously_decided_at": rc.get("decided_at", "?"),
             })
-        result = confirm_rc(rc_id, body.approved_by, "rejected", body.notes)
-        mark_reviewed(rc_id, "rejected", body.approved_by)
+        result = confirm_rc(rc_id, identity, "rejected", body.notes)
+        mark_reviewed(rc_id, "rejected", identity)
         return result
     except HTTPException:
         raise
@@ -309,11 +311,12 @@ def post_reject_rc(rc_id: str, body: ReviewDecision):
 
 
 @router.post("/review/{rc_id}/return")
-def post_return_rc(rc_id: str, body: ReviewReturn):
+def post_return_rc(rc_id: str, body: ReviewReturn,
+                    identity: str = Depends(require_identity)):
     try:
         notes = f"{body.notes}\nAjustes: {body.adjustments_needed}".strip()
-        result = confirm_rc(rc_id, body.approved_by, "returned_to_adjustments", notes)
-        mark_reviewed(rc_id, "returned", body.approved_by)
+        result = confirm_rc(rc_id, identity, "returned_to_adjustments", notes)
+        mark_reviewed(rc_id, "returned", identity)
         return result
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
@@ -347,7 +350,8 @@ _FINDING_QUOTE_NOT_APPLICABLE_CONCLUSIONS = frozenset({
 
 
 @router.post("/review/findings/{rc_id}/decide")
-def post_decide_finding(rc_id: str, body: FindingReviewDecision):
+def post_decide_finding(rc_id: str, body: FindingReviewDecision,
+                         identity: str = Depends(require_identity)):
     """R3-T1.2/F0.4 (2026-08-12): decisión humana sobre una entrada de
     `finding_review` (`factory.layer9.human_review_queue.
     enqueue_finding_for_review()`, R1.8/R2.3 §4) -- hallazgo real: NO
@@ -401,7 +405,7 @@ def post_decide_finding(rc_id: str, body: FindingReviewDecision):
                               "Deja el campo vacio.",
                 })
         return mark_reviewed(
-            rc_id, body.decision, body.reviewer,
+            rc_id, body.decision, identity,
             confirmed_page=body.confirmed_page, confirmed_quote=body.confirmed_quote,
         )
     except HTTPException:
@@ -415,7 +419,8 @@ def post_decide_finding(rc_id: str, body: FindingReviewDecision):
 
 
 @router.post("/missions/{project_id}/return")
-def post_return_mission(project_id: str, body: MissionReturn):
+def post_return_mission(project_id: str, body: MissionReturn,
+                         identity: str = Depends(require_identity)):
     """Devuelve una misión a ajustes."""
     try:
         from factory.layer9.mission_control import _load_mission, _save_mission
@@ -423,17 +428,17 @@ def post_return_mission(project_id: str, body: MissionReturn):
         from datetime import datetime, timezone
         mission = _load_mission(project_id)
         mission["status"] = "returned_to_adjustments"
-        mission["returned_by"] = body.returned_by
+        mission["returned_by"] = identity
         mission["return_reason"] = body.reason
         mission["updated_at"] = datetime.now(timezone.utc).isoformat()
         _save_mission(mission)
         _we("layer9_decision_recorded", project_id, {
             "action": "mission_returned",
-            "returned_by": body.returned_by,
+            "returned_by": identity,
             "reason": body.reason,
         })
         return {"project_id": project_id, "status": "returned_to_adjustments",
-                "returned_by": body.returned_by}
+                "returned_by": identity}
     except FileNotFoundError:
         raise HTTPException(404, f"Misión '{project_id}' no encontrada")
     except Exception as e:
@@ -441,7 +446,8 @@ def post_return_mission(project_id: str, body: MissionReturn):
 
 
 @router.post("/missions/{project_id}/reject")
-def post_reject_mission(project_id: str, body: MissionReject):
+def post_reject_mission(project_id: str, body: MissionReject,
+                         identity: str = Depends(require_identity)):
     """Rechaza permanentemente una misión (acción irreversible)."""
     try:
         from factory.layer9.mission_control import _load_mission, _save_mission
@@ -451,17 +457,17 @@ def post_reject_mission(project_id: str, body: MissionReject):
         if mission.get("status") == "rejected":
             raise HTTPException(409, f"Misión '{project_id}' ya fue rechazada.")
         mission["status"] = "rejected"
-        mission["rejected_by"] = body.rejected_by
+        mission["rejected_by"] = identity
         mission["rejection_reason"] = body.reason
         mission["updated_at"] = datetime.now(timezone.utc).isoformat()
         _save_mission(mission)
         _we("layer9_decision_recorded", project_id, {
             "action": "mission_rejected",
-            "rejected_by": body.rejected_by,
+            "rejected_by": identity,
             "reason": body.reason,
         })
         return {"project_id": project_id, "status": "rejected",
-                "rejected_by": body.rejected_by}
+                "rejected_by": identity}
     except HTTPException:
         raise
     except FileNotFoundError:
@@ -1122,7 +1128,7 @@ class DossierGenerate(BaseModel):
 
 
 class DocApprove(BaseModel):
-    approved_by: str     # nombre real — NO es firma electrónica
+    """approved_by ya NO viaja en el body (Paquete 2, hallazgo M) -- Depends(require_identity)."""
 
 
 @router.post("/missions/{project_id}/validation-package/generate")
@@ -1131,8 +1137,9 @@ def post_generate_dossier(project_id: str, body: DossierGenerate):
 
 
 @router.post("/missions/{project_id}/validation-package/documents/{doc_id}/approve")
-def post_approve_validation_doc(project_id: str, doc_id: str, body: DocApprove):
-    return _dossier.approve_document(project_id, doc_id, body.approved_by)
+def post_approve_validation_doc(project_id: str, doc_id: str, body: DocApprove,
+                                 identity: str = Depends(require_identity)):
+    return _dossier.approve_document(project_id, doc_id, identity)
 
 
 @router.get("/missions/{project_id}/validation-package/documents/{doc_id}")
@@ -1170,8 +1177,8 @@ class AgentProposalRequest(BaseModel):
 
 
 class AgentProposalDecision(BaseModel):
+    """decided_by ya NO viaja en el body (Paquete 2, hallazgo M) -- Depends(require_identity)."""
     decision: str              # accept | reject | request_changes
-    decided_by: str            # nombre real — NO es firma electrónica
     reason: str | None = None  # obligatorio en reject/request_changes
 
 
@@ -1190,9 +1197,10 @@ def get_agent_proposal(project_id: str, doc_id: str, version: int | None = None)
 
 
 @router.post("/missions/{project_id}/validation-package/documents/{doc_id}/agent-proposal/decision")
-def post_agent_proposal_decision(project_id: str, doc_id: str, body: AgentProposalDecision):
+def post_agent_proposal_decision(project_id: str, doc_id: str, body: AgentProposalDecision,
+                                  identity: str = Depends(require_identity)):
     return _agent_review.decide_proposal(
-        project_id, doc_id, body.decision, body.decided_by, body.reason)
+        project_id, doc_id, body.decision, identity, body.reason)
 
 
 # ── W7 — Análisis de casos regulatorios por agente (gobernado) ────────────────
@@ -1207,9 +1215,9 @@ class CaseAnalyzeRequest(BaseModel):
 
 
 class CaseAnalysisDecision(BaseModel):
+    """decided_by ya NO viaja en el body (Paquete 2, hallazgo M) -- Depends(require_identity)."""
     project_id: str
     decision: str              # accept | reject | request_changes
-    decided_by: str            # nombre real — NO es firma electrónica
     reason: str | None = None  # obligatorio en reject/request_changes
 
 
@@ -1229,9 +1237,10 @@ def get_case_analysis(case_id: str, project_id: str, version: int | None = None)
 
 
 @router.post("/case-memory/{case_id}/analysis/decision")
-def post_case_analysis_decision(case_id: str, body: CaseAnalysisDecision):
+def post_case_analysis_decision(case_id: str, body: CaseAnalysisDecision,
+                                 identity: str = Depends(require_identity)):
     return _case_analysis.decide_analysis(
-        body.project_id, case_id, body.decision, body.decided_by, body.reason)
+        body.project_id, case_id, body.decision, identity, body.reason)
 
 
 # ── GMPAI — artefactos de cierre (REM-GMPAI-001, informe final, descargas) ───
@@ -1366,8 +1375,8 @@ def get_gmpai_artifact_download(run_id: str, artifact_path: str):
 # ---------------------------------------------------------------------------
 
 class W5DecisionBody(BaseModel):
+    """approved_by ya NO viaja en el body (Paquete 2, hallazgo M) -- Depends(require_identity)."""
     decision: str
-    approved_by: str
     notes: str = ""
     decision_date: str | None = None
     # Solo D1
@@ -1390,7 +1399,8 @@ def get_w5_decisions():
 
 
 @router.post("/w5-decisions/{decision_id}")
-def post_w5_decision(decision_id: str, body: W5DecisionBody):
+def post_w5_decision(decision_id: str, body: W5DecisionBody,
+                      identity: str = Depends(require_identity)):
     """Registra UNA decision humana. Un solo evento de auditoria.
     Registrar no ejecuta consecuencias: no reverifica, no promueve, no lanza
     corridas, no descongela nada."""
@@ -1399,7 +1409,7 @@ def post_w5_decision(decision_id: str, body: W5DecisionBody):
         return _w5.record_decision(
             decision_id,
             decision=body.decision,
-            approved_by=body.approved_by,
+            approved_by=identity,
             notes=body.notes,
             decision_date=body.decision_date,
             approved_source_ids=body.approved_source_ids,
@@ -1481,7 +1491,9 @@ class GovernanceProposeBody(BaseModel):
 
 
 class GovernanceConfirmBody(BaseModel):
-    approved_by_id: str
+    """approved_by_id ya NO viaja en el body (Paquete 2, hallazgo M) --
+    Depends(require_identity). approved_by_display_name sigue siendo
+    cosmetico opcional, nunca la identidad autorizante."""
     approved_by_display_name: str | None = None
     reason: str = ""
     # Sigue opcional en el SCHEMA y obligatorio en la LÓGICA, a propósito: si
@@ -1499,14 +1511,14 @@ class GovernanceAbandonBody(BaseModel):
 
 
 class GovernanceRejectBody(BaseModel):
-    rejected_by_id: str
+    """rejected_by_id ya NO viaja en el body (Paquete 2, hallazgo M) -- Depends(require_identity)."""
     rejected_by_display_name: str | None = None
     reason: str = ""
     state_hash: str | None = None
 
 
 class GovernanceReturnBody(BaseModel):
-    returned_by_id: str
+    """returned_by_id ya NO viaja en el body (Paquete 2, hallazgo M) -- Depends(require_identity)."""
     returned_by_display_name: str | None = None
     comment: str = ""
     state_hash: str | None = None
@@ -1595,7 +1607,8 @@ def post_governance_propose(family: str, body: GovernanceProposeBody,
 
 @router.post("/governance/decisions/{instance_id}/confirm", status_code=201)
 def post_governance_confirm(instance_id: str, body: GovernanceConfirmBody,
-                            response: Response):
+                            response: Response,
+                            identity: str = Depends(require_identity)):
     """Confirma una propuesta. El snapshot se materializa AQUÍ.
 
     **200, no 201, cuando el acto ya estaba firmado.** El corto-circuito de
@@ -1607,7 +1620,7 @@ def post_governance_confirm(instance_id: str, body: GovernanceConfirmBody,
     from factory.services import governance_service as _gov
     try:
         resultado = _gov.confirm(
-            instance_id, approved_by_id=body.approved_by_id,
+            instance_id, approved_by_id=identity,
             approved_by_display_name=body.approved_by_display_name,
             reason=body.reason, state_hash=body.state_hash,
             family_state_hash=body.family_state_hash,
@@ -1620,12 +1633,13 @@ def post_governance_confirm(instance_id: str, body: GovernanceConfirmBody,
 
 
 @router.post("/governance/decisions/{instance_id}/return", status_code=201)
-def post_governance_return(instance_id: str, body: GovernanceReturnBody):
+def post_governance_return(instance_id: str, body: GovernanceReturnBody,
+                            identity: str = Depends(require_identity)):
     """Devuelve la propuesta al proponente con comentario. La propuesta sigue."""
     from factory.services import governance_service as _gov
     try:
         return _gov.return_to_proposer(
-            instance_id, returned_by_id=body.returned_by_id,
+            instance_id, returned_by_id=identity,
             returned_by_display_name=body.returned_by_display_name,
             comment=body.comment, state_hash=body.state_hash)
     except Exception as e:
@@ -1633,12 +1647,13 @@ def post_governance_return(instance_id: str, body: GovernanceReturnBody):
 
 
 @router.post("/governance/decisions/{instance_id}/reject", status_code=201)
-def post_governance_reject(instance_id: str, body: GovernanceRejectBody):
+def post_governance_reject(instance_id: str, body: GovernanceRejectBody,
+                            identity: str = Depends(require_identity)):
     """Rechazo registrado. La propuesta NO se borra: el almacén es append-only."""
     from factory.services import governance_service as _gov
     try:
         return _gov.reject(
-            instance_id, rejected_by_id=body.rejected_by_id,
+            instance_id, rejected_by_id=identity,
             rejected_by_display_name=body.rejected_by_display_name,
             reason=body.reason, state_hash=body.state_hash)
     except Exception as e:
@@ -1684,6 +1699,7 @@ def post_governance_abandon(instance_id: str, body: GovernanceAbandonBody):
 # ---------------------------------------------------------------------------
 
 class ArtifactVersionSignBody(BaseModel):
+    """approved_by_id ya NO viaja en el body (Paquete 2, hallazgo M) -- Depends(require_identity)."""
     proposal_id: str
     artifact_path: str
     from_version: str
@@ -1692,7 +1708,6 @@ class ArtifactVersionSignBody(BaseModel):
     expected_hash_after: str
     state_hash: str
     reason: str
-    approved_by_id: str
     approved_by_display_name: str | None = None
 
 
@@ -1709,7 +1724,8 @@ def get_artifact_version_proposals(artifact_path: str = Query(...)):
 
 
 @router.post("/governance/artifact-version/sign", status_code=201)
-def post_artifact_version_sign(body: ArtifactVersionSignBody):
+def post_artifact_version_sign(body: ArtifactVersionSignBody,
+                                identity: str = Depends(require_identity)):
     """Firma con echo-back: cada campo se compara byte a byte contra la
     propuesta ALMACENADA antes de confirmar nada. 409 `proposal_mismatch`
     si el echo-back no coincide (incluida una `state_hash` vieja, que
@@ -1723,7 +1739,7 @@ def post_artifact_version_sign(body: ArtifactVersionSignBody):
             artifact_hash_before=body.artifact_hash_before,
             expected_hash_after=body.expected_hash_after,
             state_hash=body.state_hash, reason=body.reason,
-            approved_by_id=body.approved_by_id,
+            approved_by_id=identity,
             approved_by_display_name=body.approved_by_display_name)
         return result
     except _avs.ProposalMismatchError as e:
@@ -1741,20 +1757,23 @@ class RemediationDirectiveCreate(BaseModel):
     """R4-T1.0v2 bloque 3 (docs_plan/R4_T1_0v2_DIRECTIVA_REMEDIACION.md):
     Acto 2 -- autoría humana de la corrección. `proposed_text` y
     `original_text` (si aplica) vienen SIEMPRE del cuerpo del humano que
-    envía la petición -- este endpoint nunca los genera ni los completa."""
+    envía la petición -- este endpoint nunca los genera ni los completa.
+    `authored_by_id` ya NO viaja en el body (Paquete 2, hallazgo M) --
+    Depends(require_identity): quien redacta el texto regulatorio final
+    es exactamente el acto que este paquete protege."""
     finding_rc_id: str
     change_type: str
     proposed_text: str
     target_location: dict
     regulatory_citation: list[str]
     rationale: str
-    authored_by_id: str
     authored_by_display_name: str | None = None
     original_text: str | None = None
 
 
 @router.post("/remediation/directives", status_code=201)
-def post_remediation_directive(body: RemediationDirectiveCreate):
+def post_remediation_directive(body: RemediationDirectiveCreate,
+                                identity: str = Depends(require_identity)):
     """Vía mínima de captura (3.3: "entregar primero el endpoint +
     validación... proponer la UI rica como fase aparte"). Cada rechazo
     devuelve motivo explícito (422); identidad reservada también 422 vía
@@ -1766,7 +1785,7 @@ def post_remediation_directive(body: RemediationDirectiveCreate):
             finding_rc_id=body.finding_rc_id, change_type=body.change_type,
             proposed_text=body.proposed_text, target_location=body.target_location,
             regulatory_citation=body.regulatory_citation, rationale=body.rationale,
-            authored_by_id=body.authored_by_id,
+            authored_by_id=identity,
             authored_by_display_name=body.authored_by_display_name,
             original_text=body.original_text,
         )

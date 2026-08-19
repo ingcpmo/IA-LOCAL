@@ -1,0 +1,14 @@
+# Plantilla del registro de identidades autenticadas (Paquete 2, hallazgo M).
+# NO es el archivo real -- copiar a identity_keys.yaml (gitignored) y
+# reemplazar con keys reales generadas con `openssl rand -hex 32`.
+#
+# key_sha256 = sha256(key_real_en_claro). Nunca escribir la key en claro
+# aqui ni en ningun archivo versionado -- solo su hash.
+#
+# Para anadir una persona: generar su key (`openssl rand -hex 32`),
+# entregarsela fuera de banda (nunca por este repo), y anadir una entrada
+# con su nombre real y el hash de esa key.
+
+identities:
+  - name: "Cesar"
+    key_sha256: "REEMPLAZAR_CON_EL_HASH_REAL"

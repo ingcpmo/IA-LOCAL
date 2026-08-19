@@ -309,31 +309,32 @@ def test_http_proposals_endpoint_filters_by_artifact_path(client, tmp_decisions)
     assert ids == {"ARTIFACT_VERSION-2026-001"}
 
 
-def test_http_sign_returns_409_with_reason_on_mismatch(client, tmp_decisions):
+def test_http_sign_returns_409_with_reason_on_mismatch(client, tmp_decisions, identity_headers):
     _propose(tmp_decisions, iid="ARTIFACT_VERSION-2026-001", payload=_full_payload())
     r = client.post("/api/v1/layer9/governance/artifact-version/sign", json={
         "proposal_id": "ARTIFACT_VERSION-2026-001", "artifact_path": CATALOG,
         "from_version": "1.0",  # mismatch deliberado
         "to_version": "2.1", "artifact_hash_before": HASH_A,
         "expected_hash_after": HASH_A, "state_hash": _state_hash(tmp_decisions),
-        "reason": "test", "approved_by_id": "cesar",
-    })
+        "reason": "test",
+    }, headers=identity_headers)
     assert r.status_code == 409
     assert r.json()["detail"]["reason"] == "proposal_mismatch"
 
 
-def test_http_sign_success_end_to_end(client, tmp_decisions):
+def test_http_sign_success_end_to_end(client, tmp_decisions, identity_headers):
     _propose(tmp_decisions, iid="ARTIFACT_VERSION-2026-001", payload=_full_payload())
     r = client.post("/api/v1/layer9/governance/artifact-version/sign", json={
         "proposal_id": "ARTIFACT_VERSION-2026-001", "artifact_path": CATALOG,
         "from_version": "2.0", "to_version": "2.1",
         "artifact_hash_before": HASH_A, "expected_hash_after": HASH_A,
         "state_hash": _state_hash(tmp_decisions),
-        "reason": "test http", "approved_by_id": "cesar",
+        "reason": "test http",
         "approved_by_display_name": "Cesar May",
-    })
+    }, headers=identity_headers)
     assert r.status_code == 201, r.text
     assert r.json()["decision_origin"] == "human_confirmed"
+    assert r.json()["approved_by_id"] == "Cesar"
 
 
 # ---------------------------------------------------------------------------

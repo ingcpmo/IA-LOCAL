@@ -30,7 +30,6 @@ from factory.api.routes import remediation_packages
 from factory.core import audit_writer
 from factory.services import paths
 from factory.services import remediation_package_service as svc
-from factory.services.test_console_service import RESERVED_RUN_BY
 
 PROJECT_ID = "gmpai_document_validation_test"
 BASE = "/api/v1/remediation-packages"
@@ -128,56 +127,52 @@ def _create(client, package_id, *, version=1):
     return r
 
 
-def _decide(client, package_id, *, version=1, decided_by="cesar", justification="ok"):
+def _decide(client, package_id, headers, *, version=1, justification="ok"):
     return client.post(f"{BASE}/{PROJECT_ID}/{package_id}/{version}/decision", json={
-        "decision": "APPROVE_CLEAN", "decided_by": decided_by, "justification": justification,
-    })
+        "decision": "APPROVE_CLEAN", "justification": justification,
+    }, headers=headers)
 
 
 # ── Fase P: el contrato HTTP real ────────────────────────────────────────
 
-def test_first_decision_returns_201_with_human_confirmed_origin(client):
+def test_first_decision_returns_201_with_human_confirmed_origin(client, identity_headers):
     _create(client, "PKG-HTTP-1")
-    r = _decide(client, "PKG-HTTP-1", justification="primera decision")
+    r = _decide(client, "PKG-HTTP-1", identity_headers, justification="primera decision")
     assert r.status_code == 201, r.text
     assert r.json()["decision_origin"] == "human_confirmed"
 
 
-def test_double_decision_returns_409_not_400(client):
+def test_double_decision_returns_409_not_400(client, identity_headers):
     """La regresion concreta que ningun test cubria: si el except especifico
     de PackageDecisionAlreadyRecordedError se moviera despues del generico
     (es subclase de InvalidTransitionError), esto devolveria 400."""
     _create(client, "PKG-HTTP-2")
-    assert _decide(client, "PKG-HTTP-2", justification="primera").status_code == 201
-    r = _decide(client, "PKG-HTTP-2", justification="segunda")
+    assert _decide(client, "PKG-HTTP-2", identity_headers, justification="primera").status_code == 201
+    r = _decide(client, "PKG-HTTP-2", identity_headers, justification="segunda")
     assert r.status_code == 409, f"esperado 409 (idempotencia), obtenido {r.status_code}: {r.text}"
 
 
-def test_premature_state_is_400_so_409_keeps_meaning_something(client):
+def test_premature_state_is_400_so_409_keeps_meaning_something(client, identity_headers):
     """Contrapeso: el 409 solo significa algo si otros errores de
     transicion NO son 409. Una decision sobre un paquete inexistente da
     404, y un cuerpo invalido da 400 -- nunca 409."""
-    r = _decide(client, "PKG-NO-EXISTE")
+    r = _decide(client, "PKG-NO-EXISTE", identity_headers)
     assert r.status_code == 404, r.text
 
 
-def test_empty_decided_by_is_rejected_over_http(client):
-    """Fase P: identidad real del aprobador validada con validate_run_by.
-    Sobre HTTP el rechazo debe ser un error de cliente, nunca un 201."""
+def test_missing_identity_key_is_rejected_over_http(client):
+    """Paquete 2 (hallazgo M): decided_by ya no viaja en el body -- sin
+    X-Identity-Key el rechazo debe ser un error de cliente, nunca un 201."""
     _create(client, "PKG-HTTP-3")
-    r = _decide(client, "PKG-HTTP-3", decided_by="   ")
-    assert r.status_code in (400, 422), r.text
+    r = _decide(client, "PKG-HTTP-3", headers=None)
+    assert r.status_code == 401, r.text
     assert r.status_code != 201
 
 
-@pytest.mark.parametrize("reserved", sorted(RESERVED_RUN_BY))
-def test_generic_reserved_identity_is_rejected_over_http(client, reserved):
-    """Los 6 nombres genericos reservados reales de validate_run_by, no una
-    lista adivinada: una aprobacion regulatoria firmada por 'system' o
-    'admin' no identifica a nadie."""
-    _create(client, f"PKG-HTTP-R-{reserved}")
-    r = _decide(client, f"PKG-HTTP-R-{reserved}", decided_by=reserved)
-    assert r.status_code in (400, 422), r.text
+def test_unknown_identity_key_is_rejected_over_http(client):
+    _create(client, "PKG-HTTP-3B")
+    r = _decide(client, "PKG-HTTP-3B", headers={"X-Identity-Key": "key-no-registrada"})
+    assert r.status_code == 401, r.text
 
 
 # ── Cierre P0 (2026-08-18, VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md,
