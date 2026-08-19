@@ -191,6 +191,80 @@ function renderRCCard(rc){
   </div>`;
 }
 
+/* ---- Paquete 4/K2: decision sobre un governance_candidate (NCR/CAPA
+   sugerido, Paquete 1a) -- endpoint separado, mismo motivo que
+   finding_review: tampoco tiene rc_manifest.json real. human_classification
+   es OBLIGATORIO cuando decision='confirmed' -- nunca se hereda en
+   silencio la sugerencia de la maquina, aunque el humano la mantenga
+   con el mismo valor. */
+export async function submitCandidateDecision(rcId, decision){
+  const safeName = rcId.replace(/[^a-zA-Z0-9_-]/g,'_');
+  let human_classification = null;
+  if(decision === 'confirmed'){
+    human_classification = document.getElementById('candidate-type-'+safeName)?.value || null;
+    if(!human_classification){ toast('Selecciona la clasificación real antes de confirmar.'); return; }
+  }
+  try{
+    const r = await fetch(`${API_BASE}/api/v1/layer9/review/candidates/${encodeURIComponent(rcId)}/decide`,{
+      method:'POST', headers:headers(),
+      body:JSON.stringify({decision, human_classification})
+    });
+    if(r.ok){
+      toast(decision==='confirmed' ? `Candidato confirmado como ${human_classification} ✓` : 'Candidato rechazado');
+      setTimeout(()=>refresh('review'),600);
+      return;
+    }
+    const err = await r.json().catch(()=>({}));
+    const detail = err.detail;
+    if(r.status===409){
+      const d = typeof detail==='object' ? detail : {};
+      toast('Ya decidido antes por '+(d.previously_decided_by||'?')+' — no se puede re-decidir.');
+    } else {
+      toast('Error '+r.status+': '+(typeof detail==='string'?detail:'ver consola'));
+    }
+  }catch(e){ toast('Error de red: '+e.message); }
+}
+
+function renderCandidateCard(rc){
+  const s = rc.summary || {};
+  const safeName = rc.rc_id.replace(/[^a-zA-Z0-9_-]/g,'_');
+  const types = ['NCR','CAPA','CHANGE_CONTROL'];
+  const options = types.map(t =>
+    `<option value="${t}"${t===s.suggested_type?' selected':''}>${t}</option>`).join('');
+  return `
+  <div class="rc" style="margin-bottom:14px">
+    <div class="rc-head">
+      <span class="seal" style="width:30px;height:30px;font-size:10px">GOV</span>
+      <div>
+        <div class="mono" style="font-weight:600">${s.document_id||rc.project_id} · ${s.requirement_id||'?'}</div>
+        <div class="meta mono">enqueued ${(rc.enqueued_at||'').slice(0,16).replace('T',' ')}Z · ${rc.status} · ${s.conclusion||'?'}</div>
+      </div>
+      <div class="spacer"></div>
+      <span class="chip c-human">sugerido: ${s.suggested_type||'?'}</span>
+    </div>
+    <div class="rc-body">
+      <div class="rc-col">
+        <div class="k" style="margin-bottom:8px">Candidato de gobernanza (NCR/CAPA/change-control -- solo SUGERIDO, nunca creado ni cerrado)</div>
+        <div class="meta" style="margin-top:6px">${s.rationale||''}</div>
+        <div class="meta mono" style="margin-top:6px;color:var(--faint)">ocurrencias previas: ${s.prior_occurrences??0}</div>
+      </div>
+      <div class="rc-col">
+        <div class="k" style="margin-bottom:8px">RC ID</div>
+        <div class="meta mono" style="font-size:10.5px;word-break:break-all">${rc.rc_id}</div>
+        <div class="hr"></div>
+        <div class="field"><label>Clasificación real (obligatoria para confirmar)</label>
+          <select id="candidate-type-${safeName}">${options}</select>
+        </div>
+        <div class="meta" style="margin-top:4px;color:var(--faint)">Quien decide se resuelve de tu IDENTITY KEY de sesión (Paquete 2).</div>
+        <div class="actions" style="margin-top:8px">
+          <button class="btn pass" onclick="submitCandidateDecision('${rc.rc_id}','confirmed')">Confirmar clasificación</button>
+          <button class="btn fail" onclick="submitCandidateDecision('${rc.rc_id}','rejected')">Rechazar candidato</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
 export function renderReview(pending){
   const el=document.getElementById('review-list'); if(!el) return;
   if(!pending.length){
@@ -200,13 +274,13 @@ export function renderReview(pending){
   const findings = pending.filter(rc=>rc.entry_type==='finding_review');
   // Paquete 1a (2026-08-19): governance_candidate (NCR/CAPA sugeridos,
   // factory/layer9/human_review_queue.py::enqueue_governance_candidate_for_review)
-  // NO es un RC real -- nunca tiene rc_manifest.json/diff. Sin panel propio
-  // todavia (ver docs_plan/PAQUETE_1_INTEGRACION_HALLAZGOS_DISENO.md,
-  // K2 de Paquete 4 cubre la superficie de UI completa); se excluye aqui
-  // en vez de intentar renderizarlo como RC (fetch de diff que 404 seguro).
+  // NO es un RC real -- nunca tiene rc_manifest.json/diff, panel propio
+  // agregado en Paquete 4/K2 (renderCandidateCard).
+  const candidates = pending.filter(rc=>rc.entry_type==='governance_candidate');
   const rcs = pending.filter(rc=>rc.entry_type!=='finding_review' && rc.entry_type!=='governance_candidate');
 
-  el.innerHTML = rcs.map(renderRCCard).join('') + findings.map(renderFindingCard).join('');
+  el.innerHTML = rcs.map(renderRCCard).join('') + findings.map(renderFindingCard).join('')
+    + candidates.map(renderCandidateCard).join('');
 
   /* Solo los RCs reales tienen diff que traer -- findings nunca lo
      necesitan (F0.4: "render por tipo, findings sin diff"). */

@@ -6,10 +6,10 @@
    el mismo patrón de riesgo que causó el incidente "Hallazgo no encontrado"
    de R3-T1.7, un paso más adelante en la cadena.
 
-   Alcance deliberadamente mínimo (sin backend nuevo, solo los endpoints ya
-   reales): lista de directivas de solo lectura + adjudicación de UN paquete
-   por vez, buscado a mano por (project_id, package_id, version) -- no existe
-   endpoint de listado de paquetes todavía. */
+   Paquete 4/K2 (2026-08-19): agregado el listado real
+   (GET /api/v1/remediation-packages/{project_id}) -- ya no hace falta
+   "buscar a mano" un package_id/version para saber que existen. La
+   búsqueda directa se conserva como detalle/drill-down. */
 
 import { API_BASE, headers } from './state.js';
 import { toast } from './core.js';
@@ -79,6 +79,65 @@ export async function loadRemediationPackage(){
     box.innerHTML = '<div class="card"><div class="meta" style="color:var(--fail)">Error de red: '+esc(e.message)+'</div></div>';
     PKG = null;
   }
+}
+
+/* ---- Paquete 4/K2: listado de paquetes por proyecto (solo lectura) ---- */
+
+export async function loadRemediationPackagesList(){
+  const project = (document.getElementById('rpl-project')?.value||'').trim();
+  const box = document.getElementById('remediation-packages-list');
+  if(!box) return;
+  if(!project){ toast('Completa project_id.'); return; }
+  box.innerHTML = '<div class="meta" style="color:var(--faint)">cargando…</div>';
+  try{
+    const r = await fetch(
+      API_BASE+'/api/v1/remediation-packages/'+encodeURIComponent(project), {headers: headers()});
+    if(!r.ok){
+      box.innerHTML = '<div class="meta" style="color:var(--fail)">Error HTTP '+r.status+' al listar paquetes.</div>';
+      return;
+    }
+    const data = await r.json();
+    renderRemediationPackagesList(project, data.packages || []);
+  }catch(e){
+    box.innerHTML = '<div class="meta" style="color:var(--fail)">Error de red: '+esc(e.message)+'</div>';
+  }
+}
+
+function renderRemediationPackagesList(project, packages){
+  const box = document.getElementById('remediation-packages-list');
+  if(!box) return;
+  if(!packages.length){
+    box.innerHTML = '<div class="meta" style="color:var(--faint)">Sin paquetes de remediación para "'+esc(project)+'".</div>';
+    return;
+  }
+  box.innerHTML = packages.map(p => {
+    const rc = p.risk_counts || {};
+    const pd = p.package_decision;
+    const decisionText = pd
+      ? 'decisión: <b>'+esc(pd.decision)+'</b> por '+esc(pd.decided_by)
+      : '<span style="color:var(--warn)">sin decisión final</span>';
+    const otherVersions = (p.other_versions||[]).length
+      ? ' · versiones anteriores: '+p.other_versions.map(esc).join(', ') : '';
+    return `<div class="card" style="margin-bottom:8px;padding:8px">
+      <div class="between">
+        <b class="mono">${esc(p.package_id)} v${esc(p.version)}</b>
+        <span class="chip">${esc(p.status)}</span>
+      </div>
+      <div class="meta mono" style="margin-top:4px">
+        HIGH_RISK ${esc(rc.high_risk??0)} · MEDIUM_RISK ${esc(rc.medium_risk??0)} · LOW_RISK ${esc(rc.low_risk??0)}
+        ${otherVersions}</div>
+      <div class="meta" style="margin-top:4px">${decisionText}</div>
+      <button class="btn ghost" style="font-size:10px;margin-top:6px"
+        onclick="openRemediationPackageFromList('${esc(project)}','${esc(p.package_id)}',${esc(p.version)})">Ver / adjudicar</button>
+    </div>`;
+  }).join('');
+}
+
+export function openRemediationPackageFromList(project, packageId, version){
+  const pf = document.getElementById('rp-project'); if(pf) pf.value = project;
+  const kf = document.getElementById('rp-package'); if(kf) kf.value = packageId;
+  const vf = document.getElementById('rp-version'); if(vf) vf.value = String(version);
+  loadRemediationPackage();
 }
 
 function changeCard(cid){

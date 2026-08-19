@@ -273,3 +273,56 @@ def test_create_package_succeeds_with_real_submitted_directive(client, monkeypat
         "generation_commit_sha": "deadbeef",
     })
     assert r.status_code == 201, r.text
+
+
+# ── Paquete 4/K2: GET /{project_id} -- listado de paquetes ────────────────
+
+def test_list_packages_empty_project_returns_empty_list(client):
+    r = client.get(f"{BASE}/{PROJECT_ID}")
+    assert r.status_code == 200
+    assert r.json() == {"packages": []}
+
+
+def test_list_packages_returns_one_summary_per_package_id(client):
+    _create(client, "PKG-LIST-1")
+    _create(client, "PKG-LIST-2")
+    r = client.get(f"{BASE}/{PROJECT_ID}")
+    assert r.status_code == 200
+    by_id = {p["package_id"]: p for p in r.json()["packages"]}
+    assert set(by_id) == {"PKG-LIST-1", "PKG-LIST-2"}
+    entry = by_id["PKG-LIST-1"]
+    assert entry["project_id"] == PROJECT_ID
+    assert entry["version"] == 1
+    assert entry["other_versions"] == []
+    assert entry["status"] == "AWAITING_PACKAGE_DECISION"
+    assert entry["risk_counts"] == {"low_risk": 1, "medium_risk": 0, "high_risk": 0}
+    assert entry["package_decision"] is None
+
+
+def test_list_packages_reflects_the_latest_version_only(client):
+    _create(client, "PKG-LIST-V", version=1)
+    _create(client, "PKG-LIST-V", version=2)
+    r = client.get(f"{BASE}/{PROJECT_ID}")
+    entries = [p for p in r.json()["packages"] if p["package_id"] == "PKG-LIST-V"]
+    assert len(entries) == 1
+    assert entries[0]["version"] == 2
+    assert entries[0]["other_versions"] == [1]
+
+
+def test_list_packages_reflects_a_real_decision(client, identity_headers):
+    _create(client, "PKG-LIST-D")
+    decide = _decide(client, "PKG-LIST-D", identity_headers, justification="cerrado limpio")
+    assert decide.status_code == 201, decide.text
+    r = client.get(f"{BASE}/{PROJECT_ID}")
+    entry = next(p for p in r.json()["packages"] if p["package_id"] == "PKG-LIST-D")
+    assert entry["status"] == "PACKAGE_READY_FOR_RELEASE"
+    assert entry["package_decision"]["decision"] == "APPROVE_CLEAN"
+    assert entry["package_decision"]["decided_by"] == "Cesar"
+
+
+def test_list_packages_never_requires_identity(client):
+    """Listar es solo lectura -- a diferencia de /decision, no exige
+    X-Identity-Key."""
+    _create(client, "PKG-LIST-RO")
+    r = client.get(f"{BASE}/{PROJECT_ID}")
+    assert r.status_code == 200

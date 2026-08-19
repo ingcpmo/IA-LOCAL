@@ -94,6 +94,15 @@ def create_package(project_id: str, package_id: str, version: int, body: CreateP
         raise HTTPException(400, str(e))
 
 
+@router.get("/{project_id}")
+def get_packages(project_id: str):
+    """Paquete 4/K2: resumen de todos los paquetes reales de un proyecto
+    -- última versión de cada package_id. Nunca reemplaza el GET de
+    detalle (abajo); es el listado que faltaba para no tener que
+    "buscar a mano"."""
+    return {"packages": svc.list_packages(project_id)}
+
+
 @router.get("/{project_id}/{package_id}/{version}")
 def get_package(project_id: str, package_id: str, version: int):
     try:

@@ -277,6 +277,55 @@ def _existing_versions(project_id: str, package_id: str) -> list[int]:
     return sorted(out)
 
 
+def list_packages(project_id: str) -> list[dict]:
+    """Paquete 4/K2 (docs_plan/PAQUETE_4_UI_Y_VOCABULARIO_DISENO.md):
+    resumen de todos los paquetes de un proyecto -- la ÚLTIMA versión real
+    de cada package_id, leída de su state.json real (nunca inventa un
+    campo que el estado no tenga). Antes de esto, `remediation.js` solo
+    podía "buscar a mano" un (project_id, package_id, version) exacto --
+    no existía ninguna forma de saber qué paquetes había.
+
+    Devuelve [] (nunca lanza) si el proyecto no tiene ningún paquete
+    todavía -- estado real, no un error."""
+    project_dir = paths.REMEDIATION_PACKAGES_BASE / project_id
+    if not project_dir.exists():
+        return []
+    out = []
+    for pkg_dir in sorted(p for p in project_dir.iterdir() if p.is_dir()):
+        package_id = pkg_dir.name
+        versions = _existing_versions(project_id, package_id)
+        if not versions:
+            continue
+        latest = max(versions)
+        try:
+            state = _read_state(project_id, package_id, latest)
+        except RemediationPackageNotFound:
+            continue
+        p = state["package"]
+        changes = p.get("changes") or {}
+        pd = state.get("package_decision")
+        out.append({
+            "project_id": project_id,
+            "package_id": package_id,
+            "version": latest,
+            "other_versions": [v for v in versions if v != latest],
+            "status": p.get("status"),
+            "risk_counts": {
+                "low_risk": len(changes.get("low_risk") or []),
+                "medium_risk": len(changes.get("medium_risk") or []),
+                "high_risk": len(changes.get("high_risk") or []),
+            },
+            "automatic_evaluation_complete": p.get("automatic_evaluation_complete"),
+            "human_exception_review_complete": p.get("human_exception_review_complete"),
+            "package_decision": (
+                {"decision": pd.get("decision"), "decided_by": pd.get("decided_by"),
+                 "decided_at": pd.get("decided_at")}
+                if pd else None
+            ),
+        })
+    return out
+
+
 def _read_state(project_id: str, package_id: str, package_version: int) -> dict:
     """Lee SIEMPRE state.json (nunca un *.tmp.*) -- un archivo temporal
     huerfano de una escritura interrumpida jamas se confunde con el estado

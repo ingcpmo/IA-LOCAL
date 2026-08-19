@@ -6,7 +6,7 @@
 import { show, connect, refresh } from './refresh.js';
 import { toast, fakeSubmit } from './core.js';
 import { submitCreateMission, submitMissionDecision } from './missions.js';
-import { submitRCDecision, submitFindingDecision } from './review.js';
+import { submitRCDecision, submitFindingDecision, submitCandidateDecision } from './review.js';
 import { submitW5Decision, submitW5Correction } from './w5_decisions.js';
 import { govOpen, govRecalcHash, govRefresh, govSubmitD1Correccion,
          govSubmitD1A, govSubmitPack211, govSubmitRevokeD2003,
@@ -38,7 +38,8 @@ import { doCaseSearch, submitRegQuery, promptCaseFetch,
   toggleCaseAnalysis, loadCaseAnalysis, runCaseAnalysis,
   decideCaseAnalysis } from './intel_views.js';
 import { loadRemediationPackage, submitExceptionReview,
-  submitMediumRiskBatch, submitPackageDecision } from './remediation.js';
+  submitMediumRiskBatch, submitPackageDecision,
+  loadRemediationPackagesList, openRemediationPackageFromList } from './remediation.js';
 
 Object.assign(window, {
   show, connect, refresh, toast, fakeSubmit,
@@ -66,6 +67,8 @@ Object.assign(window, {
   copyCaseCitation, promptCaseCompare, runCaseCompare,
   toggleCaseAnalysis, loadCaseAnalysis, runCaseAnalysis, decideCaseAnalysis,
   loadRemediationPackage, submitExceptionReview, submitMediumRiskBatch, submitPackageDecision,
+  loadRemediationPackagesList, openRemediationPackageFromList,
+  submitCandidateDecision,
 });
 
 document.querySelectorAll('#nav button').forEach(b=>{

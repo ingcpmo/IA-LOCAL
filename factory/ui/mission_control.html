@@ -467,10 +467,22 @@
         </div>
 
         <div class="card" style="margin-top:14px">
+          <h3>Paquetes de remediación — listado por proyecto</h3>
+          <div class="meta" style="margin-top:4px">Paquete 4/K2: resumen real de todos los paquetes de
+          un proyecto (última versión de cada uno) — ya no hace falta conocer package_id/version de
+          antemano.</div>
+          <div class="grid g3" style="margin-top:8px">
+            <div class="field"><label>project_id</label><input id="rpl-project" placeholder="p.ej. RW-0005" autocomplete="off"></div>
+          </div>
+          <button class="btn" style="margin-top:8px" onclick="loadRemediationPackagesList()">Listar paquetes</button>
+          <div id="remediation-packages-list" style="margin-top:10px"></div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
           <h3>Paquete de remediación — buscar y adjudicar</h3>
-          <div class="meta" style="margin-top:4px">No existe todavía un listado de paquetes — se busca
-          por identificador exacto (project_id / package_id / version), el mismo que produce
-          <span class="mono">remediation_package_service.create_package()</span>.</div>
+          <div class="meta" style="margin-top:4px">Búsqueda directa por identificador exacto
+          (project_id / package_id / version) — también se llega aquí con un clic desde el listado
+          de arriba.</div>
           <div class="grid g3" style="margin-top:8px">
             <div class="field"><label>project_id</label><input id="rp-project" placeholder="p.ej. RW-0005" autocomplete="off"></div>
             <div class="field"><label>package_id</label><input id="rp-package" placeholder="p.ej. RW-0005-pkg" autocomplete="off"></div>
