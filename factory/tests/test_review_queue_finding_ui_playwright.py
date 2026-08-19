@@ -2,7 +2,13 @@
 TIPO (findings sin diff, distinto de un RC real) y nunca dejar una carga
 muda: el fetch de diff de un RC real usa timeout + error visible; una
 entrada finding_review nunca dispara ese fetch. Ademas cubre identidad de
-revisor validada (422/409) end-to-end contra la UI real.
+revisor validada (401) end-to-end contra la UI real.
+
+Paquete 2 (hallazgo M, 2026-08-19): el campo "Revisor (nombre real)" ya
+NO existe en review.js -- la identidad viaja como X-Identity-Key
+(header), no como campo `reviewer` del body. Los tests de identidad se
+repropusieron para llenar #identitykey (in-memory, mismo patron que
+#apikey) y verificar el header interceptado, no el body.
 
 REGLA ABSOLUTA (mismo criterio que test_governance_ui_stale_state_playwright.py):
 ninguna prueba de firma/decision toca el backend de produccion con una
@@ -23,7 +29,6 @@ pasan. Si un run completo del archivo da 429/timeout en '#apikey', espaciar
 las corridas (no es un defecto de review.js/main.js/layer9.py)."""
 import json
 import os
-import re
 from pathlib import Path
 
 import pytest
@@ -104,52 +109,79 @@ def _browser():
         navegador.close()
 
 
+_VALID_IDENTITY_KEY = "test-identity-key-playwright-9f3a"
+
+
+def _route_factory(contexto_llamadas):
+    def _route(route):
+        url = route.request.url
+        method = route.request.method
+        if url.endswith("/api/v1/layer9/review-queue") and method == "GET":
+            route.fulfill(status=200, content_type="application/json", body=json.dumps({
+                "pending": [_FINDING_ENTRY, _RC_ENTRY],
+                "summary": {"pending": 2, "approved": 0, "rejected": 0, "returned": 0, "superseded": 0},
+            }))
+        elif "/review/findings/" in url and url.endswith("/decide") and method == "POST":
+            body = json.loads(route.request.post_data or "{}")
+            identity_key = route.request.headers.get("x-identity-key", "")
+            contexto_llamadas["decide_calls"].append({"body": body, "identity_key": identity_key})
+            if identity_key != _VALID_IDENTITY_KEY:
+                route.fulfill(status=401, content_type="application/json",
+                               body=json.dumps({"detail": "X-Identity-Key ausente o desconocida."}))
+            else:
+                route.fulfill(status=200, content_type="application/json",
+                               body=json.dumps({"rc_id": _FINDING_ENTRY["rc_id"],
+                                                "decision": body.get("decision"),
+                                                "reviewer": "Cesar"}))
+        elif "/api/v1/layer8/missions/" in url and url.endswith("/diff"):
+            # Un RC real SI pide diff -- nunca debe llegar aqui para el
+            # finding_review (F0.4: "render por tipo, findings sin diff").
+            route.fulfill(status=200, content_type="application/json", body=json.dumps("+linea nueva\n-linea vieja\n"))
+        else:
+            route.continue_()
+    return _route
+
+
+def _conectar_y_abrir_review(page, contexto_llamadas, *, identity_key):
+    page.route("**/api/v1/layer9/review**", _route_factory(contexto_llamadas))
+    page.route("**/api/v1/layer8/missions/**/diff", _route_factory(contexto_llamadas))
+    page.goto(f"{BASE}/ui/mission_control.html", wait_until="domcontentloaded")
+    page.wait_for_selector("#apikey", timeout=20000)
+    page.fill("#apikey", os.environ.get("FACTORY_API_KEY") or _api_key_del_env())
+    page.fill("#identitykey", identity_key)
+    page.click("text=Conectar")
+    page.wait_for_function(
+        "document.getElementById('conn') "
+        "&& document.getElementById('conn').textContent.includes('conectado')",
+        timeout=15000)
+    page.click('button[data-v="review"]')
+    page.wait_for_selector("#review-list .rc", timeout=15000)
+
+
 @pytest.fixture()
 def pagina_con_mock(_browser):
     contexto = _browser.new_context()
     page = contexto.new_page()
     try:
         contexto_llamadas = {"decide_calls": []}
+        _conectar_y_abrir_review(page, contexto_llamadas, identity_key=_VALID_IDENTITY_KEY)
+        yield page, contexto_llamadas
+    finally:
+        contexto.close()
 
-        def _route(route):
-            url = route.request.url
-            method = route.request.method
-            if url.endswith("/api/v1/layer9/review-queue") and method == "GET":
-                route.fulfill(status=200, content_type="application/json", body=json.dumps({
-                    "pending": [_FINDING_ENTRY, _RC_ENTRY],
-                    "summary": {"pending": 2, "approved": 0, "rejected": 0, "returned": 0, "superseded": 0},
-                }))
-            elif "/review/findings/" in url and url.endswith("/decide") and method == "POST":
-                body = json.loads(route.request.post_data or "{}")
-                contexto_llamadas["decide_calls"].append(body)
-                if body.get("reviewer", "").lower() == "human":
-                    route.fulfill(status=422, content_type="application/json",
-                                   body=json.dumps({"detail": "reviewer='human' es una identidad reservada."}))
-                else:
-                    route.fulfill(status=200, content_type="application/json",
-                                   body=json.dumps({"rc_id": _FINDING_ENTRY["rc_id"],
-                                                    "decision": body.get("decision"),
-                                                    "reviewer": body.get("reviewer")}))
-            elif "/api/v1/layer8/missions/" in url and url.endswith("/diff"):
-                # Un RC real SI pide diff -- nunca debe llegar aqui para el
-                # finding_review (F0.4: "render por tipo, findings sin diff").
-                route.fulfill(status=200, content_type="application/json", body=json.dumps("+linea nueva\n-linea vieja\n"))
-            else:
-                route.continue_()
 
-        page.route("**/api/v1/layer9/review**", _route)
-        page.route("**/api/v1/layer8/missions/**/diff", _route)
-
-        page.goto(f"{BASE}/ui/mission_control.html", wait_until="domcontentloaded")
-        page.wait_for_selector("#apikey", timeout=20000)
-        page.fill("#apikey", os.environ.get("FACTORY_API_KEY") or _api_key_del_env())
-        page.click("text=Conectar")
-        page.wait_for_function(
-            "document.getElementById('conn') "
-            "&& document.getElementById('conn').textContent.includes('conectado')",
-            timeout=15000)
-        page.click('button[data-v="review"]')
-        page.wait_for_selector("#review-list .rc", timeout=15000)
+@pytest.fixture()
+def pagina_sin_identidad(_browser):
+    """Misma navegacion, pero CONECTADA sin identity key desde el arranque
+    -- nunca reutiliza una pagina ya conectada con una key valida (reclickear
+    Conectar dispara refresh('dash') y pierde la vista, ademas de repetir
+    ~10 fetches simultaneos -- el mismo patron de rate-limit documentado en
+    la cabecera de este archivo)."""
+    contexto = _browser.new_context()
+    page = contexto.new_page()
+    try:
+        contexto_llamadas = {"decide_calls": []}
+        _conectar_y_abrir_review(page, contexto_llamadas, identity_key="")
         yield page, contexto_llamadas
     finally:
         contexto.close()
@@ -182,27 +214,28 @@ def test_candidates_table_shows_page_rank_and_excerpt(pagina_con_mock):
     assert "texto real del candidato de fusion" in row_text
 
 
-def test_reserved_identity_shows_visible_error_and_never_advances(pagina_con_mock):
-    """F0.4: identidad del revisor validada -- un 422 real del backend debe
-    ser visible en la UI, y la decision nunca se manda a la cola con exito."""
-    page, calls = pagina_con_mock
-    safe = re.sub(r"[^a-zA-Z0-9_-]", "_", _FINDING_ENTRY["rc_id"])
-    page.fill(f"#finding-reviewer-{safe}", "human")
-    page.click(f"button:has-text('Confirmar evidencia')")
+def test_missing_identity_key_shows_visible_error_and_never_advances(pagina_sin_identidad):
+    """Paquete 2 (hallazgo M): sin X-Identity-Key valida, un 401 real del
+    backend debe ser visible en la UI, y la decision nunca se manda a la
+    cola con exito."""
+    page, calls = pagina_sin_identidad
+    page.click(f"button:has-text('Confirmar bloqueo/ausencia')")
     page.wait_for_function("document.getElementById('_toast') && document.getElementById('_toast').textContent.length > 0", timeout=8000)
     toast_text = page.locator("#_toast").inner_text()
-    assert "422" in toast_text or "reservad" in toast_text.lower()
+    assert "401" in toast_text
     assert len(calls["decide_calls"]) == 1
-    assert calls["decide_calls"][0]["reviewer"] == "human"
+    assert calls["decide_calls"][0]["identity_key"] == ""
+    assert "reviewer" not in calls["decide_calls"][0]["body"]
 
 
-def test_confirm_with_real_reviewer_sends_exactly_one_decide_call(pagina_con_mock):
-    """F0.4: un evento por decision -- un clic, una sola llamada al backend."""
+def test_confirm_with_valid_identity_sends_exactly_one_decide_call(pagina_con_mock):
+    """F0.4: un evento por decision -- un clic, una sola llamada al backend.
+    Paquete 2: la identidad viaja como header X-Identity-Key, nunca como
+    campo `reviewer` del body -- el fixture ya conecta con una key valida."""
     page, calls = pagina_con_mock
-    safe = re.sub(r"[^a-zA-Z0-9_-]", "_", _FINDING_ENTRY["rc_id"])
-    page.fill(f"#finding-reviewer-{safe}", "Cesar")
-    page.click(f"button:has-text('Confirmar evidencia')")
+    page.click(f"button:has-text('Confirmar bloqueo/ausencia')")
     page.wait_for_function("document.getElementById('_toast') && document.getElementById('_toast').textContent.length > 0", timeout=8000)
     assert len(calls["decide_calls"]) == 1
-    assert calls["decide_calls"][0]["decision"] == "confirmed"
-    assert calls["decide_calls"][0]["reviewer"] == "Cesar"
+    assert calls["decide_calls"][0]["body"]["decision"] == "confirmed"
+    assert "reviewer" not in calls["decide_calls"][0]["body"]
+    assert calls["decide_calls"][0]["identity_key"] == _VALID_IDENTITY_KEY

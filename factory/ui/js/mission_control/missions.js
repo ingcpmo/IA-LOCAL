@@ -5,33 +5,31 @@ import { toast } from './core.js';
 import { missionChip } from './dash.js';
 import { refresh } from './refresh.js';
 
-/* ---- U10: Mission approve/return reales ---- */
+/* ---- U10: Mission approve/return reales ----
+   approved_by/rejected_by/returned_by ya NO viajan en el body (Paquete 2,
+   hallazgo M) -- el backend resuelve quien decide desde X-Identity-Key
+   (headers(), state.js). Sin identity key valida, el POST falla 401. */
 export async function submitMissionDecision(projectId, action){
-  const safeName=projectId.replace(/[^a-zA-Z0-9_-]/g,'_');
-  const inp=document.getElementById('mission-approver-'+safeName);
-  const actor=(inp?.value||'').trim();
-  if(!actor){ toast('Ingresa el nombre real del '+(action==='approve'?'aprobador':'revisor')+'.'); return; }
-  if(actor.toLowerCase()==='human'){ toast('"human" no es válido — usa un nombre real.'); return; }
   try{
     let url, body, msg;
     if(action==='approve'){
       url='/api/v1/layer9/missions/'+encodeURIComponent(projectId)+'/approve';
-      body={approved_by:actor, decision_origin:'human_confirmed'};
+      body={decision_origin:'human_confirmed'};
       msg='Misión aprobada ✓';
     } else if(action==='reject'){
       url='/api/v1/layer9/missions/'+encodeURIComponent(projectId)+'/reject';
-      body={rejected_by:actor, reason:'rechazo de misión · vía Mission Control'};
+      body={reason:'rechazo de misión · vía Mission Control'};
       msg='Misión rechazada';
     } else {
       url='/api/v1/layer9/missions/'+encodeURIComponent(projectId)+'/return';
-      body={returned_by:actor, reason:'devolución a ajustes · vía Mission Control'};
+      body={reason:'devolución a ajustes · vía Mission Control'};
       msg='Misión devuelta a ajustes';
     }
     const r=await fetch(API_BASE+url,{
       method:'POST', headers:headers(), body:JSON.stringify(body)
     });
     if(r.ok){
-      toast(msg+'  · '+actor);
+      toast(msg);
       setTimeout(()=>refresh('approve'),600);
     } else {
       const err=await r.json().catch(()=>({}));
@@ -49,7 +47,6 @@ export function renderApproveMissions(ms){
     return;
   }
   el.innerHTML=pending.map(m=>{
-    const safeName=m.project_id.replace(/[^a-zA-Z0-9_-]/g,'_');
     return `
     <div class="card" style="margin-bottom:14px">
       <div class="between"><h3 class="mono">${m.project_id}</h3>${missionChip(m.status)}</div>
@@ -57,9 +54,7 @@ export function renderApproveMissions(ms){
       <div class="meta">${(m.objective||'').slice(0,120).replace(/</g,'&lt;')}…</div>
       <div class="meta mono" style="margin-top:8px">created_at · ${(m.created_at||'').slice(0,16).replace('T',' ')}Z</div>
       <div class="hr"></div>
-      <div class="field"><label>Aprobador (nombre real)</label>
-        <input id="mission-approver-${safeName}" placeholder="p.ej. Cesar" autocomplete="off">
-      </div>
+      <div class="meta" style="color:var(--faint)">Quien decide se resuelve de tu IDENTITY KEY de sesión (Paquete 2).</div>
       <div class="actions" style="margin-top:12px">
         <button class="btn human" onclick="submitMissionDecision('${m.project_id}','approve')">Aprobar misión</button>
         <button class="btn warn" onclick="submitMissionDecision('${m.project_id}','return')">Devolver</button>

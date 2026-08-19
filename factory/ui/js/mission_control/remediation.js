@@ -175,8 +175,9 @@ function packageDecisionBlock(){
       </select></div>
     <div class="field"><label>Lote MEDIUM_RISK a citar (opcional)</label>
       <select id="pd-batch"><option value="">(ninguno)</option>${batchOptions}</select></div>
-    <div class="field"><label>Decidido por (nombre real)</label>
-      <input id="pd-decided-by" placeholder="p.ej. Cesar" autocomplete="off"></div>
+    <div class="meta" style="margin-top:6px;color:var(--faint)">
+      Quien decide se resuelve de tu IDENTITY KEY de sesión (Paquete 2) --
+      ya no es un campo de texto libre.</div>
     <div class="field"><label>Justificación (obligatoria)</label>
       <input id="pd-justification" placeholder="motivo real de la decisión final" autocomplete="off"></div>
     <button class="btn pass" onclick="submitPackageDecision()">Registrar decisión final</button>
@@ -262,19 +263,19 @@ export async function submitMediumRiskBatch(){
 export async function submitPackageDecision(){
   if(!PKG) return;
   const decision = document.getElementById('pd-decision')?.value;
-  const decided_by = (document.getElementById('pd-decided-by')?.value||'').trim();
   const justification = (document.getElementById('pd-justification')?.value||'').trim();
   const medium_risk_batch_decision_id = document.getElementById('pd-batch')?.value || null;
-  if(!decided_by){ toast('Ingresa el nombre real de quien decide.'); return; }
   if(!justification){ toast('La justificación es obligatoria.'); return; }
   let high_risk_exception_ids = null;
   if(decision === 'APPROVE_WITH_EXCEPTIONS'){
     high_risk_exception_ids = Object.values(PKG.exceptions||{}).map(e=>e.exception_id);
   }
+  // decided_by ya NO viaja en el body (Paquete 2, hallazgo M) -- lo
+  // resuelve el backend desde X-Identity-Key (headers(), state.js).
   const {ok, status, data} = await _postJSON(
     '/api/v1/remediation-packages/'+encodeURIComponent(PKG.project_id)+'/'
       +encodeURIComponent(PKG.package_id)+'/'+PKG.version+'/decision',
-    {decision, decided_by, justification, medium_risk_batch_decision_id, high_risk_exception_ids});
+    {decision, justification, medium_risk_batch_decision_id, high_risk_exception_ids});
   if(ok){ toast('Decisión final registrada: '+decision); await loadRemediationPackage(); }
   else if(status===409){ toast('Ya existe una decisión para este paquete (409) — no se puede re-decidir.'); await loadRemediationPackage(); }
   else { toast('Error '+status+': '+(data.detail||JSON.stringify(data))); }

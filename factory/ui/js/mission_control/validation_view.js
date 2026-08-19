@@ -107,23 +107,23 @@ async function _generateDossier(pid, by){
   }catch(e){ toast('Error de red: '+e.message); }
 }
 
+/* approved_by ya NO viaja en el body (Paquete 2, hallazgo M) -- el
+   backend resuelve el aprobador desde X-Identity-Key (headers(), state.js). */
 export function promptApproveDoc(docId){
   if(!_pid) return;
-  const by=(window.prompt('Aprobar "'+docId+'": nombre real del aprobador (queda auditado — NO es firma electrónica):')||'').trim();
-  if(!by){ toast('Aprobación cancelada — no se envió nada (sin nombre).'); return; }
-  if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
-  _approveDoc(_pid, docId, by);
+  if(!window.confirm('¿Aprobar "'+docId+'"? Queda auditado con tu identidad de sesión (NO es firma electrónica).')) return;
+  _approveDoc(_pid, docId);
 }
 
-async function _approveDoc(pid, docId, by){
+async function _approveDoc(pid, docId){
   try{
     const r=await fetch(API_BASE+'/api/v1/layer9/missions/'+encodeURIComponent(pid)
       +'/validation-package/documents/'+encodeURIComponent(docId)+'/approve',{
-      method:'POST', headers:headers(), body:JSON.stringify({approved_by:by})
+      method:'POST', headers:headers(), body:JSON.stringify({})
     });
     const d=await r.json().catch(()=>({}));
     if(!r.ok){ toast('Error '+r.status+': '+(typeof d.detail==='object'?JSON.stringify(d.detail):(d.detail||'error'))); return; }
-    toast('✓ '+docId+' aprobado por '+by);
+    toast('✓ '+docId+' aprobado');
     window.refresh?.('validation');
   }catch(e){ toast('Error de red: '+e.message); }
 }
@@ -252,33 +252,33 @@ export async function viewAgentProposal(docId){
   }catch(e){ el.innerHTML='<div class="meta" style="color:var(--fail)">'+_gmpEscHtml(e.message)+'</div>'; }
 }
 
+/* decided_by ya NO viaja en el body (Paquete 2, hallazgo M) -- el
+   backend resuelve quien decide desde X-Identity-Key (headers(), state.js). */
 export function decideAgentProposal(docId, decision){
   if(!_pid) return;
   const labels={accept:'ACEPTAR e incorporar al borrador (el doc vuelve a "por revisar")',
     reject:'RECHAZAR (la propuesta queda archivada)',
     request_changes:'PEDIR AJUSTE (regenera una nueva versión con tu instrucción — puede tardar varios minutos)'};
-  const by=(window.prompt(labels[decision]+'\n\nNombre real de quien decide (queda auditado — NO es firma electrónica):')||'').trim();
-  if(!by){ toast('Decisión cancelada — no se envió nada (sin nombre).'); return; }
-  if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
+  if(!window.confirm(labels[decision]+'\n\nQueda auditado con tu identidad de sesión (NO es firma electrónica). ¿Continuar?')) return;
   let reason=null;
   if(decision!=='accept'){
     reason=(window.prompt(decision==='reject'?'Motivo del rechazo (obligatorio):'
       :'Instrucción de ajuste para el agente (obligatoria):')||'').trim();
     if(!reason){ toast('El motivo es obligatorio para '+decision+'.'); return; }
   }
-  _decideProposal(_pid, docId, decision, by, reason);
+  _decideProposal(_pid, docId, decision, reason);
 }
 
-async function _decideProposal(pid, docId, decision, by, reason){
+async function _decideProposal(pid, docId, decision, reason){
   if(decision==='request_changes') toast('Regenerando propuesta con tu instrucción — puede tardar varios minutos…');
   try{
     const r=await fetch(_PROPOSAL_URL(pid,docId)+'/decision',{
       method:'POST', headers:headers(),
-      body:JSON.stringify({decision:decision, decided_by:by, reason:reason})
+      body:JSON.stringify({decision:decision, reason:reason})
     });
     const d=await r.json().catch(()=>({}));
     if(!r.ok){ toast('Error '+r.status+': '+(typeof d.detail==='object'?JSON.stringify(d.detail):(d.detail||'error'))); return; }
-    toast('✓ '+decision+' registrado por '+by+' · doc → '+(d.doc_status||'—')
+    toast('✓ '+decision+' registrado · doc → '+(d.doc_status||'—')
       +(d.new_proposal?' · nueva propuesta v'+d.new_proposal.version:''));
     window.refresh?.('validation');
     viewAgentProposal(docId);

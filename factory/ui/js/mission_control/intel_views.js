@@ -404,19 +404,19 @@ function _renderCaseAnalysis(i, d){
   </div>`;
 }
 
+/* decided_by ya NO viaja en el body de /decision (Paquete 2, hallazgo M)
+   -- el backend lo resuelve desde X-Identity-Key. El input "case-an-by"
+   sigue existiendo para requested_by (runCaseAnalysis, no migrado). */
 export function decideCaseAnalysis(i, decision){
   const c=_lastCases[i]||{};
   const pid=document.getElementById('case-an-pid-'+i)?.value;
-  const by=(document.getElementById('case-an-by-'+i)?.value||'').trim();
   const reason=(document.getElementById('case-an-reason-'+i)?.value||'').trim();
   if(!c.case_id||!pid) return;
-  if(!by){ toast('Decisión NO enviada: falta el nombre real en el formulario superior.'); return; }
-  if(_RESERVED_RUN_BY.includes(by.toLowerCase())){ toast('"'+by+'" es un nombre reservado — usa tu nombre real.'); return; }
   if(decision!=='accept' && !reason){ toast('Decisión NO enviada: el motivo es obligatorio para '+decision+'.'); return; }
-  _decideAnalysis(i, c.case_id, pid, decision, by, decision==='accept'?(reason||null):reason);
+  _decideAnalysis(i, c.case_id, pid, decision, decision==='accept'?(reason||null):reason);
 }
 
-async function _decideAnalysis(i, caseId, pid, decision, by, reason){
+async function _decideAnalysis(i, caseId, pid, decision, reason){
   const out=document.getElementById('case-an-out-'+i);
   if(decision==='request_changes' && out){
     out.insertAdjacentHTML('afterbegin','<div class="meta" style="color:var(--warn)">⏳ Registrando decisión y regenerando en modo revisión (~7–9 min)…</div>');
@@ -424,11 +424,11 @@ async function _decideAnalysis(i, caseId, pid, decision, by, reason){
   try{
     const r=await fetch(_ANALYSIS_URL(caseId)+'/decision',{
       method:'POST', headers:headers(),
-      body:JSON.stringify({project_id:pid, decision:decision, decided_by:by, reason:reason})
+      body:JSON.stringify({project_id:pid, decision:decision, reason:reason})
     });
     const d=await r.json().catch(()=>({}));
     if(!r.ok){ toast('Error '+r.status+': '+(typeof d.detail==='object'?JSON.stringify(d.detail):(d.detail||'error'))); loadCaseAnalysis(i); return; }
-    toast('✓ '+decision+' registrado por '+by+' · análisis → '+(d.analysis_status||'—')
+    toast('✓ '+decision+' registrado · análisis → '+(d.analysis_status||'—')
       +(d.new_analysis?' · nueva versión v'+d.new_analysis.version:''));
     loadCaseAnalysis(i);
   }catch(e){

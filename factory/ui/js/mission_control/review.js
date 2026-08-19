@@ -14,20 +14,17 @@ import { refresh } from './refresh.js';
 
 const DIFF_FETCH_TIMEOUT_MS = 8000;
 
-/* ---- U9: RC review — aprobar/rechazar reales ---- */
+/* ---- U9: RC review — aprobar/rechazar reales ----
+   approved_by ya NO viaja en el body (Paquete 2, hallazgo M) -- el
+   backend resuelve el revisor desde X-Identity-Key (headers(), state.js). */
 export async function submitRCDecision(rcId, action){
-  const safeName=rcId.replace(/[^a-zA-Z0-9_-]/g,'_');
-  const inp=document.getElementById('rc-reviewer-'+safeName);
-  const reviewer=(inp?.value||'').trim();
-  if(!reviewer){ toast('Ingresa el nombre real del revisor.'); return; }
-  if(reviewer.toLowerCase()==='human'){ toast('"human" no es válido — usa un nombre real.'); return; }
   try{
     const r=await fetch(API_BASE+'/api/v1/layer9/review/'+encodeURIComponent(rcId)+'/'+action,{
       method:'POST', headers:headers(),
-      body:JSON.stringify({approved_by:reviewer, notes:'decision_origin: human_confirmed · via Mission Control'})
+      body:JSON.stringify({notes:'decision_origin: human_confirmed · via Mission Control'})
     });
     if(r.ok){
-      toast((action==='approve'?'RC aprobado ✓':'RC rechazado')+'  · revisor: '+reviewer);
+      toast(action==='approve'?'RC aprobado ✓':'RC rechazado');
       setTimeout(()=>refresh('review'),600);
     } else {
       const err=await r.json().catch(()=>({}));
@@ -38,12 +35,10 @@ export async function submitRCDecision(rcId, action){
 
 /* ---- R3-T1.2/F0.4: decisión sobre un finding_review (hallazgo de
    evidencia) -- endpoint separado, NUNCA /review/{rc_id}/approve|reject
-   (esos exigen un rc_manifest.json real que un finding_review no tiene). */
+   (esos exigen un rc_manifest.json real que un finding_review no tiene).
+   reviewer ya NO viaja en el body (Paquete 2, hallazgo M). */
 export async function submitFindingDecision(rcId, decision){
   const safeName=rcId.replace(/[^a-zA-Z0-9_-]/g,'_');
-  const reviewerInp=document.getElementById('finding-reviewer-'+safeName);
-  const reviewer=(reviewerInp?.value||'').trim();
-  if(!reviewer){ toast('Ingresa el nombre real del revisor.'); return; }
   const pageInp=document.getElementById('finding-page-'+safeName);
   const quoteInp=document.getElementById('finding-quote-'+safeName);
   const confirmed_page = pageInp && pageInp.value.trim() ? Number(pageInp.value.trim()) : null;
@@ -51,10 +46,10 @@ export async function submitFindingDecision(rcId, decision){
   try{
     const r=await fetch(API_BASE+'/api/v1/layer9/review/findings/'+encodeURIComponent(rcId)+'/decide',{
       method:'POST', headers:headers(),
-      body:JSON.stringify({reviewer, decision, confirmed_page, confirmed_quote})
+      body:JSON.stringify({decision, confirmed_page, confirmed_quote})
     });
     if(r.ok){
-      toast((decision==='confirmed'?'Hallazgo confirmado ✓':'Hallazgo rechazado')+'  · revisor: '+reviewer);
+      toast(decision==='confirmed'?'Hallazgo confirmado ✓':'Hallazgo rechazado');
       setTimeout(()=>refresh('review'),600);
       return;
     }
@@ -154,9 +149,7 @@ function renderFindingCard(rc){
         <div class="k" style="margin-bottom:8px">RC ID</div>
         <div class="meta mono" style="font-size:10.5px;word-break:break-all">${rc.rc_id}</div>
         <div class="hr"></div>
-        <div class="field"><label>Revisor (nombre real)</label>
-          <input id="finding-reviewer-${safeName}" placeholder="p.ej. Cesar" autocomplete="off">
-        </div>
+        <div class="meta" style="color:var(--faint)">Revisor: resuelto de tu IDENTITY KEY de sesión (Paquete 2).</div>
         ${quoteFields}
         <div class="actions">
           <button class="btn pass" onclick="submitFindingDecision('${rc.rc_id}','confirmed')">${confirmLabel}</button>
@@ -168,7 +161,6 @@ function renderFindingCard(rc){
 }
 
 function renderRCCard(rc){
-  const safeName=rc.rc_id.replace(/[^a-zA-Z0-9_-]/g,'_');
   return `
   <div class="rc" style="margin-bottom:14px">
     <div class="rc-head">
@@ -189,9 +181,7 @@ function renderRCCard(rc){
         <div class="k" style="margin-bottom:8px">RC ID</div>
         <div class="meta mono" style="font-size:10.5px;word-break:break-all">${rc.rc_id}</div>
         <div class="hr"></div>
-        <div class="field"><label>Revisor (nombre real)</label>
-          <input id="rc-reviewer-${safeName}" placeholder="p.ej. Cesar" autocomplete="off">
-        </div>
+        <div class="meta" style="color:var(--faint)">Revisor: resuelto de tu IDENTITY KEY de sesión (Paquete 2).</div>
         <div class="actions">
           <button class="btn pass" onclick="submitRCDecision('${rc.rc_id}','approve')">Aprobar RC</button>
           <button class="btn fail" onclick="submitRCDecision('${rc.rc_id}','reject')">Rechazar</button>

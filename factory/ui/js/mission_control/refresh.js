@@ -60,6 +60,7 @@ export function show(v,btn){
 
 export async function connect(){
   state.apiKey=document.getElementById('apikey').value.trim();
+  state.identityKey=document.getElementById('identitykey').value.trim();
   const conn=document.getElementById('conn');
   if(!state.apiKey){ conn.innerHTML='modo <b>diseño</b>'; state.connected=false; return; }
   try{
@@ -111,7 +112,7 @@ function _checkAuthFailure(r){
     state.connected=false;
     const conn=document.getElementById('conn');
     if(conn) conn.innerHTML='<span class="dotwarn">●</span> sesión expirada · reconectar';
-    toast('Sesión expirada (HTTP '+r.status+') — ingresa la API key de nuevo.');
+    toast('Sesión expirada (HTTP '+r.status+') — ingresa la API key y/o la identity key de nuevo.');
     return true;
   }
   return false;

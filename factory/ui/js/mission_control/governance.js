@@ -359,19 +359,22 @@ function setBusy(btnId, busy, busyLabel){
 
 /* ── formulario de firma, común a los paneles que registran ────────────── */
 
+/* Paquete 2 (hallazgo M, 2026-08-19): la identidad que FIRMA ya no la
+   declara este formulario -- se resuelve server-side desde tu
+   IDENTITY KEY de sesión (state.js). El campo "nombre para mostrar" que
+   queda aqui es puramente cosmetico (approved_by_display_name/
+   rejected_by_display_name), nunca la identidad autorizante. */
 function signatureForm(prefix, {motivoLabel='MOTIVO'}={}){
   return `
   <div style="margin-top:12px;display:grid;grid-template-columns:150px 1fr;gap:6px;align-items:center">
     <label class="meta">${esc(motivoLabel)} *</label>
     <input id="${prefix}-reason" placeholder="por qué se registra esta decisión">
-    <label class="meta">FIRMA — id *</label>
-    <input id="${prefix}-id" placeholder="identificador real (no 'human', no 'admin')">
     <label class="meta">FIRMA — nombre</label>
-    <input id="${prefix}-name" placeholder="nombre para mostrar">
+    <input id="${prefix}-id" placeholder="nombre para mostrar (cosmético)">
   </div>
   <div class="meta" style="margin-top:6px;color:var(--faint)">
-    La identidad se valida contra una lista ÚNICA compartida por toda la
-    fábrica. Un nombre genérico no identifica a nadie y se rechaza con 422.
+    Quien firma se resuelve de tu IDENTITY KEY de sesión (arriba a la
+    derecha) -- este campo es solo un nombre para mostrar en pantalla.
   </div>`;
 }
 
@@ -1004,7 +1007,6 @@ export async function govSubmitPromptVersionRegularizacion(artifactId){
   }
   const sig = readSignature(prefix);
   if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
-  if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
   if(GOV_STALE){
     setStatus(prefix,'warn','El estado cambió desde que cargaste esta página. '
       + 'Pulsa "Recargar estado" arriba antes de firmar.');
@@ -1022,7 +1024,6 @@ export async function govSubmitPromptVersionRegularizacion(artifactId){
       expected_hash_after: valida.payload.expected_hash_after,
       state_hash: GOV?.family_state_hashes?.ARTIFACT_VERSION,
       reason: sig.reason,
-      approved_by_id: sig.id,
       approved_by_display_name: sig.name || sig.id,
     });
     if(!r.ok){ setStatus(prefix,'fail', explicaError(r.status, r.data)); return; }
@@ -1852,7 +1853,6 @@ async function proponerYConfirmar(family, targetIds, sig, extra={}, ui={}){
   };
 
   if(!sig.reason){ status('warn', 'El motivo es obligatorio.'); return; }
-  if(!sig.id){ status('warn', 'La firma exige un identificador real.'); return; }
   if(!targetIds.length){ status('warn', 'No hay ninguna fuente seleccionada.'); return; }
   if(GOV_STALE){
     status('warn', 'El estado cambió desde que cargaste esta página. '
@@ -1890,7 +1890,7 @@ async function proponerYConfirmar(family, targetIds, sig, extra={}, ui={}){
     }
     status('busy', 'Confirmando firma…');
     const conf = await postJSON(`/api/v1/layer9/governance/decisions/${iid}/confirm`, {
-      approved_by_id: sig.id, approved_by_display_name: sig.name || sig.id,
+      approved_by_display_name: sig.name || sig.id,
       reason: sig.reason,
       family_state_hash: fh,
       expected_active_instance_id: prop.data.expected_active_instance_id ?? null,
@@ -2017,7 +2017,6 @@ export async function govSubmitCatalogVersion(){
   }
   const sig = readSignature('catv');
   if(!sig.reason){ setStatus('catv','warn','El motivo es obligatorio.'); return; }
-  if(!sig.id){ setStatus('catv','warn','La firma exige un identificador real.'); return; }
   if(GOV_STALE){
     setStatus('catv','warn','El estado cambió desde que cargaste esta página. '
       + 'Pulsa "Recargar estado" arriba antes de firmar.');
@@ -2035,7 +2034,6 @@ export async function govSubmitCatalogVersion(){
       expected_hash_after: valida.payload.expected_hash_after,
       state_hash: GOV?.family_state_hashes?.ARTIFACT_VERSION,
       reason: sig.reason,
-      approved_by_id: sig.id,
       approved_by_display_name: sig.name || sig.id,
     });
     if(!r.ok){ setStatus('catv','fail', explicaError(r.status, r.data)); return; }
@@ -2061,7 +2059,6 @@ export async function govSubmitMatrixVersionRegularizacion(){
   }
   const sig = readSignature('mxv');
   if(!sig.reason){ setStatus('mxv','warn','El motivo es obligatorio.'); return; }
-  if(!sig.id){ setStatus('mxv','warn','La firma exige un identificador real.'); return; }
   if(GOV_STALE){
     setStatus('mxv','warn','El estado cambió desde que cargaste esta página. '
       + 'Pulsa "Recargar estado" arriba antes de firmar.');
@@ -2079,7 +2076,6 @@ export async function govSubmitMatrixVersionRegularizacion(){
       expected_hash_after: valida.payload.expected_hash_after,
       state_hash: GOV?.family_state_hashes?.ARTIFACT_VERSION,
       reason: sig.reason,
-      approved_by_id: sig.id,
       approved_by_display_name: sig.name || sig.id,
     });
     if(!r.ok){ setStatus('mxv','fail', explicaError(r.status, r.data)); return; }
@@ -2100,7 +2096,6 @@ export async function govSubmitMatrixVersionRegularizacion(){
    matriz de aplicabilidad y golden dataset (RC-7, 2026-08-05). */
 async function confirmarPropuestaExistente(instanceId, family, sig, {statusPrefix, btnId}){
   if(!sig.reason){ setStatus(statusPrefix,'warn','El motivo es obligatorio.'); return; }
-  if(!sig.id){ setStatus(statusPrefix,'warn','La firma exige un identificador real.'); return; }
   if(GOV_STALE){
     setStatus(statusPrefix,'warn','El estado cambió desde que cargaste esta página. '
       + 'Pulsa "Recargar estado" arriba antes de firmar.');
@@ -2110,7 +2105,7 @@ async function confirmarPropuestaExistente(instanceId, family, sig, {statusPrefi
   setStatus(statusPrefix,'busy','Confirmando…');
   try {
     const r = await postJSON(`/api/v1/layer9/governance/decisions/${instanceId}/confirm`, {
-      approved_by_id: sig.id, approved_by_display_name: sig.name || sig.id,
+      approved_by_display_name: sig.name || sig.id,
       reason: sig.reason,
       family_state_hash: GOV?.family_state_hashes?.[family],
     });
@@ -2168,7 +2163,6 @@ export async function govSubmitSourceOriginVerification(decisionInstanceId, pref
 export async function govSubmitD4A(decisionInstanceId, prefix){
   const sig = readSignature(prefix);
   if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
-  if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
   await confirmarPropuestaExistente(decisionInstanceId, 'D4', sig,
                                     {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
 }
@@ -2176,7 +2170,6 @@ export async function govSubmitD4A(decisionInstanceId, prefix){
 export async function govSubmitCorpusAuthorization(decisionInstanceId, prefix){
   const sig = readSignature(prefix);
   if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
-  if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
   await confirmarPropuestaExistente(decisionInstanceId, 'CORPUS_AUTHORIZATION', sig,
                                     {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
 }
@@ -2184,7 +2177,6 @@ export async function govSubmitCorpusAuthorization(decisionInstanceId, prefix){
 export async function govSubmitPilotExecution(decisionInstanceId, prefix){
   const sig = readSignature(prefix);
   if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
-  if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
   await confirmarPropuestaExistente(decisionInstanceId, 'PILOT_EXECUTION', sig,
                                     {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
 }
@@ -2192,7 +2184,6 @@ export async function govSubmitPilotExecution(decisionInstanceId, prefix){
 export async function govSubmitEmbedExecution(decisionInstanceId, prefix){
   const sig = readSignature(prefix);
   if(!sig.reason){ setStatus(prefix,'warn','El motivo es obligatorio.'); return; }
-  if(!sig.id){ setStatus(prefix,'warn','La firma exige un identificador real.'); return; }
   await confirmarPropuestaExistente(decisionInstanceId, 'EMBED_EXECUTION', sig,
                                     {statusPrefix:prefix, btnId:prefix+'-submit-btn'});
 }
@@ -2212,7 +2203,6 @@ export async function govSubmitExcepcion(verdict){
   const sig = readSignature('gexc');
   const btnId = verdict==='APPROVE' ? 'gexc-approve-btn' : 'gexc-reject-btn';
   if(!sig.reason){ setStatus('gexc','warn','El motivo es obligatorio.'); return; }
-  if(!sig.id){ setStatus('gexc','warn','La firma exige un identificador real.'); return; }
   const forks = GOV?.audit?.unbacked_known_fork_entry_ids || [];
   if(!forks.length){ setStatus('gexc','warn','No hay ningún fork pendiente de excepción.'); return; }
   if(GOV_STALE){
@@ -2243,10 +2233,10 @@ export async function govSubmitExcepcion(verdict){
       ? `/api/v1/layer9/governance/decisions/${iid}/confirm`
       : `/api/v1/layer9/governance/decisions/${iid}/reject`;
     const body = verdict==='APPROVE'
-      ? {approved_by_id:sig.id, approved_by_display_name:sig.name||sig.id,
+      ? {approved_by_display_name:sig.name||sig.id,
          reason:sig.reason, family_state_hash:fh,
          expected_active_instance_id: prop.data.expected_active_instance_id ?? null}
-      : {rejected_by_id:sig.id, rejected_by_display_name:sig.name||sig.id,
+      : {rejected_by_display_name:sig.name||sig.id,
          reason:sig.reason, state_hash:fh};
 
     setStatus('gexc','busy', verdict==='APPROVE' ? 'Confirmando aceptación…' : 'Confirmando rechazo…');

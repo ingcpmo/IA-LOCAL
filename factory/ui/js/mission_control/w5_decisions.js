@@ -93,9 +93,8 @@ function d1Card(d){
           <input id="w5-d1-cadence" type="number" min="1" max="60" placeholder="p.ej. 12"></div>
         <div class="field"><label>Autoridad de reverificación</label>
           <input id="w5-d1-authority" placeholder="quién declara vigente una fuente"></div>
-        <div class="field"><label>Firmado por (nombre real)</label>
-          <input id="w5-d1-approver" placeholder="p.ej. Cesar" autocomplete="off"></div>
       </div>
+      <div class="meta" style="color:var(--faint)">Quien firma se resuelve de tu IDENTITY KEY de sesión (Paquete 2).</div>
       <div class="field"><label>Notas</label><input id="w5-d1-notes" placeholder="opcional"></div>
       <div class="actions">
         <button class="btn pass" onclick="submitW5Decision('D1_regulatory_sources','APPROVE')">APPROVE</button>
@@ -169,8 +168,7 @@ function genericCard(d, idx){
           Decidida: <b>${esc(rec.decision)}</b> por ${esc(rec.approved_by)}
           el ${esc((rec.decision_date||'').slice(0,16).replace('T',' '))}</div>`
       : `<div class="hr"></div>
-      <div class="field"><label>Firmado por (nombre real)</label>
-        <input id="w5-${esc(d.decision_id)}-approver" placeholder="p.ej. Cesar" autocomplete="off"></div>
+      <div class="meta" style="color:var(--faint)">Quien firma se resuelve de tu IDENTITY KEY de sesión (Paquete 2).</div>
       <div class="field"><label>Notas</label>
         <input id="w5-${esc(d.decision_id)}-notes" placeholder="opcional"></div>
       <div class="actions">
@@ -203,15 +201,13 @@ export function renderW5Decisions(data){
     decisions.map((d,i)=> d.decision_id==='D1_regulatory_sources' ? d1Card(d) : genericCard(d,i)).join('');
 }
 
+/* approved_by ya NO viaja en el body (Paquete 2, hallazgo M) -- el
+   backend resuelve quien firma desde X-Identity-Key (headers(), state.js). */
 export async function submitW5Decision(decisionId, decision){
   const val = id => (document.getElementById(id)?.value || '').trim();
-  const approver = decisionId==='D1_regulatory_sources'
-    ? val('w5-d1-approver') : val('w5-'+decisionId+'-approver');
-  if(!approver){ toast('Ingresa el nombre real de quien firma la decisión.'); return; }
 
   const body = {
     decision,
-    approved_by: approver,
     notes: decisionId==='D1_regulatory_sources' ? val('w5-d1-notes') : val('w5-'+decisionId+'-notes'),
   };
   if(decisionId==='D1_regulatory_sources'){
@@ -226,7 +222,7 @@ export async function submitW5Decision(decisionId, decision){
     const r = await fetch(API_BASE+'/api/v1/layer9/w5-decisions/'+encodeURIComponent(decisionId),
       {method:'POST', headers:headers(), body:JSON.stringify(body)});
     if(r.ok){
-      toast(decisionId+' registrada: '+decision+' · '+approver);
+      toast(decisionId+' registrada: '+decision);
       const { refresh } = await import('./refresh.js');
       setTimeout(()=>refresh('w5'), 600);
     } else {
