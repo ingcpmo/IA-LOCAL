@@ -385,3 +385,259 @@ class TestFailureCauseClassification:
         execution = result["chunk_executions"][0]
         assert execution["raw_response_full_path"] is None
         assert execution["raw_response_full_sha256"] is None
+
+
+class _FitsBaseNotEscalatedProvider(_BaseProvider):
+    """Ventana que alcanza para el presupuesto BASE (pasa el preflight) pero
+    no para el escalado 2x del reintento -- para PART11 (base=4096,
+    escalado=8192, prompt~2662 tok): 8192 >= 2662+4096=6758 (cabe base),
+    8192 < 2662+8192=10854 (NO cabe escalado)."""
+
+    @property
+    def context_window(self) -> int:
+        return 8192
+
+
+_TRUNCATED = {"response": '{"checkpoints": [{"req_id": "x"', "done_reason": "length"}
+
+
+def _valid_part11_response() -> dict:
+    return {"response": json.dumps(_payload(PART11)), "done_reason": "stop"}
+
+
+class TestTruncationRetry:
+    """Reintento puntual de UN chunk truncado por presupuesto, con
+    TRUNCATION_RETRY_MULTIPLIER (2026-08-21, motivado por el chunk 17 real
+    de RW-0005/FIXTURE_7P2N). Nunca toca el presupuesto BASE de las demas
+    ~800 llamadas de una corrida completa -- solo el chunk que YA se
+    trunco, una sola vez, y solo si el reintento cabe en context_window."""
+
+    def test_multiplier_constant_is_two(self):
+        assert ce.TRUNCATION_RETRY_MULTIPLIER == 2.0
+
+    def test_retries_only_on_output_truncated(self):
+        """Un fallo que NO es truncamiento (aqui: no_json_object) no debe
+        disparar ningun reintento -- solo output_truncated es un error de
+        CONFIGURACION recuperable subiendo el presupuesto; los otros tres
+        son del modelo/contrato y reintentar con mas tokens no los arregla."""
+        provider = _BaseProvider([
+            {"response": "lo siento, no puedo ayudar", "done_reason": "stop"},
+            _valid_part11_response(),
+        ])
+        result = _run(PART11, provider, ["contenido"], "j" * 64)
+        execution = result["chunk_executions"][0]
+        assert len(provider.calls) == 1, "no debe gastarse una segunda llamada"
+        assert execution["failure_reason"] == ce.FAILURE_NO_JSON_OBJECT
+        assert execution["truncation_retry_used"] is False
+
+    def test_truncated_output_retries_once_with_escalated_budget_and_recovers(self):
+        provider = _BaseProvider([_TRUNCATED, _valid_part11_response()])
+        result = _run(PART11, provider, ["contenido"], "k" * 64)
+        execution = result["chunk_executions"][0]
+
+        assert len(provider.calls) == 2, "exactamente un reintento, no mas"
+        base = provider.calls[0]["num_predict"]
+        escalated = provider.calls[1]["num_predict"]
+        assert base == ce.output_token_budget(5, 26)
+        assert escalated == -(-int(base * ce.TRUNCATION_RETRY_MULTIPLIER) // 512) * 512
+        assert escalated == base * 2, "para este contrato el redondeo a 512 coincide con 2x exacto"
+
+        assert execution["truncation_retry_used"] is True
+        assert execution["num_predict"] == escalated, (
+            "num_predict persistido debe ser el REALMENTE usado (el del reintento), no el base"
+        )
+        assert execution["failure_reason"] is None
+        assert execution["technical_execution_failure"] is False
+        assert execution["ok"] is True
+
+    def test_at_most_one_retry_even_if_the_retry_also_truncates(self):
+        """Si el reintento TAMBIEN se trunca, no hay un tercer intento --
+        el reintento esta acotado a UNA sola vez, siempre."""
+        provider = _BaseProvider([_TRUNCATED, _TRUNCATED, _valid_part11_response()])
+        result = _run(PART11, provider, ["contenido"], "l" * 64)
+        execution = result["chunk_executions"][0]
+
+        assert len(provider.calls) == 2, "el tercer response nunca debe consultarse"
+        assert execution["truncation_retry_used"] is True, "el reintento SI se intento"
+        assert execution["failure_reason"] == ce.FAILURE_OUTPUT_TRUNCATED, (
+            "sigue fallando -- el reintento no garantiza exito, solo se intenta una vez"
+        )
+        assert execution["technical_execution_failure"] is True
+        assert execution["num_predict"] == provider.calls[1]["num_predict"], (
+            "aunque el reintento fallo tambien, el num_predict persistido es el del intento real"
+        )
+
+    def test_no_retry_when_the_escalated_budget_does_not_fit_context_window(self):
+        """Misma garantia que la guardia de preflight (_assert_token_budget_
+        fits): si prompt + num_predict escalado > context_window, el
+        reintento arriesgaria truncar el PROMPT en silencio (perdiendo
+        common_contract/req_id) -- estrictamente peor que quedarse en
+        technical_execution_failure. Debe NO reintentar y fallar-cerrado."""
+        provider = _FitsBaseNotEscalatedProvider([_TRUNCATED, _valid_part11_response()])
+        result = _run(PART11, provider, ["contenido"], "m" * 64)
+        execution = result["chunk_executions"][0]
+
+        assert len(provider.calls) == 1, "el reintento no debe intentarse si no cabe"
+        assert execution["truncation_retry_used"] is False
+        assert execution["failure_reason"] == ce.FAILURE_OUTPUT_TRUNCATED
+        assert execution["technical_execution_failure"] is True
+        assert execution["num_predict"] == provider.calls[0]["num_predict"]
+
+    def test_no_retry_when_provider_does_not_honor_num_predict(self):
+        """Un provider del contrato ANTERIOR (sin num_predict) no tiene nada
+        que escalar -- comportamiento identico al de antes de este cambio:
+        se declara honestamente (provider_honors_token_budget=False,
+        num_predict persistido=None) y no se reintenta."""
+        provider = _LegacyProvider([_TRUNCATED, _valid_part11_response()])
+        result = _run(PART11, provider, ["contenido"], "n" * 64)
+        execution = result["chunk_executions"][0]
+
+        assert len(provider.calls) == 1
+        assert execution["truncation_retry_used"] is False
+        assert execution["num_predict"] is None
+        assert execution["failure_reason"] == ce.FAILURE_OUTPUT_TRUNCATED
+        assert execution["technical_execution_failure"] is True
+
+    def test_no_retry_when_context_window_is_undeclared(self):
+        """Sin context_window conocido no se puede verificar que el
+        reintento no trunque el prompt -- mismo principio que la guardia de
+        preflight: no se supone un limite que no se conoce."""
+        provider = _UndeclaredWindowProvider([_TRUNCATED, _valid_part11_response()])
+        assert not hasattr(provider, "context_window")
+        result = _run(PART11, provider, ["contenido"], "o" * 64)
+        execution = result["chunk_executions"][0]
+
+        assert len(provider.calls) == 1
+        assert execution["truncation_retry_used"] is False
+        assert execution["failure_reason"] == ce.FAILURE_OUTPUT_TRUNCATED
+
+    def test_normal_success_is_not_marked_as_a_retry(self):
+        """No-regresion: un chunk que responde bien a la primera no debe
+        traer ningun rastro de reintento."""
+        provider = _BaseProvider([_valid_part11_response()])
+        result = _run(PART11, provider, ["contenido"], "p" * 64)
+        execution = result["chunk_executions"][0]
+
+        assert len(provider.calls) == 1
+        assert execution["truncation_retry_used"] is False
+        assert execution["num_predict"] == provider.calls[0]["num_predict"]
+        assert execution["ok"] is True
+
+    def test_retry_preserves_the_final_raw_response_used(self):
+        """El raw_response persistido debe corresponder a la respuesta que
+        REALMENTE se uso (la del reintento cuando hubo uno), no al primer
+        intento descartado -- para que un dossier audite lo que paso de
+        verdad."""
+        provider = _BaseProvider([_TRUNCATED, _valid_part11_response()])
+        result = _run(PART11, provider, ["contenido"], "q" * 64)
+        execution = result["chunk_executions"][0]
+        assert execution["raw_response"] == json.dumps(_payload(PART11))
+
+
+class _RealFailureReplayProvider(_BaseProvider):
+    """Repite EXACTAMENTE la respuesta cruda real capturada por Fase 5 en el
+    primer intento (mismo done_reason='length' que Ollama devolvio de
+    verdad), y una respuesta valida sintetica en el reintento -- el reintento
+    en si nunca corrio en produccion (el fix es posterior a la corrida), asi
+    que no hay un "raw_response real del reintento" que reproducir; lo que
+    se valida aqui es que el DISPARADOR (el fallo real) escala el
+    presupuesto exactamente como predice el contrato real del agente."""
+
+    def __init__(self, real_raw_response: str, agent_prompt_path: Path):
+        payload = json.dumps(_payload(agent_prompt_path))
+        super().__init__([
+            {"response": real_raw_response, "done_reason": "length"},
+            {"response": payload, "done_reason": "stop"},
+        ])
+
+
+class TestTruncationRetryAgainstRealFase5Failures:
+    """Bloque 4.1 de docs_plan/DISENO_UNIFICACION_RUNNER_FORMAL.md: el fix
+    de TestTruncationRetry (arriba) se probo solo contra un truncamiento
+    SINTETICO. Esta clase repite, en el primer intento de cada caso, la
+    respuesta cruda REAL persistida por la propia corrida de produccion
+    fase5_produccion_real_fixture7p2n_20260820 (2026-08-20/21) que motivo el
+    fix -- leida en vivo desde su ubicacion real bajo
+    factory/regulatory/corpus_run/, nunca copiada a este archivo.
+
+    Por que no esta embebida como literal en este test (W5.3 Fase 5.4.4,
+    mismo regimen de confidencialidad que factory/regulatory/
+    validation_evidence/.gitignore: ningun texto citado del documento
+    regulado real entra a Git): el archivo se lee de su ruta original en
+    disco -- si no existe (clon limpio, CI sin esta evidencia de runtime),
+    el test se salta explicitamente en vez de fallar o inventar un
+    sustituto, y el sha256 se verifica ANTES de usarlo para que un archivo
+    corrupto/distinto nunca pase como si fuera la evidencia real."""
+
+    _CHECKPOINT_DIR = Path("factory/regulatory/corpus_run/checkpoints")
+
+    _CASES = [
+        # (nombre, checkpoint run_id, task_id, agente, prompt, sha256 real
+        # registrado en el chunk_execution correspondiente, num_predict BASE
+        # real que se uso en la corrida -- ver fase5_result.json/checkpoint).
+        (
+            "eu_annex11_RW-0005_chunk17",
+            "chunked-d56217c2d498", "task-9f3b53406432", "eu_annex11_agent", ANNEX11,
+            "54f7caf560748f9051fe951c94ad3978556d64a16dff077912ddc9602d2f09a3",
+            3072,
+        ),
+        (
+            "alcoa_plus_RW-0005_chunk17",
+            "chunked-6a24f7ec77e5", "task-e548f07c600a", "alcoa_plus_agent", ALCOA,
+            "175a3c5517cc2f6851cf2f7836d22a3c3c4cdf6e282dc812e928a536b2d56043",
+            4096,
+        ),
+    ]
+
+    def _load_real_raw_response(self, run_id: str, task_id: str, expected_sha256: str) -> str:
+        import gzip
+        import hashlib
+
+        path = self._CHECKPOINT_DIR / "raw_responses" / run_id / f"{task_id}.txt.gz"
+        if not path.is_file():
+            pytest.skip(
+                f"evidencia real de Fase 5 no presente en este entorno ({path}) -- "
+                "runtime local, nunca en Git (W5.3 Fase 5.4.4)"
+            )
+        with gzip.open(path, "rt", encoding="utf-8") as f:
+            text = f.read()
+        actual_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        assert actual_sha256 == expected_sha256, (
+            f"{path}: el contenido en disco no coincide con el sha256 registrado por la "
+            "corrida real -- no se puede confiar en que sea la misma evidencia"
+        )
+        return text
+
+    @pytest.mark.parametrize("name,run_id,task_id,agent_id,prompt_path,sha256,base_predict", _CASES)
+    def test_real_truncated_response_triggers_correctly_scaled_retry(
+        self, name, run_id, task_id, agent_id, prompt_path, sha256, base_predict
+    ):
+        real_raw = self._load_real_raw_response(run_id, task_id, sha256)
+        provider = _RealFailureReplayProvider(real_raw, prompt_path)
+
+        result = _run(prompt_path, provider, ["contenido"], "r" * 64)
+        execution = result["chunk_executions"][0]
+
+        assert len(provider.calls) == 2, (
+            f"{name}: el fallo real debio disparar exactamente un reintento"
+        )
+        assert provider.calls[0]["num_predict"] == base_predict, (
+            f"{name}: el presupuesto BASE calculado debe coincidir con el que la corrida "
+            "real de produccion efectivamente uso (mismo contrato, mismo agente)"
+        )
+        escalated = provider.calls[1]["num_predict"]
+        assert escalated == base_predict * ce.TRUNCATION_RETRY_MULTIPLIER
+        assert execution["truncation_retry_used"] is True
+        assert execution["num_predict"] == escalated
+        assert execution["failure_reason"] is None, (
+            f"{name}: con el fix activo, el caso real que antes quedaba "
+            "rejected_by_verifier debe resolverse en el reintento"
+        )
+        assert execution["ok"] is True
+
+    def test_both_real_fase5_failures_are_covered(self):
+        """No-regresion de cobertura: si algun dia se agrega un tercer
+        truncamiento real a la evidencia de Fase 5, este test avisa que la
+        lista de _CASES quedo corta -- 2 es el conteo real confirmado
+        (technical_execution_failures=1+1 en fase5_result.json)."""
+        assert len(self._CASES) == 2

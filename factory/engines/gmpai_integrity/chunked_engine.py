@@ -101,6 +101,18 @@ TOKENS_PER_CRITERION = 130   # ~110 medidos + 18 % de margen
 TOKENS_PER_CHECKPOINT = 60   # envelope: estado/evidencia_exacta/brecha/recomendacion
 TOKENS_JSON_OVERHEAD = 120   # llaves, "checkpoints", indentacion
 
+# Factor de escalado para el reintento de UN chunk truncado (2026-08-21).
+# output_token_budget() se dimensiona contra el PROMEDIO medido del
+# contrato; un chunk individual mas denso que ese promedio puede truncarse
+# igual aunque el presupuesto del contrato completo este bien calculado.
+# 2.0x se eligio por ser el orden de magnitud observado en el caso real que
+# motiva esto (RW-0005 chunk 17: ~4-5 de 9 checkpoints completados con el
+# presupuesto base -- ver chunk_execution real, task-e548f07c600a). Nunca se
+# aplica al presupuesto BASE (eso subiria el costo de las ~800 llamadas de
+# una corrida completa por una minoria de chunks densos); solo al reintento
+# puntual de un chunk que YA se trunco.
+TRUNCATION_RETRY_MULTIPLIER = 2.0
+
 
 def output_token_budget(n_checkpoints: int, n_criteria: int) -> int:
     """Presupuesto de tokens de salida derivado del CONTRATO REAL del prompt
@@ -1414,6 +1426,8 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         technical_execution_failure = False
         failure_reason = None
         raw_response_text = ""
+        num_predict_used = num_predict
+        truncation_retry_used = False
         if not admitted_checkpoints:
             # Gate 4: ningun checkpoint tiene Evidence Pack completo, asi que
             # no hay nada que preguntarle al modelo. Se BLOQUEA la llamada
@@ -1435,6 +1449,38 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 raw = (provider.generate(prompt, num_predict=num_predict)
                        if honors_budget else provider.generate(prompt))
                 chunk_result, failure_reason, raw_response_text = classify_model_response(raw)
+
+                # Reintento con presupuesto escalado (2026-08-21, motivado por
+                # el chunk 17 real de RW-0005/FIXTURE_7P2N, corrida de
+                # produccion fase5_produccion_real_fixture7p2n_20260820).
+                # output_token_budget() deriva el presupuesto del CONTRATO (checkpoints x
+                # criterios), no del chunk -- un chunk individual cuyo
+                # contenido real es mas denso que el promedio con el que se
+                # midio ese contrato (2026-07-28) puede truncarse aunque el
+                # presupuesto este bien calculado para el documento completo.
+                # No es el defecto del postmortem original (ese era un
+                # NUM_PREDICT fijo que no conocia el contrato); es varianza
+                # real de un chunk contra el promedio. Un solo reintento,
+                # acotado con las mismas garantias que la guardia de
+                # preflight (_assert_token_budget_fits): SOLO si
+                # failure_reason es output_truncated, SOLO si honors_budget
+                # (si el provider no acepta num_predict no hay nada que
+                # escalar), y SOLO si context_window es conocido -- sin el no
+                # se puede verificar que el reintento no trunque el PROMPT en
+                # su lugar (el mismo riesgo silencioso que motivo D2 del
+                # diseno original). Nunca en silencio: chunk_execution.
+                # truncation_retry_used/num_predict declara si se uso.
+                if (failure_reason == FAILURE_OUTPUT_TRUNCATED and honors_budget
+                        and context_window is not None):
+                    escalated_predict = -(-int(num_predict * TRUNCATION_RETRY_MULTIPLIER) // 512) * 512
+                    prompt_tokens_estimate = int(len(prompt) / PROMPT_CHARS_PER_TOKEN) + 1
+                    if (escalated_predict > num_predict
+                            and prompt_tokens_estimate + escalated_predict <= context_window):
+                        raw = provider.generate(prompt, num_predict=escalated_predict)
+                        chunk_result, failure_reason, raw_response_text = classify_model_response(raw)
+                        num_predict_used = escalated_predict
+                        truncation_retry_used = True
+
                 if failure_reason is None:
                     error = None
                 else:
@@ -1668,7 +1714,13 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             # unico mensaje y un truncamiento por presupuesto era
             # indistinguible de un modelo devolviendo basura.
             "failure_reason": failure_reason,
-            "num_predict": num_predict if honors_budget else None,
+            "num_predict": num_predict_used if honors_budget else None,
+            # Reintento con presupuesto escalado (2026-08-21): declara si
+            # este chunk se trunco con el presupuesto base del contrato y se
+            # reejecuto con TRUNCATION_RETRY_MULTIPLIER -- nunca en silencio,
+            # un dossier debe poder mostrar que un resultado vino de un
+            # segundo intento, no del primero.
+            "truncation_retry_used": truncation_retry_used,
             # La respuesta CRUDA se conserva (acotada) para que un fallo sea
             # diagnosticable post-hoc sin re-ejecutar el chunk, y para poder
             # auditar que dijo el modelo en un run regulatorio.
