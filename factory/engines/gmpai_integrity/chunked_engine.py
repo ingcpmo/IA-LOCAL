@@ -113,6 +113,22 @@ TOKENS_JSON_OVERHEAD = 120   # llaves, "checkpoints", indentacion
 # puntual de un chunk que YA se trunco.
 TRUNCATION_RETRY_MULTIPLIER = 2.0
 
+# Bloque 4 (docs_plan/BLOQUE4_FIX_AUDIT_TRAIL_Y_CIERRE.md, 2026-08-21): el
+# reintento inline de un chunk truncado ocurre COMO MAXIMO una vez -- nombrado
+# y testeado explicitamente en vez de quedar implicito en la ausencia de un
+# bucle. Cualquier otro failure_reason, o un segundo truncamiento tras este
+# reintento, cae al mecanismo existente de checkpoint/resume
+# (retry_technical_failures=True) sin cambios.
+MAX_INLINE_RETRY = 1
+
+# Linaje de intentos (Bloque 4): declara COMO se llego a un chunk_execution
+# dado, reutilizando siempre la misma estructura de superseded_attempts (el
+# mecanismo de resume ya existente) -- nunca un segundo formato de historial
+# paralelo, ni para el reintento inline de truncamiento ni para el resume.
+ATTEMPT_TYPE_INITIAL = "INITIAL_ATTEMPT"
+ATTEMPT_TYPE_INLINE_TRUNCATION_RETRY = "INLINE_TRUNCATION_RETRY"
+ATTEMPT_TYPE_CHECKPOINT_RESUME_RETRY = "CHECKPOINT_RESUME_RETRY"
+
 
 def output_token_budget(n_checkpoints: int, n_criteria: int) -> int:
     """Presupuesto de tokens de salida derivado del CONTRATO REAL del prompt
@@ -1428,6 +1444,10 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
         raw_response_text = ""
         num_predict_used = num_predict
         truncation_retry_used = False
+        # Intento inicial truncado, preservado ANTES de sobrescribirse con el
+        # resultado del reintento inline -- ver Bloque A del documento citado
+        # arriba. None si nunca hubo reintento inline para este chunk.
+        inline_superseded_attempt: dict | None = None
         if not admitted_checkpoints:
             # Gate 4: ningun checkpoint tiene Evidence Pack completo, asi que
             # no hay nada que preguntarle al modelo. Se BLOQUEA la llamada
@@ -1476,6 +1496,33 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                     prompt_tokens_estimate = int(len(prompt) / PROMPT_CHARS_PER_TOKEN) + 1
                     if (escalated_predict > num_predict
                             and prompt_tokens_estimate + escalated_predict <= context_window):
+                        # Preservacion de evidencia (Bloque 4, MAX_INLINE_RETRY=1):
+                        # el intento truncado se pierde para siempre si se
+                        # sobrescribe sin conservarlo primero -- misma logica que
+                        # ya aplica el mecanismo de resume (superseded_attempts),
+                        # reutilizada aqui en vez de descartarse en silencio.
+                        first_attempt_raw_ref = (
+                            checkpoint_store.save_raw_response(
+                                run_id, f"{task_id}-attempt1", raw_response_text)
+                            if (checkpoint_store is not None and raw_response_text)
+                            else None
+                        )
+                        inline_superseded_attempt = {
+                            "run_id": run_id, "task_id": f"{task_id}-attempt1",
+                            "chunk_index": chunk["chunk_index"],
+                            "attempt_type": ATTEMPT_TYPE_INITIAL,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "model": model_name, "model_digest": model_digest,
+                            "ok": False, "error": _FAILURE_DETAIL[failure_reason],
+                            "technical_execution_failure": True,
+                            "failure_reason": failure_reason,
+                            "num_predict": num_predict if honors_budget else None,
+                            "truncation_retry_used": False,
+                            "raw_response": raw_response_text[:_RAW_PERSIST_MAX_CHARS],
+                            "raw_response_truncated_in_log": len(raw_response_text) > _RAW_PERSIST_MAX_CHARS,
+                            "raw_response_full_path": first_attempt_raw_ref["path"] if first_attempt_raw_ref else None,
+                            "raw_response_full_sha256": first_attempt_raw_ref["sha256"] if first_attempt_raw_ref else None,
+                        }
                         raw = provider.generate(prompt, num_predict=escalated_predict)
                         chunk_result, failure_reason, raw_response_text = classify_model_response(raw)
                         num_predict_used = escalated_predict
@@ -1732,15 +1779,46 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             "_criterion_assessments_for_d": criterion_assessments_for_d_this_chunk,
         }
 
+        # Linaje de intentos (Bloque 4): un mismo chunk_execution puede haber
+        # pasado por dos mecanismos de preservacion distintos en la misma
+        # cadena -- un resume anterior (previous, si replace_at no es None) Y
+        # un reintento inline de truncamiento en ESTA invocacion
+        # (inline_superseded_attempt). Ambos se combinan en un unico
+        # superseded_attempts, en orden cronologico, reutilizando siempre la
+        # misma estructura -- nunca dos historiales paralelos.
+        history: list[dict] = []
+        if replace_at is not None:
+            previous = chunk_executions[replace_at]
+            history = list(previous.pop("superseded_attempts", []))
+            # Checkpoints de antes de Bloque 4 no traen attempt_type/attempt_
+            # number -- se backfillean sin alterar ningun otro campo, para que
+            # un run viejo reanudado hoy siga produciendo una cadena valida.
+            previous.setdefault("attempt_type", ATTEMPT_TYPE_INITIAL)
+            history.append(previous)
+        if inline_superseded_attempt is not None:
+            history.append(inline_superseded_attempt)
+
+        # Cada intento superado declara su propio numero y quien lo supero,
+        # en orden -- nunca se infiere desde afuera de la cadena.
+        for idx, attempt in enumerate(history, start=1):
+            attempt["attempt_number"] = idx
+        final_attempt_number = len(history) + 1
+        for idx, attempt in enumerate(history):
+            attempt["superseded_by_attempt"] = (
+                history[idx + 1]["attempt_number"] if idx + 1 < len(history) else final_attempt_number
+            )
+
+        execution["attempt_number"] = final_attempt_number
+        execution["attempt_type"] = (
+            ATTEMPT_TYPE_INLINE_TRUNCATION_RETRY if truncation_retry_used
+            else (ATTEMPT_TYPE_CHECKPOINT_RESUME_RETRY if replace_at is not None else ATTEMPT_TYPE_INITIAL)
+        )
+        if history:
+            execution["superseded_attempts"] = history
+
         if replace_at is None:
             chunk_executions.append(execution)
         else:
-            # El intento fallido NUNCA se borra: un run regulatorio debe poder
-            # demostrar que hubo un fallo y que se resolvio.
-            previous = chunk_executions[replace_at]
-            history = list(previous.pop("superseded_attempts", []))
-            history.append(previous)
-            execution["superseded_attempts"] = history
             chunk_executions[replace_at] = execution
 
         if checkpoint_store is not None:

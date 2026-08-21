@@ -450,6 +450,20 @@ class TestTruncationRetry:
         assert execution["technical_execution_failure"] is False
         assert execution["ok"] is True
 
+        # Bloque 4 (docs_plan/BLOQUE4_FIX_AUDIT_TRAIL_Y_CIERRE.md): el
+        # primer intento truncado debe preservarse, no perderse al
+        # sobrescribirse con el resultado del reintento.
+        assert execution["attempt_type"] == ce.ATTEMPT_TYPE_INLINE_TRUNCATION_RETRY
+        assert execution["attempt_number"] == 2
+        history = execution["superseded_attempts"]
+        assert len(history) == 1
+        assert history[0]["attempt_type"] == ce.ATTEMPT_TYPE_INITIAL
+        assert history[0]["attempt_number"] == 1
+        assert history[0]["superseded_by_attempt"] == 2
+        assert history[0]["technical_execution_failure"] is True
+        assert history[0]["failure_reason"] == ce.FAILURE_OUTPUT_TRUNCATED
+        assert history[0]["num_predict"] == base
+
     def test_at_most_one_retry_even_if_the_retry_also_truncates(self):
         """Si el reintento TAMBIEN se trunca, no hay un tercer intento --
         el reintento esta acotado a UNA sola vez, siempre."""
@@ -467,6 +481,14 @@ class TestTruncationRetry:
             "aunque el reintento fallo tambien, el num_predict persistido es el del intento real"
         )
 
+        # Bloque 4: el reintento SI se intento, asi que el primer intento
+        # sigue debiendo preservarse aunque el resultado final tambien haya
+        # fallado -- la evidencia no depende de que el reintento tenga exito.
+        history = execution["superseded_attempts"]
+        assert len(history) == 1
+        assert history[0]["attempt_type"] == ce.ATTEMPT_TYPE_INITIAL
+        assert history[0]["failure_reason"] == ce.FAILURE_OUTPUT_TRUNCATED
+
     def test_no_retry_when_the_escalated_budget_does_not_fit_context_window(self):
         """Misma garantia que la guardia de preflight (_assert_token_budget_
         fits): si prompt + num_predict escalado > context_window, el
@@ -482,6 +504,9 @@ class TestTruncationRetry:
         assert execution["failure_reason"] == ce.FAILURE_OUTPUT_TRUNCATED
         assert execution["technical_execution_failure"] is True
         assert execution["num_predict"] == provider.calls[0]["num_predict"]
+        assert "superseded_attempts" not in execution, (
+            "sin reintento inline no hay nada que preservar"
+        )
 
     def test_no_retry_when_provider_does_not_honor_num_predict(self):
         """Un provider del contrato ANTERIOR (sin num_predict) no tiene nada
@@ -497,6 +522,7 @@ class TestTruncationRetry:
         assert execution["num_predict"] is None
         assert execution["failure_reason"] == ce.FAILURE_OUTPUT_TRUNCATED
         assert execution["technical_execution_failure"] is True
+        assert "superseded_attempts" not in execution
 
     def test_no_retry_when_context_window_is_undeclared(self):
         """Sin context_window conocido no se puede verificar que el
@@ -510,6 +536,7 @@ class TestTruncationRetry:
         assert len(provider.calls) == 1
         assert execution["truncation_retry_used"] is False
         assert execution["failure_reason"] == ce.FAILURE_OUTPUT_TRUNCATED
+        assert "superseded_attempts" not in execution
 
     def test_normal_success_is_not_marked_as_a_retry(self):
         """No-regresion: un chunk que responde bien a la primera no debe
@@ -517,6 +544,9 @@ class TestTruncationRetry:
         provider = _BaseProvider([_valid_part11_response()])
         result = _run(PART11, provider, ["contenido"], "p" * 64)
         execution = result["chunk_executions"][0]
+        assert "superseded_attempts" not in execution
+        assert execution["attempt_type"] == ce.ATTEMPT_TYPE_INITIAL
+        assert execution["attempt_number"] == 1
 
         assert len(provider.calls) == 1
         assert execution["truncation_retry_used"] is False
@@ -610,12 +640,17 @@ class TestTruncationRetryAgainstRealFase5Failures:
 
     @pytest.mark.parametrize("name,run_id,task_id,agent_id,prompt_path,sha256,base_predict", _CASES)
     def test_real_truncated_response_triggers_correctly_scaled_retry(
-        self, name, run_id, task_id, agent_id, prompt_path, sha256, base_predict
+        self, name, run_id, task_id, agent_id, prompt_path, sha256, base_predict, tmp_path
     ):
         real_raw = self._load_real_raw_response(run_id, task_id, sha256)
         provider = _RealFailureReplayProvider(real_raw, prompt_path)
+        # Bloque 4 (docs_plan/BLOQUE4_FIX_AUDIT_TRAIL_Y_CIERRE.md) B.1: con
+        # checkpoint_store, el intento truncado real debe quedar anclado en
+        # superseded_attempts con el MISMO sha256 que el archivo .txt.gz
+        # original -- cero llamadas nuevas, es el mismo raw ya capturado.
+        store = ce.CheckpointStore(tmp_path)
 
-        result = _run(prompt_path, provider, ["contenido"], "r" * 64)
+        result = _run(prompt_path, provider, ["contenido"], "r" * 64, checkpoint_store=store)
         execution = result["chunk_executions"][0]
 
         assert len(provider.calls) == 2, (
@@ -634,6 +669,19 @@ class TestTruncationRetryAgainstRealFase5Failures:
             "rejected_by_verifier debe resolverse en el reintento"
         )
         assert execution["ok"] is True
+
+        history = execution["superseded_attempts"]
+        assert len(history) == 1, f"{name}: el intento truncado real debe preservarse, no perderse"
+        preserved = history[0]
+        assert preserved["attempt_type"] == ce.ATTEMPT_TYPE_INITIAL
+        assert preserved["technical_execution_failure"] is True
+        assert preserved["failure_reason"] == ce.FAILURE_OUTPUT_TRUNCATED
+        assert preserved["num_predict"] == base_predict
+        assert preserved["raw_response_full_sha256"] == sha256, (
+            f"{name}: el sha256 anclado del intento preservado debe coincidir EXACTO con el "
+            "archivo .txt.gz real -- si no coincide, no se puede confiar en que sea la misma evidencia"
+        )
+        assert store.load_raw_response(preserved["raw_response_full_path"]) == real_raw
 
     def test_both_real_fase5_failures_are_covered(self):
         """No-regresion de cobertura: si algun dia se agrega un tercer

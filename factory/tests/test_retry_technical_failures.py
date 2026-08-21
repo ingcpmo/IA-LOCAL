@@ -53,9 +53,16 @@ class _ScriptedProvider:
     def model_name(self) -> str:
         return "fake-model"
 
-    @property
-    def context_window(self) -> int:
-        return 16384
+    # Sin context_window declarado, a proposito (Bloque 4,
+    # docs_plan/BLOQUE4_FIX_AUDIT_TRAIL_Y_CIERRE.md): este archivo prueba el
+    # mecanismo de reintento POR RESUME (retry_technical_failures), un
+    # mecanismo distinto al reintento INLINE de truncamiento (ver
+    # TestTruncationRetry en test_output_token_budget.py, que si declara
+    # context_window para poder probarlo). Sin context_window, la guardia de
+    # chunked_engine que dispara el reintento inline nunca se activa (no
+    # puede verificar que el reintento no trunque el prompt sin conocer la
+    # ventana) -- un _TRUNCATED en este archivo sigue siendo, como antes de
+    # Bloque 4, un fallo tecnico permanente hasta que se pida el resume.
 
     def generate(self, prompt: str, *, num_predict: int | None = None) -> dict:
         response = self.script[min(self.calls, len(self.script) - 1)]
@@ -67,6 +74,18 @@ class _ScriptedProvider:
 
     def runtime_version(self) -> str:
         return "0.0.0-fake"
+
+
+class _ScriptedProviderWithWindow(_ScriptedProvider):
+    """Misma respuesta guionada que _ScriptedProvider, pero SI declara
+    context_window -- usada unicamente por los tests de Bloque 4 que
+    necesitan ejercer el reintento INLINE de truncamiento a la vez que el
+    reintento por resume, para probar que ambos mecanismos coexisten sin
+    pisarse (nunca en el resto de este archivo, que prueba resume aislado)."""
+
+    @property
+    def context_window(self) -> int:
+        return 16384
 
 
 _TRUNCATED = {"response": '{"checkpoints": [{"req_id": "A", "estado": "cumple", '
@@ -196,3 +215,77 @@ class TestProvisionalFlagOnNoCumpleBranch:
         for finding in no_cumple:
             assert finding["technical_execution_failure_pending"] is False
             assert not finding["brecha"].startswith("PROVISIONAL")
+
+
+class TestBloque4AttemptLineage:
+    """docs_plan/BLOQUE4_FIX_AUDIT_TRAIL_Y_CIERRE.md Bloque B: el reintento
+    INLINE de truncamiento (chunked_engine, ~1473) y el reintento POR RESUME
+    (este archivo) son dos mecanismos de preservacion de evidencia
+    independientes que deben coexistir sin pisarse. Unica clase de este
+    archivo que usa _ScriptedProviderWithWindow -- necesita que el inline
+    retry SI se active para poder probar la interaccion entre ambos."""
+
+    def test_max_inline_retry_is_one(self):
+        assert ce.MAX_INLINE_RETRY == 1
+
+    def test_resume_after_inline_retry_success_is_idempotent(self, tmp_path):
+        """B.2: un chunk resuelto por el reintento INLINE (dentro de la
+        misma corrida) no debe reejecutarse ni ver alterado su
+        superseded_attempts cuando una corrida POSTERIOR reanuda para
+        resolver OTRO chunk que si sigue fallando -- el resume debe
+        reconocer que ese chunk ya esta ok=True y saltarlo."""
+        store = ce.CheckpointStore(tmp_path)
+        # chunk0 (PAGE_A): trunca y se autorepara via reintento inline.
+        # chunk1 (PAGE_B): trunca DOS veces (inicial + reintento inline) y
+        # queda con technical_execution_failure=True, exigiendo resume.
+        first = _ScriptedProviderWithWindow([_TRUNCATED, _good(), _TRUNCATED, _TRUNCATED])
+        first_result = _run(first, "h" * 64, store)
+        assert first.calls == 4
+        chunk0_history_before = first_result["chunk_executions"][0]["superseded_attempts"]
+        assert len(chunk0_history_before) == 1
+        assert first_result["chunk_executions"][0]["ok"] is True
+        assert first_result["chunk_executions"][1]["technical_execution_failure"] is True
+
+        second = _ScriptedProviderWithWindow([_good()])
+        result = _run(second, "h" * 64, store, retry_technical_failures=True)
+
+        assert second.calls == 1, "solo el chunk que seguia fallando debe reejecutarse"
+        assert result["preflight_metadata"]["retried_chunk_indices"] == [1]
+        assert result["chunk_executions"][0]["superseded_attempts"] == chunk0_history_before, (
+            "el chunk ya resuelto por el reintento inline no debe alterarse al reanudar"
+        )
+        assert result["chunk_executions"][1]["ok"] is True
+
+    def test_bridge_scenario_inline_retry_then_resume_recovers(self, tmp_path):
+        """B.3: truncamiento -> reintento inline -> vuelve a fallar ->
+        persistencia con superseded_attempts completo -> resume con
+        retry_technical_failures=True -> recuperacion final. Confirma que
+        ambos mecanismos, encadenados en el mismo chunk, producen un
+        linaje de intentos completo y correctamente numerado."""
+        store = ce.CheckpointStore(tmp_path)
+        first = _ScriptedProviderWithWindow([_TRUNCATED, _TRUNCATED, _good()])
+        first_result = _run(first, "i" * 64, store)
+        failed = first_result["chunk_executions"][0]
+        assert failed["technical_execution_failure"] is True
+        assert failed["attempt_type"] == ce.ATTEMPT_TYPE_INLINE_TRUNCATION_RETRY
+        assert len(failed["superseded_attempts"]) == 1
+        assert failed["superseded_attempts"][0]["attempt_type"] == ce.ATTEMPT_TYPE_INITIAL
+
+        second = _ScriptedProviderWithWindow([_good()])
+        result = _run(second, "i" * 64, store, retry_technical_failures=True)
+
+        recovered = result["chunk_executions"][0]
+        assert recovered["ok"] is True
+        assert recovered["technical_execution_failure"] is False
+        assert recovered["attempt_type"] == ce.ATTEMPT_TYPE_CHECKPOINT_RESUME_RETRY
+        history = recovered["superseded_attempts"]
+        assert len(history) == 2, "el intento inicial Y el intento truncado-tras-inline se preservan ambos"
+        assert [a["attempt_type"] for a in history] == [
+            ce.ATTEMPT_TYPE_INITIAL, ce.ATTEMPT_TYPE_INLINE_TRUNCATION_RETRY,
+        ]
+        assert [a["attempt_number"] for a in history] == [1, 2]
+        assert [a["superseded_by_attempt"] for a in history] == [2, 3]
+        assert recovered["attempt_number"] == 3
+        for attempt in history:
+            assert attempt["technical_execution_failure"] is True
+            assert attempt["failure_reason"] == ce.FAILURE_OUTPUT_TRUNCATED
