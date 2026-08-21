@@ -198,6 +198,16 @@ class CorpusRunSummary:
     # run_corpus_batch(retrieval_mode=...).
     retrieval_mode: str = "full_chunk"
     total_embed_calls_made: int = 0
+    # Bloque 3 (2026-08-21, docs_plan/DISENO_UNIFICACION_RUNNER_FORMAL.md):
+    # configuración efectiva registrada ANTES de la primera llamada real de
+    # `run_corpus_batch` -- lo que la corrida de Fase 5 no dejó verificable.
+    # None para `run_pilot_sample_batch` (familia de gobernanza distinta,
+    # ya trazada por selected_pilot_instance_id/pilot_selection_rule).
+    run_context: str | None = None
+    corpus_authorization_id: str | None = None
+    model_qualification_status: str | None = None
+    requirement_scope: dict = field(default_factory=dict)
+    truncation_retry_multiplier: float | None = None
 
 
 def _load_allowlist_entry(document_id: str) -> dict:
@@ -500,11 +510,13 @@ def _default_extractor(path: Path) -> list[str]:
 
 
 def _check_corpus_authorization(document_ids: list[str], *,
-                                decision_store_file: Path | None = None) -> None:
+                                decision_store_file: Path | None = None) -> str:
     """Fail-closed: TODOS los `document_ids` deben estar cubiertos por la
     MISMA decisión `CORPUS_AUTHORIZATION` vigente (mismo criterio que
     `corpus_authorization._d4_covering_instance`, aplicado aquí a la
-    familia de autorización de corpus, no a la de presupuesto)."""
+    familia de autorización de corpus, no a la de presupuesto). Devuelve el
+    `decision_instance_id` único (Bloque 3: se persiste en el manifest para
+    que la corrida quede trazable a la autorización real que la cubrió)."""
     instances = set()
     for doc_id in document_ids:
         scope = resolver.resolve(ca.DECISION_FAMILY, doc_id, store_file=decision_store_file)
@@ -516,6 +528,7 @@ def _check_corpus_authorization(document_ids: list[str], *,
         raise CorpusRunNotAuthorizedError(
             f"los documentos del lote no comparten una única CORPUS_AUTHORIZATION "
             f"({instances!r}) -- nunca se ejecuta un lote con cobertura mixta o parcial")
+    return next(iter(instances))
 
 
 class EmbedBudgetInsufficientError(Exception):
@@ -741,7 +754,8 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
     validate_production_run_config(run_context=run_context, retrieval_mode=retrieval_mode)
 
     document_ids = sorted({u.document_id for u in units})
-    _check_corpus_authorization(document_ids, decision_store_file=decision_store_file)
+    corpus_authorization_id = _check_corpus_authorization(
+        document_ids, decision_store_file=decision_store_file)
 
     status = mqg.evaluate_model_qualification(provider).status
     mqg.require_inference_authorized(
@@ -751,7 +765,22 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
     hard_stop_calls = d4a["hard_stop_calls"]
     hard_stop_wall_seconds = d4a["hard_stop_wall_time_hours"] * 3600
 
-    summary = CorpusRunSummary(retrieval_mode=retrieval_mode)
+    # Bloque 3: configuración efectiva registrada ANTES de la primera
+    # llamada real -- lo que Fase 5 no dejó verificable. evaluation_profile
+    # es una consecuencia de retrieval_mode (ver docstring arriba), nunca un
+    # parámetro independiente de esta función.
+    summary = CorpusRunSummary(
+        retrieval_mode=retrieval_mode,
+        evaluation_profile="H2H4" if retrieval_mode == "top_k_fusion" else "BASELINE",
+        run_context=run_context,
+        corpus_authorization_id=corpus_authorization_id,
+        model_qualification_status=status,
+        requirement_scope={
+            f"{u.document_id}::{u.agent_id}": _admitted_requirement_ids(u.prompt_path)
+            for u in units
+        },
+        truncation_retry_multiplier=getattr(ce, "TRUNCATION_RETRY_MULTIPLIER", None),
+    )
 
     if retrieval_mode == "top_k_fusion":
         # Preflight del presupuesto de EMBED_EXECUTION -- familia de
@@ -886,6 +915,20 @@ def _persist_manifest(summary: CorpusRunSummary, manifest_dir: Path) -> str:
         "total_calls_made": summary.total_calls_made,
         "total_wall_seconds": round(summary.total_wall_seconds, 1),
         "retrieval_mode": summary.retrieval_mode,
+        # Bloque 3 (2026-08-21): configuración efectiva de esta corrida,
+        # registrada ANTES de la primera llamada real -- None para
+        # run_pilot_sample_batch (familia de gobernanza distinta, ya
+        # trazada por selected_pilot_instance_id/pilot_selection_rule más
+        # abajo). Motivado por fase5_produccion_real_fixture7p2n_20260820,
+        # cuyo manifest no dejaba verificable con qué evaluation_profile
+        # real había corrido.
+        "engine": "CURRENT",
+        "evaluation_profile": summary.evaluation_profile,
+        "run_context": summary.run_context,
+        "corpus_authorization_id": summary.corpus_authorization_id,
+        "model_qualification_status": summary.model_qualification_status,
+        "requirement_scope": summary.requirement_scope,
+        "truncation_retry_multiplier": summary.truncation_retry_multiplier,
         "units": [vars(u) for u in summary.units],
     }
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -911,4 +954,5 @@ def _write_batch_event(summary: CorpusRunSummary, document_ids: list[str], *,
         "pilot_selection_rule": summary.pilot_selection_rule,
         "evaluation_profile": summary.evaluation_profile,
         "retrieval_mode": summary.retrieval_mode,
+        "corpus_authorization_id": summary.corpus_authorization_id,
     })

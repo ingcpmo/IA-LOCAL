@@ -12,6 +12,7 @@ recall gastando presupuesto de nuevo."""
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -268,3 +269,104 @@ def test_fingerprint_default_retrieval_mode_is_full_chunk_backward_compatible():
         meta, model_digest="d", document_sha256="s" * 64, agent_version="v1",
         use_verified_pipeline=True)
     assert fp["retrieval_mode"] == "full_chunk"
+
+
+# ---------------------------------------------------------------------------
+# Bloque 3 (docs_plan/DISENO_UNIFICACION_RUNNER_FORMAL.md): configuracion
+# efectiva registrada en CorpusRunSummary/manifest ANTES de la primera
+# llamada real -- lo que fase5_produccion_real_fixture7p2n_20260820 no dejo
+# verificable.
+# ---------------------------------------------------------------------------
+
+def test_manifest_registra_configuracion_efectiva_bloque3(monkeypatch, tmp_path):
+    """Cubre las dos ramas reales de evaluation_profile (BASELINE via
+    full_chunk, H2H4 via top_k_fusion) y confirma que summary Y el
+    manifest.json persistido coinciden campo a campo -- nunca solo uno de
+    los dos."""
+    monkeypatch.setattr(mqg, "evaluate_model_qualification",
+                        lambda *a, **k: type("R", (), {"status": mqg.STATUS_QUALIFIED})())
+
+    # --- rama full_chunk (BASELINE) ---
+    monkeypatch.setattr(runner, "_default_extractor", lambda path: ["Texto corto." * 20])
+    monkeypatch.setattr(runner.ce, "evaluate_chunked", lambda *a, **kw: {
+        "run_id": "run-full", "chunk_executions": [{"chunk_index": 0}],
+        "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": []},
+        "technical_execution_failures": [],
+    })
+
+    summary_full = _run([_unit()], tmp_path, run_context="validation")
+
+    assert summary_full.evaluation_profile == "BASELINE"
+    assert summary_full.retrieval_mode == "full_chunk"
+    assert summary_full.run_context == "validation"
+    assert summary_full.corpus_authorization_id == "INST-1"  # _AuthorizedScope de este archivo
+    assert summary_full.model_qualification_status == mqg.STATUS_QUALIFIED
+    assert summary_full.requirement_scope == {
+        "DOC-1::fda_part11_agent": runner._admitted_requirement_ids(
+            runner._PROMPT_PATH_BY_AGENT["fda_part11_agent"])
+    }
+    assert summary_full.truncation_retry_multiplier == ce.TRUNCATION_RETRY_MULTIPLIER
+
+    manifest_full = json.loads(Path(summary_full.manifest_path).read_text())
+    assert manifest_full["engine"] == "CURRENT"
+    assert manifest_full["evaluation_profile"] == "BASELINE"
+    assert manifest_full["retrieval_mode"] == "full_chunk"
+    assert manifest_full["run_context"] == "validation"
+    assert manifest_full["corpus_authorization_id"] == "INST-1"
+    assert manifest_full["model_qualification_status"] == mqg.STATUS_QUALIFIED
+    assert manifest_full["requirement_scope"] == summary_full.requirement_scope
+    assert manifest_full["truncation_retry_multiplier"] == ce.TRUNCATION_RETRY_MULTIPLIER
+
+    # --- rama top_k_fusion (H2H4) -- run_context='production' a proposito:
+    # es la UNICA combinacion que el guard del Bloque 2 admite en produccion,
+    # y es la que realmente importa demostrar (evaluation_profile='H2H4'
+    # persistido para la corrida formal real, no solo para diagnostico).
+    monkeypatch.setattr(runner, "_preflight_embed_budget", lambda *a, **k: {
+        "needed": 1, "max_calls": 60, "remaining": 50, "fits": True,
+        "selected_embed_instance_id": "EMBED_EXECUTION-2026-002",
+        "per_document_pending_chunks": {}, "unique_query_pairs": 1,
+    })
+    monkeypatch.setattr(runner, "_expected_calls_top_k_fusion", lambda unit, **k: 1)
+
+    from factory.regulatory.retrieval import indexer as _indexer, embed_runner as _embed_runner
+    monkeypatch.setattr(_indexer, "build_index", lambda path, **k: {"document_sha256": "sha-x"})
+
+    class _EmbedSummary:
+        total_calls_made = 0
+        stop_reason = "BATCH_COMPLETE"
+
+    monkeypatch.setattr(_embed_runner, "run_embed_batch", lambda *a, **k: _EmbedSummary())
+    monkeypatch.setattr(runner.ce, "load_prompt_meta", lambda p: {"checkpoints": [
+        {"req_id": "21_CFR_11.10(a)", "label": "a"}]})
+    monkeypatch.setattr(runner.ce, "evidence_pack_gate", lambda meta: (meta["checkpoints"], []))
+
+    from factory.regulatory.retrieval import judgment_candidate_pool as _jcp
+    monkeypatch.setattr(_jcp, "build_fusion_candidate_pool", lambda doc_id, sha, req_id, **k: [
+        {"chunk_index": 0, "page_start": 46, "page_end": 46, "text": "evidencia a"}])
+
+    monkeypatch.setattr(runner.ce, "evaluate_chunked", lambda *a, **kw: {
+        "run_id": "run-topk", "chunk_executions": [{"chunk_index": 0}],
+        "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": []},
+        "technical_execution_failures": [],
+    })
+
+    summary_topk = _run([_unit(document_id="DOC-2")], tmp_path,
+                        run_context="production", retrieval_mode="top_k_fusion")
+
+    assert summary_topk.evaluation_profile == "H2H4"
+    assert summary_topk.retrieval_mode == "top_k_fusion"
+    assert summary_topk.run_context == "production"
+    assert summary_topk.corpus_authorization_id == "INST-1"
+    assert summary_topk.model_qualification_status == mqg.STATUS_QUALIFIED
+    assert summary_topk.requirement_scope == {"DOC-2::fda_part11_agent": ["21_CFR_11.10(a)"]}
+    assert summary_topk.truncation_retry_multiplier == ce.TRUNCATION_RETRY_MULTIPLIER
+
+    manifest_topk = json.loads(Path(summary_topk.manifest_path).read_text())
+    assert manifest_topk["engine"] == "CURRENT"
+    assert manifest_topk["evaluation_profile"] == "H2H4"
+    assert manifest_topk["retrieval_mode"] == "top_k_fusion"
+    assert manifest_topk["run_context"] == "production"
+    assert manifest_topk["corpus_authorization_id"] == "INST-1"
+    assert manifest_topk["model_qualification_status"] == mqg.STATUS_QUALIFIED
+    assert manifest_topk["requirement_scope"] == summary_topk.requirement_scope
+    assert manifest_topk["truncation_retry_multiplier"] == ce.TRUNCATION_RETRY_MULTIPLIER
