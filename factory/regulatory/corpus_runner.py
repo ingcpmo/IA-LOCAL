@@ -103,6 +103,16 @@ class CorpusDocumentDriftError(Exception):
     archivo que no es demostrablemente el mismo que se autorizó."""
 
 
+def _h2h4_target_requirement_ids(evaluation_profile: str, requirement_id: str) -> "list[str] | None":
+    """Superficie compartida (Bloque 1) entre `run_pilot_sample_batch`
+    (BASELINE o H2H4, según se pida) y `_run_unit_top_k_fusion` (siempre
+    H2H4, es su único modo) para construir el filtro real de checkpoints
+    que `evaluate_chunked(target_requirement_ids=...)` consume. BASELINE
+    -> None (sin filtro, comportamiento sin cambio para todo llamador
+    existente)."""
+    return [requirement_id] if evaluation_profile == "H2H4" else None
+
+
 @dataclass
 class CorpusRunUnit:
     document_id: str
@@ -402,7 +412,7 @@ def run_pilot_sample_batch(units: list[PilotSampleUnit], *,
                 use_verified_pipeline=True, document_type=unit.document_type,
                 retry_technical_failures=True, provider=provider,
                 evaluation_profile=evaluation_profile,
-                target_requirement_ids=[unit.requirement_id] if evaluation_profile == "H2H4" else None,
+                target_requirement_ids=_h2h4_target_requirement_ids(evaluation_profile, unit.requirement_id),
                 # Fix runner exact-page (Fase M1, 2026-08-17): unit.page_indices
                 # es 0-based (docstring de PilotSampleUnit); +1 da la pagina real
                 # 1-indexada que build_page_chunks()/evidence_page deben grabar
@@ -614,7 +624,8 @@ def _run_unit_top_k_fusion(unit: "CorpusRunUnit", *, checkpoint_store, provider:
             use_verified_pipeline=True, document_type=unit.document_type,
             retry_technical_failures=True, provider=provider,
             full_document_coverage=False, evaluation_profile="H2H4",
-            target_requirement_ids=[req_id], candidate_metadata=pool,
+            target_requirement_ids=_h2h4_target_requirement_ids("H2H4", req_id),
+            candidate_metadata=pool,
             page_numbers=[c["page_start"] for c in pool],
             retrieval_mode="top_k_fusion",
         )
