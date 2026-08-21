@@ -92,9 +92,16 @@ def _isolate_and_authorize(monkeypatch, tmp_path):
 
 
 def _run(units, provider=None, tmp_path=None, **kw):
+    """Default run_context='validation' (Bloque 2,
+    docs_plan/DISENO_UNIFICACION_RUNNER_FORMAL.md): estos tests ejercitan
+    la MECANICA del runner (resume, hard stops, manifest) con
+    retrieval_mode='full_chunk' -- nunca declaran una corrida formal, asi
+    que nunca deben chocar con validate_production_run_config(). El guard
+    en si mismo tiene su propia clase de tests mas abajo
+    (TestProductionRunConfigGuard)."""
     ckpt = tmp_path / "ckpt" if tmp_path else None
     manifest = tmp_path / "manifest" if tmp_path else None
-    kwargs = {}
+    kwargs = {"run_context": "validation"}
     if ckpt is not None:
         kwargs["checkpoint_dir"] = ckpt
         kwargs["manifest_dir"] = manifest
@@ -103,16 +110,24 @@ def _run(units, provider=None, tmp_path=None, **kw):
 
 
 def test_sin_unidades_no_hace_nada():
-    summary = runner.run_corpus_batch([], provider=FakeCorpusProvider())
+    summary = runner.run_corpus_batch([], provider=FakeCorpusProvider(), run_context="validation")
     assert summary.stop_reason == "NO_UNITS"
     assert summary.units == []
+
+
+def test_sin_unidades_no_hace_nada_ni_siquiera_valida_config_de_produccion():
+    """NO_UNITS es un no-op legitimo -- no debe fallar por el guard del
+    Bloque 2 aunque venga con run_context='production' por default,
+    porque no hay ninguna llamada real que arriesgar."""
+    summary = runner.run_corpus_batch([], provider=FakeCorpusProvider())
+    assert summary.stop_reason == "NO_UNITS"
 
 
 def test_bloqueado_sin_corpus_authorization(monkeypatch):
     monkeypatch.setattr(resolver, "resolve",
                         lambda *a, **k: _AuthorizedScope(authorized=False, denial_reason="no firmada"))
     with pytest.raises(runner.CorpusRunNotAuthorizedError):
-        runner.run_corpus_batch([_unit()], provider=FakeCorpusProvider())
+        runner.run_corpus_batch([_unit()], provider=FakeCorpusProvider(), run_context="validation")
 
 
 def test_bloqueado_si_cobertura_esta_dividida_entre_dos_decisiones(monkeypatch):
@@ -129,7 +144,7 @@ def test_bloqueado_si_cobertura_esta_dividida_entre_dos_decisiones(monkeypatch):
     with pytest.raises(runner.CorpusRunNotAuthorizedError):
         runner.run_corpus_batch(
             [_unit(document_id="DOC-1"), _unit(document_id="DOC-2")],
-            provider=FakeCorpusProvider())
+            provider=FakeCorpusProvider(), run_context="validation")
 
 
 def test_bloqueado_si_modelo_no_qualified(monkeypatch):
@@ -138,8 +153,60 @@ def test_bloqueado_si_modelo_no_qualified(monkeypatch):
                             mqg.InferenceNotAuthorizedError("no qualified")))
     provider = FakeCorpusProvider()
     with pytest.raises(mqg.InferenceNotAuthorizedError):
-        runner.run_corpus_batch([_unit()], provider=provider)
+        runner.run_corpus_batch([_unit()], provider=provider, run_context="validation")
     assert provider.generate_calls == 0, "ninguna llamada real si la autorizacion de inferencia fallo"
+
+
+class TestProductionRunConfigGuard:
+    """Bloque 2: reproduce EXACTAMENTE la desviacion real de
+    fase5_produccion_real_fixture7p2n_20260820 (run_context de produccion +
+    retrieval_mode='full_chunk') y confirma que ahora se bloquea ANTES de
+    cualquier llamada real -- y que la configuracion correcta (H2H4 vimplicito
+    via top_k_fusion) no se bloquea."""
+
+    def test_produccion_con_full_chunk_se_bloquea_como_en_fase5(self):
+        """Mismo caso real que broke silenciosamente el 2026-08-20: sin
+        pasar run_context (default='production') ni retrieval_mode (default
+        ='full_chunk'), exactamente como fase5_produccion_real_fixture7p2n.py
+        invoco run_corpus_batch()."""
+        provider = FakeCorpusProvider()
+        with pytest.raises(runner.ProductionRunConfigError) as exc:
+            runner.run_corpus_batch([_unit()], provider=provider)
+        assert provider.generate_calls == 0, "cero llamadas reales -- el guard corre primero"
+        message = str(exc.value)
+        assert "full_chunk" in message and "top_k_fusion" in message
+
+    def test_produccion_con_full_chunk_explicito_tambien_se_bloquea(self):
+        provider = FakeCorpusProvider()
+        with pytest.raises(runner.ProductionRunConfigError):
+            runner.run_corpus_batch([_unit()], provider=provider,
+                                    run_context="production", retrieval_mode="full_chunk")
+        assert provider.generate_calls == 0
+
+    def test_validation_con_full_chunk_no_se_bloquea(self):
+        """run_context='validation' sigue libre de elegir su config, como
+        hasta ahora -- el guard es especifico de 'production'."""
+        summary = runner.run_corpus_batch([_unit()], provider=FakeCorpusProvider(),
+                                          run_context="validation", retrieval_mode="full_chunk")
+        assert summary.stop_reason == "CORPUS_COMPLETE"
+
+    def test_pilot_run_context_nunca_pasa_por_este_guard(self):
+        """run_pilot_sample_batch no llama a validate_production_run_config
+        -- es una familia de gobernanza distinta (PILOT_EXECUTION, no
+        CORPUS_AUTHORIZATION/D4-A). Confirmado por inspeccion: el guard vive
+        solo en run_corpus_batch."""
+        import inspect
+        source = inspect.getsource(runner.run_pilot_sample_batch)
+        assert "validate_production_run_config" not in source
+
+    def test_validate_production_run_config_es_funcion_publica_reutilizable(self):
+        """Expuesta a nivel de modulo (no _prefijada) para que un futuro
+        llamador -- o un test dedicado -- pueda invocarla directamente sin
+        pasar por toda la mecanica de run_corpus_batch."""
+        runner.validate_production_run_config(run_context="validation", retrieval_mode="full_chunk")
+        runner.validate_production_run_config(run_context="production", retrieval_mode="top_k_fusion")
+        with pytest.raises(runner.ProductionRunConfigError):
+            runner.validate_production_run_config(run_context="production", retrieval_mode="full_chunk")
 
 
 def test_hard_stop_detiene_antes_de_una_unidad_que_no_cabe(monkeypatch, tmp_path):
@@ -202,7 +269,7 @@ def test_resume_reintenta_solo_el_chunk_que_fallo_tecnicamente(monkeypatch, tmp_
     ckpt = tmp_path / "ckpt"
     unit = _unit(expected_calls=2)
 
-    first = runner.run_corpus_batch([unit], provider=provider,
+    first = runner.run_corpus_batch([unit], provider=provider, run_context="validation",
                                     checkpoint_dir=ckpt, manifest_dir=tmp_path / "m1")
     assert first.units[0].status == "COMPLETED"
     assert first.units[0].technical_execution_failures == 1
@@ -210,7 +277,7 @@ def test_resume_reintenta_solo_el_chunk_que_fallo_tecnicamente(monkeypatch, tmp_
     calls_after_first = provider.generate_calls
     assert calls_after_first == 2
 
-    second = runner.run_corpus_batch([unit], provider=provider,
+    second = runner.run_corpus_batch([unit], provider=provider, run_context="validation",
                                      checkpoint_dir=ckpt, manifest_dir=tmp_path / "m2")
     assert second.units[0].status == "COMPLETED"
     assert second.units[0].calls_made_this_invocation == 1, "solo se reintenta el chunk fallido"

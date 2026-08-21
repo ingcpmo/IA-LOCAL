@@ -93,7 +93,7 @@ def test_retrieval_mode_default_is_full_chunk_and_unchanged(monkeypatch, tmp_pat
                         lambda *a, **k: type("R", (), {"status": mqg.STATUS_QUALIFIED})())
     monkeypatch.setattr(runner.ce, "evaluate_chunked", _fake_evaluate_chunked)
 
-    summary = _run([_unit()], tmp_path)
+    summary = _run([_unit()], tmp_path, run_context="validation")
     assert summary.retrieval_mode == "full_chunk"
     assert summary.stop_reason == "CORPUS_COMPLETE"
     assert "retrieval_mode" not in captured  # el llamador de siempre no lo pasa

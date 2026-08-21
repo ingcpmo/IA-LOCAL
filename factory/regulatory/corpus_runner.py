@@ -103,6 +103,40 @@ class CorpusDocumentDriftError(Exception):
     archivo que no es demostrablemente el mismo que se autorizó."""
 
 
+class ProductionRunConfigError(Exception):
+    """Fail-closed de configuración (Bloque 2,
+    docs_plan/DISENO_UNIFICACION_RUNNER_FORMAL.md): una corrida con
+    `run_context='production'` -- la única etiqueta que
+    `run_corpus_batch()` usa para sus llamadas reales -- exige
+    `retrieval_mode='top_k_fusion'` (que a su vez implica
+    `evaluation_profile='H2H4'` internamente, ver `_run_unit_top_k_fusion`).
+
+    Motivada por la corrida real `fase5_produccion_real_fixture7p2n_
+    20260820`: se lanzó con `run_context` de producción y
+    `retrieval_mode='full_chunk'` (BASELINE) sin que nada lo impidiera --
+    158 llamadas reales gastadas sin ejercer la arquitectura CURRENT
+    (M3/AD-1/AD-2) que la calificación pedía. `run_context='validation'`/
+    `'pilot'` no llevan esta exigencia -- son para mecánica de motor y
+    diagnóstico, nunca para una corrida que se declare formal."""
+
+
+def validate_production_run_config(*, run_context: str, retrieval_mode: str) -> None:
+    """Bloque 2: se llama ANTES de cualquier llamada LLM real (antes
+    incluso de `_check_corpus_authorization`, para fallar lo más barato
+    posible). Nunca bloquea `run_context` distinto de `'production'` --
+    ver docstring de `ProductionRunConfigError`."""
+    if run_context != "production":
+        return
+    if retrieval_mode != "top_k_fusion":
+        raise ProductionRunConfigError(
+            f"run_context='production' con retrieval_mode={retrieval_mode!r} -- una corrida "
+            "formal exige retrieval_mode='top_k_fusion' (arquitectura CURRENT, M3/AD-1/AD-2; "
+            "implica evaluation_profile='H2H4' internamente). Si esto es un diagnóstico o una "
+            "prueba de mecánica del runner, no una calificación formal, use "
+            "run_context='validation' explícitamente -- nunca confíe en el default."
+        )
+
+
 def _h2h4_target_requirement_ids(evaluation_profile: str, requirement_id: str) -> "list[str] | None":
     """Superficie compartida (Bloque 1) entre `run_pilot_sample_batch`
     (BASELINE o H2H4, según se pida) y `_run_unit_top_k_fusion` (siempre
@@ -576,6 +610,7 @@ def _expected_calls_top_k_fusion(unit: "CorpusRunUnit", *, k: int = 5) -> int:
 
 def _run_unit_top_k_fusion(unit: "CorpusRunUnit", *, checkpoint_store, provider: ModelProvider,
                            calls_already_used_for_embed: int, decision_store_file: Path | None,
+                           run_context: str = "production",
                            k: int = 5) -> tuple["UnitOutcome", int]:
     """Ejecuta UNA unidad en modo 'top_k_fusion': 1 llamada a
     `evaluate_chunked` POR requirement_id admitido, cada una alimentada
@@ -620,7 +655,7 @@ def _run_unit_top_k_fusion(unit: "CorpusRunUnit", *, checkpoint_store, provider:
             sistema="corpus_run", documento=unit.document_id,
             version="v1", archivo=str(unit.document_path),
             document_sha256=unit.document_sha256,
-            run_context="production", checkpoint_store=checkpoint_store,
+            run_context=run_context, checkpoint_store=checkpoint_store,
             use_verified_pipeline=True, document_type=unit.document_type,
             retry_technical_failures=True, provider=provider,
             full_document_coverage=False, evaluation_profile="H2H4",
@@ -654,6 +689,7 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
                      decision_store_file: Path | None = None,
                      persist_manifest: bool = True,
                      retrieval_mode: str = "full_chunk",
+                     run_context: str = "production",
                      calls_already_used_for_embed: int = 0) -> CorpusRunSummary:
     """Ejecuta unidades (documento, agente) en orden hasta agotar el
     corpus o un hard stop de D4-A. Nunca arranca una unidad cuyo costo
@@ -670,7 +706,26 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
     build_fusion_candidate_pool()`, ya medido 7/7 en V1) en vez del
     documento entero -- ver `docs_plan/GMP_AI_FACTORY_ARQUITECTURA_
     OBJETIVO.md` Fase M3. Requiere selección EXPLÍCITA, mismo patrón que
-    `evaluation_profile`: nunca se activa por defecto.
+    `evaluation_profile`: nunca se activa por defecto. `evaluation_profile`
+    NO es un parámetro propio de esta función -- va implícito en
+    `retrieval_mode`: 'top_k_fusion' usa H2H4 internamente (una llamada por
+    requirement_id, `_run_unit_top_k_fusion`), 'full_chunk' usa BASELINE
+    (barrido completo del documento, todos los requisitos del agente en la
+    misma llamada). Los dos nunca se combinan hoy en este runner.
+
+    run_context (Bloque 2, docs_plan/DISENO_UNIFICACION_RUNNER_FORMAL.md,
+    2026-08-21, default 'production' -- MISMO comportamiento que antes de
+    este parámetro, cuando estaba hardcodeado): con 'production',
+    `validate_production_run_config()` exige `retrieval_mode='top_k_fusion'`
+    ANTES de la primera llamada real -- motivado por
+    `fase5_produccion_real_fixture7p2n_20260820`, que corrió con
+    'full_chunk' bajo esta misma etiqueta de producción sin que nada lo
+    impidiera. Pasar 'validation' (mismo significado que en
+    `chunked_engine.evaluate_chunked`: relaja la guardia de matriz de
+    aplicabilidad aprobada, ver `_require_matrix_approved`) es la vía
+    explícita para ejercitar la mecánica del runner (resume, hard stops,
+    'full_chunk') sin declarar una corrida formal -- nunca 'production' por
+    default silencioso disfrazado de otra cosa.
 
     calls_already_used_for_embed: reconciliación manual del consumo YA
     hecho contra la EMBED_EXECUTION vigente antes de esta invocación --
@@ -683,12 +738,14 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
     if not units:
         return CorpusRunSummary(stop_reason="NO_UNITS")
 
+    validate_production_run_config(run_context=run_context, retrieval_mode=retrieval_mode)
+
     document_ids = sorted({u.document_id for u in units})
     _check_corpus_authorization(document_ids, decision_store_file=decision_store_file)
 
     status = mqg.evaluate_model_qualification(provider).status
     mqg.require_inference_authorized(
-        status, call_type=mqg.CALL_TYPE_INFERENCE, run_context="production")
+        status, call_type=mqg.CALL_TYPE_INFERENCE, run_context=run_context)
 
     d4a = compute_d4a(documents=tuple(d for d in CORPUS_PLAN_DOCUMENTS if d[0] in document_ids))
     hard_stop_calls = d4a["hard_stop_calls"]
@@ -715,7 +772,7 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
             summary.stop_reason = "HARD_STOP_EMBED_CALLS"
             if persist_manifest:
                 summary.manifest_path = _persist_manifest(summary, manifest_dir)
-            _write_batch_event(summary, document_ids)
+            _write_batch_event(summary, document_ids, run_context=run_context)
             return summary
 
     checkpoint_store = ce.CheckpointStore(checkpoint_dir)
@@ -744,7 +801,7 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
                 outcome, calls_already_used_for_embed = _run_unit_top_k_fusion(
                     unit, checkpoint_store=checkpoint_store, provider=provider,
                     calls_already_used_for_embed=calls_already_used_for_embed,
-                    decision_store_file=decision_store_file)
+                    decision_store_file=decision_store_file, run_context=run_context)
             except Exception as e:  # noqa: BLE001 -- nunca se traga: se registra y se relanza
                 outcome = UnitOutcome(
                     document_id=unit.document_id, agent_id=unit.agent_id, status="FAILED",
@@ -753,7 +810,7 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
                 summary.stop_reason = "TECHNICAL_FAILURE"
                 if persist_manifest:
                     summary.manifest_path = _persist_manifest(summary, manifest_dir)
-                _write_batch_event(summary, document_ids)
+                _write_batch_event(summary, document_ids, run_context=run_context)
                 raise
             summary.units.append(outcome)
             summary.total_calls_made += outcome.calls_made_this_invocation
@@ -772,7 +829,7 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
                 sistema="corpus_run", documento=unit.document_id,
                 version="v1", archivo=str(unit.document_path),
                 document_sha256=unit.document_sha256,
-                run_context="production", checkpoint_store=checkpoint_store,
+                run_context=run_context, checkpoint_store=checkpoint_store,
                 use_verified_pipeline=True, document_type=unit.document_type,
                 retry_technical_failures=True, provider=provider,
             )
@@ -786,7 +843,7 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
             summary.stop_reason = "TECHNICAL_FAILURE"
             if persist_manifest:
                 summary.manifest_path = _persist_manifest(summary, manifest_dir)
-            _write_batch_event(summary, document_ids)
+            _write_batch_event(summary, document_ids, run_context=run_context)
             raise
 
         wall = time.monotonic() - t0
