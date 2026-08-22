@@ -1415,6 +1415,19 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             preflight_metadata["retried_chunk_indices"].append(previous["chunk_index"])
     pending.extend((chunk, None) for chunk in chunks[start_index:])
 
+    # Bloque de verificacion 0-LLM (Cesar, 2026-08-22, previo a firmar
+    # JUDGMENT_EXECUTION-2026-003): contador de llamadas FISICAS reales a
+    # provider.generate() en ESTA invocacion -- corpus_runner._run_unit_
+    # top_k_fusion() sumaba antes len(chunk_executions), que cuenta CHUNKS
+    # procesados, no llamadas fisicas; un chunk con reintento inline de
+    # truncamiento hace 2 llamadas reales pero contaba como 1. Confirmado
+    # por test_judgment_execution_physical_accounting.py (provider.calls=4,
+    # calls_made_this_invocation reportaba 2 o 3 antes de este fix). Este
+    # contador se incrementa exactamente en los dos puntos del codigo que
+    # llaman a provider.generate() -- base y reintento inline -- y por
+    # tanto es correcto por construccion, no por inferencia de estructura.
+    physical_provider_calls_this_invocation = 0
+
     for chunk, replace_at in pending:
         task_id = f"task-{uuid.uuid4().hex[:12]}"
         text = sanitize_document(chunk["text"])
@@ -1468,6 +1481,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
             try:
                 raw = (provider.generate(prompt, num_predict=num_predict)
                        if honors_budget else provider.generate(prompt))
+                physical_provider_calls_this_invocation += 1
                 chunk_result, failure_reason, raw_response_text = classify_model_response(raw)
 
                 # Reintento con presupuesto escalado (2026-08-21, motivado por
@@ -1524,6 +1538,7 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                             "raw_response_full_sha256": first_attempt_raw_ref["sha256"] if first_attempt_raw_ref else None,
                         }
                         raw = provider.generate(prompt, num_predict=escalated_predict)
+                        physical_provider_calls_this_invocation += 1
                         chunk_result, failure_reason, raw_response_text = classify_model_response(raw)
                         num_predict_used = escalated_predict
                         truncation_retry_used = True
@@ -1834,6 +1849,10 @@ def evaluate_chunked(prompt_path: Path, agent_id: str, agent_version: str,
                 # suposicion sobre quien lo escribio.
                 "verified_records_by_req": verified_records_by_req,
             })
+
+    preflight_metadata["physical_provider_calls_this_invocation"] = (
+        physical_provider_calls_this_invocation
+    )
 
     any_unresolved_technical_failure = any(
         ce.get("technical_execution_failure") for ce in chunk_executions

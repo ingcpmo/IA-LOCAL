@@ -98,7 +98,8 @@ def test_retrieval_mode_default_is_full_chunk_and_unchanged(monkeypatch, tmp_pat
         captured.update(kw)
         return {
             "run_id": "run-1", "chunk_executions": [{"chunk_index": 0}],
-            "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": []},
+            "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": [],
+                                 "physical_provider_calls_this_invocation": 1},
             "technical_execution_failures": [],
         }
 
@@ -211,7 +212,8 @@ def test_top_k_fusion_calls_evaluate_chunked_once_per_admitted_requirement(monke
         captured_calls.append(kw)
         return {
             "run_id": f"run-{len(captured_calls)}", "chunk_executions": [{"chunk_index": 0}],
-            "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": []},
+            "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": [],
+                                 "physical_provider_calls_this_invocation": 1},
             "technical_execution_failures": [],
         }
 
@@ -310,13 +312,15 @@ def test_technical_failure_retried_immediately_within_the_same_requirement(monke
         if calls["n"] == 1:
             return {
                 "run_id": "run-real-failure", "chunk_executions": [{"chunk_index": 0}],
-                "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": []},
+                "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": [],
+                                 "physical_provider_calls_this_invocation": 1},
                 "technical_execution_failures": [
                     {"chunk_index": 0, "task_id": "task-23358ad39227", "error": real_raw[:80]}],
             }
         return {
             "run_id": "run-real-failure", "chunk_executions": [{"chunk_index": 0}],
-            "preflight_metadata": {"resumed_chunk_count": 1, "retried_chunk_indices": [0]},
+            "preflight_metadata": {"resumed_chunk_count": 1, "retried_chunk_indices": [0],
+                                   "physical_provider_calls_this_invocation": 1},
             "technical_execution_failures": [],
         }
 
@@ -376,6 +380,7 @@ def test_technical_failure_stays_rejected_if_the_retry_also_fails(monkeypatch, t
             "preflight_metadata": {
                 "resumed_chunk_count": 0 if calls["n"] == 1 else 1,
                 "retried_chunk_indices": [] if calls["n"] == 1 else [0],
+                "physical_provider_calls_this_invocation": 1,
             },
             "technical_execution_failures": [{"chunk_index": 0, "task_id": "t", "error": "sigue fallando"}],
         }
@@ -592,7 +597,8 @@ def test_manifest_registra_configuracion_efectiva_bloque3(monkeypatch, tmp_path)
     monkeypatch.setattr(runner, "_default_extractor", lambda path: ["Texto corto." * 20])
     monkeypatch.setattr(runner.ce, "evaluate_chunked", lambda *a, **kw: {
         "run_id": "run-full", "chunk_executions": [{"chunk_index": 0}],
-        "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": []},
+        "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": [],
+                                 "physical_provider_calls_this_invocation": 1},
         "technical_execution_failures": [],
     })
 
@@ -648,7 +654,8 @@ def test_manifest_registra_configuracion_efectiva_bloque3(monkeypatch, tmp_path)
 
     monkeypatch.setattr(runner.ce, "evaluate_chunked", lambda *a, **kw: {
         "run_id": "run-topk", "chunk_executions": [{"chunk_index": 0}],
-        "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": []},
+        "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": [],
+                                 "physical_provider_calls_this_invocation": 1},
         "technical_execution_failures": [],
     })
 

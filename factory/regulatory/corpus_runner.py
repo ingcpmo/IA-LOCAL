@@ -742,7 +742,18 @@ def _run_unit_top_k_fusion(unit: "CorpusRunUnit", *, checkpoint_store, provider:
         preflight = result["preflight_metadata"]
         resumed_at_start = preflight.get("resumed_chunk_count", 0)
         retried = len(preflight.get("retried_chunk_indices") or [])
-        req_new_calls = (len(result["chunk_executions"]) - resumed_at_start) + retried
+        # Verificacion 0-LLM (Cesar, 2026-08-22, previo a firmar
+        # JUDGMENT_EXECUTION-2026-003): `len(chunk_executions) - resumed +
+        # retried` cuenta CHUNKS procesados, no llamadas FISICAS reales a
+        # provider.generate() -- un chunk con reintento inline de
+        # truncamiento (chunked_engine.py) hace 2 llamadas reales pero
+        # contaba 1, subestimando el costo real exactamente igual que el
+        # hueco que dejo pasar las 149 llamadas de Paso A sin control
+        # dedicado. `physical_provider_calls_this_invocation` lo cuenta
+        # correcto por construccion (incrementado en cada punto real de
+        # provider.generate() dentro de evaluate_chunked). Confirmado por
+        # test_judgment_execution_physical_accounting.py.
+        req_new_calls = preflight["physical_provider_calls_this_invocation"]
         req_resumed = resumed_at_start - retried
 
         # Bloque 1 (docs_plan/CIERRE_PENDIENTES_PASO_B_Y_GATE_PRODUCCION.md):
@@ -765,7 +776,7 @@ def _run_unit_top_k_fusion(unit: "CorpusRunUnit", *, checkpoint_store, provider:
             preflight = result["preflight_metadata"]
             resumed_at_start = preflight.get("resumed_chunk_count", 0)
             retried = len(preflight.get("retried_chunk_indices") or [])
-            req_new_calls += (len(result["chunk_executions"]) - resumed_at_start) + retried
+            req_new_calls += preflight["physical_provider_calls_this_invocation"]
             req_resumed += resumed_at_start - retried
 
         total_new_calls += req_new_calls
