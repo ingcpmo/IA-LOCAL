@@ -152,6 +152,35 @@ families:
     # EMBED_EXECUTION no autoriza, ni por accidente, ninguna llamada de
     # juicio.
 
+  JUDGMENT_EXECUTION:
+    label: "Techo real de llamadas de JUICIO (LLM, no embedding) para run_corpus_batch(retrieval_mode='top_k_fusion') -- nunca autoriza PILOT_EXECUTION, CORPUS_AUTHORIZATION, D4 ni EMBED_EXECUTION"
+    target_kind: run_scope
+    # Mismo patron que EMBED_EXECUTION/PILOT_EXECUTION: el objetivo es un
+    # plan de corrida acotado (documentos + unidades), no un id que viva en
+    # un registry.
+    target_registry: null
+    target_registry_id_path: null
+    selection_modes: [EXPLICIT_LIST]
+    consumers: [corpus_runner]
+    requires_human_confirmation: true
+    # docs_plan/PASOA_RESOLUCION_K_Y_HARDSTOP.md Bloque 2 (2026-08-22):
+    # Paso A (149 llamadas de juicio reales) corrio sin que ningun techo
+    # TECNICO real gobernara el conteo de llamadas de juicio bajo
+    # top_k_fusion -- D4-A (hard_stop_calls=205) es el unico control que
+    # de hecho corrio, pero mide el COSTO DE full_chunk (n_checkpoints x
+    # n_criterios del contrato completo), no el costo real de top_k_fusion
+    # (k chunks x requisito admitido). El numero que Cesar aprueba en chat
+    # (ej. "HARD_MAX_CALLS=104") nunca tuvo efecto de control real -- esta
+    # familia lo corrige: el techo real de juicio bajo top_k_fusion viene
+    # de una autorizacion firmada (payload.max_calls), resuelta por
+    # decision_scope_resolver igual que CORPUS_AUTHORIZATION/EMBED_EXECUTION,
+    # nunca de un literal en el codigo ni de una cifra de chat sin
+    # aplicacion tecnica. Familia NUEVA y separada (mismo criterio ya usado
+    # para separar EMBED_EXECUTION de PILOT_EXECUTION): un JUDGMENT_
+    # EXECUTION mide juicio LLM real, EMBED_EXECUTION mide vectores
+    # deterministas -- mezclarlos ocultaria cuanto presupuesto de cada uno
+    # queda disponible.
+
   D5:
     label: "Regeneracion de paquetes QA"
     target_kind: package_id

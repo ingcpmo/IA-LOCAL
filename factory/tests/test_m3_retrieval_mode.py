@@ -19,6 +19,11 @@ import pytest
 from factory.core import decision_scope_resolver as resolver
 from factory.engines.gmpai_integrity import chunked_engine as ce
 from factory.regulatory import corpus_runner as runner
+
+# Capturada ANTES de que cualquier fixture la mockee (ver _isolate mas abajo)
+# -- unica forma de restaurar la resolucion REAL de JUDGMENT_EXECUTION en el
+# test que necesita ejercitarla de verdad, sin duplicar su logica aqui.
+_REAL_SELECT_JUDGMENT_EXECUTION_INSTANCE = runner._select_judgment_execution_instance
 from factory.regulatory import model_qualification_gate as mqg
 from factory.regulatory.retrieval import embed_index, embed_runner, indexer, judgment_candidate_pool as jcp
 
@@ -65,6 +70,13 @@ def _isolate(monkeypatch, tmp_path):
     monkeypatch.setattr(runner, "_write_batch_event", lambda *a, **k: None)
     monkeypatch.setattr(runner, "compute_d4a", lambda **k: {
         "hard_stop_calls": 999, "hard_stop_wall_time_hours": 999.0,
+    })
+    # Bloque 2 (docs_plan/PASOA_RESOLUCION_K_Y_HARDSTOP.md): default
+    # generoso para no interferir con los tests que no ejercitan el techo
+    # de JUDGMENT_EXECUTION en si -- los que SI lo hacen sobreescriben esto
+    # localmente con su propio monkeypatch.
+    monkeypatch.setattr(runner, "_select_judgment_execution_instance", lambda *a, **k: {
+        "selected_instance_id": "JUDGMENT_EXECUTION-test-default", "payload": {"max_calls": 999},
     })
 
 
@@ -404,6 +416,139 @@ def test_top_k_fusion_hard_stops_if_chunk_embedding_batch_did_not_complete(monke
 
     with pytest.raises(runner.EmbedBudgetInsufficientError):
         _run([_unit()], tmp_path, retrieval_mode="top_k_fusion")
+
+
+# ---------------------------------------------------------------------------
+# Bloque 2 (docs_plan/PASOA_RESOLUCION_K_Y_HARDSTOP.md): techo REAL de
+# llamadas de JUICIO bajo top_k_fusion, resuelto contra JUDGMENT_EXECUTION
+# -- D4-A (hard_stop_calls) mide otra formula de costo y no debe ser el
+# unico control (ese fue exactamente el hueco que dejo pasar las 149
+# llamadas reales de Paso A).
+# ---------------------------------------------------------------------------
+
+def test_judgment_execution_gates_top_k_fusion_before_any_real_call(monkeypatch, tmp_path):
+    """Sin JUDGMENT_EXECUTION vigente que cubra el lote, top_k_fusion falla
+    cerrado ANTES de cualquier llamada real -- mismo principio que
+    EMBED_EXECUTION/CORPUS_AUTHORIZATION."""
+    monkeypatch.setattr(runner, "_select_judgment_execution_instance",
+                        _REAL_SELECT_JUDGMENT_EXECUTION_INSTANCE)  # restaura la resolucion real
+    monkeypatch.setattr(resolver, "resolve", lambda family, doc_id, **k: (
+        _AuthorizedScope() if family != "JUDGMENT_EXECUTION"
+        else _AuthorizedScope(authorized=False, denial_reason="sin JUDGMENT_EXECUTION firmada")
+    ))
+    monkeypatch.setattr(runner, "_preflight_embed_budget", lambda *a, **k: {
+        "needed": 1, "max_calls": 60, "remaining": 50, "fits": True,
+        "selected_embed_instance_id": "x", "per_document_pending_chunks": {}, "unique_query_pairs": 1,
+    })
+    calls = {"n": 0}
+    monkeypatch.setattr(runner, "_run_unit_top_k_fusion",
+                        lambda *a, **k: calls.__setitem__("n", calls["n"] + 1))
+
+    with pytest.raises(runner.JudgmentExecutionNotAuthorizedError):
+        _run([_unit()], tmp_path, retrieval_mode="top_k_fusion")
+    assert calls["n"] == 0, "cero llamadas reales -- el guard corre antes que cualquier unidad"
+
+
+def test_judgment_hard_stop_calls_stops_before_the_call_that_would_exceed_it(monkeypatch, tmp_path):
+    """Escenario sintetico donde el conteo real superaria el techo
+    aprobado: 2 unidades, la primera cabe exacto (5/5), la segunda (1 mas)
+    ya no -- el runner debe detenerse ANTES de arrancar la segunda unidad,
+    nunca a mitad ni despues."""
+    monkeypatch.setattr(runner, "_select_judgment_execution_instance", lambda *a, **k: {
+        "selected_instance_id": "JUDGMENT_EXECUTION-test-tight", "payload": {"max_calls": 5},
+    })
+    monkeypatch.setattr(runner, "_preflight_embed_budget", lambda *a, **k: {
+        "needed": 0, "max_calls": 60, "remaining": 60, "fits": True,
+        "selected_embed_instance_id": "x", "per_document_pending_chunks": {}, "unique_query_pairs": 0,
+    })
+    expected_by_doc = {"DOC-1": 5, "DOC-2": 1}
+    monkeypatch.setattr(runner, "_expected_calls_top_k_fusion",
+                        lambda unit, **k: expected_by_doc[unit.document_id])
+
+    started_units = []
+
+    def _fake_run_unit(unit, **kw):
+        started_units.append(unit.document_id)
+        outcome = runner.UnitOutcome(
+            document_id=unit.document_id, agent_id=unit.agent_id, status="COMPLETED",
+            calls_made_this_invocation=expected_by_doc[unit.document_id], run_ids=["run-x"])
+        return outcome, kw["calls_already_used_for_embed"]
+
+    monkeypatch.setattr(runner, "_run_unit_top_k_fusion", _fake_run_unit)
+
+    units = [_unit(document_id="DOC-1"), _unit(document_id="DOC-2")]
+    summary = _run(units, tmp_path, retrieval_mode="top_k_fusion")
+
+    assert started_units == ["DOC-1"], "DOC-2 nunca debe arrancar -- excederia el techo aprobado"
+    assert summary.stop_reason == "HARD_STOP_JUDGMENT_CALLS"
+    assert summary.total_calls_made == 5
+    assert summary.judgment_execution_id == "JUDGMENT_EXECUTION-test-tight"
+    assert summary.judgment_hard_stop_calls == 5
+    assert summary.units[-1].status == "NOT_STARTED_HARD_STOP"
+    assert summary.units[-1].document_id == "DOC-2"
+
+
+def test_d4a_never_stops_a_top_k_fusion_run_under_its_own_judgment_ceiling(monkeypatch, tmp_path):
+    """Bloque 2 (docs_plan/CIERRE_PENDIENTES_PASO_B_Y_GATE_PRODUCCION.md):
+    reproduce EXACTAMENTE el escenario real detectado -- 300 llamadas de
+    juicio necesarias bajo top_k_fusion, JUDGMENT_EXECUTION autorizada
+    para 300, D4-A (otra formula de costo) calculando solo 205 para el
+    mismo lote. El runner NO debe detenerse en 205 -- D4-A no gobierna
+    top_k_fusion."""
+    monkeypatch.setattr(runner, "_select_judgment_execution_instance", lambda *a, **k: {
+        "selected_instance_id": "JUDGMENT_EXECUTION-test-300", "payload": {"max_calls": 300},
+    })
+    monkeypatch.setattr(runner, "_preflight_embed_budget", lambda *a, **k: {
+        "needed": 0, "max_calls": 60, "remaining": 60, "fits": True,
+        "selected_embed_instance_id": "x", "per_document_pending_chunks": {}, "unique_query_pairs": 0,
+    })
+    # Mismo D4-A real que el escenario detectado: 205 para este lote,
+    # bajo la formula de full_chunk -- deliberadamente MENOR que las 300
+    # llamadas reales que top_k_fusion necesita.
+    monkeypatch.setattr(runner, "compute_d4a", lambda **k: {
+        "hard_stop_calls": 205, "hard_stop_wall_time_hours": 999.0,
+    })
+    expected_by_doc = {"DOC-1": 150, "DOC-2": 150}  # suma 300 > 205 (D4-A) pero <= 300 (judgment)
+    monkeypatch.setattr(runner, "_expected_calls_top_k_fusion",
+                        lambda unit, **k: expected_by_doc[unit.document_id])
+
+    started_units = []
+
+    def _fake_run_unit(unit, **kw):
+        started_units.append(unit.document_id)
+        outcome = runner.UnitOutcome(
+            document_id=unit.document_id, agent_id=unit.agent_id, status="COMPLETED",
+            calls_made_this_invocation=expected_by_doc[unit.document_id], run_ids=["run-x"])
+        return outcome, kw["calls_already_used_for_embed"]
+
+    monkeypatch.setattr(runner, "_run_unit_top_k_fusion", _fake_run_unit)
+
+    units = [_unit(document_id="DOC-1"), _unit(document_id="DOC-2")]
+    summary = _run(units, tmp_path, retrieval_mode="top_k_fusion")
+
+    assert started_units == ["DOC-1", "DOC-2"], "ambas unidades deben arrancar -- D4-A no debe cortar aqui"
+    assert summary.stop_reason == "CORPUS_COMPLETE"
+    assert summary.total_calls_made == 300
+    assert summary.total_calls_made > 205, "confirma que SI se supero el techo (equivocado) de D4-A sin detenerse"
+
+
+def test_d4a_still_governs_full_chunk_runs_unchanged(monkeypatch, tmp_path):
+    """2.4: D4-A no se retira, solo se acota -- una corrida full_chunk
+    sigue deteniendose en su techo real, sin cambio de comportamiento."""
+    monkeypatch.setattr(runner, "compute_d4a", lambda **k: {
+        "hard_stop_calls": 0, "hard_stop_wall_time_hours": 999.0,
+    })
+    monkeypatch.setattr(runner, "_default_extractor", lambda path: ["Texto corto." * 20])
+    monkeypatch.setattr(mqg, "evaluate_model_qualification",
+                        lambda *a, **k: type("R", (), {"status": mqg.STATUS_QUALIFIED})())
+    calls = {"n": 0}
+    monkeypatch.setattr(runner.ce, "evaluate_chunked", lambda *a, **kw: calls.__setitem__("n", calls["n"] + 1))
+
+    summary = _run([_unit(document_id="DOC-1"), _unit(document_id="DOC-2")], tmp_path,
+                   run_context="validation")  # retrieval_mode default = full_chunk
+
+    assert summary.stop_reason == "HARD_STOP_CALLS", "full_chunk sigue gobernado por D4-A, sin cambios"
+    assert calls["n"] == 0, "hard_stop_calls=0 debe bloquear incluso la primera unidad (expected_calls=1 > 0)"
 
 
 # ---------------------------------------------------------------------------

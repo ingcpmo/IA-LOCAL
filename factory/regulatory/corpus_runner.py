@@ -208,6 +208,13 @@ class CorpusRunSummary:
     model_qualification_status: str | None = None
     requirement_scope: dict = field(default_factory=dict)
     truncation_retry_multiplier: float | None = None
+    # Bloque 2 (2026-08-22, docs_plan/PASOA_RESOLUCION_K_Y_HARDSTOP.md):
+    # instancia JUDGMENT_EXECUTION vigente que impuso el techo real de
+    # llamadas de juicio bajo retrieval_mode='top_k_fusion' -- None si el
+    # modo es 'full_chunk' (D4-A sigue siendo el único control ahí, sin
+    # cambio) o si la corrida nunca llegó a resolverla.
+    judgment_execution_id: str | None = None
+    judgment_hard_stop_calls: int | None = None
 
 
 def _load_allowlist_entry(document_id: str) -> dict:
@@ -549,6 +556,58 @@ def _admitted_requirement_ids(prompt_path: Path) -> list[str]:
     return [cp["req_id"] for cp in admitted]
 
 
+class JudgmentExecutionNotAuthorizedError(Exception):
+    pass
+
+
+def _select_judgment_execution_instance(document_ids: list[str], *,
+                                        decision_store_file: Path | None = None) -> dict:
+    """Selección DETERMINISTA de `JUDGMENT_EXECUTION` vigente -- mismo
+    algoritmo que `_select_pilot_execution_instance`/`embed_runner.
+    _select_embed_execution_instance`: vigente ∧ cubre TODOS los
+    documentos del lote ∧ `max_calls`>0 ∧ `decision_date` más reciente.
+
+    Bloque 2 (docs_plan/PASOA_RESOLUCION_K_Y_HARDSTOP.md): el techo real
+    de llamadas de JUICIO bajo `retrieval_mode='top_k_fusion'` viene de
+    esta autorización firmada -- nunca de un literal en el código ni de
+    una cifra aprobada en chat sin efecto técnico (ese fue exactamente el
+    hueco que dejó pasar las 149 llamadas de Paso A sin ningún control
+    dedicado)."""
+    from factory.regulatory import judgment_execution as je
+
+    cobertura: dict[str, set[str]] = {}
+    for doc_id in document_ids:
+        scope = resolver.resolve(je.DECISION_FAMILY, doc_id, store_file=decision_store_file)
+        if not scope.authorized:
+            raise JudgmentExecutionNotAuthorizedError(
+                f"{doc_id!r} sin JUDGMENT_EXECUTION vigente: {scope.denial_reason}")
+        cobertura[doc_id] = set(scope.covering_instances)
+
+    comun = set.intersection(*cobertura.values()) if cobertura else set()
+    if not comun:
+        raise JudgmentExecutionNotAuthorizedError(
+            "los documentos no comparten ninguna JUDGMENT_EXECUTION vigente en común "
+            f"(cobertura por documento: {cobertura!r})")
+
+    registros = decision_store.read_all(decision_store_file)
+    por_id = {r["decision_instance_id"]: r for r in registros if r.get("decision_instance_id") in comun}
+    faltantes = comun - set(por_id)
+    if faltantes:
+        raise JudgmentExecutionNotAuthorizedError(
+            f"instancia(s) {sorted(faltantes)!r} resueltas por el resolver pero ausentes del almacén")
+
+    con_presupuesto = [iid for iid in comun
+                       if (por_id[iid].get("payload") or {}).get("max_calls", 0) > 0]
+    if not con_presupuesto:
+        raise JudgmentExecutionNotAuthorizedError(
+            f"{len(comun)} instancia(s) JUDGMENT_EXECUTION vigentes cubren el lote pero ninguna "
+            "tiene max_calls > 0")
+
+    seleccionada = max(con_presupuesto, key=lambda iid: por_id[iid].get("decision_date", ""))
+    payload = por_id[seleccionada].get("payload") or {}
+    return {"selected_instance_id": seleccionada, "payload": payload}
+
+
 def _preflight_embed_budget(units: list["CorpusRunUnit"], *,
                             calls_already_used_for_embed: int,
                             decision_store_file: Path | None = None) -> dict:
@@ -833,6 +892,21 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
             _write_batch_event(summary, document_ids, run_context=run_context)
             return summary
 
+        # Bloque 2 (docs_plan/PASOA_RESOLUCION_K_Y_HARDSTOP.md): techo REAL
+        # de llamadas de JUICIO bajo top_k_fusion, resuelto contra una
+        # autorización firmada -- D4-A (hard_stop_calls, arriba) mide el
+        # costo de full_chunk (n_checkpoints x n_criterios), no el de
+        # top_k_fusion (k chunks x requisito admitido); Paso A corrió 149
+        # llamadas reales sin que ningún techo dedicado a esta dimensión de
+        # costo lo gobernara. Fail-closed: sin JUDGMENT_EXECUTION vigente
+        # que cubra el lote, esto lanza (mismo criterio que
+        # _select_embed_execution_instance/_preflight_embed_budget arriba)
+        # -- nunca se asume un techo, nunca se cae al de D4-A en silencio.
+        judgment_selection = _select_judgment_execution_instance(
+            document_ids, decision_store_file=decision_store_file)
+        summary.judgment_execution_id = judgment_selection["selected_instance_id"]
+        summary.judgment_hard_stop_calls = judgment_selection["payload"]["max_calls"]
+
     checkpoint_store = ce.CheckpointStore(checkpoint_dir)
     page_cache: dict[str, list[str]] = {}
 
@@ -841,11 +915,32 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
             _expected_calls_top_k_fusion(unit) if retrieval_mode == "top_k_fusion"
             else unit.expected_calls
         )
-        if summary.total_calls_made + expected_calls > hard_stop_calls:
+        # Bloque 2 (docs_plan/CIERRE_PENDIENTES_PASO_B_Y_GATE_PRODUCCION.md):
+        # D4-A (hard_stop_calls) esta calibrado sobre la formula de costo
+        # de 'full_chunk' (n_checkpoints x n_criterios del contrato
+        # completo) -- bajo 'top_k_fusion' el costo real es k chunks x
+        # requisito admitido, una dimension distinta que D4-A no conoce
+        # (confirmado: Paso A necesito 300 llamadas reales bajo
+        # top_k_fusion, D4-A calculaba 205 para el mismo lote). Aplicar
+        # D4-A tambien ahi no es conservador, es una medida equivocada
+        # que puede cortar una corrida top_k_fusion legitima antes de
+        # tiempo -- o dejarla pasar de largo, segun el lote. El unico
+        # techo real de llamadas de juicio bajo top_k_fusion es
+        # JUDGMENT_EXECUTION (mas abajo). D4-A sigue gobernando
+        # 'full_chunk' sin cambios -- su funcion original no se retira,
+        # solo se acota a donde su formula si aplica.
+        if retrieval_mode == "full_chunk" and summary.total_calls_made + expected_calls > hard_stop_calls:
             summary.units.append(UnitOutcome(
                 document_id=unit.document_id, agent_id=unit.agent_id,
                 status="NOT_STARTED_HARD_STOP"))
             summary.stop_reason = "HARD_STOP_CALLS"
+            break
+        if (retrieval_mode == "top_k_fusion"
+                and summary.total_calls_made + expected_calls > summary.judgment_hard_stop_calls):
+            summary.units.append(UnitOutcome(
+                document_id=unit.document_id, agent_id=unit.agent_id,
+                status="NOT_STARTED_HARD_STOP"))
+            summary.stop_reason = "HARD_STOP_JUDGMENT_CALLS"
             break
         if summary.total_wall_seconds > hard_stop_wall_seconds:
             summary.units.append(UnitOutcome(
@@ -958,6 +1053,8 @@ def _persist_manifest(summary: CorpusRunSummary, manifest_dir: Path) -> str:
         "model_qualification_status": summary.model_qualification_status,
         "requirement_scope": summary.requirement_scope,
         "truncation_retry_multiplier": summary.truncation_retry_multiplier,
+        "judgment_execution_id": summary.judgment_execution_id,
+        "judgment_hard_stop_calls": summary.judgment_hard_stop_calls,
         "units": [vars(u) for u in summary.units],
     }
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
