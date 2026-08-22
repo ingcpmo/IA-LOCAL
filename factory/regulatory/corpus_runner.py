@@ -661,27 +661,56 @@ def _run_unit_top_k_fusion(unit: "CorpusRunUnit", *, checkpoint_store, provider:
         if not pool:
             continue
 
-        result = ce.evaluate_chunked(
-            unit.prompt_path, agent_id=unit.agent_id,
-            agent_version=CORPUS_RUN_AGENT_VERSION,
-            per_unit_text=[c["text"] for c in pool],
-            sistema="corpus_run", documento=unit.document_id,
-            version="v1", archivo=str(unit.document_path),
-            document_sha256=unit.document_sha256,
-            run_context=run_context, checkpoint_store=checkpoint_store,
-            use_verified_pipeline=True, document_type=unit.document_type,
-            retry_technical_failures=True, provider=provider,
-            full_document_coverage=False, evaluation_profile="H2H4",
-            target_requirement_ids=_h2h4_target_requirement_ids("H2H4", req_id),
-            candidate_metadata=pool,
-            page_numbers=[c["page_start"] for c in pool],
-            retrieval_mode="top_k_fusion",
-        )
+        def _evaluate_this_requirement() -> dict:
+            return ce.evaluate_chunked(
+                unit.prompt_path, agent_id=unit.agent_id,
+                agent_version=CORPUS_RUN_AGENT_VERSION,
+                per_unit_text=[c["text"] for c in pool],
+                sistema="corpus_run", documento=unit.document_id,
+                version="v1", archivo=str(unit.document_path),
+                document_sha256=unit.document_sha256,
+                run_context=run_context, checkpoint_store=checkpoint_store,
+                use_verified_pipeline=True, document_type=unit.document_type,
+                retry_technical_failures=True, provider=provider,
+                full_document_coverage=False, evaluation_profile="H2H4",
+                target_requirement_ids=_h2h4_target_requirement_ids("H2H4", req_id),
+                candidate_metadata=pool,
+                page_numbers=[c["page_start"] for c in pool],
+                retrieval_mode="top_k_fusion",
+            )
+
+        result = _evaluate_this_requirement()
         preflight = result["preflight_metadata"]
         resumed_at_start = preflight.get("resumed_chunk_count", 0)
         retried = len(preflight.get("retried_chunk_indices") or [])
-        total_new_calls += (len(result["chunk_executions"]) - resumed_at_start) + retried
-        total_resumed += resumed_at_start - retried
+        req_new_calls = (len(result["chunk_executions"]) - resumed_at_start) + retried
+        req_resumed = resumed_at_start - retried
+
+        # Bloque 1 (docs_plan/CIERRE_PENDIENTES_PASO_B_Y_GATE_PRODUCCION.md):
+        # retry_technical_failures=True arriba no hizo nada en el intento de
+        # arriba -- solo actua cuando evaluate_chunked() encuentra un
+        # checkpoint YA persistido con fallos (`resumed is not None`), y en
+        # la primera invocacion `resumed` siempre es None. Una segunda
+        # invocacion INMEDIATA, con los mismos argumentos, encuentra el
+        # checkpoint que el primer intento acaba de dejar (mismo
+        # document_sha256/agent/fingerprint) y SI dispara el reintento
+        # selectivo -- solo de los chunks con technical_execution_failure,
+        # nunca redo del pool completo (checkpoint_store ya tiene los
+        # demas). Alcance intencionalmente ACOTADO a este mismo req_id --
+        # nunca una segunda invocacion completa de run_corpus_batch(), que
+        # volveria a gastar los ~60 requisitos ya resueltos sin fallos. Las
+        # llamadas del PRIMER intento (req_new_calls de arriba) se suman,
+        # nunca se descartan -- perderlas subestimaria el costo real.
+        if result.get("technical_execution_failures"):
+            result = _evaluate_this_requirement()
+            preflight = result["preflight_metadata"]
+            resumed_at_start = preflight.get("resumed_chunk_count", 0)
+            retried = len(preflight.get("retried_chunk_indices") or [])
+            req_new_calls += (len(result["chunk_executions"]) - resumed_at_start) + retried
+            req_resumed += resumed_at_start - retried
+
+        total_new_calls += req_new_calls
+        total_resumed += req_resumed
         total_failures += len(result.get("technical_execution_failures") or [])
         run_ids.append(result["run_id"])
 

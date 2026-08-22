@@ -224,6 +224,163 @@ def test_top_k_fusion_calls_evaluate_chunked_once_per_admitted_requirement(monke
         assert kw["page_numbers"] == [c["page_start"] for c in pool_by_req[req_id]]
 
 
+# ---------------------------------------------------------------------------
+# Bloque 1 (docs_plan/CIERRE_PENDIENTES_PASO_B_Y_GATE_PRODUCCION.md): retry
+# de fallos tecnicos NO-truncamiento dentro de top_k_fusion -- replay del
+# caso real (RW-0005/alcoa_plus_agent/ALCOA_ATTRIBUTABLE,
+# chunked-ef211e17236b, failure_reason=schema_validation_failed) que
+# quedo contenido pero nunca reintentado en Paso A.
+# ---------------------------------------------------------------------------
+
+_REAL_SCHEMA_FAILURE_CHECKPOINT = Path(
+    "factory/regulatory/corpus_run/checkpoints/chunked-ef211e17236b.checkpoint.json")
+
+
+def _load_real_schema_failure_raw() -> str | None:
+    """Lee el raw real persistido del intento tecnico fallido -- runtime
+    local, nunca en Git (mismo regimen que W5.3 Fase 5.4.4); si no existe
+    en este entorno, el test que lo usa se salta explicitamente."""
+    if not _REAL_SCHEMA_FAILURE_CHECKPOINT.is_file():
+        return None
+    ckpt = json.loads(_REAL_SCHEMA_FAILURE_CHECKPOINT.read_text())
+    ce0 = ckpt["chunk_executions"][0]
+    assert ce0["failure_reason"] == "schema_validation_failed"
+    rel_path = ce0["raw_response_full_path"]
+    full_path = _REAL_SCHEMA_FAILURE_CHECKPOINT.parent / rel_path
+    if not full_path.is_file():
+        return None
+    import gzip
+    with gzip.open(full_path, "rt", encoding="utf-8") as f:
+        return f.read()
+
+
+def test_technical_failure_retried_immediately_within_the_same_requirement(monkeypatch, tmp_path):
+    """Replay del fallo tecnico real: la respuesta cruda real (schema
+    invalido) en el primer intento, una respuesta valida en el reintento
+    -- confirma que _run_unit_top_k_fusion() ahora SI dispara ese segundo
+    intento (antes: quedaba contenido en rejected_by_verifier para
+    siempre, nunca reintentado) y que el costo de AMBOS intentos se suma,
+    nunca se pierde."""
+    real_raw = _load_real_schema_failure_raw()
+    if real_raw is None:
+        pytest.skip("evidencia real de Paso A no presente en este entorno -- runtime local, no en Git")
+
+    monkeypatch.setattr(runner, "_preflight_embed_budget", lambda *a, **k: {
+        "needed": 1, "max_calls": 60, "remaining": 50, "fits": True,
+        "selected_embed_instance_id": "EMBED_EXECUTION-test",
+        "per_document_pending_chunks": {}, "unique_query_pairs": 1,
+    })
+    monkeypatch.setattr(runner, "_expected_calls_top_k_fusion", lambda unit, **k: 1)
+
+    from factory.regulatory.retrieval import indexer as _indexer, embed_runner as _embed_runner
+    monkeypatch.setattr(_indexer, "build_index", lambda path, **k: {"document_sha256": "sha-x"})
+
+    class _EmbedSummary:
+        total_calls_made = 0
+        stop_reason = "BATCH_COMPLETE"
+
+    monkeypatch.setattr(_embed_runner, "run_embed_batch", lambda *a, **k: _EmbedSummary())
+    monkeypatch.setattr(runner.ce, "load_prompt_meta", lambda p: {"checkpoints": [
+        {"req_id": "ALCOA_ATTRIBUTABLE", "label": "a"}]})
+    monkeypatch.setattr(runner.ce, "evidence_pack_gate", lambda meta: (meta["checkpoints"], []))
+
+    from factory.regulatory.retrieval import judgment_candidate_pool as _jcp
+    monkeypatch.setattr(_jcp, "build_fusion_candidate_pool", lambda doc_id, sha, req_id, **k: [
+        {"chunk_index": 0, "page_start": 12, "page_end": 12, "text": "evidencia real"}])
+
+    # Primer intento: la respuesta cruda REAL que fallo validacion de
+    # schema. Reintento: una respuesta valida sintetica (el reintento en
+    # si nunca corrio en produccion -- el fix es posterior a Paso A).
+    calls = {"n": 0}
+
+    def _fake_evaluate_chunked(*a, **kw):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return {
+                "run_id": "run-real-failure", "chunk_executions": [{"chunk_index": 0}],
+                "preflight_metadata": {"resumed_chunk_count": 0, "retried_chunk_indices": []},
+                "technical_execution_failures": [
+                    {"chunk_index": 0, "task_id": "task-23358ad39227", "error": real_raw[:80]}],
+            }
+        return {
+            "run_id": "run-real-failure", "chunk_executions": [{"chunk_index": 0}],
+            "preflight_metadata": {"resumed_chunk_count": 1, "retried_chunk_indices": [0]},
+            "technical_execution_failures": [],
+        }
+
+    monkeypatch.setattr(runner.ce, "evaluate_chunked", _fake_evaluate_chunked)
+
+    outcome, _ = runner._run_unit_top_k_fusion(
+        _unit(document_id="RW-0005", agent_id="alcoa_plus_agent"),
+        checkpoint_store=None, provider=None, calls_already_used_for_embed=0,
+        decision_store_file=None, run_context="production",
+    )
+
+    assert calls["n"] == 2, "debe reintentar exactamente una vez tras el fallo tecnico"
+    assert outcome.status == "COMPLETED"
+    assert outcome.technical_execution_failures == 0, (
+        "tras el reintento exitoso, 0 fallos pendientes -- antes de este fix quedaba en 1 para siempre"
+    )
+    assert outcome.run_ids == ["run-real-failure"], "el reintento resuelve el MISMO run_id, no crea uno nuevo"
+    assert outcome.calls_made_this_invocation == 2, (
+        "el costo del primer intento (1 llamada real, aunque fallara) y del reintento "
+        "(1 llamada real) se suman -- nunca se pierde el primero"
+    )
+
+
+def test_technical_failure_stays_rejected_if_the_retry_also_fails(monkeypatch, tmp_path):
+    """Si el reintento TAMBIEN falla, sigue contenido (rejected_by_
+    verifier), nunca fabricado -- mismo criterio que antes del fix, solo
+    que ahora se le dio una oportunidad real de resolverse primero."""
+    monkeypatch.setattr(runner, "_preflight_embed_budget", lambda *a, **k: {
+        "needed": 1, "max_calls": 60, "remaining": 50, "fits": True,
+        "selected_embed_instance_id": "EMBED_EXECUTION-test",
+        "per_document_pending_chunks": {}, "unique_query_pairs": 1,
+    })
+    monkeypatch.setattr(runner, "_expected_calls_top_k_fusion", lambda unit, **k: 1)
+
+    from factory.regulatory.retrieval import indexer as _indexer, embed_runner as _embed_runner
+    monkeypatch.setattr(_indexer, "build_index", lambda path, **k: {"document_sha256": "sha-x"})
+
+    class _EmbedSummary:
+        total_calls_made = 0
+        stop_reason = "BATCH_COMPLETE"
+
+    monkeypatch.setattr(_embed_runner, "run_embed_batch", lambda *a, **k: _EmbedSummary())
+    monkeypatch.setattr(runner.ce, "load_prompt_meta", lambda p: {"checkpoints": [
+        {"req_id": "ALCOA_ATTRIBUTABLE", "label": "a"}]})
+    monkeypatch.setattr(runner.ce, "evidence_pack_gate", lambda meta: (meta["checkpoints"], []))
+
+    from factory.regulatory.retrieval import judgment_candidate_pool as _jcp
+    monkeypatch.setattr(_jcp, "build_fusion_candidate_pool", lambda doc_id, sha, req_id, **k: [
+        {"chunk_index": 0, "page_start": 12, "page_end": 12, "text": "evidencia real"}])
+
+    calls = {"n": 0}
+
+    def _fake_evaluate_chunked(*a, **kw):
+        calls["n"] += 1
+        return {
+            "run_id": "run-still-failing", "chunk_executions": [{"chunk_index": 0}],
+            "preflight_metadata": {
+                "resumed_chunk_count": 0 if calls["n"] == 1 else 1,
+                "retried_chunk_indices": [] if calls["n"] == 1 else [0],
+            },
+            "technical_execution_failures": [{"chunk_index": 0, "task_id": "t", "error": "sigue fallando"}],
+        }
+
+    monkeypatch.setattr(runner.ce, "evaluate_chunked", _fake_evaluate_chunked)
+
+    outcome, _ = runner._run_unit_top_k_fusion(
+        _unit(document_id="RW-0005", agent_id="alcoa_plus_agent"),
+        checkpoint_store=None, provider=None, calls_already_used_for_embed=0,
+        decision_store_file=None, run_context="production",
+    )
+
+    assert calls["n"] == 2, "se intenta el reintento exactamente una vez, nunca en bucle"
+    assert outcome.status == "COMPLETED", "la unidad no aborta -- el fallo queda contenido, no fabricado"
+    assert outcome.technical_execution_failures == 1, "sigue sin resolverse tras el unico reintento -- honesto"
+
+
 def test_top_k_fusion_hard_stops_if_chunk_embedding_batch_did_not_complete(monkeypatch, tmp_path):
     """Defensa en profundidad: aunque el preflight del LOTE haya dicho que
     cabe, si `run_embed_batch` de una unidad concreta reporta
