@@ -160,7 +160,40 @@ def serialize(records: list[dict]) -> str:
     )
 
 
-def run(apply: bool = False, *, force: bool = False,
+def _reconcile_preserving_natives(target: Path, projected: list[dict]) -> None:
+    """Anade SOLO los proyectados cuyo `decision_instance_id` todavia no
+    esta en el almacen -- ninguna linea existente se toca, ni NATIVA ni ya
+    MIGRADA.
+
+    Deliberadamente NO re-serializa los ya migrados aunque `serialize()`
+    produciria hoy un `families_registry_hash` distinto (el registro de
+    familias vigente cambia con el tiempo; VOLATILE_ON_COMPARE ya ignora
+    ese campo al comparar). Reescribirlos retroactivamente reescribiria la
+    foto de una decision ya tomada -- lo unico que puede pasar aqui es
+    anadir el registro que un almacen legacy vivo produjo de mas, igual que
+    `append_record` anadiria cualquier registro nuevo.
+
+    Existe porque `run(apply=True)` sin esto reescribe el fichero ENTERO
+    (`serialize(projected)`) y por tanto exige elegir entre negarse
+    (`WouldDiscardNativeRecords`) o `--force` (que SI descarta los
+    NATIVOS) en cuanto el almacen deja de ser solo proyecciones -- exactamente
+    la situacion que el propio docstring de `WouldDiscardNativeRecords`
+    preveia. Esta funcion es la tercera opcion: anadir lo que falta sin
+    arriesgar ni una firma humana ni reescribir una decision ya grabada.
+    """
+    lines = target.read_text(encoding="utf-8").splitlines()
+    existing_ids = {json.loads(ln)["decision_instance_id"] for ln in lines if ln.strip()}
+    new_lines = [
+        json.dumps({**r, "audit_event_id": None}, ensure_ascii=False, sort_keys=True)
+        for r in projected if r["decision_instance_id"] not in existing_ids
+    ]
+    if not new_lines:
+        return
+    with target.open("a", encoding="utf-8") as fh:
+        fh.write("\n".join(new_lines) + "\n")
+
+
+def run(apply: bool = False, *, force: bool = False, merge_natives: bool = False,
         out_file: Path | None = None,
         legacy_a: Path | None = None, legacy_b: Path | None = None,
         registry_file: Path | None = None, emit_audit: bool = True) -> dict:
@@ -187,15 +220,19 @@ def run(apply: bool = False, *, force: bool = False,
 
     if apply:
         nativos = native_records(target)
-        if nativos and not force:
-            raise WouldDiscardNativeRecords(
-                f"{target} contiene {len(nativos)} registro(s) NATIVO(s) que esta "
-                f"migracion borraria: {nativos}. Son firmas hechas por la "
-                "superficie humana, no proyecciones. Usa --force solo si de verdad "
-                "quieres descartarlas."
-            )
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(payload, encoding="utf-8")
+        if nativos and not force:
+            if not merge_natives:
+                raise WouldDiscardNativeRecords(
+                    f"{target} contiene {len(nativos)} registro(s) NATIVO(s) que esta "
+                    f"migracion borraria: {nativos}. Son firmas hechas por la "
+                    "superficie humana, no proyecciones. Usa --merge_natives para "
+                    "re-sincronizar sin tocarlos, o --force solo si de verdad "
+                    "quieres descartarlas."
+                )
+            _reconcile_preserving_natives(target, projected)
+        else:
+            target.write_text(payload, encoding="utf-8")
 
     after = {"a": _sha256(src_a), "b": _sha256(src_b)}
     inputs_untouched = before == after
@@ -249,10 +286,13 @@ def main() -> int:
                     help="escribe decisions_v2.jsonl (por defecto: dry-run)")
     ap.add_argument("--force", action="store_true",
                     help="sobrescribe aunque haya registros NATIVOS (los DESCARTA)")
+    ap.add_argument("--merge-natives", action="store_true",
+                    help="re-sincroniza solo la parte migrada, preservando los "
+                         "registros NATIVOS byte a byte (ni --force ni negarse)")
     args = ap.parse_args()
 
     try:
-        s = run(apply=args.apply, force=args.force)
+        s = run(apply=args.apply, force=args.force, merge_natives=args.merge_natives)
     except WouldDiscardNativeRecords as exc:
         print(f"ABORTADA: {exc}")
         return 2

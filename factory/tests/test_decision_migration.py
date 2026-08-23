@@ -66,10 +66,18 @@ def test_v3_every_projected_record_passes_the_invariants(migrated):
 def test_the_four_targetless_decisions_are_flagged_not_hidden(migrated):
     """D2/D3/D4/D5 se firmaron APPROVE sin decir sobre qué. Que aparezcan como
     pendientes de re-firma no es una regresión: es el sistema diciendo la
-    verdad sobre lo que se firmó."""
+    verdad sobre lo que se firmó.
+
+    `LEGACY_UNMAPPED-2026-010` se sumó el 2026-08-23: es `D6_pdf_generation_
+    policy` (Sistema B, `w5_human_decisions.jsonl`, firmado por Cesar
+    2026-08-13, nota "mejora", sin `approved_pack_ids`) -- decisión real y
+    legítima que también carece de objetivo declarado, mismo patrón que
+    D2-D5. No se fabrica un alcance para ocultarlo.
+    """
     _, s = migrated
     assert set(s["pending_resignature"]) == {
-        "D2-2026-001", "D3-2026-001", "D4-2026-001", "D5-2026-001"}
+        "D2-2026-001", "D3-2026-001", "D4-2026-001", "D5-2026-001",
+        "LEGACY_UNMAPPED-2026-010"}
 
 
 def test_non_governance_decisions_are_legacy_unmapped_not_forced(migrated):
@@ -86,9 +94,19 @@ def test_non_governance_decisions_are_legacy_unmapped_not_forced(migrated):
     confirm de `human_source_regovernance.py` para `ecfr_21cfr_part11`
     (misma sesión) agregó 3 decisiones más de otra acción no gobernada
     (`regulatory_source_regovernance`), subiendo el conteo real a 9.
+
+    2026-08-23: `D6_pdf_generation_policy` (Sistema B, firmado por Cesar
+    2026-08-13) sube el conteo real a 10. Este mismo registro expuso una
+    colisión de `decision_instance_id` entre Sistema A y Sistema B --
+    `project_system_a`/`project_system_b` numeraban LEGACY_UNMAPPED cada
+    una por su cuenta desde 001, y ambas ya tenían un primer registro con
+    ese id. `project_all` ahora comparte un contador entre las dos
+    proyecciones (única familia que ambos sistemas pueden producir), asi
+    que el nuevo registro continua la secuencia real (010) en vez de
+    repetir un id ya usado.
     """
     _, s = migrated
-    assert len(s["legacy_unmapped"]) == 9
+    assert len(s["legacy_unmapped"]) == 10
 
 
 # --- V-2: las entradas no se tocan ------------------------------------------

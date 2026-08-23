@@ -111,8 +111,19 @@ def reconstruct_d1_snapshot(signed_at: str, *,
 # Proyeccion
 # ---------------------------------------------------------------------------
 
-def project_system_a(records: list[dict], families: dict) -> list[dict]:
-    out, counters = [], {}
+def project_system_a(records: list[dict], families: dict, *,
+                     counters: dict | None = None) -> list[dict]:
+    out = []
+    # `counters` puede venir compartido con `project_system_b` (ver
+    # `project_all`): LEGACY_UNMAPPED es la unica familia que ambos sistemas
+    # pueden producir (Sistema A via accion no mapeada, Sistema B via
+    # `legacy_w5_decision_id` no mapeado) -- sin contador compartido, cada
+    # funcion numera desde 001 por su cuenta y dos decisiones DISTINTAS
+    # terminan con el mismo decision_instance_id (colision real detectada
+    # 2026-08-23: LEGACY_UNMAPPED-2026-001 asignado tanto a un registro de
+    # 2026-06-13 del Sistema A como a uno de 2026-08-13 del Sistema B).
+    if counters is None:
+        counters = {}
     id_map: dict[str, str] = {}
 
     for r in sorted(records, key=lambda x: x["timestamp"]):
@@ -186,7 +197,8 @@ def project_system_a(records: list[dict], families: dict) -> list[dict]:
 
 
 def project_system_b(records: list[dict], families: dict, *,
-                     registry_file: Path | None = None) -> list[dict]:
+                     registry_file: Path | None = None,
+                     counters: dict | None = None) -> list[dict]:
     """Proyecta el Sistema B, incluidas sus CORRECCIONES.
 
     Una correccion legacy trae todo lo necesario y el adaptador lo descartaba:
@@ -204,7 +216,9 @@ def project_system_b(records: list[dict], families: dict, *,
     UI legacy DESPUES de la migracion: el defecto era invisible mientras no
     hubiera ninguna correccion en el almacen.
     """
-    out, counters = [], {}
+    out = []
+    if counters is None:
+        counters = {}
     # recorded_at -> instance_id, para resolver `supersedes_recorded_at`. Se
     # indexa por marca de tiempo porque es lo que el registro legacy guarda;
     # no se adivina por familia ni por posicion.
@@ -292,9 +306,18 @@ def project_system_b(records: list[dict], families: dict, *,
 
 def project_all(*, legacy_a: Path | None = None, legacy_b: Path | None = None,
                 registry_file: Path | None = None) -> list[dict]:
-    """Los 14 registros historicos proyectados, en orden cronologico."""
+    """Los registros historicos proyectados, en orden cronologico.
+
+    `counters` se comparte entre ambas llamadas para que LEGACY_UNMAPPED
+    -- la unica familia que ambos sistemas pueden producir -- numere de
+    forma global y nunca colisione entre Sistema A y Sistema B. Sistema A
+    se proyecta primero: sus IDs ya migrados (001..009) quedan intactos;
+    Sistema B simplemente continua la secuencia.
+    """
     families = store.load_families()
-    a = project_system_a(_read_jsonl(legacy_a or LEGACY_A_FILE), families)
+    counters: dict = {}
+    a = project_system_a(_read_jsonl(legacy_a or LEGACY_A_FILE), families,
+                        counters=counters)
     b = project_system_b(_read_jsonl(legacy_b or LEGACY_B_FILE), families,
-                         registry_file=registry_file)
+                         registry_file=registry_file, counters=counters)
     return sorted(a + b, key=lambda r: r["recorded_at"])
