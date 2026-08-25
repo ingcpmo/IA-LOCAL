@@ -1,0 +1,246 @@
+# RECONSTRUIDO por inspección en vivo (docker inspect) el 2026-08-25/26.
+# SOLO DISEÑO -- NUNCA EJECUTADO. No modernizar, no cambiar imágenes ni
+# versiones, no cambiar Postgres/Redis, no cambiar puertos/redes, no
+# corregir Asterisk, no eliminar dependencias legacy. Ver
+# docs_plan/AUDITORIA_TOPOLOGIA_REAL_CORREGIDA_FASE1A_1B.md para la
+# validación campo por campo y los mismatches conocidos.
+#
+# Secretos vía ${VARIABLE} -- ningún valor real copiado de docker inspect.
+# Volúmenes declarados `external: true`: este archivo NUNCA debe crear
+# volúmenes nuevos vacíos, debe reutilizar los 7 volúmenes hotelbot_*
+# reales que ya contienen los datos vivos de ARIA.
+
+name: hotelbot
+
+services:
+  ai-engine:
+    image: hotelbot-ai-engine@sha256:8b699158b3c20ddc326b9bb098f385ed75e436c17e40bc45ad85ae2faeecdbe0
+    working_dir: /app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7001", "--workers", "1"]
+    restart: unless-stopped
+    mem_limit: 4294967296
+    cpus: "2.0"
+    environment:
+      RTP_PORT_START: "7010"
+      RTP_PORT_END: "7049"
+      RTP_BIND_HOST: "0.0.0.0"
+      TTS_URL: "http://tts:5500"
+      OLLAMA_URL: "http://ollama:11434"
+      REDIS_URL: "redis://:${REDIS_PASSWORD}@redis:6379/1"
+      VOSK_MODEL_PATH: "/models/vosk-model-small-en-us-0.15"
+      LLM_MODEL: "mistral"
+    volumes:
+      - hotelbot_vosk_models:/models
+    ports:
+      - "7001:7001"
+      - "7010-7049:7010-7049/udp"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    depends_on:
+      ollama:
+        condition: service_healthy
+      tts:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - aria_net
+
+  tts:
+    image: hotelbot-tts@sha256:0b2c70d67b71e027a6e9119c29026a34f3ebd455cc10dd7027749cb32d650c2f
+    working_dir: /app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5500"]
+    restart: unless-stopped
+    mem_limit: 1073741824
+    cpus: "2.0"
+    environment:
+      TTS_VOICE: "en_US-lessac-medium"
+      TTS_SAMPLE_RATE: "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:5500/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - aria_net
+
+  orchestrator:
+    image: hotelbot-orchestrator@sha256:fedea2eb7517fea6e49dd20d478e084bd91dc091ecc6492950517a08fa4a8c8b
+    working_dir: /app
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2 --access-log"]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://aria:${POSTGRES_PASSWORD}@postgres:5432/aria"
+      REDIS_URL: "redis://:${REDIS_PASSWORD}@redis:6379/0"
+      MAX_CONCURRENT_CALLS: "7"
+      SECRET_KEY: "${ARIA_SECRET_KEY}"
+      AI_ENGINE_URL: "http://ai-engine:7001"
+      ASTERISK_ARI_USER: "aria"
+      ASTERISK_ARI_PASSWORD: "${ASTERISK_ARI_PASSWORD}"
+      ASTERISK_ARI_URL: "http://asterisk:8088"
+      ASTERISK_ARI_APP: "hotelbot"
+      ENVIRONMENT: "development"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - aria_net
+
+  celery-worker:
+    image: hotelbot-celery-worker@sha256:2c3cd7b49b0a2cf7706829fd880ea9d974fdbe62eaab3f72712b7f168e99979b
+    working_dir: /app
+    command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info", "--concurrency=8", "-Q", "calls,campaigns,default"]
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: "${ARIA_SECRET_KEY}"
+      ASTERISK_ARI_URL: "http://asterisk:8088"
+      REDIS_URL: "redis://:${REDIS_PASSWORD}@redis:6379/0"
+      ASTERISK_ARI_APP: "hotelbot"
+      ASTERISK_ARI_PASSWORD: "${ASTERISK_ARI_PASSWORD}"
+      MAX_CONCURRENT_CALLS: "7"
+      AI_ENGINE_URL: "http://ai-engine:7001"
+      DATABASE_URL: "postgresql+asyncpg://aria:${POSTGRES_PASSWORD}@postgres:5432/aria"
+      ASTERISK_ARI_USER: "aria"
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.tasks.celery_app inspect ping -d celery@$$HOSTNAME --timeout 5 2>&1 | grep -q pong"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - aria_net
+
+  ollama:
+    image: hotelbot-ollama@sha256:b166ed16ab6e64a1dda3edf1b3dde6907478e396a53cd86b39154366c5c66003
+    entrypoint: ["/entrypoint.sh"]
+    restart: unless-stopped
+    mem_limit: 8589934592
+    cpus: "3.0"
+    environment:
+      OLLAMA_HOST: "0.0.0.0"
+      OLLAMA_NUM_PARALLEL: "2"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      LLM_MODEL: "mistral"
+      # NVIDIA_* heredadas de la imagen base -- reproducidas tal cual,
+      # sin confirmar uso real de GPU en el host (ver reporte Fase 1A).
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+    volumes:
+      - hotelbot_ollama_models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "/bin/ollama list > /dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 30
+      start_period: 2m
+    networks:
+      - aria_net
+
+  asterisk:
+    image: hotelbot-asterisk@sha256:39a3b3be4f1a4b1583aee10e4c281271209e0490dc14941a7e13c110133a4130
+    working_dir: /
+    entrypoint: ["/docker-entrypoint.sh"]
+    restart: unless-stopped
+    environment:
+      ASTERISK_ARI_PASSWORD: "${ASTERISK_ARI_PASSWORD}"
+      PUBLIC_IP: "${PUBLIC_IP}"
+      SIP_TRUNK_HOST: "${SIP_TRUNK_HOST:-}"
+      SIP_TRUNK_USER: "${SIP_TRUNK_USER:-}"
+      SIP_TRUNK_PASSWORD: "${SIP_TRUNK_PASSWORD:-}"
+    volumes:
+      - hotelbot_asterisk_sounds:/var/lib/asterisk/sounds
+      - hotelbot_asterisk_logs:/var/log/asterisk
+      - hotelbot_asterisk_spool:/var/spool/asterisk
+      # Bind mounts ORIGINALES reproducidos tal cual -- ver Fase 1A: los
+      # paths de origen están VACÍOS hoy. Este archivo NO los corrige (a
+      # propósito, "no corregir Asterisk" es una restricción explícita
+      # de la Fase 1B). Ejecutar esto sin resolver esos paths primero
+      # reproduce el mismo Exited(127) que ya tiene el contenedor real.
+      - ./asterisk/docker-entrypoint.sh:/docker-entrypoint.sh
+      - ./asterisk/etc/asterisk:/etc/asterisk-templates
+    ports:
+      - "5060:5060/tcp"
+      - "5060:5060/udp"
+      - "8088:8088/tcp"
+      - "10000-10049:10000-10049/udp"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8088/ari/asterisk/info -u \"aria:${ASTERISK_ARI_PASSWORD}\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+    networks:
+      - aria_net
+
+  postgres:
+    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+    working_dir: /
+    environment:
+      POSTGRES_USER: "aria"
+      POSTGRES_DB: "aria"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    volumes:
+      - hotelbot_postgres_data:/var/lib/postgresql/data
+      # Bind mount ORIGINAL reproducido tal cual -- path vacío hoy,
+      # inofensivo para Postgres (simplemente no corre scripts de init).
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aria -d aria"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - aria_net
+
+  redis:
+    image: redis:7-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+    working_dir: /data
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - hotelbot_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks:
+      - aria_net
+
+networks:
+  aria_net:
+    name: hotelbot_aria_net
+    external: true
+
+volumes:
+  hotelbot_postgres_data:
+    external: true
+  hotelbot_redis_data:
+    external: true
+  hotelbot_ollama_models:
+    external: true
+  hotelbot_vosk_models:
+    external: true
+  hotelbot_asterisk_sounds:
+    external: true
+  hotelbot_asterisk_logs:
+    external: true
+  hotelbot_asterisk_spool:
+    external: true
