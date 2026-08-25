@@ -1,0 +1,104 @@
+# FASE 2 -- STACK DE PRUEBA AISLADO, TEMPORAL. Nombres/red/volumenes/puertos
+# TODOS distintos de los reales. Se destruye (down -v) al terminar la
+# verificacion. NUNCA toca hotelbot_aria_net ni los volumenes hotelbot_*
+# reales.
+name: aria-cutover-test
+
+services:
+  postgres:
+    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+    environment:
+      POSTGRES_USER: "aria"
+      POSTGRES_DB: "aria"
+      POSTGRES_PASSWORD: "test_only_password"
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "15432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aria -d aria"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - test_net
+
+  redis:
+    image: redis:7-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+    command: ["redis-server", "--requirepass", "test_only_password", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - test_redis_data:/data
+    ports:
+      - "16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "test_only_password", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks:
+      - test_net
+
+  orchestrator:
+    image: hotelbot-orchestrator@sha256:fedea2eb7517fea6e49dd20d478e084bd91dc091ecc6492950517a08fa4a8c8b
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2 --access-log"]
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://aria:test_only_password@postgres:5432/aria"
+      REDIS_URL: "redis://:test_only_password@redis:6379/0"
+      MAX_CONCURRENT_CALLS: "7"
+      SECRET_KEY: "test_only_secret"
+      AI_ENGINE_URL: "http://ai-engine:7001"
+      ASTERISK_ARI_USER: "aria"
+      ASTERISK_ARI_PASSWORD: "test_only_password"
+      ASTERISK_ARI_URL: "http://asterisk:8088"
+      ASTERISK_ARI_APP: "hotelbot"
+      ENVIRONMENT: "development"
+    ports:
+      - "18000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - test_net
+
+  celery-worker:
+    image: hotelbot-celery-worker@sha256:2c3cd7b49b0a2cf7706829fd880ea9d974fdbe62eaab3f72712b7f168e99979b
+    command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info", "--concurrency=8", "-Q", "calls,campaigns,default"]
+    environment:
+      SECRET_KEY: "test_only_secret"
+      ASTERISK_ARI_URL: "http://asterisk:8088"
+      REDIS_URL: "redis://:test_only_password@redis:6379/0"
+      ASTERISK_ARI_APP: "hotelbot"
+      ASTERISK_ARI_PASSWORD: "test_only_password"
+      MAX_CONCURRENT_CALLS: "7"
+      AI_ENGINE_URL: "http://ai-engine:7001"
+      DATABASE_URL: "postgresql+asyncpg://aria:test_only_password@postgres:5432/aria"
+      ASTERISK_ARI_USER: "aria"
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.tasks.celery_app inspect ping -d celery@$$HOSTNAME --timeout 5 2>&1 | grep -q pong"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - test_net
+
+networks:
+  test_net:
+    name: aria_cutover_test_net
+
+volumes:
+  test_postgres_data:
+  test_redis_data:
