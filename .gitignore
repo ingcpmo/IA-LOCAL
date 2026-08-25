@@ -83,3 +83,8 @@ node_modules/
 
 # Reportes internos/confidenciales sueltos en el home, nunca al repo
 /private_reports/
+
+# CLAUDE.md prohíbe Torch CUDA -- este instalador es artefacto de un
+# intento descartado, no debe volver a versionarse (docs_plan/
+# PLAN_MIGRACION_ARBOL_CANONICO_FASES_1_5.md, Fase 4.2)
+/cuda_installer.pyz
