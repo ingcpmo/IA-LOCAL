@@ -1,0 +1,419 @@
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  8%]
+........................................................................ [ 10%]
+........................................................................ [ 13%]
+........................................................................ [ 16%]
+........................................................................ [ 18%]
+................................................x....................... [ 21%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 32%]
+........................................................................ [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 40%]
+........................................................................ [ 43%]
+......FFF............................................................... [ 46%]
+...............................ssss..................................... [ 48%]
+........................................................................ [ 51%]
+........................................................................ [ 54%]
+........................................................................ [ 56%]
+........................................................................ [ 59%]
+........................................................................ [ 62%]
+........................................................................ [ 65%]
+........................................................................ [ 67%]
+........................................................................ [ 70%]
+........................................................................ [ 73%]
+........................................................................ [ 75%]
+........................................................................ [ 78%]
+........................................................................ [ 81%]
+..............................................................EE........ [ 84%]
+...s.................................................................... [ 86%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+................F....................................................... [ 94%]
+........................................................................ [ 97%]
+.............................................................            [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_missing_identity_key_shows_visible_error_and_never_advances _
+
+_browser = <Browser type=<BrowserType name=chromium executable_path=/home/ing_cpmo/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome> version=149.0.7827.55>
+
+    @pytest.fixture()
+    def pagina_sin_identidad(_browser):
+        """Misma navegacion, pero CONECTADA sin identity key desde el arranque
+        -- nunca reutiliza una pagina ya conectada con una key valida (reclickear
+        Conectar dispara refresh('dash') y pierde la vista, ademas de repetir
+        ~10 fetches simultaneos -- el mismo patron de rate-limit documentado en
+        la cabecera de este archivo)."""
+        contexto = _browser.new_context()
+        page = contexto.new_page()
+        try:
+            contexto_llamadas = {"decide_calls": []}
+>           _conectar_y_abrir_review(page, contexto_llamadas, identity_key="")
+
+factory/tests/test_review_queue_finding_ui_playwright.py:184: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+factory/tests/test_review_queue_finding_ui_playwright.py:153: in _conectar_y_abrir_review
+    page.wait_for_function(
+.venv/lib/python3.11/site-packages/playwright/sync_api/_generated.py:12594: in wait_for_function
+    self._sync(
+.venv/lib/python3.11/site-packages/playwright/_impl/_page.py:1144: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/playwright/_impl/_frame.py:932: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f00aa978210>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f009a337880>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        st: List[inspect.FrameInfo] = getattr(
+            task, "__pw_stack__", None
+        ) or inspect.stack(0)
+    
+        parsed_st = _extract_stack_trace_information_from_stack(st, is_internal, title)
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 15000ms exceeded.
+
+.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py:563: TimeoutError
+_ ERROR at setup of test_confirm_with_valid_identity_sends_exactly_one_decide_call _
+
+_browser = <Browser type=<BrowserType name=chromium executable_path=/home/ing_cpmo/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome> version=149.0.7827.55>
+
+    @pytest.fixture()
+    def pagina_con_mock(_browser):
+        contexto = _browser.new_context()
+        page = contexto.new_page()
+        try:
+            contexto_llamadas = {"decide_calls": []}
+>           _conectar_y_abrir_review(page, contexto_llamadas, identity_key=_VALID_IDENTITY_KEY)
+
+factory/tests/test_review_queue_finding_ui_playwright.py:167: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+factory/tests/test_review_queue_finding_ui_playwright.py:149: in _conectar_y_abrir_review
+    page.wait_for_selector("#apikey", timeout=20000)
+.venv/lib/python3.11/site-packages/playwright/sync_api/_generated.py:8928: in wait_for_selector
+    self._sync(
+.venv/lib/python3.11/site-packages/playwright/_impl/_page.py:427: in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/playwright/_impl/_frame.py:394: in wait_for_selector
+    await self._channel.send(
+.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f00aa978210>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f009a3cfe20>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        st: List[inspect.FrameInfo] = getattr(
+            task, "__pw_stack__", None
+        ) or inspect.stack(0)
+    
+        parsed_st = _extract_stack_trace_information_from_stack(st, is_internal, title)
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 20000ms exceeded.
+E           Call log:
+E             - waiting for locator("#apikey") to be visible
+
+.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py:563: TimeoutError
+=================================== FAILURES ===================================
+_________ test_button_enabled_and_signs_with_full_echo_back_when_valid _________
+
+_browser = <Browser type=<BrowserType name=chromium executable_path=/home/ing_cpmo/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome> version=149.0.7827.55>
+
+    def test_button_enabled_and_signs_with_full_echo_back_when_valid(_browser):
+>       contexto, pg, llamadas = _abrir_panel(_browser, _estado_base(with_valid_proposal=True))
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+factory/tests/test_governance_catalog_version_playwright.py:204: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+factory/tests/test_governance_catalog_version_playwright.py:165: in _abrir_panel
+    pg.wait_for_function(
+.venv/lib/python3.11/site-packages/playwright/sync_api/_generated.py:12594: in wait_for_function
+    self._sync(
+.venv/lib/python3.11/site-packages/playwright/_impl/_page.py:1144: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/playwright/_impl/_frame.py:932: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f009d4e7610>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f00a6a834c0>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        st: List[inspect.FrameInfo] = getattr(
+            task, "__pw_stack__", None
+        ) or inspect.stack(0)
+    
+        parsed_st = _extract_stack_trace_information_from_stack(st, is_internal, title)
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 15000ms exceeded.
+
+.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py:563: TimeoutError
+_____________ test_409_proposal_mismatch_is_rendered_persistently ______________
+
+_browser = <Browser type=<BrowserType name=chromium executable_path=/home/ing_cpmo/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome> version=149.0.7827.55>
+
+    def test_409_proposal_mismatch_is_rendered_persistently(_browser):
+        def _mismatch(route):
+            route.fulfill(status=409, content_type="application/json",
+                          body=json.dumps({"detail": {"detail": "no coincide",
+                                                       "reason": "proposal_mismatch"}}))
+>       contexto, pg, llamadas = _abrir_panel(
+            _browser, _estado_base(with_valid_proposal=True), sign_handler=_mismatch)
+
+factory/tests/test_governance_catalog_version_playwright.py:234: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+factory/tests/test_governance_catalog_version_playwright.py:162: in _abrir_panel
+    pg.wait_for_selector("#apikey", timeout=20000)
+.venv/lib/python3.11/site-packages/playwright/sync_api/_generated.py:8928: in wait_for_selector
+    self._sync(
+.venv/lib/python3.11/site-packages/playwright/_impl/_page.py:427: in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/playwright/_impl/_frame.py:394: in wait_for_selector
+    await self._channel.send(
+.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f009d4e7610>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f00a6a816c0>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        st: List[inspect.FrameInfo] = getattr(
+            task, "__pw_stack__", None
+        ) or inspect.stack(0)
+    
+        parsed_st = _extract_stack_trace_information_from_stack(st, is_internal, title)
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 20000ms exceeded.
+E           Call log:
+E             - waiting for locator("#apikey") to be visible
+
+.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py:563: TimeoutError
+________________ test_409_stale_state_is_rendered_persistently _________________
+
+_browser = <Browser type=<BrowserType name=chromium executable_path=/home/ing_cpmo/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome> version=149.0.7827.55>
+
+    def test_409_stale_state_is_rendered_persistently(_browser):
+        def _stale(route):
+            route.fulfill(status=409, content_type="application/json",
+                          body=json.dumps({"detail": {"detail": "state_hash obsoleto",
+                                                       "reason": "stale_state"}}))
+>       contexto, pg, llamadas = _abrir_panel(
+            _browser, _estado_base(with_valid_proposal=True), sign_handler=_stale)
+
+factory/tests/test_governance_catalog_version_playwright.py:255: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+factory/tests/test_governance_catalog_version_playwright.py:162: in _abrir_panel
+    pg.wait_for_selector("#apikey", timeout=20000)
+.venv/lib/python3.11/site-packages/playwright/sync_api/_generated.py:8928: in wait_for_selector
+    self._sync(
+.venv/lib/python3.11/site-packages/playwright/_impl/_page.py:427: in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/playwright/_impl/_frame.py:394: in wait_for_selector
+    await self._channel.send(
+.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py:69: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f009d4e7610>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f009d3f4180>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        st: List[inspect.FrameInfo] = getattr(
+            task, "__pw_stack__", None
+        ) or inspect.stack(0)
+    
+        parsed_st = _extract_stack_trace_information_from_stack(st, is_internal, title)
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 20000ms exceeded.
+E           Call log:
+E             - waiting for locator("#apikey") to be visible
+
+.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py:563: TimeoutError
+____________ test_every_blocking_risk_is_justified_by_a_real_state _____________
+
+    def test_every_blocking_risk_is_justified_by_a_real_state():
+        """U12+V1, reformulado: no se exige "cero riesgos bloqueantes" —eso haría
+        fallar la suite cada vez que la gobernanza detecta algo de verdad— sino
+        que todo riesgo bloqueante corresponda a un estado real y comprobable.
+        Un riesgo sin causa verificable sigue siendo un fallo.
+    
+        W5 V2 G2.2: el `else` de abajo declaraba injustificado TODO riesgo que no
+        fuera de remediación, es decir afirmaba de facto "el riesgo de cadena de
+        auditoría nunca existe". G1.14 (`f0c59a2`, un día posterior a este test)
+        convirtió `part11_compliant` en enum y hizo que la cadena reportara
+        `NOT_DETERMINED` mientras el fork histórico conocido siga sin excepción
+        humana registrada — exactamente el comportamiento que
+        AUDIT_FORK_REMEDIATION_SPEC §1.2 pide. El riesgo pasó a ser correcto y el
+        test lo leyó como fallo, repitiendo el error que su propio docstring
+        describe: fotografiar el mundo en vez de medir la regla. Se le enseña a
+        verificar RISK_AUDIT_CHAIN contra `verify_chain()`, igual que ya verifica
+        los de remediación contra el estado de la misión. Sigue detectando el
+        zombie (riesgo con cadena COMPLIANT) y no exige que el fork desaparezca.
+        """
+        blocking = [r for r in _get_risks()["risks"] if r.get("severity") not in ("info",)]
+        unjustified = []
+        for risk in blocking:
+            if risk["id"].startswith("RISK_REMEDIATION_"):
+                pid = risk["id"].removeprefix("RISK_REMEDIATION_").lower()
+                if _mission_status(pid) != "returned_to_adjustments":
+                    unjustified.append(risk)
+            elif risk["id"] == "RISK_AUDIT_CHAIN":
+                if _audit_chain_state().get("part11_compliant") == "COMPLIANT":
+                    unjustified.append(risk)
+            else:
+                unjustified.append(risk)
+>       assert unjustified == [], f"riesgos bloqueantes sin estado real que los sustente: {unjustified}"
+E       AssertionError: riesgos bloqueantes sin estado real que los sustente: [{'id': 'RISK_DISK_USAGE', 'severity': 'medio', 'description': 'Disco al 73.0% — umbral de alerta: 80%'}]
+E       assert [{'descriptio...ty': 'medio'}] == []
+E         
+E         Left contains one more item: {'description': 'Disco al 73.0% — umbral de alerta: 80%', 'id': 'RISK_DISK_USAGE', 'severity': 'medio'}
+E         Use -v to get more diff
+
+factory/tests/test_status_risks.py:127: AssertionError
+=============================== warnings summary ===============================
+factory/regulatory/schema_loader.py:44: 24 warnings
+factory/tests/test_applicability_matrix_v2.py: 6 warnings
+factory/tests/test_artifact_version_apply.py: 60 warnings
+factory/tests/test_artifact_version_signing.py: 28 warnings
+factory/tests/test_artifact_versioning.py: 73 warnings
+factory/tests/test_audit_chain.py: 32 warnings
+factory/tests/test_audit_fork_governance.py: 221 warnings
+factory/tests/test_catalog_source_verification_sync.py: 476 warnings
+factory/tests/test_catalog_source_verification_sync_apply.py: 22 warnings
+factory/tests/test_cgmp211_agent.py: 1 warning
+factory/tests/test_checkpoint_finding_contract.py: 8 warnings
+factory/tests/test_checkpoint_fingerprint_invalidation.py: 45 warnings
+factory/tests/test_chunked_engine_validation_evidence.py: 6 warnings
+factory/tests/test_corpus_authorization.py: 111 warnings
+factory/tests/test_corpus_budget_formula.py: 49880 warnings
+factory/tests/test_corpus_plan.py: 8928 warnings
+factory/tests/test_corpus_runner.py: 87 warnings
+factory/tests/test_decision_migration.py: 604 warnings
+factory/tests/test_decision_model_v2.py: 34 warnings
+factory/tests/test_decision_scope_resolver.py: 517 warnings
+factory/tests/test_evaluation_profile_h2h4.py: 70 warnings
+factory/tests/test_evidence_pack_gate.py: 15 warnings
+factory/tests/test_evidence_pack_governance.py: 24353 warnings
+factory/tests/test_exact_page_runner.py: 5 warnings
+factory/tests/test_g3_claude_probe_incident_closure.py: 67 warnings
+factory/tests/test_g3_reverification_launcher.py: 2124 warnings
+factory/tests/test_g7_audit_exception_readiness.py: 9724 warnings
+factory/tests/test_gate0_extended.py: 74 warnings
+factory/tests/test_gmpai_artifacts.py: 16 warnings
+factory/tests/test_gmpai_chunked_engine.py: 492 warnings
+factory/tests/test_governance_endpoints.py: 2241 warnings
+factory/tests/test_governance_signature_flow_g21.py: 1870 warnings
+factory/tests/test_human_source_registration.py: 7 warnings
+factory/tests/test_human_source_regovernance.py: 3 warnings
+factory/tests/test_judgment_execution_physical_accounting.py: 80 warnings
+factory/tests/test_m3_retrieval_mode.py: 40 warnings
+factory/tests/test_model_provider.py: 10 warnings
+factory/tests/test_model_qualification_gate.py: 880 warnings
+factory/tests/test_model_requalification_calibration.py: 86 warnings
+factory/tests/test_ollama_client.py: 6 warnings
+factory/tests/test_output_token_budget.py: 69 warnings
+factory/tests/test_pilot_execution_selection.py: 125 warnings
+factory/tests/test_pilot_isolation.py: 44 warnings
+factory/tests/test_provisional_evidence_model.py: 12 warnings
+factory/tests/test_r1_7_soft_relevance_verified_pipeline.py: 4 warnings
+factory/tests/test_r1_8_review_queue_dispatch.py: 3 warnings
+factory/tests/test_r2_3_p2_p5_judgment_replay.py: 10 warnings
+factory/tests/test_r2_3_reviewer_enrichment.py: 5 warnings
+factory/tests/test_r2_judgment.py: 77 warnings
+factory/tests/test_release_decision_coverage.py: 1230 warnings
+factory/tests/test_remediation_package_audit_isolation.py: 2 warnings
+factory/tests/test_requirement_catalog_loader.py: 67 warnings
+factory/tests/test_resignature_g2prime.py: 326 warnings
+factory/tests/test_retry_technical_failures.py: 114 warnings
+factory/tests/test_run_context_audit.py: 2 warnings
+factory/tests/test_schema_enforcement.py: 34 warnings
+factory/tests/test_semantic_verification_golden_dataset.py: 80 warnings
+factory/tests/test_sign_artifact_version_proposal_cli.py: 6 warnings
+factory/tests/test_source_baseline_allowlist.py: 14 warnings
+factory/tests/test_source_currency_checker.py: 18 warnings
+factory/tests/test_source_currency_confirmation.py: 24 warnings
+factory/tests/test_source_lifecycle.py: 1010 warnings
+factory/tests/test_source_origin_verification.py: 29 warnings
+factory/tests/test_status_risks.py: 6 warnings
+factory/tests/test_tier1_report.py: 60 warnings
+factory/tests/test_verified_pipeline.py: 10 warnings
+factory/tests/test_w5v2_governance_gates.py: 1 warning
+factory/tests/test_w5v2_regulatory_schemas.py: 23 warnings
+  /home/ing_cpmo/factory/regulatory/schema_loader.py:44: DeprecationWarning: jsonschema.RefResolver is deprecated as of v4.18.0, in favor of the https://github.com/python-jsonschema/referencing library, which provides more compliant referencing behavior as well as more flexible APIs for customization. A future release will remove RefResolver. Please file a feature request (on referencing) if you are missing an API for the kind of customization you need.
+    resolver=jsonschema.RefResolver(base_uri=f"{SCHEMAS_DIR.as_uri()}/", referrer=load_schema(schema_name)),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED factory/tests/test_governance_catalog_version_playwright.py::test_button_enabled_and_signs_with_full_echo_back_when_valid
+FAILED factory/tests/test_governance_catalog_version_playwright.py::test_409_proposal_mismatch_is_rendered_persistently
+FAILED factory/tests/test_governance_catalog_version_playwright.py::test_409_stale_state_is_rendered_persistently
+FAILED factory/tests/test_status_risks.py::test_every_blocking_risk_is_justified_by_a_real_state
+ERROR factory/tests/test_review_queue_finding_ui_playwright.py::test_missing_identity_key_shows_visible_error_and_never_advances
+ERROR factory/tests/test_review_queue_finding_ui_playwright.py::test_confirm_with_valid_identity_sends_exactly_one_decide_call
+4 failed, 2641 passed, 5 skipped, 1 xfailed, 106731 warnings, 2 errors in 881.41s (0:14:41)
+PYTEST_EXIT_CODE=1
