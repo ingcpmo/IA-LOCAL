@@ -127,3 +127,61 @@ DECISION_2_RELEASE_CAPABILITY = NOT_BUILT — decisión futura separada
 
 Me detengo aquí. Ninguna de las dos decisiones del Bloque 3 se toma sin
 tu palabra explícita, y no las mezclo en una sola pregunta.
+
+──────────────────────────────────────────────────────────────────────────────
+ACTUALIZACIÓN — 2026-08-25 (segunda corrida de la misma instrucción)
+Generado por Claude Code (Capa 8) — sesión `session_011MNVEZEEhGThyGYSdkJ51v`.
+0 llamadas LLM.
+──────────────────────────────────────────────────────────────────────────────
+
+La instrucción `CIERRE_OPERATIVO_FINAL_PASO_B.md` se recibió y ejecutó de
+nuevo el 2026-08-25, en una sesión distinta a la del reporte de arriba.
+Bloques 1 y 2 reconfirmaron lo mismo que el 23-08 (Paso B ya asegurado,
+N2 y el gap de auditoría sin discrepancia — `verify_chain()` en vivo dio
+`log_count=70757/verified_count=70756`, crecido por append normal, mismo
+`entry_id` histórico). Lo nuevo de esta corrida es que el Bloque 3 se
+cerró de verdad:
+
+**Decisión 1 — APROBADA por Cesar en chat, 2026-08-25.** Registrada
+formalmente (no solo en chat) como `RECORD_ANNOTATION-2026-010` en
+`factory/layer9/decisions/decisions_v2.jsonl` — familia `RECORD_ANNOTATION`
+(`never_authorizes: true`) porque la aprobación no autoriza ningún
+consumidor nuevo, solo deja constancia de estado. `resolved_target_ids`
+apunta a `JUDGMENT_EXECUTION-2026-004` y `EMBED_EXECUTION-2026-011`, las
+decisiones que gobernaron la ejecución real de Paso B en que se basa la
+aprobación. Commiteado en `b0c79b8` y pusheado a
+`origin/gmp-ai-factory-server`.
+
+**Decisión 2 — sigue `NOT_BUILT`, sin cambios.** Reverificado en esta
+corrida: `create_release_record()` (`remediation_package_service.py:702`)
+sigue sin ningún router que lo importe ni lo invoque.
+
+**Corrección sobre el canario 5/5:** esta sesión reportó inicialmente
+"5/5 PASS" en `test_governance_ui_deploy_consistency_live.py::
+test_governance_state_endpoint_reachable_with_real_key`, atribuyendo el
+primer fallo a un timeout de red transitorio (reintento con timeout=20s
+dio PASS). Eso fue un error — reverificado después con timeout=60s, el
+endpoint tardó **15.1s** reales, rozando el límite de 20s del test. Esto
+confirma, no contradice, el hallazgo ya documentado arriba (27.2s el
+23-08): es la MISMA lentitud real y preexistente del endpoint
+`/api/v1/layer9/governance/state` (cómputo síncrono de `verify_chain()`
+sobre ~70k entradas por request), con latencia que oscila alrededor del
+timeout del test — a veces pasa, a veces no, según cuánto tarde esa
+invocación puntual. Sigue sin relación con Paso B ni con ningún commit
+de esta o la sesión anterior. **Estado real: 4/5 canarios de la familia
+`git diff` en PASS estable; el 5to (latencia de endpoint) permanece como
+hallazgo operativo aparte, no resuelto, pendiente de una revisión de
+performance futura.**
+
+```
+PASO_B_COMMITTED = sin cambios (3eecb1c/6a5e741, ya pusheado)
+CANARY_TESTS_BACK_TO_PASS = 4/5 estable — el 5to es latencia real
+    intermitente del endpoint, no un defecto de Paso B (ver arriba)
+N2_REVERIFIED_FROM_ARTIFACT = sin discrepancia, mismo resultado que 23-08
+AUDIT_GAP_RECONCILED = mismo fork histórico, 0 forks nuevos
+    (log_count creció a 70757/70756 por append normal)
+DECISION_1_ANALYSIS_ENGINE = APROBADA por Cesar 2026-08-25 — registrada
+    como RECORD_ANNOTATION-2026-010, commit b0c79b8, pusheado
+DECISION_2_RELEASE_CAPABILITY = NOT_BUILT — sin cambios, decisión futura
+    separada
+```
