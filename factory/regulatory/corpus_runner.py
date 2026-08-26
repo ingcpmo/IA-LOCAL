@@ -517,13 +517,23 @@ def _default_extractor(path: Path) -> list[str]:
 
 
 def _check_corpus_authorization(document_ids: list[str], *,
-                                decision_store_file: Path | None = None) -> str:
+                                decision_store_file: Path | None = None,
+                                provider=None) -> str:
     """Fail-closed: TODOS los `document_ids` deben estar cubiertos por la
     MISMA decisión `CORPUS_AUTHORIZATION` vigente (mismo criterio que
     `corpus_authorization._d4_covering_instance`, aplicado aquí a la
     familia de autorización de corpus, no a la de presupuesto). Devuelve el
     `decision_instance_id` único (Bloque 3: se persiste en el manifest para
-    que la corrida quede trazable a la autorización real que la cubrió)."""
+    que la corrida quede trazable a la autorización real que la cubrió).
+
+    Cierre del gap técnico (docs_plan, 2026-08-26): además de resolver
+    cobertura, re-verifica AQUÍ MISMO que el `run_fingerprint` vivo sigue
+    coincidiendo con el firmado (`corpus_authorization.
+    verify_fingerprint_matches()`) -- antes, esa verificación solo vivía en
+    `apply_corpus_authorization()`, un pre-flight manual separado que nada
+    obligaba a correr antes de `run_corpus_batch()`. Ahora ninguna corrida
+    real puede arrancar con un fingerprint desactualizado sin que un humano
+    tenga que recordarlo."""
     instances = set()
     for doc_id in document_ids:
         scope = resolver.resolve(ca.DECISION_FAMILY, doc_id, store_file=decision_store_file)
@@ -535,7 +545,13 @@ def _check_corpus_authorization(document_ids: list[str], *,
         raise CorpusRunNotAuthorizedError(
             f"los documentos del lote no comparten una única CORPUS_AUTHORIZATION "
             f"({instances!r}) -- nunca se ejecuta un lote con cobertura mixta o parcial")
-    return next(iter(instances))
+    instance_id = next(iter(instances))
+    try:
+        ca.verify_fingerprint_matches(
+            instance_id, decision_store_file=decision_store_file, provider=provider)
+    except ca.CorpusAuthorizationError as exc:
+        raise CorpusRunNotAuthorizedError(str(exc)) from exc
+    return instance_id
 
 
 class EmbedBudgetInsufficientError(Exception):
@@ -854,7 +870,7 @@ def run_corpus_batch(units: list[CorpusRunUnit] | None = None, *,
 
     document_ids = sorted({u.document_id for u in units})
     corpus_authorization_id = _check_corpus_authorization(
-        document_ids, decision_store_file=decision_store_file)
+        document_ids, decision_store_file=decision_store_file, provider=provider)
 
     status = mqg.evaluate_model_qualification(provider).status
     mqg.require_inference_authorized(

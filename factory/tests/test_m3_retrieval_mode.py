@@ -18,6 +18,7 @@ import pytest
 
 from factory.core import decision_scope_resolver as resolver
 from factory.engines.gmpai_integrity import chunked_engine as ce
+from factory.regulatory import corpus_authorization as ca
 from factory.regulatory import corpus_runner as runner
 
 # Capturada ANTES de que cualquier fixture la mockee (ver _isolate mas abajo)
@@ -65,6 +66,12 @@ def _isolate(monkeypatch, tmp_path):
     monkeypatch.setattr(runner, "DEFAULT_MANIFEST_DIR", tmp_path / "manifests")
     monkeypatch.setattr(resolver, "resolve", lambda *a, **k: _AuthorizedScope())
     monkeypatch.setattr(runner, "resolver", resolver)
+    # Cierre del gap tecnico (docs_plan, 2026-08-26): ver misma nota en
+    # test_corpus_runner.py -- este archivo mockea su propio
+    # resolver.resolve con un decision_instance_id falso, asi que necesita
+    # el mismo mock de verify_fingerprint_matches.
+    monkeypatch.setattr(ca, "verify_fingerprint_matches", lambda *a, **k: {})
+    monkeypatch.setattr(runner, "ca", ca)
     monkeypatch.setattr(mqg, "require_inference_authorized", lambda *a, **k: None)
     monkeypatch.setattr(runner, "mqg", mqg)
     monkeypatch.setattr(runner, "_write_batch_event", lambda *a, **k: None)

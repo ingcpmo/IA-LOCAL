@@ -20,8 +20,14 @@ import json
 import pytest
 
 from factory.core import decision_scope_resolver as resolver
+from factory.regulatory import corpus_authorization as ca
 from factory.regulatory import corpus_runner as runner
 from factory.regulatory import model_qualification_gate as mqg
+
+# Capturada ANTES de que la fixture autouse mockee ca.verify_fingerprint_matches
+# -- TestFingerprintEnforcementIntegration la restaura para probar el
+# camino real, sin el mock que aisla al resto de este archivo.
+_REAL_VERIFY_FINGERPRINT_MATCHES = ca.verify_fingerprint_matches
 
 
 class FakeCorpusProvider:
@@ -82,6 +88,17 @@ def _isolate_and_authorize(monkeypatch, tmp_path):
     monkeypatch.setattr(runner, "DEFAULT_MANIFEST_DIR", tmp_path / "manifests")
     monkeypatch.setattr(resolver, "resolve", lambda *a, **k: _AuthorizedScope())
     monkeypatch.setattr(runner, "resolver", resolver)
+    # Cierre del gap tecnico (docs_plan, 2026-08-26): _check_corpus_authorization
+    # ahora tambien verifica el fingerprint vivo contra el firmado. Estos
+    # tests ejercitan OTRA cosa (hard stops, resume, manifest) sobre un
+    # decision_instance_id falso ("INST-1") que no existe en ningun
+    # almacen real -- se mockea la verificacion de fingerprint aparte,
+    # igual que ya se mockea require_inference_authorized, para no atar
+    # esta suite a un concern que no le corresponde. La cobertura real de
+    # verify_fingerprint_matches vive en test_corpus_authorization.py y en
+    # TestFingerprintEnforcement mas abajo.
+    monkeypatch.setattr(ca, "verify_fingerprint_matches", lambda *a, **k: {})
+    monkeypatch.setattr(runner, "ca", ca)
     monkeypatch.setattr(mqg, "require_inference_authorized", lambda *a, **k: None)
     monkeypatch.setattr(runner, "mqg", mqg)
     monkeypatch.setattr(runner, "_write_batch_event", lambda *a, **k: None)
@@ -155,6 +172,131 @@ def test_bloqueado_si_modelo_no_qualified(monkeypatch):
     with pytest.raises(mqg.InferenceNotAuthorizedError):
         runner.run_corpus_batch([_unit()], provider=provider, run_context="validation")
     assert provider.generate_calls == 0, "ninguna llamada real si la autorizacion de inferencia fallo"
+
+
+class TestFingerprintEnforcementIntegration:
+    """Cierre del gap tecnico (docs_plan, 2026-08-26): confirma que
+    run_corpus_batch() de verdad invoca la verificacion de fingerprint --
+    NO mockeada aqui (a diferencia del resto del archivo, donde
+    ca.verify_fingerprint_matches esta mockeada en la fixture autouse para
+    aislar otros concerns) -- contra un almacen de decisiones TEMPORAL
+    real, con una CORPUS_AUTHORIZATION real firmada via el ciclo
+    propose->confirm de gobernanza."""
+
+    @staticmethod
+    def _grant_d4_coverage(tmp_decisions, document_ids):
+        from factory.services import governance_service as gov
+        prop = gov.propose(
+            "D4", target_ids=list(document_ids), decision_type="ORIGINAL",
+            selection_mode="EXPLICIT_LIST", proposed_by_id="test",
+            reason="presupuesto de prueba", payload={"max_calls": 10},
+            store_file=tmp_decisions)
+        conf = gov.confirm(
+            prop["proposal_id"], approved_by_id="cesar", approved_by_display_name="Cesar",
+            reason="presupuesto de prueba", family_state_hash=prop["family_state_hash"],
+            store_file=tmp_decisions)
+        return conf["decision_instance_id"]
+
+    def _authorize_real(self, tmp_decisions, document_ids, provider):
+        """Firma una CORPUS_AUTHORIZATION real, de punta a punta, sobre
+        `document_ids` con el fingerprint LIMPIO de `provider`. Devuelve el
+        decision_instance_id real (nunca "INST-1" -- ese es el fake del
+        resto del archivo)."""
+        self._grant_d4_coverage(tmp_decisions, document_ids)
+        prop = ca.propose_corpus_authorization(
+            document_ids, proposed_by_id="test", decision_store_file=tmp_decisions,
+            provider=provider)
+        from factory.services import governance_service as gov
+        conf = gov.confirm(
+            prop["proposal_id"], approved_by_id="cesar", approved_by_display_name="Cesar",
+            reason="autorizado", family_state_hash=prop["family_state_hash"],
+            store_file=tmp_decisions)
+        return conf["decision_instance_id"]
+
+    def _unmock_and_authorize(self, monkeypatch, tmp_decisions, instance_id):
+        """Restaura el verify_fingerprint_matches REAL (la fixture autouse
+        del archivo lo mockea) y apunta resolver.resolve al instance_id
+        real recien firmado."""
+        monkeypatch.setattr(ca, "verify_fingerprint_matches", _REAL_VERIFY_FINGERPRINT_MATCHES)
+        monkeypatch.setattr(resolver, "resolve",
+                            lambda *a, **k: _AuthorizedScope(covering_instances=(instance_id,)))
+
+    def test_fingerprint_valido_permite_la_corrida(self, monkeypatch, tmp_path):
+        tmp_decisions = tmp_path / "decisions_v2.jsonl"
+        tmp_decisions.write_text("", encoding="utf-8")
+        provider = FakeCorpusProvider()
+        instance_id = self._authorize_real(tmp_decisions, ("DOC-1",), provider)
+        self._unmock_and_authorize(monkeypatch, tmp_decisions, instance_id)
+        summary = runner.run_corpus_batch(
+            [_unit()], provider=provider, decision_store_file=tmp_decisions,
+            run_context="validation")
+        assert summary.corpus_authorization_id == instance_id
+        assert summary.stop_reason != "NOT_AUTHORIZED"
+
+    def test_catalogo_cambiado_bloquea_la_corrida(self, monkeypatch, tmp_path):
+        tmp_decisions = tmp_path / "decisions_v2.jsonl"
+        tmp_decisions.write_text("", encoding="utf-8")
+        provider = FakeCorpusProvider()
+        instance_id = self._authorize_real(tmp_decisions, ("DOC-1",), provider)
+        self._unmock_and_authorize(monkeypatch, tmp_decisions, instance_id)
+
+        original = mqg.build_qualification_fingerprint
+
+        def _drifted(provider=None):
+            fp = dict(original(provider))
+            fp["catalog_sha256"] = "0" * 64
+            return fp
+
+        monkeypatch.setattr(mqg, "build_qualification_fingerprint", _drifted)
+        with pytest.raises(runner.CorpusRunNotAuthorizedError, match="ya no coincide"):
+            runner.run_corpus_batch(
+                [_unit()], provider=provider, decision_store_file=tmp_decisions,
+                run_context="validation")
+
+    def test_prompt_cambiado_bloquea_la_corrida(self, monkeypatch, tmp_path):
+        tmp_decisions = tmp_path / "decisions_v2.jsonl"
+        tmp_decisions.write_text("", encoding="utf-8")
+        provider = FakeCorpusProvider()
+        instance_id = self._authorize_real(tmp_decisions, ("DOC-1",), provider)
+        self._unmock_and_authorize(monkeypatch, tmp_decisions, instance_id)
+
+        original = mqg.build_qualification_fingerprint
+
+        def _drifted(provider=None):
+            fp = dict(original(provider))
+            fp["prompt_versions"] = dict(fp["prompt_versions"])
+            key = next(iter(fp["prompt_versions"]))
+            fp["prompt_versions"][key] = "9.9.9-drift"
+            return fp
+
+        monkeypatch.setattr(mqg, "build_qualification_fingerprint", _drifted)
+        with pytest.raises(runner.CorpusRunNotAuthorizedError, match="ya no coincide"):
+            runner.run_corpus_batch(
+                [_unit()], provider=provider, decision_store_file=tmp_decisions,
+                run_context="validation")
+
+    def test_autorizacion_inexistente_bloquea_la_corrida(self, monkeypatch, tmp_path):
+        """decision_instance_id resuelto por el resolver pero ausente del
+        almacen real -- caso degenerado, fail-closed igual."""
+        tmp_decisions = tmp_path / "decisions_v2.jsonl"
+        tmp_decisions.write_text("", encoding="utf-8")
+        monkeypatch.setattr(ca, "verify_fingerprint_matches", _REAL_VERIFY_FINGERPRINT_MATCHES)
+        monkeypatch.setattr(resolver, "resolve",
+                            lambda *a, **k: _AuthorizedScope(covering_instances=("CORPUS_AUTHORIZATION-2026-999",)))
+        with pytest.raises(runner.CorpusRunNotAuthorizedError, match="no se encuentra en el almacén"):
+            runner.run_corpus_batch(
+                [_unit()], provider=FakeCorpusProvider(), decision_store_file=tmp_decisions,
+                run_context="validation")
+
+    def test_documento_fuera_de_scope_bloquea_la_corrida(self, monkeypatch):
+        """Ya cubierto por test_bloqueado_sin_corpus_authorization arriba
+        (mismo mecanismo: el resolver niega authorized=False) -- se deja
+        aqui como referencia explicita del quinto caso pedido, sin
+        duplicar aserciones."""
+        monkeypatch.setattr(resolver, "resolve",
+                            lambda *a, **k: _AuthorizedScope(authorized=False, denial_reason="fuera de scope"))
+        with pytest.raises(runner.CorpusRunNotAuthorizedError, match="fuera de scope"):
+            runner.run_corpus_batch([_unit()], provider=FakeCorpusProvider(), run_context="validation")
 
 
 class TestProductionRunConfigGuard:

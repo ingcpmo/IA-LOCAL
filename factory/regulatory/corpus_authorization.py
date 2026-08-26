@@ -107,6 +107,45 @@ def propose_corpus_authorization(document_ids: tuple[str, ...], *, proposed_by_i
         reason=reason, payload=payload, store_file=decision_store_file)
 
 
+def verify_fingerprint_matches(decision_instance_id: str, *,
+                               decision_store_file: Path | None = None,
+                               provider=None) -> dict:
+    """Único punto de comparación fingerprint vivo vs. firmado — extraído
+    de `apply_corpus_authorization()` (Bloque de cierre del gap técnico,
+    docs_plan, 2026-08-26) para que el camino REAL de ejecución
+    (`corpus_runner._check_corpus_authorization()`) lo reutilice sin
+    depender de que un humano recuerde invocar `apply_corpus_authorization()`
+    aparte. No valida cobertura de `document_ids` -- eso es precondición
+    propia de `apply_corpus_authorization()` (exige el conjunto EXACTO que
+    la decisión autorizó), mientras que el runner real puede legítimamente
+    ejecutar un lote que sea un SUBCONJUNTO de lo autorizado (resume/retry
+    parcial) -- mezclar ambas exigencias en una sola función rompería esos
+    lotes parciales que hoy funcionan.
+
+    Fail-closed: `CorpusAuthorizationError` si el registro no existe, el
+    payload está incompleto, o el fingerprint vivo difiere del firmado en
+    cualquier campo (catálogo, prompts, modelo, golden dataset, parámetros
+    de generación -- se compara el dict completo, no campo por campo)."""
+    from factory.regulatory import model_qualification_gate as mqg
+
+    decision = next((r for r in store.read_all(decision_store_file)
+                     if r.get("decision_instance_id") == decision_instance_id), None)
+    if decision is None:
+        raise CorpusAuthorizationError(f"{decision_instance_id!r} no se encuentra en el almacén")
+    payload = decision.get("payload") or {}
+    missing = [f for f in REQUIRED_PAYLOAD_FIELDS if f not in payload]
+    if missing:
+        raise CorpusAuthorizationError(f"payload incompleto, faltan: {missing}")
+
+    live_fingerprint = mqg.build_qualification_fingerprint(provider=provider)
+    if live_fingerprint != payload["run_fingerprint"]:
+        raise CorpusAuthorizationError(
+            "el run_fingerprint vivo ya no coincide con el firmado -- la configuración "
+            "cambió desde que se propuso (catálogo/prompts/modelo/golden dataset), "
+            "esta autorización no se hereda, hay que re-proponer sobre el estado actual")
+    return live_fingerprint
+
+
 def apply_corpus_authorization(document_ids: tuple[str, ...], *, decision_instance_id: str,
                                decision_store_file: Path | None = None,
                                provider=None) -> dict:
@@ -116,8 +155,6 @@ def apply_corpus_authorization(document_ids: tuple[str, ...], *, decision_instan
     dataset) desde la propuesta invalida la autorización, no se hereda.
     NUNCA lanza ninguna corrida -- solo confirma que la autorización está
     lista para que el runner (aparte, no implementado aquí) la consuma."""
-    from factory.regulatory import model_qualification_gate as mqg
-
     scope = resolver.resolve(DECISION_FAMILY, document_ids[0] if document_ids else "",
                              store_file=decision_store_file)
     if not scope.authorized or decision_instance_id not in scope.covering_instances:
@@ -136,12 +173,8 @@ def apply_corpus_authorization(document_ids: tuple[str, ...], *, decision_instan
         raise CorpusAuthorizationError(
             f"la decisión autoriza document_ids={payload['document_ids']!r}, no {list(document_ids)!r}")
 
-    live_fingerprint = mqg.build_qualification_fingerprint(provider=provider)
-    if live_fingerprint != payload["run_fingerprint"]:
-        raise CorpusAuthorizationError(
-            "el run_fingerprint vivo ya no coincide con el firmado -- la configuración "
-            "cambió desde que se propuso (catálogo/prompts/modelo/golden dataset), "
-            "esta autorización no se hereda, hay que re-proponer sobre el estado actual")
+    live_fingerprint = verify_fingerprint_matches(
+        decision_instance_id, decision_store_file=decision_store_file, provider=provider)
 
     from factory.core.audit_writer import write_event
     write_event("corpus_authorization_applied", "regulatory_intel", {

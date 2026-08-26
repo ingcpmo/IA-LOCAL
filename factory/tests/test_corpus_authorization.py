@@ -143,6 +143,62 @@ def test_apply_rejects_a_decision_that_does_not_cover_this_scope(tmp_decisions):
             decision_store_file=tmp_decisions, provider=FakeProvider())
 
 
+def test_verify_fingerprint_matches_passes_when_identical(tmp_decisions):
+    """Cierre del gap tecnico (docs_plan, 2026-08-26): fingerprint vivo ==
+    firmado -> PASS, devuelve el fingerprint vivo."""
+    _, conf = _propose_y_confirmar(tmp_decisions)
+    live = ca.verify_fingerprint_matches(
+        conf["decision_instance_id"], decision_store_file=tmp_decisions, provider=FakeProvider())
+    assert live == mqg.build_qualification_fingerprint(FakeProvider())
+
+
+def test_verify_fingerprint_matches_blocks_when_catalog_sha256_differs(tmp_decisions, monkeypatch):
+    """Catalogo cambiado desde la firma -> BLOCK. Se firma con el
+    fingerprint LIMPIO primero, y solo DESPUES se simula el drift para la
+    verificacion -- si se mockeara antes, la firma y la verificacion
+    quedarian identicas por construccion y el test no probaria nada."""
+    _, conf = _propose_y_confirmar(tmp_decisions)
+    original = mqg.build_qualification_fingerprint
+
+    def _drifted(provider=None):
+        fp = dict(original(provider))
+        fp["catalog_sha256"] = "0" * 64
+        return fp
+
+    monkeypatch.setattr(mqg, "build_qualification_fingerprint", _drifted)
+    with pytest.raises(ca.CorpusAuthorizationError, match="ya no coincide"):
+        ca.verify_fingerprint_matches(
+            conf["decision_instance_id"], decision_store_file=tmp_decisions, provider=FakeProvider())
+
+
+def test_verify_fingerprint_matches_blocks_when_a_prompt_version_differs(tmp_decisions, monkeypatch):
+    """Un solo prompt_version distinto -- no solo catalog_sha256 -- ya
+    basta para bloquear (se compara el dict completo del fingerprint)."""
+    _, conf = _propose_y_confirmar(tmp_decisions)
+    original = mqg.build_qualification_fingerprint
+
+    def _drifted(provider=None):
+        fp = dict(original(provider))
+        fp["prompt_versions"] = dict(fp["prompt_versions"])
+        key = next(iter(fp["prompt_versions"]))
+        fp["prompt_versions"][key] = "9.9.9-drift"
+        return fp
+
+    monkeypatch.setattr(mqg, "build_qualification_fingerprint", _drifted)
+    with pytest.raises(ca.CorpusAuthorizationError, match="ya no coincide"):
+        ca.verify_fingerprint_matches(
+            conf["decision_instance_id"], decision_store_file=tmp_decisions, provider=FakeProvider())
+
+
+def test_verify_fingerprint_matches_blocks_when_decision_not_found(tmp_decisions):
+    """decision_instance_id inexistente en el almacen -- caso degenerado
+    (el resolver ya no deberia devolverlo como covering_instance si no
+    existe, pero se verifica igual, fail-closed)."""
+    with pytest.raises(ca.CorpusAuthorizationError, match="no se encuentra en el almacén"):
+        ca.verify_fingerprint_matches(
+            "CORPUS_AUTHORIZATION-2026-999", decision_store_file=tmp_decisions, provider=FakeProvider())
+
+
 def test_corpus_authorization_is_a_registered_family_and_governed_family():
     families = store.load_families()
     assert "CORPUS_AUTHORIZATION" in families
