@@ -20,10 +20,10 @@ let DIRECTIVES = [];
 /* Último paquete leído -- cada acción reenvía sobre ESTO, no sobre un
    estado adivinado; tras cada POST se vuelve a pedir el GET real. */
 let PKG = null;
-/* Release del paquete actual, si esta sesión lo liberó. El GET de detalle
-   no devuelve el ReleaseRecord (no hay endpoint dedicado todavía) -- por
-   eso esto vive solo en memoria y se resetea en cada loadRemediationPackage(),
-   no sobrevive a un refresh de página. */
+/* ReleaseRecord del paquete actual (o null) -- viene de GET .../release,
+   consultado en loadRemediationPackage() cuando el estado es
+   PACKAGE_READY_FOR_RELEASE. Tras liberar, submitReleasePackage() lo
+   asigna directo desde la respuesta del POST sin esperar un reload. */
 let RELEASE_INFO = null;
 
 /* ---- Directivas de remediación (solo lectura) ---- */
@@ -80,6 +80,15 @@ export async function loadRemediationPackage(){
     }
     const data = await r.json();
     PKG = {project_id: project, package_id: pkgId, version: Number(version), ...data};
+    if(data.package.status === 'PACKAGE_READY_FOR_RELEASE'){
+      try{
+        const rr = await fetch(
+          API_BASE+'/api/v1/remediation-packages/'+encodeURIComponent(project)+'/'
+            +encodeURIComponent(pkgId)+'/'+encodeURIComponent(version)+'/release',
+          {headers: headers()});
+        if(rr.ok) RELEASE_INFO = (await rr.json()).release;
+      }catch(e){ /* estado del release solo -- no bloquea el resto del panel */ }
+    }
     renderRemediationPackage();
   }catch(e){
     box.innerHTML = '<div class="card"><div class="meta" style="color:var(--fail)">Error de red: '+esc(e.message)+'</div></div>';

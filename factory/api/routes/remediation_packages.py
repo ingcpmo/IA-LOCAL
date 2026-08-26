@@ -24,6 +24,10 @@ toca.
   POST .../{version}/release
       crear ReleaseRecord -- Depends(require_identity), body vacio,
       released_by SIEMPRE server-side, nunca del cliente
+  GET  .../{version}/release
+      consultar el ReleaseRecord de esta version exacta (o {"release":
+      null} si no se libero) -- gap cerrado 2026-08-26: sin esto la UI
+      no podia saber si un paquete ya estaba liberado tras un refresh
 """
 
 import sys
@@ -197,3 +201,14 @@ def release_package(project_id: str, package_id: str, version: int,
         raise HTTPException(409, str(e))
     except _CLIENT_ERROR_TYPES as e:
         raise HTTPException(400, str(e))
+
+
+@router.get("/{project_id}/{package_id}/{version}/release")
+def get_release(project_id: str, package_id: str, version: int):
+    """`{"release": null}` si el paquete existe pero nunca se liberó --
+    distinto de 404, que significa que el paquete/version en sí no existe."""
+    try:
+        svc._read_state(project_id, package_id, version)
+    except svc.RemediationPackageNotFound as e:
+        raise HTTPException(404, str(e))
+    return {"release": svc.get_release_for_version(project_id, package_id, version)}

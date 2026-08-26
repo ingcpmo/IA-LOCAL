@@ -281,6 +281,36 @@ def test_release_emits_document_released_audit_event(client, identity_headers, i
     assert released_events[0]["data"]["package_id"] == "PKG-REL-8"
 
 
+# ── GET .../release (gap cerrado 2026-08-26): sin esto, la UI no podia
+# distinguir "nunca se libero" de "ya se libero" tras un refresh de pagina --
+# solo lo sabia mientras durara la memoria en JS de la propia sesion que
+# disparo el POST.
+
+def _get_release(client, package_id, *, version=1):
+    return client.get(f"{BASE}/{PROJECT_ID}/{package_id}/{version}/release")
+
+
+def test_get_release_before_release_returns_null(client, identity_headers):
+    _create(client, "PKG-REL-GET-1")
+    r = _get_release(client, "PKG-REL-GET-1")
+    assert r.status_code == 200, r.text
+    assert r.json() == {"release": None}
+
+
+def test_get_release_after_release_returns_record(client, identity_headers, identity_headers_other):
+    _create(client, "PKG-REL-GET-2")
+    _decide(client, "PKG-REL-GET-2", identity_headers_other, justification="ok")
+    posted = _release(client, "PKG-REL-GET-2", identity_headers).json()
+    r = _get_release(client, "PKG-REL-GET-2")
+    assert r.status_code == 200, r.text
+    assert r.json() == {"release": posted}
+
+
+def test_get_release_nonexistent_package_returns_404(client):
+    r = _get_release(client, "PKG-REL-GET-NO-EXISTE")
+    assert r.status_code == 404, r.text
+
+
 # ── Cierre P0 (2026-08-18, VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md,
 # hallazgo I): el endpoint de creacion de paquetes debia aceptar `changes`
 # arbitrarios sin exigir una RemediationDirective real y SUBMITTED detras.

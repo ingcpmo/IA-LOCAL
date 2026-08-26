@@ -717,6 +717,17 @@ def get_effective_release(project_id: str, package_id: str) -> dict | None:
         return _effective_release(releases, supersessions)
 
 
+def get_release_for_version(project_id: str, package_id: str, package_version: int) -> dict | None:
+    """ReleaseRecord de esta version exacta, o None si nunca se libero --
+    distinto de `get_effective_release()`, que responde por `package_id`
+    (la version vigente, que puede haber sido superseded). Como mucho un
+    release por version (invariante que ya aplica `create_release_record()`
+    antes de escribir), asi que basta con el primer match."""
+    with _package_lock(project_id, package_id):
+        releases = _read_jsonl(_releases_path(project_id, package_id))
+    return next((r for r in releases if r["package_version"] == package_version), None)
+
+
 def create_release_record(
     *, project_id: str, package_id: str, package_version: int, released_by: str,
 ) -> dict:

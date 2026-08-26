@@ -446,6 +446,17 @@ def test_release_supersession_never_mutates_prior_release_record():
     effective = svc.get_effective_release(PROJECT_ID, "PKG12")
     assert effective["release_id"] == release_v2["release_id"]
 
+    # get_release_for_version, a diferencia de get_effective_release, responde
+    # por VERSION exacta -- v1 sigue teniendo su propio release aunque ya no
+    # sea el vigente (fue superseded, nunca borrado ni modificado).
+    assert svc.get_release_for_version(PROJECT_ID, "PKG12", 1)["release_id"] == release_v1["release_id"]
+    assert svc.get_release_for_version(PROJECT_ID, "PKG12", 2)["release_id"] == release_v2["release_id"]
+
+
+def test_get_release_for_version_returns_none_when_not_released():
+    _approve_clean_package("PKG10D")
+    assert svc.get_release_for_version(PROJECT_ID, "PKG10D", 1) is None
+
 
 def test_closed_package_rejects_new_exception_review():
     """Una version RETURNED_SUPERSEDED/CLOSED_REJECTED/PACKAGE_READY_FOR_RELEASE
