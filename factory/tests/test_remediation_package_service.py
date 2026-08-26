@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import pytest
 
 from factory.core import audit_writer
+from factory.core import release_authorization
 from factory.services import paths
 from factory.services import remediation_package_service as svc
 
@@ -42,6 +43,13 @@ def _isolated_remediation_packages_base(tmp_path, monkeypatch):
     # este fixture). El bypass que create_package() cierra ahora se prueba
     # aparte en test_create_package_requires_real_submitted_directive.
     monkeypatch.setattr(svc, "_resolve_directive", lambda directive_id: {"status": "SUBMITTED"})
+    # Decision 2 (2026-08-26): create_release_record() ahora exige
+    # autorizacion explicita -- estos tests ejercitan OTRAS invariantes
+    # (version, riesgo, excepciones, decision, release append-only) y no
+    # deben depender del contenido real de release_authorized_identities.yaml.
+    # La cobertura real de autorizacion/cuatro-ojos vive en
+    # test_release_authorization.py.
+    monkeypatch.setattr(release_authorization, "is_authorized_to_release", lambda name, **k: True)
     yield
 
 
@@ -213,6 +221,74 @@ def test_duplicate_package_version_rejected():
                             generation_commit_sha="deadbeef")
 
 
+# ── directive_id real: SUPERSEDED nunca puede respaldar un change ──────────
+# (Causa B, CALIFICACION_FINAL_CURRENT_ENGINE.md continuación 2026-08-20).
+# Estos 2 tests deshacen el monkeypatch autouse de _resolve_directive para
+# ejercitar el resolver REAL (remediation_directive.get_directive) contra
+# una RemediationDirective real de punta a punta -- el bypass que
+# create_package() cierra (hallazgo I, VERIFICACION_ACOTADA_Y_PAQUETES_
+# CIERRE.md) nunca tuvo cobertura real hasta ahora.
+
+def test_create_package_rejects_superseded_directive(monkeypatch, tmp_path):
+    from factory.layer9 import human_review_queue as hrq
+    from factory.services import remediation_directive as rd
+
+    monkeypatch.setattr(hrq, "REVIEW_QUEUE_FILE", tmp_path / "review_queue_real.jsonl")
+    monkeypatch.setattr(rd, "DIRECTIVES_FILE", tmp_path / "directives_real.jsonl")
+    monkeypatch.setattr(svc, "_resolve_directive", rd.get_directive)  # deshace el bypass autouse
+
+    fixed_path = Path("/fake/RW-TEST.pdf")
+    monkeypatch.setattr(rd, "_resolve_document_path", lambda document_id: (fixed_path, "a" * 64))
+
+    class _FakeReader:
+        pages = [object()] * 10
+
+    import pypdf
+    monkeypatch.setattr(pypdf, "PdfReader", lambda path: _FakeReader())
+
+    entry = hrq.enqueue_finding_for_review(
+        run_id="chunked-real-test", requirement_id="21_CFR_11.10(e)", document_id="RW-TEST",
+        page=None, evidence_quote="", conclusion="PROVISIONAL_GAP",
+        review_flags=[], agent_id="fda_part11_agent",
+    )
+    hrq.mark_reviewed(entry["rc_id"], "confirmed", "Cesar")
+
+    kwargs = dict(
+        finding_rc_id=entry["rc_id"], change_type="ADD",
+        proposed_text="Texto de correccion original.",
+        target_location={"page_start": 3, "page_end": 3, "section": None},
+        regulatory_citation=["21_CFR_11.10(e)"], rationale="Cierra la brecha.",
+        authored_by_id="Cesar",
+    )
+    original = rd.propose_remediation_directive(**kwargs)
+    replacement = rd.propose_remediation_directive(
+        **{**kwargs, "proposed_text": "Texto de correccion corregido.",
+           "supersedes_directive_id": original["directive_id"]})
+    assert rd.get_directive(original["directive_id"])["status"] == "SUPERSEDED"
+
+    change_on_old = _change("C-SUPERSEDED")
+    change_on_old["directive_id"] = original["directive_id"]
+    with pytest.raises(svc.DirectiveNotSubmittedError, match="SUBMITTED"):
+        svc.create_package(
+            project_id=PROJECT_ID, package_id="PKG-SUPERSEDED-REJECTED", package_version=1,
+            changes=[change_on_old], artifacts=_artifacts(),
+            automatic_evaluation_basis=_basis(requirement_ids=("REQ-C-SUPERSEDED",)),
+            generation_commit_sha="deadbeef",
+        )
+
+    # La sustituta SUBMITTED sí puede respaldar el package -- confirma que
+    # el rechazo de arriba es por status, no por un resolver roto.
+    change_on_new = _change("C-REPLACEMENT")
+    change_on_new["directive_id"] = replacement["directive_id"]
+    pkg = svc.create_package(
+        project_id=PROJECT_ID, package_id="PKG-REPLACEMENT-ACCEPTED", package_version=1,
+        changes=[change_on_new], artifacts=_artifacts(),
+        automatic_evaluation_basis=_basis(requirement_ids=("REQ-C-REPLACEMENT",)),
+        generation_commit_sha="deadbeef",
+    )
+    assert pkg["status"] in ("AWAITING_HUMAN_EXCEPTION_REVIEW", "AWAITING_PACKAGE_DECISION")
+
+
 # ── invariante corregida: resolver exception_id -> change_id antes de comparar ──
 
 def _package_with_one_high_risk(package_id, version=1):
@@ -309,26 +385,46 @@ def test_package_ready_for_release_status_is_the_only_source():
 
 
 def test_release_record_created_and_duplicate_rejected():
-    _approve_clean_package("PKG10")
+    _approve_clean_package("PKG10")  # decided_by="cesar"
     release = svc.create_release_record(project_id=PROJECT_ID, package_id="PKG10", package_version=1,
-                                         released_by="cesar")
+                                         released_by="qa_lead")
     assert release["package_version"] == 1
     with pytest.raises(svc.DuplicateReleaseError):
         svc.create_release_record(project_id=PROJECT_ID, package_id="PKG10", package_version=1,
-                                   released_by="cesar")
+                                   released_by="qa_lead")
 
 
 def test_release_requires_package_ready_for_release_status():
     _package_with_one_high_risk("PKG11")  # queda en AWAITING_HUMAN_EXCEPTION_REVIEW
     with pytest.raises(svc.InvalidTransitionError):
         svc.create_release_record(project_id=PROJECT_ID, package_id="PKG11", package_version=1,
+                                   released_by="qa_lead")
+
+
+def test_release_rejects_unauthorized_identity(monkeypatch):
+    """Decision 2: autorizacion explicita, independiente de cuatro ojos --
+    se verifica ANTES de leer el estado del paquete."""
+    monkeypatch.setattr(release_authorization, "is_authorized_to_release", lambda name, **k: False)
+    _approve_clean_package("PKG10B")
+    with pytest.raises(svc.ReleaseNotAuthorizedError):
+        svc.create_release_record(project_id=PROJECT_ID, package_id="PKG10B", package_version=1,
+                                   released_by="quien_sea")
+
+
+def test_release_rejects_same_identity_as_decision():
+    """Decision 2: cuatro ojos -- decided_by='cesar' (via _approve_clean_
+    package), released_by='cesar' -> FAIL CLOSED aunque este autorizado
+    (el mock autouse de este archivo autoriza a cualquiera)."""
+    _approve_clean_package("PKG10C")
+    with pytest.raises(svc.ReleaseFourEyesViolationError):
+        svc.create_release_record(project_id=PROJECT_ID, package_id="PKG10C", package_version=1,
                                    released_by="cesar")
 
 
 def test_release_supersession_never_mutates_prior_release_record():
-    _approve_clean_package("PKG12")
+    _approve_clean_package("PKG12")  # decided_by="cesar"
     release_v1 = svc.create_release_record(project_id=PROJECT_ID, package_id="PKG12", package_version=1,
-                                            released_by="cesar")
+                                            released_by="qa_lead")
 
     # ciclo de control de cambios posterior: nueva version, tambien aprobada y liberada
     low_v2 = _change("C-LOW-V2", risk_factors={
@@ -341,7 +437,7 @@ def test_release_supersession_never_mutates_prior_release_record():
     svc.record_package_decision(project_id=PROJECT_ID, package_id="PKG12", package_version=2,
                                  decision="APPROVE_CLEAN", decided_by="cesar", justification="v2 limpia")
     release_v2 = svc.create_release_record(project_id=PROJECT_ID, package_id="PKG12", package_version=2,
-                                            released_by="cesar")
+                                            released_by="qa_lead")
 
     releases = svc._read_jsonl(svc._releases_path(PROJECT_ID, "PKG12"))
     assert releases[0] == release_v1  # el registro v1 nunca se modifico

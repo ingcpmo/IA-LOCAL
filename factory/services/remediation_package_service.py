@@ -129,6 +129,24 @@ class ReleaseInvariantViolationError(RemediationPackageError):
     pass
 
 
+class ReleaseNotAuthorizedError(RemediationPackageError):
+    """Decisión 2 (2026-08-26): `released_by` no está en la lista de
+    identidades autorizadas a liberar (`release_authorization.
+    is_authorized_to_release()`). Distinta de un fallo de autenticación
+    (eso ya lo resuelve `require_identity` con 401 antes de llegar aquí)
+    -- esta es una identidad real y autenticada, pero sin autorización
+    específica para este acto."""
+
+
+class ReleaseFourEyesViolationError(RemediationPackageError):
+    """Decisión 2 (2026-08-26): `released_by` coincide con
+    `package_decision.decided_by` -- la misma identidad que aprobó el
+    paquete no puede además liberarlo. Segregación de funciones exigida
+    por Cesar (Capa 9), comparada contra la identidad CANÓNICA resuelta
+    por el sistema en ambos actos, nunca contra un nombre visible o un
+    string del cliente."""
+
+
 # ── Cálculo de riesgo/confianza (deterministas, "el peor factor gana") ──────
 # CHANGE_RISK: solo factores de contenido/impacto regulatorio. Nunca incluye
 # coverage_status/anchor/relevance/schema -- esos alimentan EVALUATION_
@@ -708,13 +726,36 @@ def create_release_record(
     ReleaseSupersessionRecord, nunca se reescribe). Bajo _package_lock: la
     comprobacion de duplicado y el append ocurren en la misma seccion
     critica, asi que dos llamadas concurrentes nunca producen dos releases
-    para la misma version."""
+    para la misma version.
+
+    Decisión 2 (2026-08-26), dos controles nuevos, en este orden:
+    1. `released_by` debe estar en `release_authorization.
+       is_authorized_to_release()` -- se verifica ANTES de leer el estado
+       del paquete, no requiere ningún dato de él.
+    2. Cuatro ojos: `released_by` debe ser DISTINTO de
+       `package_decision.decided_by` -- la identidad que aprobó el
+       paquete no puede además liberarlo (segregación de funciones
+       exigida por Cesar). Ambas identidades ya son las CANÓNICAS
+       resueltas por el sistema (`require_identity` en ambos actos),
+       nunca un nombre visible ni un string del cliente."""
+    from factory.core.release_authorization import is_authorized_to_release
+    if not is_authorized_to_release(released_by):
+        raise ReleaseNotAuthorizedError(
+            f"{released_by!r} no está autorizado a liberar documentos "
+            "(release_authorized_identities.yaml)")
+
     with _package_lock(project_id, package_id):
         state = _read_state(project_id, package_id, package_version)
         pkg = state["package"]
         if pkg["status"] != "PACKAGE_READY_FOR_RELEASE":
             raise InvalidTransitionError(
                 f"paquete v{package_version} en estado '{pkg['status']}', no esta PACKAGE_READY_FOR_RELEASE")
+
+        decided_by = state["package_decision"]["decided_by"]
+        if released_by == decided_by:
+            raise ReleaseFourEyesViolationError(
+                f"{released_by!r} ya firmó el PackageDecisionRecord de este paquete -- "
+                "la misma identidad no puede además liberarlo, se exige una identidad distinta")
 
         releases_path = _releases_path(project_id, package_id)
         supersessions_path = _supersessions_path(project_id, package_id)

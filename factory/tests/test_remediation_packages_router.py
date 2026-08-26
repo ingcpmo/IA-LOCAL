@@ -175,6 +175,112 @@ def test_unknown_identity_key_is_rejected_over_http(client):
     assert r.status_code == 401, r.text
 
 
+# ── Decision 2 (2026-08-26): endpoint de liberacion ─────────────────────────
+# `identity_headers` resuelve a "Cesar" (conftest.py) -- coincide a
+# proposito con la UNICA identidad de factory/config/release_authorized_
+# identities.yaml real (no mockeado en estos tests: son de contrato HTTP
+# end-to-end). `identity_headers_other` resuelve a "OtroRevisor" -- real,
+# autenticado, pero NUNCA en esa lista, para probar autorizacion negativa
+# sin depender de una identidad inventada que require_identity rechazaria
+# antes de llegar al concern que se quiere probar.
+
+def _release(client, package_id, headers, *, version=1):
+    return client.post(f"{BASE}/{PROJECT_ID}/{package_id}/{version}/release",
+                       json={"released_by": "inyectado-por-el-cliente"}, headers=headers)
+
+
+def test_release_with_authorized_and_distinct_identity_returns_201(client, identity_headers,
+                                                                    identity_headers_other):
+    """decide OtroRevisor, libera Cesar (autorizado, distinto) -> 201."""
+    _create(client, "PKG-REL-1")
+    assert _decide(client, "PKG-REL-1", identity_headers_other, justification="ok").status_code == 201
+    r = _release(client, "PKG-REL-1", identity_headers)
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["released_by"] == "Cesar", "released_by debe ser la identidad SERVER-SIDE, nunca el body"
+    assert body["release_id"].startswith("REL-PKG-REL-1")
+
+
+def test_release_body_cannot_inject_released_by(client, identity_headers, identity_headers_other):
+    """El body manda released_by='inyectado-por-el-cliente' en TODOS estos
+    tests (via el helper _release) -- si algun dia el endpoint empezara a
+    leerlo, este valor apareceria en el ReleaseRecord. Se ignora siempre:
+    no hay ningun parametro Body declarado en la firma del endpoint."""
+    _create(client, "PKG-REL-2")
+    _decide(client, "PKG-REL-2", identity_headers_other, justification="ok")
+    r = _release(client, "PKG-REL-2", identity_headers)
+    assert r.status_code == 201, r.text
+    assert r.json()["released_by"] != "inyectado-por-el-cliente"
+    assert r.json()["released_by"] == "Cesar"
+
+
+def test_release_same_identity_that_decided_fails_closed(client, identity_headers):
+    """Cuatro ojos: Cesar decide Y Cesar intenta liberar -> FAIL CLOSED."""
+    _create(client, "PKG-REL-3")
+    assert _decide(client, "PKG-REL-3", identity_headers, justification="ok").status_code == 201
+    r = _release(client, "PKG-REL-3", identity_headers)
+    assert r.status_code == 403, r.text
+    assert "misma identidad" in r.text or "no puede" in r.text
+
+
+def test_release_unauthorized_identity_fails_closed(client, identity_headers, identity_headers_other):
+    """OtroRevisor esta autenticado y es distinto de quien decidio, pero NO
+    esta en release_authorized_identities.yaml -> FAIL CLOSED (403), nunca
+    201 solo por tener una X-Identity-Key valida."""
+    _create(client, "PKG-REL-4")
+    assert _decide(client, "PKG-REL-4", identity_headers, justification="ok").status_code == 201
+    r = _release(client, "PKG-REL-4", identity_headers_other)
+    assert r.status_code == 403, r.text
+    assert "autorizado" in r.text
+
+
+def test_release_package_not_ready_fails_closed(client, identity_headers):
+    """Paquete creado pero sin PackageDecisionRecord -- nunca llega a
+    PACKAGE_READY_FOR_RELEASE."""
+    _create(client, "PKG-REL-5")
+    r = _release(client, "PKG-REL-5", identity_headers)
+    assert r.status_code == 400, r.text
+
+
+def test_release_nonexistent_package_returns_404(client, identity_headers):
+    r = _release(client, "PKG-REL-NO-EXISTE", identity_headers)
+    assert r.status_code == 404, r.text
+
+
+def test_release_duplicate_returns_409(client, identity_headers, identity_headers_other):
+    _create(client, "PKG-REL-6")
+    _decide(client, "PKG-REL-6", identity_headers_other, justification="ok")
+    assert _release(client, "PKG-REL-6", identity_headers).status_code == 201
+    r = _release(client, "PKG-REL-6", identity_headers)
+    assert r.status_code == 409, r.text
+
+
+def test_release_missing_identity_key_is_rejected_over_http(client, identity_headers_other):
+    _create(client, "PKG-REL-7")
+    _decide(client, "PKG-REL-7", identity_headers_other, justification="ok")
+    r = _release(client, "PKG-REL-7", headers=None)
+    assert r.status_code == 401, r.text
+
+
+def test_release_emits_document_released_audit_event(client, identity_headers, identity_headers_other,
+                                                       tmp_path, monkeypatch):
+    from factory.core import audit_writer as aw
+    audit_file = tmp_path / "audit" / "release_audit_test.jsonl"
+    monkeypatch.setattr(aw, "AUDIT_FILE", audit_file)
+    monkeypatch.setattr(aw, "_last_entry_hash", None)
+
+    _create(client, "PKG-REL-8")
+    _decide(client, "PKG-REL-8", identity_headers_other, justification="ok")
+    r = _release(client, "PKG-REL-8", identity_headers)
+    assert r.status_code == 201, r.text
+
+    events = [json.loads(line) for line in audit_file.read_text(encoding="utf-8").splitlines()]
+    released_events = [e for e in events if e.get("event_type") == "document_released"]
+    assert len(released_events) == 1, events
+    assert released_events[0]["data"]["released_by"] == "Cesar"
+    assert released_events[0]["data"]["package_id"] == "PKG-REL-8"
+
+
 # ── Cierre P0 (2026-08-18, VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md,
 # hallazgo I): el endpoint de creacion de paquetes debia aceptar `changes`
 # arbitrarios sin exigir una RemediationDirective real y SUBMITTED detras.

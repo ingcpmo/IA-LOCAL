@@ -1,11 +1,15 @@
 """
 BATCH_AND_EXCEPTION — endpoints internos de gestion de CandidatePackage.
 
-Deliberadamente NO expone ningun endpoint de ReleaseRecord todavia (Fase 3
-del ajuste aprobado): DOCUMENT_RELEASED permanece false y
-PRODUCTION_ENABLEMENT permanece BLOCKED para todo lo que pasa por esta
-capa -- create_release_record() existe en el servicio pero no se conecta
-aqui a proposito.
+Decision 2 (2026-08-26): el endpoint de liberacion YA esta conectado --
+create_release_record() se invoca desde .../release con dos controles
+nuevos antes de tocar el estado del paquete: autorizacion explicita
+(release_authorization.is_authorized_to_release(), lista minima
+provisionada por Capa 9, vacio = nadie autorizado) y cuatro ojos
+(released_by != package_decision.decided_by, ambas identidades
+canonicas resueltas por el sistema). PRODUCTION_ENABLEMENT sigue
+gobernado aparte por model_qualification_gate -- este endpoint no lo
+toca.
 
   POST /api/v1/remediation-packages/{project_id}/{package_id}/{version}
       crear paquete (generacion automatica, sin aprobacion por chunk)
@@ -17,6 +21,9 @@ aqui a proposito.
       registrar MediumRiskBatchDecision
   POST .../{version}/decision
       registrar PackageDecisionRecord
+  POST .../{version}/release
+      crear ReleaseRecord -- Depends(require_identity), body vacio,
+      released_by SIEMPRE server-side, nunca del cliente
 """
 
 import sys
@@ -164,6 +171,29 @@ def create_package_decision(project_id: str, package_id: str, version: int, body
     # PackageDecisionAlreadyRecordedError es subclase de InvalidTransitionError,
     # por eso debe capturarse ANTES que _CLIENT_ERROR_TYPES.
     except svc.PackageDecisionAlreadyRecordedError as e:
+        raise HTTPException(409, str(e))
+    except _CLIENT_ERROR_TYPES as e:
+        raise HTTPException(400, str(e))
+
+
+@router.post("/{project_id}/{package_id}/{version}/release", status_code=201)
+def release_package(project_id: str, package_id: str, version: int,
+                    identity: str = Depends(require_identity)):
+    """Decision 2 (2026-08-26). Sin body -- released_by SIEMPRE viene de
+    `identity` (require_identity), mismo criterio que decided_by en
+    /decision (Paquete 2, hallazgo M): el cliente no puede declarar quien
+    libera. Cualquier campo que el cliente mande en el body se ignora --
+    no hay ningun parametro Body declarado que lo reciba."""
+    try:
+        return svc.create_release_record(
+            project_id=project_id, package_id=package_id, package_version=version,
+            released_by=identity,
+        )
+    except svc.RemediationPackageNotFound as e:
+        raise HTTPException(404, str(e))
+    except (svc.ReleaseNotAuthorizedError, svc.ReleaseFourEyesViolationError) as e:
+        raise HTTPException(403, str(e))
+    except svc.DuplicateReleaseError as e:
         raise HTTPException(409, str(e))
     except _CLIENT_ERROR_TYPES as e:
         raise HTTPException(400, str(e))

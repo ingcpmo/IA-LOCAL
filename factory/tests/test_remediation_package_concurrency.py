@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import pytest
 
 from factory.core import audit_writer
+from factory.core import release_authorization
 from factory.services import paths
 from factory.services import remediation_package_service as svc
 
@@ -105,6 +106,11 @@ def _isolated_remediation_packages_base(tmp_path, monkeypatch):
     # ANTES de crear cualquier Pool: los procesos hijo (fork) heredan la
     # memoria ya parcheada del proceso padre en el momento del fork.
     monkeypatch.setattr(svc, "_resolve_directive", lambda directive_id: {"status": "SUBMITTED"})
+    # Decision 2 (2026-08-26): mismo criterio que arriba -- debe patchearse
+    # ANTES de crear cualquier Pool para que el fork lo herede. "worker" y
+    # "setup"/"cesar" ya son identidades distintas en los tests de este
+    # archivo, asi que solo hace falta destrabar la autorizacion.
+    monkeypatch.setattr(release_authorization, "is_authorized_to_release", lambda name, **k: True)
     yield tmp_path / "remediation_packages"
 
 

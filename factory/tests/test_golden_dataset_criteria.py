@@ -136,10 +136,12 @@ def test_check_no_pending_high_risk_fails_without_exception():
 
 
 def test_check_no_automatic_release_passes_structurally():
-    """Verificacion estructural real: el router de remediation_packages no
-    registra ninguna ruta de release ni importa create_release_record."""
+    """Decision 2 (2026-08-26): el criterio ya no exige que /release no
+    exista -- exige que exista PROTEGIDA por require_identity +
+    autorizacion explicita + cuatro ojos. Verificacion estructural real,
+    sin servidor en vivo."""
     result = gdc.check_no_automatic_release()
-    assert result["status"] == "PASS"
+    assert result["status"] == "PASS", result["reason"]
 
 
 REAL_PDF = Path(

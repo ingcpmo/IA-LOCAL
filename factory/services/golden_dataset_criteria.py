@@ -174,21 +174,50 @@ def check_no_pending_high_risk_without_exception(package_state: dict) -> dict:
 
 
 def check_no_automatic_release() -> dict:
-    """Criterio 12 -- 0 liberaciones automáticas. Verificación estructural
-    real (no una suposición): el router de `remediation_packages.py` no
-    registra ninguna ruta que contenga "release" en su path, y el módulo
-    no importa `create_release_record` -- por lo tanto ningún endpoint
-    HTTP puede alcanzarlo, sin depender de un servidor en vivo."""
-    from factory.api.routes import remediation_packages as pkg_routes
+    """Criterio 12 -- 0 liberaciones automáticas. Decisión 2 (2026-08-26):
+    ya existe una ruta `/release` real -- el criterio deja de ser "no
+    existe ninguna ruta de release" (eso dejó de ser cierto a propósito) y
+    pasa a verificar lo que el nombre siempre quiso decir: que liberar
+    exige una identidad humana autenticada (`require_identity`),
+    autorización explícita (`release_authorization.is_authorized_to_
+    release()`) y cuatro ojos (`released_by != decided_by`) -- nunca un
+    disparo automático. Verificación estructural real (no un servidor en
+    vivo ni una corrida real): inspecciona la ruta registrada y el código
+    fuente de `create_release_record()`."""
+    import inspect
 
-    release_paths = [r.path for r in pkg_routes.router.routes if "release" in r.path.lower()]
-    imports_release_fn = "create_release_record" in vars(pkg_routes)
-    if release_paths or imports_release_fn:
+    from factory.api.routes import remediation_packages as pkg_routes
+    from factory.services import remediation_package_service as pkg_svc
+
+    release_routes = [r for r in pkg_routes.router.routes if r.path.endswith("/release")]
+    if not release_routes:
+        return {"status": "FAIL", "reason": "no existe ninguna ruta de release"}
+
+    route = release_routes[0]
+    depends_on_identity = any(
+        getattr(d.call, "__name__", "") == "require_identity"
+        for d in route.dependant.dependencies
+    )
+    if not depends_on_identity:
+        return {"status": "FAIL", "reason": f"{route.path} no depende de require_identity"}
+
+    source = inspect.getsource(pkg_svc.create_release_record)
+    has_authorization_check = "is_authorized_to_release" in source
+    has_four_eyes_check = "decided_by" in source and "released_by ==" in source
+    if not (has_authorization_check and has_four_eyes_check):
         return {
             "status": "FAIL",
-            "reason": {"release_paths": release_paths, "imports_create_release_record": imports_release_fn},
+            "reason": {"has_authorization_check": has_authorization_check,
+                       "has_four_eyes_check": has_four_eyes_check},
         }
-    return {"status": "PASS", "reason": "router sin rutas de release y sin importar create_release_record"}
+    return {
+        "status": "PASS",
+        "reason": (
+            f"{route.path} exige require_identity + autorización explícita "
+            "(is_authorized_to_release) + cuatro ojos (released_by != decided_by) "
+            "antes de crear un ReleaseRecord -- nunca automático"
+        ),
+    }
 
 
 def evaluate_golden_dataset_criteria(

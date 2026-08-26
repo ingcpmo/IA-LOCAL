@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import pytest
 
 from factory.core import audit_writer
+from factory.core import release_authorization
 from factory.services import paths
 from factory.services import remediation_package_service as svc
 
@@ -110,6 +111,10 @@ def test_real_audit_log_unchanged_after_full_batch_and_exception_lifecycle(tmp_p
     # test_remediation_package_service.py): este test prueba aislamiento de
     # auditoria, no el flujo de RemediationDirective.
     monkeypatch.setattr(svc, "_resolve_directive", lambda directive_id: {"status": "SUBMITTED"})
+    # Decision 2 (2026-08-26): este test prueba aislamiento de auditoria,
+    # no autorizacion de release -- se mockea aparte, mismo criterio que
+    # test_remediation_package_service.py.
+    monkeypatch.setattr(release_authorization, "is_authorized_to_release", lambda name, **k: True)
 
     package_id = "PKG-AUDIT-ISOLATION"
     pkg = svc.create_package(
@@ -129,7 +134,7 @@ def test_real_audit_log_unchanged_after_full_batch_and_exception_lifecycle(tmp_p
         decision="APPROVE_WITH_EXCEPTIONS", decided_by="cesar", justification="test aislado",
         high_risk_exception_ids=["EXC-C-HIGH"])
     release = svc.create_release_record(
-        project_id=PROJECT_ID, package_id=package_id, package_version=1, released_by="cesar")
+        project_id=PROJECT_ID, package_id=package_id, package_version=1, released_by="qa_lead")
     assert release["release_id"]
 
     # el archivo AISLADO si recibio los eventos (confirma que write_event

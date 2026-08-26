@@ -1,0 +1,10 @@
+# Control mínimo de autorización de liberación -- Decisión 2, 2026-08-26.
+# Lista EXPLÍCITA de identidades reales (mismo nombre que resuelve
+# `require_identity`) autorizadas a invocar create_release_record().
+# Vacío o ausente = NADIE autorizado (fail-closed) -- nunca "todos".
+# Sin datos sensibles (nombres, no claves) -- versionado en git a
+# propósito: el historial queda como registro auditable de quién fue
+# autorizado y cuándo (a diferencia de identity_keys.yaml, gitignorado
+# por las claves).
+authorized_identities:
+  - Cesar
