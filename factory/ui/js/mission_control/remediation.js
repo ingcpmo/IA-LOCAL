@@ -20,6 +20,11 @@ let DIRECTIVES = [];
 /* Último paquete leído -- cada acción reenvía sobre ESTO, no sobre un
    estado adivinado; tras cada POST se vuelve a pedir el GET real. */
 let PKG = null;
+/* Release del paquete actual, si esta sesión lo liberó. El GET de detalle
+   no devuelve el ReleaseRecord (no hay endpoint dedicado todavía) -- por
+   eso esto vive solo en memoria y se resetea en cada loadRemediationPackage(),
+   no sobrevive a un refresh de página. */
+let RELEASE_INFO = null;
 
 /* ---- Directivas de remediación (solo lectura) ---- */
 
@@ -59,6 +64,7 @@ export async function loadRemediationPackage(){
   if(!box) return;
   if(!project || !pkgId || !version){ toast('Completa project_id, package_id y version.'); return; }
   box.innerHTML = '<div class="card"><div class="meta" style="color:var(--faint)">cargando…</div></div>';
+  RELEASE_INFO = null;
   try{
     const r = await fetch(
       API_BASE+'/api/v1/remediation-packages/'+encodeURIComponent(project)+'/'
@@ -223,8 +229,9 @@ function packageDecisionBlock(){
   return `<div class="card" style="margin-top:10px">
     <b>Decisión final del paquete</b>
     <div class="meta" style="margin-top:6px;color:var(--warn)">
-      Nunca ejecuta ni libera nada -- create_release_record() no está conectado
-      a ningún endpoint. Registrar esta decisión NO libera el documento.</div>
+      Registrar esta decisión NO libera el documento -- liberar es una acción
+      separada (más abajo), disponible solo cuando el paquete llegue a
+      PACKAGE_READY_FOR_RELEASE.</div>
     <div class="field" style="margin-top:8px"><label>Decisión</label>
       <select id="pd-decision">
         <option value="APPROVE_CLEAN">APPROVE_CLEAN</option>
@@ -240,6 +247,27 @@ function packageDecisionBlock(){
     <div class="field"><label>Justificación (obligatoria)</label>
       <input id="pd-justification" placeholder="motivo real de la decisión final" autocomplete="off"></div>
     <button class="btn pass" onclick="submitPackageDecision()">Registrar decisión final</button>
+  </div>`;
+}
+
+function releaseBlock(){
+  const p = PKG.package;
+  if(RELEASE_INFO){
+    return `<div class="card" style="margin-top:10px;border:1px solid var(--pass)">
+      <b>Documento liberado</b>
+      <div class="meta mono" style="margin-top:4px">${esc(RELEASE_INFO.release_id)}</div>
+      <div class="meta" style="margin-top:4px">liberado por ${esc(RELEASE_INFO.released_by)}
+        — ${esc((RELEASE_INFO.released_at||'').slice(0,16).replace('T',' '))}Z</div>
+    </div>`;
+  }
+  if(p.status !== 'PACKAGE_READY_FOR_RELEASE') return '';
+  return `<div class="card" style="margin-top:10px">
+    <b>Liberación</b>
+    <div class="meta" style="margin-top:6px;color:var(--warn)">
+      Acción irreversible -- crea un ReleaseRecord append-only. Exige una
+      identidad autorizada (release_authorized_identities.yaml) DISTINTA de
+      quien firmó la decisión final (cuatro ojos).</div>
+    <button class="btn pass" onclick="submitReleasePackage()">Liberar documento</button>
   </div>`;
 }
 
@@ -278,7 +306,8 @@ function renderRemediationPackage(){
     ${groups.low_risk.map(changeCard).join('') || '<div class="meta" style="color:var(--faint);margin-top:8px">Ninguno.</div>'}
   </div>
 
-  ${packageDecisionBlock()}`;
+  ${packageDecisionBlock()}
+  ${releaseBlock()}`;
 }
 
 async function _postJSON(path, body){
@@ -337,5 +366,21 @@ export async function submitPackageDecision(){
     {decision, justification, medium_risk_batch_decision_id, high_risk_exception_ids});
   if(ok){ toast('Decisión final registrada: '+decision); await loadRemediationPackage(); }
   else if(status===409){ toast('Ya existe una decisión para este paquete (409) — no se puede re-decidir.'); await loadRemediationPackage(); }
+  else { toast('Error '+status+': '+(data.detail||JSON.stringify(data))); }
+}
+
+export async function submitReleasePackage(){
+  if(!PKG) return;
+  if(!confirm('¿Liberar este documento? Acción irreversible -- crea un ReleaseRecord append-only.')) return;
+  const {ok, status, data} = await _postJSON(
+    '/api/v1/remediation-packages/'+encodeURIComponent(PKG.project_id)+'/'
+      +encodeURIComponent(PKG.package_id)+'/'+PKG.version+'/release', {});
+  if(ok){
+    RELEASE_INFO = data;
+    toast('Documento liberado — '+data.release_id);
+    renderRemediationPackage();
+  }
+  else if(status===403){ toast('No autorizado a liberar (403): '+(data.detail||'')); }
+  else if(status===409){ toast('Ya existe un release para esta versión (409).'); await loadRemediationPackage(); }
   else { toast('Error '+status+': '+(data.detail||JSON.stringify(data))); }
 }

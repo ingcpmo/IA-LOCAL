@@ -38,7 +38,7 @@ import { doCaseSearch, submitRegQuery, promptCaseFetch,
   toggleCaseAnalysis, loadCaseAnalysis, runCaseAnalysis,
   decideCaseAnalysis } from './intel_views.js';
 import { loadRemediationPackage, submitExceptionReview,
-  submitMediumRiskBatch, submitPackageDecision,
+  submitMediumRiskBatch, submitPackageDecision, submitReleasePackage,
   loadRemediationPackagesList, openRemediationPackageFromList } from './remediation.js';
 
 Object.assign(window, {
@@ -67,6 +67,7 @@ Object.assign(window, {
   copyCaseCitation, promptCaseCompare, runCaseCompare,
   toggleCaseAnalysis, loadCaseAnalysis, runCaseAnalysis, decideCaseAnalysis,
   loadRemediationPackage, submitExceptionReview, submitMediumRiskBatch, submitPackageDecision,
+  submitReleasePackage,
   loadRemediationPackagesList, openRemediationPackageFromList,
   submitCandidateDecision,
 });
