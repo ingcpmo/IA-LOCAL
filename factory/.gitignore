@@ -46,6 +46,11 @@ regulatory/retrieval_index/
 # criterio que retrieval_index/, nunca fuente de verdad)
 regulatory/embedding_index/
 
+# V2 B1: store del modelo canónico por documento (SQLite regenerable desde
+# el PDF real con canonical/extract_document.py -- mismo criterio que
+# retrieval_index/, nunca fuente de verdad)
+regulatory/canonical_store/
+
 # Config local de Claude Code dentro de deployments
 deployments/*/.claude/
 
