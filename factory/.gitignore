@@ -51,6 +51,11 @@ regulatory/embedding_index/
 # retrieval_index/, nunca fuente de verdad)
 regulatory/canonical_store/
 
+# V2 B2: grafo de evidencia/conocimiento por proyecto (SQLite regenerable
+# desde el canonical_store + el catálogo con graph/build.py -- mismo
+# criterio que canonical_store/)
+regulatory/graph_store/
+
 # Config local de Claude Code dentro de deployments
 deployments/*/.claude/
 
