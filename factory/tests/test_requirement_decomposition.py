@@ -19,8 +19,20 @@ from factory.regulatory.requirement_catalog.requirement_catalog_loader import lo
 
 def test_loads_and_validates():
     data = dl.load_decomposition()
-    assert data["decomposition_version"] == "1.0"
+    assert data["decomposition_version"] == "1.1"
     assert data["signed_by"].startswith("Capa 9")
+    assert data.get("bilingual") is True
+
+
+def test_every_subcriterion_is_bilingual():
+    """v1.1: cada sub-criterio tiene text (ES, autoritativo) + text_en
+    (glosa EN, aid de recuperación cross-idioma)."""
+    for rid in dl.load_decomposition()["requirements"]:
+        for sc in dl.get_subcriteria(rid):
+            assert sc.get("text_en", "").strip(), f"{rid}::{sc['id']} sin text_en"
+            # el aid combina ambos idiomas
+            m = dl.subcriterion_match_text(sc)
+            assert sc["text"] in m and sc["text_en"] in m
 
 
 def test_full_coverage_of_catalog():

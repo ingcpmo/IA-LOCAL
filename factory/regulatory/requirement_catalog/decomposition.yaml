@@ -4,6 +4,15 @@
 # docs_plan/PROPUESTA_DECOMPOSITION_REQUIREMENTS_V2.md ("firmo con los
 # cambios, siempre que estos ayuden a mejorar").
 #
+# v1.1 (2026-08-27, misma firma -- "haz las glosas bilingües"): cada
+# sub-criterio gana `text_en`, glosa en inglés FIEL de `text`. Motivo
+# medido (Gate B3): los documentos del cliente están en inglés y el
+# reranker léxico determinista no cruza el idioma -- los 9 sub-criterios
+# de un requisito devolvían el mismo candidato. `text` (español) sigue
+# siendo el AUTORITATIVO; `text_en` es un aid de recuperación/enmarcado,
+# NO una re-interpretación (misma sustancia, otro idioma). El anclaje
+# final sigue siendo Claim.source_text literal.
+#
 # Archivo HERMANO de requirements.yaml -- NO se mete dentro del catálogo v1
 # porque requirement_catalog_entry_v1.json es additionalProperties:false y
 # tocarlo rompería CURRENT. Se carga por separado en el camino V2
@@ -12,22 +21,21 @@
 #
 # Cada sub-criterio es una re-expresión atómica de citation_text +
 # evidence_min_criteria del requisito (ver `derived_from`). NO añade ni
-# elimina exigencias -- desdobla las compuestas. La cita citable de
-# cualquier `observed` sigue siendo el Claim.source_text literal; el
-# sub-criterio solo enmarca la pregunta al modelo y la recuperación.
+# elimina exigencias -- desdobla las compuestas.
 #
 # Reglas duras: cero LLM en runtime (estático); el verificador
 # (evidence_verifier) no se toca; el negativo obligatorio ANNEX11_4 sigue
 # rechazándose (ver la nota de guardián en su bloque); ningún cambio a
 # este archivo sin nueva versión + firma de Capa 9.
 
-decomposition_version: "1.0"
+decomposition_version: "1.1"
 signed_by: "Capa 9 (Cesar)"
 signed_at: "2026-08-27"
 source_proposal: "docs_plan/PROPUESTA_DECOMPOSITION_REQUIREMENTS_V2.md"
 catalog_version_ref: "2.1"   # requirements.yaml sobre el que se autoró
 total_requirements: 20
 total_subcriteria: 84
+bilingual: true              # cada sub-criterio tiene text (ES, autoritativo) + text_en (EN, aid)
 
 requirements:
 
@@ -35,111 +43,143 @@ requirements:
     subcriteria:
       - id: sc1
         text: "existe un enfoque de validación documentado, basado en riesgo y uso previsto"
+        text_en: "there is a documented validation approach, risk-based and driven by intended use"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "los criterios de aceptación se definieron antes de ejecutar la validación"
+        text_en: "acceptance criteria were defined before executing the validation"
         derived_from: ["evidence_min_criteria[1]"]
       - id: sc3
         text: "hay evidencia real de ejecución: protocolo ejecutado, resultados registrados, desviaciones documentadas si las hubo"
+        text_en: "there is real execution evidence: protocol executed, results recorded, deviations documented if any"
         derived_from: ["evidence_min_criteria[2]"]
       - id: sc4
         text: "existe trazabilidad requisito ↔ prueba ↔ resultado"
+        text_en: "there is requirement <-> test <-> result traceability"
         derived_from: ["evidence_min_criteria[3]"]
       - id: sc5
         text: "el sistema puede discernir registros inválidos o alterados, por algún mecanismo técnico demostrado"
+        text_en: "the system can discern invalid or altered records, by some demonstrated technical mechanism"
         derived_from: ["evidence_min_criteria[4]", "citation_text"]
 
   21_CFR_11.10(d):
     subcriteria:
       - id: sc1
         text: "existe un mecanismo de control de acceso al sistema (propio o federado), descrito"
+        text_en: "there is a described system access control mechanism (native or federated)"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "hay un proceso de alta de cuentas"
+        text_en: "there is an account provisioning / creation process"
         derived_from: ["evidence_min_criteria[1]"]
       - id: sc3
         text: "hay un proceso de cambio de privilegios de cuentas"
+        text_en: "there is a process for changing account privileges"
         derived_from: ["evidence_min_criteria[1]"]
       - id: sc4
         text: "hay revisión periódica de cuentas y accesos"
+        text_en: "there is periodic review of accounts and access rights"
         derived_from: ["evidence_min_criteria[1]"]
       - id: sc5
         text: "hay un proceso de revocación de cuentas"
+        text_en: "there is an account revocation / deactivation process"
         derived_from: ["evidence_min_criteria[1]"]
       - id: sc6
         text: "las cuentas humanas son individuales, no compartidas"
+        text_en: "human accounts are individual, not shared"
         derived_from: ["evidence_min_criteria[2]"]
       - id: sc7
         text: "las cuentas técnicas no interactivas, si existen, tienen propietario, propósito y privilegio mínimo declarados, y no pueden firmar electrónicamente"
+        text_en: "non-interactive technical / service accounts, if any, have a declared owner, purpose and least privilege, and cannot electronically sign"
         derived_from: ["evidence_min_criteria[3]"]
       - id: sc8
         text: "hay evidencia de prueba de acceso permitido y de acceso denegado"
+        text_en: "there is test evidence of allowed access and of denied access"
         derived_from: ["evidence_min_criteria[4]"]
 
   21_CFR_11.10(e):
     subcriteria:
       - id: sc1
         text: "existe un audit trail generado automáticamente por el sistema, sin intervención del operador"
+        text_en: "there is a computer-generated audit trail, produced automatically without operator intervention"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "cada entrada del audit trail registra fecha y hora"
+        text_en: "each audit trail entry records the date and time (time-stamped)"
         derived_from: ["evidence_min_criteria[1]", "citation_text"]
       - id: sc3
         text: "el audit trail registra las acciones de crear, modificar y eliminar registros electrónicos"
+        text_en: "the audit trail records actions that create, modify and delete electronic records"
         derived_from: ["evidence_min_criteria[2]", "citation_text"]
       - id: sc4
         text: "al modificar un registro, el audit trail preserva el valor o la información previa (no solo el nuevo valor)"
+        text_en: "on record modification, the audit trail preserves the previous value or prior information (not only the new value)"
         derived_from: ["evidence_min_criteria[3]"]
       - id: sc5
         text: "el acceso para modificar el propio audit trail está restringido a usuarios privilegiados"
+        text_en: "access to modify the audit trail itself is restricted to privileged users"
         derived_from: ["evidence_min_criteria[4]"]
       - id: sc6
         text: "el audit trail permite detectar manipulación / es trazable"
+        text_en: "the audit trail allows tamper detection / is traceable"
         derived_from: ["evidence_min_criteria[5]"]
       - id: sc7
         text: "la modificación silenciosa del audit trail está impedida y es detectable"
+        text_en: "silent modification of the audit trail is prevented and detectable"
         derived_from: ["evidence_min_criteria[6]"]
       - id: sc8
         text: "el audit trail se retiene por un periodo igual o mayor al del registro asociado"
+        text_en: "the audit trail is retained for a period at least as long as the associated record"
         derived_from: ["evidence_min_criteria[7]"]
       - id: sc9
         text: "el audit trail se puede exportar o copiar para inspección"
+        text_en: "the audit trail can be exported or copied for inspection"
         derived_from: ["evidence_min_criteria[8]"]
 
   21_CFR_11.10(g):
     subcriteria:
       - id: sc1
         text: "existe una matriz de operaciones del sistema con el nivel de autorización requerido por cada una"
+        text_en: "there is a matrix of system operations with the authorization level required for each"
         derived_from: ["evidence_min_criteria[0]"]
       - id: sc2
         text: "el sistema ejecuta un chequeo técnico de autoridad en el momento de cada operación aplicable (firmar, alterar un registro, acceder a E/S, ejecutar la operación)"
+        text_en: "the system performs a technical authority check at the time of each applicable operation (sign, alter a record, access I/O, perform the operation)"
         derived_from: ["evidence_min_criteria[1]", "citation_text"]
       - id: sc3
         text: "hay evidencia de prueba negativa: un intento de operación sin autoridad suficiente resulta bloqueado"
+        text_en: "there is negative-test evidence: an operation attempt without sufficient authority is blocked"
         derived_from: ["evidence_min_criteria[2]"]
 
   21_CFR_11.50_11.70:
     subcriteria:
       - id: sc1
         text: "cada firma electrónica muestra el nombre impreso del firmante"
+        text_en: "each electronic signature shows the printed name of the signer"
         derived_from: ["citation_text(1)", "evidence_min_criteria[0]"]
       - id: sc2
         text: "cada firma electrónica muestra la fecha y hora en que se ejecutó"
+        text_en: "each electronic signature shows the date and time it was executed"
         derived_from: ["citation_text(2)", "evidence_min_criteria[0]"]
       - id: sc3
         text: "cada firma electrónica muestra el significado asociado (revisión, aprobación, responsabilidad, autoría)"
+        text_en: "each electronic signature shows the associated meaning (review, approval, responsibility, authorship)"
         derived_from: ["citation_text(3)", "evidence_min_criteria[0]"]
       - id: sc4
         text: "esos tres elementos son legibles y están asociados al registro firmado"
+        text_en: "those three elements are human-readable and associated with the signed record"
         derived_from: ["evidence_min_criteria[0]"]
       - id: sc5
         text: "los controles del registro electrónico (acceso, integridad, retención, disponibilidad) se extienden a los tres elementos de la firma"
+        text_en: "the electronic record controls (access, integrity, retention, availability) are extended to the three signature elements"
         derived_from: ["evidence_min_criteria[1]"]
       - id: sc6
         text: "existe un mecanismo técnico protegido que ata la firma al registro específico"
+        text_en: "there is a protected technical mechanism that binds the signature to the specific record"
         derived_from: ["evidence_min_criteria[2]"]
       - id: sc7
         text: "hay prueba de que ese mecanismo impide extraer, copiar o transferir la firma por medios ordinarios"
+        text_en: "there is proof that this mechanism prevents excising, copying or transferring the signature by ordinary means"
         derived_from: ["evidence_min_criteria[3]"]
 
   ANNEX11_4:
@@ -150,199 +190,251 @@ requirements:
     subcriteria:
       - id: sc1
         text: "existe documentación de validación que cubre las etapas relevantes del ciclo de vida del sistema"
+        text_en: "there is validation documentation covering the relevant lifecycle stages of the system"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "existe una evaluación de riesgo real y documentada del sistema computarizado"
+        text_en: "there is a real, documented risk assessment of the computerised system"
         derived_from: ["evidence_min_criteria[1]", "citation_text"]
       - id: sc3
         text: "hay una conexión explícita y trazable entre esa evaluación de riesgo y las decisiones de validación tomadas (alcance, protocolos, criterios de aceptación, procedimientos, registros)"
+        text_en: "there is an explicit, traceable connection between that risk assessment and the validation decisions taken (scope, protocols, acceptance criteria, procedures, records)"
         derived_from: ["evidence_min_criteria[2]", "citation_text"]
 
   ANNEX11_7.1:
     subcriteria:
       - id: sc1
         text: "hay medios físicos de protección de datos descritos (acceso restringido a sala de servidores / racks)"
+        text_en: "there are described physical means of data protection (restricted access to the server room / racks)"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "hay medios electrónicos de protección descritos (redundancia, checksums, control de integridad)"
+        text_en: "there are described electronic means of protection (redundancy, checksums, integrity control)"
         derived_from: ["evidence_min_criteria[1]", "citation_text"]
       - id: sc3
         text: "hay verificación documentada, con evidencia real, de accesibilidad, legibilidad y exactitud de los datos almacenados"
+        text_en: "there is documented verification, with real evidence, of accessibility, readability and accuracy of the stored data"
         derived_from: ["evidence_min_criteria[2]", "citation_text"]
       - id: sc4
         text: "existe una frecuencia de reverificación definida según riesgo y procedimiento, cuando el riesgo lo justifica"
+        text_en: "there is a re-verification frequency defined by risk and procedure, where the risk justifies it"
         derived_from: ["evidence_min_criteria[3]"]
       - id: sc5
         text: "el periodo de retención está declarado y hay evidencia de que el acceso a los datos se mantiene durante ese periodo"
+        text_en: "the retention period is declared and there is evidence that access to the data is ensured throughout that period"
         derived_from: ["evidence_min_criteria[4]", "citation_text"]
 
   ANNEX11_9:
     subcriteria:
       - id: sc1
         text: "existe una evaluación de riesgo documentada sobre la necesidad y el alcance del audit trail"
+        text_en: "there is a documented risk assessment about the need for and scope of the audit trail"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "el sistema genera un audit trail que registra los cambios y las eliminaciones GMP-relevantes"
+        text_en: "the system generates an audit trail recording GMP-relevant changes and deletions"
         derived_from: ["evidence_min_criteria[1]", "citation_text"]
       - id: sc3
         text: "para cada cambio o eliminación GMP-relevante, el motivo queda documentado (no solo el hecho del cambio)"
+        text_en: "for each GMP-relevant change or deletion, the reason is documented (not only the fact of the change)"
         derived_from: ["evidence_min_criteria[2]", "citation_text"]
       - id: sc4
         text: "el audit trail está disponible y es convertible a una forma generalmente inteligible (exportable / legible por humano)"
+        text_en: "the audit trail is available and convertible to a generally intelligible form (exportable / human-readable)"
         derived_from: ["evidence_min_criteria[3]", "citation_text"]
       - id: sc5
         text: "hay evidencia de revisión periódica real del audit trail (no solo de su existencia)"
+        text_en: "there is evidence of real periodic review of the audit trail (not only of its existence)"
         derived_from: ["evidence_min_criteria[4]", "citation_text"]
 
   ANNEX11_12:
     subcriteria:
       - id: sc1
         text: "hay controles físicos y/o lógicos descritos con un método concreto (llaves, tarjetas, códigos + contraseñas, biometría, acceso restringido a equipos / áreas de almacenamiento)"
+        text_en: "there are described physical and/or logical controls with a concrete method (keys, pass cards, personal codes + passwords, biometrics, restricted access to equipment / storage areas)"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "la combinación elegida (físico, lógico o ambos) está justificada según riesgo, arquitectura y entorno del sistema"
+        text_en: "the chosen combination (physical, logical or both) is justified by the risk, architecture and environment of the system"
         derived_from: ["evidence_min_criteria[1]"]
       - id: sc3
         text: "hay evidencia de restricción efectiva a personas autorizadas: lista de autorizados verificada contra el control real, o prueba de acceso denegado a no autorizados"
+        text_en: "there is evidence of effective restriction to authorised persons: an authorised list verified against the actual control, or proof of denied access for unauthorised persons"
         derived_from: ["evidence_min_criteria[2]", "citation_text"]
 
   ANNEX11_17:
     subcriteria:
       - id: sc1
         text: "existe un proceso de archivo de datos descrito"
+        text_en: "there is a described data archiving process"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "hay verificación documentada de accesibilidad, legibilidad e integridad de los datos archivados"
+        text_en: "there is documented verification of accessibility, readability and integrity of the archived data"
         derived_from: ["evidence_min_criteria[1]", "citation_text"]
       - id: sc3
         text: "existe una frecuencia de verificación definida según riesgo y procedimiento, cuando el riesgo lo justifica"
+        text_en: "there is a verification frequency defined by risk and procedure, where the risk justifies it"
         derived_from: ["evidence_min_criteria[2]"]
       - id: sc4
         text: "ante cambios relevantes al sistema, hay evidencia de que la capacidad de recuperar los datos archivados fue asegurada y probada"
+        text_en: "when relevant system changes occur, there is evidence that the ability to retrieve the archived data was ensured and tested"
         derived_from: ["evidence_min_criteria[3]", "citation_text"]
 
   ALCOA_ATTRIBUTABLE:
     subcriteria:
       - id: sc1
         text: "(acción humana) cada dato se identifica de forma única e individual con la persona que lo generó"
+        text_en: "(human action) each data point is uniquely and individually attributable to the person who generated it"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "(acción humana) hay un mecanismo técnico que sostiene esa atribución de forma confiable (no solo un campo de texto libre)"
+        text_en: "(human action) there is a technical mechanism that reliably sustains that attribution (not only a free-text field)"
         derived_from: ["evidence_min_criteria[1]"]
       - id: sc3
         text: "(acción humana) la atribución se sostiene para crear, modificar y eliminar — no solo para crear"
+        text_en: "(human action) attribution is sustained for create, modify and delete — not only for create"
         derived_from: ["evidence_min_criteria[2]"]
       - id: sc4
         text: "(dato autogenerado) hay un identificador específico y trazable del instrumento / sistema / fuente técnica que generó el dato (no una categoría genérica de equipo)"
+        text_en: "(system-generated data) there is a specific, traceable identifier of the instrument / system / technical source that generated the data (not a generic equipment category)"
         derived_from: ["evidence_min_criteria[3]"]
       - id: sc5
         text: "(dato autogenerado) hay trazabilidad de que ese instrumento / sistema fue el que efectivamente generó el dato"
+        text_en: "(system-generated data) there is traceability that this instrument / system was the one that actually generated the data"
         derived_from: ["evidence_min_criteria[4]"]
 
   ALCOA_LEGIBLE:
     subcriteria:
       - id: sc1
         text: "la legibilidad de los datos está garantizada durante todo el ciclo de vida"
+        text_en: "data legibility is guaranteed throughout the entire lifecycle"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "los datos son permanentes: no hay sobrescritura silenciosa"
+        text_en: "the data is permanent: there is no silent overwriting"
         derived_from: ["evidence_min_criteria[1]", "citation_text"]
       - id: sc3
         text: "existe un criterio de continuidad de legibilidad cuando el riesgo de obsolescencia del formato es real"
+        text_en: "there is a legibility-continuity criterion where the risk of format obsolescence is real"
         derived_from: ["evidence_min_criteria[2]"]
 
   ALCOA_CONTEMPORANEOUS:
     subcriteria:
       - id: sc1
         text: "como regla general, el registro se hace en el momento de la actividad"
+        text_en: "as a general rule, the record is made at the time of the activity"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "(caso escribiente) el escribiente registra en el momento de la actividad, no retrospectivamente, e identifica al ejecutor real"
+        text_en: "(scribe case) the scribe records at the time of the activity, not retrospectively, and identifies the actual performer"
         derived_from: ["evidence_min_criteria[1]"]
       - id: sc3
         text: "(caso contrafirma) existe un procedimiento gobernado que define cuándo una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo máximo y revisión"
+        text_en: "(countersignature case) there is a governed procedure defining when a late countersignature by the performer is acceptable, with a real reason, a maximum time limit and review"
         derived_from: ["evidence_min_criteria[2]"]
 
   ALCOA_ORIGINAL:
     subcriteria:
       - id: sc1
         text: "el original de primera captura está identificado y preservado, o existe una copia certificada con un proceso real descrito"
+        text_en: "the first-capture original is identified and preserved, or there is a certified true copy with a real described process"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "hay evidencia de que la certificación de la copia se ejecutó realmente"
+        text_en: "there is evidence that the copy certification was actually carried out"
         derived_from: ["evidence_min_criteria[1]"]
 
   ALCOA_ACCURATE:
     subcriteria:
       - id: sc1
         text: "hay un mecanismo de verificación de exactitud del dato descrito"
+        text_en: "there is a described mechanism for verifying data accuracy"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "ese mecanismo cubre todas las formas del dato que pertenecen al proceso y alcance evaluados"
+        text_en: "that mechanism covers all forms of the data that belong to the evaluated process and scope"
         derived_from: ["evidence_min_criteria[1]"]
 
   ALCOA_COMPLETE:
     subcriteria:
       - id: sc1
         text: "se capturan todos los datos relevantes del proceso evaluado, incluidos reintentos, reprocesamientos, exclusiones y desviaciones cuando forman parte de ese proceso"
+        text_en: "all relevant data of the evaluated process is captured, including retries, reprocessing, exclusions and deviations when they are part of that process"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "no hay eliminación selectiva de datos desfavorables que formen parte del proceso evaluado"
+        text_en: "there is no selective deletion of unfavourable data that is part of the evaluated process"
         derived_from: ["evidence_min_criteria[1]"]
       - id: sc3
         text: "es posible reconstruir completamente la actividad a partir de los datos"
+        text_en: "it is possible to fully reconstruct the activity from the data"
         derived_from: ["evidence_min_criteria[2]"]
       - id: sc4
         text: "cuando aplica OOS al proceso evaluado, el tratamiento y registro de los resultados OOS está descrito"
+        text_en: "where OOS applies to the evaluated process, the handling and recording of OOS results is described"
         derived_from: ["evidence_min_criteria[3]"]
 
   ALCOA_CONSISTENT:
     subcriteria:
       - id: sc1
         text: "existe una secuencia cronológica consistente (timestamps, numeración de lotes)"
+        text_en: "there is a consistent chronological sequence (timestamps, batch numbering)"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "hay un mecanismo gobernado que detecta inconsistencias reales (humano, técnico/automatizado o equivalente), definido y con registro de ejecución"
+        text_en: "there is a governed mechanism that detects real inconsistencies (human, technical/automated or equivalent), defined and with an execution record"
         derived_from: ["evidence_min_criteria[1]"]
 
   ALCOA_ENDURING:
     subcriteria:
       - id: sc1
         text: "el medio o formato garantiza durabilidad durante todo el periodo de retención"
+        text_en: "the medium or format guarantees durability throughout the entire retention period"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "existe un criterio de reevaluación según el riesgo de obsolescencia o degradación"
+        text_en: "there is a re-evaluation criterion driven by the risk of obsolescence or degradation"
         derived_from: ["evidence_min_criteria[1]"]
 
   ALCOA_AVAILABLE:
     subcriteria:
       - id: sc1
         text: "los datos se recuperan sin demora indebida, directamente accesibles cuando se solicitan, y en forma legible para revisión o inspección"
+        text_en: "the data is retrieved without undue delay, readily accessible when requested, and in a legible form for review or inspection"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "la recuperación no depende de personal específico ni de sistemas legados sin contingencia"
+        text_en: "retrieval does not depend on specific personnel or on legacy systems without a contingency"
         derived_from: ["evidence_min_criteria[1]"]
 
   21_CFR_211.68(b):
     subcriteria:
       - id: sc1
         text: "hay un mecanismo técnico (no solo una política) que restringe quién puede modificar los registros maestros de producción y control"
+        text_en: "there is a technical mechanism (not just a policy) that restricts who can change master production and control records"
         derived_from: ["evidence_min_criteria[0]", "citation_text"]
       - id: sc2
         text: "el sistema identifica que la modificación la realizó personal con autorización vigente para ese registro"
+        text_en: "the system identifies that the change was made by personnel with current authorization for that record"
         derived_from: ["evidence_min_criteria[1]", "citation_text"]
       - id: sc3
         text: "hay un mecanismo descrito de verificación de exactitud de los datos de entrada y salida del sistema"
+        text_en: "there is a described mechanism for verifying the accuracy of the system's input and output data"
         derived_from: ["evidence_min_criteria[2]"]
       - id: sc4
         text: "el grado o la frecuencia de esa verificación de exactitud está justificado por la complejidad o confiabilidad del sistema"
+        text_en: "the degree or frequency of that accuracy verification is justified by the complexity or reliability of the system"
         derived_from: ["evidence_min_criteria[3]"]
       - id: sc5
         text: "hay un mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo"
+        text_en: "there is a backup mechanism for the entered data, with evidence that it is accurate and complete"
         derived_from: ["evidence_min_criteria[4]"]
       - id: sc6
         text: "hay protección descrita del respaldo contra alteración, borrado accidental o pérdida"
+        text_en: "there is described protection of the backup against alteration, accidental erasure or loss"
         derived_from: ["evidence_min_criteria[5]"]
       - id: sc7
         text: "(caso excepcional) si algún dato se elimina por diseño del proceso automatizado, existe un registro escrito del programa más datos de validación que lo sustenten, en lugar del respaldo"
+        text_en: "(exceptional case) if any data is deleted by design of the automated process, there is a written record of the program plus supporting validation data, in place of the backup"
         derived_from: ["evidence_min_criteria[6]"]

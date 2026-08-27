@@ -112,9 +112,12 @@ def test_real_corpus_if_available(tmp_path):
     extract_document(pdf, "RW-0005", tipo="FS", store_dir=canon_dir)
     bundles = eb.build_bundles_for_requirement("RW-0005", "21_CFR_11.10(e)", canon_dir=canon_dir)
     assert len(bundles) == 9
-    # al menos un sub-criterio de audit trail debe recuperar algún claim
     assert any(b.candidate_claims for b in bundles)
     for b in bundles:
         assert len(b.candidate_claims) <= 5
         for c in b.candidate_claims:
             assert c["provenance"]["document_id"] == "RW-0005"
+    # v1.1 (glosas EN): sobre el FS en inglés, los 9 sub-criterios ya NO
+    # devuelven todos el mismo top claim -- el reranker bilingüe diferencia.
+    tops = [b.candidate_claims[0]["claim_id"] for b in bundles if b.candidate_claims]
+    assert len(set(tops)) >= 3, f"diferenciación insuficiente: {len(set(tops))} tops distintos de {len(tops)}"

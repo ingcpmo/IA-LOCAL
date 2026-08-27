@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from factory.regulatory.canonical.persistence import STORE_DIR as CANON_DIR, CanonicalStore
 from factory.regulatory.requirement_catalog.requirement_catalog_loader import get_requirement
 from factory.regulatory.requirement_catalog.requirement_decomposition_loader import (
-    get_subcriteria, subcriterion_ref,
+    get_subcriteria, subcriterion_match_text, subcriterion_ref,
 )
 from factory.regulatory.retrieval.bm25 import (
     bm25_score, build_idf_table, term_counts, tokenize,
@@ -139,17 +139,16 @@ def build_bundles_for_requirement(document_id: str, requirement_id: str, *,
 
     bundles: list[EvidenceBundle] = []
     for sc in get_subcriteria(requirement_id):
-        sc_text = sc["text"]
-        query = _claim_query(requirement_id, sc_text)
+        sc_text = sc["text"]                       # ES, autoritativo
+        sc_match = subcriterion_match_text(sc)     # ES + glosa EN (v1.1)
+        query = _claim_query(requirement_id, sc_match)
         prefiltered = _bm25_over_claims(claims, query, _BM25_PREFILTER)
-        # El reranker se corre contra el texto del sub-criterio MÁS el
-        # contexto de la cita normativa (query): el sub-criterio solo
-        # aporta términos propios (lo que diferencia los N sub-criterios
-        # de un requisito), y la cita aporta el vocabulario normativo
-        # -- importante cuando el documento fuente está en otro idioma que
-        # el sub-criterio (limitación conocida del reranker léxico, ver
-        # docs_plan). El anclaje final sigue siendo Claim.source_text.
-        rerank_text = f"{sc_text} {query}"
+        # El reranker se corre contra el sub-criterio bilingüe MÁS el
+        # contexto de la cita normativa (query). La glosa EN (decomposition
+        # v1.1) es lo que permite diferenciar los N sub-criterios de un
+        # requisito cuando el documento fuente está en inglés (Gate B3).
+        # El anclaje final sigue siendo Claim.source_text.
+        rerank_text = f"{sc_match} {query}"
         reranked = rerank(rerank_text, prefiltered, top_k=max_candidates,
                           text_key="source_text", reranker=reranker)
         cand_claims = [{
@@ -164,7 +163,7 @@ def build_bundles_for_requirement(document_id: str, requirement_id: str, *,
             "rerank_method": c.get("rerank_method"),
             "provenance": c.get("provenance"),
         } for c in reranked]
-        cand_tables = _tables_for_subcriterion(tables, f"{sc_text} {query}")
+        cand_tables = _tables_for_subcriterion(tables, f"{sc_match} {query}")
         bundles.append(EvidenceBundle(
             document_id=document_id, requirement_id=requirement_id,
             subcriterion_id=sc["id"], subcriterion_ref=subcriterion_ref(requirement_id, sc["id"]),

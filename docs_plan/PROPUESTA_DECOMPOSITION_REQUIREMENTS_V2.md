@@ -14,11 +14,16 @@
    schema quedan **intactos**.
 2. **Conteo.** El total de la propuesta decía 89; el real es **84** sub-criterios
    (error aritmético de la tabla resumen, no de las listas). Corregido en la tabla y en el YAML.
-3. **Redacción de los sub-criterios: sin cambios.** Van verbatim. "Cambios que ayuden a
-   mejorar" se trata como **bucle empírico de FASE 10**: si la medición muestra que la
-   redacción de un sub-criterio concreto perjudica el recall, se propone ese cambio *con la
-   medición como justificación* para re-firma (nueva `decomposition_version`). Cambiar el
-   fraseo a ciegas antes de medir es el patrón que la skill `gmp-recall-pipeline` prohíbe.
+3. **Redacción de los sub-criterios (semántica): sin cambios.** `text` (español) va verbatim y
+   sigue siendo el autoritativo. Cambiar el fraseo a ciegas antes de medir es el patrón que la
+   skill `gmp-recall-pipeline` prohíbe.
+4. **Glosas bilingües (`decomposition_version` 1.1, misma firma — "haz las glosas bilingües").**
+   Motivo **medido** en Gate B3: los documentos del cliente están en inglés y el reranker
+   léxico determinista no cruza el idioma — los 9 sub-criterios de `21_CFR_11.10(e)` devolvían
+   el mismo candidato. Cada sub-criterio gana `text_en`, glosa en inglés **fiel** de `text`
+   (misma sustancia, otro idioma — no es re-interpretación). El aid de recuperación pasa a ser
+   `text + text_en`. Resultado medido tras la glosa: los tops distintos sobre el FS real pasan
+   de 1 a ≥3 de 9. La diferenciación semántica completa sigue necesitando embeddings (B3.1).
 
 ---
 

@@ -40,6 +40,7 @@ def load_decomposition() -> dict:
         raise DecompositionError("decomposition.yaml sin bloque 'requirements'")
 
     reqs = data["requirements"]
+    bilingual = bool(data.get("bilingual"))
     seen_total = 0
     for rid, block in reqs.items():
         subs = (block or {}).get("subcriteria") or []
@@ -51,6 +52,9 @@ def load_decomposition() -> dict:
                 raise DecompositionError(f"{rid}: subcriterio {i} sin id")
             if not (sc.get("text") or "").strip():
                 raise DecompositionError(f"{rid}::{sc.get('id')}: text vacío")
+            if bilingual and not (sc.get("text_en") or "").strip():
+                raise DecompositionError(
+                    f"{rid}::{sc['id']}: bilingual=true pero text_en vacío")
             if sc["id"] in ids:
                 raise DecompositionError(f"{rid}: id de subcriterio duplicado: {sc['id']!r}")
             ids.add(sc["id"])
@@ -95,6 +99,16 @@ def get_subcriteria(requirement_id: str) -> list[dict]:
 
 def subcriterion_ref(requirement_id: str, sc_id: str) -> str:
     return f"{requirement_id}::{sc_id}"
+
+
+def subcriterion_match_text(sc: dict) -> str:
+    """Texto para recuperación/rerank de un sub-criterio: `text` (ES,
+    autoritativo) + `text_en` (glosa EN, aid cross-idioma) si existe. El
+    ANCLAJE final sigue siendo Claim.source_text, nunca esto."""
+    parts = [sc.get("text", "")]
+    if sc.get("text_en"):
+        parts.append(sc["text_en"])
+    return " ".join(p for p in parts if p).strip()
 
 
 def has_decomposition(requirement_id: str) -> bool:
