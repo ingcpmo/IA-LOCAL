@@ -1,5 +1,5 @@
 # Prompt de juicio V2 -- PASO B: mapeo al sub-criterio (B4b, VARIANTE NO ESTRICTA).
-# BORRADOR SIN FIRMAR. Ver docs_plan/REPORTE_B4B_MEDICION_RECALL_V2.md §6(B).
+# FIRMADO por Capa 9 (Cesar) 2026-08-27. Ver docs_plan/REPORTE_B4B_MEDICION_RECALL_V2.md §6(B).
 #
 # VARIANTE NO ESTRICTA (experimento diagnóstico last-ditch tras el 0/7 de
 # la variante estricta): el paso B SÍ ve la lista de Claims (id -> texto
@@ -14,8 +14,11 @@
 # experimento gobernado aparte, con su propia firma.
 
 prompt_id: step_b_criterion_mapping_nonstrict
-prompt_version: "0.1-draft"
-status: DRAFT_UNSIGNED
+prompt_version: "1.0"
+status: SIGNED
+signed_by: "Capa 9 (Cesar)"
+signed_at: "2026-08-27"
+signed_on: "firmo el prompt no-estricto (experimento diagnóstico B4b)"
 schema_version: judgment_v2_step_b_v1
 variant: nonstrict
 temperature: 0.0
