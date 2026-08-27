@@ -5,6 +5,14 @@ Los 3 prompts se implementan como **borrador** (`prompts/v2_draft/`, marcados
 `DRAFT_UNSIGNED`); el código de B4a los carga para tests por *replay offline* (LLM
 mockeado), pero **ninguna corrida real de medición (B4b) arranca sin esta firma + una
 `PILOT_EXECUTION` firmada**.
+
+> **Decisión de Capa 9 (2026-08-27):** pregunta 1 resuelta — se adopta la **VARIANTE
+> ESTRICTA** del paso B. El paso B NO ve ningún Claim ni texto crudo del documento; devuelve
+> solo `{verdict, rationale}`. La cita de un veredicto positivo se elige de forma
+> DETERMINISTA (paso B2): es el `Claim.source_text` del candidato que originó la descripción
+> neutra. El modelo nunca produce ni señala una cita → fabricación/paráfrasis imposibles por
+> construcción. `evidence_verifier` sigue validando relevancia (C) y página (B).
+
 **Fecha:** 2026-08-27. **Autor:** Capa 8.
 **Contexto:** `docs_plan/ARQUITECTURA_OBJETIVO_ANALIZADOR_GMP_LOCAL_V2.md` FASE 6; causa raíz
 `SEMANTIC_JUDGMENT_FAILURE` (FASE 1).
@@ -24,18 +32,18 @@ Paso A — Descripción operativa neutra
             sobre qué componente — SIN mencionar ninguna norma ni ningún criterio".
    Salida:  texto libre corto (1–3 frases). NO es evidencia citable.
 
-Paso B — Mapeo al sub-criterio
-   Entrada: el sub-criterio (bilingüe, decomposition v1.1) + la descripción neutra del paso A.
-            El JUICIO ("¿satisface?") se hace sobre la descripción neutra, no sobre el pasaje.
-            La lista de Claims (id → texto literal) se incluye SOLO para que el modelo pueda
-            devolver una cita literal — no para re-juzgar sobre el texto crudo.
+Paso B — Mapeo al sub-criterio  (VARIANTE ESTRICTA, elegida)
+   Entrada: SOLO el sub-criterio (bilingüe, decomposition v1.1) + la descripción neutra del
+            paso A. El modelo NO ve ningún Claim ni ningún texto crudo del documento.
    Tarea:   "¿esta descripción satisface el sub-criterio?" → {SATISFIES | PARTIAL | NO | UNCLEAR}
-            + claim_id citado + evidence_quote (transcripción literal del Claim).
-   Salida:  JSON.
-   Guardián: `evidence_verifier` (sin cambios) comprueba INDEPENDIENTEMENTE que esa
-            evidence_quote ancla literalmente en `Claim.source_text`. Si el modelo la
-            parafrasea o la inventa, el verificador la rechaza y el candidato cae a
-            MACHINE_REJECTED — el paso B no puede "colar" evidencia.
+   Salida:  JSON con solo `verdict` + `rationale`.
+
+Paso B2 — Selección de cita  (DETERMINISTA, sin LLM)
+   Si el veredicto es SATISFIES/PARTIAL, la evidencia es el `Claim.source_text` del candidato
+   que originó la descripción neutra del paso A. El modelo nunca elige ni produce la cita.
+   `evidence_verifier` (sin cambios) valida relevancia temática (C) y página (B); el anclaje
+   literal (A) es trivial por construcción. Un claim fuera de tema → flag de relevancia →
+   INCONCLUSIVE, nunca MACHINE_CONFIRMED.
 
 Critic — Segunda lectura adversarial (prompt distinto, temperatura 0)
    Entrada: el sub-criterio + el Claim.source_text + el veredicto del paso B.
@@ -52,12 +60,11 @@ Después, **determinista** (sin LLM): `evidence_verifier` (validación A/B/C/D, 
 - **La cita citable de cualquier `observed` es SIEMPRE `Claim.source_text` literal**, verificada
   por `evidence_verifier` sin cambios. El paso A (descripción neutra) es insumo de
   razonamiento, **nunca** evidencia.
-- **El JUICIO del paso B se hace sobre la descripción neutra**, no sobre el pasaje crudo. El
-  paso B recibe la lista de Claims solo para poder devolver una cita literal; esa cita la
-  valida `evidence_verifier` de forma independiente contra `Claim.source_text`. Un paso B que
-  parafrasee o invente la cita produce MACHINE_REJECTED, no un `observed`.
-  (Alternativa más estricta —paso B sin ver ningún Claim, la cita se elige en un paso B2
-  determinista— queda como pregunta 1 para tu firma.)
+- **El paso B NO ve ningún Claim ni texto crudo** (variante estricta). Devuelve solo
+  `{verdict, rationale}`. La cita de un veredicto positivo la fija el paso B2 DETERMINISTA
+  (el `Claim.source_text` del candidato que originó la descripción neutra). El modelo nunca
+  produce ni señala una cita → no puede fabricar ni parafrasear evidencia. `evidence_verifier`
+  valida relevancia (C) y página (B); el anclaje literal (A) es trivial por construcción.
 - **`evidence_verifier` intacto** — umbral fuzzy 0.93, exigencia de cita anclada, validación C.
   Ninguna de estas prompts las relaja.
 - **El Critic no puede promover** — solo `AGREE`/`DISAGREE`/`CANNOT_CONFIRM`. Un `DISAGREE` o un
@@ -89,18 +96,19 @@ step_b_criterion_mapping.yaml, critic.yaml}` — cada uno con `prompt_version: "
 >
 > User: FRAGMENTO(S):\n{claims_source_text}\n\nDescripción operativa neutra:
 
-### 3.2 Paso B — `step_b_criterion_mapping`
+### 3.2 Paso B — `step_b_criterion_mapping` (variante estricta)
 
 > System: Se te dará (1) un SUB-CRITERIO regulatorio concreto y (2) una DESCRIPCIÓN OPERATIVA
-> NEUTRA de lo que hace un sistema. Decide si la descripción satisface el sub-criterio.
-> Reglas: responde SOLO en JSON con las claves `verdict` (uno de SATISFIES, PARTIAL, NO,
-> UNCLEAR), `rationale` (1–2 frases), `evidence_claim_id` (el id del claim que sustenta, o
-> null), `evidence_quote` (transcripción LITERAL del claim que sustenta, o cadena vacía).
-> `SATISFIES`/`PARTIAL` EXIGEN `evidence_quote` no vacía. No parafrasees la cita. Si dudas,
-> usa `UNCLEAR`. No consideres nada fuera de la descripción dada.
+> NEUTRA de lo que hace un sistema. Decide si la descripción satisface el sub-criterio,
+> considerando ÚNICAMENTE lo que la descripción dice de forma explícita. Responde SOLO en JSON
+> con `verdict` (uno de SATISFIES, PARTIAL, NO, UNCLEAR) y `rationale` (1–2 frases). NO
+> infieras nada que la descripción no diga explícitamente. NO uses conocimiento externo. Ante
+> duda, `UNCLEAR`.
 >
-> User: SUB-CRITERIO:\n{subcriterion_text}\n\nDESCRIPCIÓN OPERATIVA NEUTRA:\n{neutral_description}
-> \n\nCLAIMS DISPONIBLES (id → texto literal):\n{claims_index}\n\nJSON:
+> User: SUB-CRITERIO:\n{subcriterion_text}\n\nDESCRIPCIÓN OPERATIVA NEUTRA:\n{neutral_description}\n\nJSON:
+>
+> **Paso B2 (determinista, sin LLM):** si `verdict` ∈ {SATISFIES, PARTIAL}, `evidence_quote` =
+> `Claim.source_text` del candidato que originó la descripción neutra.
 
 ### 3.3 Critic — `critic`
 
@@ -136,11 +144,8 @@ los sub-criterios con candidatos plausibles llegan al modelo. Estimación fina e
 
 ## 6. Preguntas para tu firma
 
-1. ¿El paso B juzgando sobre la descripción neutra, con la lista de Claims disponible SOLO para
-   citar (y `evidence_verifier` validando la cita de forma independiente), es aceptable — o
-   prefieres la variante estricta (paso B sin ver ningún Claim + un paso B2 determinista que
-   elige la cita)? La variante estricta añade robustez anti-fabricación a costa de que el
-   modelo no puede señalar un span concreto.
+1. ~~variante del paso B~~ **RESUELTA (2026-08-27): variante estricta.** Paso B sin ver ningún
+   Claim + paso B2 determinista para la cita. Implementado en B4a.
 2. ¿El Critic como degradador-solo (nunca promueve) es suficiente, o quieres que un `DISAGREE`
    fuerce además una entrada explícita a la cola de revisión con la razón del Critic?
 3. ¿Los estados del Adjudicator (§4) están bien, o falta/sobra alguno?

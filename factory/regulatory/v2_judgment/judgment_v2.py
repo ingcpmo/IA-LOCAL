@@ -78,10 +78,6 @@ def _extract_json(raw: str) -> dict | None:
         return None
 
 
-def _claims_index(candidate_claims: list[dict]) -> str:
-    return "\n".join(f"- {c['claim_id']}: {c['source_text']}" for c in candidate_claims)
-
-
 def evaluate_bundle(bundle, *, provider: ModelProvider,
                     has_open_contradiction: bool = False) -> SubcriterionVerdict:
     """`bundle`: un EvidenceBundle de B3. `provider`: ModelProvider
@@ -97,8 +93,6 @@ def evaluate_bundle(bundle, *, provider: ModelProvider,
 
     known_ids = {bundle.requirement_id}
     req_terms = load_requirement_terms(bundle.requirement_id)
-    claims_idx = _claims_index(bundle.candidate_claims)
-    by_id = {c["claim_id"]: c for c in bundle.candidate_claims}
 
     for cand in bundle.candidate_claims:
         # ── paso A ────────────────────────────────────────────────────────
@@ -106,10 +100,11 @@ def evaluate_bundle(bundle, *, provider: ModelProvider,
         neutral = _resp_text(provider.generate(a_prompt)).strip()
         verdict.calls_made += 1
 
-        # ── paso B (no ve el pasaje original) ────────────────────────────
+        # ── paso B (VARIANTE ESTRICTA: solo sub-criterio + descripción
+        #    neutra; el modelo NUNCA ve un Claim ni produce una cita) ─────
         b_prompt = prompts.render(
             prompts.STEP_B, subcriterion_text=bundle.subcriterion_text,
-            neutral_description=neutral, claims_index=claims_idx,
+            neutral_description=neutral,
         )
         b_parsed = _extract_json(_resp_text(provider.generate(b_prompt)))
         verdict.calls_made += 1
@@ -126,11 +121,11 @@ def evaluate_bundle(bundle, *, provider: ModelProvider,
                 INCONCLUSIVE, [f"step_b_invalid_verdict:{hunter!r}"]))
             continue
 
-        # el claim citado por el modelo (si difiere, se usa el que dijo el modelo
-        # PERO solo si está en el bundle -- nunca uno inventado)
-        cited_id = b_parsed.get("evidence_claim_id") or cand["claim_id"]
-        cited_claim = by_id.get(cited_id, cand)
-        quote = (b_parsed.get("evidence_quote") or "").strip()
+        # ── paso B2 (DETERMINISTA): la evidencia de un veredicto positivo
+        #    es el Claim que originó esta descripción neutra. El modelo no
+        #    elige ni produce cita -> no puede fabricar ni parafrasear. ──
+        cited_claim = cand
+        quote = cand["source_text"] if hunter in (HUNTER_SATISFIES, HUNTER_PARTIAL) else ""
 
         # ── Verifier (determinista, sin cambios) ─────────────────────────
         observation = ("observed" if hunter in (HUNTER_SATISFIES, HUNTER_PARTIAL)
@@ -181,7 +176,7 @@ def evaluate_bundle(bundle, *, provider: ModelProvider,
             break
     if verdict.state in (MACHINE_PARTIAL,):
         winner = next(o for o in verdict.candidate_outcomes if o.state == verdict.state)
-        wc = by_id.get(winner.claim_id, {})
+        wc = next((c for c in bundle.candidate_claims if c["claim_id"] == winner.claim_id), {})
         verdict.best_claim_id = winner.claim_id
         verdict.best_quote = winner.hunter_quote
         verdict.best_page = wc.get("pagina")

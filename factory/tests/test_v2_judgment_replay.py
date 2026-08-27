@@ -27,8 +27,7 @@ class ScriptedProvider:
     def __init__(self, *, step_a="El sistema registra la acción del operador con fecha y hora.",
                  step_b=None, critic="AGREE"):
         self._a = step_a
-        self._b = step_b or {"verdict": "SATISFIES", "rationale": "ok",
-                             "evidence_claim_id": None, "evidence_quote": None}
+        self._b = step_b or {"verdict": "SATISFIES", "rationale": "ok"}
         self._critic = critic
         self.calls = []
 
@@ -38,7 +37,7 @@ class ScriptedProvider:
             return {"response": self._a, "done": True}
         if "VEREDICTO PREVIO:" in prompt:
             return {"response": f'{{"assessment": "{self._critic}", "reason": "r"}}', "done": True}
-        # paso B
+        # paso B (variante estricta: solo verdict + rationale)
         import json
         return {"response": json.dumps(self._b), "done": True}
 
@@ -93,52 +92,58 @@ def test_critic_invalid_assessment_falls_to_cannot_confirm():
 # ── judgment_v2 end-to-end (mocked) ─────────────────────────────────────
 
 def test_happy_path_confirmed():
-    quote = "generate a time-stamped audit trail record for every operator entry"
-    p = ScriptedProvider(step_b={"verdict": "SATISFIES", "rationale": "ok",
-                                 "evidence_claim_id": "clm-1", "evidence_quote": quote},
-                         critic="AGREE")
+    p = ScriptedProvider(step_b={"verdict": "SATISFIES", "rationale": "ok"}, critic="AGREE")
     v = judgment_v2.evaluate_bundle(_bundle(), provider=p)
     assert v.state == adj.MACHINE_CONFIRMED
     assert v.best_claim_id == "clm-1"
-    assert v.best_quote == quote
+    # variante estricta: la evidencia es el Claim.source_text del candidato,
+    # elegida de forma DETERMINISTA -- el modelo nunca produjo una cita.
+    assert v.best_quote == CLAIM_TEXT
     assert v.calls_made == 3          # A + B + Critic
 
 
-def test_fabricated_quote_is_rejected_by_verifier():
-    """El paso B devuelve una cita que NO aparece literal en el claim ->
-    evidence_verifier la rechaza -> MACHINE_REJECTED. El paso B no puede
-    'colar' evidencia."""
-    p = ScriptedProvider(step_b={"verdict": "SATISFIES", "rationale": "ok",
-                                 "evidence_claim_id": "clm-1",
-                                 "evidence_quote": "the system fully complies with 21 CFR Part 11"},
-                         critic="AGREE")
-    v = judgment_v2.evaluate_bundle(_bundle(), provider=p)
-    assert v.state == adj.MACHINE_REJECTED
+def test_strict_variant_step_b_prompt_has_no_claim_text():
+    """El prompt del paso B (estricto) NO contiene ningún Claim ni texto
+    crudo del documento -- solo el sub-criterio y la descripción neutra."""
+    p = ScriptedProvider()
+    judgment_v2.evaluate_bundle(_bundle(), provider=p)
+    step_b_prompts = [c for c in p.calls if "DESCRIPCIÓN OPERATIVA NEUTRA:" in c
+                      and "VEREDICTO PREVIO:" not in c and "SUB-CRITERIO:" in c]
+    assert step_b_prompts
+    for pr in step_b_prompts:
+        assert CLAIM_TEXT not in pr
+        assert "clm-1" not in pr
+
+
+def test_offtopic_claim_flagged_by_verifier_relevance():
+    """Veredicto SATISFIES sobre un claim que no comparte vocabulario del
+    requisito -> evidence_verifier marca relevancia -> INCONCLUSIVE, no
+    MACHINE_CONFIRMED. (La validación C sigue siendo la red de seguridad
+    en la variante estricta.)"""
+    offtopic = "La HMI muestra un gráfico de tendencia de la temperatura del reactor en verde."
+    p = ScriptedProvider(step_b={"verdict": "SATISFIES", "rationale": "x"}, critic="AGREE")
+    v = judgment_v2.evaluate_bundle(_bundle(offtopic), provider=p)
+    assert v.state != adj.MACHINE_CONFIRMED
 
 
 def test_satisfies_but_critic_disagree_is_inconclusive():
-    quote = "generate a time-stamped audit trail record"
-    p = ScriptedProvider(step_b={"verdict": "SATISFIES", "rationale": "ok",
-                                 "evidence_claim_id": "clm-1", "evidence_quote": quote},
-                         critic="DISAGREE")
+    p = ScriptedProvider(step_b={"verdict": "SATISFIES", "rationale": "ok"}, critic="DISAGREE")
     v = judgment_v2.evaluate_bundle(_bundle(), provider=p)
     assert v.state == adj.INCONCLUSIVE
 
 
 def test_hunter_no_is_evidence_not_found_not_gap():
-    p = ScriptedProvider(step_b={"verdict": "NO", "rationale": "not present",
-                                 "evidence_claim_id": None, "evidence_quote": ""})
+    p = ScriptedProvider(step_b={"verdict": "NO", "rationale": "not present"})
     v = judgment_v2.evaluate_bundle(_bundle(), provider=p)
     assert v.state == adj.EVIDENCE_NOT_FOUND
     assert v.calls_made == 2          # A + B, sin Critic (no fue positivo)
 
 
-def test_positive_without_quote_is_inconclusive():
-    p = ScriptedProvider(step_b={"verdict": "SATISFIES", "rationale": "ok",
-                                 "evidence_claim_id": "clm-1", "evidence_quote": ""},
-                         critic="AGREE")
+def test_unclear_verdict_is_inconclusive():
+    p = ScriptedProvider(step_b={"verdict": "UNCLEAR", "rationale": "not enough"})
     v = judgment_v2.evaluate_bundle(_bundle(), provider=p)
     assert v.state == adj.INCONCLUSIVE
+    assert v.calls_made == 2          # A + B, sin Critic
 
 
 def test_step_b_unparseable_is_inconclusive():
