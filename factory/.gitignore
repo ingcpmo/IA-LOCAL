@@ -56,6 +56,11 @@ regulatory/canonical_store/
 # criterio que canonical_store/)
 regulatory/graph_store/
 
+# V2 B9: artefactos de shadow mode (salida de corrida, sin efectos,
+# regenerable) y flag local de routing
+regulatory/pilot_run/v2_shadow/
+regulatory/validation_v2/routing.txt
+
 # Config local de Claude Code dentro de deployments
 deployments/*/.claude/
 
