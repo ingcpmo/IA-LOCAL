@@ -161,3 +161,32 @@ def test_real_rockwell_corpus_if_available(tmp_path):
     assert summ["requirements_total"] == 20
     assert isinstance(summ["not_implemented"], list)
     g.close()
+
+
+def test_b12_links_urs_continuation_line_by_local_id(tmp_path):
+    """B1.2: un claim de la URS SIN número en su texto (continuación de
+    línea) se linkea al FS por el local_id heredado."""
+    from factory.regulatory.canonical.persistence import CanonicalStore
+    from factory.regulatory.canonical import model as m
+    canon_dir = tmp_path / "canon"
+    graph_dir = tmp_path / "graph"
+    with CanonicalStore("RW-URS", store_dir=canon_dir) as s:
+        s.put(m.Document(document_id="RW-URS", sha256="x" * 64, tipo="URS", titulo="URS", n_paginas=20))
+        # dos claims: el 2º sin número propio, hereda "5.2.22"
+        s.put(m.build_claim("RW-URS", 8, "5.2.22 URS-PCS-SR-028 Alarms shall be stored one year.",
+                            "control", "alarms stored", local_id="5.2.22"))
+        s.put(m.build_claim("RW-URS", 8, "A historical archive shall retain the records.",
+                            "control", "historical archive", local_id="5.2.22"))
+    with CanonicalStore("RW-FS", store_dir=canon_dir) as s:
+        s.put(m.Document(document_id="RW-FS", sha256="y" * 64, tipo="FS", titulo="FS", n_paginas=40))
+        # el FS cita el número jerárquico (patrón real: FS usa UR5.2.22 / 5.2.22)
+        s.put(m.build_claim("RW-FS", 30, "This function implements UR5.2.22: alarm storage and archiving.",
+                            "function", "implements alarm storage"))
+    docs = [("RW-URS", "URS"), ("RW-FS", "FS")]
+    gb.build_project_graph("PRJ-B12L", docs, canon_dir=canon_dir, graph_dir=graph_dir)
+    g = GraphStore("PRJ-B12L", store_dir=graph_dir)
+    impl = g.edges(rel="implemented_by")
+    # el FS claim debe quedar aguas abajo de AMBOS claims URS: el que trae
+    # "5.2.22" en el texto Y la continuación de línea, que lo hereda por local_id.
+    assert len(impl) >= 2
+    g.close()

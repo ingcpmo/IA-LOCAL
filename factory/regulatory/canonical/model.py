@@ -181,6 +181,11 @@ class Claim:
     tipo: str                      # CLAIM_TYPES
     normalized_statement: str      # heurística en B1; NUNCA se usa como cita
     provenance: Provenance | None = None
+    #: B1.2 -- identificador del requisito al que pertenece el claim
+    #: (número jerárquico 3+ niveles o id formal tipo URS-PCS-SR-037),
+    #: propio o HEREDADO de una línea anterior del mismo bloque de
+    #: requisito. None si no se pudo determinar. NO es una cita citable.
+    local_id: str | None = None
 
     def __post_init__(self) -> None:
         if self.tipo not in CLAIM_TYPES:
@@ -285,7 +290,8 @@ def build_section(document_id: str, numero: str | None, titulo: str | None,
 def build_claim(document_id: str, pagina: int, source_text: str, tipo: str,
                 normalized_statement: str, *, section_id: str | None = None,
                 section_numero: str | None = None,
-                section_titulo: str | None = None) -> Claim:
+                section_titulo: str | None = None,
+                local_id: str | None = None) -> Claim:
     prov = Provenance.build(
         document_id, pagina, source_text,
         section_numero=section_numero, section_titulo=section_titulo,
@@ -295,6 +301,7 @@ def build_claim(document_id: str, pagina: int, source_text: str, tipo: str,
         document_id=document_id, section_id=section_id, pagina=pagina,
         source_text=source_text, source_hash=sha256_text(source_text),
         tipo=tipo, normalized_statement=normalized_statement, provenance=prov,
+        local_id=local_id,
     )
 
 

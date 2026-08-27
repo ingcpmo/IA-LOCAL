@@ -137,18 +137,43 @@ def sentences_from_section_text(text: str) -> list[str]:
     return out
 
 
+# B1.2 -- identificador de requisito al INICIO de una oración/línea:
+#   - id formal:   URS-PCS-SR-037 / PCS-SR-037 / MCCPDC-... (letras-letras-numero)
+#   - número jerárquico de 3+ niveles: 4.4.1 / 5.2.22 / 1.4.2.4
+# Se exige que vaya SEGUIDO de más texto (no un encabezado suelto).
+_REQ_LOCAL_ID_RE = re.compile(
+    r"^\s*(?P<id>(?:URS[\s\-])?[A-Z]{2,6}[\s\-][A-Z]{2,5}[\s\-]\d{2,5}[A-Za-z]?"
+    r"|\d\.\d{1,2}(?:\.\d{1,3}){1,3})\b\s*[-:\.]?\s*(?=\S)"
+)
+
+
+def _extract_local_id(sentence: str) -> str | None:
+    m = _REQ_LOCAL_ID_RE.match(sentence or "")
+    if not m:
+        return None
+    return re.sub(r"\s+", "-", m.group("id").strip()).upper()
+
+
 def extract_claims_for_section(document_id: str, pagina: int, section_text: str, *,
                                section_id: str | None = None,
                                section_numero: str | None = None,
                                section_titulo: str | None = None) -> list[Claim]:
     """Determinista, sin LLM. Un `Claim` por oración candidata que
-    sobrevive el filtro de ruido. `pagina` es la página real donde
-    empieza la sección (se hereda a todos sus claims en B1; la
-    localización por página exacta de cada oración es deuda para B1.1,
-    igual que la jerarquía de subsecciones en `document_structure_extractor`)."""
+    sobrevive el filtro de ruido.
+
+    B1.2: si una oración arranca con un identificador de requisito
+    (número jerárquico 3+ niveles o id formal tipo URS-PCS-SR-037), ese
+    id se guarda en `Claim.local_id` y se HEREDA a las oraciones
+    siguientes de la misma sección que no traigan uno propio (una
+    continuación de línea pertenece al mismo bloque de requisito). El id
+    se resetea al aparecer uno nuevo. `local_id` NO es una cita citable."""
     claims: list[Claim] = []
     seen: set[str] = set()
+    current_local_id: str | None = None
     for sent in sentences_from_section_text(section_text):
+        own = _extract_local_id(sent)
+        if own:
+            current_local_id = own
         norm = normalize_statement(sent)
         if len(norm) < _MIN_CLAIM_CHARS:
             continue
@@ -161,5 +186,6 @@ def extract_claims_for_section(document_id: str, pagina: int, section_text: str,
             tipo=_classify(sent), normalized_statement=norm,
             section_id=section_id, section_numero=section_numero,
             section_titulo=section_titulo,
+            local_id=own or current_local_id,
         ))
     return claims

@@ -40,6 +40,8 @@ _REF_PATTERNS = [
     re.compile(r"\b\d{1,2}\s*CFR\s*\d{2,3}\.\d{1,3}\([a-z]\)", re.IGNORECASE),# 21 CFR 11.10(e)
     re.compile(r"\bANNEX\s*11[_\s\-]?\d{1,2}\b", re.IGNORECASE),
     re.compile(r"\bALCOA[_\s\-]?[A-Z]+\b", re.IGNORECASE),
+    # B1.2 -- id formal de requisito: (URS-)PCS-SR-037, PCS-HR-021, MCCPDC-...
+    re.compile(r"\b(?:URS[\s\-])?[A-Z]{2,6}[\s\-][A-Z]{2,5}[\s\-]\d{2,5}[a-z]?\b"),
 ]
 # Número de sección jerárquico "desnudo" (3.3.1, 4.1.2.4). El URS de
 # Rockwell numera sus requisitos así (sin prefijo "UR"), mientras que el
@@ -55,7 +57,12 @@ _CHAIN_ROLE = {"URS": "source", "FS": "impl", "DS": "design", "SAT": "test",
 
 
 def _norm_ref(ref: str) -> str:
-    return re.sub(r"[\s\-_]", "", ref).upper()
+    n = re.sub(r"[\s\-_]", "", ref).upper()
+    # B1.2: id formal -- "URSPCSSR037" y "PCSSR037" identifican el mismo
+    # requisito; se quita el prefijo URS para que colisionen.
+    if n.startswith("URS") and re.match(r"^URS[A-Z]{4,}\d{2,}$", n):
+        n = n[3:]
+    return n
 
 
 def _strip_ur_prefix(ref: str) -> str:
@@ -104,6 +111,14 @@ def _ingest_canonical(g: GraphStore, canon: CanonicalStore, doc_type: str) -> di
                    attrs={"tipo": c.get("tipo"), "pagina": c.get("pagina"),
                           "section_id": c.get("section_id")})
         refs = extract_refs(c.get("source_text", ""))
+        # B1.2: el local_id (propio o heredado) del claim también es un
+        # ancla de trazabilidad -- una continuación de línea de un
+        # requisito de la URS no repite su número en el texto.
+        if c.get("local_id"):
+            refs |= {_norm_ref(c["local_id"])}
+            stripped = _strip_ur_prefix(_norm_ref(c["local_id"]))
+            if re.match(r"^\d\.\d", stripped):
+                refs |= {stripped}
         for r in refs:
             idx["claims_by_ref"].setdefault(r, []).append(c["claim_id"])
         idx["own_refs"] |= refs

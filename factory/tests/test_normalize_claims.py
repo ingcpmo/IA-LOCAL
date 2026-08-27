@@ -84,3 +84,33 @@ def test_dedup_within_section():
     texts = [c.normalized_statement.lower() for c in claims]
     assert len(texts) == len(set(texts))    # sin duplicados
     assert len(claims) == 2
+
+
+def test_b12_local_id_extraction_and_carry_forward():
+    """B1.2: la 1ª línea trae el id del requisito; las continuaciones lo
+    heredan (una continuación pertenece al mismo bloque de requisito)."""
+    section = (
+        "4.4.1 URS-PCS-HR-006 The operator interface terminals shall provide "
+        "full control of the process.\n"
+        "The system shall also allow the operator to acknowledge alarms from the OIT.\n"
+        "5.2.22 URS-PCS-SR-028 Alarms shall be stored and available to view for one year.\n"
+        "A separate historical archive shall retain the alarm records beyond that period.\n"
+    )
+    claims = nc.extract_claims_for_section("RW-URS", 12, section)
+    by_id = {}
+    for c in claims:
+        by_id.setdefault(c.local_id, []).append(c.source_text)
+    assert "4.4.1" in by_id and "5.2.22" in by_id
+    # la continuación de 4.4.1 hereda su id
+    assert any("acknowledge alarms from the OIT" in t for t in by_id["4.4.1"])
+    # la continuación de 5.2.22 hereda su id, no el de 4.4.1
+    assert any("historical archive" in t for t in by_id["5.2.22"])
+    assert not any("historical archive" in t for t in by_id.get("4.4.1", []))
+
+
+def test_b12_local_id_not_a_citation():
+    """local_id nunca reemplaza source_text (que sigue literal)."""
+    claims = nc.extract_claims_for_section(
+        "RW-URS", 1, "3.3.1 The audit trail shall record operator identity and timestamp.")
+    assert claims[0].local_id == "3.3.1"
+    assert claims[0].source_text.startswith("3.3.1 The audit trail")
