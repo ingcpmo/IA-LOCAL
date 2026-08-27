@@ -10,7 +10,14 @@ DETERMINISTA, sin LLM: recorre el evidence graph (B2) y emite
   - test sin `verifies` ni `tested_by` entrante
       -> TestCoverageFinding: TEST_WITHOUT_REQUIREMENT
   - claim de un documento FUENTE (URS) sin `implemented_by`/`tested_by` saliente
-      -> TraceabilityFinding: REQUIREMENT_NOT_TRACED
+      -> TraceabilityFinding: REQUIREMENT_NOT_TRACED, CON filtro de confianza:
+         solo se emite si el claim parece un requisito real (no encabezado
+         ni texto de alcance) Y lleva un identificador de referencia (UR#,
+         F#, ...) -- así el linkeo determinista tuvo un asa. Si el id
+         aparece aguas abajo pero sin arista -> confianza LOW
+         (MACHINE_INCONCLUSIVE); si no aparece en ningún doc de
+         impl/diseño/prueba -> confianza MEDIUM (MACHINE_DEVIATION_CANDIDATE).
+         Claims sin id se SUPRIMEN (límite de extracción, no hueco).
 
 Los findings que dependen de linkear un requisito DEL CATÁLOGO a un claim
 (REQUIREMENT_NOT_IMPLEMENTED / REQUIREMENT_NOT_TESTED con el req_id
@@ -27,30 +34,56 @@ from factory.regulatory.canonical.persistence import STORE_DIR as CANON_DIR, Can
 from factory.regulatory.findings.risk import compute_risk
 from factory.regulatory.findings.taxonomy import FindingProvenance, build_finding
 from factory.regulatory.graph import queries as gq
+from factory.regulatory.graph.build import extract_refs
 from factory.regulatory.graph.store import GraphStore
 
 _SOURCE_DOC_TYPES = ("URS",)   # documentos "fuente" de trazabilidad
+_DOWNSTREAM_DOC_TYPES = ("FS", "DS", "SAT", "OQ", "IQ", "PQ")
+
+# Filtro de confianza para REQUIREMENT_NOT_TRACED: un claim de la URS
+# demasiado corto o que arranca con lenguaje de encabezado/alcance no es
+# un requisito trazable -- es ruido de extracción heurística (B1).
+_MIN_TRACE_CLAIM_CHARS = 40
+_BOILERPLATE_PREFIXES = (
+    "scope", "purpose", "introduction", "overview", "note", "this document",
+    "alcance", "propósito", "proposito", "introducción", "introduccion",
+    "este documento", "general", "background", "abbreviation", "definition",
+)
 
 
 def _claim_lookup(canon_dir, document_ids) -> dict:
-    """{claim_id: {source_text, pagina, section_id}} y {test_id: {...}}."""
+    """{claim_id: {source_text, pagina, section_id, refs}} y {test_id: {...}}."""
     out: dict = {}
     for did in document_ids:
         try:
             with CanonicalStore(did, store_dir=canon_dir) as s:
                 for c in s.all("claim"):
-                    out[c["claim_id"]] = {"source_text": c.get("source_text", ""),
+                    st = c.get("source_text", "")
+                    out[c["claim_id"]] = {"source_text": st,
                                           "pagina": c.get("pagina"),
                                           "section_id": c.get("section_id"),
-                                          "document_id": did}
+                                          "document_id": did,
+                                          "refs": extract_refs(st)}
                 for t in s.all("test"):
-                    out[t["test_id"]] = {"source_text": t.get("descripcion", ""),
+                    d = t.get("descripcion", "")
+                    out[t["test_id"]] = {"source_text": d,
                                          "pagina": (t.get("provenance") or {}).get("page"),
                                          "section_id": t.get("section_id"),
-                                         "document_id": did}
+                                         "document_id": did,
+                                         "refs": extract_refs(d)}
         except Exception:  # noqa: BLE001 -- un store ausente no aborta el resto
             continue
     return out
+
+
+def _looks_like_requirement(text: str) -> bool:
+    t = (text or "").strip()
+    if len(t) < _MIN_TRACE_CLAIM_CHARS:
+        return False
+    low = t.lower()
+    if any(low.startswith(p) for p in _BOILERPLATE_PREFIXES):
+        return False
+    return True
 
 
 def _anchorable(rec) -> bool:
@@ -59,11 +92,23 @@ def _anchorable(rec) -> bool:
 
 def graph_functional_findings(project_id: str, document_ids: list[str], *,
                               extraction_version: str, run_id: str | None = None,
-                              canon_dir=CANON_DIR, graph_dir=None) -> list:
+                              canon_dir=CANON_DIR, graph_dir=None,
+                              confidence_filter: bool = True,
+                              stats: dict | None = None) -> list:
+    """`confidence_filter` (default True): aplica el filtro de confianza a
+    REQUIREMENT_NOT_TRACED -- solo emite cuando el claim de la URS parece
+    un requisito real Y lleva un identificador de referencia (así el
+    linkeo determinista tuvo un asa para encontrarlo). Claims sin id de
+    referencia se SUPRIMEN (son límite de extracción, no hueco); claims
+    cuyo id SÍ aparece aguas abajo pero sin arista se degradan a
+    confianza baja. `stats` (opcional) recibe los conteos."""
     from factory.regulatory.graph.store import STORE_DIR as GRAPH_DIR
     g = GraphStore(project_id, store_dir=graph_dir or GRAPH_DIR)
     lut = _claim_lookup(canon_dir, document_ids)
     src_docs = _source_document_ids(g)
+    downstream_refs = _downstream_ref_union(g, lut)
+    _stats = {"untraced_emitted_high": 0, "untraced_emitted_low": 0,
+              "untraced_suppressed_no_ref": 0, "untraced_suppressed_boilerplate": 0}
     findings: list = []
 
     # ── contradicciones ────────────────────────────────────────────────
@@ -110,6 +155,7 @@ def graph_functional_findings(project_id: str, document_ids: list[str], *,
         ))
 
     # ── claims de documento fuente sin trazabilidad hacia abajo ────────
+    subtype = "REQUIREMENT_NOT_TRACED"
     for n in g.nodes(kind="claim"):
         if n.document_id not in src_docs:
             continue
@@ -120,24 +166,65 @@ def graph_functional_findings(project_id: str, document_ids: list[str], *,
         rec = lut.get(n.node_id)
         if not _anchorable(rec):
             continue
-        subtype = "REQUIREMENT_NOT_TRACED"
+
+        # ── filtro de confianza ──────────────────────────────────────
+        own_refs = rec.get("refs") or set()
+        if confidence_filter:
+            if not _looks_like_requirement(rec["source_text"]):
+                _stats["untraced_suppressed_boilerplate"] += 1
+                continue
+            if not own_refs:
+                # el linkeo determinista nunca tuvo un asa: límite de
+                # extracción, no un hueco de trazabilidad. No se emite.
+                _stats["untraced_suppressed_no_ref"] += 1
+                continue
+            ref_seen_downstream = bool(own_refs & downstream_refs)
+        else:
+            ref_seen_downstream = bool(own_refs & downstream_refs)
+
+        if ref_seen_downstream:
+            _stats["untraced_emitted_low"] += 1
+            confidence, machine_state, severity = "LOW", "MACHINE_INCONCLUSIVE", "MINOR"
+            extra = ("El identificador de este requisito SÍ aparece en un documento aguas "
+                     "abajo, pero sin arista de trazabilidad -- probable límite de "
+                     "extracción; verificar el enlace real.")
+        else:
+            _stats["untraced_emitted_high"] += 1
+            confidence, machine_state, severity = "MEDIUM", "MACHINE_DEVIATION_CANDIDATE", "MAJOR"
+            extra = ("El identificador de este requisito NO aparece en ningún documento de "
+                     "implementación/diseño/prueba -- candidato a hueco de trazabilidad real.")
+
         prov = FindingProvenance(document_id=rec["document_id"],
                                  extraction_version=extraction_version, run_id=run_id,
                                  agent_id="requirements_traceability_agent")
         findings.append(build_finding(
-            "TraceabilityFinding", subtype, severity="MAJOR",
+            "TraceabilityFinding", subtype, severity=severity,
             document=rec["document_id"], page=rec["pagina"],
             source_text=rec["source_text"], section=rec.get("section_id"),
-            rationale=("Claim de documento fuente sin arista `implemented_by` ni `tested_by` "
-                       "saliente en el grafo: no se pudo trazar a diseño ni a prueba. "
-                       "BORRADOR ASISTIDO -- puede ser un hueco real o un límite de la "
-                       "extracción; revisión humana requerida."),
-            confidence="LOW", machine_state="MACHINE_INCONCLUSIVE",
-            provenance=prov, risk=compute_risk(subtype, "MAJOR", "MEDIUM").as_dict(),
+            rationale=(f"Claim de documento fuente sin arista `implemented_by` ni `tested_by`. "
+                       f"{extra} refs del claim: {sorted(own_refs)}. BORRADOR ASISTIDO -- "
+                       f"revisión humana requerida."),
+            confidence=confidence, machine_state=machine_state,
+            provenance=prov, risk=compute_risk(subtype, severity, "MEDIUM").as_dict(),
         ))
 
+    if stats is not None:
+        stats.update(_stats)
     g.close()
     return findings
+
+
+def _downstream_ref_union(g: GraphStore, lut: dict) -> set:
+    """Unión de todos los identificadores de referencia (UR#, F#, SAT-#,
+    …) que aparecen en claims/tests de documentos de
+    implementación/diseño/prueba."""
+    downstream_docs = {n.document_id for n in g.nodes(kind="document")
+                       if (n.attrs or {}).get("tipo") in _DOWNSTREAM_DOC_TYPES}
+    refs: set = set()
+    for rec in lut.values():
+        if rec.get("document_id") in downstream_docs:
+            refs |= (rec.get("refs") or set())
+    return refs
 
 
 def _source_document_ids(g: GraphStore) -> set:
