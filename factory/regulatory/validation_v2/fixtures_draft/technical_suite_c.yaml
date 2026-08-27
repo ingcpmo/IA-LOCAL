@@ -1,0 +1,141 @@
+# Suite C -- Technical (V2, B8) -- BORRADOR SIN FIRMAR.
+# docs_plan/PLAN_VALIDACION_ANALIZADOR_GMP_LOCAL_V2.md FASE 10 §1 (Suite C).
+#
+# 20 casos conocidos sobre: audit trail (diseño), access control, timestamp /
+# time-sync, backup & recovery, interfaces, redundancia, data retention,
+# seguridad. ~13 positivos (el hueco técnico existe y está evidenciado) +
+# ~7 negativos (el control técnico SÍ está descrito, o no aplica).
+#
+# Referencias de documento/sección PROPUESTAS por Capa 8; Capa 9 confirma
+# contra los PDFs reales antes de firmar como Golden Dataset.
+
+status: DRAFT_UNSIGNED
+suite: technical_suite_c
+version: "0.1-draft"
+authored_by: "Capa 8"
+proposal_doc: "docs_plan/PROPUESTA_FIXTURES_FUNCIONAL_TECNICO_B8.md"
+
+cases:
+  # ---- positivos (hueco técnico presente y evidenciado) ----
+  - case_id: C01
+    topic: audit_trail_design
+    documents: [RW-0005]
+    ref: "audit trail descrito sin mecanismo de protección contra modificación privilegiada"
+    evidence_locator: "confirmar sección F12.00 / audit trail del FS"
+    expected: { finding: true, class: TechnicalFinding, subtype: AUDIT_TRAIL_DESIGN_GAP }
+  - case_id: C02
+    topic: time_sync
+    documents: [RW-0005, RW-0011]
+    ref: "timestamps usados sin describir fuente de tiempo ni sincronización NTP/maestra"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: TechnicalFinding, subtype: TIME_SYNC_GAP }
+  - case_id: C03
+    topic: backup_recovery
+    documents: [RW-0005]
+    ref: "backup mencionado sin describir prueba de restore ni RTO/RPO"
+    evidence_locator: "confirmar sección F14.00 backup and recovery"
+    expected: { finding: true, class: TechnicalFinding, subtype: BACKUP_RECOVERY_GAP }
+  - case_id: C04
+    topic: access_control
+    documents: [RW-0005]
+    ref: "roles descritos sin matriz operación x nivel de autorización"
+    evidence_locator: "confirmar sección seguridad / F10.04"
+    expected: { finding: true, class: SecurityFinding, subtype: ACCESS_CONTROL_GAP }
+  - case_id: C05
+    topic: authority_check
+    documents: [RW-0005]
+    ref: "no se describe chequeo técnico de autoridad por operación (11.10(g) a nivel diseño)"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: SecurityFinding, subtype: AUTHORITY_CHECK_GAP }
+  - case_id: C06
+    topic: interfaces
+    documents: [RW-0005, RW-0011]
+    ref: "interfaz PCS<->SCADA descrita en un doc con parámetros distintos que en el otro"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: TechnicalFinding, subtype: INTERFACE_INCONSISTENCY }
+  - case_id: C07
+    topic: redundancy
+    documents: [RW-0011]
+    ref: "sin descripción de redundancia/failover del PLC de control crítico"
+    evidence_locator: "confirmar EMS control block narrative"
+    expected: { finding: true, class: TechnicalFinding, subtype: REDUNDANCY_GAP }
+  - case_id: C08
+    topic: data_retention
+    documents: [RW-0005]
+    ref: "retención declarada sin verificación de accesibilidad/legibilidad en el periodo"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: TechnicalFinding, subtype: TECHNICAL_DESIGN_GAP }
+  - case_id: C09
+    topic: audit_trail_integrity
+    documents: [RW-0005]
+    ref: "audit trail sin descripción de detección de manipulación / hash-chain"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: DataIntegrityFinding, subtype: AUDIT_TRAIL_INTEGRITY_GAP }
+  - case_id: C10
+    topic: attributable
+    documents: [RW-0011]
+    ref: "acciones de calibración atadas a 'proper credentials' sin identidad individual"
+    evidence_locator: "confirmar (mismo pasaje que P4/P6 del fixture regulatorio)"
+    expected: { finding: true, class: DataIntegrityFinding, subtype: ALCOA_ATTRIBUTABLE_GAP }
+  - case_id: C11
+    topic: physical_security
+    documents: [RW-0005]
+    ref: "seguridad física de servidores/racks no descrita"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: SecurityFinding, subtype: PHYSICAL_SECURITY_GAP }
+  - case_id: C12
+    topic: interfaces
+    documents: [RW-0011, RW-0012]
+    ref: "manejo de fallo de comunicación difiere entre EMS y WFI narratives sin justificación"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: TechnicalFinding, subtype: INTERFACE_INCONSISTENCY }
+  - case_id: C13
+    topic: backup_recovery
+    documents: [RW-0011]
+    ref: "narrativa de control sin describir persistencia de estado tras reinicio del PLC"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: TechnicalFinding, subtype: BACKUP_RECOVERY_GAP }
+
+  # ---- negativos (el control técnico SÍ está descrito, o no aplica) ----
+  - case_id: C14
+    topic: audit_trail_design
+    documents: [RW-0005]
+    ref: "audit trail CON campos completos descritos (operador, timestamp, valor previo/nuevo)"
+    evidence_locator: "confirmar (pasaje P1/P5 del fixture regulatorio)"
+    expected: { finding: false }
+  - case_id: C15
+    topic: access_control
+    documents: [RW-0005]
+    ref: "FactoryTalk Security roles descritos adecuadamente para el alcance"
+    evidence_locator: "confirmar"
+    expected: { finding: false }
+  - case_id: C16
+    topic: time_sync
+    documents: [RW-0005]
+    ref: "fuente de tiempo maestra descrita explícitamente"
+    evidence_locator: "confirmar (si existe; si no, mover a positivo)"
+    expected: { finding: false }
+  - case_id: C17
+    topic: interfaces
+    documents: [RW-0005]
+    ref: "interfaz descrita de forma consistente en el mismo documento"
+    evidence_locator: "confirmar"
+    expected: { finding: false }
+  - case_id: C18
+    topic: redundancy
+    documents: [RW-0005]
+    ref: "requisito de redundancia fuera del alcance documental de un FS de aplicación"
+    evidence_locator: "confirmar aplicabilidad"
+    expected: { finding: false }
+  - case_id: C19
+    topic: data_retention
+    documents: [RW-0005]
+    ref: "retención con verificación descrita (accesibilidad/legibilidad/integridad)"
+    evidence_locator: "confirmar"
+    expected: { finding: false }
+  - case_id: C20
+    topic: physical_security
+    documents: [RW-URS]
+    ref: "seguridad física asignada explícitamente a otro documento (cross-reference legítima)"
+    evidence_locator: "confirmar"
+    expected: { finding: false }
