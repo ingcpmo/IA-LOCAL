@@ -1,11 +1,13 @@
 # Prompt de juicio V2 -- PASO A: descripción operativa neutra (B4).
-# BORRADOR SIN FIRMAR. Ver docs_plan/PROPUESTA_PROMPTS_JUICIO_V2_B4.md.
-# El código de B4a lo carga para tests por replay offline (LLM mockeado).
-# Ninguna corrida real (B4b) arranca sin firma de Capa 9 + PILOT_EXECUTION.
+# FIRMADO por Capa 9 (Cesar) 2026-08-27. Ver docs_plan/PROPUESTA_PROMPTS_JUICIO_V2_B4.md.
+# B4b (corrida real) arranca con este prompt firmado + una PILOT_EXECUTION vigente.
 
 prompt_id: step_a_neutral_description
-prompt_version: "0.1-draft"
-status: DRAFT_UNSIGNED
+prompt_version: "1.0"
+status: SIGNED
+signed_by: "Capa 9 (Cesar)"
+signed_at: "2026-08-27"
+signed_on: "docs_plan/PROPUESTA_PROMPTS_JUICIO_V2_B4.md (firmo los 3 prompts de B4b)"
 schema_version: none          # salida = texto libre, sin JSON
 temperature: 0.0
 

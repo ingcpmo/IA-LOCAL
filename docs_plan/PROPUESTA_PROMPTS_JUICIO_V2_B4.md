@@ -1,10 +1,9 @@
 # PROPUESTA — Prompts de juicio V2 (B4): 2 pasos + Critic
 
-**Estado:** PROPUESTA de contenido gobernado. **Pendiente de firma de Capa 9 (Cesar).**
-Los 3 prompts se implementan como **borrador** (`prompts/v2_draft/`, marcados
-`DRAFT_UNSIGNED`); el código de B4a los carga para tests por *replay offline* (LLM
-mockeado), pero **ninguna corrida real de medición (B4b) arranca sin esta firma + una
-`PILOT_EXECUTION` firmada**.
+**Estado:** ✅ **FIRMADO por Capa 9 (Cesar) el 2026-08-27** — *"firmo los 3 prompts de B4b"*.
+Los 3 prompts (`prompts/v2_draft/{step_a_neutral_description,step_b_criterion_mapping,critic}.yaml`)
+pasan a `status: SIGNED`, `prompt_version: 1.0`; `prompts.assert_all_signed()` ya pasa.
+**B4b (corrida real de medición) arranca en cuanto exista una `PILOT_EXECUTION` vigente** — en preparación.
 
 > **Decisión de Capa 9 (2026-08-27):** pregunta 1 resuelta — se adopta la **VARIANTE
 > ESTRICTA** del paso B. El paso B NO ve ningún Claim ni texto crudo del documento; devuelve

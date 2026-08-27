@@ -173,8 +173,12 @@ def test_guardrail_step_a_prompt_has_no_norm_vocabulary():
     assert "no evalúes si algo" in low
 
 
-def test_prompts_are_draft_unsigned():
-    """B4a: los 3 prompts están sin firmar; assert_all_signed() falla."""
-    assert not prompts.is_signed(prompts.STEP_A)
-    with pytest.raises(prompts.PromptNotSignedError):
-        prompts.assert_all_signed()
+def test_prompts_are_signed_for_b4b():
+    """B4b: los 3 prompts están firmados por Capa 9 (2026-08-27);
+    assert_all_signed() pasa. B4b puede correr con una PILOT_EXECUTION."""
+    for pid in (prompts.STEP_A, prompts.STEP_B, prompts.CRITIC):
+        p = prompts.load_prompt(pid)
+        assert prompts.is_signed(pid), pid
+        assert p["prompt_version"] == "1.0"
+        assert p["signed_by"].startswith("Capa 9")
+    prompts.assert_all_signed()   # no lanza

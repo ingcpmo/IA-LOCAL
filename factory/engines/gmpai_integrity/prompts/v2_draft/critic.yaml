@@ -1,12 +1,15 @@
 # Prompt de juicio V2 -- CRITIC: segunda lectura adversarial (B4).
-# BORRADOR SIN FIRMAR. Ver docs_plan/PROPUESTA_PROMPTS_JUICIO_V2_B4.md.
+# FIRMADO por Capa 9 (Cesar) 2026-08-27. Ver docs_plan/PROPUESTA_PROMPTS_JUICIO_V2_B4.md.
 #
 # El Critic solo DEGRADA: AGREE | DISAGREE | CANNOT_CONFIRM. Nunca propone
 # un veredicto nuevo, nunca promueve. Temperatura 0.
 
 prompt_id: critic
-prompt_version: "0.1-draft"
-status: DRAFT_UNSIGNED
+prompt_version: "1.0"
+status: SIGNED
+signed_by: "Capa 9 (Cesar)"
+signed_at: "2026-08-27"
+signed_on: "docs_plan/PROPUESTA_PROMPTS_JUICIO_V2_B4.md (firmo los 3 prompts de B4b)"
 schema_version: judgment_v2_critic_v1
 temperature: 0.0
 

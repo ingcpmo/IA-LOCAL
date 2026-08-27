@@ -1,5 +1,5 @@
 # Prompt de juicio V2 -- PASO B: mapeo al sub-criterio (B4, VARIANTE ESTRICTA).
-# BORRADOR SIN FIRMAR. Ver docs_plan/PROPUESTA_PROMPTS_JUICIO_V2_B4.md.
+# FIRMADO por Capa 9 (Cesar) 2026-08-27. Ver docs_plan/PROPUESTA_PROMPTS_JUICIO_V2_B4.md.
 #
 # VARIANTE ESTRICTA (elegida por Capa 9, 2026-08-27): el paso B NO ve
 # ningún Claim ni ningún texto crudo del documento -- solo el sub-criterio
@@ -12,8 +12,11 @@
 # y página; el anclaje literal es trivial por construcción.
 
 prompt_id: step_b_criterion_mapping
-prompt_version: "0.1-draft"
-status: DRAFT_UNSIGNED
+prompt_version: "1.0"
+status: SIGNED
+signed_by: "Capa 9 (Cesar)"
+signed_at: "2026-08-27"
+signed_on: "docs_plan/PROPUESTA_PROMPTS_JUICIO_V2_B4.md (firmo los 3 prompts de B4b)"
 schema_version: judgment_v2_step_b_v1
 variant: strict
 temperature: 0.0
