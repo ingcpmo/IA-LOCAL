@@ -96,7 +96,8 @@ def _ingest_canonical(g: GraphStore, canon: CanonicalStore, doc_type: str) -> di
                                                    "sha256": doc.get("sha256")})
 
     idx = {"claims_by_ref": {}, "sections": [], "tests": [], "own_refs": set(),
-           "doc_type": doc_type, "document_id": document_id, "claim_texts": {}}
+           "doc_type": doc_type, "document_id": document_id, "claim_texts": {},
+           "claim_local_id": {}}
 
     for s in canon.all("section"):
         g.add_node(s["section_id"], "section",
@@ -123,6 +124,7 @@ def _ingest_canonical(g: GraphStore, canon: CanonicalStore, doc_type: str) -> di
             idx["claims_by_ref"].setdefault(r, []).append(c["claim_id"])
         idx["own_refs"] |= refs
         idx["claim_texts"][c["claim_id"]] = c.get("source_text", "")
+        idx["claim_local_id"][c["claim_id"]] = c.get("local_id")
 
     for t in canon.all("test"):
         g.add_node(t["test_id"], "test", t.get("descripcion", "")[:200],
@@ -248,27 +250,66 @@ def _link_to_tests(g: GraphStore, ups: list[dict], tests_idx: list[dict]) -> Non
                         _safe_edge(g, su, t["test_id"], "tested_by", {"via_ref": ref})
 
 
-def _link_contradictions(g: GraphStore, indices: list[dict]) -> None:
-    """MUY conservador: dos claims (de cualquier par de documentos) que
-    comparten un identificador de referencia y donde uno usa modal
-    POSITIVO y el otro modal NEGATIVO sobre ese ref. No pretende cubrir
-    contradicciones semánticas -- eso es trabajo de B6/agentes.
+_CONTRA_STOP = frozenset("""
+shall not must should will would may can the a an of to in on for and or is are be as that
+this these those with by from at it its their his her els each any all no every operator
+system user function device panel record data
+""".split())
 
-    Usa `idx["claim_texts"]`/`idx["claims_by_ref"]` ya capturados en
-    `_ingest_canonical` -- no vuelve a leer el store (así no depende de
-    ningún `store_dir` implícito)."""
-    ref_claims: dict[str, list[tuple[str, str]]] = {}  # ref -> [(claim_id, source_text)]
+
+def _predicate_overlap(a: str, b: str, ref: str) -> float:
+    """Solapamiento de palabras de contenido (fuera de modales, stopwords
+    y del propio ref) -- mide si los dos claims hablan de lo mismo."""
+    ref_toks = set(re.findall(r"[a-z0-9]+", (ref or "").lower()))
+    def content(t):
+        return {w for w in re.findall(r"[a-z0-9]+", (t or "").lower())
+                if w not in _CONTRA_STOP and w not in ref_toks and len(w) > 2}
+    ca, cb = content(a), content(b)
+    if not ca or not cb:
+        return 0.0
+    return len(ca & cb) / min(len(ca), len(cb))
+
+
+def _link_contradictions(g: GraphStore, indices: list[dict]) -> None:
+    """MUY conservador: dos claims que comparten un identificador de
+    referencia, uno con modal POSITIVO y el otro NEGATIVO sobre ese ref.
+    No pretende cubrir contradicciones semánticas -- eso es trabajo de
+    B6/agentes.
+
+    Guardas anti-falso-positivo (B8b): una contradicción real es
+    CROSS-DOCUMENTO y entre requisitos DISTINTOS. Dos cláusulas del mismo
+    requisito, o dos fragmentos de la misma frase partida por la
+    segmentación, NO son una contradicción. Se descarta el par si:
+      - ambos claims son del MISMO documento (una contradicción interna a
+        un documento es casi siempre fragmentación de frase), o
+      - comparten `local_id` (mismo bloque de requisito).
+    Y se EXIGE que los dos claims hablen del MISMO predicado: solapamiento
+    de palabras de contenido (fuera de modales y del ref) >= 0.55. Una
+    contradicción modal real ('shall have access' vs 'shall not have
+    access') comparte casi todo el vocabulario; dos cláusulas distintas
+    del mismo requisito ('shall not require PPE' vs 'shall have no power
+    source > 50V') no -- esas son fragmentación, no contradicción."""
+    ref_claims: dict[str, list[tuple]] = {}  # ref -> [(claim_id, text, doc, local_id)]
     for idx in indices:
-        texts = idx["claim_texts"]
+        texts, lids, doc = idx["claim_texts"], idx["claim_local_id"], idx["document_id"]
         for ref, claim_ids in idx["claims_by_ref"].items():
             for cid in claim_ids:
-                ref_claims.setdefault(ref, []).append((cid, texts.get(cid, "")))
+                ref_claims.setdefault(ref, []).append(
+                    (cid, texts.get(cid, ""), doc, lids.get(cid)))
     for ref, items in ref_claims.items():
         for i in range(len(items)):
             for j in range(i + 1, len(items)):
-                (ci, ti), (cj, tj) = items[i], items[j]
+                (ci, ti, di, li), (cj, tj, dj, lj) = items[i], items[j]
+                if di == dj:
+                    continue
+                if li and lj and li == lj:
+                    continue
                 neg_i, neg_j = bool(_MODAL_NEG.search(ti)), bool(_MODAL_NEG.search(tj))
                 pos_i = bool(_MODAL_POS.search(ti)) and not neg_i
                 pos_j = bool(_MODAL_POS.search(tj)) and not neg_j
-                if (neg_i and pos_j) or (neg_j and pos_i):
-                    _safe_edge(g, ci, cj, "contradicts", {"via_ref": ref, "heuristic": "modal_opposite"})
+                if not ((neg_i and pos_j) or (neg_j and pos_i)):
+                    continue
+                if _predicate_overlap(ti, tj, ref) < 0.55:
+                    continue
+                _safe_edge(g, ci, cj, "contradicts",
+                           {"via_ref": ref, "heuristic": "modal_opposite_cross_doc"})
