@@ -166,6 +166,111 @@ def test_untraced_low_confidence_when_ref_present_downstream(tmp_path):
             assert f.machine_state == "MACHINE_INCONCLUSIVE"
 
 
+def test_requirement_not_tested_when_implemented_but_no_test(tmp_path):
+    """Requisito de la URS CON implementación aguas abajo pero sin ningún
+    `test` transitivo -> TestCoverageFinding REQUIREMENT_NOT_TESTED."""
+    canon_dir = tmp_path / "canon"
+    graph_dir = tmp_path / "graph"
+    _seed_doc(canon_dir, "RW-URS", "URS", [
+        (7, "control", "UR5.5.5 The system shall enforce access control on the recipe editor."),
+        (8, "control", "UR6.6.6 The system shall log every recipe download with attribution."),
+    ])
+    _seed_doc(canon_dir, "RW-FS", "FS", [
+        (40, "function", "This function implements UR5.5.5: enforces access control on recipe editor."),
+        (41, "function", "This function implements UR6.6.6: logs recipe downloads with attribution."),
+    ])
+    _seed_doc(canon_dir, "RW-SAT", "SAT", [], tests=[
+        ("SAT-055", "Test case SAT-055: verify UR5.5.5 access control on the recipe editor."),
+    ])
+    docs = [("RW-URS", "URS"), ("RW-FS", "FS"), ("RW-SAT", "SAT")]
+    gb.build_project_graph("PRJ-NT", docs, canon_dir=canon_dir, graph_dir=graph_dir)
+    findings = ff.graph_functional_findings(
+        "PRJ-NT", [d for d, _ in docs], extraction_version="v1",
+        canon_dir=canon_dir, graph_dir=graph_dir)
+
+    nt = [f for f in findings if f.subtype == "REQUIREMENT_NOT_TESTED"]
+    # UR6.6.6 implementado pero sin test -> se emite; UR5.5.5 sí tiene test -> no
+    assert any("UR6.6.6" in f.source_text for f in nt)
+    assert all("UR5.5.5" not in f.source_text for f in nt)
+    f6 = next(f for f in nt if "UR6.6.6" in f.source_text)
+    assert f6.finding_class == "TestCoverageFinding"
+    assert f6.human_state == "UNREVIEWED"
+    assert f6.machine_state == "MACHINE_DEVIATION_CANDIDATE"
+    # y UR6.6.6 NO debe salir como REQUIREMENT_NOT_TRACED (sí está implementado)
+    assert all("UR6.6.6" not in f.source_text
+               for f in findings if f.subtype == "REQUIREMENT_NOT_TRACED")
+
+
+def test_implementation_without_requirement(tmp_path):
+    """Claim del FS sin arista `implemented_by`/`designed_by` entrante y
+    que no cita ningún id de requisito existente -> FunctionalFinding
+    IMPLEMENTATION_WITHOUT_REQUIREMENT (confianza LOW)."""
+    canon_dir = tmp_path / "canon"
+    graph_dir = tmp_path / "graph"
+    _seed_doc(canon_dir, "RW-URS", "URS", [
+        (7, "control", "UR2.2.2 The system shall record batch start events with a timestamp."),
+    ])
+    _seed_doc(canon_dir, "RW-FS", "FS", [
+        (40, "function", "This function implements UR2.2.2: records batch start with timestamp."),
+        (50, "function", "FX-DB-101 The HMI shall display a decorative company logo on the splash screen."),
+    ])
+    docs = [("RW-URS", "URS"), ("RW-FS", "FS")]
+    gb.build_project_graph("PRJ-IW", docs, canon_dir=canon_dir, graph_dir=graph_dir)
+    findings = ff.graph_functional_findings(
+        "PRJ-IW", [d for d, _ in docs], extraction_version="v1",
+        canon_dir=canon_dir, graph_dir=graph_dir)
+
+    iw = [f for f in findings if f.subtype == "IMPLEMENTATION_WITHOUT_REQUIREMENT"]
+    assert any("FX-DB-101" in f.source_text for f in iw)
+    # el claim que sí implementa UR2.2.2 no debe salir
+    assert all("UR2.2.2" not in f.source_text for f in iw)
+    orphan = next(f for f in iw if "FX-DB-101" in f.source_text)
+    assert orphan.finding_class == "FunctionalFinding"
+    assert orphan.confidence == "LOW"
+    assert orphan.machine_state == "MACHINE_INCONCLUSIVE"
+    assert orphan.document == "RW-FS"
+
+
+def test_impl_without_req_skips_claim_citing_existing_requirement(tmp_path):
+    """Un claim del DS que cita un id de requisito que SÍ existe en la URS
+    no es 'sin requisito' -- es límite de extracción de la arista. No se
+    emite IMPLEMENTATION_WITHOUT_REQUIREMENT."""
+    canon_dir = tmp_path / "canon"
+    graph_dir = tmp_path / "graph"
+    _seed_doc(canon_dir, "RW-URS", "URS", [
+        (7, "control", "UR-DB-021 The operator shall have access to the alarm reset function from the OIT."),
+    ])
+    _seed_doc(canon_dir, "RW-DS", "DS", [
+        (12, "control", "Concerning some detail of UR-DB-021, an additional supervisor key is needed "
+                        "before the operation completes in the field."),
+    ])
+    docs = [("RW-URS", "URS"), ("RW-DS", "DS")]
+    gb.build_project_graph("PRJ-IW2", docs, canon_dir=canon_dir, graph_dir=graph_dir)
+    findings = ff.graph_functional_findings(
+        "PRJ-IW2", [d for d, _ in docs], extraction_version="v1",
+        canon_dir=canon_dir, graph_dir=graph_dir)
+    iw = [f for f in findings if f.subtype == "IMPLEMENTATION_WITHOUT_REQUIREMENT"]
+    assert all("UR-DB-021" not in f.source_text for f in iw)
+
+
+def test_defect_corpus_suite_b_measures_functional_recall(tmp_path):
+    """El fixture de inyección de defectos (B8b opción A) mide
+    FUNCTIONAL_RECALL de verdad: todos los defectos conocidos detectados,
+    cero falsos positivos, gate funcional en verde."""
+    from factory.regulatory.validation_v2.defect_corpus import run_suite_b, GROUND_TRUTH
+
+    r = run_suite_b(tmp_path / "canon", tmp_path / "graph")
+    assert r["n_expected"] == len(GROUND_TRUTH)
+    assert r["n_detected"] == r["n_expected"], r["by_case"]
+    assert r["recall"] == 1.0
+    assert r["n_false_positives"] == 0, r["false_positives"]
+    gate = r["gate_report"]
+    assert gate["all_passed"] is True
+    names = {g["name"]: g for g in gate["gates"]}
+    assert names["FUNCTIONAL_RECALL"]["passed"] is True
+    assert names["FUNCTIONAL_FALSE_POSITIVE"]["passed"] is True
+
+
 def test_findings_feed_report_v2(tmp_path):
     from factory.regulatory.findings import report_v2
     canon_dir = tmp_path / "canon"

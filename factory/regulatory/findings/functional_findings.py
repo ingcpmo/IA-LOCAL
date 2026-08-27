@@ -208,10 +208,113 @@ def graph_functional_findings(project_id: str, document_ids: list[str], *,
             provenance=prov, risk=compute_risk(subtype, severity, "MEDIUM").as_dict(),
         ))
 
+    # ── requisito de doc fuente implementado pero SIN prueba ───────────
+    for n in g.nodes(kind="claim"):
+        if n.document_id not in src_docs:
+            continue
+        if n.attrs.get("tipo") not in ("control", "function"):
+            continue
+        if not g.edges(src_id=n.node_id, rel="implemented_by"):
+            continue  # sin implementación -> ya cubierto por REQUIREMENT_NOT_TRACED
+        rec = lut.get(n.node_id)
+        if not _anchorable(rec):
+            continue
+        if confidence_filter and (not _looks_like_requirement(rec["source_text"])
+                                  or not (rec.get("refs") or set())):
+            continue
+        if _reaches_test(g, n.node_id):
+            continue
+        subtype = "REQUIREMENT_NOT_TESTED"
+        prov = FindingProvenance(document_id=rec["document_id"],
+                                 extraction_version=extraction_version, run_id=run_id,
+                                 agent_id="test_coverage_agent")
+        findings.append(build_finding(
+            "TestCoverageFinding", subtype, severity="MAJOR",
+            document=rec["document_id"], page=rec["pagina"],
+            source_text=rec["source_text"], section=rec.get("section_id"),
+            rationale=("Requisito de documento fuente con implementación aguas abajo pero "
+                       "SIN ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- "
+                       "revisión humana requerida."),
+            confidence="MEDIUM", machine_state="MACHINE_DEVIATION_CANDIDATE",
+            provenance=prov, risk=compute_risk(subtype, "MAJOR", "MEDIUM").as_dict(),
+        ))
+
+    # ── claim de doc de implementación/diseño SIN requisito aguas arriba ─
+    all_source_refs: set = set()
+    for sd in src_docs:
+        for cn in g.nodes(kind="claim", document_id=sd):
+            all_source_refs |= extract_refs(lut.get(cn.node_id, {}).get("source_text", ""))
+            if lut.get(cn.node_id, {}).get("refs"):
+                all_source_refs |= lut[cn.node_id]["refs"]
+    for n in g.nodes(kind="claim"):
+        doc_type = _doc_type_of(g, n.document_id)
+        if doc_type not in _DOWNSTREAM_DOC_TYPES:
+            continue
+        if n.attrs.get("tipo") not in ("control", "function"):
+            continue
+        if g.edges(dst_id=n.node_id, rel="implemented_by") or g.edges(dst_id=n.node_id, rel="designed_by"):
+            continue  # tiene requisito/diseño aguas arriba
+        rec = lut.get(n.node_id)
+        if not _anchorable(rec):
+            continue
+        # si el claim cita un identificador de requisito que existe en un
+        # documento fuente, está atado a ese requisito aunque falte la
+        # arista -- no es "sin requisito", es un límite de extracción.
+        if (rec.get("refs") or set()) & all_source_refs:
+            continue
+        if confidence_filter and (not _looks_like_requirement(rec["source_text"])
+                                  or not (rec.get("refs") or set())):
+            continue
+        subtype = "IMPLEMENTATION_WITHOUT_REQUIREMENT"
+        prov = FindingProvenance(document_id=rec["document_id"],
+                                 extraction_version=extraction_version, run_id=run_id,
+                                 agent_id="cross_document_agent")
+        findings.append(build_finding(
+            "FunctionalFinding", subtype, severity="MINOR",
+            document=rec["document_id"], page=rec["pagina"],
+            source_text=rec["source_text"], section=rec.get("section_id"),
+            rationale=("Claim de un documento de implementación/diseño sin arista "
+                       "`implemented_by`/`designed_by` entrante: no traza a ningún requisito "
+                       "aguas arriba. BORRADOR ASISTIDO -- revisión humana requerida."),
+            confidence="LOW", machine_state="MACHINE_INCONCLUSIVE",
+            provenance=prov, risk=compute_risk(subtype, "MINOR", "LOW").as_dict(),
+        ))
+
     if stats is not None:
         stats.update(_stats)
     g.close()
     return findings
+
+
+def _doc_type_of(g: GraphStore, document_id: str) -> str | None:
+    for dn in g.nodes(kind="document"):
+        if dn.document_id == document_id:
+            return (dn.attrs or {}).get("tipo")
+    return None
+
+
+def _reaches_test(g: GraphStore, node_id: str, *, max_depth: int = 8) -> bool:
+    """¿Se alcanza algún nodo `test` desde `node_id` siguiendo
+    implemented_by/designed_by/tested_by hacia abajo?"""
+    from collections import deque
+    seen = {node_id}
+    dq = deque([(node_id, 0)])
+    rels = ("implemented_by", "designed_by", "tested_by")
+    while dq:
+        nid, depth = dq.popleft()
+        if depth >= max_depth:
+            continue
+        for rel in rels:
+            for e in g.edges(src_id=nid, rel=rel):
+                dst = g.get_node(e.dst_id)
+                if dst is None:
+                    continue
+                if dst.kind == "test":
+                    return True
+                if dst.node_id not in seen:
+                    seen.add(dst.node_id)
+                    dq.append((dst.node_id, depth + 1))
+    return False
 
 
 def _downstream_ref_union(g: GraphStore, lut: dict) -> set:
