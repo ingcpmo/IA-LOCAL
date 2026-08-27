@@ -105,13 +105,14 @@ def _expected_calls(bundles) -> int:
 
 
 def run_b4b(*, provider=None, canon_dir=CANON_DIR, out_root: Path = _OUT_ROOT,
-            run_id: str | None = None, max_candidates: int = 2) -> dict:
+            run_id: str | None = None, max_candidates: int = 2,
+            variant: str = "strict") -> dict:
     provider = provider or DEFAULT_PROVIDER
-    run_id = run_id or f"b4b-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+    run_id = run_id or f"b4b-{variant}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
     out_dir = out_root / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    prompts.assert_all_signed()
+    prompts.assert_all_signed(variant=variant)
 
     document_ids = sorted({u[2] for u in FIXTURE})
     selection = _select_pilot_execution_instance(document_ids)
@@ -127,7 +128,7 @@ def run_b4b(*, provider=None, canon_dir=CANON_DIR, out_root: Path = _OUT_ROOT,
 
     meta = {
         "run_id": run_id, "pilot_instance": pilot_instance, "max_calls": max_calls,
-        "model": getattr(provider, "model_name", "?"), "max_candidates": max_candidates,
+        "model": getattr(provider, "model_name", "?"), "max_candidates": max_candidates, "variant": variant,
         "started_at": datetime.now(timezone.utc).isoformat(),
         "fixture_units": len(FIXTURE), "no_effects": True,
     }
@@ -154,7 +155,7 @@ def run_b4b(*, provider=None, canon_dir=CANON_DIR, out_root: Path = _OUT_ROOT,
                     stop_reason = "HARD_STOP_CALLS"
                     break
                 for b in bundles:
-                    v = evaluate_bundle(b, provider=provider)
+                    v = evaluate_bundle(b, provider=provider, variant=variant)
                     calls_made += v.calls_made
                     ur.calls_made += v.calls_made
                     ur.subcriterion_states[b.subcriterion_id] = v.state

@@ -78,10 +78,18 @@ def _extract_json(raw: str) -> dict | None:
         return None
 
 
+def _claims_index(candidate_claims: list[dict]) -> str:
+    return "\n".join(f"- {c['claim_id']}: {c['source_text']}" for c in candidate_claims)
+
+
 def evaluate_bundle(bundle, *, provider: ModelProvider,
-                    has_open_contradiction: bool = False) -> SubcriterionVerdict:
+                    has_open_contradiction: bool = False,
+                    variant: str = "strict") -> SubcriterionVerdict:
     """`bundle`: un EvidenceBundle de B3. `provider`: ModelProvider
-    (mockeado en B4a)."""
+    (mockeado en B4a). `variant`: "strict" (paso B no ve Claims, cita
+    determinista) | "nonstrict" (paso B ve los Claims para citar; la cita
+    la valida evidence_verifier de forma independiente) -- experimento
+    diagnóstico B4b §6(B)."""
     verdict = SubcriterionVerdict(
         subcriterion_ref=bundle.subcriterion_ref,
         requirement_id=bundle.requirement_id, state=EVIDENCE_NOT_FOUND,
@@ -93,6 +101,9 @@ def evaluate_bundle(bundle, *, provider: ModelProvider,
 
     known_ids = {bundle.requirement_id}
     req_terms = load_requirement_terms(bundle.requirement_id)
+    step_b_pid = prompts.step_b_id(variant)
+    claims_idx = _claims_index(bundle.candidate_claims) if variant == "nonstrict" else None
+    by_id = {c["claim_id"]: c for c in bundle.candidate_claims}
 
     for cand in bundle.candidate_claims:
         # ── paso A ────────────────────────────────────────────────────────
@@ -100,12 +111,11 @@ def evaluate_bundle(bundle, *, provider: ModelProvider,
         neutral = _resp_text(provider.generate(a_prompt)).strip()
         verdict.calls_made += 1
 
-        # ── paso B (VARIANTE ESTRICTA: solo sub-criterio + descripción
-        #    neutra; el modelo NUNCA ve un Claim ni produce una cita) ─────
-        b_prompt = prompts.render(
-            prompts.STEP_B, subcriterion_text=bundle.subcriterion_text,
-            neutral_description=neutral,
-        )
+        # ── paso B ──────────────────────────────────────────────────────
+        b_fields = dict(subcriterion_text=bundle.subcriterion_text, neutral_description=neutral)
+        if variant == "nonstrict":
+            b_fields["claims_index"] = claims_idx
+        b_prompt = prompts.render(step_b_pid, **b_fields)
         b_parsed = _extract_json(_resp_text(provider.generate(b_prompt)))
         verdict.calls_made += 1
         if not b_parsed:
@@ -121,11 +131,18 @@ def evaluate_bundle(bundle, *, provider: ModelProvider,
                 INCONCLUSIVE, [f"step_b_invalid_verdict:{hunter!r}"]))
             continue
 
-        # ── paso B2 (DETERMINISTA): la evidencia de un veredicto positivo
-        #    es el Claim que originó esta descripción neutra. El modelo no
-        #    elige ni produce cita -> no puede fabricar ni parafrasear. ──
-        cited_claim = cand
-        quote = cand["source_text"] if hunter in (HUNTER_SATISFIES, HUNTER_PARTIAL) else ""
+        # ── selección de cita ───────────────────────────────────────────
+        if variant == "nonstrict":
+            # el modelo elige el claim y produce la cita; solo se acepta un
+            # claim que esté en el bundle (nunca uno inventado).
+            cited_id = b_parsed.get("evidence_claim_id") or cand["claim_id"]
+            cited_claim = by_id.get(cited_id, cand)
+            quote = (b_parsed.get("evidence_quote") or "").strip()
+        else:
+            # estricta: la evidencia es el Claim que originó la descripción
+            # neutra; el modelo no elige ni produce cita.
+            cited_claim = cand
+            quote = cand["source_text"] if hunter in (HUNTER_SATISFIES, HUNTER_PARTIAL) else ""
 
         # ── Verifier (determinista, sin cambios) ─────────────────────────
         observation = ("observed" if hunter in (HUNTER_SATISFIES, HUNTER_PARTIAL)
