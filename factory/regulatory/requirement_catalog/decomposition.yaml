@@ -1,0 +1,348 @@
+# Descomposición de requisitos en sub-criterios atómicos verificables (V2, B3).
+#
+# Contenido GOBERNADO. Firmado por Capa 9 (Cesar) el 2026-08-27 sobre
+# docs_plan/PROPUESTA_DECOMPOSITION_REQUIREMENTS_V2.md ("firmo con los
+# cambios, siempre que estos ayuden a mejorar").
+#
+# Archivo HERMANO de requirements.yaml -- NO se mete dentro del catálogo v1
+# porque requirement_catalog_entry_v1.json es additionalProperties:false y
+# tocarlo rompería CURRENT. Se carga por separado en el camino V2
+# (requirement_decomposition_loader.py). El catálogo v1 y su schema quedan
+# intactos.
+#
+# Cada sub-criterio es una re-expresión atómica de citation_text +
+# evidence_min_criteria del requisito (ver `derived_from`). NO añade ni
+# elimina exigencias -- desdobla las compuestas. La cita citable de
+# cualquier `observed` sigue siendo el Claim.source_text literal; el
+# sub-criterio solo enmarca la pregunta al modelo y la recuperación.
+#
+# Reglas duras: cero LLM en runtime (estático); el verificador
+# (evidence_verifier) no se toca; el negativo obligatorio ANNEX11_4 sigue
+# rechazándose (ver la nota de guardián en su bloque); ningún cambio a
+# este archivo sin nueva versión + firma de Capa 9.
+
+decomposition_version: "1.0"
+signed_by: "Capa 9 (Cesar)"
+signed_at: "2026-08-27"
+source_proposal: "docs_plan/PROPUESTA_DECOMPOSITION_REQUIREMENTS_V2.md"
+catalog_version_ref: "2.1"   # requirements.yaml sobre el que se autoró
+total_requirements: 20
+total_subcriteria: 84
+
+requirements:
+
+  21_CFR_11.10(a):
+    subcriteria:
+      - id: sc1
+        text: "existe un enfoque de validación documentado, basado en riesgo y uso previsto"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "los criterios de aceptación se definieron antes de ejecutar la validación"
+        derived_from: ["evidence_min_criteria[1]"]
+      - id: sc3
+        text: "hay evidencia real de ejecución: protocolo ejecutado, resultados registrados, desviaciones documentadas si las hubo"
+        derived_from: ["evidence_min_criteria[2]"]
+      - id: sc4
+        text: "existe trazabilidad requisito ↔ prueba ↔ resultado"
+        derived_from: ["evidence_min_criteria[3]"]
+      - id: sc5
+        text: "el sistema puede discernir registros inválidos o alterados, por algún mecanismo técnico demostrado"
+        derived_from: ["evidence_min_criteria[4]", "citation_text"]
+
+  21_CFR_11.10(d):
+    subcriteria:
+      - id: sc1
+        text: "existe un mecanismo de control de acceso al sistema (propio o federado), descrito"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "hay un proceso de alta de cuentas"
+        derived_from: ["evidence_min_criteria[1]"]
+      - id: sc3
+        text: "hay un proceso de cambio de privilegios de cuentas"
+        derived_from: ["evidence_min_criteria[1]"]
+      - id: sc4
+        text: "hay revisión periódica de cuentas y accesos"
+        derived_from: ["evidence_min_criteria[1]"]
+      - id: sc5
+        text: "hay un proceso de revocación de cuentas"
+        derived_from: ["evidence_min_criteria[1]"]
+      - id: sc6
+        text: "las cuentas humanas son individuales, no compartidas"
+        derived_from: ["evidence_min_criteria[2]"]
+      - id: sc7
+        text: "las cuentas técnicas no interactivas, si existen, tienen propietario, propósito y privilegio mínimo declarados, y no pueden firmar electrónicamente"
+        derived_from: ["evidence_min_criteria[3]"]
+      - id: sc8
+        text: "hay evidencia de prueba de acceso permitido y de acceso denegado"
+        derived_from: ["evidence_min_criteria[4]"]
+
+  21_CFR_11.10(e):
+    subcriteria:
+      - id: sc1
+        text: "existe un audit trail generado automáticamente por el sistema, sin intervención del operador"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "cada entrada del audit trail registra fecha y hora"
+        derived_from: ["evidence_min_criteria[1]", "citation_text"]
+      - id: sc3
+        text: "el audit trail registra las acciones de crear, modificar y eliminar registros electrónicos"
+        derived_from: ["evidence_min_criteria[2]", "citation_text"]
+      - id: sc4
+        text: "al modificar un registro, el audit trail preserva el valor o la información previa (no solo el nuevo valor)"
+        derived_from: ["evidence_min_criteria[3]"]
+      - id: sc5
+        text: "el acceso para modificar el propio audit trail está restringido a usuarios privilegiados"
+        derived_from: ["evidence_min_criteria[4]"]
+      - id: sc6
+        text: "el audit trail permite detectar manipulación / es trazable"
+        derived_from: ["evidence_min_criteria[5]"]
+      - id: sc7
+        text: "la modificación silenciosa del audit trail está impedida y es detectable"
+        derived_from: ["evidence_min_criteria[6]"]
+      - id: sc8
+        text: "el audit trail se retiene por un periodo igual o mayor al del registro asociado"
+        derived_from: ["evidence_min_criteria[7]"]
+      - id: sc9
+        text: "el audit trail se puede exportar o copiar para inspección"
+        derived_from: ["evidence_min_criteria[8]"]
+
+  21_CFR_11.10(g):
+    subcriteria:
+      - id: sc1
+        text: "existe una matriz de operaciones del sistema con el nivel de autorización requerido por cada una"
+        derived_from: ["evidence_min_criteria[0]"]
+      - id: sc2
+        text: "el sistema ejecuta un chequeo técnico de autoridad en el momento de cada operación aplicable (firmar, alterar un registro, acceder a E/S, ejecutar la operación)"
+        derived_from: ["evidence_min_criteria[1]", "citation_text"]
+      - id: sc3
+        text: "hay evidencia de prueba negativa: un intento de operación sin autoridad suficiente resulta bloqueado"
+        derived_from: ["evidence_min_criteria[2]"]
+
+  21_CFR_11.50_11.70:
+    subcriteria:
+      - id: sc1
+        text: "cada firma electrónica muestra el nombre impreso del firmante"
+        derived_from: ["citation_text(1)", "evidence_min_criteria[0]"]
+      - id: sc2
+        text: "cada firma electrónica muestra la fecha y hora en que se ejecutó"
+        derived_from: ["citation_text(2)", "evidence_min_criteria[0]"]
+      - id: sc3
+        text: "cada firma electrónica muestra el significado asociado (revisión, aprobación, responsabilidad, autoría)"
+        derived_from: ["citation_text(3)", "evidence_min_criteria[0]"]
+      - id: sc4
+        text: "esos tres elementos son legibles y están asociados al registro firmado"
+        derived_from: ["evidence_min_criteria[0]"]
+      - id: sc5
+        text: "los controles del registro electrónico (acceso, integridad, retención, disponibilidad) se extienden a los tres elementos de la firma"
+        derived_from: ["evidence_min_criteria[1]"]
+      - id: sc6
+        text: "existe un mecanismo técnico protegido que ata la firma al registro específico"
+        derived_from: ["evidence_min_criteria[2]"]
+      - id: sc7
+        text: "hay prueba de que ese mecanismo impide extraer, copiar o transferir la firma por medios ordinarios"
+        derived_from: ["evidence_min_criteria[3]"]
+
+  ANNEX11_4:
+    # NOTA DE GUARDIÁN (negativo obligatorio del fixture, N1): una entrada
+    # bibliográfica que solo nombra "GAMP5" u otro estándar NO satisface
+    # ninguno de estos tres -- los tres exigen documentación / evaluación /
+    # conexión sustantiva del sistema evaluado, no la mención de un nombre.
+    subcriteria:
+      - id: sc1
+        text: "existe documentación de validación que cubre las etapas relevantes del ciclo de vida del sistema"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "existe una evaluación de riesgo real y documentada del sistema computarizado"
+        derived_from: ["evidence_min_criteria[1]", "citation_text"]
+      - id: sc3
+        text: "hay una conexión explícita y trazable entre esa evaluación de riesgo y las decisiones de validación tomadas (alcance, protocolos, criterios de aceptación, procedimientos, registros)"
+        derived_from: ["evidence_min_criteria[2]", "citation_text"]
+
+  ANNEX11_7.1:
+    subcriteria:
+      - id: sc1
+        text: "hay medios físicos de protección de datos descritos (acceso restringido a sala de servidores / racks)"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "hay medios electrónicos de protección descritos (redundancia, checksums, control de integridad)"
+        derived_from: ["evidence_min_criteria[1]", "citation_text"]
+      - id: sc3
+        text: "hay verificación documentada, con evidencia real, de accesibilidad, legibilidad y exactitud de los datos almacenados"
+        derived_from: ["evidence_min_criteria[2]", "citation_text"]
+      - id: sc4
+        text: "existe una frecuencia de reverificación definida según riesgo y procedimiento, cuando el riesgo lo justifica"
+        derived_from: ["evidence_min_criteria[3]"]
+      - id: sc5
+        text: "el periodo de retención está declarado y hay evidencia de que el acceso a los datos se mantiene durante ese periodo"
+        derived_from: ["evidence_min_criteria[4]", "citation_text"]
+
+  ANNEX11_9:
+    subcriteria:
+      - id: sc1
+        text: "existe una evaluación de riesgo documentada sobre la necesidad y el alcance del audit trail"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "el sistema genera un audit trail que registra los cambios y las eliminaciones GMP-relevantes"
+        derived_from: ["evidence_min_criteria[1]", "citation_text"]
+      - id: sc3
+        text: "para cada cambio o eliminación GMP-relevante, el motivo queda documentado (no solo el hecho del cambio)"
+        derived_from: ["evidence_min_criteria[2]", "citation_text"]
+      - id: sc4
+        text: "el audit trail está disponible y es convertible a una forma generalmente inteligible (exportable / legible por humano)"
+        derived_from: ["evidence_min_criteria[3]", "citation_text"]
+      - id: sc5
+        text: "hay evidencia de revisión periódica real del audit trail (no solo de su existencia)"
+        derived_from: ["evidence_min_criteria[4]", "citation_text"]
+
+  ANNEX11_12:
+    subcriteria:
+      - id: sc1
+        text: "hay controles físicos y/o lógicos descritos con un método concreto (llaves, tarjetas, códigos + contraseñas, biometría, acceso restringido a equipos / áreas de almacenamiento)"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "la combinación elegida (físico, lógico o ambos) está justificada según riesgo, arquitectura y entorno del sistema"
+        derived_from: ["evidence_min_criteria[1]"]
+      - id: sc3
+        text: "hay evidencia de restricción efectiva a personas autorizadas: lista de autorizados verificada contra el control real, o prueba de acceso denegado a no autorizados"
+        derived_from: ["evidence_min_criteria[2]", "citation_text"]
+
+  ANNEX11_17:
+    subcriteria:
+      - id: sc1
+        text: "existe un proceso de archivo de datos descrito"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "hay verificación documentada de accesibilidad, legibilidad e integridad de los datos archivados"
+        derived_from: ["evidence_min_criteria[1]", "citation_text"]
+      - id: sc3
+        text: "existe una frecuencia de verificación definida según riesgo y procedimiento, cuando el riesgo lo justifica"
+        derived_from: ["evidence_min_criteria[2]"]
+      - id: sc4
+        text: "ante cambios relevantes al sistema, hay evidencia de que la capacidad de recuperar los datos archivados fue asegurada y probada"
+        derived_from: ["evidence_min_criteria[3]", "citation_text"]
+
+  ALCOA_ATTRIBUTABLE:
+    subcriteria:
+      - id: sc1
+        text: "(acción humana) cada dato se identifica de forma única e individual con la persona que lo generó"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "(acción humana) hay un mecanismo técnico que sostiene esa atribución de forma confiable (no solo un campo de texto libre)"
+        derived_from: ["evidence_min_criteria[1]"]
+      - id: sc3
+        text: "(acción humana) la atribución se sostiene para crear, modificar y eliminar — no solo para crear"
+        derived_from: ["evidence_min_criteria[2]"]
+      - id: sc4
+        text: "(dato autogenerado) hay un identificador específico y trazable del instrumento / sistema / fuente técnica que generó el dato (no una categoría genérica de equipo)"
+        derived_from: ["evidence_min_criteria[3]"]
+      - id: sc5
+        text: "(dato autogenerado) hay trazabilidad de que ese instrumento / sistema fue el que efectivamente generó el dato"
+        derived_from: ["evidence_min_criteria[4]"]
+
+  ALCOA_LEGIBLE:
+    subcriteria:
+      - id: sc1
+        text: "la legibilidad de los datos está garantizada durante todo el ciclo de vida"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "los datos son permanentes: no hay sobrescritura silenciosa"
+        derived_from: ["evidence_min_criteria[1]", "citation_text"]
+      - id: sc3
+        text: "existe un criterio de continuidad de legibilidad cuando el riesgo de obsolescencia del formato es real"
+        derived_from: ["evidence_min_criteria[2]"]
+
+  ALCOA_CONTEMPORANEOUS:
+    subcriteria:
+      - id: sc1
+        text: "como regla general, el registro se hace en el momento de la actividad"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "(caso escribiente) el escribiente registra en el momento de la actividad, no retrospectivamente, e identifica al ejecutor real"
+        derived_from: ["evidence_min_criteria[1]"]
+      - id: sc3
+        text: "(caso contrafirma) existe un procedimiento gobernado que define cuándo una contrafirma tardía del ejecutor es aceptable, con motivo real, plazo máximo y revisión"
+        derived_from: ["evidence_min_criteria[2]"]
+
+  ALCOA_ORIGINAL:
+    subcriteria:
+      - id: sc1
+        text: "el original de primera captura está identificado y preservado, o existe una copia certificada con un proceso real descrito"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "hay evidencia de que la certificación de la copia se ejecutó realmente"
+        derived_from: ["evidence_min_criteria[1]"]
+
+  ALCOA_ACCURATE:
+    subcriteria:
+      - id: sc1
+        text: "hay un mecanismo de verificación de exactitud del dato descrito"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "ese mecanismo cubre todas las formas del dato que pertenecen al proceso y alcance evaluados"
+        derived_from: ["evidence_min_criteria[1]"]
+
+  ALCOA_COMPLETE:
+    subcriteria:
+      - id: sc1
+        text: "se capturan todos los datos relevantes del proceso evaluado, incluidos reintentos, reprocesamientos, exclusiones y desviaciones cuando forman parte de ese proceso"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "no hay eliminación selectiva de datos desfavorables que formen parte del proceso evaluado"
+        derived_from: ["evidence_min_criteria[1]"]
+      - id: sc3
+        text: "es posible reconstruir completamente la actividad a partir de los datos"
+        derived_from: ["evidence_min_criteria[2]"]
+      - id: sc4
+        text: "cuando aplica OOS al proceso evaluado, el tratamiento y registro de los resultados OOS está descrito"
+        derived_from: ["evidence_min_criteria[3]"]
+
+  ALCOA_CONSISTENT:
+    subcriteria:
+      - id: sc1
+        text: "existe una secuencia cronológica consistente (timestamps, numeración de lotes)"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "hay un mecanismo gobernado que detecta inconsistencias reales (humano, técnico/automatizado o equivalente), definido y con registro de ejecución"
+        derived_from: ["evidence_min_criteria[1]"]
+
+  ALCOA_ENDURING:
+    subcriteria:
+      - id: sc1
+        text: "el medio o formato garantiza durabilidad durante todo el periodo de retención"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "existe un criterio de reevaluación según el riesgo de obsolescencia o degradación"
+        derived_from: ["evidence_min_criteria[1]"]
+
+  ALCOA_AVAILABLE:
+    subcriteria:
+      - id: sc1
+        text: "los datos se recuperan sin demora indebida, directamente accesibles cuando se solicitan, y en forma legible para revisión o inspección"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "la recuperación no depende de personal específico ni de sistemas legados sin contingencia"
+        derived_from: ["evidence_min_criteria[1]"]
+
+  21_CFR_211.68(b):
+    subcriteria:
+      - id: sc1
+        text: "hay un mecanismo técnico (no solo una política) que restringe quién puede modificar los registros maestros de producción y control"
+        derived_from: ["evidence_min_criteria[0]", "citation_text"]
+      - id: sc2
+        text: "el sistema identifica que la modificación la realizó personal con autorización vigente para ese registro"
+        derived_from: ["evidence_min_criteria[1]", "citation_text"]
+      - id: sc3
+        text: "hay un mecanismo descrito de verificación de exactitud de los datos de entrada y salida del sistema"
+        derived_from: ["evidence_min_criteria[2]"]
+      - id: sc4
+        text: "el grado o la frecuencia de esa verificación de exactitud está justificado por la complejidad o confiabilidad del sistema"
+        derived_from: ["evidence_min_criteria[3]"]
+      - id: sc5
+        text: "hay un mecanismo de respaldo de los datos ingresados, con evidencia de que es exacto y completo"
+        derived_from: ["evidence_min_criteria[4]"]
+      - id: sc6
+        text: "hay protección descrita del respaldo contra alteración, borrado accidental o pérdida"
+        derived_from: ["evidence_min_criteria[5]"]
+      - id: sc7
+        text: "(caso excepcional) si algún dato se elimina por diseño del proceso automatizado, existe un registro escrito del programa más datos de validación que lo sustenten, en lugar del respaldo"
+        derived_from: ["evidence_min_criteria[6]"]
