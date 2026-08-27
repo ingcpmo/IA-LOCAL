@@ -109,3 +109,66 @@ salen del grafo determinista y de la taxonomía, no del juicio de paráfrasis. S
 ---
 
 *Ningún validador se relajó en esta corrida. El resultado se reporta tal cual.*
+
+---
+
+## 7. Experimento diagnóstico — variante NO ESTRICTA del paso B (autorizado por Cesar)
+
+`PILOT_EXECUTION-2026-034` (`human_confirmed` por Cesar, `max_calls` 240).
+Run `b4b-nonstrict-20260827T205418Z`, 205 llamadas, `COMPLETE`.
+Prompt `step_b_criterion_mapping_nonstrict.yaml` firmado (`prompt_version 1.0`).
+Diferencia: el paso B **sí ve la lista de claims** para poder producir una cita literal
+(el juicio sigue sobre la descripción neutra del paso A; `evidence_verifier` valida la cita).
+
+```
+REGULATORY_POSITIVE:  0/7        ← igual que la variante estricta
+REGULATORY_NEGATIVE:  2/2
+FABRICATED_CITATIONS: 0
+SCHEMA_VALID_RATE:    9/9 = 100%
+DOCUMENT_EGRESS:      0 bytes
+sub-criterios (56):  40 INCONCLUSIVE (paso B = UNCLEAR), 10 EVIDENCE_NOT_FOUND (paso B = NO)
+                     0 SATISFIES · 0 PARTIAL · 0 rechazos del verificador
+```
+
+**Único efecto de dar los claims al paso B:** las respuestas se movieron de `NO` hacia
+`UNCLEAR` (40 vs 20 en la estricta), pero **ni un solo `SATISFIES`/`PARTIAL`**. El mecanismo
+de cita (estricto vs no estricto) **no es la causa** — la causa es que el 7B, juzgando sobre
+la descripción operativa neutra del paso A, no compromete que ninguna descripción satisfaga
+ningún sub-criterio regulatorio.
+
+## 8. Conclusión consolidada — 6 vías independientes
+
+| Vía | Recall positivos |
+|---|---|
+| H1-H4 (desempaquetado + schema mínimo) | 2/7 |
+| Palanca A (qwen2.5:14b) | 2/7 |
+| V2 fusión (top_k) | 2/7 |
+| R2 (fusión, pool perfecto) | 1/6 |
+| **B4b V2 estricto** | **0/7** |
+| **B4b V2 no estricto** | **0/7** |
+
+**El rediseño V2, cuyo objetivo era cruzar el techo, lo empeoró en ambas variantes.** El techo
+del juicio semántico de paráfrasis del 7B local está confirmado por seis instrumentos distintos.
+Ninguna palanca de arquitectura local probada lo mueve.
+
+## 9. Decisión (contingencia pre-fijada, ADR §10 + R2.2 §1)
+
+`REGULATORY_POSITIVE ≤ 2/7` ⇒ **Palanca C (Tier-1 de alcance reducido) PERMANENTE para la clase
+Regulatory.** No es una propuesta nueva — es la contingencia ya firmada por Cesar. La medición
+está hecha; la rama se toma:
+
+- El analizador **no automatiza el juicio regulatorio de paráfrasis**. Para la clase Regulatory:
+  confirmación automática solo de eco léxico anclado + rechazo de falsos positivos +
+  recuperación semántica al revisor + **todos los sub-criterios `INCONCLUSIVE`/`EVIDENCE_NOT_FOUND`
+  a revisión humana con cobertura declarada.** Nunca auto-aprobación. **Sin degradar ningún
+  validador.**
+- Lo que V2 SÍ aporta a ese Tier-1 asistido (todo determinista, todo commiteado): modelo
+  canónico + claims normalizados, descomposición de requisitos firmada, `EvidenceBundle` por
+  sub-criterio entregado al revisor, taxonomía de 7 clases de Finding, cadena de remediación
+  verificada, `DOCUMENT_EGRESS = 0` verificado bajo carga real (2 corridas de ~40 min, 410
+  llamadas, cero egress).
+- Las clases **FUNCTIONAL / TECHNICAL** son independientes de este resultado (salen del grafo
+  determinista y de la taxonomía, no del juicio de paráfrasis). Su validación (suites B/C, B8b)
+  sigue abierta.
+
+*Ningún validador se relajó en ninguna de las dos corridas.*
