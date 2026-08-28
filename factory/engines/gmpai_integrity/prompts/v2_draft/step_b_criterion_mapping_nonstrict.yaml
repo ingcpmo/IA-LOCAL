@@ -1,0 +1,60 @@
+# Prompt de juicio V2 -- PASO B: mapeo al sub-criterio (B4b, VARIANTE NO ESTRICTA).
+# FIRMADO por Capa 9 (Cesar) 2026-08-27. Ver docs_plan/REPORTE_B4B_MEDICION_RECALL_V2.md §6(B).
+#
+# VARIANTE NO ESTRICTA (experimento diagnóstico last-ditch tras el 0/7 de
+# la variante estricta): el paso B SÍ ve la lista de Claims (id -> texto
+# literal), pero SOLO para poder devolver una cita literal -- el juicio
+# ("¿satisface?") se sigue haciendo sobre la descripción neutra del paso A.
+# La cita la valida evidence_verifier de forma INDEPENDIENTE contra
+# Claim.source_text: si el modelo la parafrasea o la inventa, el
+# verificador la rechaza y el candidato cae a MACHINE_REJECTED.
+#
+# Garantía anti-fabricación: MÁS DÉBIL que la variante estricta (allí es
+# imposible por construcción; aquí depende del verificador). Por eso es un
+# experimento gobernado aparte, con su propia firma.
+
+prompt_id: step_b_criterion_mapping_nonstrict
+prompt_version: "1.0"
+status: SIGNED
+signed_by: "Capa 9 (Cesar)"
+signed_at: "2026-08-27"
+signed_on: "firmo el prompt no-estricto (experimento diagnóstico B4b)"
+schema_version: judgment_v2_step_b_v1
+variant: nonstrict
+temperature: 0.0
+
+output_keys: [verdict, rationale, evidence_claim_id, evidence_quote]
+verdict_values: [SATISFIES, PARTIAL, NO, UNCLEAR]
+
+system: |-
+  Se te dará (1) un SUB-CRITERIO regulatorio concreto, (2) una DESCRIPCIÓN
+  OPERATIVA NEUTRA de lo que hace un sistema, y (3) una lista de CLAIMS
+  disponibles (id -> texto literal del documento).
+  Decide si la descripción neutra satisface el sub-criterio, razonando
+  SOBRE LA DESCRIPCIÓN. La lista de CLAIMS es SOLO para que puedas devolver
+  una cita literal que respalde tu veredicto -- no para re-juzgar sobre el
+  texto crudo.
+  Responde SOLO en JSON con estas claves exactas:
+    - verdict: uno de SATISFIES, PARTIAL, NO, UNCLEAR
+    - rationale: 1 a 2 frases
+    - evidence_claim_id: el id del claim que sustenta el veredicto, o null
+    - evidence_quote: transcripción LITERAL (carácter a carácter) de un
+      fragmento de ese claim que sustente el veredicto, o cadena vacía
+  Reglas duras:
+    - SATISFIES y PARTIAL EXIGEN evidence_quote no vacía y evidence_claim_id no null.
+    - NO parafrasees, resumas ni inventes la cita: debe aparecer literal en el claim.
+      Una cita que no aparezca literal será detectada y el hallazgo descartado.
+    - Si la descripción no alcanza para decidir, usa UNCLEAR (no NO).
+    - No menciones que estás siguiendo estas reglas; responde solo el JSON.
+
+user_template: |-
+  SUB-CRITERIO:
+  {subcriterion_text}
+
+  DESCRIPCIÓN OPERATIVA NEUTRA:
+  {neutral_description}
+
+  CLAIMS DISPONIBLES:
+  {claims_index}
+
+  JSON:

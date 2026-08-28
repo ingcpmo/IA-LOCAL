@@ -1,0 +1,198 @@
+# Suite C -- Technical (V2, B8) -- BENCHMARK FASE 10.
+#
+# Fixture CONTROLADO y REPRODUCIBLE de 20 casos conocidos. NO se reescribe
+# el ground truth en función de lo que exista o no en el corpus Rockwell:
+# el benchmark mide la CAPACIDAD del analizador contra casos bien
+# definidos. Los positivos se materializan en un corpus sintético fiel
+# (factory/regulatory/validation_v2/technical_suite_c.py); los negativos
+# son fixtures sintéticos/conformes diseñados para medir FALSOS POSITIVOS.
+#
+# La validación contra el corpus REAL (RW-0005/0006/0009/0011/0012/0014)
+# se lleva por SEPARADO en docs_plan/VALIDACION_TECNICA_CORPUS_REAL_RW.md
+# y NO usa C01..C20 como obligación de hallar los mismos defectos.
+#
+# Clasificación normativamente corregida (aprobada por Capa 9, 2026-08-27):
+#   VALID_POSITIVE_CASES  = C01 C03 C04 C05 C06 C07 C08 C09 C10 C12
+#   DETERMINISTIC_TARGETS = C01 C03 C04 C05 C06 C08 C09 C10 C12
+#   SEMANTIC              = C07
+#   NOT_APPLICABLE        = C02 C11 C13   (sin fuente normativa / requisito de cliente)
+
+status: SIGNED
+suite: technical_suite_c
+version: "1.0-benchmark"
+authored_by: "Capa 8"
+signed_by: "Capa 9 (Cesar)"
+signed_at: "2026-08-27"
+signed_note: >
+  Capa 9 firma el fixture benchmark de Suite C: 20 casos con clasificacion
+  normativamente corregida. Golden Dataset FIJO -- no se reescribe en funcion
+  del corpus Rockwell. La validacion real va por separado en
+  docs_plan/VALIDACION_TECNICA_CORPUS_REAL_RW.md.
+proposal_doc: "docs_plan/PROPUESTA_FIXTURES_FUNCIONAL_TECNICO_B8.md"
+governed_rules_ref: "factory/regulatory/requirement_catalog/technical_completeness_rules.yaml (SIGNED 1.1)"
+real_corpus_validation_ref: "docs_plan/VALIDACION_TECNICA_CORPUS_REAL_RW.md"
+
+cases:
+  # ---- positivos válidos: objetivo DETERMINISTA (regla de completitud gobernada, B6b v2) ----
+  - case_id: C01
+    topic: audit_trail_design
+    documents: [RW-0005]
+    detection_class: DETERMINISTIC_V2
+    ref: "audit trail descrito sin mecanismo de protección contra modificación privilegiada"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FS)"
+    expected: { finding: true, class: TechnicalFinding, subtype: AUDIT_TRAIL_DESIGN_GAP }
+  - case_id: C03
+    topic: backup_recovery
+    documents: [RW-0005]
+    detection_class: DETERMINISTIC_V2
+    ref: "backup mencionado sin describir prueba de restore (RTO/RPO FUERA de alcance por decisión de Capa 9)"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FS)"
+    expected: { finding: true, class: TechnicalFinding, subtype: BACKUP_RECOVERY_GAP }
+  - case_id: C04
+    topic: access_control
+    documents: [RW-0005]
+    detection_class: DETERMINISTIC_V2
+    ref: "roles descritos sin nivel de autorización por operación (matriz formal NO obligatoria)"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FS)"
+    expected: { finding: true, class: SecurityFinding, subtype: ACCESS_CONTROL_GAP }
+  - case_id: C05
+    topic: authority_check
+    documents: [RW-0005]
+    detection_class: DETERMINISTIC_V2
+    ref: "no se describe chequeo técnico de autoridad por operación (11.10(g) a nivel diseño)"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FS)"
+    expected: { finding: true, class: SecurityFinding, subtype: AUTHORITY_CHECK_GAP }
+  - case_id: C08
+    topic: data_retention
+    documents: [RW-0005]
+    detection_class: DETERMINISTIC_V2
+    ref: "retención declarada sin verificación de accesibilidad/legibilidad en el periodo"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FS)"
+    expected: { finding: true, class: TechnicalFinding, subtype: TECHNICAL_DESIGN_GAP }
+  - case_id: C09
+    topic: audit_trail_integrity
+    documents: [RW-0005]
+    detection_class: DETERMINISTIC_V2
+    ref: "audit trail sin descripción de detección de manipulación (criptografía NO obligatoria)"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FS)"
+    expected: { finding: true, class: DataIntegrityFinding, subtype: AUDIT_TRAIL_INTEGRITY_GAP }
+  - case_id: C10
+    topic: attributable
+    documents: [RW-0011]
+    detection_class: DETERMINISTIC_V2
+    ref: "acciones de calibración atadas a 'proper credentials' sin identidad individual"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-DS1)"
+    expected: { finding: true, class: DataIntegrityFinding, subtype: ALCOA_ATTRIBUTABLE_GAP }
+
+  # ---- positivos válidos: objetivo DETERMINISTA (regla de interfaz, B6b v1) ----
+  - case_id: C06
+    topic: interfaces
+    documents: [RW-0005, RW-0011]
+    detection_class: DETERMINISTIC_V1
+    ref: "identificador de interfaz compartido con valor de parámetro divergente entre dos documentos"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FS / TC-DS1)"
+    expected: { finding: true, class: TechnicalFinding, subtype: INTERFACE_INCONSISTENCY }
+  - case_id: C12
+    topic: interfaces
+    documents: [RW-0011, RW-0012]
+    detection_class: DETERMINISTIC_V1
+    ref: "mismo identificador de interfaz, predicado modal-opuesto (shall hold / shall not hold) entre dos narrativos"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-DS1 / TC-DS2)"
+    expected: { finding: true, class: TechnicalFinding, subtype: INTERFACE_INCONSISTENCY }
+
+  # ---- positivo válido: SEMANTIC (fuera del detector determinista; no LLM/HYBRID) ----
+  - case_id: C07
+    topic: redundancy
+    documents: [RW-0011]
+    detection_class: SEMANTIC
+    ref: "sin descripción de redundancia/failover del PLC de control crítico"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-DS1)"
+    semantic_reason: >
+      Requiere (1) juicio de criticidad del componente y (2) defecto de tipo tema-ausente.
+      No expresable como conjunto de atributos verificables. Permanece separado; no se
+      activa HYBRID ni LLM.
+    expected: { finding: true, class: TechnicalFinding, subtype: REDUNDANCY_GAP }
+
+  # ---- NOT_APPLICABLE (revisión normativa: no hay defecto positivo -- no se puntúa) ----
+  - case_id: C02
+    topic: time_sync
+    documents: [RW-0005, RW-0011]
+    applicability: NOT_APPLICABLE
+    normative_reason: >
+      Ninguna cláusula citada (21 CFR 11.10(e), Annex 11) exige documentar la FUENTE de
+      tiempo ni su sincronización; 11.10(e) sólo exige registros "time-stamped". El único
+      requisito de cliente relacionado, URS-PCS-SR-038 (UR5.4.4), es manejo de DST, no
+      sincronización a una fuente maestra. Sin base -> no es un defecto positivo.
+    expected: { finding: false }
+  - case_id: C11
+    topic: physical_security
+    documents: [RW-0005]
+    applicability: NOT_APPLICABLE
+    normative_reason: >
+      Annex 11 12.1 se satisface con controles físicos Y/O lógicos justificados según
+      riesgo. FS F09.00 traza al puntero genérico UR3.4.1 (=implementar Part 11), sin
+      Req-ID de cliente discreto de seguridad física. Los URS-PCS-HR-014/015/016 son de
+      gabinete eléctrico / NEMA / desconexión con llave, no control de acceso al sistema.
+    expected: { finding: false }
+  - case_id: C13
+    topic: backup_recovery
+    documents: [RW-0011]
+    applicability: NOT_APPLICABLE
+    normative_reason: >
+      UR4.3.4 "UPS battery back-up system installed"; UR4.3.5 "UPS ... at least fifteen (15)
+      minutes ... after loss of facility electrical power" (Customer Req-ID MCCPDC 3.2.2,
+      trazan a FS F01.09). Son requisitos de CONTINUIDAD DE ENERGÍA (ride-through de UPS),
+      NO de reinicio ni de persistencia de estado. El defecto C13 tal como está planteado
+      (persistencia de estado tras reinicio del PLC) no tiene requisito explícito.
+    expected: { finding: false }
+
+  # ---- negativos sintéticos/conformes (miden FALSOS POSITIVOS) ----
+  - case_id: C14
+    topic: audit_trail_design
+    documents: [RW-0005]
+    negative_kind: synthetic_conforming
+    ref: "audit trail CON campos completos Y protección contra modificación privilegiada descrita"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FSOK)"
+    expected: { finding: false }
+  - case_id: C15
+    topic: access_control
+    documents: [RW-0005]
+    negative_kind: synthetic_conforming
+    ref: "roles + nivel de autorización por operación descrito adecuadamente"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FSOK)"
+    expected: { finding: false }
+  - case_id: C16
+    topic: time_sync
+    documents: [RW-0005]
+    negative_kind: control_no_rule
+    ref: "control: C02 es NOT_APPLICABLE; el analizador no tiene regla de time_sync y NO debe emitir nada"
+    evidence_locator: "n/a"
+    expected: { finding: false }
+  - case_id: C17
+    topic: interfaces
+    documents: [RW-0005]
+    negative_kind: synthetic_conforming
+    ref: "interfaz descrita de forma consistente dentro del mismo documento"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FSOK)"
+    expected: { finding: false }
+  - case_id: C18
+    topic: redundancy
+    documents: [RW-0005]
+    negative_kind: synthetic_conforming
+    ref: "redundancia fuera del alcance del FS de aplicación (cross-reference legítima)"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FSOK)"
+    expected: { finding: false }
+  - case_id: C19
+    topic: data_retention
+    documents: [RW-0005]
+    negative_kind: synthetic_conforming
+    ref: "retención CON verificación de accesibilidad/legibilidad/integridad descrita"
+    evidence_locator: "benchmark sintético -- ver technical_suite_c.py (TC-FSOK)"
+    expected: { finding: false }
+  - case_id: C20
+    topic: physical_security
+    documents: [RW-URS]
+    negative_kind: control_no_rule
+    ref: "control: C11 es NOT_APPLICABLE; el analizador no tiene regla de seguridad física y NO debe emitir nada"
+    evidence_locator: "n/a"
+    expected: { finding: false }

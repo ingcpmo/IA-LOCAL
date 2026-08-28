@@ -1,0 +1,80 @@
+# Matriz de riesgo determinista (V2, B5) --
+# docs_plan/ARQUITECTURA_OBJETIVO_ANALIZADOR_GMP_LOCAL_V2.md FASE 7.4.
+#
+# Contenido GOBERNADO. El Risk de un Finding se calcula con esta tabla,
+# NUNCA con un número del LLM. Escala tipo RPN (multiplicativa):
+#   score = severity_w * gxp_impact_w * probability_w * detectability_w
+#   (rango 1..81)  ->  band por umbrales.
+#
+# severity_w / gxp_impact_w los aporta el llamador (severity la propone el
+# agente; gxp_impact sale de la criticidad del Requirement/Control en el
+# catálogo). probability_w / detectability_w salen de esta tabla por
+# subtype (más alto = peor: más probable / más difícil de detectar).
+#
+# Cambiar esta tabla = nueva versión + firma de Capa 9 (mismo régimen que
+# evidence_min_criteria / decomposition.yaml).
+
+risk_matrix_version: "1.0"
+
+severity_weights:
+  LOW: 1
+  MINOR: 1
+  MAJOR: 2
+  MAYOR: 2
+  CRITICAL: 3
+  CRITICA: 3
+  NO_DETERMINADA: 2
+
+gxp_impact_weights:
+  LOW: 1
+  MEDIUM: 2
+  HIGH: 3
+  NONE: 1
+
+bands:
+  - { max: 6, band: LOW }
+  - { max: 18, band: MEDIUM }
+  - { max: 36, band: HIGH }
+  - { max: 81, band: CRITICAL }
+
+default:
+  probability: 2
+  detectability: 2
+
+subtypes:
+  # Regulatory
+  REGULATORY_GAP: { probability: 3, detectability: 2 }
+  REGULATORY_PARTIAL: { probability: 2, detectability: 2 }
+  REGULATORY_COMPLIANT_EVIDENCE: { probability: 1, detectability: 1 }
+  REGULATORY_INCONCLUSIVE: { probability: 2, detectability: 3 }
+  # Functional
+  REQUIREMENT_NOT_IMPLEMENTED: { probability: 3, detectability: 2 }
+  IMPLEMENTATION_WITHOUT_REQUIREMENT: { probability: 2, detectability: 2 }
+  CONTRADICTORY_FUNCTIONAL_BEHAVIOR: { probability: 3, detectability: 3 }
+  # Technical
+  TECHNICAL_DESIGN_GAP: { probability: 2, detectability: 2 }
+  AUDIT_TRAIL_DESIGN_GAP: { probability: 3, detectability: 2 }
+  BACKUP_RECOVERY_GAP: { probability: 2, detectability: 3 }
+  TIME_SYNC_GAP: { probability: 2, detectability: 3 }
+  INTERFACE_INCONSISTENCY: { probability: 2, detectability: 2 }
+  REDUNDANCY_GAP: { probability: 2, detectability: 3 }
+  # Traceability
+  REQUIREMENT_NOT_TRACED: { probability: 3, detectability: 1 }
+  ORPHAN_DESIGN_ELEMENT: { probability: 2, detectability: 1 }
+  BROKEN_TRACE_LINK: { probability: 2, detectability: 1 }
+  # DataIntegrity
+  ALCOA_ATTRIBUTABLE_GAP: { probability: 3, detectability: 2 }
+  ALCOA_CONTEMPORANEOUS_GAP: { probability: 2, detectability: 3 }
+  ALCOA_ORIGINAL_GAP: { probability: 2, detectability: 2 }
+  ALCOA_ACCURATE_GAP: { probability: 2, detectability: 2 }
+  ALCOA_COMPLETE_GAP: { probability: 2, detectability: 3 }
+  AUDIT_TRAIL_INTEGRITY_GAP: { probability: 3, detectability: 3 }
+  # Security
+  ACCESS_CONTROL_GAP: { probability: 3, detectability: 2 }
+  SECURITY_CONTROL_GAP: { probability: 3, detectability: 2 }
+  AUTHORITY_CHECK_GAP: { probability: 3, detectability: 2 }
+  PHYSICAL_SECURITY_GAP: { probability: 2, detectability: 1 }
+  # TestCoverage
+  REQUIREMENT_NOT_TESTED: { probability: 3, detectability: 1 }
+  TEST_WITHOUT_REQUIREMENT: { probability: 2, detectability: 1 }
+  PARTIAL_TEST_COVERAGE: { probability: 2, detectability: 2 }

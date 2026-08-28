@@ -1,0 +1,184 @@
+"""Tests -- factory/regulatory/v2_judgment/{critic,judgment_v2}.py (V2, B4a).
+
+Replay OFFLINE: el ModelProvider está MOCKEADO -> CERO llamadas reales,
+cero gobernanza. Verifica el flujo paso A -> paso B -> verifier -> critic
+-> adjudicator y los guardarraíles de docs_plan/PROPUESTA_PROMPTS_JUICIO_V2_B4.md.
+"""
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from factory.regulatory.retrieval.evidence_bundle import EvidenceBundle
+from factory.regulatory.v2_judgment import adjudicator as adj
+from factory.regulatory.v2_judgment import critic as v2critic
+from factory.regulatory.v2_judgment import judgment_v2, prompts
+
+
+# ── Mock provider ────────────────────────────────────────────────────────
+
+class ScriptedProvider:
+    """Devuelve respuestas según qué prompt reciba (paso A / paso B /
+    critic), sin ninguna llamada real."""
+    model_name = "scripted-mock"
+
+    def __init__(self, *, step_a="El sistema registra la acción del operador con fecha y hora.",
+                 step_b=None, critic="AGREE"):
+        self._a = step_a
+        self._b = step_b or {"verdict": "SATISFIES", "rationale": "ok"}
+        self._critic = critic
+        self.calls = []
+
+    def generate(self, prompt, *, num_predict=None):
+        self.calls.append(prompt)
+        if "Descripción operativa neutra:" in prompt and "SUB-CRITERIO" not in prompt:
+            return {"response": self._a, "done": True}
+        if "VEREDICTO PREVIO:" in prompt:
+            return {"response": f'{{"assessment": "{self._critic}", "reason": "r"}}', "done": True}
+        # paso B (variante estricta: solo verdict + rationale)
+        import json
+        return {"response": json.dumps(self._b), "done": True}
+
+
+CLAIM_TEXT = ("The system shall generate a time-stamped audit trail record for every operator "
+              "entry that creates, modifies or deletes an electronic record, preserving the "
+              "previous value.")
+
+
+def _bundle(claim_text=CLAIM_TEXT):
+    return EvidenceBundle(
+        document_id="RW-0005", requirement_id="21_CFR_11.10(e)",
+        subcriterion_id="sc1", subcriterion_ref="21_CFR_11.10(e)::sc1",
+        subcriterion_text="existe un audit trail generado automáticamente por el sistema",
+        candidate_claims=[{
+            "claim_id": "clm-1", "source_text": claim_text,
+            "normalized_statement": claim_text, "pagina": 45, "section_id": None,
+            "tipo": "control", "bm25_score": 1.0, "rerank_score": 1.0,
+            "provenance": {"document_id": "RW-0005", "page": 45},
+        }],
+    )
+
+
+# ── Critic ───────────────────────────────────────────────────────────────
+
+def test_critic_parses_valid():
+    p = ScriptedProvider(critic="DISAGREE")
+    r = v2critic.review("sub", "claim text", "SATISFIES", provider=p)
+    assert r.assessment == "DISAGREE"
+    assert r.parse_ok
+
+
+def test_critic_unparseable_falls_to_cannot_confirm():
+    class Bad:
+        model_name = "bad"
+        def generate(self, prompt, *, num_predict=None):
+            return {"response": "no json here at all"}
+    r = v2critic.review("sub", "claim", "SATISFIES", provider=Bad())
+    assert r.assessment == "CANNOT_CONFIRM"
+    assert not r.parse_ok
+
+
+def test_critic_invalid_assessment_falls_to_cannot_confirm():
+    class Weird:
+        model_name = "w"
+        def generate(self, prompt, *, num_predict=None):
+            return {"response": '{"assessment": "PROBABLY", "reason": "x"}'}
+    r = v2critic.review("sub", "claim", "SATISFIES", provider=Weird())
+    assert r.assessment == "CANNOT_CONFIRM"
+
+
+# ── judgment_v2 end-to-end (mocked) ─────────────────────────────────────
+
+def test_happy_path_confirmed():
+    p = ScriptedProvider(step_b={"verdict": "SATISFIES", "rationale": "ok"}, critic="AGREE")
+    v = judgment_v2.evaluate_bundle(_bundle(), provider=p)
+    assert v.state == adj.MACHINE_CONFIRMED
+    assert v.best_claim_id == "clm-1"
+    # variante estricta: la evidencia es el Claim.source_text del candidato,
+    # elegida de forma DETERMINISTA -- el modelo nunca produjo una cita.
+    assert v.best_quote == CLAIM_TEXT
+    assert v.calls_made == 3          # A + B + Critic
+
+
+def test_strict_variant_step_b_prompt_has_no_claim_text():
+    """El prompt del paso B (estricto) NO contiene ningún Claim ni texto
+    crudo del documento -- solo el sub-criterio y la descripción neutra."""
+    p = ScriptedProvider()
+    judgment_v2.evaluate_bundle(_bundle(), provider=p)
+    step_b_prompts = [c for c in p.calls if "DESCRIPCIÓN OPERATIVA NEUTRA:" in c
+                      and "VEREDICTO PREVIO:" not in c and "SUB-CRITERIO:" in c]
+    assert step_b_prompts
+    for pr in step_b_prompts:
+        assert CLAIM_TEXT not in pr
+        assert "clm-1" not in pr
+
+
+def test_offtopic_claim_flagged_by_verifier_relevance():
+    """Veredicto SATISFIES sobre un claim que no comparte vocabulario del
+    requisito -> evidence_verifier marca relevancia -> INCONCLUSIVE, no
+    MACHINE_CONFIRMED. (La validación C sigue siendo la red de seguridad
+    en la variante estricta.)"""
+    offtopic = "La HMI muestra un gráfico de tendencia de la temperatura del reactor en verde."
+    p = ScriptedProvider(step_b={"verdict": "SATISFIES", "rationale": "x"}, critic="AGREE")
+    v = judgment_v2.evaluate_bundle(_bundle(offtopic), provider=p)
+    assert v.state != adj.MACHINE_CONFIRMED
+
+
+def test_satisfies_but_critic_disagree_is_inconclusive():
+    p = ScriptedProvider(step_b={"verdict": "SATISFIES", "rationale": "ok"}, critic="DISAGREE")
+    v = judgment_v2.evaluate_bundle(_bundle(), provider=p)
+    assert v.state == adj.INCONCLUSIVE
+
+
+def test_hunter_no_is_evidence_not_found_not_gap():
+    p = ScriptedProvider(step_b={"verdict": "NO", "rationale": "not present"})
+    v = judgment_v2.evaluate_bundle(_bundle(), provider=p)
+    assert v.state == adj.EVIDENCE_NOT_FOUND
+    assert v.calls_made == 2          # A + B, sin Critic (no fue positivo)
+
+
+def test_unclear_verdict_is_inconclusive():
+    p = ScriptedProvider(step_b={"verdict": "UNCLEAR", "rationale": "not enough"})
+    v = judgment_v2.evaluate_bundle(_bundle(), provider=p)
+    assert v.state == adj.INCONCLUSIVE
+    assert v.calls_made == 2          # A + B, sin Critic
+
+
+def test_step_b_unparseable_is_inconclusive():
+    class BadB:
+        model_name = "b"
+        def generate(self, prompt, *, num_predict=None):
+            if "Descripción operativa neutra:" in prompt and "SUB-CRITERIO" not in prompt:
+                return {"response": "desc"}
+            return {"response": "not json"}
+    v = judgment_v2.evaluate_bundle(_bundle(), provider=BadB())
+    assert v.state == adj.INCONCLUSIVE
+
+
+def test_empty_bundle_is_inconclusive():
+    b = _bundle()
+    b.candidate_claims = []
+    v = judgment_v2.evaluate_bundle(b, provider=ScriptedProvider())
+    assert v.state == adj.INCONCLUSIVE
+    assert v.calls_made == 0
+
+
+def test_guardrail_step_a_prompt_has_no_norm_vocabulary():
+    """El prompt del paso A no debe pedir evaluación de cumplimiento."""
+    txt = prompts.render(prompts.STEP_A, claims_source_text="x")
+    low = txt.lower()
+    assert "no menciones ninguna norma" in low
+    assert "no evalúes si algo" in low
+
+
+def test_prompts_are_signed_for_b4b():
+    """B4b: los 3 prompts están firmados por Capa 9 (2026-08-27);
+    assert_all_signed() pasa. B4b puede correr con una PILOT_EXECUTION."""
+    for pid in (prompts.STEP_A, prompts.STEP_B, prompts.CRITIC):
+        p = prompts.load_prompt(pid)
+        assert prompts.is_signed(pid), pid
+        assert p["prompt_version"] == "1.0"
+        assert p["signed_by"].startswith("Capa 9")
+    prompts.assert_all_signed()   # no lanza

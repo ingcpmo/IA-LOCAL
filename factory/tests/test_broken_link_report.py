@@ -127,6 +127,6 @@ def test_build_report_logs_and_audits_once(report_env):
 
 
 def test_never_writes_registry_json_or_currency_log():
-    src = Path("/home/ing_cpmo/factory/regulatory/broken_link_report.py").read_text(encoding="utf-8")
+    src = (Path(__file__).resolve().parents[1] / "regulatory" / "broken_link_report.py").read_text(encoding="utf-8")
     assert ".write_text(" not in src
     assert 'open(paths.BROKEN_LINK_REPORT_FILE, "a"' in src

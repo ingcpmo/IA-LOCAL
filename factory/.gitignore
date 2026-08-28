@@ -46,8 +46,29 @@ regulatory/retrieval_index/
 # criterio que retrieval_index/, nunca fuente de verdad)
 regulatory/embedding_index/
 
+# V2 B1: store del modelo canónico por documento (SQLite regenerable desde
+# el PDF real con canonical/extract_document.py -- mismo criterio que
+# retrieval_index/, nunca fuente de verdad)
+regulatory/canonical_store/
+
+# V2 B2: grafo de evidencia/conocimiento por proyecto (SQLite regenerable
+# desde el canonical_store + el catálogo con graph/build.py -- mismo
+# criterio que canonical_store/)
+regulatory/graph_store/
+
+# V2 B9: artefactos de shadow mode (salida de corrida, sin efectos,
+# regenerable) y flag local de routing
+regulatory/pilot_run/v2_shadow/
+regulatory/validation_v2/routing.txt
+
 # Config local de Claude Code dentro de deployments
 deployments/*/.claude/
 
 # Artefacto de un `pip install paquete >=1.1.0` mal citado
 =1.1.0
+
+# V2 B9b: validacion tecnica sobre corpus real (regenerable, ver docs_plan/VALIDACION_TECNICA_CORPUS_REAL_RW.md)
+regulatory/pilot_run/technical_real_corpus/
+
+# V2 B9b cutover: flag de routing + historial (operativo, no fuente)
+regulatory/validation_v2/routing_history.jsonl

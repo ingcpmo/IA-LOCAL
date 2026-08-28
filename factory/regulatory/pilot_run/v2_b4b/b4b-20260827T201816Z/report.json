@@ -1,0 +1,284 @@
+{
+ "meta": {
+  "run_id": "b4b-20260827T201816Z",
+  "pilot_instance": "PILOT_EXECUTION-2026-032",
+  "max_calls": 280,
+  "model": "qwen2.5:7b-instruct-q4_K_M",
+  "max_candidates": 2,
+  "started_at": "2026-08-27T20:18:28.317395+00:00",
+  "fixture_units": 9,
+  "no_effects": true,
+  "finished_at": "2026-08-27T20:36:38.490670+00:00",
+  "calls_made": 203,
+  "stop_reason": "COMPLETE"
+ },
+ "local_only": true,
+ "document_egress_bytes": 0,
+ "egress_attempts": [],
+ "units": [
+  {
+   "case_id": "P1",
+   "kind": "positive",
+   "document_id": "RW-0005",
+   "requirement_id": "21_CFR_11.10(e)",
+   "n_subcriteria": 9,
+   "calls_made": 36,
+   "wall_seconds": 190.1,
+   "anchored": false,
+   "fabricated_citation": false,
+   "schema_valid": true,
+   "rejected_count": 0,
+   "subcriterion_states": {
+    "sc1": "INCONCLUSIVE",
+    "sc2": "EVIDENCE_NOT_FOUND",
+    "sc3": "INCONCLUSIVE",
+    "sc4": "INCONCLUSIVE",
+    "sc5": "EVIDENCE_NOT_FOUND",
+    "sc6": "INCONCLUSIVE",
+    "sc7": "EVIDENCE_NOT_FOUND",
+    "sc8": "INCONCLUSIVE",
+    "sc9": "EVIDENCE_NOT_FOUND"
+   },
+   "best_quote": null,
+   "best_page": null,
+   "error": null,
+   "hard_stopped": false
+  },
+  {
+   "case_id": "P2",
+   "kind": "positive",
+   "document_id": "RW-0005",
+   "requirement_id": "21_CFR_11.10(g)",
+   "n_subcriteria": 3,
+   "calls_made": 14,
+   "wall_seconds": 118.7,
+   "anchored": false,
+   "fabricated_citation": false,
+   "schema_valid": true,
+   "rejected_count": 0,
+   "subcriterion_states": {
+    "sc1": "INCONCLUSIVE",
+    "sc2": "EVIDENCE_NOT_FOUND",
+    "sc3": "INCONCLUSIVE"
+   },
+   "best_quote": null,
+   "best_page": null,
+   "error": null,
+   "hard_stopped": false
+  },
+  {
+   "case_id": "P3",
+   "kind": "positive",
+   "document_id": "RW-0005",
+   "requirement_id": "ANNEX11_17",
+   "n_subcriteria": 4,
+   "calls_made": 16,
+   "wall_seconds": 132.6,
+   "anchored": false,
+   "fabricated_citation": false,
+   "schema_valid": true,
+   "rejected_count": 0,
+   "subcriterion_states": {
+    "sc1": "EVIDENCE_NOT_FOUND",
+    "sc2": "INCONCLUSIVE",
+    "sc3": "INCONCLUSIVE",
+    "sc4": "EVIDENCE_NOT_FOUND"
+   },
+   "best_quote": null,
+   "best_page": null,
+   "error": null,
+   "hard_stopped": false
+  },
+  {
+   "case_id": "P4",
+   "kind": "positive",
+   "document_id": "RW-0011",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "n_subcriteria": 5,
+   "calls_made": 20,
+   "wall_seconds": 88.6,
+   "anchored": false,
+   "fabricated_citation": false,
+   "schema_valid": true,
+   "rejected_count": 0,
+   "subcriterion_states": {
+    "sc1": "EVIDENCE_NOT_FOUND",
+    "sc2": "EVIDENCE_NOT_FOUND",
+    "sc3": "EVIDENCE_NOT_FOUND",
+    "sc4": "EVIDENCE_NOT_FOUND",
+    "sc5": "EVIDENCE_NOT_FOUND"
+   },
+   "best_quote": null,
+   "best_page": null,
+   "error": null,
+   "hard_stopped": false
+  },
+  {
+   "case_id": "P5",
+   "kind": "positive",
+   "document_id": "RW-0005",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "n_subcriteria": 3,
+   "calls_made": 12,
+   "wall_seconds": 56.1,
+   "anchored": false,
+   "fabricated_citation": false,
+   "schema_valid": true,
+   "rejected_count": 0,
+   "subcriterion_states": {
+    "sc1": "EVIDENCE_NOT_FOUND",
+    "sc2": "EVIDENCE_NOT_FOUND",
+    "sc3": "EVIDENCE_NOT_FOUND"
+   },
+   "best_quote": null,
+   "best_page": null,
+   "error": null,
+   "hard_stopped": false
+  },
+  {
+   "case_id": "P6",
+   "kind": "positive",
+   "document_id": "RW-0011",
+   "requirement_id": "21_CFR_211.68(b)",
+   "n_subcriteria": 7,
+   "calls_made": 28,
+   "wall_seconds": 154.2,
+   "anchored": false,
+   "fabricated_citation": false,
+   "schema_valid": true,
+   "rejected_count": 0,
+   "subcriterion_states": {
+    "sc1": "EVIDENCE_NOT_FOUND",
+    "sc2": "EVIDENCE_NOT_FOUND",
+    "sc3": "EVIDENCE_NOT_FOUND",
+    "sc4": "INCONCLUSIVE",
+    "sc5": "EVIDENCE_NOT_FOUND",
+    "sc6": "EVIDENCE_NOT_FOUND",
+    "sc7": "INCONCLUSIVE"
+   },
+   "best_quote": null,
+   "best_page": null,
+   "error": null,
+   "hard_stopped": false
+  },
+  {
+   "case_id": "P7",
+   "kind": "positive",
+   "document_id": "RW-0012",
+   "requirement_id": "21_CFR_211.68(b)",
+   "n_subcriteria": 7,
+   "calls_made": 28,
+   "wall_seconds": 143.5,
+   "anchored": false,
+   "fabricated_citation": false,
+   "schema_valid": true,
+   "rejected_count": 0,
+   "subcriterion_states": {
+    "sc1": "EVIDENCE_NOT_FOUND",
+    "sc2": "EVIDENCE_NOT_FOUND",
+    "sc3": "INCONCLUSIVE",
+    "sc4": "EVIDENCE_NOT_FOUND",
+    "sc5": "EVIDENCE_NOT_FOUND",
+    "sc6": "EVIDENCE_NOT_FOUND",
+    "sc7": "INCONCLUSIVE"
+   },
+   "best_quote": null,
+   "best_page": null,
+   "error": null,
+   "hard_stopped": false
+  },
+  {
+   "case_id": "N1",
+   "kind": "negative",
+   "document_id": "RW-0005",
+   "requirement_id": "ANNEX11_4",
+   "n_subcriteria": 3,
+   "calls_made": 12,
+   "wall_seconds": 62.1,
+   "anchored": false,
+   "fabricated_citation": false,
+   "schema_valid": true,
+   "rejected_count": 0,
+   "subcriterion_states": {
+    "sc1": "INCONCLUSIVE",
+    "sc2": "EVIDENCE_NOT_FOUND",
+    "sc3": "INCONCLUSIVE"
+   },
+   "best_quote": null,
+   "best_page": null,
+   "error": null,
+   "hard_stopped": false
+  },
+  {
+   "case_id": "N2",
+   "kind": "negative",
+   "document_id": "RW-0005",
+   "requirement_id": "21_CFR_11.10(e)",
+   "n_subcriteria": 9,
+   "calls_made": 37,
+   "wall_seconds": 144.2,
+   "anchored": false,
+   "fabricated_citation": false,
+   "schema_valid": true,
+   "rejected_count": 0,
+   "subcriterion_states": {
+    "sc1": "INCONCLUSIVE",
+    "sc2": "EVIDENCE_NOT_FOUND",
+    "sc3": "INCONCLUSIVE",
+    "sc4": "INCONCLUSIVE",
+    "sc5": "EVIDENCE_NOT_FOUND",
+    "sc6": "INCONCLUSIVE",
+    "sc7": "EVIDENCE_NOT_FOUND",
+    "sc8": "INCONCLUSIVE",
+    "sc9": "EVIDENCE_NOT_FOUND"
+   },
+   "best_quote": null,
+   "best_page": null,
+   "error": null,
+   "hard_stopped": false
+  }
+ ],
+ "gate_report": {
+  "suite": "A_regulatory",
+  "all_passed": false,
+  "gates": [
+   {
+    "name": "REGULATORY_POSITIVE",
+    "value": "0/7",
+    "threshold": ">=6/7",
+    "passed": false,
+    "detail": ""
+   },
+   {
+    "name": "REGULATORY_NEGATIVE",
+    "value": "2/2",
+    "threshold": "==2/2",
+    "passed": true,
+    "detail": ""
+   },
+   {
+    "name": "FABRICATED_CITATIONS",
+    "value": 0,
+    "threshold": "==0",
+    "passed": true,
+    "detail": "una sola cita fabricada que pasa es FALLO DURO"
+   },
+   {
+    "name": "SCHEMA_VALID_RATE",
+    "value": "9/9",
+    "threshold": "100%",
+    "passed": true,
+    "detail": ""
+   },
+   {
+    "name": "LATENCIA_POR_LLAMADA",
+    "value": "registrada (9/9)",
+    "threshold": "registrada",
+    "passed": true,
+    "detail": "no es gate, es dato obligatorio"
+   }
+  ]
+ },
+ "regulatory_interpretation": "TECHO_NO_CRUZADO -- adoptar Palanca C (Tier-1) permanente para la clase Regulatory; no degradar validadores",
+ "note": "Instrumento único: el fixture. NO se relajó ningún validador. N2 comparte doc+requisito con P1 -- la recuperación V2 es a nivel de documento, así que N2 mide lo mismo que P1 (la evidencia real de audit trail SÍ está en RW-0005). El negativo estructural que V2 debe rechazar es N1 (ANNEX11_4, GAMP5 en lista de referencias)."
+}

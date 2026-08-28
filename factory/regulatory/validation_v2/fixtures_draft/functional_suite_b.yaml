@@ -1,0 +1,163 @@
+# Suite B -- Functional (V2, B8) -- BORRADOR SIN FIRMAR.
+# docs_plan/PLAN_VALIDACION_ANALIZADOR_GMP_LOCAL_V2.md FASE 10 §1 (Suite B).
+#
+# 20 casos sobre pares de documentos reales de GMPAI/source/Rockwell/
+# (URS v2.1, FS v1.2, DS/control narratives, SAT-039/041):
+#   5 fully-traced      -> NO finding
+#   5 missing-impl       -> FunctionalFinding: REQUIREMENT_NOT_IMPLEMENTED
+#   5 missing-tests      -> TestCoverageFinding: REQUIREMENT_NOT_TESTED
+#   5 contradictions     -> FunctionalFinding: CONTRADICTORY_FUNCTIONAL_BEHAVIOR
+#
+# Las referencias de documento/sección/pasaje son PROPUESTAS por Capa 8 a
+# partir de una lectura de los PDFs reales; Capa 9 las CONFIRMA (o corrige)
+# contra los documentos antes de firmar como Golden Dataset. Cada caso
+# marca `evidence_locator` como "confirmar".
+
+status: RETIRED
+suite: functional_suite_b
+version: "0.1-draft"
+authored_by: "Capa 8"
+proposal_doc: "docs_plan/PROPUESTA_FIXTURES_FUNCIONAL_TECNICO_B8.md"
+retired_by: "Capa 9 (Cesar)"
+retired_at: "2026-08-27"
+retired_note: >
+  RETIRADO con trazabilidad. Los 15 casos positivos de este borrador eran
+  ficción para el corpus real Rockwell (URS/FS/DS/SAT están completamente
+  trazados -> 0 findings funcionales verdaderos que detectar; ver
+  docs_plan/REPORTE_B8B_SUITE_B_DRY_RUN.md y docs_plan/DECISION_B8B_SUITE_B.md).
+  El instrumento de gate funcional de FASE 10 es el FIXTURE DE INYECCIÓN DE
+  DEFECTOS: `factory/regulatory/validation_v2/defect_corpus.py`
+  (GROUND_TRUTH = 16 defectos conocidos y anclados), medido en
+  docs_plan/REPORTE_B8B_SUITE_B_RECALL.md -> FUNCTIONAL_RECALL = 16/16 = 1.00,
+  FUNCTIONAL_FALSE_POSITIVE = 0/16 = 0.00. Reproducible:
+  `pytest factory/tests/test_functional_findings.py::test_defect_corpus_suite_b_measures_functional_recall`.
+  Este archivo se conserva sólo como registro histórico; no es un gate.
+
+cases:
+  # ---- 5 fully-traced (URS req implementado en FS y probado en SAT) ----
+  - case_id: B01
+    kind: fully_traced
+    documents: [RW-URS, RW-0005, RW-SAT]
+    ref: "UR3.3.1 (audit trail de cambio de umbral de alarma)"
+    evidence_locator: "confirmar: URS 3.3.1 -> FS 'UR3.3.1' -> SAT-039"
+    expected: { finding: false }
+  - case_id: B02
+    kind: fully_traced
+    documents: [RW-URS, RW-0005, RW-SAT]
+    ref: "UR3.3.6 (retención de datos / archivo)"
+    evidence_locator: "confirmar: URS 3.3.6 -> FS UR3.3.6 -> SAT paso de retención"
+    expected: { finding: false }
+  - case_id: B03
+    kind: fully_traced
+    documents: [RW-URS, RW-0005, RW-SAT]
+    ref: "UR4.1.1 (arranque/energización del sistema)"
+    evidence_locator: "confirmar"
+    expected: { finding: false }
+  - case_id: B04
+    kind: fully_traced
+    documents: [RW-URS, RW-0005, RW-SAT]
+    ref: "F09.00 (seguridad física) trazado a URS y SAT"
+    evidence_locator: "confirmar"
+    expected: { finding: false }
+  - case_id: B05
+    kind: fully_traced
+    documents: [RW-URS, RW-0005, RW-SAT]
+    ref: "UR5.4.3 trazado FS + SAT"
+    evidence_locator: "confirmar"
+    expected: { finding: false }
+
+  # ---- 5 missing implementation (URS req sin claim en FS) ----
+  - case_id: B06
+    kind: missing_implementation
+    documents: [RW-URS, RW-0005]
+    ref: "UR (a confirmar) presente en URS, sin implemented_by en FS"
+    evidence_locator: "confirmar cuál UR de la URS no aparece citado en el FS"
+    expected: { finding: true, class: FunctionalFinding, subtype: REQUIREMENT_NOT_IMPLEMENTED }
+  - case_id: B07
+    kind: missing_implementation
+    documents: [RW-URS, RW-0005]
+    ref: "UR de reporting/histórico sin implementación en FS"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: FunctionalFinding, subtype: REQUIREMENT_NOT_IMPLEMENTED }
+  - case_id: B08
+    kind: missing_implementation
+    documents: [RW-URS, RW-0005]
+    ref: "UR de gestión de usuarios/roles sin implementación en FS"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: FunctionalFinding, subtype: REQUIREMENT_NOT_IMPLEMENTED }
+  - case_id: B09
+    kind: missing_implementation
+    documents: [RW-URS, RW-0005]
+    ref: "UR de backup sin implementación en FS"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: FunctionalFinding, subtype: REQUIREMENT_NOT_IMPLEMENTED }
+  - case_id: B10
+    kind: missing_implementation
+    documents: [RW-URS, RW-0005]
+    ref: "UR de interfaz externa sin implementación en FS"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: FunctionalFinding, subtype: REQUIREMENT_NOT_IMPLEMENTED }
+
+  # ---- 5 missing tests (req implementado, sin Test transitivo) ----
+  - case_id: B11
+    kind: missing_test
+    documents: [RW-URS, RW-0005, RW-SAT]
+    ref: "UR implementado en FS, sin paso SAT que lo verifique"
+    evidence_locator: "confirmar cuál UR/F-code no tiene paso SAT"
+    expected: { finding: true, class: TestCoverageFinding, subtype: REQUIREMENT_NOT_TESTED }
+  - case_id: B12
+    kind: missing_test
+    documents: [RW-URS, RW-0005, RW-SAT]
+    ref: "control de audit trail implementado, sin verificación SAT del valor previo"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: TestCoverageFinding, subtype: REQUIREMENT_NOT_TESTED }
+  - case_id: B13
+    kind: missing_test
+    documents: [RW-URS, RW-0005, RW-SAT]
+    ref: "authority check implementado, sin prueba negativa en SAT"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: TestCoverageFinding, subtype: REQUIREMENT_NOT_TESTED }
+  - case_id: B14
+    kind: missing_test
+    documents: [RW-URS, RW-0005, RW-SAT]
+    ref: "recuperación/backup implementado, sin prueba de restore en SAT"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: TestCoverageFinding, subtype: REQUIREMENT_NOT_TESTED }
+  - case_id: B15
+    kind: missing_test
+    documents: [RW-URS, RW-0005, RW-SAT]
+    ref: "sincronización de tiempo implementada, sin verificación SAT"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: TestCoverageFinding, subtype: REQUIREMENT_NOT_TESTED }
+
+  # ---- 5 contradictions (dos documentos afirman comportamiento opuesto) ----
+  - case_id: B16
+    kind: contradiction
+    documents: [RW-0005, RW-0011]
+    ref: "F09.00 acceso del operador a reset de alarma: FS permite / narrativa restringe"
+    evidence_locator: "confirmar el par de claims opuestos"
+    expected: { finding: true, class: FunctionalFinding, subtype: CONTRADICTORY_FUNCTIONAL_BEHAVIOR }
+  - case_id: B17
+    kind: contradiction
+    documents: [RW-0005, RW-0011]
+    ref: "retención de audit trail: FS declara N, narrativa declara M distinto"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: FunctionalFinding, subtype: CONTRADICTORY_FUNCTIONAL_BEHAVIOR }
+  - case_id: B18
+    kind: contradiction
+    documents: [RW-URS, RW-0005]
+    ref: "número de niveles de autorización: URS vs FS"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: FunctionalFinding, subtype: CONTRADICTORY_FUNCTIONAL_BEHAVIOR }
+  - case_id: B19
+    kind: contradiction
+    documents: [RW-0005, RW-0012]
+    ref: "comportamiento de alarma en pérdida de comunicación: EMS vs WFI narrative"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: FunctionalFinding, subtype: CONTRADICTORY_FUNCTIONAL_BEHAVIOR }
+  - case_id: B20
+    kind: contradiction
+    documents: [RW-0005, RW-SAT]
+    ref: "valor de setpoint de umbral crítico: FS vs resultado registrado en SAT"
+    evidence_locator: "confirmar"
+    expected: { finding: true, class: FunctionalFinding, subtype: CONTRADICTORY_FUNCTIONAL_BEHAVIOR }

@@ -1,0 +1,535 @@
+# =============================================================================
+# TECHNICAL COMPLETENESS RULES -- B6b v2 (DETERMINISTIC)          [FIRMADO 1.1 -- OD-6 context-scoped]
+# =============================================================================
+# Contenido GOBERNADO: codifica interpretacion regulatoria (que sub-atributos
+# son obligatorios para un control tecnico, segun una fuente normativa
+# explicita). Mismo estatus que `decomposition.yaml`.
+#
+# FIRMADO por Capa 9 (Cesar) el 2026-08-27 como version gobernada 1.1.
+# v1.1 (OD-6) acota el ALCANCE de la evaluacion del comportamiento
+# (document_wide -> context_scoped); NO toca REQUIRED_BEHAVIOR,
+# SOURCE_REQUIREMENT_ID, family_signals ni cross_reference_suppressors.
+# Consumido por
+# `factory/regulatory/findings/technical_findings.py` (B6b v2).
+#
+# 7 reglas (sin cambios de contenido vs v1.0):
+#   C01, C03 (solo restore verification -- excluir RTO/RPO), C04, C05, C08,
+#   C09 (comportamiento tecnologicamente neutro -- NO exigir criptografia), C10.
+#
+# REGLA DURA (Capa 9): el REQUIRED_BEHAVIOR se toma SOLO de la fuente normativa
+# o de un requisito de cliente explicito. Ninguna implementacion concreta
+# (NTP, RTO/RPO, SHA-256, HMAC, firma digital, "authorization matrix" como
+# artefacto formal, controles fisicos especificos, memoria retentiva) es
+# requisito: son EXCLUDED_IMPLEMENTATION_ASSUMPTIONS. La regla detecta la
+# AUSENCIA del comportamiento requerido; nunca exige una tecnologia concreta.
+#
+# Cada regla emite, cuando dispara, un Finding con:
+#   - machine_state = MACHINE_DEVIATION_CANDIDATE  o  MACHINE_INCONCLUSIVE
+#   - human_state   = UNREVIEWED  (inmutable desde codigo de IA)
+#   - destino: cola de revision humana con cobertura declarada.
+# NUNCA auto-confirma, NUNCA auto-descarta, NUNCA declara cumplimiento.
+#
+# NO cubierto por este artefacto (sin base para regla determinista):
+#   C02 TIME_SYNC          -- ninguna clausula citada exige documentar fuente/
+#                             sincronizacion de tiempo; URS-PCS-SR-038 es DST,
+#                             no sincronizacion. FUERA del detector automatico.
+#   C11 PHYSICAL_SECURITY   -- Annex 11 12.1 admite solo-logico justificado; sin
+#                             Req-ID de cliente discreto. FUERA del detector.
+#   C13 STATE_PERSISTENCE   -- SI hay base de cliente (UR4.3.4/UR4.3.5, MCCPDC
+#                             3.2.2) pero Capa 9 no lo autorizo en este lote.
+#   C07 REDUNDANCY          -- permanece separado; requiere decision HYBRID/LLM.
+# =============================================================================
+
+artifact: technical_completeness_rules
+version: "1.1"
+status: SIGNED
+authored_by: "Capa 8"
+signed_by: "Capa 9 (Cesar)"
+signed_at: "2026-08-27"
+supersedes_version: "1.0"
+change_note: >
+  v1.1 (OD-6): corrige un DEFECTO REAL del detector. En v1.0 la deteccion del
+  comportamiento requerido (y su supresion) opera DOCUMENT-WIDE: en un FS real
+  de 1409 claims, una frase no relacionada en otra parte del documento puede
+  falso-suprimir un hueco real. v1.1 acota la busqueda del comportamiento al
+  CONTEXTO del claim ancla (misma Section + subsecciones relacionadas +
+  referencia cruzada explicita valida). NO cambia ningun REQUIRED_BEHAVIOR,
+  SOURCE_REQUIREMENT_ID, family_signals ni cross_reference_suppressors --
+  solo el ALCANCE de la evaluacion. fail-closed sin cambios.
+authorization_note: >
+  Capa 9, 2026-08-27: firma v1.0 (7 reglas) y luego v1.1 (OD-6, context_scoped).
+  Contenido gobernado: cambiar REQUIRED_BEHAVIOR / SOURCE_REQUIREMENT_ID /
+  el alcance de una regla exige nueva firma. `family_signals` (abajo) es el
+  matcher normativo determinista; `neutral_evidence_families` queda como
+  ilustracion legible del comportamiento aceptable.
+
+# --- OD-6: alcance de la evaluacion del comportamiento requerido ---
+scope_policy:
+  behavior_search: context_scoped        # v1.0 (implicito): document_wide
+  search_order:
+    - anchor_section                     # la MISMA Section del claim ancla
+    - related_subsections                # subsecciones de la misma familia (numero por prefijo) + seccion padre inmediata
+    - explicit_cross_reference           # "see section N" / "refer to section N" en el claim ancla -> esa seccion
+  fallback_when_section_unresolved:
+    mode: claim_window                   # si el claim ancla no tiene Section resuelta
+    window_claims: 6                     # +-6 claims por numero de pagina (acotado, NUNCA document-wide)
+  max_scope_claims: 60                   # si la Section resuelta es demasiado gruesa (> 60 claims),
+                                         # se acota al claim_window DENTRO de esa Section (sigue sin ser document-wide)
+  forbid: document_wide_unrelated_phrase # una frase no relacionada en otra Section NO suprime un gap
+  cross_reference_suppressors: applies_on_anchor_claim_text   # sin cambios (se evaluan sobre el texto del claim ancla)
+  inconclusive_downgraders: applies_within_scope              # coherente con el nuevo alcance
+  fail_closed: true
+
+# `family_signals`: matcher DETERMINISTA. Cada familia = lista de AND-groups;
+# una familia se considera PRESENTE en el alcance si ALGUN AND-group tiene
+# TODOS sus substrings (lowercase) en el texto del alcance. Son señales del
+# COMPORTAMIENTO requerido, tecnologicamente neutras -- nunca nombran un
+# producto ni una tecnologia concreta.
+family_signals:
+  restore_verified:
+    - ["restore", "test"]
+    - ["restore", "verif"]
+    - ["restore", "validat"]
+    - ["ability to restore", "check"]
+    - ["restaur", "prueba"]
+    - ["restaur", "verif"]
+  audit_trail_privileged_protection:
+    - ["audit", "cannot be modif"]
+    - ["audit", "cannot be alter"]
+    - ["audit", "cannot be disabl"]
+    - ["audit", "cannot be modified or disabled"]
+    - ["audit", "read-only"]
+    - ["audit", "append-only"]
+    - ["audit", "not be modif"]
+    - ["audit", "prevent", "modif"]
+    - ["auditoria", "no puede", "modif"]
+  audit_trail_tamper_detection:
+    - ["audit", "tamper"]
+    - ["audit", "detect", "alter"]
+    - ["audit", "detect", "modif"]
+    - ["audit", "undetected", "chang"]
+    - ["audit", "integrity", "verif"]
+    - ["auditoria", "manipulacion", "detect"]
+  per_operation_authorization:
+    - ["authorization level", "operation"]
+    - ["authorization level", "function"]
+    - ["privileg", "per role", "operation"]
+    - ["privileg", "defined per role"]
+    - ["access level", "each", "function"]
+    - ["restricted by role", "operation"]
+    - ["nivel de autorizacion", "operacion"]
+  authority_check_at_operation:
+    - ["verif", "authority", "before"]
+    - ["authority", "check", "operation"]
+    - ["permission", "verif", "transaction"]
+    - ["block", "without", "authority"]
+    - ["re-authenticat", "operation"]
+    - ["verificacion de autoridad", "operacion"]
+  retention_access_verified:
+    - ["accessib", "verif"]
+    - ["accessib", "check"]
+    - ["readab", "verif"]
+    - ["legib", "verif"]
+    - ["retriev", "verif"]
+    - ["access", "ensured", "retention period"]
+    - ["accesibilidad", "verif"]
+  individual_attribution:
+    - ["individual user"]
+    - ["unique user"]
+    - ["no shared account"]
+    - ["personal login"]
+    - ["named user account"]
+    - ["identificacion individual"]
+    - ["each action", "individual user"]
+
+# Guarda comun: si el texto del claim del tema (o su seccion) remite el
+# comportamiento a otro documento, se SUPRIME (no es un hueco, es un puntero).
+cross_reference_suppressors:
+  - "see document"
+  - "refer to document"
+  - "covered by document"
+  - "covered by the infrastructure"
+  - "as described in document"
+  - "assigned to document"
+  - "out of scope for this"
+  - "ver documento"
+  - "cubierto por el documento"
+
+# Downgrade a MACHINE_INCONCLUSIVE (en vez del machine_state por defecto de la
+# regla) si aparece cualquiera de estos junto al tema y la familia esta ausente:
+inconclusive_downgraders:
+  - "per the client procedure"
+  - "see procedure"
+  - "governed by sop"
+  - "sop-"
+  - "single operational role"
+  - "only one role"
+  - "un unico rol"
+  - "referenced validation plan"
+
+# --- ilustracion legible (NO es el matcher; ver family_signals arriba) ---
+neutral_evidence_families:
+neutral_evidence_families:
+  restore_verified:
+    - "restore is tested"
+    - "restore verification"
+    - "ability to restore checked"
+    - "recovery tested during validation"
+    - "periodic restore test"
+    - "backup restorability verified"
+    - "prueba de restauracion"
+    - "capacidad de restaurar verificada"
+  audit_trail_privileged_protection:
+    - "audit trail cannot be modified"
+    - "audit records cannot be altered by any role"
+    - "audit trail cannot be disabled"
+    - "changes to audit records are prevented"
+    - "attempts to modify the audit trail are logged"
+    - "read-only audit records"
+    - "append-only audit trail"
+    - "registro de auditoria no puede ser modificado"
+  audit_trail_tamper_detection:   # NEUTRO -- NO nombra criptografia
+    - "any alteration of audit records is detectable"
+    - "tampering with the audit trail is detected"
+    - "audit records protected against undetected change"
+    - "integrity of the audit trail can be verified"
+    - "unauthorized modification of audit data is evident"
+    - "manipulacion del audit trail es detectable"
+  per_operation_authorization:
+    - "each operation requires a defined authorization level"
+    - "authorization level is defined per function"
+    - "privileges are defined per role for each operation"
+    - "operations are restricted by role"
+    - "access level required for each system function"
+    - "nivel de autorizacion definido por operacion"
+  authority_check_at_operation:
+    - "the system verifies the user's authority before executing"
+    - "authority is checked at the time of the operation"
+    - "permission is verified per transaction"
+    - "the system blocks operations without sufficient authority"
+    - "authority check per operation"
+    - "verificacion de autoridad por operacion"
+  retention_access_verified:
+    - "records checked for accessibility"
+    - "records checked for readability"
+    - "records checked for legibility and integrity"
+    - "access to data ensured throughout the retention period"
+    - "retrievability verified over the retention period"
+    - "verificacion de accesibilidad y legibilidad de registros"
+  individual_attribution:
+    - "each action is recorded against an individual user account"
+    - "unique user identity"
+    - "individual user identification"
+    - "no shared accounts"
+    - "personal login enforced"
+    - "identificacion individual del usuario"
+
+rules:
+
+  # ---------------------------------------------------------------------------
+  - CASE_ID: C01
+    CONTROL_OBJECTIVE: >
+      El audit trail no puede ser alterado, borrado ni desactivado -- ni
+      siquiera por usuarios privilegiados -- y toda modificacion silenciosa
+      es imposible o detectable.
+    SOURCE_REQUIREMENT_ID: "21_CFR_11.10(e)"
+    SOURCE_CATALOG_REFERENCE:
+      - "requirements.yaml 21_CFR_11.10(e) evidence_min_criteria[4] 'Controles de acceso privilegiado sobre el propio audit trail'"
+      - "requirements.yaml 21_CFR_11.10(e) evidence_min_criteria[6] 'Prohibicion y deteccion de modificacion silenciosa'"
+      - "EU GMP Annex 11 Section 9 (audit trails available and regularly reviewed)"
+    REQUIRED_BEHAVIOR: >
+      Existe (a) control de acceso privilegiado sobre el propio audit trail
+      y (b) un mecanismo -- de cualquier naturaleza -- que impide o hace
+      detectable la modificacion o el borrado de sus entradas.
+    ACCEPTABLE_EVIDENCE_PATTERNS:
+      family: audit_trail_privileged_protection
+      also_accept:
+        - "una tabla de permisos donde ningun rol tiene modify/delete sobre audit records"
+        - "descripcion de que el audit trail reside en almacenamiento no reescribible"
+    EXCLUDED_IMPLEMENTATION_ASSUMPTIONS:
+      - "WORM storage especifico"
+      - "un producto o marca de base de datos concreto"
+      - "cualquier mecanismo criptografico concreto (eso es C09, y alli tambien es ejemplo)"
+    DETERMINISTIC_DETECTION_RULE:
+      topic_anchor: ["audit trail", "audit log", "registro de auditoria", "pista de auditoria"]
+      scope: section            # la seccion/claim que introduce el audit trail
+      emit_when: "topic_anchor presente en scope AND ningun miembro de family:audit_trail_privileged_protection presente en scope NI en el documento"
+      guards:
+        - "si el documento remite explicitamente la proteccion a otro documento (see document X / covered by / cubierto por) -> suprimir"
+      finding:
+        finding_class: TechnicalFinding
+        subtype: AUDIT_TRAIL_DESIGN_GAP
+        severity: MAJOR
+    HUMAN_REVIEW_STATE:
+      machine_state: MACHINE_DEVIATION_CANDIDATE
+      human_state: UNREVIEWED
+      routing: "human_review_queue con cobertura declarada -- nunca auto-confirmado"
+
+  # ---------------------------------------------------------------------------
+  - CASE_ID: C03
+    CONTROL_OBJECTIVE: >
+      Los datos se pueden recuperar tras una perdida: hay backups regulares
+      Y se verifica la capacidad de restaurarlos.
+    SOURCE_REQUIREMENT_ID: "ANNEX11_7 (Section 7.2)"
+    SOURCE_CATALOG_REFERENCE:
+      - "EU GMP Annex 11 Section 7.2 (texto normativo directo): 'the ability to restore the data should be checked during validation and monitored periodically'"
+      - "Section 7.2 no figura como entrada propia del catalogo local -> se cita la norma"
+    REQUIRED_BEHAVIOR: >
+      Se realizan backups regulares Y se verifica -- durante validacion y de
+      forma periodica -- la capacidad de RESTAURAR los datos.
+    ACCEPTABLE_EVIDENCE_PATTERNS:
+      family: restore_verified
+      also_accept:
+        - "referencia a un procedimiento de prueba de restauracion con evidencia"
+        - "resultado de una restauracion real registrado"
+    EXCLUDED_IMPLEMENTATION_ASSUMPTIONS:
+      - "RTO -- Recovery Time Objective  (marco de continuidad de negocio, NO Annex 11)"
+      - "RPO -- Recovery Point Objective (idem)"
+      - "esquema de rotacion GFS, snapshots, replicacion concreta"
+      - "frecuencia de backup especifica (nightly, hourly) como requisito"
+    DETERMINISTIC_DETECTION_RULE:
+      topic_anchor: ["backup", "back-up", "back up", "respaldo", "copia de seguridad"]
+      scope: document
+      emit_when: "topic_anchor presente AND ningun miembro de family:restore_verified presente en el documento"
+      excluded_from_rule:
+        - "NO se evalua presencia/ausencia de RTO ni RPO -- fuera de alcance por decision de Capa 9"
+      guards:
+        - "si la verificacion de restauracion se remite a un plan de validacion citado -> emitir INCONCLUSIVE, no CANDIDATE"
+      finding:
+        finding_class: TechnicalFinding
+        subtype: BACKUP_RECOVERY_GAP
+        severity: MAJOR
+    HUMAN_REVIEW_STATE:
+      machine_state: MACHINE_DEVIATION_CANDIDATE
+      human_state: UNREVIEWED
+      routing: "human_review_queue con cobertura declarada -- nunca auto-confirmado"
+
+  # ---------------------------------------------------------------------------
+  - CASE_ID: C04
+    CONTROL_OBJECTIVE: >
+      Cada operacion aplicable del sistema tiene un nivel de autorizacion
+      definido.
+    SOURCE_REQUIREMENT_ID: "21_CFR_11.10(g)"
+    SOURCE_CATALOG_REFERENCE:
+      - "requirements.yaml 21_CFR_11.10(g) evidence_min_criteria[0] 'Matriz de operaciones del sistema con el nivel de autorizacion requerido por cada una (segun aplique)'"
+      - "requirements.yaml 21_CFR_11.10(d) evidence_min_criteria[2] 'Cuentas humanas individuales (no compartidas)'"
+      - "cliente: URS-PCS-SR-008 (UR5.2.2) 'Control and privilege access shall be assigned to system users based on operator access levels: Default User, Operator, Supervisor, Maintenance, Administrator'"
+    REQUIRED_BEHAVIOR: >
+      Se describe, para cada operacion aplicable del sistema, el nivel de
+      autorizacion requerido -- en cualquier forma (prosa enumerada, lista,
+      tabla). El artefacto llamado literalmente "matriz" NO es obligatorio.
+    ACCEPTABLE_EVIDENCE_PATTERNS:
+      family: per_operation_authorization
+      also_accept:
+        - "una Table (modelo canonico B1) cuyas columnas mapeen a rol y a permiso/operacion"
+        - "enumeracion de niveles de acceso con las funciones permitidas a cada uno"
+    EXCLUDED_IMPLEMENTATION_ASSUMPTIONS:
+      - "un documento formal titulado 'Authorization Matrix' / 'Access Control Matrix'"
+      - "un producto de RBAC concreto (FactoryTalk Security, LDAP groups, etc.)"
+    DETERMINISTIC_DETECTION_RULE:
+      topic_anchor: ["role", "roles", "access level", "user group", "perfil de acceso", "nivel de acceso"]
+      scope: document
+      emit_when: "topic_anchor presente AND ningun miembro de family:per_operation_authorization presente AND ninguna Table con roles de columna rol/permiso"
+      applicability_guard:
+        - "'segun aplique' (11.10(g)[0]): si el alcance del sistema es trivial (p.ej. un unico rol operativo declarado) -> emitir INCONCLUSIVE, no CANDIDATE"
+      finding:
+        finding_class: SecurityFinding
+        subtype: ACCESS_CONTROL_GAP
+        severity: MAJOR
+    HUMAN_REVIEW_STATE:
+      machine_state: MACHINE_DEVIATION_CANDIDATE
+      human_state: UNREVIEWED
+      routing: "human_review_queue con cobertura declarada -- nunca auto-confirmado"
+
+  # ---------------------------------------------------------------------------
+  - CASE_ID: C05
+    CONTROL_OBJECTIVE: >
+      El sistema verifica tecnicamente la autoridad del usuario en el momento
+      de ejecutar cada operacion aplicable (no solo en el login inicial).
+    SOURCE_REQUIREMENT_ID: "21_CFR_11.10(g)"
+    SOURCE_CATALOG_REFERENCE:
+      - "21 CFR 11.10(g) texto: 'Use of authority checks to ensure that only authorized individuals can ... perform the operation at hand'"
+      - "requirements.yaml 21_CFR_11.10(g) evidence_min_criteria[1] 'Chequeo tecnico de autoridad ejecutado en el momento de cada operacion aplicable'"
+    REQUIRED_BEHAVIOR: >
+      Se describe un chequeo de autoridad ejecutado por el sistema en el
+      momento de cada operacion aplicable.
+    ACCEPTABLE_EVIDENCE_PATTERNS:
+      family: authority_check_at_operation
+      also_accept:
+        - "descripcion de que operaciones criticas requieren re-autenticacion o comprobacion de privilegio en el punto de uso"
+    EXCLUDED_IMPLEMENTATION_ASSUMPTIONS:
+      - "un middleware o framework de autorizacion concreto"
+      - "tokens con scopes / claims especificos"
+    DETERMINISTIC_DETECTION_RULE:
+      topic_anchor: ["access control", "role based access", "authentication", "login", "electronic signature", "control de acceso"]
+      scope: document
+      emit_when: "topic_anchor presente AND ningun miembro de family:authority_check_at_operation presente en el documento"
+      precision_note: >
+        Riesgo de falso positivo alto: 'role based access' generico puede
+        satisfacer el requisito sin nombrarlo. Por eso el estado es
+        INCONCLUSIVE (candidato debil), no CANDIDATE.
+      finding:
+        finding_class: SecurityFinding
+        subtype: AUTHORITY_CHECK_GAP
+        severity: MAJOR
+    HUMAN_REVIEW_STATE:
+      machine_state: MACHINE_INCONCLUSIVE
+      human_state: UNREVIEWED
+      routing: "human_review_queue con cobertura declarada -- el revisor confirma si el chequeo de autoridad existe"
+
+  # ---------------------------------------------------------------------------
+  - CASE_ID: C08
+    CONTROL_OBJECTIVE: >
+      Los registros siguen accesibles, legibles e integros durante todo el
+      periodo de retencion declarado.
+    SOURCE_REQUIREMENT_ID: "ANNEX11_7 (Section 7.1) ; ANNEX11_17"
+    SOURCE_CATALOG_REFERENCE:
+      - "Annex 11 Section 7.1 texto: 'Stored data should be checked for accessibility, readability and accuracy. Access to data should be ensured throughout the retention period.'"
+      - "requirements.yaml ANNEX11_7.1 evidence_min_criteria[2] 'Verificacion documentada ... de accesibilidad, legibilidad y exactitud'"
+      - "requirements.yaml ANNEX11_7.1 evidence_min_criteria[4] 'acceso a los datos se mantiene durante ese periodo'"
+      - "requirements.yaml ANNEX11_17 evidence_min_criteria[1] 'Verificacion documentada de accesibilidad, legibilidad e integridad de los datos archivados'"
+    REQUIRED_BEHAVIOR: >
+      El periodo de retencion esta declarado Y hay verificacion documentada
+      de que los registros permanecen accesibles / legibles / integros
+      durante ese periodo.
+    ACCEPTABLE_EVIDENCE_PATTERNS:
+      family: retention_access_verified
+      also_accept:
+        - "referencia a una verificacion periodica programada de accesibilidad/legibilidad con evidencia"
+    EXCLUDED_IMPLEMENTATION_ASSUMPTIONS:
+      - "una frecuencia de reverificacion concreta (anual, bienal) como requisito -- la norma dice 'segun riesgo'"
+      - "migracion de formato como unico medio aceptable"
+      - "checksums / hashes de archivo como requisito (son un medio, no el requisito)"
+    DETERMINISTIC_DETECTION_RULE:
+      topic_anchor: ["retention", "retained for", "retention period", "archiv", "retencion", "conservacion"]
+      scope: document
+      emit_when: "topic_anchor presente AND ningun miembro de family:retention_access_verified presente en el documento"
+      guards:
+        - "si la verificacion se remite explicitamente a un procedimiento del cliente citado -> INCONCLUSIVE, no CANDIDATE"
+      finding:
+        finding_class: TechnicalFinding
+        subtype: TECHNICAL_DESIGN_GAP
+        severity: MAJOR
+    HUMAN_REVIEW_STATE:
+      machine_state: MACHINE_DEVIATION_CANDIDATE
+      human_state: UNREVIEWED
+      routing: "human_review_queue con cobertura declarada -- nunca auto-confirmado"
+
+  # ---------------------------------------------------------------------------
+  - CASE_ID: C09
+    CONTROL_OBJECTIVE: >
+      Se puede detectar si el audit trail fue manipulado.
+    SOURCE_REQUIREMENT_ID: "21_CFR_11.10(e)"
+    SOURCE_CATALOG_REFERENCE:
+      - "21 CFR 11.10(e) texto: 'Use of secure, computer-generated, time-stamped audit trails'"
+      - "requirements.yaml 21_CFR_11.10(e) evidence_min_criteria[5] 'Trazabilidad y capacidad de deteccion de manipulacion'"
+    REQUIRED_BEHAVIOR: >
+      El audit trail tiene capacidad de deteccion de manipulacion -- por
+      CUALQUIER medio. El comportamiento requerido es "una alteracion no
+      autorizada de los registros de auditoria es detectable"; el medio
+      tecnico es libre.
+    ACCEPTABLE_EVIDENCE_PATTERNS:
+      family: audit_trail_tamper_detection
+      also_accept:
+        - "descripcion de que el audit trail es append-only y cualquier intento de cambio queda registrado/alarmado"
+        - "descripcion de una revision periodica que detectaria discrepancias"
+    EXCLUDED_IMPLEMENTATION_ASSUMPTIONS:
+      - "hash-chain"
+      - "HMAC"
+      - "SHA-256 / SHA-2 / cualquier algoritmo de hash nombrado"
+      - "firma digital de entradas"
+      - "sellado criptografico"
+    EXCLUDED_IMPLEMENTATION_ASSUMPTIONS_NOTE: >
+      NINGUN termino criptografico es requisito. Si la regla exigiera esas
+      palabras, marcaria como hueco un audit trail conforme que usa un
+      control no-criptografico (append-only + alarma + revision). La regla
+      SOLO verifica la presencia del COMPORTAMIENTO neutro.
+    DETERMINISTIC_DETECTION_RULE:
+      topic_anchor: ["audit trail", "audit log", "registro de auditoria"]
+      scope: document
+      emit_when: "topic_anchor presente AND ningun miembro de family:audit_trail_tamper_detection presente en el documento AND ningun miembro de family:audit_trail_privileged_protection presente (proteccion privilegiada fuerte cubre parcialmente la deteccion)"
+      guards:
+        - "si C01 ya emitio para el mismo audit trail -> emitir C09 como related_finding, no duplicar la severidad"
+      finding:
+        finding_class: DataIntegrityFinding
+        subtype: AUDIT_TRAIL_INTEGRITY_GAP
+        severity: MAJOR
+    HUMAN_REVIEW_STATE:
+      machine_state: MACHINE_DEVIATION_CANDIDATE
+      human_state: UNREVIEWED
+      routing: "human_review_queue con cobertura declarada -- nunca auto-confirmado"
+
+  # ---------------------------------------------------------------------------
+  - CASE_ID: C10
+    CONTROL_OBJECTIVE: >
+      Cada dato de accion humana es atribuible a un individuo unico.
+    SOURCE_REQUIREMENT_ID: "ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d)"
+    SOURCE_CATALOG_REFERENCE:
+      - "requirements.yaml ALCOA_ATTRIBUTABLE evidence_min_criteria[0] 'Identificacion unica e individual por dato'"
+      - "requirements.yaml ALCOA_ATTRIBUTABLE evidence_min_criteria[1] 'Mecanismo tecnico que sostiene esa atribucion de forma confiable (no solo un campo de texto libre)'"
+      - "requirements.yaml 21_CFR_11.10(d) evidence_min_criteria[2] 'Cuentas humanas individuales (no compartidas)'"
+      - "cliente: URS-PCS-SR-010 (UR5.2.4) 'The user identification must consist of two parts: username and password'"
+    REQUIRED_BEHAVIOR: >
+      Toda accion humana registrada queda atribuida a una identidad
+      individual y unica, sostenida por un mecanismo tecnico (no un campo de
+      texto libre), para crear / modificar / eliminar.
+    ACCEPTABLE_EVIDENCE_PATTERNS:
+      family: individual_attribution
+      also_accept:
+        - "descripcion de cuentas nominales gestionadas en un directorio, sin cuentas compartidas"
+    EXCLUDED_IMPLEMENTATION_ASSUMPTIONS:
+      - "un directorio o IdP concreto (Active Directory, LDAP, ...)"
+      - "MFA / biometria como requisito (son medios)"
+      - "la sola frase 'proper credentials' / 'authorized personnel' NO satisface el requisito, pero decidir si un texto dado lo satisface es juicio humano, no de la regla"
+    DETERMINISTIC_DETECTION_RULE:
+      topic_anchor: ["credentials", "authorized personnel", "logged-in user", "operator performs", "calibration by", "personal autorizado", "credenciales"]
+      scope: document
+      emit_when: "topic_anchor presente (accion condicionada a credencial) AND ningun miembro de family:individual_attribution presente en el documento"
+      precision_note: >
+        Es la familia de pasaje P4/P6 del fixture regulatorio (recall LLM
+        medido 0/7). La regla detecta la AUSENCIA de lenguaje de identidad
+        individual; la CONFIRMACION de si 'proper credentials' implica o no
+        identidad individual la hace el revisor humano, NO un LLM.
+      finding:
+        finding_class: DataIntegrityFinding
+        subtype: ALCOA_ATTRIBUTABLE_GAP
+        severity: MAJOR
+    HUMAN_REVIEW_STATE:
+      machine_state: MACHINE_INCONCLUSIVE
+      human_state: UNREVIEWED
+      routing: "human_review_queue con cobertura declarada -- el revisor confirma la semantica de 'proper credentials'"
+
+# =============================================================================
+# Excluidos explicitamente de este artefacto (registro, no son reglas):
+# =============================================================================
+excluded_cases:
+  - CASE_ID: C02
+    reason: "Sin fuente normativa ni requisito de cliente que exija documentar fuente/sincronizacion de tiempo. URS-PCS-SR-038 (UR5.4.4) es manejo de DST, no sincronizacion."
+    client_requirement_found: false
+    client_requirement_id: null
+  - CASE_ID: C11
+    reason: "Annex 11 12.1 admite controles solo-logicos justificados. FS F09.00 traza al puntero generico UR3.4.1 (=implementar Part 11), sin Req-ID de cliente discreto para seguridad fisica."
+    client_requirement_found: false
+    client_requirement_id: null
+  - CASE_ID: C13
+    reason: >
+      Revisada la evidencia literal: UR4.3.4 exige "a UPS battery back-up system
+      installed"; UR4.3.5 exige que el UPS "supply the connected system power for
+      at least fifteen (15) minutes ... after loss of facility electrical power".
+      Ambos son requisitos de CONTINUIDAD DE ENERGIA (ride-through de UPS), NO de
+      reinicio ni de persistencia de estado. La descripcion de auto-recuperacion
+      tras fallo de energia esta en FS F19.00 (traza a UR3.2.2), como elaboracion
+      de diseno, NO como texto de requisito. El defecto C13 tal como esta
+      planteado (persistencia de estado tras reinicio del PLC) NO tiene requisito
+      explicito que lo sostenga. Incorporarlo con una regla de "continuidad de
+      energia" cambiaria el objetivo del caso -> prohibido. C13 FUERA del
+      detector automatico.
+    client_requirement_found_for_case_as_framed: false
+    client_requirement_id: null
+    related_client_requirements_different_objective: ["UR4.3.4", "UR4.3.5 (UPS ride-through)", "UR3.2.2 (failure/recovery, FS F19.00)"]
+    C13_EXPLICITLY_REQUIRES_RESTART_OR_STATE_PERSISTENCE: "NO"
+    C13_DETERMINISTIC_RULE_SAFE: "NO"
+  - CASE_ID: C07
+    reason: "Requiere juicio de criticidad + defecto de tipo tema-ausente. Permanece separado; no se activa HYBRID ni LLM."
+    client_requirement_found: null
+    client_requirement_id: null

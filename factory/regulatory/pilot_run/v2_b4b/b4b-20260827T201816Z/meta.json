@@ -1,0 +1,10 @@
+{
+ "run_id": "b4b-20260827T201816Z",
+ "pilot_instance": "PILOT_EXECUTION-2026-032",
+ "max_calls": 280,
+ "model": "qwen2.5:7b-instruct-q4_K_M",
+ "max_candidates": 2,
+ "started_at": "2026-08-27T20:18:28.317395+00:00",
+ "fixture_units": 9,
+ "no_effects": true
+}
