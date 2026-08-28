@@ -242,6 +242,21 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
 
     # --- audit metadata ---
     finished = datetime.now(timezone.utc).isoformat()
+
+    # WP-A: fingerprint de corrida (identidad de ejecucion != resultado). 100% aditivo.
+    from factory.regulatory.validation_v2 import run_fingerprint as _fp
+    _wall = (datetime.fromisoformat(finished) - datetime.fromisoformat(started)).total_seconds()
+    _fpr = _fp.compute_fingerprints(
+        entrypoint="v2_runtime",
+        inputs=_fp.inputs_from_canon(document_ids, canon_dir),
+        extraction_version=_EXT_VER,
+        consumed_artifacts=_fp.consumed_artifacts_for("v2_runtime",
+                                                      tier1_requirements=_TIER1_REQUIREMENTS),
+        applied_thresholds={},
+        findings=all_findings,
+        wall_clock_seconds=_wall,
+    )
+
     audit = {
         "run_id": run_id, "project_id": project_id, "engine": "V2",
         "documents": document_ids, "extraction_version": _EXT_VER,
@@ -256,6 +271,11 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
         "mark": MACHINE_GENERATED_MARK, "qa_status": QA_STATUS_DRAFT,
         "routing_note": ("Regulatory en modo Tier-1 / Palanca C (contingencia determinista). "
                          "NUNCA aprobacion automatica."),
+        "input_config_fingerprint": _fpr["input_config_fingerprint"],
+        "findings_fingerprint": _fpr["findings_fingerprint"],
+        "schema_digests": _fpr["schema_digests"],
+        "input_config": _fpr["input_config"],
+        "run_attestation": _fpr["run_attestation"],
     }
     _write_json(run_dir / "audit_summary" / "audit_metadata.json", audit)
 
@@ -273,6 +293,8 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
         "counts": {"regulatory": len(reg), "functional": len(func), "technical": len(tech),
                    "remediation_drafts": len(remediation)},
         "gates_ref": "docs_plan/CIERRE_FASE_10_ANALIZADOR_GMP_LOCAL_V2.md",
+        "input_config_fingerprint": _fpr["input_config_fingerprint"],
+        "findings_fingerprint": _fpr["findings_fingerprint"],
     }
     mb = json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
     (run_dir / "manifest.json").write_bytes(mb)

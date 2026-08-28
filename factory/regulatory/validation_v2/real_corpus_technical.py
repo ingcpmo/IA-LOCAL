@@ -80,6 +80,19 @@ def run_real_corpus_technical(out_root: Path = OUT_ROOT, run_id: str | None = No
         by_subtype[d["subtype"]] = by_subtype.get(d["subtype"], 0) + 1
         by_doc[d["document"]] = by_doc.get(d["document"], 0) + 1
 
+    # WP-A: fingerprint de corrida (100% aditivo).
+    from factory.regulatory.validation_v2 import run_fingerprint as _fp
+    _wall = (datetime.fromisoformat(finished) - datetime.fromisoformat(started)).total_seconds()
+    _fpr = _fp.compute_fingerprints(
+        entrypoint="real_corpus_technical",
+        inputs=_fp.inputs_from_canon([d for d, _ in RW_DOCS], canon_dir),
+        extraction_version=_EXT_VER,
+        consumed_artifacts=_fp.consumed_artifacts_for("real_corpus_technical"),
+        applied_thresholds={},
+        findings=findings,
+        wall_clock_seconds=_wall,
+    )
+
     meta = {
         "run_id": run_id, "project_id": PROJECT_ID,
         "documents": RW_DOCS, "extraction_version": _EXT_VER,
@@ -91,6 +104,11 @@ def run_real_corpus_technical(out_root: Path = OUT_ROOT, run_id: str | None = No
         "stats": stats,
         "n_findings": len(fds),
         "by_subtype": by_subtype, "by_document": by_doc,
+        "input_config_fingerprint": _fpr["input_config_fingerprint"],
+        "findings_fingerprint": _fpr["findings_fingerprint"],
+        "schema_digests": _fpr["schema_digests"],
+        "input_config": _fpr["input_config"],
+        "run_attestation": _fpr["run_attestation"],
         "note": ("Validación real, NO benchmark. Todos los findings human_state=UNREVIEWED "
                  "-> revisión humana. OD-1..OD-5 se conservan como observaciones (ver "
                  "docs_plan/VALIDACION_TECNICA_CORPUS_REAL_RW.md), NO cambian Suite C."),
