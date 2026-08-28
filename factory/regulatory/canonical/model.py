@@ -27,6 +27,27 @@ from dataclasses import dataclass, field, fields
 #: resultado y debe quedar registrado en cada objeto).
 EXTRACTION_VERSION = "canonical-v1-2026-08"
 
+#: WP-D -- etapa de extracción de objetos `Test` (SAT/OQ/IQ/PQ). ADITIVA y GOBERNADA
+#: POR FLAG: OFF por default -> la salida del pipeline es idéntica a hoy y
+#: `EXTRACTION_VERSION` no cambia. Activarla (env `V2_TEST_EXTRACTION=1` o el
+#: parámetro `extract_tests=True`) sube la versión efectiva a
+#: `EXTRACTION_VERSION + "+tests-v1"` -> re-derivación explícita, decisión de Capa 9.
+TEST_EXTRACTION_ENV = "V2_TEST_EXTRACTION"
+TEST_EXTRACTION_SUFFIX = "+tests-v1"
+
+
+def test_extraction_enabled(override: bool | None = None) -> bool:
+    if override is not None:
+        return bool(override)
+    import os
+    return os.environ.get(TEST_EXTRACTION_ENV, "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def effective_extraction_version(override: bool | None = None) -> str:
+    return (EXTRACTION_VERSION + TEST_EXTRACTION_SUFFIX
+            if test_extraction_enabled(override) else EXTRACTION_VERSION)
+
+
 DOCUMENT_TYPES = ("URS", "FS", "DS", "SAT", "OQ", "IQ", "PQ", "SOP", "OTHER")
 CLAIM_TYPES = ("control", "function", "test", "parameter", "actor_action", "statement")
 CONTROL_CATEGORIES = (
