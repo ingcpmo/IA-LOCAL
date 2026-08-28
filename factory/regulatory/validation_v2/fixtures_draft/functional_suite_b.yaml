@@ -13,11 +13,25 @@
 # contra los documentos antes de firmar como Golden Dataset. Cada caso
 # marca `evidence_locator` como "confirmar".
 
-status: DRAFT_UNSIGNED
+status: RETIRED
 suite: functional_suite_b
 version: "0.1-draft"
 authored_by: "Capa 8"
 proposal_doc: "docs_plan/PROPUESTA_FIXTURES_FUNCIONAL_TECNICO_B8.md"
+retired_by: "Capa 9 (Cesar)"
+retired_at: "2026-08-27"
+retired_note: >
+  RETIRADO con trazabilidad. Los 15 casos positivos de este borrador eran
+  ficción para el corpus real Rockwell (URS/FS/DS/SAT están completamente
+  trazados -> 0 findings funcionales verdaderos que detectar; ver
+  docs_plan/REPORTE_B8B_SUITE_B_DRY_RUN.md y docs_plan/DECISION_B8B_SUITE_B.md).
+  El instrumento de gate funcional de FASE 10 es el FIXTURE DE INYECCIÓN DE
+  DEFECTOS: `factory/regulatory/validation_v2/defect_corpus.py`
+  (GROUND_TRUTH = 16 defectos conocidos y anclados), medido en
+  docs_plan/REPORTE_B8B_SUITE_B_RECALL.md -> FUNCTIONAL_RECALL = 16/16 = 1.00,
+  FUNCTIONAL_FALSE_POSITIVE = 0/16 = 0.00. Reproducible:
+  `pytest factory/tests/test_functional_findings.py::test_defect_corpus_suite_b_measures_functional_recall`.
+  Este archivo se conserva sólo como registro histórico; no es un gate.
 
 cases:
   # ---- 5 fully-traced (URS req implementado en FS y probado en SAT) ----

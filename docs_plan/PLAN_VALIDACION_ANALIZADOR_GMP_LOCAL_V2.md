@@ -144,3 +144,25 @@ GATE_0_FACTORY             =  PASS   (factory_selfcheck.sh, sin regresión sobre
 - **No valida escala de corpus completo** — las suites son fixtures acotados. Una corrida de corpus formal es una decisión posterior de Capa 9 (como la W5 diferida).
 - **No valida los agentes técnicos contra un inspector real** — los gates 90%/≤5% son objetivos de diseño contra un Golden Dataset construido por Capa 8 y firmado por Capa 9, no contra una auditoría regulatoria externa.
 - **No cierra `REGULATORY_COMPLIANCE`** — eso sigue siendo decisión de Capa 9 tras Piloto 2 / R4-R5, fuera del alcance de esta validación técnica.
+
+---
+
+## ADDENDUM — Cierre del plan original V2 (2026-08-28)
+
+El plan original del Analizador GMP LOCAL V2 se completó de FASE 0 a FASE 12.
+Acta consolidada fase por fase, con evidencia:
+**`docs_plan/ACTA_CIERRE_ANALIZADOR_GMP_LOCAL_V2.md`**.
+
+Puntos firmes:
+- Arquitectura V2 **congelada** en su diseño actual.
+- REGULATORY_GATE = **FAIL** (recall LLM 0/7) — contingencia determinista aceptada:
+  **Regulatory Tier-1 / Palanca C**. NO se reinterpreta como PASS.
+- FUNCTIONAL_GATE = **PASS** (16/16 recall, 0 FP — fixture de inyección de defectos).
+- TECHNICAL_GATE = **PASS** (benchmark Suite C: TP=9, FN=C07 semántico, FP=0, recall 0.90;
+  transversales LOCAL_ONLY / DOCUMENT_EGRESS=0 / FABRICATED_CITATIONS=0 / TRACEABILITY=YES).
+- `technical_completeness_rules.yaml` **v1.1 SIGNED** (OD-6: alcance context-scoped).
+- REPORTING_GAP **cerrado**: runtime V2 E2E (`v2_runtime.py`) persiste bajo
+  `GMPAI/reports/gmpai_document_validation/<run_id>/`; Mission Control lo expone vía `/api/v1/v2-analyzer/*` (API). La UI
+  `mission_control.html` aún NO consume esos endpoints (no se construye UI nueva). Shadow mode ejecutado, CURRENT retenido, cutover NO ejecutado.
+- Regresión: 2779 passed / **5 failed** (deuda de clon/servicio-en-vivo, EXC-1..EXC-5,
+  0 tocan V2) — `docs_plan/DEUDA_REGRESION_EXCEPCION_CAPA9.md`. **pytest exit code real = 1.**

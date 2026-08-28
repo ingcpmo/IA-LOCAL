@@ -133,3 +133,84 @@ def test_compare_recommends_cutover_when_gains_no_regressions():
     v2 = [_F("r1", "MACHINE_CONFIRMED_FINDING")]
     out = shadow_compare.compare(current, v2)
     assert "candidato a cutover" in out["cutover_recommendation"]
+
+
+def test_shadow_run_v2_no_effects_and_reversible(tmp_path):
+    """FASE 11: shadow V2 determinista -- mismo input, comparación CURRENT vs
+    V2, sin efectos, flag de routing reversible, CURRENT como rollback,
+    cutover NO ejecutado."""
+    from factory.regulatory.validation_v2.shadow_run_v2 import run_shadow_v2
+    r = run_shadow_v2(["RW-0005", "RW-0011", "RW-0012"], shadow_root=tmp_path / "sh")
+    assert r["no_effects"] is True
+    assert r["document_egress_bytes"] == 0
+    assert r["local_only"] is True
+    assert r["runtime"]["llm_calls"] == 0
+    rr = r["routing_reversible"]
+    assert rr["changed_by_shadow"] is False
+    assert rr["mode_before"] == rr["mode_after"]   # shadow NO cambia el routing (sea cual sea)
+    assert rr["current_retained_as_rollback"] is True
+    assert rr["cutover_executed"] is False
+    assert "comparison" in r["current_vs_v2"]
+    # dual-runtime: V2 fresco; CURRENT = corrida real persistida sobre el MISMO input
+    assert r["dual_runtime"]["V2_EXECUTED_IN_SHADOW"] is True
+    assert r["dual_runtime"]["CURRENT_EXECUTED_IN_SHADOW"] is False
+    assert r["dual_runtime"]["current_real_run_calls"] == 158
+    assert r["same_input"]["current_and_v2_share_byte_identical_input"] is True
+    assert len(r["same_input"]["same_input_hash"]) == 64
+    assert (tmp_path / "sh").exists()
+
+
+def test_cutover_set_routing_mode_and_rollback(tmp_path, monkeypatch):
+    """B9b: set_routing_mode escribe el flag + historial; rollback a
+    'current' restaura CURRENT. Aislado en tmp_path (no toca el flag real)."""
+    from factory.regulatory.validation_v2 import cutover
+    monkeypatch.setattr(cutover, "_FILE", tmp_path / "routing.txt")
+    monkeypatch.setattr(cutover, "_HISTORY", tmp_path / "routing_history.jsonl")
+    monkeypatch.delenv("V2_ANALYZER_ROUTING", raising=False)
+
+    assert cutover.routing_mode() == "current"          # DEFAULT
+    e = cutover.set_routing_mode("v2", actor="Capa 9 (Cesar)", reason="cutover test")
+    assert e["from"] == "current" and e["to"] == "v2"
+    assert e["current_retained_as_rollback"] is True
+    assert cutover.is_v2_active() is True
+
+    cutover.set_routing_mode("current", actor="ops", reason="rollback test")
+    assert cutover.routing_mode() == "current"
+    assert cutover.is_current_only() is True
+    assert len(cutover.routing_history()) == 2
+
+
+def test_analyzer_router_dispatches_by_routing_mode(tmp_path, monkeypatch):
+    """El dispatcher enruta: current -> handoff a CURRENT; v2 -> V2 pipeline
+    (determinista, 0 LLM, Regulatory en Tier-1/Palanca C)."""
+    from factory.regulatory.canonical import model as m
+    from factory.regulatory.canonical.persistence import CanonicalStore
+    from factory.regulatory.validation_v2 import cutover, analyzer_router as ar
+
+    monkeypatch.setattr(cutover, "_FILE", tmp_path / "routing.txt")
+    monkeypatch.setattr(cutover, "_HISTORY", tmp_path / "routing_history.jsonl")
+    monkeypatch.delenv("V2_ANALYZER_ROUTING", raising=False)
+
+    canon = tmp_path / "canon"
+    with CanonicalStore("R-URS", store_dir=canon) as s:
+        s.put(m.Document(document_id="R-URS", sha256="u" * 64, tipo="URS", titulo="URS", n_paginas=3))
+        s.put(m.build_claim("R-URS", 1, "UR-1 The audit trail shall record every change with user id.",
+                            "control", "UR-1 audit trail change user id", local_id="UR-1"))
+
+    # modo current -> handoff (CURRENT no se duplica)
+    assert ar.active_engine() == "CURRENT"
+    with pytest.raises(ar.CurrentEngineHandoff):
+        ar.analyze(["R-URS"], canon_dir=canon, graph_dir=tmp_path / "g",
+                   report_base=tmp_path / "rep")
+
+    # cutover -> v2
+    cutover.set_routing_mode("v2", actor="Capa 9 (Cesar)", reason="cutover")
+    assert ar.active_engine() == "V2"
+    assert ar.regulatory_modality() == "REGULATORY_TIER1_PALANCA_C"
+    r = ar.analyze(["R-URS"], canon_dir=canon, graph_dir=tmp_path / "g2",
+                   report_base=tmp_path / "rep2")
+    assert r["routing_mode"] == "v2"
+    assert r["regulatory_modality"] == "REGULATORY_TIER1_PALANCA_C"
+    assert r["llm_calls"] == 0
+    assert r["document_egress_bytes"] == 0
+    assert r["human_gate_intact"] is True

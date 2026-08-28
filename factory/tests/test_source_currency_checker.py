@@ -322,6 +322,6 @@ def test_never_writes_registry_json():
     """Este modulo nunca abre registry.json para escritura ni usa
     write_text (que sobrescribiria un archivo entero) -- su unica
     escritura es el log append-only via open(...'a')."""
-    src = Path("/home/ing_cpmo/factory/regulatory/source_currency_checker.py").read_text(encoding="utf-8")
+    src = (Path(__file__).resolve().parents[1] / "regulatory" / "source_currency_checker.py").read_text(encoding="utf-8")
     assert ".write_text(" not in src
     assert 'open(paths.SOURCE_CURRENCY_LOG_FILE, "a"' in src

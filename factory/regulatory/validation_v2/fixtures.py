@@ -55,15 +55,28 @@ def _validate_shape(name: str, data: dict) -> None:
             raise ValueError(f"{name}/{c['case_id']}: expected.finding=true sin 'subtype'")
 
 
+_NOT_USABLE_STATUS = ("DRAFT_UNSIGNED", "RETIRED", "SUPERSEDED", "")
+
+
+def status(name: str) -> str:
+    return str(load_fixture(name).get("status", "")).upper()
+
+
 def is_signed(name: str) -> bool:
-    return str(load_fixture(name).get("status", "")).upper() not in ("DRAFT_UNSIGNED", "")
+    """True sólo si el fixture es un Golden Dataset vigente (SIGNED).
+    DRAFT_UNSIGNED / RETIRED / SUPERSEDED -> no usable como gate."""
+    return status(name) not in _NOT_USABLE_STATUS
+
+
+def is_retired(name: str) -> bool:
+    return status(name) in ("RETIRED", "SUPERSEDED")
 
 
 def assert_signed(name: str) -> None:
     if not is_signed(name):
         raise FixtureNotSignedError(
-            f"{name} en DRAFT_UNSIGNED -- requiere firma de Capa 9 como Golden Dataset "
-            f"(docs_plan/PROPUESTA_FIXTURES_FUNCIONAL_TECNICO_B8.md).")
+            f"{name} en estado {status(name) or 'DRAFT_UNSIGNED'!r} -- no es un Golden "
+            f"Dataset vigente (requiere status: SIGNED de Capa 9).")
 
 
 def case_count(name: str) -> int:

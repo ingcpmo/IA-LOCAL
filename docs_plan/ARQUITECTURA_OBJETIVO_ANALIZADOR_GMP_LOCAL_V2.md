@@ -288,3 +288,25 @@ Retrieval: el fix de furniture simétrico de R4 ya subió `retrieval_recall_at_5
 | **KEEP sin cambios** | `evidence_verifier.py` (A/B/C/D), `absence_consolidator.py` (fail-closed), `bm25.py`, `fusion.py`, `indexer.py`, `embed*.py`, `document_structure_extractor.py`, `CheckpointStore`, `audit_writer.py`, `human_review_queue.py`, `model_provider.py` (Protocol), `pilot_execution.py`, `model_qualification_gate.py`, prompts YAML de los 4 agentes regulatorios (como base) |
 | **MODIFY** | `chunked_engine.evaluate_chunked` (juicio 2-pasos; consumir EvidenceBundle), `build_prompt` (recibir Claim normalizado + sub-criterio), `retrieval/judgment.py` (+ reranker, EvidenceBundle), `corpus_runner.py` (orquestar 3 clases con dependencia), `requirement_catalog/requirements.yaml` (+ `decomposition[]`), `tier1_report.py` (3 clases de finding) |
 | **CREATE** | modelo canónico (persistencia + extractores), `table_structure_extractor.py`, evidence graph (SQLite/JSON), reranker cross-encoder local, Critic + Adjudicator, taxonomía de 7 clases de Finding, 4 agentes FUNCTIONAL + 4 TECHNICAL (perfiles/agentes con corpus + fixtures), suites de benchmark B y C, `Risk` calculator determinista |
+
+---
+
+## ADDENDUM — Cierre del plan original V2 (2026-08-28)
+
+El plan original del Analizador GMP LOCAL V2 se completó de FASE 0 a FASE 12.
+Acta consolidada fase por fase, con evidencia:
+**`docs_plan/ACTA_CIERRE_ANALIZADOR_GMP_LOCAL_V2.md`**.
+
+Puntos firmes:
+- Arquitectura V2 **congelada** en su diseño actual.
+- REGULATORY_GATE = **FAIL** (recall LLM 0/7) — contingencia determinista aceptada:
+  **Regulatory Tier-1 / Palanca C**. NO se reinterpreta como PASS.
+- FUNCTIONAL_GATE = **PASS** (16/16 recall, 0 FP — fixture de inyección de defectos).
+- TECHNICAL_GATE = **PASS** (benchmark Suite C: TP=9, FN=C07 semántico, FP=0, recall 0.90;
+  transversales LOCAL_ONLY / DOCUMENT_EGRESS=0 / FABRICATED_CITATIONS=0 / TRACEABILITY=YES).
+- `technical_completeness_rules.yaml` **v1.1 SIGNED** (OD-6: alcance context-scoped).
+- REPORTING_GAP **cerrado**: runtime V2 E2E (`v2_runtime.py`) persiste bajo
+  `GMPAI/reports/gmpai_document_validation/<run_id>/`; Mission Control lo expone vía `/api/v1/v2-analyzer/*` (API). La UI
+  `mission_control.html` aún NO consume esos endpoints (no se construye UI nueva). Shadow mode ejecutado, CURRENT retenido, cutover NO ejecutado.
+- Regresión: 2779 passed / **5 failed** (deuda de clon/servicio-en-vivo, EXC-1..EXC-5,
+  0 tocan V2) — `docs_plan/DEUDA_REGRESION_EXCEPCION_CAPA9.md`. **pytest exit code real = 1.**

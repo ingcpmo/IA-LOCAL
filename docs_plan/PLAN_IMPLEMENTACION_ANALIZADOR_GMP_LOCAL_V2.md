@@ -135,6 +135,42 @@ Suites A (regulatoria, fixture conservado), B (funcional), C (técnica) + test `
 
 **Criterio de cutover (decisión de Capa 9):** `REGULATORY_POSITIVE ≥ 6/7` **o** decisión explícita de operar la clase Regulatory en modo Tier-1 (Palanca C) con V2 aportando Functional/Technical. Ningún cutover automático.
 
+#### B9b — Cierre del REPORTING_GAP (OBLIGATORIO en FASE 11)
+
+**Estado del hallazgo:** `REPORTING_GAP_CONFIRMED = YES` (verificación read-only 2026-08-27).
+Hoy V2 devuelve findings / bundles / proposals / redlines / manifests **solo en
+memoria**; ningún camino de runtime los persiste, y no hay publicación a
+`GMPAI/reports/` ni visibilidad en Mission Control.
+
+**Restricción de Capa 9:** NO se crean carpetas ni raíces de reporte nuevas.
+V2 reutiliza el destino operativo existente
+`/home/cmay/ivr-ia/GMPAI/reports/gmpai_document_validation/<run_id>/` y
+reutiliza/adapta `factory/services/gmpai_artifact_service.py`
+(`GMPAI_REPORTS_BASE`, `package_receipt.json`, `SHA256SUMS.txt`,
+`paquete_final.zip`, resolvers que lee Mission Control).
+
+**Alcance obligatorio de B9b (todo o el cutover no procede):**
+
+| # | Entregable | Reutiliza |
+|---|---|---|
+| 1 | Runtime V2 E2E: `extract_document` → `graph.build` → `evidence_bundle` → juicio/Tier-1 → `from_verdicts` + `graph_functional_findings` → `report_v2`, con `run_id` | orquestación estilo `b4b_runner`, sin nuevo esquema de carpetas |
+| 2 | Persistencia de findings (regulatorios Tier-1 + funcionales) por corrida | serializador de corrida escribiendo bajo el `<run_id>` existente |
+| 3 | Evidence / provenance persistidos | `canonical_store/*.sqlite3` (ya existe) + volcado del `EvidenceBundle` por sub-criterio |
+| 4 | Remediación materializada | `remediation_v2` + adaptador `to_current_pipeline_change` → `candidate_document_generator` de CURRENT |
+| 5 | candidate / redline / manifest `.docx` + hashes | pipeline docx de CURRENT; `RemediationChain.build_manifest(require_docx=True)` |
+| 6 | Reporte final de usuario | `report_v2.build_report` / `render_markdown` escrito a disco (hoy no se escribe) |
+| 7 | Publicación en `GMPAI/reports/.../<run_id>/` | `gmpai_artifact_service` (adaptar para aceptar fuente V2) + `package_receipt.json` + `SHA256SUMS.txt` |
+| 8 | Visibilidad en Mission Control | registrar la corrida donde los resolvers de `gmpai_artifact_service` la enumeran |
+
+**Gobernanza:** la vía Tier-1 (Palanca C, `regulatory_tier1_findings` + análisis
+funcional determinista) es **0 LLM** y no consume `PILOT_EXECUTION`. Si B9b
+incorpora juicio LLM, requiere `PILOT_EXECUTION` firmada (como B4b). Marca
+"MACHINE GENERATED — BORRADOR, NO APROBADO" y `human_state=UNREVIEWED`
+preservadas por el writer.
+
+**No se implementa aún** — queda registrado como parte de FASE 11, posterior a
+B6b / B8b Suite C.
+
 ---
 
 ## 3. FASE 12 — COSTO COMPUTACIONAL LOCAL
@@ -198,3 +234,25 @@ B1 (canónico + tablas) ──┬─→ B2 (grafo) ─────────�
 B1–B3 son deterministas, sin LLM nuevo, sin gobernanza extra — se pueden construir y probar de inmediato tras la firma del ADR.
 B4 es el primer gasto de llamadas y el gate que decide el recall regulatorio.
 B6 es independiente del resultado de B4 para las clases Functional/Technical (sus gates son propios).
+
+---
+
+## ADDENDUM — Cierre del plan original V2 (2026-08-28)
+
+El plan original del Analizador GMP LOCAL V2 se completó de FASE 0 a FASE 12.
+Acta consolidada fase por fase, con evidencia:
+**`docs_plan/ACTA_CIERRE_ANALIZADOR_GMP_LOCAL_V2.md`**.
+
+Puntos firmes:
+- Arquitectura V2 **congelada** en su diseño actual.
+- REGULATORY_GATE = **FAIL** (recall LLM 0/7) — contingencia determinista aceptada:
+  **Regulatory Tier-1 / Palanca C**. NO se reinterpreta como PASS.
+- FUNCTIONAL_GATE = **PASS** (16/16 recall, 0 FP — fixture de inyección de defectos).
+- TECHNICAL_GATE = **PASS** (benchmark Suite C: TP=9, FN=C07 semántico, FP=0, recall 0.90;
+  transversales LOCAL_ONLY / DOCUMENT_EGRESS=0 / FABRICATED_CITATIONS=0 / TRACEABILITY=YES).
+- `technical_completeness_rules.yaml` **v1.1 SIGNED** (OD-6: alcance context-scoped).
+- REPORTING_GAP **cerrado**: runtime V2 E2E (`v2_runtime.py`) persiste bajo
+  `GMPAI/reports/gmpai_document_validation/<run_id>/`; Mission Control lo expone vía `/api/v1/v2-analyzer/*` (API). La UI
+  `mission_control.html` aún NO consume esos endpoints (no se construye UI nueva). Shadow mode ejecutado, CURRENT retenido, cutover NO ejecutado.
+- Regresión: 2779 passed / **5 failed** (deuda de clon/servicio-en-vivo, EXC-1..EXC-5,
+  0 tocan V2) — `docs_plan/DEUDA_REGRESION_EXCEPCION_CAPA9.md`. **pytest exit code real = 1.**
