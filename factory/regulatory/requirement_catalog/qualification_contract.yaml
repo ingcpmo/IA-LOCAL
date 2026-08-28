@@ -1,0 +1,223 @@
+# WP-F -- CONTRATO DE CUALIFICACIÓN DEL ANALIZADOR DOCUMENTAL GMP V2
+# docs_plan/PLAN_HARDENING_ANALIZADOR_GMP_LOCAL_V2.md WP-F ; docs_plan/WP_F_CONTRATO_CUALIFICACION_20260828.md
+#
+# El checker (`validation_v2/qualification_contract.py`) RE-EJECUTA cada caso, LEE el valor esperado
+# de su fuente autorizada citada (NUNCA un literal en el YAML), calcula found/expected/delta, y
+# REPRODUCE el fingerprint declarado (WP-A). Si no coincide, o un disparador cambió de SHA, o un caso
+# falla -> FAIL_REQUALIFICATION_REQUIRED.
+#
+# REGLAS DURAS: todo nace DRAFT. El sistema NO se auto-cualifica: `qualified_version` y cualquier
+# estado QUALIFIED los fija EXCLUSIVAMENTE un humano firmando este archivo. El contrato NO declara
+# cumplimiento -- solo estado de gates y contingencias.
+
+artifact: qualification_contract
+version: "0.1-draft"
+status: DRAFT
+qualified_version: null                 # <- solo un humano lo fija al firmar
+signed_by: null
+signed_at: null
+system_never_self_qualifies: true
+
+dataset:
+  name: "Rockwell 6-doc (RW-0005 FS, RW-0006 URS, RW-0009 SAT-transmittal, RW-0011/0012/0014 DS)"
+  document_ids: [RW-0005, RW-0006, RW-0009, RW-0011, RW-0012, RW-0014]
+
+qualified_against:                       # lo congela el humano al firmar (SHAs + fingerprints reales)
+  rules: "technical_completeness_rules.yaml v1.1 SIGNED"
+  decomposition: "decomposition.yaml v1.1 SIGNED"
+  risk_matrix: "risk_matrix.yaml v1.0"
+  fixture: "technical_suite_c.yaml v1.0-benchmark SIGNED"
+  routing: "v2 (Tier-1 / Palanca C para Regulatory)"
+  artifact_sha256: {}                    # vacío en DRAFT -> el checker reporta el baseline actual
+  fingerprints: {}                       # vacío en DRAFT -> el checker captura el baseline actual
+
+# --- Qué cambio OBLIGA a requalification (lista explícita; el checker compara SHAs) ---
+requalification_triggers:
+  extractor_document: factory/regulatory/canonical/extract_document.py
+  extractor_tests: factory/regulatory/canonical/extract_tests.py
+  ocr_assets: "N/A -- sin motor OCR local (ver docs_plan/WP_C_BENCHMARK_EXTRACCION_20260828.md)"
+  canonical_schema_model: factory/regulatory/canonical/model.py
+  canonical_schema_persistence: factory/regulatory/canonical/persistence.py
+  graph_store: factory/regulatory/graph/store.py
+  graph_build: factory/regulatory/graph/build.py
+  rules: factory/regulatory/requirement_catalog/technical_completeness_rules.yaml
+  decomposition: factory/regulatory/requirement_catalog/decomposition.yaml
+  fixture_suite_c: factory/regulatory/validation_v2/fixtures_draft/technical_suite_c.yaml
+  risk_matrix: factory/regulatory/findings/risk_matrix.yaml
+  adequacy_thresholds: factory/regulatory/requirement_catalog/extraction_adequacy_thresholds.yaml
+  gate_thresholds: factory/regulatory/validation_v2/gates.py
+  routing_flag: factory/regulatory/validation_v2/routing.txt
+
+# --- Casos de cualificación (métricas con umbral LEÍDO de fuente autorizada) ---
+qualification_cases:
+  - case_id: QC-TECH-RECALL
+    intended_use: "Detección determinista de brechas de completitud técnica (FS/DS)."
+    requirement: "El detector técnico recupera >= umbral de los positivos del benchmark."
+    test_objective: "TECHNICAL_RECALL de Suite C >= umbral firmado."
+    test_artifact: "factory.regulatory.validation_v2.qualification_contract:_run_technical_suite_c"
+    acceptance: {actual_key: "recall", op: ">="}
+    expected_value_source: {const_module: "factory.regulatory.validation_v2.gates", const: "TECHNICAL_RECALL_MIN"}
+    suite_version: "technical_suite_c@1.0-benchmark (SIGNED)"
+    metric_envelope:
+      size: {positives: 10}
+      reportable_range: "SYNTHETIC_ONLY"
+      contamination_statement: >
+        Corpus sintético construido por el autor de las reglas; anchors == frases del builder (D-3).
+        Sin held-out firmado por autor independiente ni muestra real adjudicada (WP-E). Rango real
+        pendiente de WP-E.3/E.4.
+    status: DRAFT
+    reviewer: null
+
+  - case_id: QC-TECH-FABRICATED-CITATIONS
+    intended_use: "Toda cita de un finding está anclada a source_text literal."
+    requirement: "Cero citas fabricadas en Suite C."
+    test_objective: "FABRICATED_CITATIONS de Suite C <= umbral."
+    test_artifact: "factory.regulatory.validation_v2.qualification_contract:_run_technical_suite_c"
+    acceptance: {actual_key: "gate:FABRICATED_CITATIONS:value", op: "<="}
+    expected_value_source: {const_module: "factory.regulatory.validation_v2.gates", const: "FABRICATED_CITATIONS_MAX"}
+    suite_version: "technical_suite_c@1.0-benchmark (SIGNED)"
+    metric_envelope: {size: 1, reportable_range: "SYNTHETIC_ONLY", contamination_statement: "benchmark sintético"}
+    status: DRAFT
+    reviewer: null
+
+  - case_id: QC-FUNC-RECALL
+    intended_use: "Detección funcional determinista (trazabilidad, cobertura de prueba, contradicción)."
+    requirement: "FUNCTIONAL_RECALL sobre el fixture de inyección de defectos >= umbral."
+    test_objective: "recall de defect_corpus >= umbral firmado."
+    test_artifact: "factory.regulatory.validation_v2.qualification_contract:_run_functional_defect_corpus"
+    acceptance: {actual_key: "recall", op: ">="}
+    expected_value_source: {const_module: "factory.regulatory.validation_v2.gates", const: "FUNCTIONAL_RECALL_MIN"}
+    suite_version: "defect_corpus (GROUND_TRUTH 16)"
+    metric_envelope:
+      size: {defects: 16}
+      reportable_range: "SYNTHETIC_ONLY"
+      contamination_statement: >
+        Fixture de inyección de defectos del mismo autor. Sobre el corpus real la línea base es
+        90 findings (70 artefacto de D-1). Rango real pendiente de la muestra adjudicada (WP-E.4).
+    status: DRAFT
+    reviewer: null
+
+  - case_id: QC-FUNC-FALSE-POSITIVE
+    intended_use: "El detector funcional no cría lobos."
+    requirement: "Cero falsos positivos del detector funcional en el fixture."
+    test_objective: "n_false_positives de defect_corpus <= 0."
+    test_artifact: "factory.regulatory.validation_v2.qualification_contract:_run_functional_defect_corpus"
+    acceptance: {actual_key: "n_false_positives", op: "<="}
+    expected_value_source: {zero: true, authority: "docs_plan/REPORTE_B8B_SUITE_B_RECALL.md -- FP = 0 medido"}
+    suite_version: "defect_corpus"
+    metric_envelope: {size: 1, reportable_range: "SYNTHETIC_ONLY", contamination_statement: "fixture del mismo autor"}
+    status: DRAFT
+    reviewer: null
+
+  - case_id: QC-DOCUMENT-EGRESS
+    intended_use: "El documento del cliente no sale del servidor."
+    requirement: "DOCUMENT_EGRESS = 0 en la corrida E2E."
+    test_objective: "audit.document_egress_bytes <= 0."
+    test_artifact: "factory.regulatory.validation_v2.qualification_contract:_run_v2_audit"
+    acceptance: {actual_key: "document_egress_bytes", op: "<="}
+    expected_value_source: {zero: true, authority: "ADR_HARDENING_V2.md §SECURITY ; CLAUDE.md LOCAL ONLY"}
+    suite_version: "v2_runtime E2E (6 docs)"
+    metric_envelope: {size: 1, reportable_range: [0, 0], contamination_statement: "network_locked() en toda corrida"}
+    status: DRAFT
+    reviewer: null
+
+  - case_id: QC-LLM-CALLS
+    intended_use: "La arquitectura V2 adoptada no invoca LLM."
+    requirement: "llm_calls = 0 en la corrida E2E."
+    test_objective: "audit.llm_calls <= 0."
+    test_artifact: "factory.regulatory.validation_v2.qualification_contract:_run_v2_audit"
+    acceptance: {actual_key: "llm_calls", op: "<="}
+    expected_value_source: {zero: true, authority: "REPORTE_FINAL_REDIESENO... §K -- arquitectura V2 adoptada = 0 LLM"}
+    suite_version: "v2_runtime E2E (6 docs)"
+    metric_envelope: {size: 1, reportable_range: [0, 0], contamination_statement: "camino determinista adoptado"}
+    status: DRAFT
+    reviewer: null
+
+  - case_id: QC-FORBIDDEN-STATES
+    intended_use: "El sistema nunca fija QA_APPROVED / RELEASED / CAPA_CLOSED / FINAL_GMP_APPROVAL / APPROVED."
+    requirement: "forbidden_states_present = false en la corrida E2E."
+    test_objective: "audit.forbidden_states_present is False."
+    test_artifact: "factory.regulatory.validation_v2.qualification_contract:_run_v2_audit"
+    acceptance: {actual_key: "forbidden_states_present", op: "is_false"}
+    expected_value_source:
+      assertion: "ningún estado prohibido en ningún finding/artefacto de la corrida V2"
+      authority: "factory/regulatory/findings/taxonomy.py FORBIDDEN_STATES + remediation_v2._guard_no_forbidden"
+    suite_version: "v2_runtime E2E (6 docs)"
+    metric_envelope: {size: 1, reportable_range: "NOT_A_GATE", contamination_statement: "aserción estructural verificada"}
+    status: DRAFT
+    reviewer: null
+
+  - case_id: QC-HUMAN-GATE-INTACT
+    intended_use: "Todo finding nace UNREVIEWED; el sistema no cierra la revisión humana."
+    requirement: "human_gate_intact = true en la corrida E2E."
+    test_objective: "audit.human_gate_intact is True."
+    test_artifact: "factory.regulatory.validation_v2.qualification_contract:_run_v2_audit"
+    acceptance: {actual_key: "human_gate_intact", op: "is_true"}
+    expected_value_source:
+      assertion: "human_state == UNREVIEWED en todos los findings de la corrida"
+      authority: "factory/regulatory/findings/taxonomy.py set_human_state (exige reviewer real)"
+    suite_version: "v2_runtime E2E (6 docs)"
+    metric_envelope: {size: 1, reportable_range: "NOT_A_GATE", contamination_statement: "aserción estructural verificada"}
+    status: DRAFT
+    reviewer: null
+
+  - case_id: QC-EXTRACTION-ADEQUACY-RW0009
+    intended_use: "El sistema distingue 'el documento dice que no' de 'el documento no se pudo leer'."
+    requirement: "RW-0009 (transmittal de 2 páginas) se clasifica NOT_ANALYZABLE."
+    test_objective: "adequacy_rw0009_not_analyzable is True (WP-B OBSERVE)."
+    test_artifact: "factory.regulatory.validation_v2.qualification_contract:_run_v2_audit"
+    acceptance: {actual_key: "adequacy_rw0009_not_analyzable", op: "is_true"}
+    expected_value_source:
+      assertion: "RW-0009 es 215115305-T-041 SAT3 Completed.pdf = TRANSMITTAL de 2 páginas, no el SAT"
+      authority: "docs_plan/WP_C_BENCHMARK_EXTRACCION_20260828.md"
+    suite_version: "extraction_adequacy (DRAFT_UNSIGNED heurísticas)"
+    metric_envelope: {size: 1, reportable_range: "NOT_A_GATE", contamination_statement: "heurísticas DRAFT_UNSIGNED"}
+    status: DRAFT
+    reviewer: null
+
+  - case_id: QC-REPRODUCIBILITY
+    intended_use: "Misma entrada + config + fuentes => mismo resultado lógico (WP-A)."
+    requirement: "Dos corridas E2E producen INPUT_CONFIG_FINGERPRINT y FINDINGS_FINGERPRINT idénticos."
+    test_objective: "fingerprints_reproducible is True."
+    test_artifact: "factory.regulatory.validation_v2.qualification_contract:_run_reproducibility"
+    acceptance: {actual_key: "fingerprints_reproducible", op: "is_true"}
+    expected_value_source:
+      assertion: "determinismo de v2_runtime demostrado"
+      authority: "WP-A (commit 598e60e) + factory/regulatory/validation_v2/run_fingerprint.py"
+    suite_version: "run_fingerprint (WP-A)"
+    metric_envelope: {size: 2, reportable_range: "NOT_A_GATE", contamination_statement: "determinismo verificado en 2 corridas"}
+    status: DRAFT
+    reviewer: null
+
+# --- Contingencias declaradas (NO son gates pasables; estado explícito) ---
+contingencies:
+  - id: CT-REGULATORY-LLM
+    statement: "REGULATORY_LLM_GATE = FAIL (positive recall 0/7, negatives 2/2, fabricated 0)."
+    contingency: "Regulatory Tier-1 / Palanca C -- determinista, revisión humana con cobertura declarada."
+    status: FAIL_ACCEPTED_CONTINGENCY
+    authority: "docs_plan/CIERRE_FASE_10_ANALIZADOR_GMP_LOCAL_V2.md ; ADR §10 (TECHO_NO_CRUZADO)"
+  - id: CT-EXCEPTIONS-1-5
+    statement: "5 tests de regresión fallan por asunción de ruta de clon /home/ing_cpmo y servicios en vivo."
+    contingency: "EXC-1..EXC-5 aceptadas por Capa 9; 0 impacto V2; re-verificar en el entorno de origen."
+    status: ACCEPTED_EXCEPTION
+    authority: "docs_plan/DEUDA_REGRESION_EXCEPCION_CAPA9.md"
+  - id: CT-PYTEST-EXIT-1
+    statement: "pytest devuelve exit code 1 por CT-EXCEPTIONS-1-5."
+    contingency: "La suite global NO se declara PASS."
+    status: ACCEPTED
+    authority: "regla explícita de Capa 9"
+  - id: CT-HELD-OUT-PENDING
+    statement: "TECHNICAL_GATE y FUNCTIONAL_GATE se miden sobre corpus sintético del autor de las reglas."
+    contingency: "reportable_range = SYNTHETIC_ONLY hasta held-out firmado (WP-E.3) + muestra real adjudicada (WP-E.4)."
+    status: PENDING_HUMAN_WORK
+    authority: "docs_plan/WP_E_INDEPENDENCIA_MEDICION_20260828.md"
+  - id: CT-WP-D-REAL
+    statement: "La etapa de extracción de Test (WP-D) se validó solo sintéticamente."
+    contingency: "RW-0009 es un transmittal; el SAT real (RW-0003, 204 pág imagen) está bloqueado en gobernanza (ingesta + OCR + salto de EXTRACTION_VERSION)."
+    status: BLOCKED_GOVERNANCE
+    authority: "docs_plan/WP_C_BENCHMARK_EXTRACCION_20260828.md §6"
+
+structural_assertions:
+  - "El original nunca se sobrescribe (source_text literal en cada finding)."
+  - "Sin declaración de cumplimiento final; sin aprobación automática; sin cierre automático de CAPA; sin liberación de lote."
+  - "analysis_coverage.json (WP-B) es metadata de LIMITACIÓN, no un Finding GMP."

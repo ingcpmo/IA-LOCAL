@@ -506,8 +506,18 @@ Cuatro piezas — **detalle y estado en `docs_plan/WP_E_INDEPENDENCIA_MEDICION_2
 - **Rollback:** aditivo (4 módulos + 2 yaml `DRAFT` + 1 test); las suites actuales corren igual. Sin
   cambio de `EXTRACTION_VERSION`.
 
-### WP-F — Contrato de cualificación
-**Motiva:** D-5. **Riesgo:** BAJO-MEDIO. **Precondición:** WP-A y WP-E cerrados (⛔).
+### WP-F — Contrato de cualificación — ENTREGADO (código; contrato `DRAFT`)
+**Motiva:** D-5. **Precondición:** WP-A + WP-E cerrados ✅. **Detalle:** `docs_plan/WP_F_CONTRATO_CUALIFICACION_20260828.md`.
+
+Entregado: `requirement_catalog/qualification_contract.yaml` (`status: DRAFT`) +
+`validation_v2/qualification_contract.py` (checker `run_contract()`). 10 casos, todos leyendo el
+umbral de su **fuente autorizada citada** (`gates.py` consts / `zero`+authority / `assertion`+authority);
+`found/expected/delta` por caso; `metric_envelope` (WP-E) obligatorio por métrica. Checker re-ejecuta
+las suites, reproduce el fingerprint (WP-A) y compara los SHA de los disparadores de requalification.
+`decide_overall()` puro: solo `DRAFT_BASELINE` / `GATES_MET_AS_QUALIFIED` / `FAIL_REQUALIFICATION_REQUIRED`
+— **nunca `QUALIFIED` ni `COMPLIANT`** (el sistema no se auto-cualifica; eso lo firma un humano).
+Baseline en DRAFT: 10/10 casos PASS, `overall = DRAFT_BASELINE`, fingerprint capturado.
+Pendiente de humano: firma de `qualified_version` + congelado de SHAs/fingerprints + `reviewer` por caso.
 
 Artefacto declarativo (YAML) + checker re-ejecutable que ligue, por requisito:
 `Intended Use → Requirement → Test Objective → Acceptance Criterion → fuente autorizada del valor
