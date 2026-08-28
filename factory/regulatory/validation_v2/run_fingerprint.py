@@ -79,12 +79,16 @@ _ARTIFACT_REGISTRY = {
     "decomposition.yaml": "factory/regulatory/requirement_catalog/decomposition.yaml",
     "requirement_terms.yaml": "factory/regulatory/requirement_terms.yaml",
     "technical_suite_c.yaml": "factory/regulatory/validation_v2/fixtures_draft/technical_suite_c.yaml",
+    # WP-B: heurísticas de adecuación de extracción (DRAFT_UNSIGNED) -- consumidas por
+    # v2_runtime y real_corpus_technical al construir analysis_coverage.json.
+    "extraction_adequacy_thresholds.yaml":
+        "factory/regulatory/requirement_catalog/extraction_adequacy_thresholds.yaml",
 }
 
 _CONSUMED_BY_ENTRYPOINT = {
     "v2_runtime": (
         "technical_completeness_rules.yaml", "risk_matrix.yaml", "requirements.yaml",
-        "decomposition.yaml", "requirement_terms.yaml",
+        "decomposition.yaml", "requirement_terms.yaml", "extraction_adequacy_thresholds.yaml",
     ),
     "suite_c_formal": (
         "technical_suite_c.yaml", "technical_completeness_rules.yaml", "risk_matrix.yaml",
@@ -92,6 +96,7 @@ _CONSUMED_BY_ENTRYPOINT = {
     ),
     "real_corpus_technical": (
         "technical_completeness_rules.yaml", "risk_matrix.yaml", "requirements.yaml",
+        "extraction_adequacy_thresholds.yaml",
     ),
 }
 
@@ -271,6 +276,7 @@ _FINDING_SEMANTIC_FIELDS = (
     "finding_class", "subtype", "severity", "document", "page", "section",
     "source_hash", "requirement_id", "regulatory_basis", "technical_basis",
     "risk", "confidence", "machine_state", "human_state", "rationale",
+    "evidence_basis",   # WP-B: metadata epistémica aditiva (PRESENCE|ABSENCE_DEPENDENT|INDETERMINATE|None)
 )
 
 

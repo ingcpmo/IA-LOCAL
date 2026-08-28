@@ -320,10 +320,12 @@ def run_suite_c_formal(canon_dir=None, graph_dir=None) -> dict:
     # FABRICATED_CITATIONS: cada finding emitido está anclado a source_text
     # literal de un claim del corpus (benchmark sintético) -> por construcción 0.
     # Se verifica que ningún source_text esté vacío.
+    from factory.regulatory.findings import evidence_basis as _eb
     from factory.regulatory.findings.technical_findings import graph_technical_findings
     findings = graph_technical_findings(
         PROJECT_ID, [URS, FS, FSOK, DS1, DS2, SAT], extraction_version=_EXT_VER,
         run_id="suite-c-formal", canon_dir=cdir, graph_dir=gdir)
+    _eb.stamp(findings)   # WP-B: metadata epistémica aditiva (no cambia el ground truth ni el gate)
     fabricated = sum(1 for f in findings if not (f.source_text or "").strip())
 
     edges = r["graph_edges"] if isinstance(r["graph_edges"], dict) else {}

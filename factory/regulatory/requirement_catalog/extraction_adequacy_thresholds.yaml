@@ -1,0 +1,44 @@
+# HEURÍSTICAS TÉCNICAS de adecuación de EXTRACCIÓN -- WP-B (docs_plan/PLAN_HARDENING_ANALIZADOR_GMP_LOCAL_V2.md §4.1).
+#
+# QUÉ SON: señales de si el parser recuperó estructura y capa de texto de un PDF.
+# QUÉ NO SON: requisitos GMP. `toc_anchored` / "secciones detectables" NO son exigencias
+#   regulatorias; un documento GMP válido puede carecer de un TOC detectable por máquina.
+#   Estas heurísticas hablan de la EXTRACCIÓN, no del CUMPLIMIENTO.
+#
+# ESTADO: DRAFT_UNSIGNED -- NO usable como gate ENFORCE hasta firma de Capa 9.
+#   En modo OBSERVE se usan solo para etiquetar (analysis_coverage.json); no suprimen nada.
+
+artifact: extraction_adequacy_thresholds
+version: "0.1-draft"
+status: DRAFT_UNSIGNED
+nature: TECHNICAL_EXTRACTION_HEURISTIC          # explícito: no regulatorio
+signed_by: null
+signed_at: null
+
+# --- Único criterio DECISIVO del verdict (independiente del rol; empíricamente defendible de por sí) ---
+absolute_floor:
+  # "Sin estructura recuperada Y documento delgado" => el cuerpo del documento no está presente.
+  # (caso real RW-0009: un TRANSMITTAL de 2 páginas ingerido en lugar del protocolo SAT.)
+  require_zero_sections: true
+  require_no_toc_anchor: true
+  thin_if_pages_below: 5                        # nº de páginas con texto recuperado
+  thin_if_claims_below: 150                     # los 5 documentos legibles rinden 317-1409 claims
+
+# --- DEGRADED: recuperación de estructura incompleta (role-independiente) ---
+structure_recovery:
+  degraded_if_no_structure_recovered: true      # 0 secciones + sin ancla TOC pero con volumen suficiente
+  degraded_if_no_toc_anchor: true               # tiene secciones (>0) pero el ancla TOC falló
+
+# --- OBSERVACIONAL: se registra con su `n` por rol, NO decide el verdict (SAMPLE_SIZE_LIMITATIONS) ---
+observational:
+  relative_claims_per_page:
+    enabled: true
+    low_ratio_vs_role_median: 0.35             # informativo únicamente
+  per_role_sample_min_for_use: 5               # nº mínimo de docs/rol para que un estadístico por rol sea usable
+
+roles_expecting_toc: [URS, FS, DS, SAT, OQ, IQ, PQ]
+
+notes: >
+  El corpus piloto tiene 6 documentos (~1 URS, 1 FS, ~3 DS, 1 SAT): no hay muestra suficiente por rol
+  para un estadístico por rol defendible. Solo `absolute_floor` decide el verdict; todo lo relativo es
+  observacional hasta que exista corpus mayor. Estas cifras son HEURÍSTICAS a validar, no requisitos.

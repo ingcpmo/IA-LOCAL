@@ -124,6 +124,10 @@ class Finding:
     human_state: str = "UNREVIEWED"
     reviewer: str | None = None
     reviewed_at: str | None = None
+    #: WP-B -- metadata epistémica aditiva {PRESENCE|ABSENCE_DEPENDENT|INDETERMINATE|None}.
+    #: La rellena un post-pass (findings/evidence_basis.stamp); NO cambia ninguna otra
+    #: propiedad del finding ni participa en risk/remediation/state.
+    evidence_basis: str | None = None
 
     def __post_init__(self) -> None:
         if self.finding_class not in FINDING_CLASSES:

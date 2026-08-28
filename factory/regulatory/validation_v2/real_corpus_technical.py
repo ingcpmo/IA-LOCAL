@@ -55,6 +55,7 @@ def _finding_dict(f) -> dict:
         "machine_state": f.machine_state,
         "human_state": f.human_state,
         "related_finding_ids": list(f.related_finding_ids),
+        "evidence_basis": getattr(f, "evidence_basis", None),   # WP-B
     }
 
 
@@ -72,6 +73,31 @@ def run_real_corpus_technical(out_root: Path = OUT_ROOT, run_id: str | None = No
             PROJECT_ID, [d for d, _ in RW_DOCS], extraction_version=_EXT_VER,
             run_id=run_id, canon_dir=canon_dir, graph_dir=graph_dir, stats=stats)
     finished = datetime.now(timezone.utc).isoformat()
+
+    # WP-B OBSERVE: adecuación de extracción + evidence_basis (metadata aditiva; 0 supresión).
+    from factory.regulatory.findings import evidence_basis as _eb
+    from factory.regulatory.validation_v2 import extraction_adequacy as _adq
+    _eb.stamp(findings)
+    _rw_ids = [d for d, _ in RW_DOCS]
+    _graph_edges = counts.get("edges_by_rel", counts) if isinstance(counts, dict) else {}
+    try:
+        _assessment = _adq.assess_corpus(_rw_ids, canon_dir)
+        _assessment["mode"] = "OBSERVE"
+        _cov_deps = _eb.coverage_dependencies(findings, _assessment,
+                                              graph_edges=_graph_edges, canon_dir=canon_dir)
+        analysis_coverage = {
+            "mode": "OBSERVE",
+            "thresholds_artifact": _assessment.get("thresholds_artifact"),
+            "thresholds_signed": _assessment.get("thresholds_signed"),
+            "coverage_statement": _adq.coverage_statement(_assessment),
+            "adequacy_by_document": _assessment.get("by_document", {}),
+            "adequacy_verdicts": _assessment.get("verdicts", {}),
+            "role_stats_observational": _assessment.get("role_stats_observational", {}),
+            "coverage_dependencies": _cov_deps,
+            "would_degrade_histogram": _eb.histogram(_cov_deps),
+        }
+    except Exception as e:  # noqa: BLE001
+        analysis_coverage = {"mode": "OBSERVE", "error": f"{type(e).__name__}: {e}"}
 
     fds = [_finding_dict(f) for f in findings]
     by_subtype: dict[str, int] = {}
@@ -109,6 +135,7 @@ def run_real_corpus_technical(out_root: Path = OUT_ROOT, run_id: str | None = No
         "schema_digests": _fpr["schema_digests"],
         "input_config": _fpr["input_config"],
         "run_attestation": _fpr["run_attestation"],
+        "analysis_coverage": analysis_coverage,   # WP-B OBSERVE
         "note": ("Validación real, NO benchmark. Todos los findings human_state=UNREVIEWED "
                  "-> revisión humana. OD-1..OD-5 se conservan como observaciones (ver "
                  "docs_plan/VALIDACION_TECNICA_CORPUS_REAL_RW.md), NO cambian Suite C."),
