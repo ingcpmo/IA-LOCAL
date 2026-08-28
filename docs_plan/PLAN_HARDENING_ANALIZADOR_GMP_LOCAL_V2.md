@@ -537,8 +537,16 @@ taxonomía.
 - **Gate:** el checker re-ejecuta y reproduce el fingerprint declarado; si no coincide, `FAIL`.
 - **Rollback:** artefacto y checker son independientes del runtime; se pueden retirar sin efecto.
 
-### WP-G — Panel V2 en Mission Control
-**Motiva:** D-6. **Riesgo:** BAJO. **Independiente** — puede ir en paralelo a cualquier otro.
+### WP-G — Panel V2 en Mission Control — ENTREGADO
+**Motiva:** D-6. **Detalle:** `docs_plan/WP_G_PANEL_V2_MISSION_CONTROL_20260828.md`.
+
+Entregado: `factory/ui/js/mission_control/v2_analyzer_view.js` (`refreshV2Analyzer()` + `openV2Run()`),
+cableado en la UI existente (nav `data-v="v2analyzer"` + `<section id="v-v2analyzer">` + `main.js` +
+`refresh.js`). **Sin backend nuevo** — consume los 6 endpoints GET ya publicados. **0 llamadas de
+escritura** (verificado por test). Muestra explícitamente: fingerprint de la corrida (WP-A), adecuación
+por documento (WP-B `adequacy_verdicts`), `evidence_basis` por finding (WP-B), y las marcas
+`MACHINE GENERATED` / `NOT_QA_APPROVED`. Banner «solo lectura». `MISSION_CONTROL_V2 = API_VISIBLE=YES ·
+UI_VISIBLE=YES` — D-6 cerrado. 6 tests. Regresión: 2891 passed / 5 EXC / exit 1 (NEW_REGRESSION_FAILURES = 0).
 
 Módulo JS adicional en la UI existente que consuma los 6 endpoints ya publicados. Read-only estricto:
 el front **no** replica adjudicación, riesgo, gobernanza ni cambio de estado. Debe mostrar

@@ -4,6 +4,7 @@
    declarations, ninguna llamada en tiempo de evaluación de módulos). */
 
 import { state, API_BASE, headers } from './state.js';
+import { refreshV2Analyzer } from './v2_analyzer_view.js';
 import {
   renderStacks, renderMissions, renderAuditSeal, renderAuditChain,
   updateHeadless, renderResources, renderRisks, renderSidebarDeploy,
@@ -44,6 +45,7 @@ const TITLES={
   sources:["Fuentes regulatorias · MODO DISEÑO","mission-control / intel / sources"],
   memory:["Memoria de casos · memoria ligera gobernada","mission-control / intel / case-memory"],
   remediacion:["Remediación — directivas y adjudicación","mission-control / governance / remediation"],
+  v2analyzer:["Analizador V2 · solo lectura","mission-control / v2-analyzer / runs"],
 };
 
 export function show(v,btn){
@@ -281,6 +283,9 @@ export async function refresh(v){
         const el=document.getElementById('remediation-directives-list');
         if(el) el.innerHTML='<div class="card"><div class="meta" style="color:var(--fail)">Error HTTP '+r.status+' al leer las directivas.</div></div>';
       }
+    }
+    if(v==='v2analyzer'){
+      await refreshV2Analyzer();   // WP-G -- solo lectura (GET /api/v1/v2-analyzer/*)
     }
   }catch(e){
     /* Corrección operativa: antes se tragaba en silencio cualquier error

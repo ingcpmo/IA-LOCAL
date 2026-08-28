@@ -40,6 +40,7 @@ import { doCaseSearch, submitRegQuery, promptCaseFetch,
 import { loadRemediationPackage, submitExceptionReview,
   submitMediumRiskBatch, submitPackageDecision, submitReleasePackage,
   loadRemediationPackagesList, openRemediationPackageFromList } from './remediation.js';
+import { openV2Run } from './v2_analyzer_view.js';   // WP-G -- panel V2 solo lectura
 
 Object.assign(window, {
   show, connect, refresh, toast, fakeSubmit,
@@ -70,6 +71,7 @@ Object.assign(window, {
   submitReleasePackage,
   loadRemediationPackagesList, openRemediationPackageFromList,
   submitCandidateDecision,
+  openV2Run,
 });
 
 document.querySelectorAll('#nav button').forEach(b=>{

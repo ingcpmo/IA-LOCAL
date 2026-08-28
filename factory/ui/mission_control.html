@@ -43,6 +43,7 @@
       <button data-v="audit">Auditoría</button>
       <button data-v="risks">Riesgos y Readiness</button>
       <button data-v="validation">Validación GAMP 5</button>
+      <button data-v="v2analyzer">Analizador V2 · solo lectura</button>
       <button data-v="system">Estado del sistema</button>
       <div class="grp">Inteligencia <span class="grp-tag">diseño</span></div>
       <button data-v="tasks">Tareas de agentes</button>
@@ -542,6 +543,15 @@
           <div class="link"><span class="t">17:04:04Z</span><span class="ev">deployment_started</span><span class="meta mono">lab_qc · v0.2.0 redeploy</span><span class="h">778e…03ab</span></div>
           <div class="link"><span class="t">—</span><span class="ev"><span style="color:var(--accent)">decision · correction</span></span><span class="meta mono">F6 reclasificado agent_proposed</span><span class="h">d99d…101a</span></div>
         </div>
+      </section>
+
+      <!-- WP-G  ANALIZADOR V2 (solo lectura) -->
+      <section class="view" id="v-v2analyzer">
+        <p class="lead">Analizador Documental GMP V2 — corridas persistidas. <b>Panel de solo lectura</b>:
+          consume los endpoints <code>GET /api/v1/v2-analyzer/*</code>; no muta ningún estado GMP.
+          La adjudicación y toda decisión se hacen en «Revisión humana» / «Gobernanza».</p>
+        <div id="v2-runs-list" class="muted">conecta a factory-api para listar las corridas V2.</div>
+        <div id="v2-run-detail"></div>
       </section>
 
       <!-- 07 SYSTEM -->
