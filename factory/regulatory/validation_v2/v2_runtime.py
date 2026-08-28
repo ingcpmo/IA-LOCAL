@@ -91,6 +91,7 @@ def _finding_row(f) -> dict:
                        "graph_path": getattr(p, "graph_path", None)},
         "confidence": f.confidence, "machine_state": f.machine_state,
         "human_state": f.human_state, "related_finding_ids": list(f.related_finding_ids),
+        "evidence_basis": getattr(f, "evidence_basis", None),   # WP-B: metadata epistémica aditiva
     }
 
 
@@ -147,6 +148,37 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
 
     all_findings = reg + func + tech
     _assert_no_forbidden(all_findings)
+
+    # --- WP-B OBSERVE: contrato de adecuación de extracción (analysis_coverage) ---
+    # 0 supresiones, 0 Findings GMP nuevos, 0 cambio de risk/remediation/state.
+    # `stamp` solo rellena el campo aditivo evidence_basis; el resto del finding no cambia.
+    from factory.regulatory.findings import evidence_basis as _eb
+    from factory.regulatory.validation_v2 import extraction_adequacy as _adq
+    _eb.stamp(all_findings)
+    _graph_edges = counts.get("edges_by_rel", counts) if isinstance(counts, dict) else {}
+    try:
+        _assessment = _adq.assess_corpus(document_ids, canon_dir)
+        _assessment["mode"] = "OBSERVE"
+        _cov_deps = _eb.coverage_dependencies(all_findings, _assessment,
+                                              graph_edges=_graph_edges, canon_dir=canon_dir)
+        _analysis_coverage = {
+            "mode": "OBSERVE",
+            "thresholds_artifact": _assessment.get("thresholds_artifact"),
+            "thresholds_signed": _assessment.get("thresholds_signed"),
+            "note": ("OBSERVE -- 0 supresiones, 0 Findings GMP nuevos, 0 cambio de "
+                     "risk/remediation/state. evidence_basis y coverage_dependencies son "
+                     "metadata aditiva. Umbrales = HEURÍSTICAS DRAFT_UNSIGNED, no requisitos GMP. "
+                     "Ver docs_plan/PLAN_HARDENING_ANALIZADOR_GMP_LOCAL_V2.md WP-B."),
+            "coverage_statement": _adq.coverage_statement(_assessment),
+            "adequacy_by_document": _assessment.get("by_document", {}),
+            "adequacy_verdicts": _assessment.get("verdicts", {}),
+            "role_stats_observational": _assessment.get("role_stats_observational", {}),
+            "coverage_dependencies": _cov_deps,
+            "would_degrade_histogram": _eb.histogram(_cov_deps),
+        }
+    except Exception as e:  # noqa: BLE001 -- WP-B OBSERVE nunca aborta la corrida
+        _analysis_coverage = {"mode": "OBSERVE", "error": f"{type(e).__name__}: {e}"}
+    _write_json(run_dir / "analysis_coverage.json", _analysis_coverage)
 
     # --- persistence: findings + evidence/provenance ---
     _write_json(run_dir / "regulatory_findings.json", [_finding_row(f) for f in reg])
@@ -242,6 +274,21 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
 
     # --- audit metadata ---
     finished = datetime.now(timezone.utc).isoformat()
+
+    # WP-A: fingerprint de corrida (identidad de ejecucion != resultado). 100% aditivo.
+    from factory.regulatory.validation_v2 import run_fingerprint as _fp
+    _wall = (datetime.fromisoformat(finished) - datetime.fromisoformat(started)).total_seconds()
+    _fpr = _fp.compute_fingerprints(
+        entrypoint="v2_runtime",
+        inputs=_fp.inputs_from_canon(document_ids, canon_dir),
+        extraction_version=_EXT_VER,
+        consumed_artifacts=_fp.consumed_artifacts_for("v2_runtime",
+                                                      tier1_requirements=_TIER1_REQUIREMENTS),
+        applied_thresholds={},
+        findings=all_findings,
+        wall_clock_seconds=_wall,
+    )
+
     audit = {
         "run_id": run_id, "project_id": project_id, "engine": "V2",
         "documents": document_ids, "extraction_version": _EXT_VER,
@@ -256,6 +303,16 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
         "mark": MACHINE_GENERATED_MARK, "qa_status": QA_STATUS_DRAFT,
         "routing_note": ("Regulatory en modo Tier-1 / Palanca C (contingencia determinista). "
                          "NUNCA aprobacion automatica."),
+        "input_config_fingerprint": _fpr["input_config_fingerprint"],
+        "findings_fingerprint": _fpr["findings_fingerprint"],
+        "schema_digests": _fpr["schema_digests"],
+        "input_config": _fpr["input_config"],
+        "run_attestation": _fpr["run_attestation"],
+        # WP-B OBSERVE -- resumen (el detalle va en analysis_coverage.json)
+        "analysis_coverage_mode": "OBSERVE",
+        "adequacy_verdicts": _analysis_coverage.get("adequacy_verdicts", {}),
+        "coverage_would_degrade": _analysis_coverage.get("would_degrade_histogram", {}),
+        "wp_b_effect": "0 supresiones · 0 Findings GMP nuevos · 0 cambio de risk/remediation/state",
     }
     _write_json(run_dir / "audit_summary" / "audit_metadata.json", audit)
 
@@ -273,6 +330,8 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
         "counts": {"regulatory": len(reg), "functional": len(func), "technical": len(tech),
                    "remediation_drafts": len(remediation)},
         "gates_ref": "docs_plan/CIERRE_FASE_10_ANALIZADOR_GMP_LOCAL_V2.md",
+        "input_config_fingerprint": _fpr["input_config_fingerprint"],
+        "findings_fingerprint": _fpr["findings_fingerprint"],
     }
     mb = json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
     (run_dir / "manifest.json").write_bytes(mb)

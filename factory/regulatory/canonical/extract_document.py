@@ -18,8 +18,10 @@ from pathlib import Path
 
 from factory.regulatory import document_structure_extractor as dse
 from factory.regulatory.canonical.model import (
-    EXTRACTION_VERSION, Document, build_section,
+    EXTRACTION_VERSION, Document, build_section, effective_extraction_version,
+    test_extraction_enabled,
 )
+from factory.regulatory.canonical.extract_tests import extract_tests_for_document
 from factory.regulatory.canonical.normalize_claims import extract_claims_for_section
 from factory.regulatory.canonical.persistence import STORE_DIR, CanonicalStore
 from factory.regulatory.table_structure_extractor import extract_tables_from_pdf
@@ -89,7 +91,8 @@ class ExtractionResult:
 
 def extract_document(pdf_path: str | Path, document_id: str, *,
                      tipo: str | None = None, cliente: str | None = None,
-                     store_dir: Path = STORE_DIR) -> ExtractionResult:
+                     store_dir: Path = STORE_DIR,
+                     extract_tests: bool | None = None) -> ExtractionResult:
     pdf_path = Path(pdf_path)
     if not pdf_path.exists():
         raise FileNotFoundError(pdf_path)
@@ -102,17 +105,22 @@ def extract_document(pdf_path: str | Path, document_id: str, *,
     structure = dse.extract_structure(per_page)
     tables = extract_tables_from_pdf(pdf_path, document_id)
 
+    # WP-D: etapa de extracción de `Test`. GOBERNADA POR FLAG -- OFF por default
+    # => salida idéntica a hoy y `EXTRACTION_VERSION` sin cambio.
+    tests_on = test_extraction_enabled(extract_tests)
+    ext_ver = effective_extraction_version(extract_tests)
+
     doc = Document(
         document_id=document_id, sha256=_sha256_file(pdf_path), tipo=doc_type,
         titulo=_guess_title(pdf_path.name, first_text), n_paginas=n_paginas,
-        extraction_version=EXTRACTION_VERSION, cliente=cliente,
+        extraction_version=ext_ver, cliente=cliente,
         archivo=str(pdf_path),
     )
 
     with CanonicalStore(document_id, store_dir=store_dir) as store:
         store.put(doc)
         store.set_meta("toc_anchored", structure.get("toc_anchored", False))
-        store.set_meta("extraction_version", EXTRACTION_VERSION)
+        store.set_meta("extraction_version", ext_ver)
 
         # Secciones + claims
         secciones = structure.get("secciones", [])
@@ -156,6 +164,14 @@ def extract_document(pdf_path: str | Path, document_id: str, *,
                 ))
 
         store.put_many(tables)
+
+        # WP-D: extracción de `Test` (solo si el flag está ON y el rol es de protocolo).
+        if tests_on:
+            tests = extract_tests_for_document(document_id, per_page, doc_type)
+            if tests:
+                store.put_many(tests)
+            store.set_meta("test_extraction", "tests-v1")
+
         counts = store.counts()
 
     return ExtractionResult(

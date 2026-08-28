@@ -320,10 +320,12 @@ def run_suite_c_formal(canon_dir=None, graph_dir=None) -> dict:
     # FABRICATED_CITATIONS: cada finding emitido está anclado a source_text
     # literal de un claim del corpus (benchmark sintético) -> por construcción 0.
     # Se verifica que ningún source_text esté vacío.
+    from factory.regulatory.findings import evidence_basis as _eb
     from factory.regulatory.findings.technical_findings import graph_technical_findings
     findings = graph_technical_findings(
         PROJECT_ID, [URS, FS, FSOK, DS1, DS2, SAT], extraction_version=_EXT_VER,
         run_id="suite-c-formal", canon_dir=cdir, graph_dir=gdir)
+    _eb.stamp(findings)   # WP-B: metadata epistémica aditiva (no cambia el ground truth ni el gate)
     fabricated = sum(1 for f in findings if not (f.source_text or "").strip())
 
     edges = r["graph_edges"] if isinstance(r["graph_edges"], dict) else {}
@@ -345,10 +347,32 @@ def run_suite_c_formal(canon_dir=None, graph_dir=None) -> dict:
     all_passed = all(g["passed"] for g in all_gates)
     tp = r["n_detected_now"]
     fn_cases = r["MISSED_NOW"]
+
+    # WP-A: fingerprint de corrida (100% aditivo). Solo artefactos que ESTE entrypoint consume.
+    from factory.regulatory.validation_v2 import gates as _g
+    from factory.regulatory.validation_v2 import run_fingerprint as _fp
+    _fpr = _fp.compute_fingerprints(
+        entrypoint="suite_c_formal",
+        inputs=_fp.inputs_from_canon([URS, FS, FSOK, DS1, DS2, SAT], cdir),
+        extraction_version=_EXT_VER,
+        consumed_artifacts=_fp.consumed_artifacts_for("suite_c_formal"),
+        applied_thresholds={
+            "TECHNICAL_RECALL_MIN": _g.TECHNICAL_RECALL_MIN,
+            "TECHNICAL_FP_MAX": _g.TECHNICAL_FP_MAX,
+            "FABRICATED_CITATIONS_MAX": _g.FABRICATED_CITATIONS_MAX,
+        },
+        findings=findings,
+    )
+
     return {
         "suite": "technical_suite_c_formal",
         "fixture_version": fixtures.load_fixture(fixtures.SUITE_C).get("version"),
         "fixture_signed": True,
+        "input_config_fingerprint": _fpr["input_config_fingerprint"],
+        "findings_fingerprint": _fpr["findings_fingerprint"],
+        "schema_digests": _fpr["schema_digests"],
+        "input_config": _fpr["input_config"],
+        "run_attestation": _fpr["run_attestation"],
         "TP": tp,
         "FN": fn_cases,
         "FP": r["n_false_positives"],
