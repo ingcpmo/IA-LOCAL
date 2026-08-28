@@ -478,24 +478,33 @@ otro protocolo legible, y se declara sin evidencia sobre este corpus.
 ### WP-E — Independencia de medición y medición sobre corpus real
 **Motiva:** D-3, NG-2, NG-3, NG-4, NG-5. **Riesgo:** BAJO. **Es el paquete que más defendibilidad aporta.**
 
-Cuatro piezas:
-1. **Diagnóstico previo (sin código):** reconciliar NG-2 (0 vs 90) y emitir veredicto por familia de
-   aristas vacías (NG-5). Es un prerrequisito de todo lo demás en este WP.
-2. **Separación física** builder-de-corpus / runner; los `anchor` dejan de ser las frases literales
-   que el builder inserta.
-3. **Corpus held-out** redactado y firmado por autor **distinto** del autor de
-   `technical_completeness_rules.yaml`, con etiquetado de procedencia por caso (`REG-` derivado de
-   cláusula citada / `DOM-` conocimiento del revisor / `ADV-` propuesto por máquina, entra solo con
-   aprobación humana) y umbrales fijados antes de correr.
-4. **Muestra adjudicada del corpus real:** subconjunto de findings reales etiquetado por un humano,
-   que produzca por primera vez TP/FN/FP sobre datos reales y, con ello, el **rango reportable** de
-   cada gate.
+Cuatro piezas — **detalle y estado en `docs_plan/WP_E_INDEPENDENCIA_MEDICION_20260828.md`**:
+1. **Diagnóstico previo (sin código) — EJECUTADO 2026-08-28.** NG-2 / NG-2b reconciliadas; NG-5
+   diagnosticada por familia. Resultados en NG-2 / NG-2b / NG-5.
+2. **Separación física** builder / runner + anchors ≠ frase literal — **entregado en el instrumento
+   NUEVO** (`held_out_corpus.build_seed_corpus` separado del runner; match ESTRUCTURAL
+   `[finding_class, subtype, document, page_band]`). `technical_suite_c` **NO se retrofitea ni se
+   re-puntúa** (su resultado firmado queda con D-3 documentado como limitación conocida).
+3. **Corpus held-out** — `held_out_technical_corpus.yaml` (`DRAFT_UNSIGNED`) +
+   `held_out_corpus.py`. Independiente por construcción: `assert_usable_as_gate()` fail-closed exige
+   `SIGNED` **y** `author ∉ {"Capa 9 (Cesar)"}` (autor de las reglas). Procedencia `REG/DOM/ADV`
+   validada en el loader; umbrales ex-ante. **Semilla sintética placeholder** — la pueblan/firman un
+   autor independiente + Capa 9.
+4. **Muestra adjudicada del corpus real** — `real_corpus_adjudication.py` + `.yaml` (`DRAFT_UNSIGNED`).
+   `sample_for_adjudication()` = muestra determinista, estratificada, prioriza `would_degrade`.
+   Etiquetado **humano** (QA, no la máquina); `COVERAGE_LIMITED` excluido del cálculo. Sin etiquetas →
+   `REPORTABLE_RANGE = UNKNOWN`. **Muestra de 40 casos generada hoy, PENDIENTE de adjudicación QA.**
 
-- **Gate:** cada métrica publicada viaja con `suite_version + tamaño + definición + rango reportable +
-  declaración de contaminación`. Sin eso, no se publica.
+- **Gate — `metric_envelope.py`:** `require_envelope()` es fail-closed sobre los 5 campos
+  (`suite_version + size + definition + reportable_range + contamination_statement`).
+  `reportable_range` ∈ `[lo,hi]` o `{UNKNOWN, INDICATIVE_ONLY, NOT_A_GATE, SYNTHETIC_ONLY}`.
+  **Consecuencia:** `TECHNICAL_GATE` y `FUNCTIONAL_GATE` actuales quedan con
+  `reportable_range = SYNTHETIC_ONLY` hasta que el held-out firmado (3) y la muestra adjudicada (4)
+  den el rango real.
 - **Restricción:** los fixtures ya firmados **no se tocan ni se re-puntúan retrospectivamente**. El
   corpus held-out es adicional, no sustituto.
-- **Rollback:** aditivo; las suites actuales siguen corriendo igual.
+- **Rollback:** aditivo (4 módulos + 2 yaml `DRAFT` + 1 test); las suites actuales corren igual. Sin
+  cambio de `EXTRACTION_VERSION`.
 
 ### WP-F — Contrato de cualificación
 **Motiva:** D-5. **Riesgo:** BAJO-MEDIO. **Precondición:** WP-A y WP-E cerrados (⛔).

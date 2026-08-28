@@ -1,0 +1,70 @@
+# WP-E -- CORPUS HELD-OUT (técnico) -- docs_plan/PLAN_HARDENING_ANALIZADOR_GMP_LOCAL_V2.md WP-E.3
+#
+# PROPÓSITO: instrumento de medición ADICIONAL (no sustituye a `technical_suite_c.yaml`),
+#   construido para eliminar el acoplamiento de validez de constructo (D-3):
+#     - AUTOR distinto del autor de `technical_completeness_rules.yaml` (Capa 9 / Cesar) -> `excluded_authors`.
+#     - MATCH ESTRUCTURAL (class + subtype + document + page_band) -- NUNCA la frase literal que inserta
+#       el builder. El ground truth no puede "escribir" la cadena que el detector busca.
+#     - PROCEDENCIA por caso: REG (derivado de cláusula normativa citada) / DOM (conocimiento del
+#       revisor) / ADV (propuesto por máquina -> entra solo con `human_approved: true`).
+#     - Umbrales fijados ANTES de correr (`thresholds`).
+#
+# ESTADO: DRAFT_UNSIGNED. NO es un gate. Requiere que un autor independiente (QA/Validation, != Capa 9)
+#   pueble los casos reales, cite las cláusulas de los REG, apruebe los ADV, fije los umbrales y firme.
+#   Hasta entonces el runner produce solo números INDICATIVOS marcados NOT_A_GATE.
+
+artifact: held_out_technical_corpus
+version: "0.1-draft"
+status: DRAFT_UNSIGNED
+author: null
+signed_at: null
+excluded_authors: ["Capa 9 (Cesar)"]          # el autor de las reglas NO puede ser el autor del held-out
+independent_author_required: true
+
+thresholds:                                    # fijados ex-ante; solo aplican cuando status == SIGNED
+  TECHNICAL_RECALL_MIN: 0.90
+  TECHNICAL_FALSE_POSITIVE_MAX: 0.05
+  FABRICATED_CITATIONS_MAX: 0
+
+match_policy:
+  by: [finding_class, subtype, document, page_band]   # estructural; el ground truth NO aporta texto
+  page_band_tolerance: 3
+
+# --- SEMILLA SINTÉTICA (independiente por construcción; se reemplaza con casos reales al firmar) ---
+# Nota: el corpus lo construye un builder SEPARADO (held_out_corpus.build_seed_corpus); estos casos
+#   describen QUÉ debe encontrar el analizador, por posición y tipo, sin dictar la redacción.
+cases:
+  - case_id: HO-T-001
+    provenance_tag: REG
+    source_clause: "21 CFR 11.10(e) -- audit trail: fecha/hora, quién, qué (valor anterior/nuevo)"
+    expected: {finding: true, finding_class: DataIntegrityFinding, subtype: AUDIT_TRAIL_INTEGRITY_GAP}
+    match: {document: HO-FS, page_band: [10, 16]}
+
+  - case_id: HO-T-002
+    provenance_tag: REG
+    source_clause: "EU GMP Annex 11 §7.2 -- backups: realización regular y verificación de restauración"
+    expected: {finding: true, finding_class: TechnicalFinding, subtype: BACKUP_RECOVERY_GAP}
+    match: {document: HO-FS, page_band: [10, 16]}
+
+  - case_id: HO-T-003
+    provenance_tag: DOM
+    source_clause: null
+    reviewer_rationale: "El FS nombra 'roles' pero no describe verificación de autoridad por operación."
+    expected: {finding: true, finding_class: SecurityFinding, subtype: AUTHORITY_CHECK_GAP}
+    match: {document: HO-FS, page_band: [10, 16]}
+
+  - case_id: HO-T-004
+    provenance_tag: ADV
+    human_approved: true
+    source_clause: null
+    machine_proposal_note: "Detector de completitud propuso ACCESS_CONTROL_GAP; revisor humano lo aprobó."
+    expected: {finding: true, finding_class: SecurityFinding, subtype: ACCESS_CONTROL_GAP}
+    match: {document: HO-FS, page_band: [10, 16]}
+
+  # --- negativo: control descrito por completo -> el analizador NO debe emitir nada ---
+  - case_id: HO-T-N01
+    provenance_tag: DOM
+    source_clause: null
+    reviewer_rationale: "FS conforme separado: audit trail completo + protección anti-modificación."
+    expected: {finding: false}
+    match: {document: HO-FSOK, page_band: [1, 10]}

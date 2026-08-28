@@ -1,0 +1,36 @@
+# WP-E.4 -- PLANTILLA de hoja de adjudicación del corpus real.
+# docs_plan/PLAN_HARDENING_ANALIZADOR_GMP_LOCAL_V2.md WP-E.4.
+#
+# FLUJO:
+#   1. `real_corpus_adjudication.sample_for_adjudication(run_dir, n, seed)` genera una hoja
+#      concreta (muestra determinista y estratificada de una corrida v2_runtime persistida),
+#      con cada caso en `label: PENDING`.
+#   2. Un adjudicador HUMANO (QA/Validation -- NUNCA la máquina) rellena `label` con uno de:
+#        TP  = finding correcto (desviación real, evidencia anclada)
+#        FP  = finding incorrecto (no hay desviación / evidencia no lo sostiene)
+#        FN  = (solo si el revisor detecta una desviación que el analizador NO emitió)
+#        TN  = negativo correcto
+#        COVERAGE_LIMITED = el finding NO es sólidamente evaluable en este corpus
+#                           (p.ej. depende de la mitad de prueba vacía, RW-0009 NOT_ANALYZABLE).
+#                           -> se excluye del numerador y denominador de recall/precisión.
+#   3. `real_corpus_adjudication.score_sheet(sheet)` calcula TP/FN/FP + rango reportable
+#      (intervalo de Wilson) + declaración de contaminación, envuelto en metric_envelope.
+#
+# Hasta que TODAS las etiquetas != PENDING -> REPORTABLE_RANGE = UNKNOWN (no publicable).
+
+artifact: real_corpus_adjudication
+version: "0.1-draft"
+status: DRAFT_UNSIGNED
+adjudicator: null            # nombre real del QA/Validation que etiqueta; la máquina NO puede rellenarlo
+adjudicated_at: null
+source_run_dir: null         # lo fija sample_for_adjudication()
+source_input_config_fingerprint: null
+sample_size: 0
+seed: 0
+label_options: [TP, FP, FN, TN, COVERAGE_LIMITED]
+notes: >
+  Esta es una plantilla. Las hojas reales se generan por corrida y se guardan en
+  factory/regulatory/pilot_run/adjudication/<run_id>.yaml. El rango reportable resultante
+  es lo que puede publicarse como recall/precisión del gate FUNCIONAL/TÉCNICO sobre datos
+  reales -- con su tamaño de muestra y su declaración de contaminación.
+cases: []
