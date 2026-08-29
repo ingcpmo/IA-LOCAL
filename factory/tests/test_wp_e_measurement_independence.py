@@ -188,12 +188,97 @@ def test_score_recall_fail_closed_without_signed_opportunities(_run_dir):
     assert r["opportunities_status"] in ("DRAFT_UNSIGNED", "ABSENT")
     assert r["usable"] is False
     assert r["RECALL_REPORTABLE"] == "UNKNOWN"
+    assert r["SPECIFICITY_REPORTABLE"] == "UNKNOWN"
     assert r["TN"] is None                                      # sin negative_units firmadas -> no se inventa TN
     me.require_envelope(r["metric_envelope"])
 
 
-def test_opportunities_template_is_draft_and_empty():
+def test_opportunities_template_is_draft_empty_and_declares_protocol():
     d = adj.load_opportunities()
     assert str(d["status"]).upper() in ("DRAFT_UNSIGNED", "ABSENT")
     assert d["opportunities"] == [] and d["negative_units"] == []
     assert d.get("adjudicator") in (None, "null")
+    # política de página EXPLÍCITA, no un ±N implícito
+    assert d["page_match_policy"]["tolerance_pages"] == 0
+    # los 9 campos obligatorios por oportunidad están declarados
+    for k in ("opportunity_id", "expected_class", "expected_subtype", "document", "page_band",
+              "expected_topic_or_requirement", "human_evidence_anchor", "basis", "reviewer_note"):
+        assert k in adj.OPPORTUNITY_REQUIRED_FIELDS
+
+
+# --- helpers para construir un yaml de oportunidades sintético SIGNED ---
+def _emitted(run_dir):
+    import json
+    fs = []
+    for n in ("regulatory_findings.json", "functional_findings.json", "technical_findings.json"):
+        p = run_dir / n
+        if p.is_file():
+            fs += json.loads(p.read_text())
+    return fs
+
+
+def _write_opps(tmp_path, opps, *, negatives=None, tol=0, name="opps.yaml"):
+    import yaml
+    d = {"artifact": "real_corpus_opportunities", "version": "test", "status": "SIGNED",
+         "adjudicator": "QA sim", "page_match_policy": {"tolerance_pages": tol},
+         "opportunities": opps, "negative_units": negatives or []}
+    p = tmp_path / name
+    p.write_text(yaml.safe_dump(d), encoding="utf-8")
+    return p
+
+
+def _opp(cls, sub, doc, band, oid):
+    return {"opportunity_id": oid, "expected_class": cls, "expected_subtype": sub,
+            "document": doc, "page_band": list(band),
+            "expected_topic_or_requirement": "t", "human_evidence_anchor": "a",
+            "basis": "b", "reviewer_note": "n"}
+
+
+def test_score_recall_matching_is_one_to_one(_run_dir, tmp_path):
+    from collections import Counter
+    fs = _emitted(_run_dir)
+    cc = Counter((f["class"], f["subtype"], f["document"]) for f in fs)
+    # elige una clave con EXACTAMENTE k>=1 findings; crea k+1 oportunidades sobre ella
+    (cls, sub, doc), k = min(((k, v) for k, v in cc.items() if v >= 1), key=lambda x: x[1])
+    pages = sorted(f["page"] for f in fs if (f["class"], f["subtype"], f["document"]) == (cls, sub, doc))
+    band = [min(pages), max(pages)]
+    opps = [_opp(cls, sub, doc, band, f"OPP-{i}") for i in range(k + 1)]
+    r = adj.score_recall(_run_dir, _write_opps(tmp_path, opps))
+    assert r["one_to_one"] is True
+    assert r["TP"] == k                       # solo k findings disponibles -> a lo sumo k aciertos
+    assert r["FN"] == 1                        # la (k+1)-ésima oportunidad no tiene finding libre
+    assert len({m["finding_id"] for m in r["matched_pairs"]}) == k    # ningún finding repetido
+
+
+def test_score_recall_page_match_policy_is_explicit_and_effective(_run_dir, tmp_path):
+    from collections import Counter
+    fs = _emitted(_run_dir)
+    cc = Counter((f["class"], f["subtype"], f["document"]) for f in fs)
+    (cls, sub, doc), _ = max(cc.items(), key=lambda x: x[1])
+    pages = sorted(f["page"] for f in fs if (f["class"], f["subtype"], f["document"]) == (cls, sub, doc))
+    outside = [max(pages) + 5, max(pages) + 6]           # banda fuera de toda página emitida
+    opp = [_opp(cls, sub, doc, outside, "OPP-X")]
+    r0 = adj.score_recall(_run_dir, _write_opps(tmp_path, opp, tol=0, name="t0.yaml"))
+    r6 = adj.score_recall(_run_dir, _write_opps(tmp_path, opp, tol=6, name="t6.yaml"))
+    assert r0["TP"] == 0 and r0["FN"] == 1                # tol=0 -> no cuenta
+    assert r6["TP"] == 1 and r6["FN"] == 0                # tol=6 -> cae dentro
+    assert r0["page_match_policy"]["tolerance_pages"] == 0
+    assert r6["metric_envelope"]["size"]["page_tolerance_pages"] == 6
+
+
+def test_score_recall_fail_closed_on_missing_opportunity_fields(_run_dir, tmp_path):
+    opp = _opp("TechnicalFinding", "BACKUP_RECOVERY_GAP", "RW-0005", [1, 10], "OPP-1")
+    del opp["human_evidence_anchor"]                      # campo que QA debe completar
+    with pytest.raises(adj.AdjudicationMethodError):
+        adj.score_recall(_run_dir, _write_opps(tmp_path, [opp]))
+
+
+def test_specificity_unknown_without_valid_negative_units(_run_dir, tmp_path):
+    opp = [_opp("TechnicalFinding", "BACKUP_RECOVERY_GAP", "RW-0005", [1, 10], "OPP-1")]
+    # negative_units incompletas -> fail-closed
+    bad_neg = [{"unit_id": "NEG-1", "document": "RW-0006"}]
+    with pytest.raises(adj.AdjudicationMethodError):
+        adj.score_recall(_run_dir, _write_opps(tmp_path, opp, negatives=bad_neg))
+    # sin negative_units -> specificity UNKNOWN, TN None
+    r = adj.score_recall(_run_dir, _write_opps(tmp_path, opp, name="noneg.yaml"))
+    assert r["SPECIFICITY_REPORTABLE"] == "UNKNOWN" and r["TN"] is None

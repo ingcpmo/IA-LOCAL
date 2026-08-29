@@ -71,29 +71,62 @@ umbrales y firma. Solo entonces es un gate.
 
 ---
 
-## WP-E.4 — Muestra adjudicada del corpus real → rango reportable
+## WP-E.4 — Dos mediciones SEPARADAS sobre el corpus real (precisión ≠ recall ≠ especificidad)
 
-| Componente | Ruta | Estado |
-|---|---|---|
-| Plantilla de hoja de adjudicación | `factory/regulatory/requirement_catalog/real_corpus_adjudication.yaml` | **`DRAFT_UNSIGNED`** |
-| Sampler + scorer | `factory/regulatory/validation_v2/real_corpus_adjudication.py` | implementado |
+**Corrección metodológica 2026-08-28.** Una muestra de findings **emitidos** solo contiene información
+sobre lo que el sistema **sí** dijo. No permite derivar FN (lo que el sistema **no** dijo) ni TN.
+Por eso hay ahora **tres artefactos distintos**, cada uno mide **una** cosa:
 
-**Flujo:**
-1. `sample_for_adjudication(run_dir, n, seed)` → muestra **determinista** y **estratificada** por
-   `(finding_class, subtype)` de una corrida `v2_runtime` persistida, **priorizando** los findings con
-   `would_degrade = true` (WP-B) porque son los que más informan el rango. Escribe una hoja con cada
-   caso en `label: PENDING` y ancla el `input_config_fingerprint` de la corrida.
-2. Un **adjudicador humano** (QA/Validation — **nunca la máquina**) rellena `label ∈
-   {TP, FP, FN, TN, COVERAGE_LIMITED}`. `COVERAGE_LIMITED` = el finding no es sólidamente evaluable en
-   este corpus (p.ej. depende de la mitad de prueba vacía / RW-0009 `NOT_ANALYZABLE`) → **se excluye del
-   numerador y denominador** de recall/precisión y se reporta aparte.
-3. `score_sheet()` → TP/FN/FP + **rango reportable** (intervalo de Wilson) + declaración de contaminación,
-   envuelto en `metric_envelope`. **Sin etiquetas → `REPORTABLE_RANGE = UNKNOWN` (no publicable).**
+| Medición | Artefacto (ground truth) | Qué revisa QA | Métrica | Estado |
+|---|---|---|---|---|
+| **Precisión real / PPV** | `real_corpus_adjudication.yaml` (plantilla) + hoja `wpe4-qa-20260828.yaml` | los **40 findings emitidos** de la muestra | TP, FP, **PRECISION/PPV** (Wilson), proporción `COVERAGE_LIMITED` | `DRAFT_UNSIGNED` — 40 casos `PENDING` |
+| **Recall real / FN** | `real_corpus_opportunities.yaml` | **el corpus** (URS/FS/DS), enumera las desviaciones que **deberían** detectarse — **sin** partir de los findings | TP, FN, **recall = TP/(TP+FN)** | `DRAFT_UNSIGNED` — `opportunities: []` |
+| **Especificidad / TN** | `real_corpus_opportunities.yaml → negative_units` | secciones/unidades donde el control **está presente y completo** → el sistema **no** debe emitir finding | TN, especificidad | **UNKNOWN** — `negative_units: []` |
 
-**Muestra generada hoy** (para QA): 40 casos de una corrida de 6 documentos, seed 7; distribución por
-subtipo incluye 16 `REQUIREMENT_NOT_TESTED`, 3 `ORPHAN_DESIGN_ELEMENT`, 3 `REGULATORY_INCONCLUSIVE`, etc.;
-≥ 19 casos `would_degrade`. **Estado: PENDIENTE de etiquetado humano** → el rango reportable de los gates
-FUNCIONAL/TÉCNICO sobre datos reales **sigue siendo desconocido** hasta que QA la adjudique.
+Scorer: `factory/regulatory/validation_v2/real_corpus_adjudication.py` (implementado).
+
+### A) Precisión — `sample_for_adjudication()` + `score_emitted_review()`
+1. `sample_for_adjudication(run_dir, n=40, seed=7)` → muestra **determinista**, **estratificada** por
+   `(finding_class, subtype)` de una corrida `v2_runtime` persistida, **priorizando** los `would_degrade`.
+   `sample_type: EMITTED_FINDINGS_REVIEW`; `label_options: [TP, FP, COVERAGE_LIMITED]`; ancla el
+   `input_config_fingerprint`.
+2. Adjudicador humano (QA/Validation — **nunca la máquina**) pone `label ∈ {TP, FP, COVERAGE_LIMITED}`.
+   `COVERAGE_LIMITED` = el finding no es sólidamente evaluable en este corpus (mitad de prueba vacía /
+   RW-0009 `NOT_ANALYZABLE`) → fuera de numerador y denominador, se reporta aparte.
+3. `score_emitted_review()` → **fail-closed**: si aparece `FN` o `TN` en la hoja, **lanza**
+   `AdjudicationMethodError` (no derivables de findings emitidos). Devuelve
+   `PRECISION_REPORTABLE` (Wilson o `UNKNOWN`), `proportion_coverage_limited`, y
+   **`RECALL_REPORTABLE = UNKNOWN` siempre** — envuelto en `metric_envelope`.
+
+### B) Recall — `real_corpus_opportunities.yaml` + `score_recall()`
+- QA lee **cada documento del corpus** y registra toda oportunidad de detección que **debería** existir,
+  **independientemente** de si el analizador la emitió. Campos **obligatorios** por oportunidad
+  (`OPPORTUNITY_REQUIRED_FIELDS`, los valida el scorer — si falta uno, **fail-closed**):
+  `opportunity_id · expected_class · expected_subtype · document · page_band ·
+  expected_topic_or_requirement · human_evidence_anchor · basis · reviewer_note`.
+  **`human_evidence_anchor` y `basis` los completa QA, nunca la IA.**
+- **Matching UNO-A-UNO** (`score_recall()`): un finding emitido acredita **a lo sumo UNA** oportunidad
+  (conjunto `consumed`). TP = oportunidad acreditada; FN = oportunidad sin finding disponible que la
+  acredite. `one_to_one = true` verificado (ningún `finding_id` repetido en `matched_pairs`).
+- **Coincidencia de página = parámetro EXPLÍCITO del protocolo**, no criterio implícito:
+  `page_match_policy.tolerance_pages` (**default 0** = la página del finding debe caer **dentro** del
+  `page_band` humano). Subirlo exige justificación documentada. Probado por test
+  (`test_score_recall_page_match_policy_is_explicit_and_effective`: tol=0 → FN; tol=6 → TP).
+- Mientras `opportunities` esté `DRAFT_UNSIGNED` o vacío → **`RECALL_REPORTABLE = UNKNOWN`**
+  (fail-closed, `usable=false`).
+
+### C) Especificidad / TN
+- **UNKNOWN salvo** que `negative_units` esté poblado y firmado, con `analysis_unit` explícita
+  (`section | document | page_range` — qué **es** una unidad negativa) y anclaje humano. Campos
+  obligatorios: `unit_id · analysis_unit · document · scope · expected_class · expected_subtype ·
+  human_evidence_anchor · basis · reviewer_note` (`NEGATIVE_UNIT_REQUIRED_FIELDS`, fail-closed).
+- **No se inventan TN.** Sin `negative_units`: `SPECIFICITY_REPORTABLE = UNKNOWN`, `TN = None`.
+
+**Muestra de precisión regenerada hoy** (para QA): 40 casos, seed 7, 6 documentos,
+`sample_type = EMITTED_FINDINGS_REVIEW`, los **mismos 40 `finding_id`** que la muestra anterior
+(preservados; verificado por digest), todos `PENDING`.
+`real_corpus_opportunities.yaml` y `negative_units` quedan **vacíos** → recall y especificidad reales
+**siguen siendo UNKNOWN** hasta que QA los pueble y firme.
 
 ---
 
@@ -115,7 +148,9 @@ SYNTHETIC_ONLY}`. `value = None` **solo** permitido con un sentinel (métrica a�
   builder (D-3); sin corpus held-out ni muestra real adjudicada"`.
 - `FUNCTIONAL_GATE = PASS (16/16)` → `reportable_range = SYNTHETIC_ONLY` (defect_corpus, mismo autor).
 - El **rango reportable REAL** de ambos gates se obtendrá de WP-E.3 (held-out firmado por autor
-  independiente) y WP-E.4 (muestra real adjudicada por QA). **Hasta entonces: `SYNTHETIC_ONLY`.**
+  independiente) y WP-E.4: **precisión** de la muestra de 40 findings emitidos adjudicada por QA;
+  **recall** del conjunto independiente de oportunidades de detección; **especificidad** solo si hay
+  `negative_units` firmadas. **Hasta entonces: `SYNTHETIC_ONLY`**, y recall/especificidad reales `UNKNOWN`.
 
 ---
 
@@ -123,9 +158,13 @@ SYNTHETIC_ONLY}`. `value = None` **solo** permitido con un sentinel (métrica a�
 
 1. **Autor independiente** (QA/Validation, ≠ Capa 9) que pueble `held_out_technical_corpus.yaml` con
    casos reales, cite las cláusulas normativas de los `REG`, apruebe los `ADV`, fije los umbrales y firme.
-2. **Adjudicador QA** que etiquete la muestra de `real_corpus_adjudication` (40 casos generados hoy) →
-   produce por primera vez el rango reportable de los gates sobre datos reales.
-3. **Capa 9**: firma del held-out (como Golden Dataset adicional, no sustituto) y aceptación del rango
+2. **Adjudicador QA** que etiquete la muestra de 40 findings emitidos (`wpe4-qa-20260828.yaml`,
+   labels `TP | FP | COVERAGE_LIMITED`) → produce por primera vez la **precisión real**.
+3. **Autor QA independiente** que pueble `real_corpus_opportunities.yaml` revisando el corpus (no los
+   findings), complete `human_evidence_anchor` y `basis` de cada oportunidad, y — si aplica —
+   `negative_units` con `analysis_unit`, y firme. Solo entonces son reportables **recall** y
+   **especificidad** reales.
+4. **Capa 9**: firma del held-out (como Golden Dataset adicional, no sustituto) y aceptación del rango
    reportable resultante.
 
 ---
@@ -134,8 +173,10 @@ SYNTHETIC_ONLY}`. `value = None` **solo** permitido con un sentinel (métrica a�
 
 - `technical_suite_c.yaml` / `technical_completeness_rules.yaml` **intactos**; su resultado firmado no se
   re-puntúa. El held-out es **adicional**.
-- Aditivo: las suites actuales corren igual. Revertir WP-E = borrar los 4 archivos nuevos + 1 yaml +
-  el test. Sin cambio de `EXTRACTION_VERSION`, sin re-derivación.
+- Aditivo: las suites actuales corren igual. Revertir WP-E = borrar los archivos nuevos
+  (`held_out_corpus.py`, `real_corpus_adjudication.py`, `held_out_technical_corpus.yaml`,
+  `real_corpus_adjudication.yaml`, `real_corpus_opportunities.yaml`) + los tests. Sin cambio de
+  `EXTRACTION_VERSION`, sin re-derivación.
 
 ---
 

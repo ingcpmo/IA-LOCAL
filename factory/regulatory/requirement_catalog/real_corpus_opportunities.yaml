@@ -1,53 +1,77 @@
-# WP-E.4 (B) -- CONJUNTO DE OPORTUNIDADES DE DETECCIÓN (ground truth de recall).
+# WP-E.4 (B) -- CONJUNTO DE OPORTUNIDADES DE DETECCIÓN (ground truth de RECALL real).
 # docs_plan/PLAN_HARDENING_ANALIZADOR_GMP_LOCAL_V2.md WP-E.4 ;
 # docs_plan/WP_E_INDEPENDENCIA_MEDICION_20260828.md ;
 # docs_plan/VALIDACION_POST_HARDENING_ANALIZADOR_V2_20260828.md (caso 9).
 #
 # PROPÓSITO: medir recall / FN REALES. QA revisa EL CORPUS (URS/FS/DS reales), NO los findings
-#   emitidos, y enumera las desviaciones / oportunidades de detección que DEBERÍAN existir. El
-#   scorer (`real_corpus_adjudication.score_recall`) cruza estas oportunidades contra los findings
-#   emitidos -> TP = detectada, FN = no detectada -> recall = TP/(TP+FN).
+#   emitidos, y enumera las desviaciones / oportunidades de detección que DEBERÍAN existir.
+#   `real_corpus_adjudication.score_recall()` cruza estas oportunidades contra los findings emitidos
+#   con matching UNO-A-UNO: un finding emitido acredita a lo sumo UNA oportunidad.
+#   TP = oportunidad acreditada por un finding ; FN = oportunidad sin finding que la acredite.
+#   recall = TP / (TP + FN).
 #
-# POR QUÉ SEPARADO de la muestra de 40: esa muestra son findings EMITIDOS -> solo permite
-#   precision/PPV. Una muestra de lo que el sistema emitió no contiene información sobre lo que
-#   NO emitió (FN). Sin este conjunto, RECALL_REPORTABLE = UNKNOWN (fail-closed).
+# POR QUÉ SEPARADO de la muestra de 40 (EMITTED_FINDINGS_REVIEW): esa muestra son findings EMITIDOS
+#   -> solo permite precision/PPV. Una muestra de lo que el sistema emitió no contiene información
+#   sobre lo que NO emitió (FN). Sin este conjunto, RECALL_REPORTABLE = UNKNOWN (fail-closed).
 #
 # REGLAS:
 #   - Lo puebla QA/Validation humano. NUNCA la máquina / IA.
-#   - Cada oportunidad con su BASE: cláusula normativa citada, o juicio del revisor documentado.
+#   - `human_evidence_anchor` y `basis` los completa QA. La IA no rellena esos campos.
+#   - Cada oportunidad DEBE tener TODOS los campos de OPPORTUNITY_REQUIRED_FIELDS o score_recall falla cerrado.
 #   - `status: SIGNED` + `adjudicator` solo cuando el conjunto esté completo y revisado.
-#   - TN / especificidad SOLO si se pueblan `negative_units` explícitas y adjudicadas
-#     (documento/sección que QA revisó y confirmó SIN esa desviación). No se inventan TN.
+#   - Coincidencia de página: parámetro EXPLÍCITO del protocolo `page_match_policy.tolerance_pages`
+#     (0 = la página del finding debe caer dentro del `page_band` humano; N = se admiten N páginas de holgura).
+#   - TN / especificidad SOLO si se pueblan `negative_units` con `analysis_unit` (unidad de análisis)
+#     definida y anclaje humano. No se inventan TN. Sin ellas: SPECIFICITY_REPORTABLE = UNKNOWN.
 
 artifact: real_corpus_opportunities
-version: "0.1-draft"
+version: "0.2-draft"
 status: DRAFT_UNSIGNED
 adjudicator: null
 adjudicated_at: null
+
 corpus:
   name: "Rockwell 6-doc"
   document_ids: [RW-0005, RW-0006, RW-0009, RW-0011, RW-0012, RW-0014]
+
+# --- parámetro EXPLÍCITO del protocolo de coincidencia de página ---
+page_match_policy:
+  tolerance_pages: 0        # 0 = página dentro de [page_band]; súbelo solo con justificación documentada
+
 methodology: >
   QA lee cada documento del corpus y registra toda desviación que DEBERÍA detectarse
   (trazabilidad, cobertura de prueba, completitud técnica, integridad de datos, etc.),
-  independientemente de si el analizador la emitió. El match con los findings emitidos
-  es estructural: (expected_class, expected_subtype, document, page_band ± 3).
+  INDEPENDIENTEMENTE de si el analizador la emitió. El match con los findings emitidos es
+  estructural y UNO-A-UNO: (expected_class, expected_subtype, document) y la página del finding
+  dentro de [page_band ± page_match_policy.tolerance_pages]. Un mismo finding no acredita dos
+  oportunidades.
 
-# --- oportunidades de detección (QA las añade; ejemplo de forma, sin poblar) ---
+# Campos obligatorios por oportunidad (los valida score_recall):
+#   opportunity_id · expected_class · expected_subtype · document · page_band
+#   expected_topic_or_requirement · human_evidence_anchor · basis · reviewer_note
 opportunities: []
 #   - opportunity_id: OPP-0001
-#     document: RW-0005
 #     expected_class: TechnicalFinding
 #     expected_subtype: BACKUP_RECOVERY_GAP
+#     document: RW-0005
 #     page_band: [40, 46]
-#     basis: "EU GMP Annex 11 §7.2 -- el FS no describe verificación de restauración"
+#     expected_topic_or_requirement: "Verificación de restauración de backups (Annex 11 §7.2)"
+#     human_evidence_anchor: "FS_v1.2 §8.4: 'A nightly backup ... is performed' -- sin verificación de restore"   # <- QA
+#     basis: "EU GMP Annex 11 §7.2 exige verificar la capacidad de restauración, no solo el respaldo"            # <- QA
+#     reviewer_note: "El FS describe el respaldo pero no la prueba de recuperación."                              # <- QA
 #     human_verified: true
 
-# --- unidades negativas explícitas (opcional; solo con esto se publican TN/especificidad) ---
+# Unidades negativas explícitas (opcional; SOLO con esto se publican TN/especificidad).
+# Campos obligatorios por unidad: unit_id · analysis_unit · document · scope · expected_class ·
+#   expected_subtype · human_evidence_anchor · basis · reviewer_note
 negative_units: []
-#   - document: RW-0006
+#   - unit_id: NEG-0001
+#     analysis_unit: "section"          # qué ES una unidad negativa aquí (section | document | page_range)
+#     document: RW-0006
+#     scope: [1, 24]                    # page_band de la unidad
 #     expected_class: SecurityFinding
 #     expected_subtype: ACCESS_CONTROL_GAP
-#     page_band: [1, 24]
-#     basis: "QA revisó la URS completa: el control de acceso está descrito -> NO debe emitirse."
+#     human_evidence_anchor: "URS v2.1 §4.3: control de acceso por rol descrito completamente"   # <- QA
+#     basis: "El control está presente y completo -> el analizador NO debe emitir ACCESS_CONTROL_GAP aquí"  # <- QA
+#     reviewer_note: "Revisada la sección completa; sin brecha."                                  # <- QA
 #     human_verified: true

@@ -246,13 +246,29 @@ def score_sheet(sheet: dict | str | Path) -> dict:
 # ===========================================================================
 # (B) DETECTION_OPPORTUNITIES -- recall / FN (y TN solo si hay unidad negativa)
 # ===========================================================================
+# Campos obligatorios que QA debe completar en cada oportunidad de detección.
+OPPORTUNITY_REQUIRED_FIELDS = (
+    "opportunity_id", "expected_class", "expected_subtype", "document", "page_band",
+    "expected_topic_or_requirement", "human_evidence_anchor", "basis", "reviewer_note",
+)
+NEGATIVE_UNIT_REQUIRED_FIELDS = (
+    "unit_id", "analysis_unit", "document", "scope", "expected_class", "expected_subtype",
+    "human_evidence_anchor", "basis", "reviewer_note",
+)
+# Política de coincidencia de página del PROTOCOLO -- explícita, no un ±N implícito.
+DEFAULT_PAGE_MATCH_POLICY = {"tolerance_pages": 0}   # 0 = la página debe caer DENTRO del page_band humano
+
+
 def load_opportunities(path: Path | None = None) -> dict:
     p = Path(path or _OPPORTUNITIES_ARTIFACT)
     if not p.is_file():
-        return {"status": "ABSENT", "opportunities": [], "negative_units": []}
+        return {"status": "ABSENT", "opportunities": [], "negative_units": [],
+                "page_match_policy": dict(DEFAULT_PAGE_MATCH_POLICY)}
     d = _yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     d.setdefault("opportunities", [])
     d.setdefault("negative_units", [])
+    pmp = d.get("page_match_policy") or {}
+    d["page_match_policy"] = {"tolerance_pages": int(pmp.get("tolerance_pages", 0))}
     return d
 
 
@@ -260,68 +276,129 @@ def _opps_signed(d: dict) -> bool:
     return str(d.get("status", "")).upper() == "SIGNED" and bool(d.get("adjudicator"))
 
 
+def _validate_opportunities(opps: list[dict]) -> None:
+    for i, o in enumerate(opps):
+        missing = [k for k in OPPORTUNITY_REQUIRED_FIELDS
+                   if o.get(k) in (None, "", []) and k != "page_band"]
+        if not (isinstance(o.get("page_band"), (list, tuple)) and len(o["page_band"]) == 2):
+            missing.append("page_band")
+        if missing:
+            raise AdjudicationMethodError(
+                f"oportunidad #{i} ({o.get('opportunity_id')}): faltan campos {missing}. "
+                f"`human_evidence_anchor` y `basis` los completa QA, no la IA.")
+
+
+def _validate_negative_units(neg: list[dict]) -> None:
+    for i, u in enumerate(neg):
+        missing = [k for k in NEGATIVE_UNIT_REQUIRED_FIELDS if u.get(k) in (None, "", [])]
+        if missing:
+            raise AdjudicationMethodError(
+                f"negative_unit #{i} ({u.get('unit_id')}): faltan campos {missing} "
+                f"(unidad de análisis definida + anclaje humano obligatorios).")
+
+
+def _page_hit(page: object, band: list, tol: int) -> bool:
+    try:
+        p = int(page)
+    except (TypeError, ValueError):
+        return False
+    return (band[0] - tol) <= p <= (band[1] + tol)
+
+
 def score_recall(run_dir: str | Path, opportunities_path: Path | None = None) -> dict:
     """Cruza el conjunto humano de oportunidades de detección contra los findings
-    EMITIDOS de `run_dir`. FAIL-CLOSED: recall UNKNOWN mientras el yaml no esté
-    SIGNED o esté vacío. TN/especificidad solo si hay `negative_units` firmadas."""
+    EMITIDOS de `run_dir`, con matching UNO-A-UNO: un finding emitido acredita como
+    máximo UNA oportunidad. FAIL-CLOSED: recall UNKNOWN mientras el yaml no esté
+    SIGNED, esté vacío, o alguna oportunidad no tenga sus campos obligatorios.
+    TN/especificidad SOLO con `negative_units` explícitas, firmadas y con unidad de
+    análisis definida; en otro caso UNKNOWN."""
     d = load_opportunities(opportunities_path)
     findings, _ = _load_run(Path(run_dir))
-    emitted = {(f["class"], f["subtype"], f["document"]) for f in findings}
-    emitted_pages = {}
+    tol = int(d["page_match_policy"]["tolerance_pages"])
+
+    # índice de findings emitidos por (class, subtype, document) -> lista consumible
+    by_key: dict[tuple, list[dict]] = {}
     for f in findings:
-        emitted_pages.setdefault((f["class"], f["subtype"], f["document"]), []).append(f.get("page"))
+        by_key.setdefault((f["class"], f["subtype"], f["document"]), []).append(f)
+    for k in by_key:
+        by_key[k].sort(key=lambda x: (x.get("page") or 0, x.get("finding_id") or ""))
+    consumed: set[str] = set()
 
     signed = _opps_signed(d)
-    opps = d.get("opportunities", [])
+    opps = list(d.get("opportunities", []))
+    neg = list(d.get("negative_units", []))
+
     tp = fn = 0
-    unmatched = []
+    matched_pairs: list[dict] = []
+    unmatched: list[str] = []
+    recall = None
+    recall_rr = "UNKNOWN"
+
     if signed and opps:
+        _validate_opportunities(opps)
+        # orden determinista de las oportunidades
+        opps.sort(key=lambda o: str(o.get("opportunity_id")))
         for o in opps:
             key = (o.get("expected_class"), o.get("expected_subtype"), o.get("document"))
-            pages = emitted_pages.get(key, [])
-            band = o.get("page_band") or [1, 10 ** 9]
-            hit = key in emitted and any(band[0] - 3 <= (p or 0) <= band[1] + 3 for p in pages)
-            if hit:
+            band = list(o.get("page_band"))
+            cand = next((f for f in by_key.get(key, [])
+                         if f.get("finding_id") not in consumed
+                         and _page_hit(f.get("page"), band, tol)), None)
+            if cand is not None:
+                consumed.add(cand["finding_id"])
                 tp += 1
+                matched_pairs.append({"opportunity_id": o.get("opportunity_id"),
+                                      "finding_id": cand["finding_id"]})
             else:
                 fn += 1
                 unmatched.append(o.get("opportunity_id"))
         recall = round(tp / (tp + fn), 4) if (tp + fn) else None
         recall_rr = me.wilson_interval(tp, tp + fn) if (tp + fn) else "UNKNOWN"
-    else:
-        recall = None
-        recall_rr = "UNKNOWN"
 
-    neg = d.get("negative_units", [])
     tn = specificity = None
+    specificity_rr = "UNKNOWN"
     if signed and neg:
-        clean = sum(1 for u in neg
-                    if (u.get("expected_class"), u.get("expected_subtype"), u.get("document"))
-                    not in emitted)
+        _validate_negative_units(neg)
+        emitted_keys = {(f["class"], f["subtype"], f["document"]) for f in findings}
+        emitted_pages = by_key
+        clean = 0
+        for u in neg:
+            key = (u.get("expected_class"), u.get("expected_subtype"), u.get("document"))
+            band = list(u.get("scope"))
+            emitted_here = any(_page_hit(f.get("page"), band, tol)
+                               for f in emitted_pages.get(key, []))
+            if not emitted_here:
+                clean += 1
         tn = clean
         specificity = round(clean / len(neg), 4) if neg else None
+        specificity_rr = me.wilson_interval(clean, len(neg)) if neg else "UNKNOWN"
 
     env = me.wrap(
         "REAL_CORPUS_RECALL_ADJUDICATED", recall,
         suite_version=f"real_corpus_opportunities@{d.get('version', 'n/a')} ({d.get('status', 'ABSENT')})",
-        size={"opportunities": len(opps), "negative_units": len(neg)},
-        definition="recall = TP/(TP+FN) sobre oportunidades de detección enumeradas por QA "
-                   "sobre el CORPUS (no sobre los findings emitidos).",
-        reportable_range=recall_rr if signed and opps else "UNKNOWN",
+        size={"opportunities": len(opps), "negative_units": len(neg),
+              "page_tolerance_pages": tol},
+        definition=("recall = TP/(TP+FN) sobre oportunidades de detección enumeradas por QA sobre el "
+                    "CORPUS. Matching UNO-A-UNO (class, subtype, document, page dentro de "
+                    f"[page_band ± {tol}]). Un finding emitido acredita a lo sumo UNA oportunidad."),
+        reportable_range=recall_rr if (signed and opps) else "UNKNOWN",
         contamination_statement=(
             f"Conjunto de oportunidades status={d.get('status', 'ABSENT')}; "
-            f"adjudicador={d.get('adjudicator')}. "
+            f"adjudicador={d.get('adjudicator')}; page_match_policy.tolerance_pages={tol}. "
             + ("" if (signed and opps) else
                "FAIL-CLOSED: RECALL_REPORTABLE = UNKNOWN hasta que QA pueble y firme "
-               "real_corpus_opportunities.yaml.")),
-        fn_opportunity_ids=unmatched)
+               "real_corpus_opportunities.yaml con los campos obligatorios por oportunidad.")),
+        matched_pairs=matched_pairs, fn_opportunity_ids=unmatched)
 
     return {
         "opportunities_status": d.get("status", "ABSENT"),
-        "usable": signed and bool(opps),
-        "TP": tp, "FN": fn,
-        "recall": recall,
+        "usable": bool(signed and opps),
+        "page_match_policy": d["page_match_policy"],
+        "TP": tp, "FN": fn, "recall": recall,
         "RECALL_REPORTABLE": recall_rr if (signed and opps) else "UNKNOWN",
-        "TN": tn, "specificity": specificity,   # None salvo negative_units firmadas
+        "matched_pairs": matched_pairs,
+        "one_to_one": len({m["finding_id"] for m in matched_pairs}) == len(matched_pairs),
+        "TN": tn, "specificity": specificity,
+        "SPECIFICITY_REPORTABLE": specificity_rr if (signed and neg) else "UNKNOWN",
         "metric_envelope": env,
     }
