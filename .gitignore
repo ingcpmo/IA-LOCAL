@@ -85,6 +85,12 @@ node_modules/
 # Reportes internos/confidenciales sueltos en el home, nunca al repo
 /private_reports/
 
+# WP-E.4 -- paquete operativo de adjudicación QA40: incrusta anchored_quote con
+# texto verbatim de los documentos del cliente (DOCUMENT_EGRESS). LOCAL, nunca al
+# repo. El método versionable vive en docs_plan/QA40_INSTRUCCIONES_ADJUDICACION_TEMPLATE.md
+/docs_plan/QA40_INSTRUCCIONES_ADJUDICACION_20*.md
+/factory/regulatory/pilot_run/adjudication/wpe4-qa-*.yaml
+
 # CLAUDE.md prohíbe Torch CUDA -- este instalador es artefacto de un
 # intento descartado, no debe volver a versionarse (docs_plan/
 # PLAN_MIGRACION_ARBOL_CANONICO_FASES_1_5.md, Fase 4.2)
