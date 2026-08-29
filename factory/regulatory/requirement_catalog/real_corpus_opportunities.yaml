@@ -1,0 +1,53 @@
+# WP-E.4 (B) -- CONJUNTO DE OPORTUNIDADES DE DETECCIÓN (ground truth de recall).
+# docs_plan/PLAN_HARDENING_ANALIZADOR_GMP_LOCAL_V2.md WP-E.4 ;
+# docs_plan/WP_E_INDEPENDENCIA_MEDICION_20260828.md ;
+# docs_plan/VALIDACION_POST_HARDENING_ANALIZADOR_V2_20260828.md (caso 9).
+#
+# PROPÓSITO: medir recall / FN REALES. QA revisa EL CORPUS (URS/FS/DS reales), NO los findings
+#   emitidos, y enumera las desviaciones / oportunidades de detección que DEBERÍAN existir. El
+#   scorer (`real_corpus_adjudication.score_recall`) cruza estas oportunidades contra los findings
+#   emitidos -> TP = detectada, FN = no detectada -> recall = TP/(TP+FN).
+#
+# POR QUÉ SEPARADO de la muestra de 40: esa muestra son findings EMITIDOS -> solo permite
+#   precision/PPV. Una muestra de lo que el sistema emitió no contiene información sobre lo que
+#   NO emitió (FN). Sin este conjunto, RECALL_REPORTABLE = UNKNOWN (fail-closed).
+#
+# REGLAS:
+#   - Lo puebla QA/Validation humano. NUNCA la máquina / IA.
+#   - Cada oportunidad con su BASE: cláusula normativa citada, o juicio del revisor documentado.
+#   - `status: SIGNED` + `adjudicator` solo cuando el conjunto esté completo y revisado.
+#   - TN / especificidad SOLO si se pueblan `negative_units` explícitas y adjudicadas
+#     (documento/sección que QA revisó y confirmó SIN esa desviación). No se inventan TN.
+
+artifact: real_corpus_opportunities
+version: "0.1-draft"
+status: DRAFT_UNSIGNED
+adjudicator: null
+adjudicated_at: null
+corpus:
+  name: "Rockwell 6-doc"
+  document_ids: [RW-0005, RW-0006, RW-0009, RW-0011, RW-0012, RW-0014]
+methodology: >
+  QA lee cada documento del corpus y registra toda desviación que DEBERÍA detectarse
+  (trazabilidad, cobertura de prueba, completitud técnica, integridad de datos, etc.),
+  independientemente de si el analizador la emitió. El match con los findings emitidos
+  es estructural: (expected_class, expected_subtype, document, page_band ± 3).
+
+# --- oportunidades de detección (QA las añade; ejemplo de forma, sin poblar) ---
+opportunities: []
+#   - opportunity_id: OPP-0001
+#     document: RW-0005
+#     expected_class: TechnicalFinding
+#     expected_subtype: BACKUP_RECOVERY_GAP
+#     page_band: [40, 46]
+#     basis: "EU GMP Annex 11 §7.2 -- el FS no describe verificación de restauración"
+#     human_verified: true
+
+# --- unidades negativas explícitas (opcional; solo con esto se publican TN/especificidad) ---
+negative_units: []
+#   - document: RW-0006
+#     expected_class: SecurityFinding
+#     expected_subtype: ACCESS_CONTROL_GAP
+#     page_band: [1, 24]
+#     basis: "QA revisó la URS completa: el control de acceso está descrito -> NO debe emitirse."
+#     human_verified: true

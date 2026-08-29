@@ -104,16 +104,18 @@ sin cambios de código, sin rediseño.
 - **PASS_FAIL:** **PASS** (mecanismo) · **BLOCKED_HUMAN** (uso real)
 - **RESIDUAL_RISK:** el rango reportable REAL del gate técnico depende de que un autor independiente (≠ Capa 9) pueble y firme el held-out. Hasta entonces: `SYNTHETIC_ONLY`.
 
-### 9 · Muestra real de 40 casos
-- **ORIGINAL_PROBLEM:** NG-4 — el rango reportable de los gates no transfiere al corpus real; nunca hubo TP/FN/FP sobre datos reales.
+### 9 · Muestra real de 40 casos (WP-E.4)
+- **ORIGINAL_PROBLEM:** NG-4 — el rango reportable de los gates no transfiere al corpus real; nunca hubo TP/FP sobre datos reales.
 - **BASELINE_BEHAVIOR:** el "0 findings / 0 FP" del reporte maestro §E quedó obsoleto tras la ampliación de subtipos (línea base real = 90, 70 de ellos artefacto de D-1).
-- **HARDENING_CONTROL:** `real_corpus_adjudication.py` — `sample_for_adjudication()` (muestra DETERMINISTA, estratificada por `(class, subtype)`, prioriza `would_degrade`); etiquetado HUMANO; `COVERAGE_LIMITED` excluido del cálculo; `score_sheet()` → rango de Wilson + declaración de contaminación.
-- **TEST_METHOD:** generar la hoja (`seed=7, n=40`) desde una corrida persistida; `load_sheet` + `score_sheet` sin etiquetas.
-- **EXPECTED_RESULT:** 40 casos, todos `label: PENDING`, **0 etiquetados por IA**, `adjudicator: null`; `score_sheet` → `labeled: false`, `reportable_range: UNKNOWN`.
-- **ACTUAL_RESULT:** `factory/regulatory/pilot_run/adjudication/wpe4-qa-20260828.yaml` — 40 casos, 40 PENDING, 0 AI-labeled, `adjudicator = null`, `status = DRAFT_UNSIGNED`; estratos: 16 `REQUIREMENT_NOT_TESTED`, 3 `ORPHAN_DESIGN_ELEMENT`, 3 `REGULATORY_INCONCLUSIVE`, 3 `IMPLEMENTATION_WITHOUT_REQUIREMENT`, 3 `ALCOA_ATTRIBUTABLE_GAP`, 2×{AUDIT_TRAIL_INTEGRITY_GAP, ACCESS_CONTROL_GAP, AUTHORITY_CHECK_GAP, AUDIT_TRAIL_DESIGN_GAP, BACKUP_RECOVERY_GAP, TECHNICAL_DESIGN_GAP}; 19 `would_degrade`; `reportable_range = UNKNOWN`.
-- **EVIDENCE_ARTIFACT:** `factory/regulatory/pilot_run/adjudication/wpe4-qa-20260828.yaml`; `factory/regulatory/validation_v2/real_corpus_adjudication.py`; `factory/tests/test_wp_e_measurement_independence.py`.
-- **PASS_FAIL:** **PASS** (paquete listo, determinista, round-trips) · **BLOCKED_HUMAN** (adjudicación QA)
-- **RESIDUAL_RISK:** hasta que QA etiquete los 40, el rango reportable real de los gates funcional/técnico sigue **desconocido**.
+- **HARDENING_CONTROL:** `real_corpus_adjudication.py` — `sample_for_adjudication()` produce una **hoja de tipo `EMITTED_FINDINGS_REVIEW`**: muestra DETERMINISTA, estratificada por `(class, subtype)`, prioriza `would_degrade`, todos los casos son **findings EMITIDOS**. `label_options` = `{TP, FP, COVERAGE_LIMITED}` — **sin FN/TN**. `score_emitted_review()` calcula **PRECISION/PPV** (= TP/(TP+FP)) + intervalo de Wilson + proporción `COVERAGE_LIMITED`, y **falla cerrado** ante etiquetas `FN`/`TN`.
+- **ALCANCE METODOLÓGICO (correcto):** una muestra de findings **emitidos** permite medir **directamente**: `TP`, `FP`, `PRECISION/PPV`, `proporción COVERAGE_LIMITED`. **NO permite medir `recall` / `FN` / `TN`** — no contiene información sobre desviaciones que deberían haberse detectado y **no** se emitieron. `RECALL_REPORTABLE = UNKNOWN` (siempre, en este conjunto).
+- **PARA MEDIR RECALL/FN:** se define un **segundo conjunto humano independiente**, `real_corpus_opportunities.yaml` (`DRAFT_UNSIGNED`) — QA revisa **el corpus** (no los findings) y enumera las desviaciones / oportunidades de detección que deberían existir, con su base (cláusula normativa citada o juicio documentado). `score_recall()` cruza esas oportunidades contra los findings emitidos → `TP`/`FN` → `recall`. **FAIL-CLOSED** (`RECALL_REPORTABLE = UNKNOWN`) mientras el yaml esté `DRAFT_UNSIGNED` o vacío. `TN`/especificidad **solo** si se pueblan `negative_units` explícitas y adjudicadas (no se inventan TN).
+- **TEST_METHOD:** generar la hoja (`seed=7, n=40`); `score_emitted_review` sin etiquetas y con etiquetas simuladas (solo TP/FP/COVERAGE_LIMITED); `score_recall` con el yaml de oportunidades `DRAFT_UNSIGNED`.
+- **EXPECTED_RESULT:** 40 casos `PENDING`, **0 etiquetados por IA**, `adjudicator: null`, `sample_type = EMITTED_FINDINGS_REVIEW`; `score_emitted_review` → `PRECISION_REPORTABLE = UNKNOWN` (sin etiquetas), `RECALL_REPORTABLE = UNKNOWN` (siempre), fail-closed ante FN/TN; `score_recall` → `RECALL_REPORTABLE = UNKNOWN`, `usable = false`, `TN = None`.
+- **ACTUAL_RESULT:** `factory/regulatory/pilot_run/adjudication/wpe4-qa-20260828.yaml` — 40 casos, 40 `PENDING`, 0 AI-labeled, `adjudicator = null`, `status = DRAFT_UNSIGNED`, `sample_type = EMITTED_FINDINGS_REVIEW`, `label_options = [TP, FP, COVERAGE_LIMITED]`; estratos: 16 `REQUIREMENT_NOT_TESTED`, 3 `ORPHAN_DESIGN_ELEMENT`, 3 `REGULATORY_INCONCLUSIVE`, 3 `IMPLEMENTATION_WITHOUT_REQUIREMENT`, 3 `ALCOA_ATTRIBUTABLE_GAP`, 2×{AUDIT_TRAIL_INTEGRITY_GAP, ACCESS_CONTROL_GAP, AUTHORITY_CHECK_GAP, AUDIT_TRAIL_DESIGN_GAP, BACKUP_RECOVERY_GAP, TECHNICAL_DESIGN_GAP}; 19 `would_degrade`. `score_emitted_review` (sin etiquetas): `PRECISION_REPORTABLE = UNKNOWN`, `RECALL_REPORTABLE = UNKNOWN`; con etiquetas simuladas TP/FP/COVERAGE_LIMITED: `PRECISION_REPORTABLE = [lo,hi]` (Wilson), `RECALL_REPORTABLE = UNKNOWN`; etiqueta `FN`/`TN` → `AdjudicationMethodError`. `score_recall` (oportunidades `DRAFT_UNSIGNED`): `RECALL_REPORTABLE = UNKNOWN`, `usable = false`, `TN = None`.
+- **EVIDENCE_ARTIFACT:** `factory/regulatory/pilot_run/adjudication/wpe4-qa-20260828.yaml`; `factory/regulatory/requirement_catalog/real_corpus_opportunities.yaml`; `factory/regulatory/validation_v2/real_corpus_adjudication.py`; `factory/tests/test_wp_e_measurement_independence.py` (18).
+- **PASS_FAIL:** **PASS** (paquete de precisión listo; método corregido: fail-closed para recall/FN/TN) · **BLOCKED_HUMAN** (adjudicación QA de la muestra + poblado/firma del conjunto de oportunidades).
+- **RESIDUAL_RISK:** `PRECISION_REPORTABLE` de los gates funcional/técnico sobre datos reales solo se conocerá cuando QA etiquete los 40. `RECALL_REPORTABLE` sobre datos reales sigue **`UNKNOWN`** hasta que QA pueble y firme `real_corpus_opportunities.yaml`. `TN`/especificidad requieren `negative_units` explícitas.
 
 ### 10 · WP-F — no auto-cualificación
 - **ORIGINAL_PROBLEM:** D-5 — la cualificación V2 vivía en prosa + un dict ad-hoc de `run_suite_c_formal()`.
@@ -215,11 +217,13 @@ sin cambios de código, sin rediseño.
   **resueltos**; los que no se pueden "arreglar" sin gobernanza o un SAT legible están **contenidos y
   declarados** (WP-B OBSERVE, WP-C, `SYNTHETIC_ONLY`); **0 regresiones** introducidas en todo el arco.
 - **REAL_CORPUS_EFFECTIVENESS = NOT_YET_DETERMINED.** La eficacia sobre datos reales **todavía no está
-  medida** porque siguen pendientes: **WP-E.4** (adjudicación humana de los 40 casos → primer TP/FN/FP
-  sobre corpus real), **WP-E.3** (held-out firmado por autor independiente → rango reportable del gate
-  técnico deja de ser `SYNTHETIC_ONLY`) y **WP-D real** (RW-0003 + OCR + `EXTRACTION_VERSION` →
-  `tested_by > 0` sobre corpus real y re-evaluación de `would_degrade`). Hasta que esos tres se cierren,
-  no se puede afirmar que el hardening corrigió los problemas **sobre el corpus real**, solo que los
+  medida** porque siguen pendientes: **WP-E.4** — conjunto A (adjudicación humana de los 40 findings
+  emitidos → `PRECISION_REPORTABLE`, **no** recall) **y** conjunto B (`real_corpus_opportunities.yaml`,
+  QA enumera las oportunidades de detección sobre el corpus → `RECALL_REPORTABLE`; hoy `UNKNOWN`,
+  fail-closed); **WP-E.3** (held-out firmado por autor independiente → el gate técnico deja de ser
+  `SYNTHETIC_ONLY`); **WP-D real** (RW-0003 + OCR + `EXTRACTION_VERSION` → `tested_by > 0` sobre corpus
+  real y re-evaluación de `would_degrade`). Hasta que esos se cierren, no se puede afirmar que el
+  hardening corrigió los problemas **sobre el corpus real**, solo que los
   **contuvo** y dejó el instrumento para medirlo.
 - La suite global **NO** se declara PASS: `pytest` sigue con exit code 1 por EXC-1..EXC-5 (aceptadas).
 
@@ -229,21 +233,29 @@ sin cambios de código, sin rediseño.
 
 Ninguna es acción de código. Todas son firmas / decisiones humanas de Capa 9 / QA.
 
-1. **Adjudicación humana de los 40 casos (WP-E.4)** — QA etiqueta
-   `factory/regulatory/pilot_run/adjudication/wpe4-qa-20260828.yaml` (40 casos `PENDING`, 0 IA) con
-   `TP/FP/FN/TN/COVERAGE_LIMITED` + `adjudicator`.
+1. **Adjudicación humana de los 40 casos (WP-E.4 · conjunto A)** — QA etiqueta
+   `factory/regulatory/pilot_run/adjudication/wpe4-qa-20260828.yaml` (40 findings EMITIDOS, `PENDING`,
+   0 IA) con **`TP` / `FP` / `COVERAGE_LIMITED`** + `adjudicator`. Da `PRECISION/PPV` + proporción
+   `COVERAGE_LIMITED`. **NO** da recall/FN (`score_emitted_review` falla cerrado ante FN/TN).
+   **En paralelo — WP-E.4 · conjunto B (ground truth de recall):** QA revisa **el corpus** (no los
+   findings) y puebla `factory/regulatory/requirement_catalog/real_corpus_opportunities.yaml` con las
+   oportunidades de detección que deberían existir (cláusula citada o juicio documentado), y opcionalmente
+   `negative_units` explícitas; luego firma (`status: SIGNED` + `adjudicator`). Sin este conjunto,
+   `RECALL_REPORTABLE = UNKNOWN`.
 2. **Held-out independiente (WP-E.3)** — un autor `≠ "Capa 9 (Cesar)"` puebla
    `held_out_technical_corpus.yaml` con casos reales, cita las cláusulas de los `REG`, aprueba los `ADV`,
    fija umbrales; luego firma (`status: SIGNED` + `author`).
-3. **Scoring real + `reportable_range`** — `score_sheet()` sobre la hoja adjudicada + `run_held_out_dry()`
-   sobre el held-out firmado → primer rango reportable REAL de los gates funcional y técnico
-   (sustituye `SYNTHETIC_ONLY`).
+3. **Scoring real + `reportable_range`** — `score_emitted_review()` sobre la hoja adjudicada →
+   `PRECISION_REPORTABLE`; `score_recall()` sobre el conjunto de oportunidades firmado →
+   `RECALL_REPORTABLE`; `run_held_out_dry()` sobre el held-out firmado. Recién entonces los gates
+   funcional/técnico tienen rango REAL (deja de ser `SYNTHETIC_ONLY`).
 4. **Decisión RW-0003 / OCR + validación WP-D real** — Capa 9 autoriza ingesta de RW-0003, descarga de
    OCR (Tesseract, Apache-2.0) y salto gobernado de `EXTRACTION_VERSION` con re-derivación de stores;
    se ejecuta WP-D sobre el corpus real y se verifica `tested_by > 0` con muestra revisada a mano.
 5. **Reevaluar `would_degrade`** — con `tested_by` poblado, recomputar `coverage_dependencies`: cuántos
-   de los 70 `REQUIREMENT_NOT_TESTED` + 8 `ORPHAN_DESIGN_ELEMENT` dejan de ser `would_degrade` (desviación
-   real) y cuántos persisten como brecha de cobertura.
+   de los 70 `REQUIREMENT_NOT_TESTED` + 8 `ORPHAN_DESIGN_ELEMENT` pasan a `coverage_status = OK`
+   (cobertura resuelta → el finding es **evaluable**, todavía **sujeto a adjudicación humana** — no
+   implica que sea una desviación confirmada) y cuántos persisten como brecha de cobertura.
 6. **Decisión WP-B ENFORCE** — con lo anterior, Capa 9 firma `extraction_adequacy_thresholds.yaml` y
    decide activar el modo enforce (degradar los `would_degrade` restantes a `MACHINE_INCONCLUSIVE` con
    `COVERAGE_LIMITATION`).

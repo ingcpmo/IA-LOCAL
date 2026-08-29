@@ -142,24 +142,58 @@ def test_sample_prioritizes_would_degrade(_run_dir):
     assert all(c["label"] == "PENDING" for c in a["cases"])
 
 
-def test_unlabeled_sheet_has_unknown_reportable_range(_run_dir):
+def test_sample_is_emitted_findings_review_not_recall_ground_truth(_run_dir):
     a = adj.sample_for_adjudication(_run_dir, n=20, seed=1)
-    sc = adj.score_sheet(a)
+    assert a["sample_type"] == adj.SAMPLE_TYPE_EMITTED
+    # FN / TN no son opciones de etiqueta para una muestra de findings emitidos
+    assert set(a["label_options"]) == {"TP", "FP", "COVERAGE_LIMITED"}
+    assert "FN" not in a["label_options"] and "TN" not in a["label_options"]
+
+
+def test_unlabeled_emitted_review_is_unknown_for_both_metrics(_run_dir):
+    a = adj.sample_for_adjudication(_run_dir, n=20, seed=1)
+    sc = adj.score_emitted_review(a)
     assert sc["labeled"] is False
-    assert sc["reportable_range"] == "UNKNOWN"
-    assert sc["metric_envelope"]["value"] is None
-    me.require_envelope(sc["metric_envelope"])  # el sobre es válido aun sin medición
+    assert sc["PRECISION_REPORTABLE"] == "UNKNOWN"
+    assert sc["RECALL_REPORTABLE"] == "UNKNOWN"
+    me.require_envelope(sc["metric_envelope_precision"])
+    me.require_envelope(sc["metric_envelope_recall"])
 
 
-def test_labeled_sheet_produces_range_and_excludes_coverage_limited(_run_dir):
+def test_score_emitted_review_is_fail_closed_on_fn_or_tn(_run_dir):
+    a = adj.sample_for_adjudication(_run_dir, n=20, seed=3)
+    a["cases"][0]["label"] = "FN"
+    with pytest.raises(adj.AdjudicationMethodError):
+        adj.score_emitted_review(a)
+    a["cases"][0]["label"] = "TN"
+    with pytest.raises(adj.AdjudicationMethodError):
+        adj.score_emitted_review(a)
+
+
+def test_labeled_emitted_review_yields_precision_only_recall_stays_unknown(_run_dir):
     a = adj.sample_for_adjudication(_run_dir, n=20, seed=2)
     for i, c in enumerate(a["cases"]):
         c["label"] = "COVERAGE_LIMITED" if c["would_degrade"] else ("TP" if i % 2 else "FP")
     a["adjudicator"] = "QA reviewer (sim)"
-    sc = adj.score_sheet(a)
+    sc = adj.score_emitted_review(a)
     assert sc["labeled"] is True
-    assert isinstance(sc["reportable_range"], list) and len(sc["reportable_range"]) == 2
-    # COVERAGE_LIMITED fuera del cálculo
-    cl = sc["counts"]["COVERAGE_LIMITED"]
-    assert sc["metric_envelope"]["size"]["coverage_limited"] == cl
-    me.require_envelope(sc["metric_envelope"])
+    assert isinstance(sc["PRECISION_REPORTABLE"], list) and len(sc["PRECISION_REPORTABLE"]) == 2
+    assert sc["RECALL_REPORTABLE"] == "UNKNOWN"                  # nunca se deriva de findings emitidos
+    assert sc["metric_envelope_precision"]["size"]["coverage_limited"] == sc["counts"]["COVERAGE_LIMITED"]
+    me.require_envelope(sc["metric_envelope_precision"])
+
+
+def test_score_recall_fail_closed_without_signed_opportunities(_run_dir):
+    r = adj.score_recall(_run_dir)                              # opportunities yaml = DRAFT_UNSIGNED
+    assert r["opportunities_status"] in ("DRAFT_UNSIGNED", "ABSENT")
+    assert r["usable"] is False
+    assert r["RECALL_REPORTABLE"] == "UNKNOWN"
+    assert r["TN"] is None                                      # sin negative_units firmadas -> no se inventa TN
+    me.require_envelope(r["metric_envelope"])
+
+
+def test_opportunities_template_is_draft_and_empty():
+    d = adj.load_opportunities()
+    assert str(d["status"]).upper() in ("DRAFT_UNSIGNED", "ABSENT")
+    assert d["opportunities"] == [] and d["negative_units"] == []
+    assert d.get("adjudicator") in (None, "null")
