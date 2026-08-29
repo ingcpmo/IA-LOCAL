@@ -227,43 +227,133 @@ def _write_opps(tmp_path, opps, *, negatives=None, tol=0, name="opps.yaml"):
     return p
 
 
-def _opp(cls, sub, doc, band, oid):
-    return {"opportunity_id": oid, "expected_class": cls, "expected_subtype": sub,
-            "document": doc, "page_band": list(band),
-            "expected_topic_or_requirement": "t", "human_evidence_anchor": "a",
-            "basis": "b", "reviewer_note": "n"}
+def _opp(cls, sub, doc, band, oid, *, matched=None, by=None, note="n"):
+    o = {"opportunity_id": oid, "expected_class": cls, "expected_subtype": sub,
+         "document": doc, "page_band": list(band),
+         "expected_topic_or_requirement": "t", "human_evidence_anchor": "a",
+         "basis": "b", "reviewer_note": "n"}
+    if matched is not None:
+        o["matched_finding_id"] = matched
+        o["match_confirmed_by"] = by or "QA Validation Lead"
+        o["match_note"] = note
+    return o
+
+
+def _fids_for(fs, cls, sub, doc):
+    return [f["finding_id"] for f in fs if (f["class"], f["subtype"], f["document"]) == (cls, sub, doc)]
+
+
+def test_score_recall_structural_match_alone_is_not_tp(_run_dir, tmp_path):
+    """La coincidencia estructural NO cuenta como TP -- solo propone candidatos."""
+    from collections import Counter
+    fs = _emitted(_run_dir)
+    (cls, sub, doc), _ = max(Counter((f["class"], f["subtype"], f["document"]) for f in fs).items(),
+                             key=lambda x: x[1])
+    pages = sorted(f["page"] for f in fs if (f["class"], f["subtype"], f["document"]) == (cls, sub, doc))
+    band = [min(pages), max(pages)]
+    r = adj.score_recall(_run_dir, _write_opps(tmp_path, [_opp(cls, sub, doc, band, "OPP-0")]))
+    assert r["human_match_confirmation_required"] is True
+    assert r["TP"] == 0 and r["FN"] == 1                       # sin confirmación humana -> FN
+    assert r["per_opportunity"][0]["outcome"] == "FN"
+    assert r["per_opportunity"][0]["structural_candidate_finding_ids"]     # candidatos propuestos
+
+
+def test_score_recall_tp_requires_human_confirmation(_run_dir, tmp_path):
+    from collections import Counter
+    fs = _emitted(_run_dir)
+    (cls, sub, doc), _ = max(Counter((f["class"], f["subtype"], f["document"]) for f in fs).items(),
+                             key=lambda x: x[1])
+    pages = sorted(f["page"] for f in fs if (f["class"], f["subtype"], f["document"]) == (cls, sub, doc))
+    band = [min(pages), max(pages)]
+    fid = _fids_for(fs, cls, sub, doc)[0]
+    opp = _opp(cls, sub, doc, band, "OPP-0", matched=fid, by="QA sim", note="corresponde")
+    r = adj.score_recall(_run_dir, _write_opps(tmp_path, [opp]))
+    assert r["TP"] == 1 and r["FN"] == 0
+    mp = r["matched_pairs"][0]
+    assert mp["finding_id"] == fid and mp["match_confirmed_by"] == "QA sim"
+    assert mp["within_structural_candidates"] is True
+    assert r["RECALL_REPORTABLE"] and r["recall"] == 1.0
 
 
 def test_score_recall_matching_is_one_to_one(_run_dir, tmp_path):
+    """Un mismo finding confirmado no puede acreditar dos oportunidades -> fail-closed."""
     from collections import Counter
     fs = _emitted(_run_dir)
     cc = Counter((f["class"], f["subtype"], f["document"]) for f in fs)
-    # elige una clave con EXACTAMENTE k>=1 findings; crea k+1 oportunidades sobre ella
-    (cls, sub, doc), k = min(((k, v) for k, v in cc.items() if v >= 1), key=lambda x: x[1])
+    (cls, sub, doc), k = max(cc.items(), key=lambda x: x[1])
+    fids = _fids_for(fs, cls, sub, doc)
     pages = sorted(f["page"] for f in fs if (f["class"], f["subtype"], f["document"]) == (cls, sub, doc))
     band = [min(pages), max(pages)]
-    opps = [_opp(cls, sub, doc, band, f"OPP-{i}") for i in range(k + 1)]
-    r = adj.score_recall(_run_dir, _write_opps(tmp_path, opps))
-    assert r["one_to_one"] is True
-    assert r["TP"] == k                       # solo k findings disponibles -> a lo sumo k aciertos
-    assert r["FN"] == 1                        # la (k+1)-ésima oportunidad no tiene finding libre
-    assert len({m["finding_id"] for m in r["matched_pairs"]}) == k    # ningún finding repetido
+    # k oportunidades, cada una confirmada a un finding DISTINTO -> TP=k, uno-a-uno
+    ok = [_opp(cls, sub, doc, band, f"OPP-{i}", matched=fids[i], by="QA") for i in range(k)]
+    r = adj.score_recall(_run_dir, _write_opps(tmp_path, ok, name="ok.yaml"))
+    assert r["TP"] == k and r["one_to_one"] is True
+    assert len({m["finding_id"] for m in r["matched_pairs"]}) == k
+    # dos oportunidades confirmando el MISMO finding -> AdjudicationMethodError
+    dup = [_opp(cls, sub, doc, band, "OPP-A", matched=fids[0], by="QA"),
+           _opp(cls, sub, doc, band, "OPP-B", matched=fids[0], by="QA")]
+    with pytest.raises(adj.AdjudicationMethodError):
+        adj.score_recall(_run_dir, _write_opps(tmp_path, dup, name="dup.yaml"))
 
 
-def test_score_recall_page_match_policy_is_explicit_and_effective(_run_dir, tmp_path):
+def test_score_recall_fail_closed_on_confirmed_nonexistent_finding(_run_dir, tmp_path):
+    opp = _opp("TechnicalFinding", "BACKUP_RECOVERY_GAP", "RW-0005", [1, 10], "OPP-1",
+               matched="does-not-exist-999", by="QA")
+    with pytest.raises(adj.AdjudicationMethodError):
+        adj.score_recall(_run_dir, _write_opps(tmp_path, [opp]))
+
+
+def test_score_recall_fail_closed_on_match_without_confirmer(_run_dir, tmp_path):
+    opp = _opp("TechnicalFinding", "BACKUP_RECOVERY_GAP", "RW-0005", [1, 10], "OPP-1")
+    opp["matched_finding_id"] = "whatever"        # sin match_confirmed_by
+    with pytest.raises(adj.AdjudicationMethodError):
+        adj.score_recall(_run_dir, _write_opps(tmp_path, [opp]))
+
+
+def test_score_recall_page_match_policy_governs_candidates_only(_run_dir, tmp_path):
+    """page_match_policy gobierna la PROPUESTA de candidatos, no el TP."""
     from collections import Counter
     fs = _emitted(_run_dir)
-    cc = Counter((f["class"], f["subtype"], f["document"]) for f in fs)
-    (cls, sub, doc), _ = max(cc.items(), key=lambda x: x[1])
+    (cls, sub, doc), _ = max(Counter((f["class"], f["subtype"], f["document"]) for f in fs).items(),
+                             key=lambda x: x[1])
     pages = sorted(f["page"] for f in fs if (f["class"], f["subtype"], f["document"]) == (cls, sub, doc))
     outside = [max(pages) + 5, max(pages) + 6]           # banda fuera de toda página emitida
     opp = [_opp(cls, sub, doc, outside, "OPP-X")]
     r0 = adj.score_recall(_run_dir, _write_opps(tmp_path, opp, tol=0, name="t0.yaml"))
     r6 = adj.score_recall(_run_dir, _write_opps(tmp_path, opp, tol=6, name="t6.yaml"))
-    assert r0["TP"] == 0 and r0["FN"] == 1                # tol=0 -> no cuenta
-    assert r6["TP"] == 1 and r6["FN"] == 0                # tol=6 -> cae dentro
+    assert r0["per_opportunity"][0]["structural_candidate_finding_ids"] == []      # tol=0 -> sin candidatos
+    assert r6["per_opportunity"][0]["structural_candidate_finding_ids"]            # tol=6 -> candidatos
+    assert r0["TP"] == 0 and r6["TP"] == 0                # sin confirmación humana, ninguno es TP
     assert r0["page_match_policy"]["tolerance_pages"] == 0
     assert r6["metric_envelope"]["size"]["page_tolerance_pages"] == 6
+
+
+@pytest.mark.parametrize("band", [
+    [5, 3],            # start > end
+    [0, 4],            # <= 0
+    [-2, 5],           # negativo
+    [3],               # longitud != 2
+    [1, 2, 3],
+    ["1", "9"],        # no enteros
+    [1.5, 9.0],        # floats
+    "1-9",             # ni siquiera lista
+])
+def test_page_band_validation_is_strict(_run_dir, tmp_path, band):
+    opp = _opp("TechnicalFinding", "BACKUP_RECOVERY_GAP", "RW-0005", [1, 9], "OPP-1")
+    opp["page_band"] = band
+    with pytest.raises(adj.AdjudicationMethodError):
+        adj.score_recall(_run_dir, _write_opps(tmp_path, [opp], name="badband.yaml"))
+
+
+@pytest.mark.parametrize("scope", [[9, 2], [0, 3], [-1, 4], [2], "1-3", [1.0, 3.0]])
+def test_negative_scope_validation_is_strict(_run_dir, tmp_path, scope):
+    opp = [_opp("TechnicalFinding", "BACKUP_RECOVERY_GAP", "RW-0005", [1, 9], "OPP-1")]
+    neg = [{"unit_id": "NEG-1", "analysis_unit": "section", "document": "RW-0006",
+            "scope": scope, "expected_class": "SecurityFinding",
+            "expected_subtype": "ACCESS_CONTROL_GAP", "human_evidence_anchor": "x",
+            "basis": "y", "reviewer_note": "z"}]
+    with pytest.raises(adj.AdjudicationMethodError):
+        adj.score_recall(_run_dir, _write_opps(tmp_path, opp, negatives=neg, name="badscope.yaml"))
 
 
 def test_score_recall_fail_closed_on_missing_opportunity_fields(_run_dir, tmp_path):

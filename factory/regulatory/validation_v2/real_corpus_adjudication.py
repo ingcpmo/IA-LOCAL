@@ -16,8 +16,11 @@ DOS conjuntos humanos, metodológicamente distintos:
   (B) DETECTION_OPPORTUNITIES  -- `real_corpus_opportunities.yaml` (DRAFT_UNSIGNED).
       QA revisa el CORPUS (no los findings) y enumera las desviaciones / oportunidades
       de detección que DEBERÍAN existir, con su base (cláusula / juicio del revisor).
-      `score_recall()` cruza esas oportunidades contra los findings emitidos -> TP/FN
-      -> recall. FAIL-CLOSED (recall UNKNOWN) mientras el yaml esté DRAFT_UNSIGNED o vacío.
+      `score_recall()` PROPONE candidatos estructurales por (class, subtype, document,
+      page_band) pero el TP de recall depende de la CONFIRMACIÓN HUMANA de la
+      correspondencia (`matched_finding_id` + `match_confirmed_by` + `match_note`),
+      nunca de la inferencia estructural. Matching UNO-A-UNO. FAIL-CLOSED (recall
+      UNKNOWN) mientras el yaml esté DRAFT_UNSIGNED o vacío.
       TN/especificidad SOLO si hay `negative_units` explícitas y firmadas.
 
 Sin LLM, sin red. Ninguna etiqueta la pone la máquina.
@@ -255,7 +258,12 @@ NEGATIVE_UNIT_REQUIRED_FIELDS = (
     "unit_id", "analysis_unit", "document", "scope", "expected_class", "expected_subtype",
     "human_evidence_anchor", "basis", "reviewer_note",
 )
+# Campos que QA rellena al ADJUDICAR la correspondencia oportunidad<->finding.
+# El scorer PROPONE candidatos estructurales; el TP de recall depende de ESTA confirmación
+# humana, nunca de la inferencia estructural automática.
+MATCH_CONFIRMATION_FIELDS = ("matched_finding_id", "match_confirmed_by", "match_note")
 # Política de coincidencia de página del PROTOCOLO -- explícita, no un ±N implícito.
+# SOLO gobierna la PROPUESTA de candidatos estructurales, no el TP.
 DEFAULT_PAGE_MATCH_POLICY = {"tolerance_pages": 0}   # 0 = la página debe caer DENTRO del page_band humano
 
 
@@ -276,25 +284,48 @@ def _opps_signed(d: dict) -> bool:
     return str(d.get("status", "")).upper() == "SIGNED" and bool(d.get("adjudicator"))
 
 
+def _validate_page_range(val: object, *, field: str, owner: str) -> None:
+    """[int, int] con start <= end y ambos > 0. Fail-closed en cualquier otro caso."""
+    if not (isinstance(val, (list, tuple)) and len(val) == 2):
+        raise AdjudicationMethodError(f"{owner}: `{field}` debe ser [int, int]; se obtuvo {val!r}")
+    a, b = val
+    if isinstance(a, bool) or isinstance(b, bool) or not (isinstance(a, int) and isinstance(b, int)):
+        raise AdjudicationMethodError(f"{owner}: `{field}` debe contener enteros; se obtuvo {val!r}")
+    if a <= 0 or b <= 0:
+        raise AdjudicationMethodError(f"{owner}: `{field}` debe ser > 0; se obtuvo {val!r}")
+    if a > b:
+        raise AdjudicationMethodError(f"{owner}: `{field}` requiere start <= end; se obtuvo {val!r}")
+
+
 def _validate_opportunities(opps: list[dict]) -> None:
     for i, o in enumerate(opps):
+        oid = o.get("opportunity_id")
         missing = [k for k in OPPORTUNITY_REQUIRED_FIELDS
                    if o.get(k) in (None, "", []) and k != "page_band"]
-        if not (isinstance(o.get("page_band"), (list, tuple)) and len(o["page_band"]) == 2):
-            missing.append("page_band")
         if missing:
             raise AdjudicationMethodError(
-                f"oportunidad #{i} ({o.get('opportunity_id')}): faltan campos {missing}. "
+                f"oportunidad #{i} ({oid}): faltan campos {missing}. "
                 f"`human_evidence_anchor` y `basis` los completa QA, no la IA.")
+        _validate_page_range(o.get("page_band"), field="page_band",
+                             owner=f"oportunidad #{i} ({oid})")
+        # los campos de confirmación humana del match van juntos: un match declarado sin
+        # confirmante (o un confirmante sin finding) es inválido.
+        mfid, by = o.get("matched_finding_id"), o.get("match_confirmed_by")
+        if bool(mfid) ^ bool(by):
+            raise AdjudicationMethodError(
+                f"oportunidad #{i} ({oid}): `matched_finding_id` y `match_confirmed_by` "
+                f"deben ir juntos -- el TP de recall exige confirmación humana explícita.")
 
 
 def _validate_negative_units(neg: list[dict]) -> None:
     for i, u in enumerate(neg):
+        uid = u.get("unit_id")
         missing = [k for k in NEGATIVE_UNIT_REQUIRED_FIELDS if u.get(k) in (None, "", [])]
         if missing:
             raise AdjudicationMethodError(
-                f"negative_unit #{i} ({u.get('unit_id')}): faltan campos {missing} "
+                f"negative_unit #{i} ({uid}): faltan campos {missing} "
                 f"(unidad de análisis definida + anclaje humano obligatorios).")
+        _validate_page_range(u.get("scope"), field="scope", owner=f"negative_unit #{i} ({uid})")
 
 
 def _page_hit(page: object, band: list, tol: int) -> bool:
@@ -307,22 +338,31 @@ def _page_hit(page: object, band: list, tol: int) -> bool:
 
 def score_recall(run_dir: str | Path, opportunities_path: Path | None = None) -> dict:
     """Cruza el conjunto humano de oportunidades de detección contra los findings
-    EMITIDOS de `run_dir`, con matching UNO-A-UNO: un finding emitido acredita como
-    máximo UNA oportunidad. FAIL-CLOSED: recall UNKNOWN mientras el yaml no esté
-    SIGNED, esté vacío, o alguna oportunidad no tenga sus campos obligatorios.
+    EMITIDOS de `run_dir`.
+
+    El TP de recall depende de la **confirmación humana** de la correspondencia
+    (`matched_finding_id` + `match_confirmed_by` en cada oportunidad), NO de la
+    inferencia estructural automática. El scorer solo PROPONE candidatos
+    estructurales (`structural_candidate_finding_ids`) por
+    (class, subtype, document, página dentro de [page_band ± tolerance_pages]).
+
+    Matching UNO-A-UNO: un `finding_id` confirmado no puede acreditar dos
+    oportunidades (fail-closed). FAIL-CLOSED además si: el yaml no está SIGNED,
+    está vacío, falta un campo obligatorio, un `page_band` no es [int,int] válido,
+    o un `matched_finding_id` confirmado no existe entre los findings emitidos.
     TN/especificidad SOLO con `negative_units` explícitas, firmadas y con unidad de
     análisis definida; en otro caso UNKNOWN."""
     d = load_opportunities(opportunities_path)
     findings, _ = _load_run(Path(run_dir))
     tol = int(d["page_match_policy"]["tolerance_pages"])
 
-    # índice de findings emitidos por (class, subtype, document) -> lista consumible
+    # índice de findings emitidos por (class, subtype, document)
     by_key: dict[tuple, list[dict]] = {}
     for f in findings:
         by_key.setdefault((f["class"], f["subtype"], f["document"]), []).append(f)
     for k in by_key:
         by_key[k].sort(key=lambda x: (x.get("page") or 0, x.get("finding_id") or ""))
-    consumed: set[str] = set()
+    emitted_ids = {f.get("finding_id") for f in findings}
 
     signed = _opps_signed(d)
     opps = list(d.get("opportunities", []))
@@ -331,27 +371,58 @@ def score_recall(run_dir: str | Path, opportunities_path: Path | None = None) ->
     tp = fn = 0
     matched_pairs: list[dict] = []
     unmatched: list[str] = []
+    per_opportunity: list[dict] = []
     recall = None
     recall_rr = "UNKNOWN"
 
     if signed and opps:
         _validate_opportunities(opps)
-        # orden determinista de las oportunidades
         opps.sort(key=lambda o: str(o.get("opportunity_id")))
+
+        # --- paso 1: matches CONFIRMADOS POR QA (única fuente del TP de recall) ---
+        confirmed_by_finding: dict[str, str] = {}
         for o in opps:
+            oid = o.get("opportunity_id")
+            mfid = o.get("matched_finding_id") or None
+            if not mfid:
+                continue
+            if mfid not in emitted_ids:
+                raise AdjudicationMethodError(
+                    f"oportunidad {oid!r}: matched_finding_id={mfid!r} no existe entre los "
+                    f"findings emitidos de la corrida -- QA no puede confirmar un match inexistente.")
+            if mfid in confirmed_by_finding:
+                raise AdjudicationMethodError(
+                    f"matching NO uno-a-uno: el finding {mfid!r} fue confirmado por "
+                    f"{confirmed_by_finding[mfid]!r} y {oid!r}. Un finding acredita a lo sumo UNA "
+                    f"oportunidad.")
+            confirmed_by_finding[mfid] = oid
+
+        # --- paso 2: candidatos ESTRUCTURALES (propuesta) + resultado por confirmación ---
+        for o in opps:
+            oid = o.get("opportunity_id")
             key = (o.get("expected_class"), o.get("expected_subtype"), o.get("document"))
             band = list(o.get("page_band"))
-            cand = next((f for f in by_key.get(key, [])
-                         if f.get("finding_id") not in consumed
-                         and _page_hit(f.get("page"), band, tol)), None)
-            if cand is not None:
-                consumed.add(cand["finding_id"])
+            plausible = [f["finding_id"] for f in by_key.get(key, [])
+                         if _page_hit(f.get("page"), band, tol)]
+            cands = [fid for fid in plausible
+                     if fid not in confirmed_by_finding or confirmed_by_finding[fid] == oid]
+            mfid = o.get("matched_finding_id") or None
+            by = o.get("match_confirmed_by") or None
+            if mfid:
                 tp += 1
-                matched_pairs.append({"opportunity_id": o.get("opportunity_id"),
-                                      "finding_id": cand["finding_id"]})
+                matched_pairs.append({
+                    "opportunity_id": oid, "finding_id": mfid,
+                    "match_confirmed_by": by, "match_note": o.get("match_note") or "",
+                    "within_structural_candidates": mfid in plausible})
+                outcome = "TP_CONFIRMED"
             else:
                 fn += 1
-                unmatched.append(o.get("opportunity_id"))
+                unmatched.append(oid)
+                outcome = "FN"
+            per_opportunity.append({
+                "opportunity_id": oid, "outcome": outcome,
+                "confirmed_finding_id": mfid, "match_confirmed_by": by,
+                "structural_candidate_finding_ids": cands})
         recall = round(tp / (tp + fn), 4) if (tp + fn) else None
         recall_rr = me.wilson_interval(tp, tp + fn) if (tp + fn) else "UNKNOWN"
 
@@ -379,12 +450,16 @@ def score_recall(run_dir: str | Path, opportunities_path: Path | None = None) ->
         size={"opportunities": len(opps), "negative_units": len(neg),
               "page_tolerance_pages": tol},
         definition=("recall = TP/(TP+FN) sobre oportunidades de detección enumeradas por QA sobre el "
-                    "CORPUS. Matching UNO-A-UNO (class, subtype, document, page dentro de "
-                    f"[page_band ± {tol}]). Un finding emitido acredita a lo sumo UNA oportunidad."),
+                    "CORPUS. TP = oportunidad con correspondencia a un finding CONFIRMADA POR QA "
+                    "(matched_finding_id + match_confirmed_by); la coincidencia estructural "
+                    f"(class, subtype, document, page dentro de [page_band ± {tol}]) solo PROPONE "
+                    "candidatos, no cuenta como TP. Matching UNO-A-UNO: un finding confirmado "
+                    "acredita a lo sumo UNA oportunidad."),
         reportable_range=recall_rr if (signed and opps) else "UNKNOWN",
         contamination_statement=(
             f"Conjunto de oportunidades status={d.get('status', 'ABSENT')}; "
             f"adjudicador={d.get('adjudicator')}; page_match_policy.tolerance_pages={tol}. "
+            f"TP por confirmación humana ({len(matched_pairs)} confirmados). "
             + ("" if (signed and opps) else
                "FAIL-CLOSED: RECALL_REPORTABLE = UNKNOWN hasta que QA pueble y firme "
                "real_corpus_opportunities.yaml con los campos obligatorios por oportunidad.")),
@@ -394,9 +469,13 @@ def score_recall(run_dir: str | Path, opportunities_path: Path | None = None) ->
         "opportunities_status": d.get("status", "ABSENT"),
         "usable": bool(signed and opps),
         "page_match_policy": d["page_match_policy"],
+        "human_match_confirmation_required": True,
         "TP": tp, "FN": fn, "recall": recall,
         "RECALL_REPORTABLE": recall_rr if (signed and opps) else "UNKNOWN",
         "matched_pairs": matched_pairs,
+        "confirmed_match_count": len(matched_pairs),
+        "per_opportunity": per_opportunity,
+        "fn_opportunity_ids": unmatched,
         "one_to_one": len({m["finding_id"] for m in matched_pairs}) == len(matched_pairs),
         "TN": tn, "specificity": specificity,
         "SPECIFICITY_REPORTABLE": specificity_rr if (signed and neg) else "UNKNOWN",

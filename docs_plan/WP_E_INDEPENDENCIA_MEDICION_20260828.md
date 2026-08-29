@@ -80,7 +80,7 @@ Por eso hay ahora **tres artefactos distintos**, cada uno mide **una** cosa:
 | Medición | Artefacto (ground truth) | Qué revisa QA | Métrica | Estado |
 |---|---|---|---|---|
 | **Precisión real / PPV** | `real_corpus_adjudication.yaml` (plantilla) + hoja `wpe4-qa-20260828.yaml` | los **40 findings emitidos** de la muestra | TP, FP, **PRECISION/PPV** (Wilson), proporción `COVERAGE_LIMITED` | `DRAFT_UNSIGNED` — 40 casos `PENDING` |
-| **Recall real / FN** | `real_corpus_opportunities.yaml` | **el corpus** (URS/FS/DS), enumera las desviaciones que **deberían** detectarse — **sin** partir de los findings | TP, FN, **recall = TP/(TP+FN)** | `DRAFT_UNSIGNED` — `opportunities: []` |
+| **Recall real / FN** | `real_corpus_opportunities.yaml` | **el corpus** (URS/FS/DS), enumera las desviaciones que **deberían** detectarse — **sin** partir de los findings; luego **confirma** el match oportunidad↔finding (`matched_finding_id` + `match_confirmed_by` + `match_note`) | TP (confirmado), FN, **recall = TP/(TP+FN)** | `DRAFT_UNSIGNED` — `opportunities: []` |
 | **Especificidad / TN** | `real_corpus_opportunities.yaml → negative_units` | secciones/unidades donde el control **está presente y completo** → el sistema **no** debe emitir finding | TN, especificidad | **UNKNOWN** — `negative_units: []` |
 
 Scorer: `factory/regulatory/validation_v2/real_corpus_adjudication.py` (implementado).
@@ -105,13 +105,24 @@ Scorer: `factory/regulatory/validation_v2/real_corpus_adjudication.py` (implemen
   `opportunity_id · expected_class · expected_subtype · document · page_band ·
   expected_topic_or_requirement · human_evidence_anchor · basis · reviewer_note`.
   **`human_evidence_anchor` y `basis` los completa QA, nunca la IA.**
-- **Matching UNO-A-UNO** (`score_recall()`): un finding emitido acredita **a lo sumo UNA** oportunidad
-  (conjunto `consumed`). TP = oportunidad acreditada; FN = oportunidad sin finding disponible que la
-  acredite. `one_to_one = true` verificado (ningún `finding_id` repetido en `matched_pairs`).
-- **Coincidencia de página = parámetro EXPLÍCITO del protocolo**, no criterio implícito:
-  `page_match_policy.tolerance_pages` (**default 0** = la página del finding debe caer **dentro** del
-  `page_band` humano). Subirlo exige justificación documentada. Probado por test
-  (`test_score_recall_page_match_policy_is_explicit_and_effective`: tol=0 → FN; tol=6 → TP).
+- **`page_band` con validación ESTRICTA:** `[int, int]`, `start ≤ end`, ambos `> 0` — cualquier otra
+  forma (float, string, longitud ≠ 2, negativo, invertido) → **fail-closed**. Ídem `negative_units.scope`.
+- **El TP de recall depende de la CONFIRMACIÓN HUMANA de la correspondencia, no de inferencia
+  estructural.** El scorer **propone** candidatos estructurales
+  (`per_opportunity[].structural_candidate_finding_ids`) por `(class, subtype, document, página
+  dentro de [page_band ± tolerance_pages])`, pero **no** los cuenta como acierto. QA rellena en cada
+  oportunidad, al adjudicar:
+  - `matched_finding_id` — el finding emitido que **QA confirma** que corresponde,
+  - `match_confirmed_by` — quién lo confirma,
+  - `match_note` — por qué corresponde.
+  **TP** = oportunidad con match confirmado; **FN** = oportunidad sin match confirmado (aunque tenga
+  candidatos estructurales).
+- **Matching UNO-A-UNO** (fail-closed): un `matched_finding_id` no puede confirmarse en dos
+  oportunidades; `matched_finding_id` y `match_confirmed_by` van juntos; el finding confirmado debe
+  existir entre los findings emitidos de la corrida. `one_to_one = true` verificado.
+- **`page_match_policy.tolerance_pages`** (**default 0**) es parámetro explícito del protocolo y
+  **solo gobierna la propuesta de candidatos**, no el TP. Probado (`tol=0` → 0 candidatos;
+  `tol=6` → candidatos), y `structural_match_alone_is_not_tp` (candidatos presentes → FN sin confirmación).
 - Mientras `opportunities` esté `DRAFT_UNSIGNED` o vacío → **`RECALL_REPORTABLE = UNKNOWN`**
   (fail-closed, `usable=false`).
 
@@ -161,9 +172,10 @@ SYNTHETIC_ONLY}`. `value = None` **solo** permitido con un sentinel (métrica a�
 2. **Adjudicador QA** que etiquete la muestra de 40 findings emitidos (`wpe4-qa-20260828.yaml`,
    labels `TP | FP | COVERAGE_LIMITED`) → produce por primera vez la **precisión real**.
 3. **Autor QA independiente** que pueble `real_corpus_opportunities.yaml` revisando el corpus (no los
-   findings), complete `human_evidence_anchor` y `basis` de cada oportunidad, y — si aplica —
-   `negative_units` con `analysis_unit`, y firme. Solo entonces son reportables **recall** y
-   **especificidad** reales.
+   findings), complete `human_evidence_anchor` y `basis` de cada oportunidad, **confirme** la
+   correspondencia con cada finding (`matched_finding_id` + `match_confirmed_by` + `match_note`) o la
+   deje sin confirmar (→ FN), y — si aplica — `negative_units` con `analysis_unit`, y firme. Solo
+   entonces son reportables **recall** y **especificidad** reales.
 4. **Capa 9**: firma del held-out (como Golden Dataset adicional, no sustituto) y aceptación del rango
    reportable resultante.
 

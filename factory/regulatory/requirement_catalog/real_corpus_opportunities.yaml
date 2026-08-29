@@ -5,9 +5,12 @@
 #
 # PROPÓSITO: medir recall / FN REALES. QA revisa EL CORPUS (URS/FS/DS reales), NO los findings
 #   emitidos, y enumera las desviaciones / oportunidades de detección que DEBERÍAN existir.
-#   `real_corpus_adjudication.score_recall()` cruza estas oportunidades contra los findings emitidos
-#   con matching UNO-A-UNO: un finding emitido acredita a lo sumo UNA oportunidad.
-#   TP = oportunidad acreditada por un finding ; FN = oportunidad sin finding que la acredite.
+#   `real_corpus_adjudication.score_recall()` PROPONE candidatos estructurales (class, subtype,
+#   document, página dentro de page_band) pero el TP de recall depende de la CONFIRMACIÓN HUMANA
+#   de la correspondencia: QA rellena en la oportunidad `matched_finding_id`, `match_confirmed_by`
+#   y `match_note`. Sin esos tres campos, la oportunidad cuenta como FN aunque haya candidatos.
+#   Matching UNO-A-UNO: un `matched_finding_id` no puede confirmarse en dos oportunidades.
+#   TP = oportunidad con match confirmado ; FN = oportunidad sin match confirmado.
 #   recall = TP / (TP + FN).
 #
 # POR QUÉ SEPARADO de la muestra de 40 (EMITTED_FINDINGS_REVIEW): esa muestra son findings EMITIDOS
@@ -19,10 +22,19 @@
 #   - `human_evidence_anchor` y `basis` los completa QA. La IA no rellena esos campos.
 #   - Cada oportunidad DEBE tener TODOS los campos de OPPORTUNITY_REQUIRED_FIELDS o score_recall falla cerrado.
 #   - `status: SIGNED` + `adjudicator` solo cuando el conjunto esté completo y revisado.
+#   - `page_band` DEBE ser [int, int] con start <= end y ambos > 0 (validación estricta, fail-closed).
 #   - Coincidencia de página: parámetro EXPLÍCITO del protocolo `page_match_policy.tolerance_pages`
 #     (0 = la página del finding debe caer dentro del `page_band` humano; N = se admiten N páginas de holgura).
+#     SOLO gobierna la PROPUESTA de candidatos estructurales, no el TP.
+#   - CONFIRMACIÓN HUMANA DEL MATCH (la pone QA al adjudicar, no la IA):
+#       matched_finding_id  -- finding emitido que QA confirma que corresponde a esta oportunidad
+#       match_confirmed_by  -- quién confirma (rol/persona)
+#       match_note          -- por qué corresponde
+#     `matched_finding_id` y `match_confirmed_by` van juntos; el finding debe existir en la corrida;
+#     ningún `matched_finding_id` se repite entre oportunidades (uno-a-uno). Sin confirmación -> FN.
 #   - TN / especificidad SOLO si se pueblan `negative_units` con `analysis_unit` (unidad de análisis)
-#     definida y anclaje humano. No se inventan TN. Sin ellas: SPECIFICITY_REPORTABLE = UNKNOWN.
+#     definida y anclaje humano. `scope` DEBE ser [int, int] con start <= end y ambos > 0.
+#     No se inventan TN. Sin ellas: SPECIFICITY_REPORTABLE = UNKNOWN.
 
 artifact: real_corpus_opportunities
 version: "0.2-draft"
@@ -41,14 +53,18 @@ page_match_policy:
 methodology: >
   QA lee cada documento del corpus y registra toda desviación que DEBERÍA detectarse
   (trazabilidad, cobertura de prueba, completitud técnica, integridad de datos, etc.),
-  INDEPENDIENTEMENTE de si el analizador la emitió. El match con los findings emitidos es
-  estructural y UNO-A-UNO: (expected_class, expected_subtype, document) y la página del finding
-  dentro de [page_band ± page_match_policy.tolerance_pages]. Un mismo finding no acredita dos
-  oportunidades.
+  INDEPENDIENTEMENTE de si el analizador la emitió. score_recall PROPONE candidatos
+  estructurales por (expected_class, expected_subtype, document) y página del finding
+  dentro de [page_band ± page_match_policy.tolerance_pages], pero el TP se decide por la
+  CONFIRMACIÓN HUMANA de la correspondencia (matched_finding_id + match_confirmed_by +
+  match_note). Sin confirmación -> FN. Matching UNO-A-UNO: un finding confirmado no
+  acredita dos oportunidades.
 
 # Campos obligatorios por oportunidad (los valida score_recall):
-#   opportunity_id · expected_class · expected_subtype · document · page_band
+#   opportunity_id · expected_class · expected_subtype · document · page_band ([int,int], start<=end, >0)
 #   expected_topic_or_requirement · human_evidence_anchor · basis · reviewer_note
+# Campos de adjudicación (los rellena QA al confirmar el match; vacíos = FN):
+#   matched_finding_id · match_confirmed_by · match_note
 opportunities: []
 #   - opportunity_id: OPP-0001
 #     expected_class: TechnicalFinding
@@ -59,7 +75,9 @@ opportunities: []
 #     human_evidence_anchor: "FS_v1.2 §8.4: 'A nightly backup ... is performed' -- sin verificación de restore"   # <- QA
 #     basis: "EU GMP Annex 11 §7.2 exige verificar la capacidad de restauración, no solo el respaldo"            # <- QA
 #     reviewer_note: "El FS describe el respaldo pero no la prueba de recuperación."                              # <- QA
-#     human_verified: true
+#     matched_finding_id: "tech-000123"        # <- QA (o dejar ausente si no hay finding que corresponda -> FN)
+#     match_confirmed_by: "QA Validation Lead" # <- QA
+#     match_note: "El finding tech-000123 en p.42 describe exactamente esta brecha de restore."   # <- QA
 
 # Unidades negativas explícitas (opcional; SOLO con esto se publican TN/especificidad).
 # Campos obligatorios por unidad: unit_id · analysis_unit · document · scope · expected_class ·
@@ -68,7 +86,7 @@ negative_units: []
 #   - unit_id: NEG-0001
 #     analysis_unit: "section"          # qué ES una unidad negativa aquí (section | document | page_range)
 #     document: RW-0006
-#     scope: [1, 24]                    # page_band de la unidad
+#     scope: [1, 24]                    # [int,int], start<=end, >0 -- rango de páginas de la unidad
 #     expected_class: SecurityFinding
 #     expected_subtype: ACCESS_CONTROL_GAP
 #     human_evidence_anchor: "URS v2.1 §4.3: control de acceso por rol descrito completamente"   # <- QA
