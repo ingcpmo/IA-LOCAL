@@ -90,6 +90,7 @@ node_modules/
 # repo. El método versionable vive en docs_plan/QA40_INSTRUCCIONES_ADJUDICACION_TEMPLATE.md
 /docs_plan/QA40_INSTRUCCIONES_ADJUDICACION_20*.md
 /docs_plan/QA40_HUMAN_REVIEW_PACKET_*.md
+/docs_plan/QA40_HUMAN_REVIEW_DATA_V3_*.json
 /factory/regulatory/pilot_run/adjudication/wpe4-qa-*.yaml
 
 # CLAUDE.md prohíbe Torch CUDA -- este instalador es artefacto de un
