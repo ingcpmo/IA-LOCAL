@@ -97,7 +97,7 @@ def _ingest_canonical(g: GraphStore, canon: CanonicalStore, doc_type: str) -> di
 
     idx = {"claims_by_ref": {}, "sections": [], "tests": [], "own_refs": set(),
            "doc_type": doc_type, "document_id": document_id, "claim_texts": {},
-           "claim_local_id": {}}
+           "claim_local_id": {}, "entities": []}
 
     for s in canon.all("section"):
         g.add_node(s["section_id"], "section",
@@ -134,11 +134,15 @@ def _ingest_canonical(g: GraphStore, canon: CanonicalStore, doc_type: str) -> di
         idx["tests"].append(t)
 
     for sc in canon.all("system_component"):
-        g.add_node(sc["component_id"], "system_component", sc.get("nombre", ""),
+        nombre = sc.get("nombre", "")
+        g.add_node(sc["component_id"], "system_component", nombre,
                    document_id=document_id, attrs={"tipo": sc.get("tipo")})
+        idx["entities"].append((sc["component_id"], "system_component", nombre))
     for a in canon.all("actor"):
-        g.add_node(a["actor_id"], "actor", a.get("nombre_rol", ""),
+        nombre = a.get("nombre_rol", "")
+        g.add_node(a["actor_id"], "actor", nombre,
                    document_id=document_id, attrs={"tipo": a.get("tipo")})
+        idx["entities"].append((a["actor_id"], "actor", nombre))
 
     return idx
 
@@ -210,6 +214,12 @@ def build_project_graph(project_id: str, documents: list[tuple[str, str]], *,
                 if rid:
                     _safe_edge(g, t["test_id"], rid, "verifies")
 
+    # claim --refers_to--> system_component|actor  (H-10: mención LITERAL del
+    # nombre/rol de una entidad en el texto citable del claim). Determinista,
+    # best-effort, con guardas anti-falso-positivo. Inanido mientras el
+    # canonical_store no traiga objetos system_component/actor.
+    _link_refers_to(g, indices)
+
     # contradicts (heurística conservadora: mismo ref + modal opuesto)
     _link_contradictions(g, indices)
 
@@ -248,6 +258,64 @@ def _link_to_tests(g: GraphStore, ups: list[dict], tests_idx: list[dict]) -> Non
                 for ref in trefs & set(u["claims_by_ref"]):
                     for su in u["claims_by_ref"][ref]:
                         _safe_edge(g, su, t["test_id"], "tested_by", {"via_ref": ref})
+
+
+# Nombres/roles demasiado genéricos para acreditar una mención literal: si el
+# "nombre" de la entidad es solo una de estas palabras, NO se crea `refers_to`
+# (sería falso positivo por construcción).
+_ENTITY_NAME_STOP = frozenset("""
+system systems user users operator operators role roles device panel server network
+db database record records data plc scada hmi historian interface component the a an
+""".split())
+
+
+def _link_refers_to(g: GraphStore, indices: list[dict]) -> None:
+    """`claim --refers_to--> system_component|actor` por mención LITERAL del
+    nombre/rol de la entidad en `claim.source_text`.
+
+    Guardas anti-falso-positivo:
+      - el nombre de la entidad debe tener >= 3 caracteres y NO ser una sola
+        palabra genérica (`_ENTITY_NAME_STOP`);
+      - la coincidencia es por límite de palabra, case-insensitive;
+      - el claim y la entidad deben ser del MISMO documento (una referencia
+        cross-documento por nombre suelto es demasiado ambigua sin más señal).
+    Nunca inventa la arista: si no hay entidad o no hay mención literal, no pasa nada.
+    """
+    ents_by_doc: dict[str, list[tuple]] = {}
+    for idx in indices:
+        for eid, ekind, name in idx.get("entities", []):
+            n = (name or "").strip()
+            if len(n) < 3:
+                continue
+            toks = [w for w in re.findall(r"[A-Za-z0-9][\w\-/]*", n.lower()) if len(w) > 1]
+            if not toks or all(w in _ENTITY_NAME_STOP for w in toks):
+                continue
+            pat = re.compile(r"\b" + re.escape(n) + r"\b", re.IGNORECASE)
+            ents_by_doc.setdefault(idx["document_id"], []).append((eid, pat))
+    if not ents_by_doc:
+        return
+    for idx in indices:
+        ents = ents_by_doc.get(idx["document_id"])
+        if not ents:
+            continue
+        for cid, text in idx["claim_texts"].items():
+            if not text or _is_reference_list_line(text):
+                # una entrada de lista de referencias / bibliografía que NOMBRA
+                # un producto ("[12] FactoryTalk View SE User's Guide ...") NO es
+                # una referencia funcional del claim -> no genera refers_to.
+                continue
+            for eid, pat in ents:
+                if pat.search(text):
+                    _safe_edge(g, cid, eid, "refers_to", {"match": "literal_name"})
+
+
+_REF_LIST_RE = re.compile(
+    r"^\s*(?:\[\d{1,3}\]|\d{1,3}\.\s+[A-Z].{0,80}(?:Guide|Manual|Standard|Specification|"
+    r"User'?s?\s+Guide|UM\d{3}|Reference))", re.IGNORECASE)
+
+
+def _is_reference_list_line(text: str) -> bool:
+    return bool(_REF_LIST_RE.match(text or ""))
 
 
 _CONTRA_STOP = frozenset("""

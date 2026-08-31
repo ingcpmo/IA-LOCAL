@@ -79,7 +79,14 @@ def test_panel_is_wired_into_existing_ui_not_a_second_ui():
 def client(tmp_path, monkeypatch):
     from factory.api.routes import v2_analyzer
     from factory.regulatory.validation_v2 import v2_mission_control as mc
+    from factory.regulatory.validation_v2 import coverage_mode as _cm
     from factory.regulatory.validation_v2.v2_runtime import run_v2_pipeline
+
+    # el panel WP-G se especificó contra OBSERVE; tras D-2 el repo está en ENFORCE.
+    _acm = tmp_path / "acm_observe.yaml"
+    _acm.write_text("mode: OBSERVE\ndecided_by: null\ndecision_ref: null\ndecision_date: null\n")
+    monkeypatch.setattr(_cm, "_MODE_PATH", _acm)
+    monkeypatch.setattr(_cm, "_thresholds_signed", lambda: False)
 
     canon = tmp_path / "canon"
     for d, tipo, txt in [

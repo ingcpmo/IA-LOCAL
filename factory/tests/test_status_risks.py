@@ -143,7 +143,7 @@ def test_audit_chain_risk_is_visible_whenever_part11_is_not_compliant():
     )
 
 
-def test_audit_chain_risk_severity_distinguishes_fork_from_corruption():
+def test_audit_chain_risk_severity_distinguishes_fork_from_corruption(real_audit_chain):
     """Un fork histórico con contenido auténtico (hash_errors=0) y una cadena
     con hashes corruptos no pueden reportarse con la misma severidad: la
     respuesta operativa es distinta. AUDIT_FORK_REMEDIATION_SPEC §1.2."""

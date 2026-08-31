@@ -32,7 +32,14 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-AUDIT_FILE = Path(__file__).parent.parent / "audit" / "factory_audit.jsonl"
+# H-2 (2026-08-29): la ruta del audit trail es INYECTABLE, no resuelta a ciegas.
+#   - producción: el default bajo el repo (sin env var).
+#   - pruebas: conftest.py::isolated_audit (autouse) la redirige a tmp_path.
+#   - ops/despliegue: FACTORY_AUDIT_FILE la fija sin tocar código.
+# Un test NUNCA debe escribir en el fichero productivo (ver
+# factory/tests/test_h2_audit_trail_isolated_from_tests.py).
+_DEFAULT_AUDIT_FILE = Path(__file__).parent.parent / "audit" / "factory_audit.jsonl"
+AUDIT_FILE = Path(os.environ["FACTORY_AUDIT_FILE"]) if os.environ.get("FACTORY_AUDIT_FILE") else _DEFAULT_AUDIT_FILE
 FORK_BASELINE_FILE = Path(__file__).parent.parent / "audit" / "fork_baseline.json"
 
 # --- W5 V2 G7 — medidas preventivas §4.2 del AUDIT_FORK_REMEDIATION_SPEC -----
@@ -280,6 +287,11 @@ VALID_EVENTS = {
     # viene del humano identificado en authored_by_id -- este evento nunca
     # se dispara desde codigo de agente.
     "remediation_directive_authored",
+    # Causa B (CALIFICACION_FINAL_CURRENT_ENGINE.md continuación 2026-08-20):
+    # mecanismo de supersede/replacement -- se dispara SOLO desde
+    # remediation_directive._mark_superseded(), después de que la directiva
+    # sustituta ya se validó y persistió con éxito.
+    "remediation_directive_superseded",
 }
 
 
@@ -472,7 +484,7 @@ def verify_chain(*, decision_store_file: Path | None = None) -> dict:
             "audit_file": str(AUDIT_FILE),
         }
 
-    walk = _walk_chain(AUDIT_FILE)
+    walk = _walk_chain_cached(AUDIT_FILE)
     total = walk["total"]
     verified_count = walk["verified_count"]
     hash_errors = walk["hash_errors"]
@@ -516,6 +528,33 @@ def verify_chain(*, decision_store_file: Path | None = None) -> dict:
 # ---------------------------------------------------------------------------
 # Recorrido único de la cadena
 # ---------------------------------------------------------------------------
+
+# El log es append-only: mientras (mtime_ns, size) no cambien, el contenido
+# tampoco, y `_walk_chain` es una funcion pura de ese contenido -- cachear por
+# firma de archivo no puede servir un resultado obsoleto, nunca. Existe porque
+# `governance_service.get_state()` (GET /governance/state, panel completo) y
+# `compute_state_hash()`/`family_state_hash()` (cada POST propose/confirm)
+# volvian a recorrer entero el audit log en cada llamada -- ~2.5-2.8s sobre
+# ~69k entradas y creciendo sin techo, medido 2026-08-23. Sin invalidar nada
+# por tiempo: un evento nuevo cambia mtime/size al instante y la proxima
+# llamada re-recorre.
+_walk_chain_cache: dict[str, tuple[tuple[int, int], dict]] = {}
+
+
+def _walk_chain_cached(path: Path) -> dict:
+    key = str(path)
+    try:
+        st = path.stat()
+        sig = (st.st_mtime_ns, st.st_size)
+    except FileNotFoundError:
+        sig = None
+    cached = _walk_chain_cache.get(key)
+    if cached is not None and cached[0] == sig:
+        return cached[1]
+    result = _walk_chain(path)
+    _walk_chain_cache[key] = (sig, result)
+    return result
+
 
 def _walk_chain(path: Path) -> dict:
     """Recorre la cadena UNA vez y devuelve todo lo que se puede saber de ella.
@@ -725,7 +764,7 @@ def chain_break_entry_ids(audit_file: Path | None = None) -> tuple[str, ...]:
     es un fork: es corrupcion, no se gobierna con una excepcion, y por eso no
     aparece en esta lista.
     """
-    return _walk_chain(audit_file or AUDIT_FILE)["break_ids"]
+    return _walk_chain_cached(audit_file or AUDIT_FILE)["break_ids"]
 
 
 # ---------------------------------------------------------------------------

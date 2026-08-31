@@ -108,19 +108,50 @@ def sample_for_adjudication(run_dir: str | Path, *, n: int = 40, seed: int = 0) 
     cases = []
     for f in picked:
         cd = cov_by_fid.get(f["finding_id"], {})
+        prov = f.get("provenance") or {}
+        risk = f.get("risk") or {}
         cases.append({
             "case_id": _det_case_id(f["finding_id"]),
+            # --- H-3: direccionamiento INEQUÍVOCO (finding_id colisiona, finding_record_id no) ---
+            "finding_record_id": f.get("finding_record_id"),
             "finding_id": f["finding_id"],
             "finding_class": f["class"],
             "subtype": f["subtype"],
+            # --- criterio / sub-criterio regulatorio ---
+            "criterion": f.get("requirement"),
+            "subcriterion_ref": prov.get("subcriterion_ref"),
+            "regulatory_basis": f.get("regulatory_basis"),
+            "technical_basis": f.get("technical_basis"),
+            # --- ancla de evidencia REPRODUCIBLE (documento / sección / página / hash) ---
             "document": f["document"],
+            "section": f.get("section"),
             "page": f["page"],
+            "source_hash": f.get("source_hash"),
+            "anchored_quote": f.get("source_text") or "",          # texto exacto, SIN truncar
+            "evidence_ids": (f.get("evidence") or {}).get("evidence_ids", []),
+            # --- estado de cobertura / epistemología ---
             "evidence_basis": f.get("evidence_basis"),
             "would_degrade": f["finding_id"] in would_degrade,
             "coverage_status": cd.get("coverage_status"),
-            "anchored_quote": (f.get("source_text") or "")[:240],
-            "label": "PENDING",     # <- QA humano rellena: TP | FP | COVERAGE_LIMITED
+            "coverage_required_capabilities": cd.get("required_capabilities"),
+            # --- referencia al grafo (H-4), cuando aplica ---
+            "graph_path": prov.get("graph_path"),
+            # --- hallazgo de máquina PROPUESTO (para que el humano lo juzgue, no lo adopte) ---
+            "proposed_machine_finding": {
+                "severity": f.get("severity"),
+                "risk_band": risk.get("band"),
+                "risk_band_pre_enforce": risk.get("band_pre_enforce"),
+                "risk_mode": risk.get("mode"),
+                "machine_state": f.get("machine_state"),
+                "confidence": f.get("confidence"),
+                "rationale": f.get("rationale"),
+            },
+            # --- procedencia held-out (la asigna QA: REG | DOM | ADV) ---
+            "held_out_provenance_tag": None,   # <- QA
+            # --- adjudicación humana (vacío = PENDING; la IA NO rellena) ---
+            "label": "PENDING",     # <- QA humano: TP | FP | COVERAGE_LIMITED
             "adjudicator_note": "",
+            "human_evidence_anchor": "",   # <- QA: cita/página exacta que sustenta su decisión
         })
 
     sheet = {

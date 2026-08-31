@@ -535,7 +535,10 @@ def post_reject_mission(project_id: str, body: MissionReject,
 
 
 class MarkCanonical(BaseModel):
-    marked_by: str
+    # H-1 (2026-08-29): `marked_by` YA NO se usa del body -- se deriva de
+    # `X-Identity-Key` (Depends(require_identity)). Se mantiene opcional por
+    # compatibilidad de esquema; el valor del body se ignora.
+    marked_by: str = ""
 
 
 @router.get("/projects/{project_id}/rcs")
@@ -581,17 +584,16 @@ def get_canonical_rc(project_id: str):
 
 
 @router.post("/review/{rc_id}/mark-canonical")
-def post_mark_canonical(rc_id: str, body: MarkCanonical):
-    """Marca un RC aprobado como canónico. Solo un RC canónico por project_id a la vez."""
+def post_mark_canonical(rc_id: str, body: MarkCanonical,
+                        identity: str = Depends(require_identity)):
+    """Marca un RC aprobado como canónico. Solo un RC canónico por project_id a la vez.
+    H-1: `marked_by` = identidad autenticada (`X-Identity-Key`); sin ella ⇒ 401."""
     import json
     from datetime import datetime, timezone
     from pathlib import Path
     from factory.core.audit_writer import write_event as _we
 
-    try:
-        _identity.validate_identity(body.marked_by, field="marked_by")
-    except _identity.IdentityValidationError as e:
-        raise HTTPException(422, str(e))
+    marked_by = identity
 
     rc = get_rc(rc_id)
     if rc is None:
@@ -616,7 +618,7 @@ def post_mark_canonical(rc_id: str, body: MarkCanonical):
                 prev_canonical_id = d.get("rc_id")
             d["is_canonical"] = (d.get("rc_id") == rc_id)
             if d.get("rc_id") == rc_id:
-                d["is_canonical_marked_by"] = body.marked_by
+                d["is_canonical_marked_by"] = marked_by
                 d["is_canonical_marked_at"] = now
             manifest_file.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
         except Exception:
@@ -625,13 +627,13 @@ def post_mark_canonical(rc_id: str, body: MarkCanonical):
     if prev_canonical_id:
         _we("rc_unmarked_canonical", project_id, {
             "rc_id": prev_canonical_id,
-            "unmarked_by": body.marked_by,
+            "unmarked_by": marked_by,
             "reason": f"superseded by {rc_id}",
         })
 
     _we("rc_marked_canonical", project_id, {
         "rc_id": rc_id,
-        "marked_by": body.marked_by,
+        "marked_by": marked_by,
         "prev_canonical": prev_canonical_id,
     })
 
@@ -639,7 +641,7 @@ def post_mark_canonical(rc_id: str, body: MarkCanonical):
         "rc_id": rc_id,
         "project_id": project_id,
         "is_canonical": True,
-        "marked_by": body.marked_by,
+        "marked_by": marked_by,
         "marked_at": now,
         "prev_canonical_unmarked": prev_canonical_id,
     }
@@ -1480,7 +1482,9 @@ def post_w5_decision(decision_id: str, body: W5DecisionBody,
 
 
 class W5CorrectionBody(BaseModel):
-    corrected_by: str
+    # H-1 (2026-08-29): `corrected_by` YA NO se usa del body -- se deriva de
+    # `X-Identity-Key`. Opcional por compatibilidad de esquema; el body se ignora.
+    corrected_by: str = ""
     reason: str
     decision: str | None = None
     notes: str = ""
@@ -1491,15 +1495,17 @@ class W5CorrectionBody(BaseModel):
 
 
 @router.post("/w5-decisions/{decision_id}/correct")
-def post_w5_decision_correction(decision_id: str, body: W5CorrectionBody):
+def post_w5_decision_correction(decision_id: str, body: W5CorrectionBody,
+                                identity: str = Depends(require_identity)):
     """Corrige una decision ya registrada ANADIENDO un registro que supersede
     al anterior. El original nunca se edita ni se borra: el almacen es
-    append-only y la cadena de auditoria es Part 11."""
+    append-only y la cadena de auditoria es Part 11.
+    H-1: `corrected_by` = identidad autenticada (`X-Identity-Key`); sin ella ⇒ 401."""
     from factory.services import w5_human_decisions as _w5
     try:
         return _w5.record_correction(
             decision_id,
-            corrected_by=body.corrected_by,
+            corrected_by=identity,
             reason=body.reason,
             decision=body.decision,
             notes=body.notes,
@@ -1821,6 +1827,7 @@ class RemediationDirectiveCreate(BaseModel):
     rationale: str
     authored_by_display_name: str | None = None
     original_text: str | None = None
+    supersedes_directive_id: str | None = None
 
 
 @router.post("/remediation/directives", status_code=201)
@@ -1829,7 +1836,12 @@ def post_remediation_directive(body: RemediationDirectiveCreate,
     """Vía mínima de captura (3.3: "entregar primero el endpoint +
     validación... proponer la UI rica como fase aparte"). Cada rechazo
     devuelve motivo explícito (422); identidad reservada también 422 vía
-    el mismo validador que el resto de la fábrica."""
+    el mismo validador que el resto de la fábrica.
+
+    supersedes_directive_id (opcional, Causa B CALIFICACION_FINAL_CURRENT_
+    ENGINE.md 2026-08-20): superficie mínima para crear una directiva que
+    reemplaza a una anterior propia (mismo finding_rc_id) -- la anterior
+    queda SUPERSEDED automáticamente, nunca borrada."""
     from factory.core.identity_policy import IdentityValidationError
     from factory.services import remediation_directive as _rd
     try:
@@ -1840,6 +1852,7 @@ def post_remediation_directive(body: RemediationDirectiveCreate,
             authored_by_id=identity,
             authored_by_display_name=body.authored_by_display_name,
             original_text=body.original_text,
+            supersedes_directive_id=body.supersedes_directive_id,
         )
     except IdentityValidationError as e:
         raise HTTPException(422, {"error": "invalid_identity", "detail": str(e)})

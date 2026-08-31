@@ -1,12 +1,13 @@
 import sys
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from factory.core.workspace_manager import (
     create_workspace, get_workspace_status, list_workspaces, close_workspace
 )
+from factory.api.auth import require_identity
 
 router = APIRouter(prefix="/api/v1/workspaces", tags=["workspaces"])
 
@@ -44,7 +45,9 @@ def get_workspace(project_id: str):
 
 
 @router.delete("/{project_id}")
-def delete_workspace(project_id: str):
+def delete_workspace(project_id: str,
+                     identity: str = Depends(require_identity)):
+    # H-1: cerrar/borrar un workspace es destructivo -> exige identidad autenticada (401 sin ella).
     try:
         return close_workspace(project_id)
     except ValueError as e:

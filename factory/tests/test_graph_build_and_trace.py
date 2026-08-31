@@ -190,3 +190,44 @@ def test_b12_links_urs_continuation_line_by_local_id(tmp_path):
     # "5.2.22" en el texto Y la continuación de línea, que lo hereda por local_id.
     assert len(impl) >= 2
     g.close()
+
+
+def test_h10_refers_to_by_literal_entity_mention(tmp_path):
+    """H-10: `claim --refers_to--> system_component|actor` cuando el nombre/rol
+    literal de la entidad aparece en el texto citable del claim. Guardas
+    anti-falso-positivo: nombre genérico ('System') NO crea arista; sin
+    entidad no pasa nada."""
+    from factory.regulatory.canonical import model as m
+    from factory.regulatory.canonical.persistence import CanonicalStore
+    canon_dir = tmp_path / "canon"
+    graph_dir = tmp_path / "graph"
+    with CanonicalStore("RW-DS", store_dir=canon_dir) as s:
+        s.put(m.Document(document_id="RW-DS", sha256="d" * 64, tipo="DS",
+                         titulo="DS", n_paginas=10))
+        s.put(m.build_claim("RW-DS", 3,
+                            "The Historian Server FR-HS-01 shall archive alarms hourly.",
+                            "function", "historian archives alarms"))
+        s.put(m.build_claim("RW-DS", 4,
+                            "The Maintenance Technician acknowledges the alarm at the panel.",
+                            "actor_action", "technician acks alarm"))
+        s.put(m.build_claim("RW-DS", 5,
+                            "The system shall be available 99.9% of the time.",
+                            "statement", "availability target"))
+        s.put(m.SystemComponent(component_id="cmp-hist", document_id="RW-DS",
+                                nombre="Historian Server FR-HS-01", tipo="Historian"))
+        s.put(m.SystemComponent(component_id="cmp-generic", document_id="RW-DS",
+                                nombre="System", tipo="other"))
+        s.put(m.Actor(actor_id="act-tech", document_id="RW-DS",
+                      nombre_rol="Maintenance Technician", tipo="role"))
+    gb.build_project_graph("PRJ-H10R", [("RW-DS", "DS")],
+                           canon_dir=canon_dir, graph_dir=graph_dir)
+    g = GraphStore("PRJ-H10R", store_dir=graph_dir)
+    refs = g.edges(rel="refers_to")
+    dsts = {e.dst_id for e in refs}
+    assert "cmp-hist" in dsts          # nombre compuesto y distintivo -> arista
+    assert "act-tech" in dsts          # rol literal -> arista
+    assert "cmp-generic" not in dsts   # 'System' es genérico -> SIN arista
+    # todas las aristas parten de un claim real
+    srcs = {e.src_id for e in refs}
+    assert srcs and all(s.startswith("clm-") for s in srcs)
+    g.close()

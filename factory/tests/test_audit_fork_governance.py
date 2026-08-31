@@ -115,7 +115,7 @@ def _dims(tmp_path, *, break_at=None, corrupt_at=None, known=(), store_file=None
 # F-01 / F-04 -- la afirmacion que se cierra
 # ===========================================================================
 
-def test_f01_part11_is_never_true_with_chain_errors():
+def test_f01_part11_is_never_true_with_chain_errors(real_audit_chain):
     """Sobre la cadena REAL de hoy. El test central de esta fase."""
     r = aw.verify_chain()
     assert r["chain_errors"] > 0
@@ -140,7 +140,7 @@ def test_f04_without_an_exception_part11_is_not_determined(tmp_path, empty_store
     assert d["chain_continuity"] == aw.CHAIN_CONTINUITY_BROKEN_HISTORICAL
 
 
-def test_f04_the_real_chain_never_claims_plain_compliance():
+def test_f04_the_real_chain_never_claims_plain_compliance(real_audit_chain):
     """Sobre la cadena REAL: con una ruptura, NUNCA se llega a COMPLIANT.
 
     Afirmaba `NOT_DETERMINED` y `unbacked == [el fork]`, que era el estado hasta
@@ -186,7 +186,7 @@ def test_f02_content_integrity_stays_green_while_continuity_is_broken(tmp_path,
     assert d["part11_compliant"] == aw.PART11_NOT_DETERMINED
 
 
-def test_f02_the_real_chain_reports_all_five_dimensions():
+def test_f02_the_real_chain_reports_all_five_dimensions(real_audit_chain):
     r = aw.verify_chain()
     for key in ("content_hash_integrity", "chain_continuity",
                 "historical_fork_present", "new_forks_since_baseline",
@@ -257,8 +257,12 @@ def test_f05_an_exception_for_another_entry_does_not_cover_this_fork(tmp_path):
 # F-06 / F-07 -- forks nuevos
 # ===========================================================================
 
-def test_f06_no_new_forks_on_the_real_chain():
-    """El unico fork de la cadena real esta en el baseline."""
+def test_f06_no_new_forks_on_the_real_chain(monkeypatch):
+    """El unico fork de la cadena real esta en el baseline.
+
+    H-2: `isolated_audit` es autouse y redirige `aw.AUDIT_FILE` a tmp. Este
+    test verifica la cadena PRODUCTIVA, asi que restaura el default explicito."""
+    monkeypatch.setattr(aw, "AUDIT_FILE", aw._DEFAULT_AUDIT_FILE)
     assert aw.new_forks_since_baseline() == ()
     assert aw.verify_chain()["new_forks_since_baseline"] == 0
 
@@ -342,7 +346,7 @@ def test_f08_an_unreadable_baseline_knows_nothing_instead_of_everything(tmp_path
     assert aw.new_forks_since_baseline(chain, roto) == ("evt-2",)
 
 
-def test_f08_the_real_baseline_names_the_real_fork():
+def test_f08_the_real_baseline_names_the_real_fork(real_audit_chain):
     """El baseline congelado apunta al evento que existe de verdad."""
     baseline = aw.load_fork_baseline()
     ids = [f["entry_id"] for f in baseline["known_forks"]]

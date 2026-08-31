@@ -235,10 +235,15 @@ class Actor:
     document_id: str
     nombre_rol: str
     tipo: str                      # ACTOR_TYPES
+    #: H-10: provenance de la MENCIÓN LITERAL que ancla al actor. None sólo en
+    #: objetos históricos/sintéticos; los extraídos por `extract_entities` la llevan.
+    provenance: Provenance | None = None
 
     def __post_init__(self) -> None:
         if self.tipo not in ACTOR_TYPES:
             raise ValueError(f"Actor.tipo inválido: {self.tipo!r}")
+        if self.provenance is not None:
+            validate_provenance(self.provenance)
 
 
 @dataclass
@@ -248,10 +253,14 @@ class SystemComponent:
     nombre: str
     tipo: str                      # COMPONENT_TYPES
     version: str | None = None
+    #: H-10: provenance de la MENCIÓN LITERAL que ancla al componente.
+    provenance: Provenance | None = None
 
     def __post_init__(self) -> None:
         if self.tipo not in COMPONENT_TYPES:
             raise ValueError(f"SystemComponent.tipo inválido: {self.tipo!r}")
+        if self.provenance is not None:
+            validate_provenance(self.provenance)
 
 
 @dataclass
@@ -356,6 +365,34 @@ def build_test(document_id: str, pagina: int, identificador: str,
         document_id=document_id, section_id=section_id,
         identificador=identificador, descripcion=descripcion, resultado=resultado,
         verifies_requirement_ids=list(verifies_requirement_ids or []),
+        provenance=prov,
+    )
+
+
+def build_system_component(document_id: str, pagina: int, nombre: str, tipo: str, *,
+                           source_text: str, version: str | None = None,
+                           section_numero: str | None = None,
+                           section_titulo: str | None = None) -> SystemComponent:
+    """H-10: `SystemComponent` anclado a una mención literal (`source_text`).
+    Id determinista por nombre normalizado -> re-extraer es idempotente."""
+    prov = Provenance.build(document_id, pagina, source_text,
+                            section_numero=section_numero, section_titulo=section_titulo)
+    return SystemComponent(
+        component_id=_det_id("cmp", document_id, nombre.strip().lower()),
+        document_id=document_id, nombre=nombre.strip(), tipo=tipo, version=version,
+        provenance=prov,
+    )
+
+
+def build_actor(document_id: str, pagina: int, nombre_rol: str, tipo: str, *,
+                source_text: str, section_numero: str | None = None,
+                section_titulo: str | None = None) -> Actor:
+    """H-10: `Actor` anclado a una mención literal (`source_text`)."""
+    prov = Provenance.build(document_id, pagina, source_text,
+                            section_numero=section_numero, section_titulo=section_titulo)
+    return Actor(
+        actor_id=_det_id("act", document_id, nombre_rol.strip().lower()),
+        document_id=document_id, nombre_rol=nombre_rol.strip(), tipo=tipo,
         provenance=prov,
     )
 

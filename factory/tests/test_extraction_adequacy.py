@@ -26,20 +26,25 @@ def _f(subtype, *, machine_state="MACHINE_DEVIATION_CANDIDATE", document="RW-000
 
 
 # ── extraction_adequacy ────────────────────────────────────────────────
-def test_thresholds_artifact_is_draft_unsigned():
-    assert adq.status() == "DRAFT_UNSIGNED"
-    assert adq.is_signed() is False
+def test_thresholds_artifact_is_signed_post_d2():
+    # D-2 APPROVE (D-2-H7-20260830) firmó este artefacto: DRAFT_UNSIGNED -> SIGNED.
+    assert adq.status() == "SIGNED"
+    assert adq.is_signed() is True
 
 
-def test_assert_signed_fails_closed_for_enforce_path():
+def test_assert_signed_fails_closed_when_artifact_unsigned(tmp_path):
+    """El MECANISMO fail-closed: `assert_signed` sobre un artefacto SIN firma
+    lanza. (El artefacto del repo ya está SIGNED tras D-2; se prueba con una
+    copia unsigned para no depender del estado gobernado vivo.)"""
+    p = tmp_path / "unsigned.yaml"
+    p.write_text("status: DRAFT_UNSIGNED\nabsolute_floor:\n  min_sections: 1\n")
     with pytest.raises(adq.AdequacyThresholdsNotSignedError):
-        adq.assert_signed()
+        adq.assert_signed(p)
 
 
 def test_observe_path_does_not_require_signature():
-    # assess_corpus NO llama assert_signed -> OBSERVE corre con DRAFT_UNSIGNED
+    # assess_corpus NUNCA llama assert_signed -> corre igual firmado o no.
     a = adq.assess_corpus(_RW)
-    assert a["thresholds_signed"] is False
     assert set(a["verdicts"]) == set(_RW)
 
 
@@ -184,10 +189,17 @@ def test_histogram_counts():
 
 
 # ── E2E OBSERVE: 0 supresión, 0 nuevos Findings GMP, 0 cambio de estado ──
-def test_v2_runtime_observe_effect(tmp_path):
+def test_v2_runtime_observe_effect(tmp_path, monkeypatch):
     import json
 
     from factory.regulatory.validation_v2.v2_runtime import run_v2_pipeline
+    from factory.regulatory.validation_v2 import coverage_mode as _cm
+    # tras D-2 el repo está en ENFORCE; este test valida el CONTRATO OBSERVE
+    # (0 supresión / evidence_basis / would_degrade), así que se fuerza OBSERVE.
+    _cfg = tmp_path / "acm_observe.yaml"
+    _cfg.write_text("mode: OBSERVE\ndecided_by: null\ndecision_ref: null\ndecision_date: null\n")
+    monkeypatch.setattr(_cm, "_MODE_PATH", _cfg)
+    monkeypatch.setattr(_cm, "_thresholds_signed", lambda: False)
     run_v2_pipeline(_RW, project_id="RW-V2-E2E", run_id="obs-test", report_base=tmp_path)
     rd = tmp_path / "obs-test"
 
@@ -204,8 +216,7 @@ def test_v2_runtime_observe_effect(tmp_path):
     assert all(f["human_state"] == "UNREVIEWED" for f in reg + func + tech)
 
     ac = json.loads((rd / "analysis_coverage.json").read_text())
-    assert ac["mode"] == "OBSERVE"
-    assert ac["thresholds_signed"] is False
+    assert ac["mode"] == "OBSERVE"   # forzado en este test; el repo va en ENFORCE tras D-2
     assert ac["adequacy_verdicts"]["RW-0009"] == "NOT_ANALYZABLE"
     assert sum(1 for d, v in ac["adequacy_verdicts"].items() if v == "ANALYZABLE") == 5
     # analysis_coverage NO es un Finding

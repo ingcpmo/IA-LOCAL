@@ -1,12 +1,13 @@
 import sys
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from factory.core.release_manager import (
     DecisionCoverageBlocked, create_release, list_releases, get_release,
 )
+from factory.api.auth import require_identity
 
 router = APIRouter(prefix="/api/v1/releases", tags=["releases"])
 
@@ -26,7 +27,9 @@ def get_project_releases(project_id: str):
 
 
 @router.post("/{project_id}/{version}", status_code=201)
-def post_release(project_id: str, version: str, body: ReleaseCreate):
+def post_release(project_id: str, version: str, body: ReleaseCreate,
+                 identity: str = Depends(require_identity)):
+    # H-1: crear una release exige identidad autenticada (`X-Identity-Key`) ⇒ 401 sin ella.
     from factory.core.workspace_manager import WORKSPACES_DIR
     ws_path = body.workspace_path or str(WORKSPACES_DIR / project_id)
     if not Path(ws_path).exists():

@@ -343,10 +343,11 @@ class TestGovernedCorrection:
             w5.record_correction("D1_regulatory_sources", corrected_by="cesar",
                                  reason="sin cambios", reverification_cadence_months=1)
 
-    def test_correcting_a_decision_that_was_never_recorded_is_404(self, client, isolated_store):
+    def test_correcting_a_decision_that_was_never_recorded_is_404(self, client, isolated_store, identity_headers):
+        # H-1: `corrected_by` se deriva de X-Identity-Key; sin identidad => 401.
         r = client.post("/api/v1/layer9/w5-decisions/D2_evidence_packs/correct",
-                        json={"corrected_by": "cesar", "reason": "x",
-                              "reverification_cadence_months": 12})
+                        json={"reason": "x", "reverification_cadence_months": 12},
+                        headers=identity_headers)
         assert r.status_code == 404
 
     def test_correction_changes_no_governed_state(self, isolated_store):

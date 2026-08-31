@@ -513,7 +513,7 @@ def test_freezing_the_baseline_is_never_an_acceptance():
     assert aw.unbacked_known_forks() == ()
 
 
-def test_the_state_resolves_exceptions_against_the_store_it_was_asked_about(tmp_path):
+def test_the_state_resolves_exceptions_against_the_store_it_was_asked_about(tmp_path, real_audit_chain):
     """`get_state(store_file=X)` no puede mezclar dos almacenes.
 
     La cobertura salia del almacen indicado y las excepciones del REAL, asi que

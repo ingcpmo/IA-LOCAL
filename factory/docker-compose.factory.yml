@@ -1,21 +1,106 @@
 name: factory
 
+# ============================================================================
+# H-5F (2026-08-29) -- Hardening de GMP AI Factory (factory-api).
+#   * Egress: red dedicada + NET_ADMIN + factory_egress_guard.sh
+#     (deny-by-default OUTPUT; allowlist = loopback / established / 127/8 /
+#      gateway:11434 Ollama local / subnet local). Internet externo => ENETUNREACH.
+#   * Mounts: árbol de código + corpus fuente + config gobernada = READ-ONLY.
+#     Solo los stores mutables declarados quedan RW.
+#   * CORS: allowlist por FACTORY_CORS_ALLOWED_ORIGINS (nunca "*").
+# NO toca gmp-api / gmp-postgres / gmp-redis / docker-compose.yml base.
+# ============================================================================
+
+networks:
+  factory_isolated:
+    name: factory_isolated
+    driver: bridge
+    ipam:
+      config:
+        # subnet/gateway fijos: el guard permite <gateway>:11434 (Ollama local
+        # del host) y `extra_hosts` mapea host.docker.internal a esta gateway.
+        - subnet: 172.29.71.0/24
+          gateway: 172.29.71.1
+
 services:
   factory-api:
     build:
       context: ..
       dockerfile: factory/Dockerfile
+    image: factory-factory-api
     container_name: factory-api
+    networks:
+      - factory_isolated
     ports:
       - "9000:8000"
     env_file:
       - .env
-    volumes:
-      - .:/app/factory
-      - ../backups/factory:/app/backups_factory
-      - ../GMPAI:/home/ing_cpmo/GMPAI
+    environment:
+      # H-5F: allowlist CORS explícita (vacía por defecto = sin CORS cross-origin).
+      # Se sobreescribe en .env o aquí con orígenes concretos de UI autorizada.
+      FACTORY_CORS_ALLOWED_ORIGINS: "${FACTORY_CORS_ALLOWED_ORIGINS:-}"
+    cap_add:
+      # requerido por factory_egress_guard.sh para escribir la cadena OUTPUT
+      # del network namespace propio del contenedor (NO del host).
+      - NET_ADMIN
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      # H-5F: la Ollama LOCAL corre en el host; se alcanza por la gateway de
+      # esta red aislada (no por el docker0 global). El guard permite este
+      # destino solo en tcp/11434.
+      - "host.docker.internal:172.29.71.1"
+    volumes:
+      # ---- base: TODO el árbol de Factory en READ-ONLY --------------------
+      # incluye TODO el código Python (api/, core/, services/, engines/,
+      # regulatory/*.py y sub-paquetes: findings/, v2_judgment/, graph/, ...),
+      # el corpus fuente (regulatory/sources/), los catálogos gobernados
+      # (requirement_catalog/, schemas/, prompts/, golden_dataset/, eval/) y la
+      # config gobernada (config/). NINGÚN directorio con .py se re-monta RW.
+      - .:/app/factory:ro
+      # ---- carve-outs RW: SOLO stores mutables SIN código Python ---------
+      - ./audit:/app/factory/audit                                   # cadena Part 11 + logs de auditoría (0 .py)
+      - ./logs:/app/factory/logs                                     # access.jsonl (0 .py)
+      - ./registry:/app/factory/registry                             # artifact_versions.jsonl + ports.yaml (0 .py)
+      - ./runtime:/app/factory/runtime                               # claude_status.json (0 .py)
+      - ./jobs:/app/factory/jobs                                     # cola de jobs (0 .py)
+      - ./approvals:/app/factory/approvals                           # aprobaciones (0 .py)
+      - ./releases:/app/factory/releases                             # paquetes liberados (0 .py)
+      - ./release_candidates:/app/factory/release_candidates         # RCs (0 .py)
+      - ./test_results:/app/factory/test_results                     # resultados de tests de soluciones (0 .py)
+      - ./agent_tasks:/app/factory/agent_tasks                       # tasks.yaml (0 .py)
+      - ./designs:/app/factory/designs                               # 0 .py
+      - ./validation:/app/factory/validation                        # 0 .py
+      - ./remediation_packages:/app/factory/remediation_packages     # contenido de paquetes de remediación (0 .py)
+      # layer9/: el PAQUETE .py (human_review_queue.py, mission_control.py, …)
+      # queda RO en la base; SOLO los stores mutables se re-montan RW:
+      - ./layer9/review_queue.jsonl:/app/factory/layer9/review_queue.jsonl
+      - ./layer9/review_queue.lock:/app/factory/layer9/review_queue.lock
+      - ./layer9/remediation_directives.jsonl:/app/factory/layer9/remediation_directives.jsonl
+      - ./layer9/risks:/app/factory/layer9/risks                     # risks.jsonl (0 .py)
+      - ./layer9/decisions:/app/factory/layer9/decisions             # decisions*.jsonl / w5_*.jsonl (0 .py)
+      # regulatory/: SOLO stores regenerables/mutables SIN .py (findings/ y
+      # v2_judgment/ son PAQUETES importados -> quedan RO):
+      - ./regulatory/graph_store:/app/factory/regulatory/graph_store
+      - ./regulatory/canonical_store:/app/factory/regulatory/canonical_store
+      - ./regulatory/retrieval_index:/app/factory/regulatory/retrieval_index
+      - ./regulatory/embedding_index:/app/factory/regulatory/embedding_index
+      - ./regulatory/validation_evidence:/app/factory/regulatory/validation_evidence
+      - ./regulatory/corpus_run:/app/factory/regulatory/corpus_run
+      - ./regulatory/case_memory:/app/factory/regulatory/case_memory
+      # ---- carve-outs RW: ficheros de estado sueltos en dirs RO ---------
+      - ./regulatory/connector_state.json:/app/factory/regulatory/connector_state.json
+      - ./regulatory/broken_link_report.jsonl:/app/factory/regulatory/broken_link_report.jsonl
+      - ./regulatory/source_currency_log.jsonl:/app/factory/regulatory/source_currency_log.jsonl
+      - ./regulatory/validation_v2/routing_history.jsonl:/app/factory/regulatory/validation_v2/routing_history.jsonl
+      - ./regulatory/validation_v2/routing.txt:/app/factory/regulatory/validation_v2/routing.txt
+      # ---- mounts externos (fuera del árbol factory/) -------------------
+      - ../backups/factory:/app/backups_factory
+      # H-5F: GMPAI mezcla INPUT (source/ = originales Rockwell/SCADA, incoming/
+      # = zips crudos, 263 MB) y OUTPUT (reports/). El runtime SOLO lee
+      # source/Rockwell y SOLO escribe reports/gmpai_document_validation/<run_id>/.
+      # -> árbol GMPAI en RO; único carve-out RW = el directorio de paquetes de
+      # corrida. Ningún documento/original del cliente queda escribible.
+      - ../GMPAI:/home/ing_cpmo/GMPAI:ro
+      - ../GMPAI/reports/gmpai_document_validation:/home/ing_cpmo/GMPAI/reports/gmpai_document_validation
     mem_limit: 512m
     cpus: "0.5"
     restart: unless-stopped

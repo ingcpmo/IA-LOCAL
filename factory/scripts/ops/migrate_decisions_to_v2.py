@@ -129,7 +129,7 @@ def is_stale(store_file: Path | None = None, **kwargs) -> dict:
     """
     target = store_file or store.STORE_FILE
     exists = target.is_file()
-    projected = adapter.project_all(**kwargs)
+    projected = adapter.project_all(occupied_from=target, **kwargs)
     actual = store.read_all(target) if exists else []
     migrated = [r for r in actual
                 if r.get("provenance") in MIGRATION_PROVENANCES]
@@ -204,7 +204,8 @@ def run(apply: bool = False, *, force: bool = False, merge_natives: bool = False
     before = {"a": _sha256(src_a), "b": _sha256(src_b)}
 
     projected = adapter.project_all(legacy_a=src_a, legacy_b=src_b,
-                                    registry_file=registry_file)
+                                    registry_file=registry_file,
+                                    occupied_from=target)
     families = store.load_families()
 
     # El lote se valida contra si mismo: una CORRECTION y la decision que

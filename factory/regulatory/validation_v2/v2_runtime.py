@@ -40,7 +40,7 @@ from factory.regulatory.findings.remediation_v2 import (
 )
 from factory.regulatory.findings.technical_findings import graph_technical_findings
 from factory.regulatory.graph import build as gb
-from factory.regulatory.validation_v2.local_only import network_locked
+from factory.regulatory.validation_v2.local_only import egress_control_state, network_locked
 
 _CANON = Path("factory/regulatory/canonical_store")
 _GRAPH = Path("factory/regulatory/graph_store")
@@ -74,10 +74,132 @@ def _sha256_bytes(b: bytes) -> str:
     return hashlib.sha256(b).hexdigest()
 
 
+#: H-4: subtipos cuya conclusion depende del ESTADO DEL GRAFO (ausencia de una
+#: familia de aristas). Para estos se puebla `provenance.graph_path` hacia el
+#: snapshot inmutable de la corrida, de forma DETERMINISTA (sin orden accidental).
+_GRAPH_DEPENDENT_SUBTYPES = {
+    "REQUIREMENT_NOT_TESTED":            "tested_by",
+    "ORPHAN_DESIGN_ELEMENT":            "tested_by",
+    "IMPLEMENTATION_WITHOUT_REQUIREMENT": "implemented_by",
+}
+
+
+def _stamp_graph_path(findings, *, snapshot_ref: str, snapshot_fp: str) -> None:
+    """Rellena `provenance.graph_path` (campo aditivo, NO entra en findings_fingerprint)
+    para los hallazgos dependientes del grafo. El path apunta al snapshot inmutable
+    del paquete y nombra la familia de arista comprobada."""
+    for f in findings:
+        p = getattr(f, "provenance", None)
+        if p is None or getattr(p, "graph_path", None):
+            continue  # ya lo trae (p.ej. refers_to/contradicts) -- no se pisa
+        rel = _GRAPH_DEPENDENT_SUBTYPES.get(getattr(f, "subtype", None))
+        dep = getattr(f, "evidence_basis", None) == "ABSENCE_DEPENDENT"
+        if rel is None and not dep:
+            continue
+        p.graph_path = [
+            snapshot_ref,
+            {
+                "graph_snapshot_fingerprint": snapshot_fp,
+                "subject_document": getattr(f, "document", None),
+                "subject_page": getattr(f, "page", None),
+                "edge_family_checked": rel,
+                "conclusion_depends_on": "ABSENCE_OF_EDGE" if rel else "GRAPH_STATE",
+            },
+        ]
+
+
+#: H-7 (2026-08-29): tratamiento gobernado de cobertura. La separación en dos
+#: colas es PRESENTACIÓN (ambos modos). La degradación de banda solo ocurre en
+#: ENFORCE efectivo (GATE D-2). En OBSERVE: 0 cambio de risk/severity/state.
+def _h7_coverage_treatment(all_findings, cov_deps: list, effective_mode: str) -> dict:
+    from factory.regulatory.findings.risk import compute_risk as _cr
+    cov_by_id = {c.get("finding_id"): c for c in (cov_deps or [])}
+
+    actionable, blocked = [], []
+    blk_by_reason = {"missing_or_degraded_coverage": 0, "method_indeterminate": 0}
+    rule_applied = 0        # la regla ENFORCE aplica al finding (== would_degrade_true)
+    band_changed = 0        # y además la banda se movió numéricamente
+    changes = []
+    for f in all_findings:
+        cd = cov_by_id.get(getattr(f, "finding_id", None), {})
+        would = bool(cd.get("would_degrade"))
+        basis = cd.get("evidence_basis") or getattr(f, "evidence_basis", None)
+        if would:
+            blocked.append(f); blk_by_reason["missing_or_degraded_coverage"] += 1
+        elif basis == "INDETERMINATE":
+            # el método determinista ya no concluyó -> bloqueado por EVIDENCIA, no por cobertura
+            blocked.append(f); blk_by_reason["method_indeterminate"] += 1
+        else:
+            actionable.append(f)
+
+        if effective_mode == "ENFORCE":
+            eb = basis
+            cs = cd.get("coverage_status")
+            gxp = _gxp_impact_for(f)
+            new = _cr(f.subtype, f.severity, gxp,
+                      evidence_basis=eb, coverage_status=cs, mode="ENFORCE").as_dict()
+            f.risk = new
+            if new.get("enforced_degraded"):
+                rule_applied += 1
+                if new.get("band_changed"):
+                    band_changed += 1
+                changes.append({"finding_id": f.finding_id, "subtype": f.subtype,
+                                "document": f.document, "band_pre": new.get("band_pre_enforce"),
+                                "band_post": new.get("band"), "band_changed": new.get("band_changed"),
+                                "coverage_status": cs, "evidence_basis": eb})
+
+    _fl = list(all_findings)
+    rw0009_blocked = [f for f in blocked if getattr(f, "document", None) == "RW-0009"]
+    rw0009_all = [f for f in _fl if getattr(f, "document", None) == "RW-0009"]
+    return {
+        "effective_mode": effective_mode,
+        "queues": {
+            "ACTIONABLE_NOW": {
+                "count": len(actionable),
+                "finding_ids": [getattr(f, "finding_id", None) for f in actionable],
+            },
+            "BLOCKED_BY_COVERAGE_OR_EVIDENCE": {
+                "count": len(blocked),
+                "by_reason": blk_by_reason,
+                "rw0009_subset_count": len(rw0009_blocked),
+                "finding_ids": [getattr(f, "finding_id", None) for f in blocked],
+            },
+        },
+        "rw0009_total_findings": len(rw0009_all),
+        "totals_coherent": (len(actionable) + len(blocked)) == len(_fl),
+        "enforce_effect": {
+            "findings_degraded": rule_applied,      # regla aplicada (== would_degrade_true en ENFORCE)
+            "band_actually_lowered": band_changed,  # subset donde la banda se movió (resto ya estaba en LOW)
+            "changes": changes,
+            "note": ("0 en OBSERVE (sin cambio de risk/severity). En ENFORCE la regla aplica a "
+                     "TODOS los ABSENCE_DEPENDENT con cobertura MISSING/DEGRADED (== would_degrade_true); "
+                     "band_actually_lowered excluye los que ya estaban en LOW."),
+        },
+    }
+
+
+def _gxp_impact_for(f) -> str:
+    """H-7: en ENFORCE, `gxp_impact` sale de la criticidad GxP estructurada del
+    requisito (gxp_criticality.yaml). Si el finding no tiene requirement_id o no
+    está mapeado -> MEDIUM (== literal actual)."""
+    rid = getattr(f, "requirement_id", None) or getattr(getattr(f, "provenance", None), "subcriterion_ref", None)
+    try:
+        from factory.regulatory.requirement_catalog import gxp_criticality_loader as _gx
+        return _gx.level_for(rid)
+    except Exception:  # noqa: BLE001
+        return "MEDIUM"
+
+
 def _finding_row(f) -> dict:
     p = f.provenance
     return {
-        "finding_id": f.finding_id, "class": f.finding_class, "subtype": f.subtype,
+        "finding_id": f.finding_id,
+        # H-3 (M2+M3, 2026-08-29): identificador ÚNICO por registro emitido.
+        # `finding_id` colisiona (varios sub-criterios de un requisito con el
+        # mismo source_text); `finding_record_id` no. Campo ADITIVO -- NO entra
+        # en `findings_fingerprint`.
+        "finding_record_id": getattr(f, "finding_record_id", None),
+        "class": f.finding_class, "subtype": f.subtype,
         "severity": f.severity, "document": f.document, "page": f.page,
         "section": f.section, "source_text": f.source_text, "source_hash": f.source_hash,
         "requirement": f.requirement_id or getattr(p, "subcriterion_ref", None),
@@ -117,6 +239,7 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
     (run_dir / "corrected_documents").mkdir(parents=True, exist_ok=True)
     (run_dir / "remediation").mkdir(parents=True, exist_ok=True)
     (run_dir / "audit_summary").mkdir(parents=True, exist_ok=True)
+    (run_dir / "graph_snapshot").mkdir(parents=True, exist_ok=True)
 
     started = datetime.now(timezone.utc).isoformat()
     with network_locked() as egress:
@@ -125,6 +248,25 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
         for did in document_ids:
             docs_typed.append((did, _doc_type(did, canon_dir)))
         counts = gb.build_project_graph(project_id, docs_typed, canon_dir=canon_dir, graph_dir=graph_dir)
+
+        # --- H-4: snapshot INMUTABLE del grafo por run_id ---
+        # El grafo es un artefacto DERIVADO. Se congela dentro del paquete de la
+        # corrida; nunca se sobrescribe (run_dir es unico por run_id). El
+        # graph_store keyed por project_id sigue existiendo aparte y SI se
+        # sobrescribe -- por eso el snapshot vive en el paquete.
+        from factory.regulatory.validation_v2 import run_fingerprint as _fp
+        _graph_snapshot = _fp.graph_snapshot_from_store(project_id, graph_dir)
+        _graph_snapshot_fp = _fp.graph_snapshot_fingerprint(_graph_snapshot)
+        _gs_path = run_dir / "graph_snapshot" / "graph_snapshot.json"
+        if _gs_path.exists():
+            raise RuntimeError(
+                f"H-4: {_gs_path} ya existe -- un snapshot de grafo NUNCA se sobrescribe. "
+                f"run_id={run_id!r} reutilizado?")
+        _gs_path.write_text(
+            json.dumps({"run_id": run_id, "project_id": project_id,
+                        "graph_snapshot_fingerprint": _graph_snapshot_fp,
+                        **_graph_snapshot}, indent=1, ensure_ascii=False),
+            encoding="utf-8")
 
         # --- regulatory (Tier-1 / Palanca C, CERO LLM) ---
         reg: list = []
@@ -154,31 +296,60 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
     # `stamp` solo rellena el campo aditivo evidence_basis; el resto del finding no cambia.
     from factory.regulatory.findings import evidence_basis as _eb
     from factory.regulatory.validation_v2 import extraction_adequacy as _adq
+    from factory.regulatory.validation_v2 import coverage_mode as _cm
+    # H-7: `analysis_coverage_mode` es ahora un PARÁMETRO GOBERNADO (no un literal
+    # en 4 sitios). ENFORCE efectivo exige firma de Capa 9 + thresholds SIGNED.
+    _mode_att = _cm.resolve()
+    _eff_mode = _mode_att["effective_mode"]
     _eb.stamp(all_findings)
+    # H-4: poblar provenance.graph_path hacia el snapshot inmutable (post-stamp,
+    # porque _stamp_graph_path consulta evidence_basis).
+    _stamp_graph_path(all_findings,
+                      snapshot_ref="graph_snapshot/graph_snapshot.json",
+                      snapshot_fp=_graph_snapshot_fp)
     _graph_edges = counts.get("edges_by_rel", counts) if isinstance(counts, dict) else {}
+    _h7 = None
     try:
         _assessment = _adq.assess_corpus(document_ids, canon_dir)
-        _assessment["mode"] = "OBSERVE"
+        _assessment["mode"] = _eff_mode
         _cov_deps = _eb.coverage_dependencies(all_findings, _assessment,
                                               graph_edges=_graph_edges, canon_dir=canon_dir)
+        # H-7: separación en dos colas (presentación, ambos modos) + degradación
+        # de banda SOLO si ENFORCE efectivo. Se ejecuta ANTES de persistir los
+        # finding_row para que el informe y los .json reflejen el modo.
+        _h7 = _h7_coverage_treatment(all_findings, _cov_deps, _eff_mode)
         _analysis_coverage = {
-            "mode": "OBSERVE",
+            "mode": _eff_mode,
+            "mode_attestation": _mode_att,
             "thresholds_artifact": _assessment.get("thresholds_artifact"),
             "thresholds_signed": _assessment.get("thresholds_signed"),
-            "note": ("OBSERVE -- 0 supresiones, 0 Findings GMP nuevos, 0 cambio de "
-                     "risk/remediation/state. evidence_basis y coverage_dependencies son "
-                     "metadata aditiva. Umbrales = HEURÍSTICAS DRAFT_UNSIGNED, no requisitos GMP. "
-                     "Ver docs_plan/PLAN_HARDENING_ANALIZADOR_GMP_LOCAL_V2.md WP-B."),
+            "note": (("OBSERVE -- 0 supresiones, 0 Findings GMP nuevos, 0 cambio de "
+                      "risk/remediation/state. evidence_basis, coverage_dependencies y las "
+                      "dos colas son metadata/presentación aditiva.")
+                     if _eff_mode == "OBSERVE" else
+                     ("ENFORCE (D-2 firmado) -- se degradó la banda de los ABSENCE_DEPENDENT "
+                      "con cobertura MISSING/DEGRADED. gxp_impact derivado de gxp_criticality.yaml.")),
             "coverage_statement": _adq.coverage_statement(_assessment),
             "adequacy_by_document": _assessment.get("by_document", {}),
             "adequacy_verdicts": _assessment.get("verdicts", {}),
             "role_stats_observational": _assessment.get("role_stats_observational", {}),
             "coverage_dependencies": _cov_deps,
             "would_degrade_histogram": _eb.histogram(_cov_deps),
+            "coverage_queues": _h7["queues"],
+            "coverage_queues_totals_coherent": _h7["totals_coherent"],
+            "enforce_effect": _h7["enforce_effect"],
         }
     except Exception as e:  # noqa: BLE001 -- WP-B OBSERVE nunca aborta la corrida
-        _analysis_coverage = {"mode": "OBSERVE", "error": f"{type(e).__name__}: {e}"}
+        _analysis_coverage = {"mode": _eff_mode, "mode_attestation": _mode_att,
+                              "error": f"{type(e).__name__}: {e}"}
     _write_json(run_dir / "analysis_coverage.json", _analysis_coverage)
+    _write_json(run_dir / "analysis_coverage_queues.json", {
+        "effective_mode": _eff_mode,
+        "queues": (_h7 or {}).get("queues", {}),
+        "totals_coherent": (_h7 or {}).get("totals_coherent"),
+        "enforce_effect": (_h7 or {}).get("enforce_effect", {}),
+        "mode_attestation": _mode_att,
+    })
 
     # --- persistence: findings + evidence/provenance ---
     _write_json(run_dir / "regulatory_findings.json", [_finding_row(f) for f in reg])
@@ -269,6 +440,31 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
     # --- final report (report_v2) ---
     rep = report_v2.build_report(all_findings, document_id=project_id, run_id=run_id)
     md = report_v2.render_markdown(rep)
+    # H-7: sección de dos colas al final del informe (presentación, ambos modos).
+    if _h7:
+        _q = _h7["queues"]
+        _an = _q["ACTIONABLE_NOW"]; _bl = _q["BLOCKED_BY_COVERAGE_OR_EVIDENCE"]
+        _br = _bl["by_reason"]
+        _tot = _an["count"] + _bl["count"]
+        _ee = _h7["enforce_effect"]
+        md += (
+            f"\n\n---\n\n## Cobertura del análisis — dos colas gobernadas (modo `{_eff_mode}`)\n\n"
+            f"> `analysis_coverage_mode` es un parámetro GOBERNADO. `ENFORCE` (degradación de "
+            f"banda) exige GATE **D-2**. En `OBSERVE` esta sección es solo presentación: "
+            f"**0 cambio** de risk/severity/state.\n\n"
+            f"| Cola | Findings | Desglose |\n|---|---|---|\n"
+            f"| **ACTIONABLE_NOW** | {_an['count']} | cobertura suficiente; no depende de una capacidad ausente |\n"
+            f"| **BLOCKED_BY_COVERAGE_OR_EVIDENCE** | {_bl['count']} | por cobertura MISSING/DEGRADED "
+            f"(`would_degrade=true`): **{_br['missing_or_degraded_coverage']}** · por método "
+            f"INDETERMINATE (juicio semántico fuera de alcance): **{_br['method_indeterminate']}** "
+            f"(incl. **{_bl['rw0009_subset_count']}** anclados en RW-0009 NOT_ANALYZABLE; "
+            f"total findings RW-0009 = {_h7.get('rw0009_total_findings')}) |\n"
+            f"| Total | {_tot} | coherente = `{_h7['totals_coherent']}` |\n\n"
+            f"Efecto ENFORCE: regla aplicada a **{_ee['findings_degraded']}** findings "
+            f"(== `would_degrade_true`); banda numéricamente bajada en "
+            f"**{_ee.get('band_actually_lowered')}** (el resto ya estaba en LOW). "
+            f"En OBSERVE: **0**.\n"
+        )
     (run_dir / "informe_hallazgos_v2.md").write_text(md, encoding="utf-8")
     _write_json(run_dir / "compliance_matrices" / "final_report_v2.json", rep)
 
@@ -286,6 +482,7 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
                                                       tier1_requirements=_TIER1_REQUIREMENTS),
         applied_thresholds={},
         findings=all_findings,
+        graph_snapshot=_graph_snapshot,   # H-4: digest SEPARADO, no entra a INPUT_CONFIG
         wall_clock_seconds=_wall,
     )
 
@@ -295,6 +492,12 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
         "started_at": started, "finished_at": finished,
         "llm_calls": 0, "embedding_calls": 0,
         "local_only": egress.local_only, "document_egress_bytes": egress.document_egress_bytes,
+        # H-5F (2026-08-29): dos controles de egress claramente diferenciados.
+        # PROCESS_LEVEL = el monkeypatch de socket (defensa adicional).
+        # NETWORK_LEVEL = ENFORCED solo si el kernel no tiene ruta a Internet
+        # (sonda real fuera de network_locked). EGRESS_GUARANTEE=FORBIDDEN exige
+        # ambos -- nunca se declara por el monkeypatch solo.
+        "egress_controls": egress_control_state(),
         "graph_edges": counts.get("edges_by_rel", counts),
         "n_regulatory": len(reg), "n_functional": len(func), "n_technical": len(tech),
         "n_remediation_drafts": len(remediation),
@@ -304,15 +507,22 @@ def run_v2_pipeline(document_ids: list[str], *, project_id: str = "V2-E2E",
         "routing_note": ("Regulatory en modo Tier-1 / Palanca C (contingencia determinista). "
                          "NUNCA aprobacion automatica."),
         "input_config_fingerprint": _fpr["input_config_fingerprint"],
+        "graph_snapshot_fingerprint": _fpr["graph_snapshot_fingerprint"],   # H-4: digest DERIVADO, separado
+        "graph_snapshot_path": "graph_snapshot/graph_snapshot.json",
         "findings_fingerprint": _fpr["findings_fingerprint"],
         "schema_digests": _fpr["schema_digests"],
         "input_config": _fpr["input_config"],
         "run_attestation": _fpr["run_attestation"],
-        # WP-B OBSERVE -- resumen (el detalle va en analysis_coverage.json)
-        "analysis_coverage_mode": "OBSERVE",
+        # WP-B / H-7 -- resumen (el detalle va en analysis_coverage.json)
+        "analysis_coverage_mode": _eff_mode,   # H-7: EFECTIVO, resuelto del parámetro gobernado
+        "analysis_coverage_mode_attestation": _mode_att,
         "adequacy_verdicts": _analysis_coverage.get("adequacy_verdicts", {}),
         "coverage_would_degrade": _analysis_coverage.get("would_degrade_histogram", {}),
-        "wp_b_effect": "0 supresiones · 0 Findings GMP nuevos · 0 cambio de risk/remediation/state",
+        "coverage_queues": (_h7 or {}).get("queues", {}),
+        "analysis_coverage_enforce_effect": (_h7 or {}).get("enforce_effect", {}),
+        "wp_b_effect": ("0 supresiones · 0 Findings GMP nuevos · 0 cambio de risk/remediation/state"
+                        if _eff_mode == "OBSERVE"
+                        else f"ENFORCE: {(_h7 or {}).get('enforce_effect', {}).get('findings_degraded', 0)} findings degradados"),
     }
     _write_json(run_dir / "audit_summary" / "audit_metadata.json", audit)
 

@@ -123,10 +123,37 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 app = FastAPI(title="GMP AI Factory", version="0.1.0", docs_url="/api/docs", redoc_url=None)
 
+
+def _cors_allowed_origins() -> list[str]:
+    """H-5F (2026-08-29): allowlist explícita de orígenes CORS por variable de
+    entorno `FACTORY_CORS_ALLOWED_ORIGINS` (lista separada por comas).
+
+    - Vacía / ausente ⇒ `[]` ⇒ `CORSMiddleware` NO emite `Access-Control-Allow-Origin`
+      para NINGÚN `Origin` ⇒ **cross-origin denegado**. El acceso same-origin del
+      navegador no dispara CORS (no manda `Origin`, o manda el propio) y sigue
+      funcionando.
+    - Nunca `["*"]`. Nunca un host de una máquina concreta hardcodeado.
+    """
+    raw = os.getenv("FACTORY_CORS_ALLOWED_ORIGINS", "")
+    origins = [o.strip() for o in raw.split(",") if o.strip()]
+    if "*" in origins:
+        raise RuntimeError(
+            "FACTORY_CORS_ALLOWED_ORIGINS no admite '*' -- H-5F exige allowlist "
+            "explícita de orígenes concretos (o vacía = sin CORS cross-origin)."
+        )
+    return origins
+
+
+_CORS_ALLOWED_ORIGINS = _cors_allowed_origins()
+logging.getLogger("factory.api").info(
+    "CORS allowlist efectiva: %s",
+    _CORS_ALLOWED_ORIGINS or "(vacía -- cross-origin denegado)",
+)
+
 # Middleware order (add_middleware = LIFO; last added = outermost = first to process request)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_CORS_ALLOWED_ORIGINS,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

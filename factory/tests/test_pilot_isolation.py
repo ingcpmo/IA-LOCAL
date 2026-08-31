@@ -255,5 +255,5 @@ def test_pilot_execution_firmada_no_autoriza_run_corpus_batch_formal(monkeypatch
         document_sha256="0" * 64, agent_id="fda_part11_agent",
         prompt_path=runner._PROMPT_PATH_BY_AGENT["fda_part11_agent"], expected_calls=1)
     with pytest.raises(runner.CorpusRunNotAuthorizedError):
-        runner.run_corpus_batch([unit], provider=FakeCorpusProvider(),
+        runner.run_corpus_batch([unit], provider=FakeCorpusProvider(), run_context="validation",
                                 checkpoint_dir=tmp_path / "ckpt", manifest_dir=tmp_path / "manifest")

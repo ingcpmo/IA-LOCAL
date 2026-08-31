@@ -87,11 +87,16 @@ def pytest_configure(config):
 PENDING_HUMAN_INTERPRETATION_REQ_IDS = frozenset()
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def isolated_audit(tmp_path, monkeypatch):
     """
     Redirige audit_writer a un archivo JSONL temporal y resetea el hash global.
     Garantiza que write_event / verify_chain no tocan factory/audit/factory_audit.jsonl real.
+
+    H-2 (2026-08-29): pasa a `autouse=True`. NINGÚN test escribe en el audit
+    trail productivo por defecto. Un test que necesite leer la cadena REAL
+    (p.ej. verificación de forks históricos) debe restaurar explícitamente
+    `aw.AUDIT_FILE = aw._DEFAULT_AUDIT_FILE` y limpiar la caché del walk.
     """
     import factory.core.audit_writer as aw
 
@@ -174,3 +179,41 @@ def isolated_review_queue(tmp_path, monkeypatch):
     queue_file = tmp_path / "review_queue_test.jsonl"
     monkeypatch.setattr(hrq, "REVIEW_QUEUE_FILE", queue_file)
     yield queue_file
+
+
+@pytest.fixture()
+def real_audit_chain(monkeypatch, tmp_path):
+    """H-2 (2026-08-29): `isolated_audit` es autouse y redirige `aw.AUDIT_FILE`
+    a un tmp por defecto. Los tests que verifican propiedades de la cadena de
+    auditoria PRODUCTIVA (forks historicos, part11_compliant real,
+    known_fork_entry_ids) piden este fixture para LEER el fichero real.
+
+    SOLO LECTURA: `write_event` queda redirigido a un tmp aparte para que un
+    test que lea la cadena real y ademas dispare una escritura transitiva
+    (p.ej. `decision_store_v2.append_record`) NUNCA toque el fichero productivo.
+    """
+    import factory.core.audit_writer as aw
+
+    monkeypatch.setattr(aw, "AUDIT_FILE", aw._DEFAULT_AUDIT_FILE)  # lecturas -> cadena real
+
+    # SOLO LECTURA: cualquier escritura transitiva de un test que use este
+    # fixture (p.ej. decision_store_v2.append_record -> write_event) va a un
+    # sink tmp, NUNCA a la cadena productiva.
+    _sink = tmp_path / "real_audit_chain_write_sink.jsonl"
+    _raw_write = aw.write_event
+
+    def _isolated_write(event_type, project_id, data=None):
+        prev = aw.AUDIT_FILE
+        aw.AUDIT_FILE = _sink
+        try:
+            return _raw_write(event_type, project_id, data)
+        finally:
+            aw.AUDIT_FILE = prev
+
+    monkeypatch.setattr(aw, "write_event", _isolated_write)
+    for _modname in ("factory.services.decision_store_v2",
+                     "factory.services.governance_service"):
+        _m = sys.modules.get(_modname)
+        if _m is not None and hasattr(_m, "write_event"):
+            monkeypatch.setattr(_m, "write_event", _isolated_write)
+    yield aw._DEFAULT_AUDIT_FILE

@@ -294,7 +294,7 @@ def test_the_real_artifact_guard_reports_the_g6_matrix_regularization_closed():
                   for f in r["findings"])
 
 
-def test_the_real_chain_dimensions_land_on_warn_not_fail():
+def test_the_real_chain_dimensions_land_on_warn_not_fail(real_audit_chain):
     """Y el paso 3 sobre la cadena REAL: nada corrupto, ningun fork nuevo.
 
     Fijaba `part11_compliant == NOT_DETERMINED`, que era el valor hasta que Cesar

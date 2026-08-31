@@ -97,3 +97,12 @@ node_modules/
 # intento descartado, no debe volver a versionarse (docs_plan/
 # PLAN_MIGRACION_ARBOL_CANONICO_FASES_1_5.md, Fase 4.2)
 /cuda_installer.pyz
+
+# --- GMP AI Factory: stores y evidencia regenerables (H-9/H-10) ---
+factory/regulatory/canonical_store_v2/
+factory/regulatory/graph_store_v2/
+factory/regulatory/validation_v2/_h9_assets/
+factory/regulatory/pilot_run/h10_extraction_v2_20260830/
+docs_plan/_h9_full/
+docs_plan/_r_par/
+docs_plan/_gates_prep/

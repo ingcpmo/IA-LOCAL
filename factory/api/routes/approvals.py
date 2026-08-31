@@ -11,11 +11,12 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from factory.core.audit_writer import write_event
+from factory.api.auth import require_identity
 
 router = APIRouter(prefix="/api/v1/approvals", tags=["approvals"])
 
@@ -35,13 +36,15 @@ class ProposeBody(BaseModel):
 
 
 class ConfirmBody(BaseModel):
-    """Cuerpo para confirmación humana — único camino a status=approved."""
+    """Cuerpo para confirmación humana — único camino a status=approved.
+
+    H-1 (2026-08-29): `approved_by` / `recorded_by` YA NO viajan en el body.
+    El aprobador se DERIVA de la identidad autenticada (`X-Identity-Key` →
+    `Depends(require_identity)`), nunca del cliente."""
     action: str
-    approved_by: str           # nombre real del humano (no puede ser 'human'/'agent'/etc.)
     notes: str = ""
     version: str = ""
     gates_report_hash: str = ""
-    recorded_by: str = ""      # se sobreescribe con approved_by si vacío
 
 
 # ── Endpoint 1: agente propone ────────────────────────────────────────────────
@@ -91,23 +94,18 @@ def propose_approval(project_id: str, body: ProposeBody):
 # ── Endpoint 2: humano confirma ───────────────────────────────────────────────
 
 @router.post("/{project_id}/confirm", status_code=201)
-def confirm_approval(project_id: str, body: ConfirmBody):
+def confirm_approval(project_id: str, body: ConfirmBody,
+                     identity: str = Depends(require_identity),
+                     x_change_reason: str = Header(default="")):
     """
     Confirmación humana explícita.
     Resultado: status=approved, decision_origin=human_confirmed.
-    approved_by no puede ser un identificador reservado (human/agent/system/etc.).
+    H-1: `approved_by` = identidad autenticada resuelta desde `X-Identity-Key`.
+    Sin identidad ⇒ 401 (lo aplica `require_identity`).
     """
-    if not body.approved_by or body.approved_by.lower().strip() in _RESERVED_APPROVERS:
-        raise HTTPException(
-            status_code=422,
-            detail=(
-                f"approved_by='{body.approved_by}' es un valor reservado. "
-                "Usa el nombre real del aprobador humano (ej. 'Cesar', 'Maria')."
-            ),
-        )
-
     now = datetime.now(timezone.utc).isoformat()
-    recorded_by = body.recorded_by or body.approved_by
+    approved_by = identity
+    recorded_by = identity
 
     # Leer propuesta previa si existe para conservar campos
     ws_approval = WORKSPACES_DIR / project_id / "approval.json"
@@ -122,11 +120,12 @@ def confirm_approval(project_id: str, body: ConfirmBody):
         "action": body.action,
         "project_id": project_id,
         "version": body.version or existing.get("version", ""),
-        "approved_by": body.approved_by,
+        "approved_by": approved_by,
         "proposed_at": existing.get("proposed_at", now),
         "approved_at": now,
         "gates_report_hash": body.gates_report_hash or existing.get("gates_report_hash", ""),
         "notes": body.notes,
+        "change_reason": x_change_reason,
         "status": "approved",
         "decision_origin": "human_confirmed",
         "recorded_by": recorded_by,
@@ -144,7 +143,8 @@ def confirm_approval(project_id: str, body: ConfirmBody):
     write_event("approval_granted", project_id, {
         "action": body.action,
         "version": approval["version"],
-        "approved_by": body.approved_by,
+        "approved_by": approved_by,
+        "change_reason": x_change_reason,
         "status": "approved",
         "decision_origin": "human_confirmed",
         "recorded_by": recorded_by,
@@ -155,24 +155,22 @@ def confirm_approval(project_id: str, body: ConfirmBody):
 # ── Endpoint 3: rechazo humano ────────────────────────────────────────────────
 
 @router.post("/{project_id}/reject", status_code=201)
-def post_rejection(project_id: str, body: ConfirmBody):
-    """Rechazo explícito de una propuesta. Solo humanos pueden rechazar."""
-    if not body.approved_by or body.approved_by.lower().strip() in _RESERVED_APPROVERS:
-        raise HTTPException(
-            status_code=422,
-            detail=f"approved_by='{body.approved_by}' es un valor reservado.",
-        )
-
+def post_rejection(project_id: str, body: ConfirmBody,
+                   identity: str = Depends(require_identity),
+                   x_change_reason: str = Header(default="")):
+    """Rechazo explícito de una propuesta. Solo humanos pueden rechazar.
+    H-1: `rejected_by` = identidad autenticada (`X-Identity-Key`)."""
     now = datetime.now(timezone.utc).isoformat()
     rejection = {
         "action": body.action,
         "project_id": project_id,
-        "rejected_by": body.approved_by,
+        "rejected_by": identity,
         "rejected_at": now,
         "notes": body.notes,
+        "change_reason": x_change_reason,
         "status": "rejected",
         "decision_origin": "human_confirmed",
-        "recorded_by": body.recorded_by or body.approved_by,
+        "recorded_by": identity,
     }
     APPROVALS_DIR.mkdir(parents=True, exist_ok=True)
     ts = now.replace(":", "").replace("-", "").replace("T", "_")[:15]

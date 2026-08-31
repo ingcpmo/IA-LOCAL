@@ -58,6 +58,10 @@ from pathlib import Path
 ATTESTATION_SCHEMA = "wp-a/run-attestation/1"
 INPUT_CONFIG_SCHEMA = "wp-a/input-config/1"
 FINDINGS_SCHEMA = "wp-a/findings/1"
+#: H-4 (2026-08-29): el grafo es un artefacto DERIVADO, no una ENTRADA.
+#: `INPUT_CONFIG_FINGERPRINT` NO lo incorpora. Se calcula un digest SEPARADO
+#: (`GRAPH_SNAPSHOT_FINGERPRINT`) y `RUN_ATTESTATION` liga los tres.
+GRAPH_SNAPSHOT_SCHEMA = "wp-a/graph-snapshot/1"
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -83,12 +87,18 @@ _ARTIFACT_REGISTRY = {
     # v2_runtime y real_corpus_technical al construir analysis_coverage.json.
     "extraction_adequacy_thresholds.yaml":
         "factory/regulatory/requirement_catalog/extraction_adequacy_thresholds.yaml",
+    # H-7: parámetro gobernado del modo de cobertura + criticidad GxP estructurada.
+    "analysis_coverage_mode.yaml":
+        "factory/regulatory/requirement_catalog/analysis_coverage_mode.yaml",
+    "gxp_criticality.yaml":
+        "factory/regulatory/requirement_catalog/gxp_criticality.yaml",
 }
 
 _CONSUMED_BY_ENTRYPOINT = {
     "v2_runtime": (
         "technical_completeness_rules.yaml", "risk_matrix.yaml", "requirements.yaml",
         "decomposition.yaml", "requirement_terms.yaml", "extraction_adequacy_thresholds.yaml",
+        "analysis_coverage_mode.yaml", "gxp_criticality.yaml",
     ),
     "suite_c_formal": (
         "technical_suite_c.yaml", "technical_completeness_rules.yaml", "risk_matrix.yaml",
@@ -292,8 +302,14 @@ def _normalized_finding(f) -> dict:
         "extraction_version": getattr(p, "extraction_version", None),
         "subcriterion_ref": getattr(p, "subcriterion_ref", None),
         "adjudicator_state": getattr(p, "adjudicator_state", None),
-        "graph_path": getattr(p, "graph_path", None),
-        # EXCLUIDO deliberadamente: run_id (volatil), document_id (== document)
+        # H-4 (2026-08-29): la CLAVE se conserva (compat. con la linea base
+        # historica b5196a71…) pero su VALOR se fija a None: `graph_path` es un
+        # PUNTERO a un artefacto DERIVADO (el snapshot de grafo), no contenido
+        # semantico del RESULTADO. Su identidad vive en GRAPH_SNAPSHOT_FINGERPRINT.
+        # Poblar provenance.graph_path (v2_runtime._stamp_graph_path) NO mueve
+        # findings_fingerprint.
+        "graph_path": None,
+        # EXCLUIDO: run_id (volatil), document_id (== document)
     }
     return row
 
@@ -302,6 +318,98 @@ def findings_fingerprint(findings) -> str:
     rows = [_normalized_finding(f) for f in findings]
     rows_sorted = sorted(rows, key=_canonical_json)  # inmune al orden de la lista
     return _sha256_canon({"schema": FINDINGS_SCHEMA, "count": len(rows_sorted), "findings": rows_sorted})
+
+
+# ---------------------------------------------------------------------------
+# graph snapshot  (H-4 -- artefacto DERIVADO, digest SEPARADO de INPUT_CONFIG)
+# ---------------------------------------------------------------------------
+def normalize_graph_snapshot(nodes: list, edges: list) -> dict:
+    """Representacion canonica y determinista del grafo construido para una
+    corrida. `nodes`/`edges` son iterables de dicts o de objetos con esos
+    campos. El orden de entrada NO importa (se ordena). Nada volatil entra."""
+    def _n(x):
+        g = (lambda k: x.get(k)) if isinstance(x, dict) else (lambda k: getattr(x, k, None))
+        return {
+            "node_id": str(g("node_id")),
+            "kind": g("kind"),
+            "document_id": g("document_id"),
+            "label": g("label"),
+            "attrs": g("attrs") or {},
+        }
+
+    def _e(x):
+        g = (lambda k: x.get(k)) if isinstance(x, dict) else (lambda k: getattr(x, k, None))
+        return {
+            "src_id": str(g("src_id")),
+            "dst_id": str(g("dst_id")),
+            "rel": g("rel"),
+            "attrs": g("attrs") or {},
+        }
+
+    ns = sorted((_n(x) for x in nodes), key=_canonical_json)
+    es = sorted((_e(x) for x in edges), key=_canonical_json)
+    return {
+        "schema": GRAPH_SNAPSHOT_SCHEMA,
+        "node_count": len(ns),
+        "edge_count": len(es),
+        "edges_by_rel": _edges_by_rel(es),
+        "nodes": ns,
+        "edges": es,
+    }
+
+
+def _edges_by_rel(edges: list) -> dict:
+    out: dict[str, int] = {}
+    for e in edges:
+        out[e["rel"]] = out.get(e["rel"], 0) + 1
+    return dict(sorted(out.items()))
+
+
+#: H-4 (2026-08-29): el fingerprint del grafo captura la TOPOLOGIA -- nodos por
+#: identidad (node_id + kind + document_id + label) y aristas por extremos +
+#: relacion (src_id + dst_id + rel). Los `attrs` se CONSERVAN en el snapshot
+#: (auditoria humana) pero NO entran al digest: `edge.attrs["via_ref"]` lo
+#: escribe `build._safe_edge` con "ultimo ref que caso gana" y el orden de
+#: iteracion sobre un `set`/`dict` de refs varia con PYTHONHASHSEED entre
+#: procesos -- misma topologia, distinto `via_ref` (medido: 71/1344 aristas).
+#: Incluir `attrs` rompia "mismos inputs -> mismo graph fingerprint" entre
+#: procesos. La identidad de la arista (`_edge_id`) NO depende de attrs, asi que
+#: la topologia es estable; el digest se ancla a ella.
+def _structural_node(n: dict) -> dict:
+    return {"node_id": n.get("node_id"), "kind": n.get("kind"),
+            "document_id": n.get("document_id"), "label": n.get("label")}
+
+
+def _structural_edge(e: dict) -> dict:
+    return {"src_id": e.get("src_id"), "dst_id": e.get("dst_id"), "rel": e.get("rel")}
+
+
+def graph_snapshot_fingerprint(snapshot: dict) -> str:
+    """Digest determinista de la TOPOLOGIA del grafo DERIVADO. Cambia si cambia
+    cualquier nodo (id/kind/document_id/label) o arista (src/dst/rel); estable
+    entre procesos para los mismos inputs. `attrs` NO entra (ver nota arriba)."""
+    ns = sorted((_structural_node(n) for n in snapshot.get("nodes", [])), key=_canonical_json)
+    es = sorted((_structural_edge(e) for e in snapshot.get("edges", [])), key=_canonical_json)
+    return _sha256_canon({
+        "schema": GRAPH_SNAPSHOT_SCHEMA,
+        "node_count": snapshot.get("node_count"),
+        "edge_count": snapshot.get("edge_count"),
+        "nodes": ns,
+        "edges": es,
+    })
+
+
+def graph_snapshot_from_store(project_id: str, graph_dir) -> dict:
+    """Lee el GraphStore recien construido y devuelve el snapshot normalizado.
+    Solo lectura -- no modifica el store."""
+    from factory.regulatory.graph.store import GraphStore
+    g = GraphStore(project_id, store_dir=Path(graph_dir))
+    try:
+        nodes = list(g.nodes())
+        edges = list(g.edges())
+    finally:
+        g.close()
+    return normalize_graph_snapshot(nodes, edges)
 
 
 # ---------------------------------------------------------------------------
@@ -390,8 +498,14 @@ def source_attestation_digest(att: dict) -> str:
 # ---------------------------------------------------------------------------
 def compute_fingerprints(*, entrypoint: str, inputs: list[dict], extraction_version: str,
                          consumed_artifacts: dict, applied_thresholds: dict, findings,
+                         graph_snapshot: dict | None = None,
                          wall_clock_seconds: float | None = None) -> dict:
-    """Devuelve los tres digests + sus piezas. `entrypoint` in ENTRYPOINTS."""
+    """Devuelve los digests + sus piezas. `entrypoint` in ENTRYPOINTS.
+
+    H-4: si se pasa `graph_snapshot` (dict de `normalize_graph_snapshot`), se
+    calcula un `GRAPH_SNAPSHOT_FINGERPRINT` SEPARADO y `run_attestation.fingerprints`
+    liga los tres (input_config, graph_snapshot, findings). El grafo NO entra a
+    `INPUT_CONFIG_FINGERPRINT`."""
     if entrypoint not in ENTRYPOINTS:
         raise KeyError(f"entrypoint desconocido: {entrypoint!r} (permitidos: {sorted(ENTRYPOINTS)})")
     entry_module = ENTRYPOINTS[entrypoint]
@@ -416,6 +530,7 @@ def compute_fingerprints(*, entrypoint: str, inputs: list[dict], extraction_vers
     }
     input_config_fp = _sha256_canon(input_config)
     findings_fp = findings_fingerprint(findings)
+    graph_snapshot_fp = graph_snapshot_fingerprint(graph_snapshot) if graph_snapshot is not None else None
 
     run_attestation = {
         "schema": ATTESTATION_SCHEMA,
@@ -426,14 +541,24 @@ def compute_fingerprints(*, entrypoint: str, inputs: list[dict], extraction_vers
         "active_engine": _active_engine(),
         "routing_source": _routing_source(),
         "source_attestation": att,
+        # H-4: los tres digests, ligados. input_config = ENTRADAS; graph_snapshot
+        # = artefacto DERIVADO; findings = RESULTADO. Ninguno contiene al otro.
+        "fingerprints": {
+            "input_config_fingerprint": input_config_fp,
+            "graph_snapshot_fingerprint": graph_snapshot_fp,
+            "findings_fingerprint": findings_fp,
+        },
         "note": ("git/host/timestamp/pid/tiempos son advisory, NO identidad logica. "
                  "module_manifest_sha256 (cierre estatico de imports factory.* por AST) + "
                  "python_version_mm identifican la BASE DE FUENTES RUNTIME alcanzable desde el "
-                 "entrypoint; NO son prueba de que ese codigo se haya ejecutado."),
+                 "entrypoint; NO son prueba de que ese codigo se haya ejecutado. "
+                 "El grafo es un artefacto DERIVADO: su identidad esta en "
+                 "graph_snapshot_fingerprint, NO en input_config_fingerprint."),
     }
 
     return {
         "input_config_fingerprint": input_config_fp,
+        "graph_snapshot_fingerprint": graph_snapshot_fp,
         "findings_fingerprint": findings_fp,
         "run_attestation": run_attestation,
         "schema_digests": sch,

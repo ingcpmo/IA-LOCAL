@@ -14,10 +14,11 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+from factory.api.auth import require_identity
 from factory.layer8.claude_account_status import check_claude_cli, write_status
 from factory.layer8.claude_runtime import (
     validate_task_safety,
@@ -270,11 +271,13 @@ def post_run_gates(project_id: str):
 
 
 @router.post("/missions/{project_id}/deploy-if-authorized")
-def post_deploy_if_authorized(project_id: str):
+def post_deploy_if_authorized(project_id: str,
+                              identity: str = Depends(require_identity)):
     """
     Comprueba si la misión tiene release aprobado.
     BLOQUEA si approval.json sigue en pending_approval.
     NUNCA despliega automáticamente — siempre requiere decisión humana final.
+    H-1: exige identidad autenticada (`X-Identity-Key`) — sin ella ⇒ 401.
     """
     approval_status = _get_approval_status(project_id)
 

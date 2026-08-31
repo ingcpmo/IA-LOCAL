@@ -10,7 +10,7 @@
 
 artifact: extraction_adequacy_thresholds
 version: "0.1-draft"
-status: DRAFT_UNSIGNED
+status: SIGNED
 nature: TECHNICAL_EXTRACTION_HEURISTIC          # explícito: no regulatorio
 signed_by: null
 signed_at: null

@@ -88,6 +88,24 @@ def _det_id(document: str, class_: str, subtype: str, page: int, source_text: st
     return "fnd-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
+def _det_record_id(finding_id: str, subcriterion_ref: str | None,
+                   requirement_id: str | None) -> str:
+    """H-3 (M2+M3, 2026-08-29) — identificador ÚNICO por registro emitido.
+
+    `finding_id` NO cambia (colisiona: 196/456 en la corrida de referencia,
+    todas RegulatoryFinding, porque varios sub-criterios de un requisito anclan
+    el mismo `source_text`). `finding_record_id` añade el discriminante SEMÁNTICO
+    estable que ya distingue esos registros: `provenance.subcriterion_ref`
+    (+ `requirement_id` como refuerzo). **Sin ordinal de emisión** — no depende
+    del orden accidental de la lista.
+
+    `findings_fingerprint` NO lo incorpora (whitelist `_FINDING_SEMANTIC_FIELDS`
+    en run_fingerprint.py), así que el fingerprint del pipeline no se mueve.
+    """
+    raw = "\x1f".join([finding_id, subcriterion_ref or "", requirement_id or ""])
+    return "rec-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
 @dataclass
 class FindingProvenance:
     document_id: str
@@ -128,6 +146,12 @@ class Finding:
     #: La rellena un post-pass (findings/evidence_basis.stamp); NO cambia ninguna otra
     #: propiedad del finding ni participa en risk/remediation/state.
     evidence_basis: str | None = None
+    #: H-3 (M2+M3, 2026-08-29): ÚNICO por registro emitido. `finding_id` puede
+    #: colisionar (varios sub-criterios de un requisito con el mismo `source_text`);
+    #: `finding_record_id` no. ADITIVO — NO participa en `findings_fingerprint`
+    #: (whitelist `_FINDING_SEMANTIC_FIELDS`). Si se construye vacío se deriva en
+    #: `__post_init__` de finding_id + provenance.subcriterion_ref + requirement_id.
+    finding_record_id: str = ""
 
     def __post_init__(self) -> None:
         if self.finding_class not in FINDING_CLASSES:
@@ -154,6 +178,13 @@ class Finding:
             raise FindingProvenanceError("source_hash no corresponde a source_text")
         if not self.provenance or not self.provenance.document_id or not self.provenance.extraction_version:
             raise FindingProvenanceError("provenance incompleto")
+        # H-3: deriva finding_record_id si no vino explícito.
+        if not self.finding_record_id:
+            self.finding_record_id = _det_record_id(
+                self.finding_id,
+                getattr(self.provenance, "subcriterion_ref", None),
+                self.requirement_id,
+            )
 
 
 def build_finding(finding_class: str, subtype: str, *, severity: str, document: str,

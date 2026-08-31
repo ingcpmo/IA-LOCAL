@@ -1,0 +1,65 @@
+{
+ "schema": "candidate_baseline_manifest/1",
+ "STATUS": "DRAFT_PENDING_E3A_AND_QA40_ALIGNMENT",
+ "note": "Freeze LÓGICO del candidato. NO constituye qualification ni firma. Autoritativo SÓLO tras E1=APPROVED + E2=APPROVED + E3A=APPROVED + QA40_ALIGNMENT=PASS (FASE 4). El campo qa40_finding_ids_sha256 es el valor PRE-alineación (baseline D-2); FASE 4 debe confirmar QA40_FINDING_IDS_SHA_UNCHANGED=YES o registrar el nuevo valor.",
+ "candidate_version": "canonical-v1-2026-08+tests-v1",
+ "git_head": "ab40f3b467daa29d08523b43dc3263f91cdd1d5c",
+ "git_head_short": "ab40f3b",
+ "git_status_digest": "044294f9734e78b8f7fe8c9055e495647dd8d6bf2aab179e866e86e00d0e236a",
+ "git_diff_sha256": "b6c581df1316e461eb9b3c376f01622c74127dcc4c247dbd6d194cfbc59f4d56",
+ "source_attestation_digest": "e7ac3d05bf09c830da5d409d1ad10282c37df2be158ff469c1744c2e40757caf",
+ "source_attestation_module_count": 7,
+ "input_config_fingerprint": "0de04225362a6f863617d63717e5da82a7e829a2594f95e53f8f36cd5d07598f",
+ "graph_snapshot_fingerprint": "8ce23f30202991d87f6d867525306e50be1cdf191a40d57b6bd191a2d7b327f4",
+ "findings_fingerprint": "2b1a300ae26f76cbf09c6c7fac84053c7edf8603e893bcf75244e161127c834f",
+ "fingerprints_source": "factory/regulatory/pilot_run/h10_extraction_v2_20260830/H10_VERSION_JUMP_RESULT.json (run1==run2)",
+ "canonical_store_v2_digest": "266fed1450d71d5f40fd265f2a7e73c64a949e5ff253f86f1e452666214e301f",
+ "graph_store_v2_digest": "e06e0cbb0310b315f989f015cffffa421c8fbc5e50951e453c0270c170998181",
+ "canonical_store_v2_files": [
+  "RW-0003.sqlite3",
+  "RW-0005.sqlite3",
+  "RW-0006.sqlite3",
+  "RW-0009.sqlite3",
+  "RW-0011.sqlite3",
+  "RW-0012.sqlite3",
+  "RW-0014.sqlite3"
+ ],
+ "qa40_finding_ids_sha256": "02b6d3d0b6fadb1f882c4e63b7f7421dd387268ddabe5b5f16abfa5d9d360d32",
+ "qa40_alignment_status": "PENDING (FASE 4, sólo tras E3A=APPROVE)",
+ "h10_sample_sha256": "f56d4babe7e8466368c9a6dbefe26e3716186f96e2658c68cf2f0469f5244f20",
+ "r_par_raw_sha256": "c8d5fc22b78b534662a155b980e19b4eae45502c2e4e3dbb9ed6891aa1b12547",
+ "modified_analytical_module_hashes": {
+  "factory/regulatory/canonical/model.py": "db0424010bf9a92e4c1359fca14e6f7fc3f0955300af2a649217da89f55a1d78",
+  "factory/regulatory/canonical/extract_document.py": "ee909cbc049c0461d2e072ae795d06c684281e8d632f9c22384b0f2c2aa7da20",
+  "factory/regulatory/canonical/extract_tests.py": "b30f0a9e1d89ac18778117f12916a6062e78c25c09707bfd4c8a082a8bcbb9c6",
+  "factory/regulatory/canonical/extract_entities.py": "631f21131b6c7ab2e97792bbf9ad4da9f8571186d6741dfd91b13fc7e33a8510",
+  "factory/regulatory/graph/build.py": "7f0ea2ade0d40839f48b40b4cdf9d786e3ad75d280d69687afcd6a68ca2df0f8",
+  "factory/regulatory/findings/risk.py": "59c3110e279479bb43d48a62c87840388c09c94ef53ac8f56b171404ba21a2e4",
+  "factory/regulatory/validation_v2/run_fingerprint.py": "f03c07d40868ddb9d7e2a8cc01df5ea2431a4437ec7e004574f62306423caf50",
+  "factory/regulatory/validation_v2/v2_runtime.py": "e0f406de52679bd8fcc6d5cd0500de2d9d57d4ad5d7efdf20569e8802550a45f",
+  "factory/regulatory/validation_v2/local_only.py": "b375f35b49bba187887a720f598bdba241042a02ccf76e1a2686171887dd6ed7",
+  "factory/regulatory/validation_v2/real_corpus_adjudication.py": "4e34f771e18d3fce2d74b1e57b9838326c240837d6635aff63ea80e430aab62d",
+  "factory/regulatory/validation_v2/coverage_mode.py": "c4d3d4ac5dfe82d4dc3e3bde9b15fcb1f60aa88908d031a8f49865b5688c7182",
+  "factory/regulatory/requirement_catalog/gxp_criticality_loader.py": "b6fe07f3a97acb14ae81d7cd90ae598612d61512a7b1542c9ca8a1b9ed77eb30",
+  "factory/regulatory/table_structure_extractor.py": "20dcce51850dc3542361f4554d6ec9c7f5f98ff7a5cd7f8ed16cdba3d714e33e"
+ },
+ "governed_ledger_state": {
+  "decisions_v2_jsonl_lines": 254,
+  "head_lines": 251,
+  "uncommitted_records": [
+   "ARTIFACT_VERSION-2026-019",
+   "ARTIFACT_VERSION-2026-020",
+   "ARTIFACT_VERSION-2026-021"
+  ]
+ },
+ "production_pointers_unchanged": {
+  "v2_runtime._CANON": "factory/regulatory/canonical_store",
+  "v2_runtime._GRAPH": "factory/regulatory/graph_store",
+  "v2_runtime._EXT_VER": "canonical-v1-2026-08"
+ },
+ "D5_EVALUATES_EXACT_CANDIDATE": "YES_ONCE_STATUS_AUTHORITATIVE",
+ "created_at": "2026-08-31T02:05:13.064267+00:00",
+ "created_by": "claude_code_session (preparación de gates; sin decisión)",
+ "refreshed_at": "2026-08-31T03:09:24.126720+00:00",
+ "e1_verdicts_recorded": 9
+}

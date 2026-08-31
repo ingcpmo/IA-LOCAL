@@ -1,0 +1,30 @@
+{
+ "target_ids": [
+  "docs_plan/CIERRE_H2B_H4_20260829.md",
+  "docs_plan/CIERRE_H5F_H6F_20260829.md",
+  "docs_plan/CIERRE_H7_TECNICO_Y_GATE_D2_20260829.md"
+ ],
+ "proposed_by_id": "claude_code_session_gates_prep",
+ "decision": "APPROVE",
+ "decision_type": "ORIGINAL",
+ "selection_mode": "EXPLICIT_LIST",
+ "reason": "GATE E-5 -- firma humana de aceptacion tecnica de los cierres H-1..H-7 (D-2 ya firmado en ARTIFACT_VERSION-2026-019/020). NO autoriza activacion ni qualification; es prerequisito de D-6.",
+ "payload": {
+  "gate": "E-5",
+  "closures_signed": [
+   "docs_plan/CIERRE_H2B_H4_20260829.md",
+   "docs_plan/CIERRE_H5F_H6F_20260829.md",
+   "docs_plan/CIERRE_H7_TECNICO_Y_GATE_D2_20260829.md"
+  ],
+  "closure_sha256": {
+   "CIERRE_H2B_H4_20260829.md": "d79a4febb0c6b831f50606717d6277432360a9db51815553e13d5db3bebb284d",
+   "CIERRE_H5F_H6F_20260829.md": "aad420dbe452da7a7a42a8bcf73b547e9d11c9c2130723d75723aa48685e8e95",
+   "CIERRE_H7_TECNICO_Y_GATE_D2_20260829.md": "cad21f25c243b246c2978499c75f4907f45c62d154521e9924d41ed4cdf14619"
+  },
+  "d2_already_signed": [
+   "ARTIFACT_VERSION-2026-019",
+   "ARTIFACT_VERSION-2026-020"
+  ],
+  "human_decision": "<APPROVE | REJECT>"
+ }
+}

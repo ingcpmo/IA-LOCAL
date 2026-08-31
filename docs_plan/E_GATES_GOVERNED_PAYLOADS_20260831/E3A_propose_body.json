@@ -1,0 +1,35 @@
+{
+ "target_ids": [
+  "factory/regulatory/canonical_store_v2",
+  "factory/regulatory/graph_store_v2"
+ ],
+ "proposed_by_id": "claude_code_session_gates_prep",
+ "decision": "APPROVE",
+ "decision_type": "ORIGINAL",
+ "selection_mode": "EXPLICIT_LIST",
+ "reason": "GATE E-3A -- aceptacion de canonical-v1-2026-08+tests-v1 como BASELINE CANDIDATA (re-extraccion limpia + RW-0003 SAT). NO es cutover, NO es production enablement, NO flip de _EXT_VER/_CANON/_GRAPH. RW-0012 limpia=258 vs prod=595 (clone-drift preexistente, explicado, no causado por H-10). Rollback disponible (stores v1 byte-identicos).",
+ "payload": {
+  "gate": "E-3A",
+  "candidate_version": "canonical-v1-2026-08+tests-v1",
+  "candidate_baseline_manifest": "docs_plan/CANDIDATE_BASELINE_MANIFEST_20260831.json",
+  "candidate_manifest_sha256": "805abda4f6cd9ff0622e10df214d8fc843ed0d910930fbbfc4b9dc4a7d773b40",
+  "canonical_store_v2_digest": "266fed1450d71d5f40fd265f2a7e73c64a949e5ff253f86f1e452666214e301f",
+  "graph_store_v2_digest": "e06e0cbb0310b315f989f015cffffa421c8fbc5e50951e453c0270c170998181",
+  "input_config_fingerprint": "0de04225362a6f863617d63717e5da82a7e829a2594f95e53f8f36cd5d07598f",
+  "graph_snapshot_fingerprint": "8ce23f30202991d87f6d867525306e50be1cdf191a40d57b6bd191a2d7b327f4",
+  "findings_fingerprint": "2b1a300ae26f76cbf09c6c7fac84053c7edf8603e893bcf75244e161127c834f",
+  "rw0012_clean_claims": 258,
+  "rw0012_prod_claims": 595,
+  "requires_before": [
+   "E-1 confirmed",
+   "E-2 confirmed"
+  ],
+  "not_authorized": [
+   "cutover",
+   "production_enablement",
+   "flip _EXT_VER/_CANON/_GRAPH",
+   "qualification"
+  ],
+  "human_decision": "<APPROVE | REJECT>"
+ }
+}

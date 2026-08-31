@@ -1,0 +1,29 @@
+# H-7 (2026-08-29) -- modo de tratamiento de cobertura del Analizador Documental.
+#
+#   OBSERVE  (default) = `evidence_basis` + `coverage_dependencies` son metadata
+#            ADITIVA. 0 supresiones, 0 Findings GMP nuevos, 0 cambio de
+#            risk / severity / remediation / state. El informe separa las dos
+#            colas (ACTIONABLE_NOW / BLOCKED_BY_COVERAGE_OR_EVIDENCE) SOLO como
+#            presentación.
+#
+#   ENFORCE  = degrada la banda de riesgo de los findings `ABSENCE_DEPENDENT`
+#            cuya cobertura es MISSING/DEGRADED (`would_degrade = true`), y deriva
+#            `gxp_impact` de `gxp_criticality.yaml`. Cambia severidades y
+#            potencialmente `findings_fingerprint`.
+#
+# Habilitar ENFORCE **NO es decisión de ingeniería** (GATE D-2). El runtime solo
+# lo honra si SE CUMPLEN LAS DOS condiciones:
+#   1. `mode: ENFORCE` aquí, con `decided_by` + `decision_ref` + `decision_date`.
+#   2. `extraction_adequacy_thresholds.yaml` en `status: SIGNED`.
+# Si falta cualquiera, el runtime fuerza OBSERVE (fail-safe) y lo atestigua.
+
+mode: ENFORCE
+
+# --- firma de Capa 9 para pasar a ENFORCE (D-2) ---
+decided_by:     "Cesar"       # nombre real del firmante (Capa 9)
+decision_ref:   "D-2-H7-20260830"       # p.ej. "D-2-2026-0xx"
+decision_date:  "2026-08-30"       # ISO-8601
+
+note: >
+  ROLLBACK = poner `mode: ENFORCE` aquí (o revertir la firma). El modo vuelve a
+  OBSERVE por configuración, sin cambios de código.

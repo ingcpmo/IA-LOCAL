@@ -1,0 +1,124 @@
+{
+ "artifact": "h9_extraction_benchmark",
+ "doc_id": "RW-0003",
+ "pdf_path": "GMPAI/source/Rockwell/215115305 SCADA-PCS Misc PLC SAT3 Scanned-1.pdf",
+ "pdf_sha256": "e96f67f7eadc3062530e7f5f4ec85fdab1c2e8ee6086489091546371e299271a",
+ "pdf_pages": 204,
+ "metrics_signed_before_run": true,
+ "max_pages": 50,
+ "ocr_engine_substitution": "OCRmyPDF+Tesseract -> rapidocr-onnxruntime (host sin sudo; Apache-2.0; pip-only; modelos empaquetados)",
+ "tie_break_bias": "menor superficie de validación (OCRmyPDF+Tesseract=1 motor vs Docling ~5 modelos)",
+ "backends": {
+  "current": {
+   "backend": "current",
+   "status": "OK",
+   "engine": "pdfplumber",
+   "text_sha256": "43f54e3ff7782ae27b7dfc2feeb4a59f5a4b66a442245a39b5c614551ff763da",
+   "metrics": {
+    "source_page_fidelity": {
+     "pdf_pages": 204,
+     "pages_processed": 50,
+     "extractor_pages": 50,
+     "match": true
+    },
+    "usable_text_recovery": {
+     "pages_with_text_gt40": 0,
+     "pct_pages": 0.0,
+     "total_chars": 49
+    },
+    "sat_oq_iq_identifier_recovery": {
+     "n_distinct": 0,
+     "sample": []
+    },
+    "insertion_false_positives": 0,
+    "table_reconstruction": {
+     "n_tables": 0
+    },
+    "reading_order_sample": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+    "determinism": "PASS",
+    "runtime_s": 0.08,
+    "peak_rss_mb": 167.3,
+    "offline_execution": "PASS",
+    "document_egress_bytes": 0
+   },
+   "network_egress_attempts": [],
+   "local_only": true
+  },
+  "ocr_rapidocr": {
+   "backend": "ocr_rapidocr",
+   "status": "OK",
+   "engine": "rapidocr-onnxruntime(pdfium 300dpi)",
+   "text_sha256": "cae3bcdacb499c52e757a153d58dbc097eb95ddd00bdbcea50a2cb1a6bf86d52",
+   "metrics": {
+    "source_page_fidelity": {
+     "pdf_pages": 204,
+     "pages_processed": 50,
+     "extractor_pages": 50,
+     "match": true
+    },
+    "usable_text_recovery": {
+     "pages_with_text_gt40": 50,
+     "pct_pages": 100.0,
+     "total_chars": 76664
+    },
+    "sat_oq_iq_identifier_recovery": {
+     "n_distinct": 3,
+     "sample": [
+      "SAT1",
+      "SAT2",
+      "SAT3"
+     ]
+    },
+    "insertion_false_positives": 0,
+    "table_reconstruction": {
+     "n_tables": 0
+    },
+    "reading_order_sample": "SITEACCEPTANCETEST\nDocument No.\nForm00\nFilename:\nRockwell\n215115305SCADA-PCSMiscPLC\nRA\nSCADA andPCS Misc.PLC System\nForm00.docx\nAutomation\nMAVERICKProject#215115305\nPage:\nMark Cuban CostPlusDrugCompany,PBC\n1of6\nSAT3\nSite Acceptance Test - 3 (SAT3)\nFiller VHP, Ambient, and Caged Storage\nMCCPDC - SCADA and PCS MISC. PLC System\nCustomer:\nMark Cuban Cost Plus Drug Company,PBC\nProject:\nMCCPDC-SCADAandPCSMISC.PLCSystem\nProject number:\n215115305\nDocumentInformation\nID code:\n215115305-SAT3\nVersion:\n1.0\nFile:\n215115305SCADA-PCSMiscPLCForm00.docx\nArchive:\n<Project Path>105.03 Documented Testing\nRockwellAutomation\nFunction:\nDate:\nSignature:\n3/31/2023\nDocuSigned by:\nAuthor:\nTaimourAzhar\nRA-PDM\nfaimour anliar\nSigner Name: TaRpcrSignad by:\nReview:\nScott Buol\nRA-PQR\n3/31/2023\nSigningReason:Iamtheauthorof thisdocument\nSigningTime:3/3toBaq4:26:23PMPDT\n1E835339455688e0685567882\n3/31/2023\nApproval:\nJasonSampers\nRA-PM\nSigningReason:Ihavereviewedthisdocument\nJasouSampus\nSigningTime:3/31/2023|5:2:59PMPDT\n20988A02360F4571939707ECBD2CCDB7\nMark Cuban CostPlus Drug\nSignerName:JasonSampers\nFunction:\nDate:\nSignataniegReason:Ihavereviewed thisdocument\nCompany, PBC\nSigningTime:3/31/2023|9:53:59PMPDT\n550@620C473",
+    "determinism": "PASS",
+    "runtime_s": 117.57,
+    "peak_rss_mb": 978.7,
+    "offline_execution": "PASS",
+    "document_egress_bytes": 0
+   },
+   "network_egress_attempts": [],
+   "local_only": true
+  },
+  "docling": {
+   "backend": "docling",
+   "status": "OK",
+   "engine": "docling(layout+tableformer+rapidocr, offline)",
+   "text_sha256": "9c5a285e737502c688b55f355b6560350ddee3d1b5b6aec168c5ec4359bb9ed3",
+   "metrics": {
+    "source_page_fidelity": {
+     "pdf_pages": 204,
+     "pages_processed": 50,
+     "extractor_pages": 50,
+     "match": true
+    },
+    "usable_text_recovery": {
+     "pages_with_text_gt40": 50,
+     "pct_pages": 100.0,
+     "total_chars": 17293
+    },
+    "sat_oq_iq_identifier_recovery": {
+     "n_distinct": 1,
+     "sample": [
+      "SAT3"
+     ]
+    },
+    "insertion_false_positives": 0,
+    "table_reconstruction": {
+     "n_tables": 45
+    },
+    "reading_order_sample": "SITE ACCEPTANCE TEST\nSCADA and PCS Misc. PLC System MAVERICK Project #215115305 Mark Cuban Cost Plus Drug Company, PBC SAT3\nSite Acceptance Test - 3 (SAT3) Filler VHP, Ambient, and Caged Storage\nMCCPDC - SCADA and PCS MISC. PLC System\nCustomer:\nMark Cuban Cost Plus Drug Company, PBC\nProject:\nMCCPDC - SCADA and PCS MISC. PLC System\nProject number:\n215115305\n20988A02360F4571939707ECBD2CCDB7 Signer Name: Jason Samp Signátanieg Reason: I have reviewed this documert SigningTime: 3/31/2023 | 9:53:59 PM PDT\nSigning Reason: I approve this document\nSigner Name: Adrian Rodriguez\nSigning Time: 4/3/2023 | 6:15:06 AM PDT\nB0E7920705D74A67902C08B6575EC844\nDocument No. Filename:\nPage:\nREVISION HISTORY\nSITE ACCEPTANCE TEST\nMark Cuban Cost Plus Drug Company, PBC\nSCADA and PCS Misc. PLC System MAVERICK Project #215115305 SAT3\nDocument No.\nFilename:\nPage:\nForm 00 215115305 SCADA-PCS Misc PLC Form00.docx\n2 of 6\nDocument No.\nFilename:\nPage:\nForm 00 215115305 SCADA-PCS Misc PLC\nForm00.docx\n3 of 6\nSITE ACCEPTANCE TEST\nSCADA and PCS Misc. PLC System MAVERICK Project #215115305 Mark Cuban Cost Plus Drug Company, PBC SAT3\n1. Objective\nThe objective of this test is to verify that the MCCPDC - SCADA and PCS MI",
+    "determinism": "PASS",
+    "runtime_s": 256.21,
+    "peak_rss_mb": 5320.8,
+    "offline_execution": "PASS",
+    "document_egress_bytes": 0
+   },
+   "network_egress_attempts": [],
+   "local_only": true
+  }
+ }
+}

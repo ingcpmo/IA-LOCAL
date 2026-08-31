@@ -1,0 +1,50 @@
+# H-7 (2026-08-29) -- criticidad GxP ESTRUCTURADA por requisito.
+#
+# Reemplaza el `gxp_impact` LITERAL (hoy "MEDIUM"/"LOW" en 9 call-sites) por un
+# campo gobernado. `gxp_impact_weights` de `risk_matrix.yaml` los mapea:
+#   HIGH -> 3 · MEDIUM -> 2 · LOW -> 1
+#
+# ESTADO: DRAFT_UNSIGNED. El runtime SOLO consulta este fichero cuando
+# `analysis_coverage_mode` EFECTIVO == ENFORCE (GATE D-2). En OBSERVE se ignora
+# por completo -> `gxp_impact` sigue siendo el literal actual y
+# `findings_fingerprint` NO cambia.
+#
+# La asignación de nivel es una PROPUESTA para revisión de Capa 9 (parte del
+# paquete D-2), no una decisión de ingeniería firmada.
+
+status: SIGNED
+gxp_criticality_version: "0.1-draft"
+decided_by:    "Cesar"
+decision_ref:  "D-2-H7-20260830"
+decision_date: "2026-08-30"
+
+# level in {LOW, MEDIUM, HIGH}
+criticality:
+  # --- 21 CFR Part 11 ---
+  "21_CFR_11.10(a)":    { level: HIGH,   rationale: "Validación del sistema -- base de confiabilidad de todo registro electrónico." }
+  "21_CFR_11.10(d)":    { level: HIGH,   rationale: "Control de acceso -- pilar de atribución e integridad; su fallo compromete todo el registro." }
+  "21_CFR_11.10(e)":    { level: HIGH,   rationale: "Audit trail seguro con timestamp -- evidencia primaria de integridad de datos." }
+  "21_CFR_11.10(g)":    { level: HIGH,   rationale: "Authority checks -- previene acciones no autorizadas sobre registros GxP." }
+  "21_CFR_11.50_11.70": { level: HIGH,   rationale: "Firma electrónica y vínculo al registro -- no repudio; equivalente legal a firma manuscrita." }
+  # --- Annex 11 ---
+  "ANNEX11_4":          { level: MEDIUM, rationale: "Gestión de riesgo del sistema -- gobierna el alcance de validación pero no es un control de registro directo." }
+  "ANNEX11_7.1":        { level: HIGH,   rationale: "Almacenamiento y protección de datos -- pérdida o corrupción afecta disponibilidad y perdurabilidad." }
+  "ANNEX11_9":          { level: HIGH,   rationale: "Audit trail (Annex 11) -- mismo peso que 11.10(e)." }
+  "ANNEX11_12":         { level: HIGH,   rationale: "Seguridad física y lógica -- control de acceso ampliado." }
+  "ANNEX11_17":         { level: MEDIUM, rationale: "Archivo y retención -- crítico a largo plazo; impacto operativo diferido, no inmediato sobre el dato vivo." }
+  # --- ALCOA+ ---
+  "ALCOA_ATTRIBUTABLE":   { level: HIGH,   rationale: "Atribución -- sin ella el registro no es defendible ante inspección." }
+  "ALCOA_LEGIBLE":        { level: MEDIUM, rationale: "Legibilidad -- degradación afecta revisión, no la existencia del dato." }
+  "ALCOA_CONTEMPORANEOUS": { level: MEDIUM, rationale: "Contemporaneidad -- desviación indica práctica pobre; recuperable con evidencia complementaria." }
+  "ALCOA_ORIGINAL":       { level: HIGH,   rationale: "Originalidad -- copia sin control de la fuente maestra rompe la cadena de integridad." }
+  "ALCOA_ACCURATE":       { level: HIGH,   rationale: "Exactitud -- un dato inexacto propaga error a decisiones de calidad." }
+  "ALCOA_COMPLETE":       { level: HIGH,   rationale: "Completitud -- datos faltantes ocultan desviaciones." }
+  "ALCOA_CONSISTENT":     { level: MEDIUM, rationale: "Consistencia -- inconsistencias detectables en revisión; no destruyen el dato." }
+  "ALCOA_ENDURING":       { level: MEDIUM, rationale: "Perdurabilidad -- impacto a largo plazo; mitigable con respaldo." }
+  "ALCOA_AVAILABLE":      { level: MEDIUM, rationale: "Disponibilidad -- afecta inspección y revisión; el dato existe." }
+  # --- 21 CFR 211.68(b) ---
+  "21_CFR_211.68(b)":   { level: HIGH,   rationale: "Cambios por personal autorizado + verificación E/S + respaldo -- múltiples controles críticos de sistema computarizado." }
+
+default:
+  level: MEDIUM
+  rationale: "Sin criticidad estructurada asignada -- se usa el nivel por defecto (equivalente al literal MEDIUM actual)."

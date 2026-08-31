@@ -38,6 +38,47 @@ LEGACY_A_FILE = paths.FACTORY_ROOT / "layer9" / "decisions" / "decisions.jsonl"
 LEGACY_B_FILE = paths.FACTORY_ROOT / "layer9" / "decisions" / "w5_human_decisions.jsonl"
 SOURCES_REGISTRY = paths.FACTORY_ROOT / "regulatory" / "sources" / "registry.json"
 
+_MIGRATION_PROVENANCES = frozenset(
+    {"MIGRATED_FROM_SYSTEM_A", "MIGRATED_FROM_SYSTEM_B", "RECONSTRUCTED_SNAPSHOT"}
+)
+
+
+def occupied_native_instance_ids(store_file: Path | None = None) -> set[str]:
+    """`decision_instance_id` de los registros del almacen destino que la
+    migracion NO produjo -- NATIVE / firmas hechas por la superficie humana.
+
+    El asignador de id de la proyeccion (`_alloc_instance_id`) debe SALTAR
+    estos numeros: reutilizar uno reescribiria de facto una decision ya
+    grabada (viola append-only e I-11). Colision real 2026-08-31: la
+    correccion de cadencia D1 de Cesar por la UI legacy se proyectaba como
+    `D1-2026-003`, ya ocupado por un propose de Mission Control sin firmar de
+    2026-07-29 (uno de los ~30 reintentos documentados en
+    `RECORD_ANNOTATION-2026-001`).
+    """
+    target = Path(store_file) if store_file is not None else store.STORE_FILE
+    if not Path(target).is_file():
+        return set()
+    return {
+        r["decision_instance_id"]
+        for r in store.read_all(target)
+        if r.get("provenance") not in _MIGRATION_PROVENANCES
+    }
+
+
+def _alloc_instance_id(family: str, year: int, counters: dict,
+                       occupied: set[str]) -> str:
+    """Siguiente `{family}-{year}-{NNN}` libre: incrementa el contador por
+    (familia, año) y salta cualquier numero ya ocupado por un registro NATIVE
+    del almacen destino. Nunca sobrescribe un NATIVE; solo avanza -- el orden
+    de las decisiones legacy se preserva porque el contador es monotono.
+    """
+    key = (family, year)
+    while True:
+        counters[key] = counters.get(key, 0) + 1
+        instance_id = f"{family}-{year}-{counters[key]:03d}"
+        if instance_id not in occupied:
+            return instance_id
+
 # decision -> decision del schema nuevo.
 _DECISION_MAP = {
     "approve": "APPROVE",
@@ -112,8 +153,10 @@ def reconstruct_d1_snapshot(signed_at: str, *,
 # ---------------------------------------------------------------------------
 
 def project_system_a(records: list[dict], families: dict, *,
-                     counters: dict | None = None) -> list[dict]:
+                     counters: dict | None = None,
+                     occupied: set[str] | None = None) -> list[dict]:
     out = []
+    occ = occupied or set()
     # `counters` puede venir compartido con `project_system_b` (ver
     # `project_all`): LEGACY_UNMAPPED es la unica familia que ambos sistemas
     # pueden producir (Sistema A via accion no mapeada, Sistema B via
@@ -129,9 +172,7 @@ def project_system_a(records: list[dict], families: dict, *,
     for r in sorted(records, key=lambda x: x["timestamp"]):
         family = _family_for_action(r.get("action", ""), families)
         year = int(r["timestamp"][:4])
-        key = (family, year)
-        counters[key] = counters.get(key, 0) + 1
-        instance_id = f"{family}-{year}-{counters[key]:03d}"
+        instance_id = _alloc_instance_id(family, year, counters, occ)
         id_map[r["decision_id"]] = instance_id
 
         meta = r.get("metadata") or {}
@@ -198,7 +239,8 @@ def project_system_a(records: list[dict], families: dict, *,
 
 def project_system_b(records: list[dict], families: dict, *,
                      registry_file: Path | None = None,
-                     counters: dict | None = None) -> list[dict]:
+                     counters: dict | None = None,
+                     occupied: set[str] | None = None) -> list[dict]:
     """Proyecta el Sistema B, incluidas sus CORRECCIONES.
 
     Una correccion legacy trae todo lo necesario y el adaptador lo descartaba:
@@ -219,6 +261,7 @@ def project_system_b(records: list[dict], families: dict, *,
     out = []
     if counters is None:
         counters = {}
+    occ = occupied or set()
     # recorded_at -> instance_id, para resolver `supersedes_recorded_at`. Se
     # indexa por marca de tiempo porque es lo que el registro legacy guarda;
     # no se adivina por familia ni por posicion.
@@ -227,9 +270,7 @@ def project_system_b(records: list[dict], families: dict, *,
         did = r["decision_id"]
         family = _family_for_w5_id(did, families)
         year = int(r["recorded_at"][:4])
-        key = (family, year)
-        counters[key] = counters.get(key, 0) + 1
-        instance_id = f"{family}-{year}-{counters[key]:03d}"
+        instance_id = _alloc_instance_id(family, year, counters, occ)
 
         targets: list[str] = []
         mode = "EXPLICIT_LIST"
@@ -305,7 +346,8 @@ def project_system_b(records: list[dict], families: dict, *,
 
 
 def project_all(*, legacy_a: Path | None = None, legacy_b: Path | None = None,
-                registry_file: Path | None = None) -> list[dict]:
+                registry_file: Path | None = None,
+                occupied_from: Path | None = None) -> list[dict]:
     """Los registros historicos proyectados, en orden cronologico.
 
     `counters` se comparte entre ambas llamadas para que LEGACY_UNMAPPED
@@ -313,11 +355,20 @@ def project_all(*, legacy_a: Path | None = None, legacy_b: Path | None = None,
     forma global y nunca colisione entre Sistema A y Sistema B. Sistema A
     se proyecta primero: sus IDs ya migrados (001..009) quedan intactos;
     Sistema B simplemente continua la secuencia.
+
+    `occupied_from` (por defecto el almacen v2 vivo) aporta los
+    `decision_instance_id` NATIVE que el asignador debe SALTAR para no
+    reescribir una firma humana. Es idempotente: una vez que un registro
+    legacy se proyecta y se persiste con provenance MIGRATED_*, deja de
+    contar como NATIVE, y la siguiente proyeccion vuelve a asignarle el
+    mismo id.
     """
     families = store.load_families()
     counters: dict = {}
+    occupied = occupied_native_instance_ids(occupied_from)
     a = project_system_a(_read_jsonl(legacy_a or LEGACY_A_FILE), families,
-                        counters=counters)
+                        counters=counters, occupied=occupied)
     b = project_system_b(_read_jsonl(legacy_b or LEGACY_B_FILE), families,
-                         registry_file=registry_file, counters=counters)
+                         registry_file=registry_file, counters=counters,
+                         occupied=occupied)
     return sorted(a + b, key=lambda r: r["recorded_at"])

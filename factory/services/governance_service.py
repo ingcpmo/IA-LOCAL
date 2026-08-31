@@ -153,7 +153,7 @@ def compute_state_hash(*, store_file: Path | None = None) -> str:
         except Exception:  # noqa: BLE001 -- familias sin target_registry
             parts.append(f"{family}:N/A")
 
-    walk = _audit._walk_chain(_audit.AUDIT_FILE)
+    walk = _audit._walk_chain_cached(_audit.AUDIT_FILE)
     parts.append(f"audit:{walk['total']}:{walk['chain_errors']}:{walk['hash_errors']}")
 
     return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
@@ -345,14 +345,24 @@ def list_proposals(family: str | None = None, *,
     return salida
 
 
-def artifact_state(artifact_id: str, *, versions_store_file: Path | None = None) -> dict:
+def artifact_state(artifact_id: str, *, versions_store_file: Path | None = None,
+                   artifacts_cached: list | None = None) -> dict:
     """Estado REAL y actual de un artefacto -- versión/hash vivos y el último
     `version_record` conocido. Existe para que un panel pueda mostrar la
     transición verdadera (p.ej. "2.0 → 2.1") en vez de una descripción
     congelada en el HTML (cierre del hallazgo de 2026-08-04, panel G4c: el
     texto decía "1.0 → 2.0" mucho después de que ese bump ya se hubiera
-    aplicado, el 2026-08-01)."""
-    current = next((s for s in _artifacts.enumerate_artifacts()
+    aplicado, el 2026-08-01).
+
+    `artifacts_cached` (opcional) evita recorrer y re-hashear TODO el
+    catálogo/matriz/prompts una vez por artefacto -- `get_state()` llama
+    esta función 5 veces por request (catálogo, matriz, 3 prompts); sin
+    reutilizar `enumerate_artifacts()` cada llamada repetia el mismo
+    recorrido completo (medido 2026-08-24: ~0.35-0.45s cada una, 5 veces
+    por request, sobre exactamente el mismo contenido)."""
+    current = next((s for s in (artifacts_cached
+                                if artifacts_cached is not None
+                                else _artifacts.enumerate_artifacts())
                     if s.artifact_id == artifact_id), None)
     if current is None:
         return {"artifact_id": artifact_id, "found": False}
@@ -369,7 +379,8 @@ def artifact_state(artifact_id: str, *, versions_store_file: Path | None = None)
     }
 
 
-def _d2a_readiness_list(*, store_file: Path | None = None) -> list[dict]:
+def _d2a_readiness_list(*, store_file: Path | None = None,
+                        guard_report_cached: dict | None = None) -> list[dict]:
     """`D2AReadiness` (§5.3) por requisito, con el contenido del pack que un
     panel necesita para mostrar QUÉ se va a aprobar -- nunca solo el
     veredicto. Reutiliza `d2a_ready()` sin reimplementar ninguna de sus
@@ -379,11 +390,16 @@ def _d2a_readiness_list(*, store_file: Path | None = None) -> list[dict]:
     calculan UNA vez aqui y se reenvian a cada `d2a_ready()` -- sin esto,
     evaluar los 20 requisitos del catalogo tardaba +200s reales (cada
     llamada los recalculaba 2 veces por su cuenta) e hizo timeout el
-    endpoint /governance/state completo."""
+    endpoint /governance/state completo.
+
+    `guard_report_cached` (opcional): `get_state()` ya calcula su propio
+    `guard_report()` para el panel de artefactos -- sin pasarlo aqui, la
+    MISMA llamada se repetia una segunda vez por request."""
     from factory.core import artifact_version_guard as _guard
     from factory.regulatory import source_lifecycle as _sl
 
-    guard_report_cached = _guard.guard_report(decision_store_file=store_file)
+    guard_report_cached = (guard_report_cached if guard_report_cached is not None
+                          else _guard.guard_report(decision_store_file=store_file))
     source_dims_cached = {d.source_id: d for d in _sl.evaluate_registry()}
 
     catalog = _load_requirements()
@@ -523,6 +539,11 @@ def get_state(*, store_file: Path | None = None) -> dict:
     coverage = {f: get_coverage(f, store_file=store_file) for f in GOVERNED_FAMILIES}
     audit = _audit.verify_chain(decision_store_file=store_file)
     artifacts = _artifacts.guard_report(decision_store_file=store_file)
+    # Una sola pasada por catalogo/matriz/prompts para los 5 artifact_state()
+    # de abajo -- sin esto cada uno repetia el mismo enumerate_artifacts()
+    # completo (medido 2026-08-24: ~0.35-0.45s x 5, sobre exactamente el
+    # mismo contenido dentro del mismo request).
+    artifacts_enum_cached = _artifacts.enumerate_artifacts()
 
     return {
         "families": {name: {"label": spec.get("label"),
@@ -543,12 +564,14 @@ def get_state(*, store_file: Path | None = None) -> dict:
                       # deliberadamente acotado a este único artefacto -- es
                       # el único caso real que lo necesita hoy.
                       "catalog_state": artifact_state(
-                          "factory/regulatory/requirement_catalog/requirements.yaml"),
+                          "factory/regulatory/requirement_catalog/requirements.yaml",
+                          artifacts_cached=artifacts_enum_cached),
                       # Mismo patrón que catalog_state, para el panel de la matriz
                       # de aplicabilidad (RC-7): la versión VIVA del archivo, no un
                       # literal congelado en el HTML.
                       "matrix_state": artifact_state(
-                          "factory/regulatory/applicability_matrix.yaml"),
+                          "factory/regulatory/applicability_matrix.yaml",
+                          artifacts_cached=artifacts_enum_cached),
                       # R2.1 Opción C (2026-08-10): mismo patrón, para el panel de
                       # regularización de los 3 prompts gobernados cuyo bump de
                       # prompt_version (Causa 2, commit d42d919) quedó sin decisión
@@ -557,7 +580,8 @@ def get_state(*, store_file: Path | None = None) -> dict:
                       # propuesta de regularización real hoy), mismo criterio que
                       # catalog_state/matrix_state.
                       "prompt_states": {
-                          p: artifact_state(p) for p in PROMPT_ARTIFACT_IDS
+                          p: artifact_state(p, artifacts_cached=artifacts_enum_cached)
+                          for p in PROMPT_ARTIFACT_IDS
                       }},
         # G4c (hallazgo 2026-08-04): propuestas CON payload, para que un panel
         # pueda filtrar por artefacto (`payload.artifact_path`/
@@ -570,7 +594,8 @@ def get_state(*, store_file: Path | None = None) -> dict:
         # d2a_ready() (§5.3), que ya deriva de source_lifecycle + resolver +
         # artifact_version_guard. El contenido del pack viaja junto para que
         # el panel muestre lo que se va a aprobar sin una segunda llamada.
-        "d2a_readiness": _d2a_readiness_list(store_file=store_file),
+        "d2a_readiness": _d2a_readiness_list(store_file=store_file,
+                                            guard_report_cached=artifacts),
         "audit": {k: audit[k] for k in (
             "content_hash_integrity", "chain_continuity", "historical_fork_present",
             "new_forks_since_baseline", "new_fork_entry_ids",

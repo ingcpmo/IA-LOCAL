@@ -70,14 +70,113 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def _per_page_text(pdf_path: Path) -> list[str]:
-    """pdfplumber -- el MISMO extractor que espera
-    `document_structure_extractor.extract_structure_from_pdf` (el anclaje
-    por Tabla de Contenido depende del layout de dot-leaders que produce
-    pdfplumber, distinto al de pypdf). Solo lectura."""
+#: H-10 / D-4 -- umbral de "PDF imagen": si pdfplumber recupera < este nº de
+#: caracteres promedio por página, el documento es escaneado y necesita OCR.
+_IMAGE_PDF_CHARS_PER_PAGE = 8
+
+
+def _per_page_text_pdfplumber(pdf_path: Path) -> list[str]:
     import pdfplumber
     with pdfplumber.open(str(pdf_path)) as pdf:
         return [(page.extract_text() or "") for page in pdf.pages]
+
+
+def _looks_image_only(per_page: list[str]) -> bool:
+    if not per_page:
+        return False
+    total = sum(len((t or "").strip()) for t in per_page)
+    return (total / max(1, len(per_page))) < _IMAGE_PDF_CHARS_PER_PAGE
+
+
+#: H-10 -- tamaño de lote para el OCR docling: acota el RSS pico (~3 GB/lote de
+#: 24 pág vs ~9.3 GB para 204 pág de una vez, medido en H-9). El resultado
+#: semántico es idéntico: cada página se procesa de forma independiente.
+_DOCLING_BATCH_PAGES = 24
+
+
+def _docling_converter():
+    import os
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    from docling.datamodel.base_models import InputFormat
+    from docling.datamodel.pipeline_options import PdfPipelineOptions
+    from docling.document_converter import DocumentConverter, PdfFormatOption
+    # bug docling 2.123 + pydantic 2.10: hash de opciones con referencia circular
+    try:  # pragma: no cover - defensivo
+        import docling.utils.pipeline_cache as _pc
+        import docling.document_converter as _dc
+        _pc.create_pipeline_options_hash = lambda *a, **k: "h10-fixed"  # type: ignore
+        _dc.create_pipeline_options_hash = lambda *a, **k: "h10-fixed"  # type: ignore
+    except Exception:
+        pass
+    _assets = (Path(__file__).resolve().parents[2]
+               / "regulatory/validation_v2/_h9_assets/docling")
+    opts = PdfPipelineOptions()
+    opts.do_ocr = True
+    opts.do_table_structure = True
+    opts.enable_remote_services = False
+    if _assets.exists():
+        opts.artifacts_path = str(_assets)
+    return DocumentConverter(format_options={
+        InputFormat.PDF: PdfFormatOption(pipeline_options=opts)})
+
+
+def _pdf_page_count(pdf_path: Path) -> int:
+    import pdfplumber
+    with pdfplumber.open(str(pdf_path)) as pdf:
+        return len(pdf.pages)
+
+
+def _docling_content(pdf_path: Path) -> tuple[list[str], list[dict]]:
+    """H-10 / D-4: backend OCR (docling, offline, `enable_remote_services=False`).
+    Procesa el PDF **por lotes de páginas** (control de memoria) y libera cada
+    lote antes del siguiente. Devuelve (texto_por_página, tablas_estructuradas).
+    Cada tabla: {page, headers, rows}. Determinista (cada página independiente)."""
+    import gc
+    conv = _docling_converter()
+    n_pages = _pdf_page_count(pdf_path)
+    pages: dict[int, list[str]] = {}
+    tables: list[dict] = []
+    start = 1
+    while start <= n_pages:
+        end = min(start + _DOCLING_BATCH_PAGES - 1, n_pages)
+        res = conv.convert(str(pdf_path), page_range=(start, end))
+        doc = res.document
+        for item, _level in doc.iterate_items():
+            pno = None
+            for pr in (getattr(item, "prov", None) or []):
+                pno = getattr(pr, "page_no", None)
+                if pno is not None:
+                    break
+            pno = int(pno or start)
+            if type(item).__name__ == "TableItem":
+                try:
+                    df = item.export_to_dataframe(doc)
+                    headers = [str(c) for c in df.columns]
+                    rows = [[("" if v is None else str(v)) for v in r]
+                            for r in df.itertuples(index=False, name=None)]
+                    tables.append({"page": pno, "headers": headers, "rows": rows})
+                except Exception:  # noqa: BLE001 - tabla no exportable se salta
+                    pass
+                continue
+            txt = getattr(item, "text", None)
+            if txt:
+                pages.setdefault(pno, []).append(txt)
+        del res, doc
+        gc.collect()
+        start = end + 1
+    n = max([*pages.keys(), *[t["page"] for t in tables], 0])
+    per_page = ["\n".join(pages.get(i, [])) for i in range(1, n + 1)]
+    return per_page, tables
+
+
+def _per_page_text(pdf_path: Path, *, ocr: bool | None = None) -> list[str]:
+    """pdfplumber por defecto (el anclaje por TOC depende de su layout de
+    dot-leaders). Si `ocr=True` y pdfplumber no recupera texto (PDF imagen),
+    cae al backend OCR gobernado por D-4 (docling). Solo lectura."""
+    per_page = _per_page_text_pdfplumber(pdf_path)
+    if ocr and _looks_image_only(per_page):
+        return _docling_content(pdf_path)[0]
+    return per_page
 
 
 @dataclass
@@ -92,12 +191,20 @@ class ExtractionResult:
 def extract_document(pdf_path: str | Path, document_id: str, *,
                      tipo: str | None = None, cliente: str | None = None,
                      store_dir: Path = STORE_DIR,
-                     extract_tests: bool | None = None) -> ExtractionResult:
+                     extract_tests: bool | None = None,
+                     ocr: bool | None = None) -> ExtractionResult:
     pdf_path = Path(pdf_path)
     if not pdf_path.exists():
         raise FileNotFoundError(pdf_path)
 
-    per_page = _per_page_text(pdf_path)
+    # H-10: si `ocr=True` y el PDF es imagen, docling da texto Y tablas
+    # estructuradas (por lotes, control de memoria). Si no, ruta pdfplumber.
+    _ocr_tables: list[dict] = []
+    _pp_pdfplumber = _per_page_text_pdfplumber(pdf_path)
+    if ocr and _looks_image_only(_pp_pdfplumber):
+        per_page, _ocr_tables = _docling_content(pdf_path)
+    else:
+        per_page = _pp_pdfplumber
     n_paginas = len(per_page)
     first_text = "\n".join(per_page[:3])
     doc_type = tipo or infer_document_type(pdf_path.name, first_text)
@@ -165,12 +272,54 @@ def extract_document(pdf_path: str | Path, document_id: str, *,
 
         store.put_many(tables)
 
+        # H-10: tablas estructuradas recuperadas por docling (PDF imagen) -> se
+        # persisten como `Table` canónicas con provenance por página + roles
+        # semánticos de columna deterministas (mismo mapeo que pdfplumber).
+        if _ocr_tables:
+            from factory.regulatory.canonical.model import build_table as _bt
+            from factory.regulatory.table_structure_extractor import map_column_roles as _mcr
+            for _t in _ocr_tables:
+                try:
+                    _h = list(_t.get("headers") or [])
+                    _r = [list(x) for x in (_t.get("rows") or [])]
+                    _roles, _unmapped = _mcr(_h, _r)
+                    store.put(_bt(document_id=document_id, pagina=int(_t["page"]),
+                                  headers=_h, rows=_r,
+                                  column_roles=_roles, columns_unmapped=_unmapped))
+                except Exception:  # noqa: BLE001
+                    pass
+
         # WP-D: extracción de `Test` (solo si el flag está ON y el rol es de protocolo).
         if tests_on:
             tests = extract_tests_for_document(document_id, per_page, doc_type)
+            # H-10: además, casos de prueba desde las TABLAS de ejecución del SAT
+            # (docling). No sustituye la ruta de texto; la complementa.
+            if _ocr_tables:
+                from factory.regulatory.canonical.extract_tests import (
+                    extract_tests_from_tables,
+                )
+                _seen_ids = {t.identificador for t in tests}
+                for _tt in extract_tests_from_tables(document_id, _ocr_tables, doc_type):
+                    if _tt.identificador not in _seen_ids:
+                        tests.append(_tt)
+                        _seen_ids.add(_tt.identificador)
             if tests:
                 store.put_many(tests)
             store.set_meta("test_extraction", "tests-v1")
+
+            # H-10: extracción de `SystemComponent` / `Actor` desde los claims YA
+            # persistidos (mención literal + diccionario cerrado + provenance).
+            # Mismo flag -> mismo salto gobernado de EXTRACTION_VERSION.
+            from factory.regulatory.canonical.extract_entities import (
+                extract_entities_for_document,
+            )
+            _claims_now = store.all("claim")
+            _comps, _actors = extract_entities_for_document(document_id, _claims_now)
+            if _comps:
+                store.put_many(_comps)
+            if _actors:
+                store.put_many(_actors)
+            store.set_meta("entity_extraction", "tests-v1")
 
         counts = store.counts()
 

@@ -1,0 +1,27 @@
+{
+ "target_ids": [
+  "docs_plan/R_PAR_DELTA_V1_V2_20260830.md"
+ ],
+ "proposed_by_id": "claude_code_session_gates_prep",
+ "decision": "APPROVE",
+ "decision_type": "ORIGINAL",
+ "selection_mode": "EXPLICIT_LIST",
+ "reason": "GATE E-2 -- aprobacion del delta de paridad v1<->v2 (R-PAR). Corpus compartido 6 docs. A vs B (clone-drift): only_in_A=38 == only_in_B(clean)=38, band_changed=0, UNEXPLAINED=0. B vs C (efecto H-10): only_in_B=0, only_in_C=1, band_changed=0. R-PAR.5 = 4/4 PASS. NO autoriza activacion.",
+ "payload": {
+  "gate": "E-2",
+  "rpar_doc_sha256": "638907dcfa45362f48cfb099b9c95b145c0537010f631b349d0db81d8b730ace",
+  "rpar_raw_sha256": "c8d5fc22b78b534662a155b980e19b4eae45502c2e4e3dbb9ed6891aa1b12547",
+  "findings_A_sha256": "175be8735aa38e250a5b391ea483c5f8de8cb7ed6a7918ef05e403d0b3dee47f",
+  "findings_B_sha256": "cbebbdcf05b2a812922da66d4d40f23809a2f7d01af2469df87a722cd7944b64",
+  "findings_C_sha256": "a7653bc2a07b1433625cee10f12fac081e4f45ddfda473399f96ea7c5d6d2aef",
+  "AvB_only_in_A": 38,
+  "AvB_only_in_B_clean": 38,
+  "AvB_band_changed": 0,
+  "AvB_unexplained": 0,
+  "BvC_only_in_B": 0,
+  "BvC_only_in_C": 1,
+  "BvC_band_changed": 0,
+  "rpar5_all_pass": true,
+  "human_decision": "<APPROVE | REJECT>"
+ }
+}
