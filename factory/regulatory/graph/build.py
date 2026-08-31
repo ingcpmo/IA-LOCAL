@@ -248,6 +248,65 @@ def _link_chain(g: GraphStore, ups: list[dict], downs: list[dict], rel: str) -> 
                         _safe_edge(g, su, sd, rel, {"via_ref": ref})
 
 
+#: H-10 fix RC-3 (tras revisión humana E1-2: 7/17 tested_by SPURIOUS + 3/17
+#: AMBIGUOUS): una coincidencia de token de referencia CORTA (3.2.3, F05.05) no
+#: basta. Palabras genéricas que no discriminan el tema del Test.
+_TB_BOILERPLATE = frozenset("""
+list lists all any each document documents functional specification included including
+comprehensive system systems number numbers reference text customer following followed
+intended provided provide detailed section sections
+""".split())
+_TB_STOP = frozenset("""
+shall not must should will would may can the a an of to in on for and or is are be as
+that this these those with by from at it its their see two redundant equipment via
+""".split())
+_TB_LEAD_ID_RE = re.compile(r"^\s*(UR?S?\d+(?:\.\d+)+|\d+(?:\.\d+){2,})")
+
+
+def _tb_content(t: str, ref: str) -> set[str]:
+    rt = set(re.findall(r"[a-z0-9]+", (ref or "").lower()))
+    return {w for w in re.findall(r"[a-z0-9]+", (t or "").lower())
+            if w not in _TB_STOP and w not in rt and len(w) > 2}
+
+
+def _ref_is_only_crossref(claim_text: str, ref: str) -> bool:
+    """El `ref` aparece en el claim SÓLO como cross-referencia -- dentro de
+    `[...]`, tras "See ..." o tras "reference number ...". En ese caso el claim
+    NO es del ref; sólo lo cita (p.ej. "UR4.1.1 [MCCPDC 3.2.3] - ...")."""
+    ct = claim_text or ""
+    spans = [m.span() for m in re.finditer(re.escape(ref), ct)]
+    if not spans:
+        return False
+    for s, _e in spans:
+        if ct.rfind("[", 0, s) > ct.rfind("]", 0, s):
+            continue  # dentro de corchetes
+        pre = ct[max(0, s - 32):s]
+        if re.search(r"\bSee\b[^\]]{0,30}$", pre) or \
+           re.search(r"\breference number\b[^\]]{0,24}$", pre, re.IGNORECASE):
+            continue  # tras "See"/"reference number"
+        return False  # esta aparición es una referencia funcional real
+    return True
+
+
+def _tested_by_anchored(claim_text: str, test_desc: str, ref: str) -> bool:
+    """`tested_by` vía `ref` sólo si el claim PERTENECE a ese ref (lo lidera o
+    lo lleva como tag final) O comparte >=2 palabras de contenido salientes con
+    la descripción del Test. Descarta las cross-referencias."""
+    ct = claim_text or ""
+    if _ref_is_only_crossref(ct, ref):
+        return False
+    lead = _TB_LEAD_ID_RE.match(ct)
+    if lead:
+        ln = _norm_ref(lead.group(1))
+        if _norm_ref(ref) in (ln, _strip_ur_prefix(ln)):
+            return True
+    tail = re.sub(r"[\s\-_]", "", ct[-24:].lower())
+    if re.sub(r"[\s\-_]", "", (ref or "").lower()) in tail and tail:
+        return True
+    shared = _tb_content(ct, ref) & _tb_content(test_desc, ref)
+    return len({w for w in shared if w not in _TB_BOILERPLATE}) >= 2
+
+
 def _link_to_tests(g: GraphStore, ups: list[dict], tests_idx: list[dict]) -> None:
     for u in ups:
         for tidx in tests_idx:
@@ -257,6 +316,9 @@ def _link_to_tests(g: GraphStore, ups: list[dict], tests_idx: list[dict]) -> Non
                     trefs.add(_norm_ref(t["identificador"]))
                 for ref in trefs & set(u["claims_by_ref"]):
                     for su in u["claims_by_ref"][ref]:
+                        if not _tested_by_anchored(u["claim_texts"].get(su, ""),
+                                                   t.get("descripcion", ""), ref):
+                            continue
                         _safe_edge(g, su, t["test_id"], "tested_by", {"via_ref": ref})
 
 

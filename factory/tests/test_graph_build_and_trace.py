@@ -280,3 +280,36 @@ def test_h10_refers_to_specificity_resolution(tmp_path):
     # la mención genérica autónoma SÍ enlaza 'FactoryTalk'
     assert any("cmp-ft" in dd for s_, dd in dsts_by_src.items() if s_ != largo[0])
     g.close()
+
+
+def test_h10_rc3_tested_by_requires_semantic_anchoring():
+    """H-10 fix RC-3 (tras revisión humana E1-2: 10/17 tested_by eran ruido).
+    Una coincidencia de token de referencia corta ('3.2.3') NO basta:
+      - un claim que lidera con OTRO id y sólo cita '[MCCPDC 3.2.3]' -> NO enlaza
+      - un claim que ES el requisito 3.2.3, o comparte tema con el Test -> SÍ enlaza
+    Preserva los enlaces válidos de UR3.2.3."""
+    from factory.regulatory.graph.build import _tested_by_anchored
+    test_desc = ("UR3.2.3 The Equipment shall have critical alarms and warnings as "
+                 "listed in Table 1 - List of Critical-to-Quality Alarms.")
+    # cross-reference -> DROP
+    assert not _tested_by_anchored(
+        "UR4.1.1 [MCCPDC 3.2.3] - The physical servers shall be two redundant appliances.",
+        test_desc, "3.2.3")
+    assert not _tested_by_anchored("specification (See 3.1.9, F05.05:", test_desc, "F05.05")
+    assert not _tested_by_anchored(
+        "UR4.1.1 requirement includes in its text the customer reference number MCCPDC 3.2.3.",
+        test_desc, "3.2.3")
+    # sin anclaje semántico -> DROP
+    assert not _tested_by_anchored("included in the Functional Specification document.",
+                                   test_desc, "3.2.3")
+    # el claim ES el requisito -> KEEP
+    assert _tested_by_anchored("3.2.3 The Equipment shall have critical alarms and warnings.",
+                               test_desc, "3.2.3")
+    assert _tested_by_anchored("UR3.2.3 The Equipment shall have critical alarms.",
+                               test_desc, "3.2.3")
+    # comparte tema con el Test -> KEEP
+    assert _tested_by_anchored("The list of critical alarms in the table is complete.",
+                               test_desc, "3.2.3")
+    # tag de ref al final -> KEEP
+    assert _tested_by_anchored("screen, accessible by Admin and Maintenance personnel.-F05.05, 24",
+                               "F05.05: Input State and Simulation Review Screen", "F05.05")

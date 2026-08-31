@@ -2281,14 +2281,20 @@ export async function govSubmitExcepcion(verdict){
    ejecuta efectos (flip, QA40, producción): sólo deja el acto en el ledger. */
 
 const E1_SAMPLE_PATH = 'factory/regulatory/pilot_run/h10_extraction_v2_20260830/H10_NEW_RELATIONS_SAMPLE_FOR_HUMAN.json';
-// Muestra ACTIVA: la REGENERADA tras FIX-A (resolución de especificidad en
-// _link_refers_to). La revisión E1-1 (sus hashes viven SÓLO en E1_PREVIOUS)
-// queda como evidencia histórica -- el almacén es append-only; esta 2ª firma
-// NO la borra.
-const E1_SAMPLE_SHA  = 'c2ca5aaa36e9904b77cecf266cfa6645ab76949828074c857a360a5bf75ad3fd';
-const E1_PREVIOUS = {sample_sha256: 'f56d4babe7e8466368c9a6dbefe26e3716186f96e2658c68cf2f0469f5244f20',
-                     verdict_set_sha256: 'a533bf4aa11d58acf2dd881cd5abaf52f85175c90db3c50d0bb1a79b352de085',
-                     acceptance: 'FAIL', review: 'E1-1 (pre FIX-A)'};
+// Muestra ACTIVA: regenerada tras FIX-A + FIX-B (RC-3, tested_by) + FIX-C
+// (RC-2, alias de producto FactoryTalk). tested_by 17->7 ; refers_to residual
+// resuelto. Las revisiones previas viven SÓLO en E1_PRIOR_REVIEWS -- el almacén
+// es append-only; esta 3ª firma NO borra E1-1 ni E1-2.
+const E1_SAMPLE_SHA   = 'da11837a84378ddb71811f6f8a6a6e8d3e3005e0f6d8576896f4d1321e1bbf58';
+const E1_SAMPLE_SIZE  = 67;
+const E1_PRIOR_REVIEWS = [
+  {review: 'E1-1 (pre FIX-A)',   sample_sha256: 'f56d4babe7e8466368c9a6dbefe26e3716186f96e2658c68cf2f0469f5244f20',
+   verdict_set_sha256: 'a533bf4aa11d58acf2dd881cd5abaf52f85175c90db3c50d0bb1a79b352de085', acceptance: 'FAIL'},
+  {review: 'E1-2 (post FIX-A)',  sample_sha256: 'c2ca5aaa36e9904b77cecf266cfa6645ab76949828074c857a360a5bf75ad3fd',
+   verdict_set_sha256: '7b3f23ff5b45082121dbeae6c87f5db0f3eff9992c9e26814a3e1f3f0fd0987a',
+   acceptance: 'NOT_DECLARED', counts: {CORRECT:60, WRONG_NODE:7, SPURIOUS:7, AMBIGUOUS:3}},
+];
+const E1_PREVIOUS = E1_PRIOR_REVIEWS[E1_PRIOR_REVIEWS.length - 1];  // la inmediatamente anterior
 const E1_VOCAB = ['CORRECT', 'WRONG_NODE', 'SPURIOUS', 'AMBIGUOUS'];
 const RPAR_EVIDENCE   = 'docs_plan/R_PAR_DELTA_V1_V2_20260831.md';
 const E3A_EVIDENCE    = 'docs_plan/PAQUETE_GATES_HUMANOS_POST_RPAR_20260831.md';
@@ -2357,21 +2363,23 @@ function firmasArtifactVersion(){
 }
 
 function panelGateE1(){
+  const prev = E1_PRIOR_REVIEWS.map(p =>
+    `${esc(p.review)}: <span class="mono">${esc(p.sample_sha256.slice(0,12))}…</span> / `
+    + `<span class="mono">${esc(p.verdict_set_sha256.slice(0,12))}…</span> — ${esc(p.acceptance)}`
+  ).join('<br>');
   return `
   <div class="card">
-    <b>E1 (2ª revisión, post FIX-A) — Adjudicación de 77 relaciones H-10</b>
+    <b>E1 (3ª revisión, post FIX-A + FIX-B RC-3 + FIX-C RC-2) — Adjudicación de ${E1_SAMPLE_SIZE} relaciones H-10</b>
     <div class="note" style="margin-top:6px;border:1px solid var(--warn)">
-      E1-1 (muestra <span class="mono">${esc(E1_PREVIOUS.sample_sha256.slice(0,12))}…</span>,
-      verdict_set <span class="mono">${esc(E1_PREVIOUS.verdict_set_sha256.slice(0,12))}…</span>)
-      resultó <b style="color:var(--fail)">${esc(E1_PREVIOUS.acceptance)}</b>. FIX-A retiró las aristas
-      genérico-sobre-específico. Esta es una revisión <b>independiente</b> sobre la muestra
-      regenerada — NO se reutiliza ningún veredicto anterior. La firma E1-1 se conserva
-      (almacén append-only).
+      Revisiones previas PRESERVADAS (almacén append-only, esta firma NO las borra):<br>${prev}<br>
+      FIX-B retiró el emparejamiento promiscuo de <span class="mono">tested_by</span> por token corto
+      (17→7). FIX-C resolvió los <span class="mono">refers_to</span> a producto FactoryTalk específico.
+      Esta es una revisión <b>independiente</b> — NO se reutiliza ningún veredicto anterior.
     </div>
     <div class="meta" style="margin-top:6px">
-      Revisa las 77 filas en <span class="mono">docs_plan/E1_REVIEW_PACKET_POST_FIXA_20260831.md</span>
+      Revisa las ${E1_SAMPLE_SIZE} filas en <span class="mono">docs_plan/E1_REVIEW_PACKET_E1_3_20260831.md</span>
       y pega abajo el array <span class="mono">verdicts</span> completo
-      (77 objetos, cada uno con <span class="mono">index</span> y
+      (${E1_SAMPLE_SIZE} objetos, cada uno con <span class="mono">index</span> y
       <span class="mono">verdict ∈ {${E1_VOCAB.join(', ')}}</span>).
       La UI calcula <span class="mono">verdict_set_sha256</span> y firma un
       ARTIFACT_VERSION sobre la muestra.
@@ -2388,7 +2396,7 @@ function panelGateE1(){
     </div>
 
     <textarea id="e1-verdicts" style="width:100%;height:140px;margin-top:10px;font-family:monospace;font-size:11px"
-      placeholder='[{"index":1,"verdict":"CORRECT"}, {"index":2,"verdict":"SPURIOUS"}, …]  (77 filas)'></textarea>
+      placeholder='[{"index":1,"verdict":"CORRECT"}, {"index":2,"verdict":"SPURIOUS"}, …]  (${E1_SAMPLE_SIZE} filas)'></textarea>
     <div style="margin-top:6px">
       <button id="e1-calc-btn" onclick="govGateE1Calc()">Validar y calcular hash</button>
     </div>
@@ -2397,7 +2405,7 @@ function panelGateE1(){
     ${signatureForm('e1')}
     ${NO_EJECUTA}
     <div style="margin-top:12px">
-      <button id="e1-submit-btn" onclick="govSubmitGateE1()">Registrar adjudicación E1</button>
+      <button id="e1-submit-btn" onclick="govSubmitGateE1()">Registrar adjudicación E1-3</button>
       <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
     </div>
     ${firmasArtifactVersion()}
@@ -2416,23 +2424,23 @@ export function govGateE1Calc(){
   let arr;
   try { arr = JSON.parse(document.getElementById('e1-verdicts')?.value || ''); }
   catch(e){ if(out) out.innerHTML = `<span style="color:var(--fail)">JSON inválido: ${esc(e.message)}</span>`; return; }
-  if(!Array.isArray(arr) || arr.length !== 77){
-    if(out) out.innerHTML = `<span style="color:var(--fail)">Se esperan 77 objetos; hay ${Array.isArray(arr)?arr.length:'—'}.</span>`; return;
+  if(!Array.isArray(arr) || arr.length !== E1_SAMPLE_SIZE){
+    if(out) out.innerHTML = `<span style="color:var(--fail)">Se esperan ${E1_SAMPLE_SIZE} objetos; hay ${Array.isArray(arr)?arr.length:'—'}.</span>`; return;
   }
   const idx = new Set();
   for(const v of arr){
-    if(typeof v.index !== 'number' || v.index < 1 || v.index > 77){
+    if(typeof v.index !== 'number' || v.index < 1 || v.index > E1_SAMPLE_SIZE){
       if(out) out.innerHTML = `<span style="color:var(--fail)">index fuera de rango: ${esc(JSON.stringify(v))}</span>`; return; }
     if(!E1_VOCAB.includes(v.verdict)){
       if(out) out.innerHTML = `<span style="color:var(--fail)">verdict inválido en fila ${esc(v.index)}: ${esc(String(v.verdict))}</span>`; return; }
     idx.add(v.index);
   }
-  if(idx.size !== 77){ if(out) out.innerHTML = `<span style="color:var(--fail)">hay index repetidos o faltantes (${idx.size} únicos).</span>`; return; }
+  if(idx.size !== E1_SAMPLE_SIZE){ if(out) out.innerHTML = `<span style="color:var(--fail)">hay index repetidos o faltantes (${idx.size} únicos).</span>`; return; }
   const counts = {};
   for(const k of E1_VOCAB) counts[k] = arr.filter(v=>v.verdict===k).length;
   e1VerdictSetSha(arr).then(sha => {
     E1_VALIDADO = { verdicts: arr, counts, verdict_set_sha256: sha };
-    if(out) out.innerHTML = `<span style="color:var(--pass)">77/77 válidas</span> · `
+    if(out) out.innerHTML = `<span style="color:var(--pass)">${E1_SAMPLE_SIZE}/${E1_SAMPLE_SIZE} válidas</span> · `
       + E1_VOCAB.map(k=>`${k}: <b>${counts[k]}</b>`).join(' · ')
       + `<br>verdict_set_sha256: <span class="mono">${esc(sha||'(no calculable en este contexto)')}</span>`;
   });
@@ -2446,16 +2454,18 @@ export async function govSubmitGateE1(){
   await proponerYConfirmar('ARTIFACT_VERSION', [E1_SAMPLE_PATH], readSignature('e1'), {
     decision:'APPROVE', decision_type:'ORIGINAL',
     payload:{
-      gate:'E1', review:'E1-2 (post FIX-A)', decision_ref:'E1-2-H10-RELATIONS-20260831',
+      gate:'E1', review:'E1-3 (post FIX-A + FIX-B RC-3 + FIX-C RC-2)',
+      decision_ref:'E1-3-H10-RELATIONS-20260831',
       meaning: 'authenticated_confirmation_of_this_human_verdict_set',
       does_not_imply: ['E1_ACCEPTANCE=PASS','graph_incorporation','flip','qa40_adjudication','production'],
       e1_acceptance: 'DETERMINED_SEPARATELY_from_verdict_distribution_vs_no-ruido_criterion',
       sample_sha256: E1_SAMPLE_SHA,
+      sample_size: E1_SAMPLE_SIZE,
       verdict_set_sha256: E1_VALIDADO.verdict_set_sha256,
       verdict_counts: E1_VALIDADO.counts,
       verdicts: E1_VALIDADO.verdicts,
-      previous_e1: E1_PREVIOUS,
-      evidence: 'docs_plan/E1_REVIEW_PACKET_POST_FIXA_20260831.md',
+      prior_reviews: E1_PRIOR_REVIEWS,
+      evidence: 'docs_plan/E1_REVIEW_PACKET_E1_3_20260831.md',
       not_authorized: ['graph_incorporation','flip','qa40_adjudication','production'],
     },
   }, {statusPrefix:'e1', btnId:'e1-submit-btn'});

@@ -63,3 +63,23 @@ def test_equipment_tag_not_confused_with_requirement_id():
     names = {c.nombre for c in comps}
     assert any("CP-01" in n or "CP01" in n for n in names)   # el tag de equipo sí
     assert not any("HR-001" in n for n in names)             # el id de requisito NO
+
+
+def test_h10_rc2_specific_factorytalk_products_are_recognized():
+    """H-10 fix RC-2 (tras E1-2: 6/7 WRONG_NODE residuales eran 'FactoryTalk'
+    genérico donde el claim nombra un producto específico). El diccionario
+    ahora reconoce esas formas completas -- la resolución de especificidad de
+    _link_refers_to hace el resto."""
+    claims = [
+        _claim("D", 1, "is handled in the PLC and not in the FactoryTalk Alarm and Events"),
+        _claim("D", 2, "added to the FactoryTalk Runtime Security group"),
+        _claim("D", 3, "FactoryTalk Activation Manager 4.05.01 Server"),
+        _claim("D", 4, "FactoryTalk View Site Edition 10-Client Bundle"),
+        _claim("D", 5, "and all FactoryTalk Security actions are audited"),
+    ]
+    comps, _ = extract_entities_for_document("D", claims)
+    names = {c.nombre for c in comps}
+    assert "FactoryTalk Alarm and Events" in names
+    assert "FactoryTalk Activation Manager" in names
+    assert "FactoryTalk View Site Edition" in names
+    assert "FactoryTalk Security" in names or "FactoryTalk Runtime Security" in names

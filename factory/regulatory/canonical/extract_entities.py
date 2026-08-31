@@ -33,11 +33,22 @@ _COMPONENT_TERMS: dict[str, str] = {
     "ControlLogix": "PLC",
     "CompactLogix": "PLC",
     "GuardLogix": "PLC",
+    # H-10 fix RC-2 (tras revisión humana E1-2): productos FactoryTalk
+    # específicos que el corpus nombra completos -- sin ellos, el claim casaba
+    # sólo con el genérico "FactoryTalk" (nodo equivocado). La resolución de
+    # especificidad de `_link_refers_to` (span contenido) descarta el genérico
+    # cuando uno de estos casa.
+    "FactoryTalk View Site Edition": "SCADA",   # forma deletreada de "View SE"
     "FactoryTalk View SE": "SCADA",
     "FactoryTalk View": "SCADA",
     "FactoryTalk Historian": "Historian",
     "FactoryTalk Linx": "network",
     "FactoryTalk Directory": "server",
+    "FactoryTalk Alarm and Events": "SCADA",
+    "FactoryTalk Alarms and Events": "SCADA",
+    "FactoryTalk Activation Manager": "server",
+    "FactoryTalk Runtime Security": "server",
+    "FactoryTalk Security": "server",
     "FactoryTalk": "SCADA",
     "PanelView Plus": "HMI",
     "PanelView": "HMI",
