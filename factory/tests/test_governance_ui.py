@@ -114,6 +114,20 @@ FIXTURE_STATE = {
          "implemented": False, "evidence_kind": "SOURCE_INSPECTION", "evidence": "pendiente"},
     ],
     "preventive_measures_complete": False,
+    # Firmas de gate del cierre H-1..H-10: E2 y E3-A confirmadas, E1-3 sin proponer.
+    "proposals": {
+        "ARTIFACT_VERSION": [
+            {"decision_instance_id": "ARTIFACT_VERSION-2026-024", "proposal_state": "CONFIRMED",
+             "signed_by_display_name": "cesar may", "signed_by_id": "Cesar",
+             "payload": {"gate": "E2", "decision_ref": "E2-RPAR-20260831"}},
+            {"decision_instance_id": "ARTIFACT_VERSION-2026-026", "proposal_state": "CONFIRMED",
+             "signed_by_display_name": "cesar may", "signed_by_id": "Cesar",
+             "payload": {"gate": "E3-A", "decision_ref": "E3A-CLEANBASE-20260831"}},
+            {"decision_instance_id": "ARTIFACT_VERSION-2026-022", "proposal_state": "CONFIRMED",
+             "signed_by_display_name": "cesar may", "signed_by_id": "Cesar",
+             "payload": {"gate": "E1", "decision_ref": "E1-2-H10-RELATIONS-20260831"}},
+        ]
+    },
 }
 
 
@@ -310,6 +324,28 @@ def test_e1_3_panel_prep_is_correct():
     assert "E1_REVIEW_PACKET_E1_3_20260831.md" in panel
     assert "E1_REVIEW_PACKET_POST_FIXA_20260831.md" not in panel  # E1-2 ya no es evidencia activa
     assert "NO declara" in panel and "E1_ACCEPTANCE=PASS" in panel
+
+
+@needs_node
+def test_index_shows_which_gate_signature_is_pending(rendered):
+    """El índice debe decir, sin abrir panel a panel, qué firma de gate falta.
+    Con E2/E3-A CONFIRMED y E1-3 sin proponer: E1-3 = FIRMA PENDIENTE ;
+    E2 y E3-A = FIRMADO por su firmante."""
+    idx = rendered["index"]
+    assert "Firmas de gate del cierre H-1" in idx
+    assert "FIRMA PENDIENTE" in idx
+    assert "3ª revisión" in idx                 # el gate E1-3
+    assert "Pendiente de firma" in idx
+    # E2 y E3-A confirmados en el fixture -> FIRMADO, no PENDIENTE
+    # (el chip va en el <td> ANTERIOR al label, por eso la ventana abarca hacia atrás)
+    e2 = idx[idx.index("E2 — delta") - 200: idx.index("E2 — delta") + 260]
+    assert "FIRMADO" in e2 and "cesar may" in e2 and "FIRMA PENDIENTE" not in e2
+    e3 = idx[idx.index("E3-A — base") - 200: idx.index("E3-A — base") + 260]
+    assert "FIRMADO" in e3
+    # revisión previa E1-2 se declara conservada
+    assert "E1-2-H10-RELATIONS-20260831" in idx and "append-only" in idx
+    # D-5 se distingue de una firma de gobernanza
+    assert "NO es una firma de gobernanza" in idx
 
 
 @needs_node

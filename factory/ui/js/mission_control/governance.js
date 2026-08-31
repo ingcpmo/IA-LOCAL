@@ -310,9 +310,68 @@ function panelCard(p){
   </div>`;
 }
 
+/* Firmas de gate del cierre H-1…H-10 (E1/E2/E3-A) sobre ARTIFACT_VERSION.
+   Lee GOV.proposals.ARTIFACT_VERSION (payload.gate / payload.decision_ref /
+   proposal_state / signed_by). NO reimplementa gobernanza: es una VISTA que
+   dice, en el índice, qué firma de gate falta -- sin tener que abrir panel a
+   panel. La firma ACTIVA de E1 es la de la revisión más reciente
+   (E1-3 tras FIX-A + FIX-B RC-3 + FIX-C RC-2). */
+const _ARC_GATES = [
+  {ref: 'E1-3-H10-RELATIONS-20260831', label: 'E1 (3ª revisión, post FIX-A/B/C) — 67 relaciones H-10', panel: 'gate-e1',
+   supersedes: ['E1-2-H10-RELATIONS-20260831', 'E1-1']},
+  {ref: 'E2-RPAR-20260831',            label: 'E2 — delta R-PAR v1↔v2',              panel: 'gate-e2', supersedes: []},
+  {ref: 'E3A-CLEANBASE-20260831',      label: 'E3-A — base canónica CLEAN',          panel: 'gate-e3a', supersedes: []},
+];
+function gateSignaturesCard(){
+  const props = (GOV?.proposals?.ARTIFACT_VERSION) || [];
+  const byRef = {};
+  for(const p of props){
+    const r = (p.payload||{}).decision_ref; if(!r) continue;
+    (byRef[r] ||= []).push(p);
+  }
+  const row = g => {
+    const mine = byRef[g.ref] || [];
+    const conf = mine.find(p => p.proposal_state === 'CONFIRMED' || p.signed_by_id || p.signed_by_display_name);
+    const prop = mine.find(p => p.proposal_state === 'PROPOSED');
+    let chip, detail;
+    if(conf){
+      chip = `<span class="chip c-pass">FIRMADO</span>`;
+      detail = `por <b>${esc(conf.signed_by_display_name || conf.signed_by_id || '?')}</b> ·
+                <span class="mono">${esc(conf.decision_instance_id)}</span>`;
+    } else if(prop){
+      chip = `<span class="chip c-warn">PROPUESTO, SIN FIRMAR</span>`;
+      detail = `propuesta <span class="mono">${esc(prop.decision_instance_id)}</span> — falta el confirm autenticado`;
+    } else {
+      chip = `<span class="chip c-fail">FIRMA PENDIENTE</span>`;
+      detail = `sin propuesta — abrir el panel y firmar`;
+    }
+    const suping = (g.supersedes||[]).filter(s => byRef[s]?.some(p => p.proposal_state==='CONFIRMED'));
+    return `<tr>
+      <td>${chip}</td>
+      <td><b>${esc(g.label)}</b><div class="meta">${detail}</div>
+        ${suping.length ? `<div class="meta" style="color:var(--faint)">revisión previa firmada: ${esc(suping.join(', '))} (se conserva, append-only)</div>` : ''}</td>
+      <td><button onclick="govOpen('${esc(g.panel)}')">Abrir panel</button></td>
+    </tr>`;
+  };
+  const pend = _ARC_GATES.filter(g => !((byRef[g.ref]||[]).some(p => p.proposal_state==='CONFIRMED' || p.signed_by_id)));
+  return `
+  <div class="card" style="margin-bottom:14px;border:1px solid ${pend.length ? 'var(--warn)' : 'var(--pass)'}">
+    <b>Firmas de gate del cierre H-1…H-10 (E1 · E2 · E3-A)</b>
+    ${pend.length ? `<div class="meta" style="color:var(--warn);margin-top:4px">
+      Pendiente de firma: <b>${esc(pend.map(g=>g.label.split(' —')[0]).join(', '))}</b></div>` :
+      `<div class="meta" style="color:var(--pass);margin-top:4px">Las 3 firmas de gate están registradas.</div>`}
+    <table class="tbl" style="width:100%;font-size:11px;margin-top:8px">
+      <tbody>${_ARC_GATES.map(row).join('')}</tbody></table>
+    <div class="meta" style="margin-top:6px;color:var(--faint)">
+      D-5 (ground truth QA40 / oportunidades / negativas / held-out) NO es una firma de gobernanza:
+      se completa y firma en los YAML del host. Firmar aquí no la sustituye.</div>
+  </div>`;
+}
+
 function indexView(){
   const a = GOV.audit;
   return `
+  ${gateSignaturesCard()}
   <div class="card" style="margin-bottom:14px">
     <b>Estado de la cadena de auditoría, por dimensión</b>
     ${auditDimensions(a)}
