@@ -279,6 +279,14 @@ def _link_refers_to(g: GraphStore, indices: list[dict]) -> None:
       - la coincidencia es por límite de palabra, case-insensitive;
       - el claim y la entidad deben ser del MISMO documento (una referencia
         cross-documento por nombre suelto es demasiado ambigua sin más señal).
+      - RESOLUCIÓN DE ESPECIFICIDAD (H-10 fix, 2026-08-31, tras la revisión
+        humana E1: 30/77 WRONG_NODE): el diccionario de entidades tiene
+        términos que son prefijo/subcadena de otros ("FactoryTalk" ⊂
+        "FactoryTalk Historian" ⊂ ...; "CP01" ⊂ "PCS-CP01"). Sin resolución se
+        emitía una arista a CADA término que casaba, incluida la genérica —
+        que casi siempre es el nodo EQUIVOCADO. Ahora, si el span de una
+        mención está ESTRICTAMENTE contenido en el de otra mención (más
+        larga) del mismo claim, sólo se enlaza la más específica.
     Nunca inventa la arista: si no hay entidad o no hay mención literal, no pasa nada.
     """
     ents_by_doc: dict[str, list[tuple]] = {}
@@ -304,8 +312,21 @@ def _link_refers_to(g: GraphStore, indices: list[dict]) -> None:
                 # un producto ("[12] FactoryTalk View SE User's Guide ...") NO es
                 # una referencia funcional del claim -> no genera refers_to.
                 continue
+            # todas las menciones (entidad, [start, end)) en este claim
+            hits: list[tuple[str, int, int]] = []
             for eid, pat in ents:
-                if pat.search(text):
+                for m in pat.finditer(text):
+                    hits.append((eid, m.start(), m.end()))
+            if not hits:
+                continue
+            # una mención dominada (span estrictamente dentro de otra más
+            # larga) es la genérica: se descarta ese destino para este claim.
+            for eid, s, e in hits:
+                dominated = any(
+                    s2 <= s and e <= e2 and (e2 - s2) > (e - s)
+                    for _eid2, s2, e2 in hits
+                )
+                if not dominated:
                     _safe_edge(g, cid, eid, "refers_to", {"match": "literal_name"})
 
 

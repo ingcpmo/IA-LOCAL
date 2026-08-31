@@ -231,3 +231,52 @@ def test_h10_refers_to_by_literal_entity_mention(tmp_path):
     srcs = {e.src_id for e in refs}
     assert srcs and all(s.startswith("clm-") for s in srcs)
     g.close()
+
+
+def test_h10_refers_to_specificity_resolution(tmp_path):
+    """H-10 fix (2026-08-31, tras revisión humana E1 = 30/77 WRONG_NODE):
+    cuando el diccionario tiene un término que es subcadena de otro
+    ('FactoryTalk' ⊂ 'FactoryTalk Historian'; 'CP01' ⊂ 'PCS-CP01') y el claim
+    menciona la forma LARGA, sólo se enlaza la entidad más específica -- la
+    genérica dominada NO recibe arista. Una mención genérica AUTÓNOMA (sin
+    forma larga que la contenga) sí se enlaza."""
+    from factory.regulatory.canonical import model as m
+    from factory.regulatory.canonical.persistence import CanonicalStore
+    canon_dir = tmp_path / "canon"
+    graph_dir = tmp_path / "graph"
+    with CanonicalStore("RW-SP", store_dir=canon_dir) as s:
+        s.put(m.Document(document_id="RW-SP", sha256="e" * 64, tipo="DS",
+                         titulo="DS", n_paginas=10))
+        # claim con la forma LARGA -> sólo la específica
+        s.put(m.build_claim("RW-SP", 3,
+                            "Alarms are archived by the FactoryTalk Historian SE server on PCS-CP01.",
+                            "function", "historian archives on cp"))
+        # claim con la forma GENÉRICA autónoma -> sí enlaza la genérica
+        s.put(m.build_claim("RW-SP", 4,
+                            "The FactoryTalk platform provides the licensing framework.",
+                            "statement", "factorytalk licensing"))
+        s.put(m.SystemComponent(component_id="cmp-ft", document_id="RW-SP",
+                                nombre="FactoryTalk", tipo="SCADA"))
+        s.put(m.SystemComponent(component_id="cmp-fth", document_id="RW-SP",
+                                nombre="FactoryTalk Historian", tipo="Historian"))
+        s.put(m.SystemComponent(component_id="cmp-cp01", document_id="RW-SP",
+                                nombre="CP01", tipo="PLC"))
+        s.put(m.SystemComponent(component_id="cmp-pcscp01", document_id="RW-SP",
+                                nombre="PCS-CP01", tipo="PLC"))
+    gb.build_project_graph("PRJ-SP", [("RW-SP", "DS")],
+                           canon_dir=canon_dir, graph_dir=graph_dir)
+    g = GraphStore("PRJ-SP", store_dir=graph_dir)
+    pairs = {(e.src_id, e.dst_id) for e in g.edges(rel="refers_to")}
+    dsts_by_src = {}
+    for s_, d_ in pairs:
+        dsts_by_src.setdefault(s_, set()).add(d_)
+    # el claim de la forma larga: enlaza Historian y PCS-CP01, NO 'FactoryTalk' ni 'CP01'
+    largo = [s_ for s_ in dsts_by_src if "cmp-fth" in dsts_by_src[s_]]
+    assert largo, "no se creó la arista a la entidad específica"
+    d = dsts_by_src[largo[0]]
+    assert "cmp-fth" in d and "cmp-pcscp01" in d
+    assert "cmp-ft" not in d, "'FactoryTalk' genérico dominado NO debe enlazarse"
+    assert "cmp-cp01" not in d, "'CP01' genérico dominado NO debe enlazarse"
+    # la mención genérica autónoma SÍ enlaza 'FactoryTalk'
+    assert any("cmp-ft" in dd for s_, dd in dsts_by_src.items() if s_ != largo[0])
+    g.close()
