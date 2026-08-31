@@ -319,9 +319,17 @@ function panelCard(p){
 const _ARC_GATES = [
   {ref: 'E1-3-H10-RELATIONS-20260831', label: 'E1 (3ª revisión, post FIX-A/B/C) — 67 relaciones H-10', panel: 'gate-e1',
    supersedes: ['E1-2-H10-RELATIONS-20260831', 'E1-1']},
+  {ref: 'E1-ACCEPTANCE-20260831',      label: 'E1_ACCEPTANCE = PASS (cierre de E1, tras E1-3)', panel: 'gate-e1', supersedes: []},
   {ref: 'E2-RPAR-20260831',            label: 'E2 — delta R-PAR v1↔v2',              panel: 'gate-e2', supersedes: []},
   {ref: 'E3A-CLEANBASE-20260831',      label: 'E3-A — base canónica CLEAN',          panel: 'gate-e3a', supersedes: []},
 ];
+
+/* ¿está CONFIRMED una propuesta ARTIFACT_VERSION con este decision_ref? */
+function _gateConfirmed(ref){
+  return ((GOV?.proposals?.ARTIFACT_VERSION) || []).some(
+    p => (p.payload||{}).decision_ref === ref
+      && (p.proposal_state === 'CONFIRMED' || p.signed_by_id || p.signed_by_display_name));
+}
 function gateSignaturesCard(){
   const props = (GOV?.proposals?.ARTIFACT_VERSION) || [];
   const byRef = {};
@@ -2469,6 +2477,38 @@ function panelGateE1(){
     </div>
     ${firmasArtifactVersion()}
     ${statusLine('e1')}
+
+    ${e1AcceptanceBlock()}
+  </div>`;
+}
+
+/* Paso 2 del gate E1: la DECISIÓN de aceptación (E1_ACCEPTANCE = PASS), separada
+   de la firma del conjunto de veredictos (paso 1). Sólo aparece cuando E1-3 ya
+   está CONFIRMED. No declara PASS: lo firma el humano con su Identity Key. */
+function e1AcceptanceBlock(){
+  const e13ok = _gateConfirmed('E1-3-H10-RELATIONS-20260831');
+  const accOk = _gateConfirmed('E1-ACCEPTANCE-20260831');
+  if(accOk){
+    return `<div class="note" style="margin-top:14px;border:1px solid var(--pass)">
+      <b>E1_ACCEPTANCE = PASS</b> ya está firmado (gate E1 cerrado).</div>`;
+  }
+  if(!e13ok){
+    return `<div class="note" style="margin-top:14px">
+      <b>E1_ACCEPTANCE</b> — firma primero la adjudicación E1-3 arriba; después aparece aquí el paso de aceptación.</div>`;
+  }
+  return `<div class="card" style="margin-top:14px;border:1px solid var(--warn)">
+    <b>E1_ACCEPTANCE — cierre de E1 (paso 2)</b>
+    <div class="meta" style="margin-top:6px">
+      E1-3 firmado: <b>66/67 CORRECT · 0 WRONG_NODE · 0 SPURIOUS · 1 AMBIGUOUS</b>
+      (el único no-CORRECT es una truncación OCR de la fuente, no atribuible a H-10). RC-2 y RC-3 = RESOLVED.
+      Registrar esto declara <span class="mono">E1_ACCEPTANCE = PASS</span> — <b>no</b> autoriza flip, QA40 ni producción.
+    </div>
+    ${signatureForm('e1acc')}
+    <div style="margin-top:12px">
+      <button id="e1acc-submit-btn" onclick="govSubmitGateE1Acceptance()">Firmar E1_ACCEPTANCE = PASS</button>
+      <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
+    </div>
+    ${statusLine('e1acc')}
   </div>`;
 }
 
@@ -2528,6 +2568,23 @@ export async function govSubmitGateE1(){
       not_authorized: ['graph_incorporation','flip','qa40_adjudication','production'],
     },
   }, {statusPrefix:'e1', btnId:'e1-submit-btn'});
+}
+
+export async function govSubmitGateE1Acceptance(){
+  if(!_gateConfirmed('E1-3-H10-RELATIONS-20260831')){
+    setStatus('e1acc','warn','E1-3 aún no está firmado. Registra primero la adjudicación E1-3.');
+    return;
+  }
+  await proponerYConfirmar('ARTIFACT_VERSION', [E1_SAMPLE_PATH], readSignature('e1acc'), {
+    decision:'APPROVE', decision_type:'ORIGINAL',
+    payload:{
+      gate:'E1', decision_ref:'E1-ACCEPTANCE-20260831', e1_acceptance:'PASS',
+      based_on:'ARTIFACT_VERSION-2026-030 (E1-3 verdict_set 7c905e256b25f2b01fc902fa7bed0dc0e6a1b2efdb119d09c01cb465f67a1f67)',
+      basis:'E1-3: 66/67 CORRECT, 0 WRONG_NODE, 0 SPURIOUS, 1 AMBIGUOUS por truncación OCR no atribuible a H-10',
+      rc2:'RESOLVED', rc3:'RESOLVED',
+      not_authorized:['flip','qa40_adjudication','production'],
+    },
+  }, {statusPrefix:'e1acc', btnId:'e1acc-submit-btn'});
 }
 
 function panelGateApprobRechazo(prefix, {titulo, evidencia, target, decisionRef, contexto}){

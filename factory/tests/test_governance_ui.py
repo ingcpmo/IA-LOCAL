@@ -126,6 +126,9 @@ FIXTURE_STATE = {
             {"decision_instance_id": "ARTIFACT_VERSION-2026-022", "proposal_state": "CONFIRMED",
              "signed_by_display_name": "cesar may", "signed_by_id": "Cesar",
              "payload": {"gate": "E1", "decision_ref": "E1-2-H10-RELATIONS-20260831"}},
+            {"decision_instance_id": "ARTIFACT_VERSION-2026-030", "proposal_state": "CONFIRMED",
+             "signed_by_display_name": "cesar may", "signed_by_id": "Cesar",
+             "payload": {"gate": "E1", "decision_ref": "E1-3-H10-RELATIONS-20260831"}},
         ]
     },
 }
@@ -346,6 +349,21 @@ def test_index_shows_which_gate_signature_is_pending(rendered):
     assert "E1-2-H10-RELATIONS-20260831" in idx and "append-only" in idx
     # D-5 se distingue de una firma de gobernanza
     assert "NO es una firma de gobernanza" in idx
+    # E1_ACCEPTANCE aparece como fila pendiente (E1-3 confirmado, aceptación no)
+    assert "E1_ACCEPTANCE = PASS" in idx
+
+
+@needs_node
+def test_e1_panel_shows_acceptance_step_once_e1_3_signed(rendered):
+    """Con E1-3 CONFIRMED y E1_ACCEPTANCE sin firmar, el panel gate-e1 muestra
+    el paso 2 (E1_ACCEPTANCE = PASS) con su propio botón/firma. Registrar ese
+    paso NO autoriza flip/QA40/producción."""
+    panel = rendered["panels"]["gate-e1"]
+    assert "E1_ACCEPTANCE — cierre de E1 (paso 2)" in panel
+    assert "govSubmitGateE1Acceptance(" in panel
+    assert "e1acc-reason" in panel          # signatureForm propio del paso 2
+    assert "66/67 CORRECT" in panel and "0 WRONG_NODE" in panel
+    assert "no</b> autoriza flip" in panel or "no autoriza flip" in panel.replace("<b>","").replace("</b>","")
 
 
 @needs_node
