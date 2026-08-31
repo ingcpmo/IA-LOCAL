@@ -2285,7 +2285,7 @@ const E1_SAMPLE_PATH = 'factory/regulatory/pilot_run/h10_extraction_v2_20260830/
 // (RC-2, alias de producto FactoryTalk). tested_by 17->7 ; refers_to residual
 // resuelto. Las revisiones previas viven SÓLO en E1_PRIOR_REVIEWS -- el almacén
 // es append-only; esta 3ª firma NO borra E1-1 ni E1-2.
-const E1_SAMPLE_SHA   = 'da11837a84378ddb71811f6f8a6a6e8d3e3005e0f6d8576896f4d1321e1bbf58';
+const E1_SAMPLE_SHA   = '77e8324f333f08edb4115a1dcb65962c9daf61bc4c6b0c584af8668b783dd0a4';
 const E1_SAMPLE_SIZE  = 67;
 const E1_PRIOR_REVIEWS = [
   {review: 'E1-1 (pre FIX-A)',   sample_sha256: 'f56d4babe7e8466368c9a6dbefe26e3716186f96e2658c68cf2f0469f5244f20',

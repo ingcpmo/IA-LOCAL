@@ -310,6 +310,80 @@ def test_h10_rc3_tested_by_requires_semantic_anchoring():
     # comparte tema con el Test -> KEEP
     assert _tested_by_anchored("The list of critical alarms in the table is complete.",
                                test_desc, "3.2.3")
-    # tag de ref al final -> KEEP
+    # tag de ref al final + contenido -> KEEP
     assert _tested_by_anchored("screen, accessible by Admin and Maintenance personnel.-F05.05, 24",
                                "F05.05: Input State and Simulation Review Screen", "F05.05")
+
+
+def test_h10_rc3_explicit_crossref_cases():
+    """Casos explícitos exigidos en la revisión E1-2 -> E1-3. `_ref_is_only_crossref`
+    debe clasificar "See 3.1.9, F05.05" como cross-referencia (los puntos de la
+    sección NO cortan la detección). Un tag suelto al final NO convierte en
+    tested_by por sí solo."""
+    from factory.regulatory.graph.build import _tested_by_anchored, _ref_is_only_crossref
+    TD_ALARM = ("UR3.2.3 The Equipment shall have critical alarms and warnings as listed "
+                "in Table 1 - List of Critical-to-Quality Alarms.")
+    TD_SCREEN = "F05.05: Input State and Simulation Review Screen. Operator reviews input state."
+
+    # 1 · "UR4.1.1 [MCCPDC 3.2.3] ..." -> NO tested_by 3.2.3
+    assert _ref_is_only_crossref("UR4.1.1 [MCCPDC 3.2.3] - The physical servers shall be two.", "3.2.3")
+    assert not _tested_by_anchored("UR4.1.1 [MCCPDC 3.2.3] - The physical servers shall be two.",
+                                   TD_ALARM, "3.2.3")
+    # 2 · "... reference number 3.2.3" -> NO tested_by
+    assert _ref_is_only_crossref("The requirement carries the customer reference number MCCPDC 3.2.3.", "3.2.3")
+    assert not _tested_by_anchored("The requirement carries the customer reference number MCCPDC 3.2.3.",
+                                   TD_ALARM, "3.2.3")
+    # 3 · "specification (See 3.1.9, F05.05)" -> NO tested_by (dots must not break detection)
+    assert _ref_is_only_crossref("specification (See 3.1.9, F05.05:", "F05.05")
+    assert _ref_is_only_crossref("per the requirement (See 3.3.1.2, F05.05, page 4)", "F05.05")
+    assert not _tested_by_anchored("specification (See 3.1.9, F05.05:", TD_SCREEN, "F05.05")
+    # 4 · "UR3.2.3 The Equipment shall..." -> SÍ tested_by
+    assert not _ref_is_only_crossref("UR3.2.3 The Equipment shall have critical alarms.", "3.2.3")
+    assert _tested_by_anchored("UR3.2.3 The Equipment shall have critical alarms and warnings.",
+                               TD_ALARM, "3.2.3")
+    # 5 · claim funcional real + F05.05 -> SÍ tested_by SÓLO con evidencia suficiente
+    assert _tested_by_anchored(
+        "The operator reviews the input state on the simulation review screen.-F05.05, 24",
+        TD_SCREEN, "F05.05")
+    #     ... pero un tag suelto sin contenido compartido NO basta
+    assert not _tested_by_anchored("As detailed elsewhere.-F05.05", TD_SCREEN, "F05.05")
+
+
+def test_h10_rc2_alias_links_canonical_node_no_generic_no_dupe(tmp_path):
+    """H-10 fix RC-2: un claim que nombra "FactoryTalk View Site Edition"
+    (variante deletreada) enlaza al MISMO nodo canónico "FactoryTalk View SE",
+    NO al genérico "FactoryTalk" ni a un nodo duplicado. Un claim con la
+    mención genérica autónoma sí enlaza "FactoryTalk"."""
+    from factory.regulatory.canonical import model as m
+    from factory.regulatory.canonical.persistence import CanonicalStore
+    from factory.regulatory.canonical.extract_entities import extract_entities_for_document
+    canon_dir, graph_dir = tmp_path / "c", tmp_path / "g"
+    texts = {
+        "spelled":  "The FactoryTalk View Site Edition 10-Client Bundle is installed on the server.",
+        "runtime":  "The group is added to the FactoryTalk Runtime Security list.",
+        "generic":  "The FactoryTalk platform provides the licensing framework.",
+    }
+    with CanonicalStore("RW-AL", store_dir=canon_dir) as s:
+        s.put(m.Document(document_id="RW-AL", sha256="c" * 64, tipo="DS", titulo="AL", n_paginas=5))
+        for k, t in texts.items():
+            s.put(m.build_claim("RW-AL", 2, t, "statement", f"{k}"))
+        comps, _ = extract_entities_for_document(
+            "RW-AL", [dict(source_text=t, pagina=2, claim_id="") for t in texts.values()])
+        for c in comps:
+            s.put(c)
+        names = {c.nombre for c in comps}
+    assert "FactoryTalk View SE" in names
+    assert "FactoryTalk View Site Edition" not in names   # variante -> canónico, sin duplicado
+    assert "FactoryTalk Security" in names
+    assert "FactoryTalk Runtime Security" not in names
+
+    gb.build_project_graph("PRJ-AL", [("RW-AL", "DS")], canon_dir=canon_dir, graph_dir=graph_dir)
+    g = GraphStore("PRJ-AL", store_dir=graph_dir)
+    nodes = {n.node_id: n for n in g.nodes()}
+    by_src = {}
+    for e in g.edges(rel="refers_to"):
+        by_src.setdefault(nodes[e.src_id].label, set()).add(nodes[e.dst_id].label)
+    assert by_src.get("spelled") == {"FactoryTalk View SE"}, by_src.get("spelled")
+    assert by_src.get("runtime") == {"FactoryTalk Security"}, by_src.get("runtime")
+    assert by_src.get("generic") == {"FactoryTalk"}, by_src.get("generic")
+    g.close()

@@ -33,14 +33,33 @@ does_not_imply      = [E1_ACCEPTANCE=PASS, graph_incorporation, flip, qa40_adjud
   sigue siendo material** (10/17 ruido) y quedaban 7 `refers_to` WRONG_NODE residuales.
 - **FIX-B (RC-3)** + **FIX-C (RC-2 alias)** aplicados sobre esos residuales → E1-3.
 
-## E1-3 · post FIX-A + FIX-B (RC-3) + FIX-C (RC-2) · **PENDING**
+## E1-3 · post FIX-A + FIX-B (RC-3, endurecido) + FIX-C (RC-2 alias) · **PENDING**
 
 ```
-sample_sha256       = da11837a84378ddb71811f6f8a6a6e8d3e3005e0f6d8576896f4d1321e1bbf58
+sample_sha256       = 77e8324f333f08edb4115a1dcb65962c9daf61bc4c6b0c584af8668b783dd0a4
 sample_size         = 67   (7 tested_by + 60 refers_to ; tested_by 17→7 por FIX-B)
 verdict_set_sha256  = (pendiente — se calcula al completar 67/67)
 E1_POST_FIX_ACCEPTANCE = PENDING
 ```
+
+**Endurecimiento posterior a la revisión de Cesar (sin rediseño):**
+- `_ref_is_only_crossref` clasifica "See 3.1.9, F05.05" como cross-referencia
+  (los puntos de la sección ya no cortan la detección) → `specification (See …, F05.05)`
+  NUNCA se convierte en `tested_by`.
+- El emparejamiento estricto de RC-3 se limita a refs CORTAS/ambiguas
+  (`3.2.3`, `F05.05`, `UR3.2.3`); un id FORMAL de requisito (`PCS-SR-037`,
+  `UR-WD-001`) o una cita CFR/Annex mantiene su coincidencia literal
+  (comportamiento pre-RC-3) → `wp_d` synthetic gate = PASS.
+- FIX-C: las variantes de nombre (`FactoryTalk View Site Edition`,
+  `FactoryTalk Runtime Security`, `FactoryTalk Alarms and Events`) NO son nodos
+  propios → `_COMPONENT_ALIASES` las resuelve al canónico. `_link_refers_to`
+  enlaza la variante al MISMO nodo canónico, sin crear duplicado semántico ni
+  enlace simultáneo al genérico `FactoryTalk`.
+
+**Composición E1-3:** `refers_to` con destino específico ; **sólo 1 `FactoryTalk`
+genérico** (fila 18 = claim truncado en el OCR de RW-0012 p5, "…the FactoryTalk",
+sin producto que resolver — límite de extracción, no defecto de modelo).
+`system_component` 47→56→**53** (sin nodos de variante). `tested_by` 17→**7**.
 - **FIX-B** (`_link_to_tests`): una coincidencia de token de ref corta (`3.2.3`, `F05.05`) ya no
   basta. Se exige que el claim pertenezca al ref (lo lidera / tag final) O comparta ≥2 palabras
   de contenido salientes con la descripción del Test; se descartan las cross-referencias

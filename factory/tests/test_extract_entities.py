@@ -68,18 +68,23 @@ def test_equipment_tag_not_confused_with_requirement_id():
 def test_h10_rc2_specific_factorytalk_products_are_recognized():
     """H-10 fix RC-2 (tras E1-2: 6/7 WRONG_NODE residuales eran 'FactoryTalk'
     genérico donde el claim nombra un producto específico). El diccionario
-    ahora reconoce esas formas completas -- la resolución de especificidad de
-    _link_refers_to hace el resto."""
+    reconoce las formas completas; las VARIANTES de nombre resuelven al nodo
+    CANÓNICO (no crean un nodo duplicado)."""
     claims = [
         _claim("D", 1, "is handled in the PLC and not in the FactoryTalk Alarm and Events"),
-        _claim("D", 2, "added to the FactoryTalk Runtime Security group"),
+        _claim("D", 2, "added to the FactoryTalk Runtime Security group"),      # variante -> Security
         _claim("D", 3, "FactoryTalk Activation Manager 4.05.01 Server"),
-        _claim("D", 4, "FactoryTalk View Site Edition 10-Client Bundle"),
+        _claim("D", 4, "FactoryTalk View Site Edition 10-Client Bundle"),        # variante -> View SE
         _claim("D", 5, "and all FactoryTalk Security actions are audited"),
+        _claim("D", 6, "the FactoryTalk Alarms and Events server logs events"),  # variante -> Alarm and Events
     ]
     comps, _ = extract_entities_for_document("D", claims)
     names = {c.nombre for c in comps}
     assert "FactoryTalk Alarm and Events" in names
     assert "FactoryTalk Activation Manager" in names
-    assert "FactoryTalk View Site Edition" in names
-    assert "FactoryTalk Security" in names or "FactoryTalk Runtime Security" in names
+    assert "FactoryTalk Security" in names
+    assert "FactoryTalk View SE" in names
+    # las variantes NO son nodos propios -> sin duplicados semánticos
+    assert "FactoryTalk View Site Edition" not in names
+    assert "FactoryTalk Runtime Security" not in names
+    assert "FactoryTalk Alarms and Events" not in names

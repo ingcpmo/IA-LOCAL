@@ -37,17 +37,16 @@ _COMPONENT_TERMS: dict[str, str] = {
     # específicos que el corpus nombra completos -- sin ellos, el claim casaba
     # sólo con el genérico "FactoryTalk" (nodo equivocado). La resolución de
     # especificidad de `_link_refers_to` (span contenido) descarta el genérico
-    # cuando uno de estos casa.
-    "FactoryTalk View Site Edition": "SCADA",   # forma deletreada de "View SE"
+    # cuando uno de estos casa. Las variantes de nombre (deletreado / plural /
+    # "Runtime") NO son nodos propios -> `_COMPONENT_ALIASES` las resuelve al
+    # canónico para no duplicar semánticamente.
     "FactoryTalk View SE": "SCADA",
     "FactoryTalk View": "SCADA",
     "FactoryTalk Historian": "Historian",
     "FactoryTalk Linx": "network",
     "FactoryTalk Directory": "server",
     "FactoryTalk Alarm and Events": "SCADA",
-    "FactoryTalk Alarms and Events": "SCADA",
     "FactoryTalk Activation Manager": "server",
-    "FactoryTalk Runtime Security": "server",
     "FactoryTalk Security": "server",
     "FactoryTalk": "SCADA",
     "PanelView Plus": "HMI",
@@ -61,6 +60,16 @@ _COMPONENT_TERMS: dict[str, str] = {
     "thin client": "server",
     "engineering workstation": "server",
     "Stratix": "network",
+}
+
+# Variantes de nombre -> nombre CANÓNICO (nodo único). El corpus escribe el
+# mismo producto de varias formas; sin esto se crearían nodos duplicados
+# semánticamente. `_link_refers_to` consulta este mapa para casar la variante
+# y enlazar al nodo canónico.
+_COMPONENT_ALIASES: dict[str, str] = {
+    "FactoryTalk View Site Edition": "FactoryTalk View SE",
+    "FactoryTalk Runtime Security": "FactoryTalk Security",
+    "FactoryTalk Alarms and Events": "FactoryTalk Alarm and Events",
 }
 
 # Tag de equipo real del proyecto (panel / controlador). Distinto del id de
@@ -132,14 +141,19 @@ def extract_entities_for_document(document_id: str, claims: list[dict]) -> tuple
         s_num = (c.get("provenance") or {}).get("section_numero")
         s_tit = (c.get("provenance") or {}).get("section_titulo")
 
-        # --- componentes por diccionario cerrado ---
-        for term, tipo in _COMPONENT_TERMS.items():
-            key = term.strip().lower()
+        # --- componentes por diccionario cerrado (+ alias -> canónico) ---
+        _cand = list(_COMPONENT_TERMS.items()) + [
+            (alias, _COMPONENT_TERMS.get(canon, "SCADA"), canon)
+            for alias, canon in _COMPONENT_ALIASES.items()]
+        for entry in _cand:
+            term, tipo = entry[0], entry[1]
+            canon = entry[2] if len(entry) > 2 else term
+            key = canon.strip().lower()
             if key in seen_c:
                 continue
             if _mentions(txt, term):
                 comps.append(build_system_component(
-                    document_id, pag, term, tipo, source_text=txt[:400],
+                    document_id, pag, canon, tipo, source_text=txt[:400],
                     section_numero=s_num, section_titulo=s_tit))
                 seen_c.add(key)
 

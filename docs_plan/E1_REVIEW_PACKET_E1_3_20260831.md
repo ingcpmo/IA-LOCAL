@@ -1,12 +1,12 @@
-# E1-3 — 3ª REVISIÓN HUMANA (post FIX-A + FIX-B RC-3 + FIX-C RC-2) · PAQUETE
+# E1-3 — 3ª REVISIÓN HUMANA (post FIX-A + FIX-B RC-3 endurecido + FIX-C RC-2 alias) · PAQUETE
 
-**Fecha:** 2026-08-31 · **Muestra:** `H10_NEW_RELATIONS_SAMPLE_FOR_HUMAN.json` `sample_sha256 = da11837a84378ddb71811f6f8a6a6e8d3e3005e0f6d8576896f4d1321e1bbf58` · **67 filas** = 7 `tested_by` + 60 `refers_to`.
+**Fecha:** 2026-08-31 · **Muestra:** `H10_NEW_RELATIONS_SAMPLE_FOR_HUMAN.json` `sample_sha256 = 77e8324f333f08edb4115a1dcb65962c9daf61bc4c6b0c584af8668b783dd0a4` · **67 filas** = 7 `tested_by` + 60 `refers_to`.
 
 **Firmas previas PRESERVADAS (append-only):**
 - E1-1 `f56d4bab…` / `a533bf4a…` — FAIL (pre FIX-A)
-- E1-2 `c2ca5aaa…` / `7b3f23ff…` — firmada por Cesar (CORRECT=60/WRONG_NODE=7/SPURIOUS=7/AMBIGUOUS=3); E1_ACCEPTANCE NO declarado ; FIX-B/FIX-C aplicados sobre sus residuales.
+- E1-2 `c2ca5aaa…` / `7b3f23ff…` — firmada por Cesar (60C/7WN/7S/3A ; E1_ACCEPTANCE NO declarado)
 
-**Instrucción:** decide `NEW_HUMAN_VERDICT ∈ {CORRECT, WRONG_NODE, SPURIOUS, AMBIGUOUS}` por fila. **No reutilices el veredicto E1-2 aunque la relación sea la misma** — se muestra sólo como referencia.
+**Instrucción:** decide `NEW_HUMAN_VERDICT ∈ {CORRECT, WRONG_NODE, SPURIOUS, AMBIGUOUS}` por fila. **No reutilices el veredicto E1-2** — se muestra sólo como referencia.
 
 **Criterio (literal):** *E1 valida que las relaciones nuevas no sean ruido.*
 ---
@@ -60,7 +60,7 @@ F05.05: Input State and Simulat`
 - **ancla provenance destino:** `Item | Test Description | Expected Result | Actual Result | Deviat- ion ID | Result (Pass/ Fail) | Performed By (Initial & Date)
 UR3.2.3 The Equipment shall hav`
 
-- **provenance_hash** `8b054b046f6700d3112c0d6dfe1948e1174dac27c8e44a9f8309cd9aeb51a2aa` · **ref** `UR3.2.3`
+- **provenance_hash** `8b054b046f6700d3112c0d6dfe1948e1174dac27c8e44a9f8309cd9aeb51a2aa` · **ref** `3.2.3`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -114,7 +114,7 @@ UR3.2.3 The Equipment shall hav`
 - **ancla provenance destino:** `Item | Test Description | Expected Result | Actual Result | Deviat- ion ID | Result (Pass/ Fail) | Performed By (Initial & Date)
 UR3.2.3 The Equipment shall hav`
 
-- **provenance_hash** `8b054b046f6700d3112c0d6dfe1948e1174dac27c8e44a9f8309cd9aeb51a2aa` · **ref** `UR3.2.3`
+- **provenance_hash** `8b054b046f6700d3112c0d6dfe1948e1174dac27c8e44a9f8309cd9aeb51a2aa` · **ref** `3.2.3`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -181,9 +181,9 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -205,24 +205,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 12 · `refers_to` · RW-0005 p.9
-
-- **SAME_RELATION_AS_E1_2** = NO   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = N/A (no estaba en E1-2)
-
-- **claim (origen)** `clm-36ac012a42ca8265`:
-
-  > FactoryTalk Alarms and Events 6.21.00 Server
-
-- **destino** `system_component` `cmp-d4a81bf0125b5103` = **FactoryTalk Alarms and Events**
-
-- **ancla provenance destino:** `FactoryTalk Alarms and Events 6.21.00 Server`
-
-- **provenance_hash** `2629a88afd0afe6339cb040ae07492927c3aea2810ae271a5417861cdf927165` · **ref** `literal_name`
-
-- **NEW_HUMAN_VERDICT** = `________`
-
-
-## Fila 13 · `refers_to` · RW-0011 p.4
+## Fila 12 · `refers_to` · RW-0011 p.4
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -239,7 +222,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 14 · `refers_to` · RW-0005 p.9
+## Fila 13 · `refers_to` · RW-0005 p.9
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -256,7 +239,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 15 · `refers_to` · RW-0005 p.13
+## Fila 14 · `refers_to` · RW-0005 p.13
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -273,7 +256,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 16 · `refers_to` · RW-0005 p.49
+## Fila 15 · `refers_to` · RW-0005 p.49
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -290,7 +273,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 17 · `refers_to` · RW-0005 p.40
+## Fila 16 · `refers_to` · RW-0005 p.40
 
 - **SAME_RELATION_AS_E1_2** = NO   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = N/A (no estaba en E1-2)
 
@@ -307,7 +290,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 18 · `refers_to` · RW-0006 p.6
+## Fila 17 · `refers_to` · RW-0006 p.6
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -324,7 +307,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 19 · `refers_to` · RW-0012 p.5
+## Fila 18 · `refers_to` · RW-0012 p.5
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = WRONG_NODE
 
@@ -341,7 +324,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 20 · `refers_to` · RW-0005 p.51
+## Fila 19 · `refers_to` · RW-0005 p.51
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -358,7 +341,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 21 · `refers_to` · RW-0005 p.13
+## Fila 20 · `refers_to` · RW-0005 p.13
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -375,7 +358,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 22 · `refers_to` · RW-0005 p.13
+## Fila 21 · `refers_to` · RW-0005 p.13
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -392,7 +375,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 23 · `refers_to` · RW-0006 p.6
+## Fila 22 · `refers_to` · RW-0006 p.6
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -409,7 +392,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 24 · `refers_to` · RW-0014 p.18
+## Fila 23 · `refers_to` · RW-0014 p.18
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -426,7 +409,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 25 · `refers_to` · RW-0005 p.49
+## Fila 24 · `refers_to` · RW-0005 p.49
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -443,7 +426,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 26 · `refers_to` · RW-0005 p.49
+## Fila 25 · `refers_to` · RW-0005 p.49
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -460,7 +443,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 27 · `refers_to` · RW-0005 p.40
+## Fila 26 · `refers_to` · RW-0005 p.40
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -470,9 +453,26 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
+
+- **NEW_HUMAN_VERDICT** = `________`
+
+
+## Fila 27 · `refers_to` · RW-0005 p.9
+
+- **SAME_RELATION_AS_E1_2** = NO   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = N/A (no estaba en E1-2)
+
+- **claim (origen)** `clm-36ac012a42ca8265`:
+
+  > FactoryTalk Alarms and Events 6.21.00 Server
+
+- **destino** `system_component` `cmp-c876c0bbeba70265` = **FactoryTalk Alarm and Events**
+
+- **ancla provenance destino:** `FactoryTalk Alarms and Events 6.21.00 Server`
+
+- **provenance_hash** `2629a88afd0afe6339cb040ae07492927c3aea2810ae271a5417861cdf927165` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -504,9 +504,9 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -606,9 +606,9 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -674,9 +674,9 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -793,9 +793,9 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -810,9 +810,9 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -844,9 +844,9 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -861,9 +861,9 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -895,14 +895,31 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
 
 ## Fila 53 · `refers_to` · RW-0005 p.40
+
+- **SAME_RELATION_AS_E1_2** = NO   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = N/A (no estaba en E1-2)
+
+- **claim (origen)** `clm-3d9f2e80ca8140a7`:
+
+  > The Windows-linked All Users group is automatically added to the FactoryTalk Runtime Security
+
+- **destino** `system_component` `cmp-281feb083f01bf7f` = **FactoryTalk Security**
+
+- **ancla provenance destino:** `P), and all FactoryTalk Security actions.`
+
+- **provenance_hash** `43e7f95445d8e6c9b5fb84f35fd8bc49d5c48ec42fef02ca0a34d7d906787f3c` · **ref** `literal_name`
+
+- **NEW_HUMAN_VERDICT** = `________`
+
+
+## Fila 54 · `refers_to` · RW-0005 p.40
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -912,14 +929,14 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 54 · `refers_to` · RW-0005 p.13
+## Fila 55 · `refers_to` · RW-0005 p.13
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -936,7 +953,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 55 · `refers_to` · RW-0005 p.13
+## Fila 56 · `refers_to` · RW-0005 p.13
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -953,7 +970,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 56 · `refers_to` · RW-0014 p.5
+## Fila 57 · `refers_to` · RW-0014 p.5
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -966,23 +983,6 @@ F05.05: Input State and Simulat`
 - **ancla provenance destino:** `PCS – Process Control System (This project’s panel is named PCS-CP01, Process Control System`
 
 - **provenance_hash** `98ef121b1460fb68db8fe854cafe136ef74aae72a41f161015427570e657cfea` · **ref** `literal_name`
-
-- **NEW_HUMAN_VERDICT** = `________`
-
-
-## Fila 57 · `refers_to` · RW-0005 p.40
-
-- **SAME_RELATION_AS_E1_2** = NO   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = N/A (no estaba en E1-2)
-
-- **claim (origen)** `clm-3d9f2e80ca8140a7`:
-
-  > The Windows-linked All Users group is automatically added to the FactoryTalk Runtime Security
-
-- **destino** `system_component` `cmp-5423c7f73ea1369e` = **FactoryTalk Runtime Security**
-
-- **ancla provenance destino:** `The Windows-linked All Users group is automatically added to the FactoryTalk Runtime Security`
-
-- **provenance_hash** `eb2ec5d62bf5ea445bc72e1c7932b01faa1dd4adf55e4bb1d17e44fd85c1cc74` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
@@ -1021,24 +1021,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 60 · `refers_to` · RW-0005 p.9
-
-- **SAME_RELATION_AS_E1_2** = NO   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = N/A (no estaba en E1-2)
-
-- **claim (origen)** `clm-61e4e0fed1bc40fc`:
-
-  > FactoryTalk View Site Edition 10-Client Bundle
-
-- **destino** `system_component` `cmp-da9b27e5d659873d` = **FactoryTalk View Site Edition**
-
-- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
-
-- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
-
-- **NEW_HUMAN_VERDICT** = `________`
-
-
-## Fila 61 · `refers_to` · RW-0005 p.40
+## Fila 60 · `refers_to` · RW-0005 p.40
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -1048,14 +1031,14 @@ F05.05: Input State and Simulat`
 
 - **destino** `system_component` `cmp-bede758f7194a8bc` = **FactoryTalk View SE**
 
-- **ancla provenance destino:** `The delivered system has the Rockwell Software FactoryTalk View SE software loaded onto it, which`
+- **ancla provenance destino:** `FactoryTalk View Site Edition 10-Client Bundle`
 
-- **provenance_hash** `0d268ad3aaafe4b87bff2366bc2f22ff123c06eb7d78d6002502097424341120` · **ref** `literal_name`
+- **provenance_hash** `9d6ad1df4af054b3ce64f950a97c9fef6fe9b0d94eb56f5652f71b0ab692069c` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 62 · `refers_to` · RW-0006 p.6
+## Fila 61 · `refers_to` · RW-0006 p.6
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -1072,7 +1055,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 63 · `refers_to` · RW-0005 p.9
+## Fila 62 · `refers_to` · RW-0005 p.9
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -1089,7 +1072,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 64 · `refers_to` · RW-0011 p.4
+## Fila 63 · `refers_to` · RW-0011 p.4
 
 - **SAME_RELATION_AS_E1_2** = NO   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = N/A (no estaba en E1-2)
 
@@ -1106,7 +1089,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 65 · `refers_to` · RW-0005 p.49
+## Fila 64 · `refers_to` · RW-0005 p.49
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -1123,7 +1106,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 66 · `refers_to` · RW-0012 p.5
+## Fila 65 · `refers_to` · RW-0012 p.5
 
 - **SAME_RELATION_AS_E1_2** = NO   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = N/A (no estaba en E1-2)
 
@@ -1140,7 +1123,7 @@ F05.05: Input State and Simulat`
 - **NEW_HUMAN_VERDICT** = `________`
 
 
-## Fila 67 · `refers_to` · RW-0012 p.14
+## Fila 66 · `refers_to` · RW-0012 p.14
 
 - **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
 
@@ -1153,6 +1136,23 @@ F05.05: Input State and Simulat`
 - **ancla provenance destino:** `PCS – Process Control System (This project’s panel is named PCS-CP01, Process Control System`
 
 - **provenance_hash** `98ef121b1460fb68db8fe854cafe136ef74aae72a41f161015427570e657cfea` · **ref** `literal_name`
+
+- **NEW_HUMAN_VERDICT** = `________`
+
+
+## Fila 67 · `refers_to` · RW-0005 p.49
+
+- **SAME_RELATION_AS_E1_2** = YES   ·   **PREVIOUS_VERDICT (E1-2, referencia)** = CORRECT
+
+- **claim (origen)** `clm-70359963bfa6e9b1`:
+
+  > The Rockwell Automation FactoryTalk Linx Enterprise software provides the connection between the
+
+- **destino** `system_component` `cmp-5e261c0b14cea343` = **FactoryTalk Linx**
+
+- **ancla provenance destino:** `FactoryTalk Linx Enterprise 6.21.00 Server`
+
+- **provenance_hash** `113f38c655eaad528a008d67e56ea8a2cf0ae1658fe7398d9cdf1e802f88c4a9` · **ref** `literal_name`
 
 - **NEW_HUMAN_VERDICT** = `________`
 

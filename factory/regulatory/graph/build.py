@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import re
 
+from factory.regulatory.canonical.extract_entities import _COMPONENT_ALIASES
 from factory.regulatory.canonical.persistence import STORE_DIR as CANON_DIR, CanonicalStore
 from factory.regulatory.graph.store import STORE_DIR as GRAPH_DIR, GraphStore
 
@@ -271,28 +272,71 @@ def _tb_content(t: str, ref: str) -> set[str]:
 
 def _ref_is_only_crossref(claim_text: str, ref: str) -> bool:
     """El `ref` aparece en el claim SÓLO como cross-referencia -- dentro de
-    `[...]`, tras "See ..." o tras "reference number ...". En ese caso el claim
-    NO es del ref; sólo lo cita (p.ej. "UR4.1.1 [MCCPDC 3.2.3] - ...")."""
+    `[...]`, en un "(See <sección>, <ref> ...)", o tras "reference number ...".
+    En ese caso el claim NO es del ref; sólo lo cita
+    (p.ej. "UR4.1.1 [MCCPDC 3.2.3] - ..." o "specification (See 3.1.9, F05.05:").
+
+    Basta con que UNA aparición del ref sea una referencia funcional real (fuera
+    de estos contextos) para que devuelva False.
+    """
     ct = claim_text or ""
     spans = [m.span() for m in re.finditer(re.escape(ref), ct)]
     if not spans:
         return False
     for s, _e in spans:
         if ct.rfind("[", 0, s) > ct.rfind("]", 0, s):
-            continue  # dentro de corchetes
-        pre = ct[max(0, s - 32):s]
-        if re.search(r"\bSee\b[^\]]{0,30}$", pre) or \
-           re.search(r"\breference number\b[^\]]{0,24}$", pre, re.IGNORECASE):
-            continue  # tras "See"/"reference number"
+            continue  # dentro de corchetes  [MCCPDC 3.2.3]
+        pre = ct[max(0, s - 44):s]
+        # "See ... <ref>" / "(See ... <ref>" -- una LISTA de referencias; el
+        # ancla puede quedar a varias secciones de distancia y el separador
+        # puede ser un número de sección con puntos ("See 3.1.9, F05.05").
+        # Se usa `.` (no `[^.]`) a propósito: los puntos de "3.1.9" no deben
+        # cortar la detección. La ventana (<=44 chars de `pre`) acota el alcance.
+        if re.search(r"\(?\bSee\b.{0,42}$", pre, re.IGNORECASE) or \
+           re.search(r"\breference number\b.{0,26}$", pre, re.IGNORECASE) or \
+           re.search(r"\bper\b\s+(?:section\s+)?[\d.]+\s*,?\s*$", pre, re.IGNORECASE):
+            continue
         return False  # esta aparición es una referencia funcional real
     return True
 
 
-def _tested_by_anchored(claim_text: str, test_desc: str, ref: str) -> bool:
-    """`tested_by` vía `ref` sólo si el claim PERTENECE a ese ref (lo lidera o
-    lo lleva como tag final) O comparte >=2 palabras de contenido salientes con
-    la descripción del Test. Descarta las cross-referencias."""
+def _tail_citation_tag(claim_text: str, ref: str) -> bool:
+    """El `ref` aparece como TAG DE CITA suelto al final del claim
+    (p.ej. "...accessible by Maintenance personnel.-F05.05, 24"): precedido de
+    un delimitador, seguido sólo de puntuación/número de página, y NO dentro de
+    un "See ...". Es señal de pertenencia SÓLO si el claim aporta además
+    contenido (se comprueba en `_tested_by_anchored`)."""
     ct = claim_text or ""
+    m = re.search(r"(?<![A-Za-z0-9])" + re.escape(ref) + r"[\s,).:;]*\d{0,4}\s*$", ct)
+    if not m:
+        return False
+    pre = ct[max(0, m.start() - 12):m.start()].lower()
+    return "see" not in pre and "[" not in ct[m.start():]
+
+
+#: El emparejamiento estricto (RC-3) SÓLO se aplica a referencias CORTAS y
+#: ambiguas -- números de sección jerárquicos (3.2.3, UR3.2.3, 1.4.2.4) y
+#: funciones F\d\d.\d\d -- que colisionan por token con facilidad. Un id
+#: FORMAL de requisito (PCS-SR-037, UR-WD-001), o una cita CFR/Annex/ALCOA,
+#: es específico y su coincidencia literal es de fiar (comportamiento pre-RC-3).
+_TB_AMBIGUOUS_REF_RE = re.compile(r"^(?:UR?S?)?\d{1,2}(?:\.\d{1,3}){1,4}$|^F\d{2}\.\d{2}$",
+                                  re.IGNORECASE)
+
+
+def _tested_by_anchored(claim_text: str, test_desc: str, ref: str) -> bool:
+    """`tested_by` vía `ref`:
+      - si `ref` es un id FORMAL/específico (no coincide `_TB_AMBIGUOUS_REF_RE`)
+        -> se acepta la coincidencia literal (no hay riesgo de colisión de token).
+      - si `ref` es CORTO/ambiguo (sección jerárquica, F\\d\\d.\\d\\d) -> sólo si:
+        (1) el ref NO es únicamente una cross-referencia  ([..], "See ..", "reference number ..")
+        (2) y el claim LIDERA con ese id (es el requisito)
+            O comparte >=2 palabras de contenido salientes con la descripción del Test
+            O lleva el ref como tag de cita final Y aporta >=1 palabra de contenido saliente.
+    Un tag de referencia suelto, por sí solo, NO basta.
+    """
+    ct = claim_text or ""
+    if not _TB_AMBIGUOUS_REF_RE.match(_norm_ref(ref)):
+        return True
     if _ref_is_only_crossref(ct, ref):
         return False
     lead = _TB_LEAD_ID_RE.match(ct)
@@ -300,11 +344,13 @@ def _tested_by_anchored(claim_text: str, test_desc: str, ref: str) -> bool:
         ln = _norm_ref(lead.group(1))
         if _norm_ref(ref) in (ln, _strip_ur_prefix(ln)):
             return True
-    tail = re.sub(r"[\s\-_]", "", ct[-24:].lower())
-    if re.sub(r"[\s\-_]", "", (ref or "").lower()) in tail and tail:
-        return True
     shared = _tb_content(ct, ref) & _tb_content(test_desc, ref)
-    return len({w for w in shared if w not in _TB_BOILERPLATE}) >= 2
+    salient = {w for w in shared if w not in _TB_BOILERPLATE}
+    if len(salient) >= 2:
+        return True
+    if salient and _tail_citation_tag(ct, ref):
+        return True
+    return False
 
 
 def _link_to_tests(g: GraphStore, ups: list[dict], tests_idx: list[dict]) -> None:
@@ -360,7 +406,13 @@ def _link_refers_to(g: GraphStore, indices: list[dict]) -> None:
             toks = [w for w in re.findall(r"[A-Za-z0-9][\w\-/]*", n.lower()) if len(w) > 1]
             if not toks or all(w in _ENTITY_NAME_STOP for w in toks):
                 continue
-            pat = re.compile(r"\b" + re.escape(n) + r"\b", re.IGNORECASE)
+            # el nodo se enlaza tanto por su nombre canónico como por sus
+            # variantes de nombre (alias -> canónico): la variante deletreada
+            # "FactoryTalk View Site Edition" enlaza al MISMO nodo que
+            # "FactoryTalk View SE", sin crear un duplicado.
+            forms = [n] + [a for a, canon in _COMPONENT_ALIASES.items() if canon == n]
+            pat = re.compile(
+                r"\b(?:" + "|".join(re.escape(f) for f in forms) + r")\b", re.IGNORECASE)
             ents_by_doc.setdefault(idx["document_id"], []).append((eid, pat))
     if not ents_by_doc:
         return

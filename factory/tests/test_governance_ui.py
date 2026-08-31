@@ -272,7 +272,7 @@ def test_e1_3_panel_prep_is_correct():
     """Preparación de la 3ª revisión E1 (post FIX-A + FIX-B RC-3 + FIX-C RC-2),
     verificada por inspección de fuente:
 
-      - `E1_SAMPLE_SHA` declarado UNA sola vez y = da11837a… (muestra E1-3).
+      - `E1_SAMPLE_SHA` declarado UNA sola vez y = 77e8324f… (muestra E1-3).
       - Los sha de E1-1 (f56d4bab) y E1-2 (c2ca5aaa) SÓLO dentro de
         `E1_PRIOR_REVIEWS` (append-only: las firmas previas se conservan).
       - `govGateE1Calc` exige exactamente `E1_SAMPLE_SIZE` (67) veredictos,
@@ -281,12 +281,12 @@ def test_e1_3_panel_prep_is_correct():
       - La evidencia activa es el paquete E1-3.
     """
     js = GOVERNANCE_JS.read_text(encoding="utf-8")
-    da = "da11837a84378ddb71811f6f8a6a6e8d3e3005e0f6d8576896f4d1321e1bbf58"
+    e13 = "77e8324f333f08edb4115a1dcb65962c9daf61bc4c6b0c584af8668b783dd0a4"
     f1 = "f56d4babe7e8466368c9a6dbefe26e3716186f96e2658c68cf2f0469f5244f20"  # E1-1
     c2 = "c2ca5aaa36e9904b77cecf266cfa6645ab76949828074c857a360a5bf75ad3fd"  # E1-2
 
     assert js.count("const E1_SAMPLE_SHA") == 1, "E1_SAMPLE_SHA declarado más de una vez"
-    assert f"const E1_SAMPLE_SHA   = '{da}'" in js
+    assert f"const E1_SAMPLE_SHA   = '{e13}'" in js
     assert "const E1_SAMPLE_SIZE  = 67;" in js
     # los sha de revisiones previas sólo dentro de E1_PRIOR_REVIEWS
     prior_block = js.split("const E1_PRIOR_REVIEWS", 1)[1].split("\n];", 1)[0]
