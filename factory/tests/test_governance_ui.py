@@ -50,7 +50,8 @@ const out = {};
 gov.renderGovernance(estado);
 out.index = nodes['gov-body'].innerHTML;
 out.panels = {};
-for (const p of ['d1-correccion','d1a','excepcion-auditoria','pack-211','d2a','d4a','catalog-version']) {
+for (const p of ['d1-correccion','d1a','excepcion-auditoria','pack-211','d2a','d4a','catalog-version',
+                 'gate-e1','gate-e2','gate-e3a']) {
   gov.govOpen(p);
   out.panels[p] = nodes['gov-body'].innerHTML;
 }
@@ -174,10 +175,34 @@ def test_the_six_panels_all_render(rendered):
     7, no 6: G4c (2026-07-31) agrego el panel 'catalog-version' sobre la
     familia ARTIFACT_VERSION -- el nombre del test se conserva (GOVERNANCE_UI_SPEC
     los llama "los seis paneles" como concepto original) en vez de renumerar
-    todo el vocabulario del spec por un panel mas."""
-    assert len(rendered["panels"]) == 7
+    todo el vocabulario del spec por un panel mas.
+
+    10, no 7: el cierre H-1..H-10 (2026-08-31) agrego los paneles de firma
+    'gate-e1'/'gate-e2'/'gate-e3a', tambien sobre ARTIFACT_VERSION."""
+    assert len(rendered["panels"]) == 10
     for pid, html in rendered["panels"].items():
         assert len(html) > 400, f"panel {pid} practicamente vacio ({len(html)} bytes)"
+
+
+@needs_node
+def test_the_e1_e2_e3a_gate_panels_have_a_signature_surface(rendered):
+    """Los tres paneles de firma del cierre H-1..H-10 tienen que traer el
+    formulario de firma y un boton cableado a su govSubmitGate*. Un panel de
+    firma sin superficie de firma es un panel muerto."""
+    for pid, submit in [("gate-e1", "govSubmitGateE1("),
+                        ("gate-e2", "govSubmitGateE2("),
+                        ("gate-e3a", "govSubmitGateE3A(")]:
+        html = rendered["panels"][pid]
+        assert "-reason" in html, f"{pid}: falta el campo MOTIVO del signatureForm"
+        assert submit in html, f"{pid}: el boton no llama a {submit}"
+        assert "NO ejecuta sus efectos" in html, f"{pid}: falta el aviso NO_EJECUTA"
+    # E1 pide el array de veredictos y calcula el hash en el cliente
+    assert "e1-verdicts" in rendered["panels"]["gate-e1"]
+    assert "govGateE1Calc(" in rendered["panels"]["gate-e1"]
+    # E2/E3-A ofrecen APPROVE y REJECT
+    for pid in ("gate-e2", "gate-e3a"):
+        assert 'value="APPROVE"' in rendered["panels"][pid]
+        assert 'value="REJECT"' in rendered["panels"][pid]
 
 
 @needs_node

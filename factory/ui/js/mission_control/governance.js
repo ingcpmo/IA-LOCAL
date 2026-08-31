@@ -158,6 +158,22 @@ const PANELS = [
        no hay precondicion real que heredar, el boton nunca queda
        bloqueado por un gate ajeno. */
     resumen:'3 prompts (part11/annex11/alcoa), cada uno 1.1.0→1.1.1 sin decisión ACTIVE que lo cubra. No reescribe ningún YAML: ya están en el estado que esta firma aprueba.' },
+
+  /* Gates E1/E2/E3-A del cierre H-1…H-10 (REVISION_CIERRE_H1_H10_Y_INSTRUCCIONES_
+     20260830.md). Los tres firman sobre la familia ARTIFACT_VERSION -- el mismo
+     mecanismo propose→confirm que el resto de paneles, sin almacén ni endpoint
+     nuevo. gate:'E1'/'E2'/'E3-A' está fuera de G1..G8 a propósito (igual que
+     'PILOT'/'G-PV'): no heredan bloqueo de ningún gate del camino crítico.
+     Registrar NO ejecuta el flip, NO adjudica QA40 y NO habilita producción. */
+  { id:'gate-e1', gate:'E1', family:'ARTIFACT_VERSION',
+    titulo:'E1 — Adjudicación de 77 relaciones nuevas H-10',
+    resumen:'Pega los 77 veredictos ya adjudicados (docs_plan/E1_H10_RELATION_REVIEW_PACKET_20260831.md), la UI calcula verdict_set_sha256 y firma un ARTIFACT_VERSION sobre la muestra. No incorpora las relaciones al grafo: sólo deja el veredicto humano en el ledger.' },
+  { id:'gate-e2', gate:'E2', family:'ARTIFACT_VERSION',
+    titulo:'E2 — Aceptación del delta R-PAR v1↔v2',
+    resumen:'APPROVE/REJECT del delta sobre el corpus compartido (re-anclaje de 38 findings RW-0012 pág 5 + 1 finding nuevo RW-0009; 0 bandas cambian). Evidencia: docs_plan/R_PAR_DELTA_V1_V2_20260831.md.' },
+  { id:'gate-e3a', gate:'E3-A', family:'ARTIFACT_VERSION',
+    titulo:'E3-A — Aceptación del paquete canónico CLEAN',
+    resumen:'APPROVE/REJECT de la base limpia como base deseada (RW-0012 = 258 claims, no 595). Evidencia: docs_plan/PAQUETE_GATES_HUMANOS_POST_RPAR_20260831.md.' },
 ];
 
 const GOLDEN_DATASET_ARTIFACT_ID = 'factory/regulatory/golden_dataset/semantic_verification_golden_dataset.py';
@@ -1743,6 +1759,9 @@ function paint(){
   else if(p.id==='pilot-execution')      body = panelPilotExecution();
   else if(p.id==='prompt-version-regularizacion') body = panelPromptVersionRegularizacion();
   else if(p.id==='embed-execution')       body = panelEmbedExecution();
+  else if(p.id==='gate-e1')        body = panelGateE1();
+  else if(p.id==='gate-e2')        body = panelGateE2();
+  else if(p.id==='gate-e3a')       body = panelGateE3A();
   else                             body = panelPendiente(p);
   el.innerHTML = banner + body;
   if(p.id==='d1-correccion') govRecalcHash();
@@ -2252,6 +2271,240 @@ export async function govSubmitExcepcion(verdict){
   } finally {
     setBusy(btnId, false);
   }
+}
+
+/* ── Gates E1 / E2 / E3-A — firmas humanas del cierre H-1…H-10 ─────────────
+   Todos firman ARTIFACT_VERSION con el mismo propose→confirm que el resto de
+   paneles. Tras confirmar, govRefresh() relee /governance/state y la nueva
+   instancia aparece en coverageBlock('ARTIFACT_VERSION') como "decisiones
+   FIRMADAS y vigentes" -- ahí se REFLEJA la firma. Ninguna de estas firmas
+   ejecuta efectos (flip, QA40, producción): sólo deja el acto en el ledger. */
+
+const E1_SAMPLE_PATH = 'factory/regulatory/pilot_run/h10_extraction_v2_20260830/H10_NEW_RELATIONS_SAMPLE_FOR_HUMAN.json';
+const E1_SAMPLE_SHA  = 'f56d4babe7e8466368c9a6dbefe26e3716186f96e2658c68cf2f0469f5244f20';
+const E1_VOCAB = ['CORRECT', 'WRONG_NODE', 'SPURIOUS', 'AMBIGUOUS'];
+const RPAR_EVIDENCE   = 'docs_plan/R_PAR_DELTA_V1_V2_20260831.md';
+const E3A_EVIDENCE    = 'docs_plan/PAQUETE_GATES_HUMANOS_POST_RPAR_20260831.md';
+const E3A_TARGET      = 'factory/regulatory/canonical_store_v2';
+
+/* verdict_set_sha256: sha256 del texto "<index>:<verdict>" por línea, ordenado
+   por index. Regla deliberadamente reproducible a mano:
+   `jq -r '.[]|"\(.index):\(.verdict)"' verdicts.json | sort -n | sha256sum`. */
+async function e1VerdictSetSha(verdicts){
+  if(!window.crypto?.subtle) return null;
+  const linea = [...verdicts].sort((a,b)=>a.index-b.index)
+    .map(v => `${v.index}:${v.verdict}`).join('\n');
+  const dig = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(linea));
+  return [...new Uint8Array(dig)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* Ciclo propose→(confirm|reject) para los gates que aceptan APPROVE y REJECT.
+   Mismo encadenado de state_hash que proponerYConfirmar() (el del GET va al
+   propose, el que devuelve el propose va al confirm/reject). No reimplementa
+   proponerYConfirmar: la diferencia es sólo la rama REJECT. */
+async function proponerYResolver(family, targetIds, sig, decision, extra, ui){
+  const { statusPrefix, btnId } = ui;
+  const st = (k,t) => setStatus(statusPrefix, k, t);
+  if(!sig.reason){ st('warn', 'El motivo es obligatorio.'); return; }
+  if(!['APPROVE','REJECT'].includes(decision)){ st('warn', 'Elige APPROVE o REJECT.'); return; }
+  if(GOV_STALE){ st('warn', 'El estado cambió. Pulsa "Recargar estado" antes de firmar.'); return; }
+  setBusy(btnId, true);
+  st('busy', 'Enviando propuesta…');
+  try {
+    const prop = await postJSON(`/api/v1/layer9/governance/decisions/${family}/propose`, {
+      target_ids: targetIds, proposed_by_id: 'mission_control_ui', reason: sig.reason,
+      decision, family_state_hash: GOV?.family_state_hashes?.[family], ...extra,
+    });
+    if(!prop.ok){ st('fail', explicaError(prop.status, prop.data)); return; }
+    const iid = prop.data.proposal_id || prop.data.decision_instance_id;
+    const fh  = prop.data.family_state_hash ?? prop.data.state_hash;
+    if(!iid || !fh){ st('fail', 'El servidor no devolvió proposal_id/family_state_hash. No se firma a ciegas.'); return; }
+    st('busy', decision==='APPROVE' ? 'Confirmando aceptación…' : 'Confirmando rechazo…');
+    const url  = decision==='APPROVE'
+      ? `/api/v1/layer9/governance/decisions/${iid}/confirm`
+      : `/api/v1/layer9/governance/decisions/${iid}/reject`;
+    const body = decision==='APPROVE'
+      ? {approved_by_display_name: sig.name||sig.id, reason: sig.reason,
+         family_state_hash: fh, expected_active_instance_id: prop.data.expected_active_instance_id ?? null}
+      : {rejected_by_display_name: sig.name||sig.id, reason: sig.reason, state_hash: fh};
+    const res = await postJSON(url, body);
+    if(!res.ok){ st('fail', explicaError(res.status, res.data) + ` La propuesta ${iid} queda registrada y sin resolver.`); return; }
+    st('ok', res.data?.already_signed ? explicaFirma(res.data)
+        : decision==='APPROVE' ? `Registrada ${res.data?.decision_instance_id||iid}. No se ejecutó ningún efecto.`
+        : `Rechazo registrado sobre ${iid}. El almacén es append-only.`);
+    govRefresh();
+  } catch(e) {
+    st('fail', 'Error inesperado: ' + (e && e.message ? e.message : String(e)));
+  } finally {
+    setBusy(btnId, false);
+  }
+}
+
+function firmasArtifactVersion(){
+  const c = GOV?.coverage?.ARTIFACT_VERSION || {};
+  const firmadas = c.confirmed_active_instances || [];
+  return `<div class="meta" style="margin-top:6px">
+    ARTIFACT_VERSION firmadas y vigentes: <span class="mono">${firmadas.length ? esc(firmadas.join(', ')) : '(ninguna)'}</span>
+    <span style="color:var(--faint)"> — aquí aparecerá esta firma tras confirmarla.</span></div>
+    <div class="meta">STATE_HASH = <span class="mono">${esc((GOV?.family_state_hashes?.ARTIFACT_VERSION||'').slice(0,16))}…</span></div>`;
+}
+
+function panelGateE1(){
+  return `
+  <div class="card">
+    <b>E1 — Adjudicación de 77 relaciones nuevas H-10</b>
+    <div class="meta" style="margin-top:6px">
+      Revisa las 77 filas en <span class="mono">docs_plan/E1_H10_RELATION_REVIEW_PACKET_20260831.md</span>
+      y pega abajo el array <span class="mono">verdicts</span> completo
+      (77 objetos, cada uno con <span class="mono">index</span> y
+      <span class="mono">verdict ∈ {${E1_VOCAB.join(', ')}}</span>).
+      La UI calcula <span class="mono">verdict_set_sha256</span> y firma un
+      ARTIFACT_VERSION sobre la muestra.
+    </div>
+    <div class="meta" style="margin-top:6px">
+      muestra: <span class="mono">${esc(E1_SAMPLE_PATH)}</span><br>
+      sample_sha256: <span class="mono">${esc(E1_SAMPLE_SHA)}</span>
+    </div>
+
+    <textarea id="e1-verdicts" style="width:100%;height:140px;margin-top:10px;font-family:monospace;font-size:11px"
+      placeholder='[{"index":1,"verdict":"CORRECT"}, {"index":2,"verdict":"SPURIOUS"}, …]  (77 filas)'></textarea>
+    <div style="margin-top:6px">
+      <button id="e1-calc-btn" onclick="govGateE1Calc()">Validar y calcular hash</button>
+    </div>
+    <div id="e1-computed" class="meta" style="margin-top:6px;min-height:1.4em"></div>
+
+    ${signatureForm('e1')}
+    ${NO_EJECUTA}
+    <div style="margin-top:12px">
+      <button id="e1-submit-btn" onclick="govSubmitGateE1()">Registrar adjudicación E1</button>
+      <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
+    </div>
+    ${firmasArtifactVersion()}
+    ${statusLine('e1')}
+  </div>`;
+}
+
+/* Estado transitorio del panel E1: el resultado de la última validación. Se
+   guarda para que el submit firme EXACTAMENTE lo que el humano vio validado,
+   no lo que haya en el textarea en ese instante. */
+let E1_VALIDADO = null;
+
+export function govGateE1Calc(){
+  const out = document.getElementById('e1-computed');
+  E1_VALIDADO = null;
+  let arr;
+  try { arr = JSON.parse(document.getElementById('e1-verdicts')?.value || ''); }
+  catch(e){ if(out) out.innerHTML = `<span style="color:var(--fail)">JSON inválido: ${esc(e.message)}</span>`; return; }
+  if(!Array.isArray(arr) || arr.length !== 77){
+    if(out) out.innerHTML = `<span style="color:var(--fail)">Se esperan 77 objetos; hay ${Array.isArray(arr)?arr.length:'—'}.</span>`; return;
+  }
+  const idx = new Set();
+  for(const v of arr){
+    if(typeof v.index !== 'number' || v.index < 1 || v.index > 77){
+      if(out) out.innerHTML = `<span style="color:var(--fail)">index fuera de rango: ${esc(JSON.stringify(v))}</span>`; return; }
+    if(!E1_VOCAB.includes(v.verdict)){
+      if(out) out.innerHTML = `<span style="color:var(--fail)">verdict inválido en fila ${esc(v.index)}: ${esc(String(v.verdict))}</span>`; return; }
+    idx.add(v.index);
+  }
+  if(idx.size !== 77){ if(out) out.innerHTML = `<span style="color:var(--fail)">hay index repetidos o faltantes (${idx.size} únicos).</span>`; return; }
+  const counts = {};
+  for(const k of E1_VOCAB) counts[k] = arr.filter(v=>v.verdict===k).length;
+  e1VerdictSetSha(arr).then(sha => {
+    E1_VALIDADO = { verdicts: arr, counts, verdict_set_sha256: sha };
+    if(out) out.innerHTML = `<span style="color:var(--pass)">77/77 válidas</span> · `
+      + E1_VOCAB.map(k=>`${k}: <b>${counts[k]}</b>`).join(' · ')
+      + `<br>verdict_set_sha256: <span class="mono">${esc(sha||'(no calculable en este contexto)')}</span>`;
+  });
+}
+
+export async function govSubmitGateE1(){
+  if(!E1_VALIDADO || !E1_VALIDADO.verdict_set_sha256){
+    setStatus('e1','warn','Pulsa "Validar y calcular hash" y espera el resultado antes de firmar.');
+    return;
+  }
+  await proponerYConfirmar('ARTIFACT_VERSION', [E1_SAMPLE_PATH], readSignature('e1'), {
+    decision:'APPROVE', decision_type:'ORIGINAL',
+    payload:{
+      gate:'E1', decision_ref:'E1-H10-RELATIONS-20260831',
+      sample_sha256: E1_SAMPLE_SHA,
+      verdict_set_sha256: E1_VALIDADO.verdict_set_sha256,
+      verdict_counts: E1_VALIDADO.counts,
+      verdicts: E1_VALIDADO.verdicts,
+      evidence: 'docs_plan/E1_H10_RELATION_REVIEW_PACKET_20260831.md',
+      not_authorized: ['graph_incorporation','flip','qa40_adjudication','production'],
+    },
+  }, {statusPrefix:'e1', btnId:'e1-submit-btn'});
+}
+
+function panelGateApprobRechazo(prefix, {titulo, evidencia, target, decisionRef, contexto}){
+  return `
+  <div class="card">
+    <b>${esc(titulo)}</b>
+    <div class="meta" style="margin-top:6px">${contexto}</div>
+    <div class="meta" style="margin-top:6px">
+      evidencia: <span class="mono">${esc(evidencia)}</span><br>
+      target: <span class="mono">${esc(target)}</span>
+    </div>
+
+    <div style="margin-top:12px"><b>DECISIÓN</b></div>
+    <label style="display:block;margin-top:4px">
+      <input type="radio" name="${prefix}-decision" value="APPROVE"> APPROVE</label>
+    <label style="display:block;margin-top:4px">
+      <input type="radio" name="${prefix}-decision" value="REJECT"> REJECT</label>
+
+    ${signatureForm(prefix)}
+    ${NO_EJECUTA}
+    <div style="margin-top:12px">
+      <button id="${prefix}-submit-btn" onclick="govSubmitGate${prefix==='e2'?'E2':'E3A'}()">Registrar ${prefix.toUpperCase()}</button>
+      <button onclick="govOpen('')" style="margin-left:6px">Volver al índice</button>
+    </div>
+    ${firmasArtifactVersion()}
+    ${statusLine(prefix)}
+  </div>`;
+}
+
+function panelGateE2(){
+  return panelGateApprobRechazo('e2', {
+    titulo:'E2 — Aceptación del delta R-PAR v1↔v2',
+    evidencia: RPAR_EVIDENCE,
+    target: RPAR_EVIDENCE,
+    decisionRef:'E2-RPAR-20260831',
+    contexto:'Al activar v2 sobre el corpus compartido: re-anclaje de 38 findings de RW-0012 pág 5 '
+      + '(misma conclusión, mejor ancla) + 1 finding legítimo nuevo (RW-0009 TEST_WITHOUT_REQUIREMENT, LOW). '
+      + '0 bandas de riesgo cambian; 0 findings perdidos por causa distinta al clone-drift (RR-2, esperado). '
+      + 'R_PAR_5 = 4/4 PASS.',
+  });
+}
+
+function panelGateE3A(){
+  return panelGateApprobRechazo('e3a', {
+    titulo:'E3-A — Aceptación del paquete canónico CLEAN',
+    evidencia: E3A_EVIDENCE,
+    target: E3A_TARGET,
+    decisionRef:'E3A-CLEANBASE-20260831',
+    contexto:'Acepta la re-extracción limpia como base canónica deseada: RW-0012 = 258 claims '
+      + '(el store de producción sobre-segmentaba la página 5 y tenía claims en páginas 17-18 de un '
+      + 'documento de 14). APPROVE habilita la re-resolución determinista de la alineación QA40 y el cutover V-A.',
+  });
+}
+
+export async function govSubmitGateE2(){
+  const d = document.querySelector('input[name="e2-decision"]:checked')?.value;
+  await proponerYResolver('ARTIFACT_VERSION', [RPAR_EVIDENCE], readSignature('e2'), d, {
+    decision_type:'ORIGINAL',
+    payload:{ gate:'E2', decision_ref:'E2-RPAR-20260831', evidence: RPAR_EVIDENCE,
+      r_par_5:'4/4 PASS', not_authorized:['flip','qa40_adjudication','production'] },
+  }, {statusPrefix:'e2', btnId:'e2-submit-btn'});
+}
+
+export async function govSubmitGateE3A(){
+  const d = document.querySelector('input[name="e3a-decision"]:checked')?.value;
+  await proponerYResolver('ARTIFACT_VERSION', [E3A_TARGET], readSignature('e3a'), d, {
+    decision_type:'ORIGINAL',
+    payload:{ gate:'E3-A', decision_ref:'E3A-CLEANBASE-20260831', evidence: E3A_EVIDENCE,
+      rw0012_claims_clean:258, rw0012_claims_prod:595,
+      not_authorized:['flip','qa40_adjudication','production'] },
+  }, {statusPrefix:'e3a', btnId:'e3a-submit-btn'});
 }
 
 export async function govRefresh(){
