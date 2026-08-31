@@ -268,6 +268,46 @@ def test_a_repeated_click_is_not_announced_as_a_new_signature():
     assert "already_signed" in js.split("govSubmitExcepcion", 1)[1]
 
 
+def test_e1_2_panel_prep_is_correct():
+    """Preparación de la 2ª revisión E1 (post FIX-A), verificada por inspección
+    de fuente (los tests de render node se saltan si no hay node):
+
+      - `E1_SAMPLE_SHA` declarado UNA sola vez y = c2ca5aaa… (muestra regenerada).
+      - f56d4bab… (E1-1) SÓLO dentro de `E1_PREVIOUS`.
+      - `govGateE1Calc` exige exactamente 77 veredictos, vocabulario válido y
+        sin index repetidos/faltantes.
+      - Registrar E1-2 (`decision:'APPROVE'`) NO declara E1_ACCEPTANCE=PASS.
+      - La evidencia activa es el paquete post-FIX-A.
+    """
+    js = GOVERNANCE_JS.read_text(encoding="utf-8")
+    c2 = "c2ca5aaa36e9904b77cecf266cfa6645ab76949828074c857a360a5bf75ad3fd"
+    f5 = "f56d4babe7e8466368c9a6dbefe26e3716186f96e2658c68cf2f0469f5244f20"
+
+    assert js.count("const E1_SAMPLE_SHA") == 1, "E1_SAMPLE_SHA declarado más de una vez"
+    assert f"const E1_SAMPLE_SHA  = '{c2}'" in js
+    # f56d4bab sólo puede aparecer dentro de la definición de E1_PREVIOUS
+    for ln in js.splitlines():
+        if f5 in ln:
+            assert "E1_PREVIOUS" in ln, f"f56d4bab fuera de E1_PREVIOUS: {ln.strip()!r}"
+
+    calc = js.split("export function govGateE1Calc(", 1)[1].split("\n}\n", 1)[0]
+    assert "arr.length !== 77" in calc
+    assert "E1_VOCAB.includes(v.verdict)" in calc
+    assert "idx.size !== 77" in calc
+    assert "v.index < 1 || v.index > 77" in calc
+
+    submit = js.split("export async function govSubmitGateE1(", 1)[1].split("\n}\n", 1)[0]
+    assert "E1_ACCEPTANCE=PASS" in submit and "does_not_imply" in submit
+    assert "authenticated_confirmation_of_this_human_verdict_set" in submit
+    assert "docs_plan/E1_REVIEW_PACKET_POST_FIXA_20260831.md" in submit
+    assert "sample_sha256: E1_SAMPLE_SHA" in submit  # firma sobre el sample activo (c2ca5aaa)
+
+    panel = js.split("function panelGateE1(", 1)[1].split("\nfunction ", 1)[0]
+    assert "E1_REVIEW_PACKET_POST_FIXA_20260831.md" in panel
+    assert "E1_H10_RELATION_REVIEW_PACKET_20260831" not in panel  # ya no es la evidencia activa
+    assert "NO declara" in panel and "E1_ACCEPTANCE=PASS" in panel
+
+
 @needs_node
 def test_the_index_can_actually_open_the_exception_panel(tmp_path_factory):
     """El indice tiene que poder ABRIR el panel, no solo mostrar su tarjeta.

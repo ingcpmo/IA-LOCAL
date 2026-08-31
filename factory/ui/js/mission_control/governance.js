@@ -2281,7 +2281,14 @@ export async function govSubmitExcepcion(verdict){
    ejecuta efectos (flip, QA40, producción): sólo deja el acto en el ledger. */
 
 const E1_SAMPLE_PATH = 'factory/regulatory/pilot_run/h10_extraction_v2_20260830/H10_NEW_RELATIONS_SAMPLE_FOR_HUMAN.json';
-const E1_SAMPLE_SHA  = 'f56d4babe7e8466368c9a6dbefe26e3716186f96e2658c68cf2f0469f5244f20';
+// Muestra ACTIVA: la REGENERADA tras FIX-A (resolución de especificidad en
+// _link_refers_to). La revisión E1-1 (sus hashes viven SÓLO en E1_PREVIOUS)
+// queda como evidencia histórica -- el almacén es append-only; esta 2ª firma
+// NO la borra.
+const E1_SAMPLE_SHA  = 'c2ca5aaa36e9904b77cecf266cfa6645ab76949828074c857a360a5bf75ad3fd';
+const E1_PREVIOUS = {sample_sha256: 'f56d4babe7e8466368c9a6dbefe26e3716186f96e2658c68cf2f0469f5244f20',
+                     verdict_set_sha256: 'a533bf4aa11d58acf2dd881cd5abaf52f85175c90db3c50d0bb1a79b352de085',
+                     acceptance: 'FAIL', review: 'E1-1 (pre FIX-A)'};
 const E1_VOCAB = ['CORRECT', 'WRONG_NODE', 'SPURIOUS', 'AMBIGUOUS'];
 const RPAR_EVIDENCE   = 'docs_plan/R_PAR_DELTA_V1_V2_20260831.md';
 const E3A_EVIDENCE    = 'docs_plan/PAQUETE_GATES_HUMANOS_POST_RPAR_20260831.md';
@@ -2352,14 +2359,28 @@ function firmasArtifactVersion(){
 function panelGateE1(){
   return `
   <div class="card">
-    <b>E1 — Adjudicación de 77 relaciones nuevas H-10</b>
+    <b>E1 (2ª revisión, post FIX-A) — Adjudicación de 77 relaciones H-10</b>
+    <div class="note" style="margin-top:6px;border:1px solid var(--warn)">
+      E1-1 (muestra <span class="mono">${esc(E1_PREVIOUS.sample_sha256.slice(0,12))}…</span>,
+      verdict_set <span class="mono">${esc(E1_PREVIOUS.verdict_set_sha256.slice(0,12))}…</span>)
+      resultó <b style="color:var(--fail)">${esc(E1_PREVIOUS.acceptance)}</b>. FIX-A retiró las aristas
+      genérico-sobre-específico. Esta es una revisión <b>independiente</b> sobre la muestra
+      regenerada — NO se reutiliza ningún veredicto anterior. La firma E1-1 se conserva
+      (almacén append-only).
+    </div>
     <div class="meta" style="margin-top:6px">
-      Revisa las 77 filas en <span class="mono">docs_plan/E1_H10_RELATION_REVIEW_PACKET_20260831.md</span>
+      Revisa las 77 filas en <span class="mono">docs_plan/E1_REVIEW_PACKET_POST_FIXA_20260831.md</span>
       y pega abajo el array <span class="mono">verdicts</span> completo
       (77 objetos, cada uno con <span class="mono">index</span> y
       <span class="mono">verdict ∈ {${E1_VOCAB.join(', ')}}</span>).
       La UI calcula <span class="mono">verdict_set_sha256</span> y firma un
       ARTIFACT_VERSION sobre la muestra.
+    </div>
+    <div class="meta" style="margin-top:6px;color:var(--faint)">
+      <b>Registrar = confirmación autenticada de ESTA adjudicación humana.</b> NO declara
+      <span class="mono">E1_ACCEPTANCE=PASS</span>, no incorpora relaciones al grafo, no hace flip,
+      no adjudica QA40, no habilita producción. El veredicto de aceptación de E1 se determina
+      aparte, contrastando la distribución contra el criterio "las relaciones no son ruido".
     </div>
     <div class="meta" style="margin-top:6px">
       muestra: <span class="mono">${esc(E1_SAMPLE_PATH)}</span><br>
@@ -2425,12 +2446,16 @@ export async function govSubmitGateE1(){
   await proponerYConfirmar('ARTIFACT_VERSION', [E1_SAMPLE_PATH], readSignature('e1'), {
     decision:'APPROVE', decision_type:'ORIGINAL',
     payload:{
-      gate:'E1', decision_ref:'E1-H10-RELATIONS-20260831',
+      gate:'E1', review:'E1-2 (post FIX-A)', decision_ref:'E1-2-H10-RELATIONS-20260831',
+      meaning: 'authenticated_confirmation_of_this_human_verdict_set',
+      does_not_imply: ['E1_ACCEPTANCE=PASS','graph_incorporation','flip','qa40_adjudication','production'],
+      e1_acceptance: 'DETERMINED_SEPARATELY_from_verdict_distribution_vs_no-ruido_criterion',
       sample_sha256: E1_SAMPLE_SHA,
       verdict_set_sha256: E1_VALIDADO.verdict_set_sha256,
       verdict_counts: E1_VALIDADO.counts,
       verdicts: E1_VALIDADO.verdicts,
-      evidence: 'docs_plan/E1_H10_RELATION_REVIEW_PACKET_20260831.md',
+      previous_e1: E1_PREVIOUS,
+      evidence: 'docs_plan/E1_REVIEW_PACKET_POST_FIXA_20260831.md',
       not_authorized: ['graph_incorporation','flip','qa40_adjudication','production'],
     },
   }, {statusPrefix:'e1', btnId:'e1-submit-btn'});
