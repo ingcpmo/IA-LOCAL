@@ -387,3 +387,48 @@ def test_h10_rc2_alias_links_canonical_node_no_generic_no_dupe(tmp_path):
     assert by_src.get("runtime") == {"FactoryTalk Security"}, by_src.get("runtime")
     assert by_src.get("generic") == {"FactoryTalk"}, by_src.get("generic")
     g.close()
+
+
+def test_h10_rc2_alias_map_is_actually_consumed(tmp_path):
+    """RC-2: `_COMPONENT_ALIASES` NO puede ser un mapa declarado sin consumir.
+    Con el mapa, "FactoryTalk View Site Edition" enlaza al nodo canónico
+    "FactoryTalk View SE"; VACIANDO el mapa, ese mismo claim deja de enlazar
+    al canónico (cae a "FactoryTalk View"). La diferencia lo demuestra."""
+    from factory.regulatory.canonical import model as m
+    from factory.regulatory.canonical.persistence import CanonicalStore
+    from factory.regulatory.canonical import extract_entities as ee
+    import importlib
+    from factory.regulatory.graph import build as _gb
+
+    def _run(sub):
+        cd, gd = tmp_path / f"c{sub}", tmp_path / f"g{sub}"
+        with CanonicalStore("RW-CN", store_dir=cd) as s:
+            s.put(m.Document(document_id="RW-CN", sha256="f" * 64, tipo="DS", titulo="CN", n_paginas=3))
+            s.put(m.build_claim("RW-CN", 2,
+                                "Users authenticate via the FactoryTalk View Site Edition client.",
+                                "statement", "spelled"))
+            comps, _ = ee.extract_entities_for_document(
+                "RW-CN", [dict(source_text="Users authenticate via the FactoryTalk View Site Edition client.",
+                               pagina=2, claim_id="")])
+            for c in comps:
+                s.put(c)
+        _gb.build_project_graph("PRJ-CN-" + sub, [("RW-CN", "DS")], canon_dir=cd, graph_dir=gd)
+        g = GraphStore("PRJ-CN-" + sub, store_dir=gd)
+        nn = {n.node_id: n for n in g.nodes()}
+        dsts = {nn[e.dst_id].label for e in g.edges(rel="refers_to")}
+        g.close()
+        return dsts
+
+    with_map = _run("real")
+    assert "FactoryTalk View SE" in with_map
+
+    saved = dict(ee._COMPONENT_ALIASES)
+    ee._COMPONENT_ALIASES.clear()
+    importlib.reload(_gb)
+    try:
+        without_map = _run("empty")
+    finally:
+        ee._COMPONENT_ALIASES.update(saved)
+        importlib.reload(_gb)
+    assert "FactoryTalk View SE" not in without_map, (
+        "el mapa de alias no se está consumiendo: vaciarlo no cambia nada")
