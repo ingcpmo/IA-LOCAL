@@ -32,8 +32,9 @@ ALL_MATERIAL_DELTAS_EXPLAINED = YES · RETURN_TO_DESIGN_REQUIRED = NO.
 | QA40 `qa40_adjudication_sheet.yaml` | 40/40 `PENDING` · `DRAFT_UNSIGNED` · `sha 02b6d3d0…` |
 | E1 `E1_propose_body.json` | 9/77 veredictos registrados (bloque 1) · sin firmar · sin registro gobernado |
 | DOCUMENT_EGRESS | 0 |
-| Regresión completa (tras remedio A) | `6 failed · 3002 passed · 79 skipped · 1 xfailed` (`_gates_prep/final_regr_remedyA.log`) |
-| NEW_REGRESSIONS | **0** — los 6 fallos son exactamente los KNOWN_EXCEPTIONS documentados; `test_decision_migration` pasó a verde (3001→3002 passed) |
+| Regresión pre-commit (tras remedio A) | `6 failed · 3002 passed · 79 skipped · 1 xfailed` (`_gates_prep/final_regr_remedyA.log`) — los 6 fallos = KNOWN_EXCEPTIONS |
+| Regresión **post-commit** (`4ae446e`) | `2 failed · 3006 passed · 79 skipped · 1 xfailed` (`_gates_prep/post_commit_regr.log`) — los 4 store-guards vs git-HEAD auto-limpiaron; restan 2 EXC de entorno/servicio vivo |
+| NEW_REGRESSIONS | **0** (pre y post commit) |
 | Condiciones STOP-general (`NEW_REGRESSION>0` propio · `MATERIAL_CONTRADICTION` · `DATA_LOSS_RISK` · `DOCUMENT_EGRESS>0` · `GOVERNANCE_INTEGRITY_FAILURE`) | ninguna disparada |
 
 **Regresión — desglose de los 6 fallos (todos KNOWN_EXCEPTIONS):**
@@ -61,9 +62,9 @@ ALL_MATERIAL_DELTAS_EXPLAINED = YES · RETURN_TO_DESIGN_REQUIRED = NO.
 | **QA40_ALIGNMENT** | Resolver la 1/40 QA40 que no resuelve en escenario D, sin modificar ground truth ni re-muestrear | **SÍ — análisis previo completo.** La 1/40 = `ADJ-34140454ec` (RW-0012, `ALCOA_ATTRIBUTABLE_GAP`, pág 5), uno de los findings re-anclados por clone-drift; el finding analítico **persiste** en D con distinto `finding_record_id`; `RESOLUTION_REASON = CLONE_DRIFT_REANCHOR`. 39/40 resuelven directo. El conjunto de 40 casos **no cambia**. | Confirmar la re-resolución determinista de `ADJ-34140454ec` por `finding_record_id` nuevo (NO re-muestreo) tras E3-A APPROVE | PREPARED (ejecuta tras E3-A) | E3-A | §QA40 de este informe · `qa40_adjudication_sheet.yaml` (sha `02b6d3d0…`) | Tras E3-A: re-mapear `ADJ-34140454ec` al `finding_record_id` de D; 40/40 direccionables |
 | **E4 / D-5** | Adjudicación humana H-8: precisión (QA40), recall (oportunidades), especificidad (unidades negativas), firma held-out | **SÍ — instrumento VACÍO construido.** 3 ficheros `:ro` en el runtime endurecido; `score_emitted_review` y `score_recall` verificados fail-closed → `UNKNOWN` sin firma. La IA **no** rellena TP/FP/COVERAGE_LIMITED/ground truth/oportunidades/negativas. | QA escribe todos los campos de ground truth y firma los 3 ficheros (campos exactos abajo) | NOT_OCCURRED (STOP humano obligatorio) | — | `PAQUETE_D5_ADJUDICACION_H8_20260830.md` · `CIERRE_H8_EVIDENCIA_REAL.md` | QA adjudica y firma `qa40_adjudication_sheet.yaml` + `real_corpus_opportunities.yaml` + `held_out_technical_corpus.yaml` |
 | **E5** | Registro gobernado autenticado de las firmas de aceptación (E1–E3-A) | Payloads `E{1,2,3A,5}_propose_body.json` preparados; mecanismo `propose → confirm` (familia `ARTIFACT_VERSION`) verificado disponible; endpoints y CLI documentados | Ejecutar `propose → confirm` con `X-API-Key` (`FACTORY_API_KEY`) + `X-Identity-Key` (Cesar), solicitadas de forma oculta | PENDING_HUMAN | E1, E2, E3-A | `GATES_HUMANOS_MECANISMO_20260831.md` · `E5_propose_body.json` | Tras E1–E3-A: firmar por gobernanza autenticada |
-| **E6** | Commit exacto del arco (sin `git add .`), árbol limpio | **SÍ — clasificación exacta preparada.** `EXACT_FILES_TO_COMMIT` (código A.1 + `decision_legacy_adapter.py` + `migrate_decisions_to_v2.py`, config gobernada A.2, tests A.4, ops A.5, docs A.6), `EXACT_FILES_TO_EXCLUDE` (stores generados + 1.4 GB `_h9_assets` + drift de misiones previas), `.gitignore` a añadir, procedimiento de staging. **NO commit.** MIGRATION_SYNC resuelto → el diff de `decisions_v2.jsonl` es ahora `4 0` (incluye `D1-2026-057`). | Autorizar el commit; re-verificar a mano el diff del ledger (4 líneas) | PENDING_HUMAN | — | `_gates_prep/E6_FILE_CLASSIFICATION_20260830.md` | Cesar autoriza staging §D y commit |
+| **E6** | Commit exacto del arco (sin `git add .`), árbol limpio | **HECHO — commit `4ae446e`** en `fix/clon-local-validacion` (93 archivos, +14013/−152), autorizado por Cesar. Lista A exacta (código A.1 + `decision_legacy_adapter.py`/`governance_service.py`/`migrate_decisions_to_v2.py`, config A.2, tests A.4, ops A.5, docs A.6). 0 archivos de B en el índice; `.gitignore` +9 (stores regenerables). Ledger: +5 líneas append-only (0 alteradas). Sin push. | Ninguna (hecho) | DONE | — | commit `4ae446e` · `_gates_prep/E6_FILE_CLASSIFICATION_20260830.md` | — |
 | **MIGRATION_SYNC** | (no previsto) Almacén v2 sincronizado con los almacenes legacy | **RESUELTO — remedio A aplicado (autorizado por Cesar).** Parche mínimo al asignador de `instance_id`: `occupied_native_instance_ids()` + `_alloc_instance_id()` en `decision_legacy_adapter.py` saltan cualquier id ya ocupado por un registro NATIVE, nunca lo sobrescriben, avanzan al siguiente libre. La corrección D1 de Cesar (cadencia 3→2) se proyecta como **`D1-2026-057`** (`003…056` ocupados por NATIVE — ~30 *propose* UI abandonados + addenda posteriores). NATIVE `D1-2026-003` preservado byte a byte. `migrate --apply --merge-natives`: +1 línea, 0 alteradas. `is_stale()=False`, `22==22`. `test_decision_migration` 28/28 PASSED. | Ninguna (queda como evidencia; el commit E6 la versiona) | RESOLVED | — | `_gates_prep/BLOCKED_decision_migration_id_collision_20260830.md` · `_gates_prep/final_regr_remedyA.log` | — |
-| **POST_COMMIT_REGRESSION** | Regresión tras el commit E6; `NEW_REGRESSION = 0` | Predicción preparada: los 4 store-guards vs git-HEAD AUTO-LIMPIAN al quedar `decisions_v2.jsonl` committeado; restan 2 EXC de entorno/servicio vivo | Ejecutar `pytest factory/tests/` tras el commit y confirmar `NEW_REGRESSION = 0` | PREPARED (ejecuta tras E6) | E6 | `_gates_prep/E6_FILE_CLASSIFICATION_20260830.md` §E | Correr la suite tras el commit |
+| **POST_COMMIT_REGRESSION** | Regresión tras el commit E6; `NEW_REGRESSION = 0` | **HECHO.** `2 failed · 3006 passed · 79 skipped · 1 xfailed` (`_gates_prep/post_commit_regr.log`). Los 4 store-guards vs git-HEAD **auto-limpiaron** (6→2 failed, 3002→3006 passed). Los 2 restantes = EXC de entorno/servicio vivo (`test_corpus_runner…232`, `test_deployment_exists_and_health`). **NEW_REGRESSIONS = 0.** | Ninguna | DONE | — | `_gates_prep/post_commit_regr.log` | — |
 | **WP-F** | Paquete de evidencia de cualificación (contrato declarativo + checker re-ejecutable) | **SÍ — preparado.** Contrato `QC-*` (WP-F) + evidencia. | Revisión humana del paquete como insumo de D-6 | PREPARED | — | `WP_F_PAQUETE_EVIDENCIA_20260830.md` | Cesar revisa WP-F antes de D-6 |
 | **D-6** | Declaración humana `QUALIFIED` (nunca por el sistema) | **SÍ — paquete preparado.** Checklist de cualificación + evidencia enlazada. La IA **no** declara `QUALIFIED`. | Cesar declara `D6 = QUALIFIED` o `NOT_QUALIFIED` con el contrato WP-F | NOT_QUALIFIED (pendiente) | E1–E6, D-5, WP-F | `PAQUETE_D6_QUALIFICATION_20260830.md` | Cesar decide D-6 tras cerrar E1–E6 + D-5 |
 | **PRODUCTION_ENABLEMENT** | Plan de habilitación de producción | **SÍ — plan preparado** (precondiciones P1–P9, orden, gobernanza, verificación egress H-5F) | Autorizar la habilitación tras P1–P8 verdes | NOT_ENABLED | E1–E6, D-5, D-6 | `PLAN_PRODUCCION_CUTOVER_POST_CUTOVER_20260831.md` §2 | Ninguna hasta cerrar la cadena de gates |
@@ -268,18 +269,28 @@ GOVERNED_REGISTRATION_METHOD= POST .../governance/decisions/ARTIFACT_VERSION/pro
                               CLI alterna: factory/scripts/ops/sign_artifact_version_proposal.py (flujo hash-echo)
 ```
 
-### GATE = E6 — autorización de commit
+### GATE = E6 — HECHO (commit autorizado por Cesar)
 ```
-DECISION_REQUIRED           = autorizar el commit del arco con la lista EXACTA (sin git add .)
-EVIDENCE_FILE               = docs_plan/_gates_prep/E6_FILE_CLASSIFICATION_20260830.md
-CURRENT_STATUS              = PENDING_HUMAN (sin BLOCKED_BY — MIGRATION_SYNC resuelto)
-CONSEQUENCE_IF_APPROVED     = el código/config/tests/ops/docs del arco quedan versionados ; los 4 store-guards vs git-HEAD
-                              AUTO-LIMPIAN ; habilita POST_COMMIT_REGRESSION y D-6
-CONSEQUENCE_IF_REJECTED     = el arco permanece sólo en el árbol de trabajo ; riesgo de pérdida por operaciones git posteriores
-GOVERNED_REGISTRATION_METHOD= (1) aplicar bloque .gitignore §C ;
-                              (2) git add <rutas exactas de A.1 (incl. decision_legacy_adapter.py + migrate_decisions_to_v2.py) / A.2 / A.4 / A.5 / A.6> ;
-                              (3) git add factory/layer9/decisions/{decisions_v2.jsonl,w5_human_decisions.jsonl} tras re-verificar a mano el diff (4 líneas: 019/020/021 + D1-2026-057) ;
-                              (4) git status + git diff --cached --stat contra la lista A ; (5) commit (sin secretos) ; NO push sin autorización aparte
+DECISION_REQUIRED           = ninguna — cerrado
+EVIDENCE_FILE               = commit 4ae446e  ·  docs_plan/_gates_prep/E6_FILE_CLASSIFICATION_20260830.md  ·  _gates_prep/post_commit_regr.log
+CURRENT_STATUS              = DONE
+WHAT_WAS_DONE               = git commit 4ae446e en fix/clon-local-validacion — 93 archivos, +14013/−152.
+                              .gitignore +9 (canonical_store_v2/, graph_store_v2/, _h9_assets/,
+                              pilot_run/h10_extraction_v2_20260830/, docs_plan/_h9_full|_r_par|_gates_prep/).
+                              Staging selectivo (nunca git add .): código A.1 (+ decision_legacy_adapter.py,
+                              governance_service.py, migrate_decisions_to_v2.py), config gobernada A.2,
+                              tests A.4, ops A.5, docs de cierre A.6, ledger A.3.
+                              Ledger: +5 líneas append-only, 0 alteradas
+                              (ARTIFACT_VERSION-2026-019/020/021 + D1-2026-057 en decisions_v2.jsonl;
+                              corrección D1 de Cesar en w5_human_decisions.jsonl).
+                              EXCLUIDO del commit: qa40_adjudication_sheet.yaml (regla "No QA40"),
+                              document_structure_extractor.py + su test (pre-arco 2026-08-20),
+                              remediation_directive.py / test_r4_* (misión previa R4-T1.1v2),
+                              .claude/settings*, stores generados, 1.4 GB _h9_assets, docs de misiones previas.
+                              NO push.
+POST_COMMIT_REGRESSION      = 2 failed / 3006 passed / 79 skipped / 1 xfailed.
+                              Los 4 store-guards vs git-HEAD AUTO-LIMPIARON (6→2 failed).
+                              Restan 2 EXC de entorno/servicio vivo. NEW_REGRESSIONS = 0.
 ```
 
 ### GATE = MIGRATION_SYNC — RESUELTO (remedio A, autorizado por Cesar)
@@ -339,20 +350,21 @@ MACHINE_WORK_STILL_MISSING           = Ninguno. Lo que resta se ejecuta DESPUÉS
                                         - POST_COMMIT_REGRESSION: correr la suite (tras E6)
                                         - POST_CUTOVER_REGRESSION: correr la suite + verificaciones (tras CUTOVER)
 
-HUMAN_GATES_PENDING                  = E1 (68/77 filas) · E2 · E3-A · E4/D-5 · E5 · E6 ·
+HUMAN_GATES_PENDING                  = E1 (68/77 filas) · E2 · E3-A · E4/D-5 · E5 ·
                                         D-6 · PRODUCTION_ENABLEMENT · CUTOVER
-                                        (MIGRATION_SYNC ya no está pendiente — RESUELTO)
+                                        (MIGRATION_SYNC = RESUELTO · E6 = HECHO, commit 4ae446e)
 
 FIRST_ACTION_AFTER_HUMAN_APPROVAL    = E1: adjudicar las 68 filas del §3 HUMAN_ACTION_PACKET
                                         (60 refers_to + 8 tested_by), calcular verdict_set_sha256,
                                         y firmar por gobernanza autenticada (propose → confirm,
-                                        X-API-Key + X-Identity-Key). En paralelo, E6: autorizar el
-                                        commit con la lista exacta (ya sin bloqueo).
+                                        X-API-Key + X-Identity-Key). Luego E2 → E3-A → QA40_ALIGNMENT
+                                        → E4/D-5 → E5 → D-6.
 
 ORIGINAL_PLAN_COMPLETE              = NO — el trabajo de máquina previo a los gates humanos está
-                                        COMPLETO; el plan se cierra cuando Capa 9 resuelva
-                                        E1, E2, E3-A, E4/D-5, E5, E6 y D-6, y (si procede) autorice
-                                        PRODUCTION_ENABLEMENT + CUTOVER + POST_CUTOVER_REGRESSION.
+                                        COMPLETO y COMMITEADO (4ae446e); el plan se cierra cuando
+                                        Capa 9 resuelva E1, E2, E3-A, E4/D-5, E5 y D-6, y (si
+                                        procede) autorice PRODUCTION_ENABLEMENT + CUTOVER +
+                                        POST_CUTOVER_REGRESSION.
 ```
 
 ---
