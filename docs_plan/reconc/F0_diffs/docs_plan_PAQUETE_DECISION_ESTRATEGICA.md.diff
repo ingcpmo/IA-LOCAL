@@ -1,0 +1,433 @@
+diff --git a/docs_plan/PAQUETE_DECISION_ESTRATEGICA.md b/docs_plan/PAQUETE_DECISION_ESTRATEGICA.md
+index 1d0586a..c206cb8 100644
+--- a/docs_plan/PAQUETE_DECISION_ESTRATEGICA.md
++++ b/docs_plan/PAQUETE_DECISION_ESTRATEGICA.md
+@@ -1,130 +1,306 @@
+-# Paquete de decisión estratégica — Palancas A/B/C
+-
+-**Estado**: documento de decisión, NO ejecución. Ninguna de las tres
+-palancas se activa por este documento. Preparado según `docs_plan/
+-CONTINUACION_CIERRE_ESTRATEGICO.md` Bloque 3, tras confirmar con
+-evidencia real (4 casos por experimento directo) que el cuello de
+-botella es el modelo de 7B, no el pipeline (ver `docs_plan/
+-AUDITORIA_ARQUITECTONICA_2026-08/BOTTLENECK_DIAGNOSIS.md`).
+-
+-Presentadas sin recomendación sesgada, mismo criterio que rigió cada
+-decisión de rumbo anterior del proyecto (D1/D2/D3, Tier-1, etc.). **C no
+-bloquea A ni B** — se puede operar hoy con alcance reducido mientras A o
+-B se evalúan en paralelo, en cualquier orden o combinación.
+-
+-──────────────────────────────────────────────────────────────────────
+-PALANCA A — Modelo local más grande (GPU)
+-──────────────────────────────────────────────────────────────────────
+-
+-**Qué es**: reemplazar `qwen2.5:7b-instruct-q4_K_M` por un modelo local
+-mayor (ej. Llama 3.1 70B) sobre GPU dedicada, vía la misma
+-`OllamaProvider` ya construida (`factory/engines/gmpai_integrity/
+-model_provider.py`) — cero cambio de arquitectura de software, el
+-`ModelProvider` Protocol ya es agnóstico al tamaño del modelo.
+-
+-**Costo de hardware**: NO estimado en esta corrida — fuera de alcance
+-técnico de Capa 8 en este momento (requiere cotización real de GPU
+-compatible con el servidor `ivr-ia` o infraestructura nueva).
+-
+-**Lo que SÍ está listo hoy**: el fixture set 7P+2N
+-(`docs_plan/W5V2_RECALL_FIXTURE_SET_DRAFT.md`) es un instrumento de
+-calificación inmediato — el día que el hardware exista, correr el
+-mismo fixture contra el modelo nuevo (mismo criterio de éxito: recall
+-≥6/7 positivos + 2/2 negativos rechazados) da una respuesta objetiva sin
+-diseño adicional.
+-
+-**Honestidad de alcance**: el recall resultante de un modelo más grande
+-no es demostrable sin probar — no hay forma de estimarlo desde la
+-evidencia ya medida (el techo confirmado es de este modelo específico,
+-no necesariamente de todos los modelos locales).
+-
+-──────────────────────────────────────────────────────────────────────
+-PALANCA B — AnthropicProvider (modelo API externo)
+-──────────────────────────────────────────────────────────────────────
+-
+-**Qué es**: implementar `AnthropicProvider` contra el `ModelProvider`
+-Protocol ya diseñado (`factory/engines/gmpai_integrity/
+-model_provider.py:26-100`) — actualmente solo existe `OllamaProvider`;
+-`AnthropicProvider` está documentado como extensión futura, nunca
+-implementado, y requiere autorización explícita de Cesar (ya declarado
+-así desde la Fase D de W5 V2).
+-
+-**Qué viajaría por llamada** (confirmado leyendo el código real, no
+-supuesto): el `prompt` que construye `chunked_engine.build_prompt()` —
+-UN chunk de hasta `CHUNK_MAX_CHARS=6000` caracteres + el Evidence Pack
+-gobernado del requisito (criterios, `citation_text` regulatorio) +
+-instrucciones del prompt YAML. **Nunca el corpus completo, nunca el
+-documento entero** — el mismo tipo de fragmento que ya usa el pipeline
+-local hoy, solo que la llamada de inferencia saldría del servidor hacia
+-una API externa en vez de quedarse en `aria-ollama`.
+-
+-**Circuito de gobernanza que exigiría** (ninguno construido todavía):
++# Paquete de decisión estratégica — Palancas A/B/C/V2b (versión final para Capa 9)
++
++**Estado: documento de decisión, NO ejecución.** Preparado conforme al
++Bloque 5 de `docs_plan/CONTINUACION_POST_V2.md`. Ninguna palanca se
++activa por este documento. Ninguna llamada LLM se gastó al escribirlo.
++M4 no se implementa aquí (ya reordenado y aprobado como secuencia,
++ADR-POSTV2-1 — su código sigue sin empezar). `PRODUCTION_ENABLEMENT =
++BLOCKED`, sin cambio.
++
++## Punto de partida (evidencia ya cerrada, no se repite en esta corrida)
++
++El techo de recall del analizador (2/7 positivos reconocidos: P1, P3)
++está **confirmado por TRES vías independientes**, con instrumentos
++distintos:
++
++| # | Vía | Fecha | Modelo/config | Resultado |
++|---|---|---|---|---|
++| 1 | H1-H4 | 2026-08-09/11 | 7B, chunking legacy | 2/7 |
++| 2 | Palanca A (exact-page) | 2026-08-15 | 14B, pasaje exacto | 2/7 (14B descartado por falta de mejora sobre 7B) |
++| 3 | V2 (`top_k_fusion`) | 2026-08-17 | 7B, arquitectura de producción real (M2+M3), commit `b44071f` | 2/7 |
++
++Con M2 (chunking por sección) y M3 (recuperación en camino de
++producción) ya construidos y verificados (`retrieval_recall_at_5=7/7`
++en V1), **la arquitectura de recuperación queda descartada como causa**
++— hecho medido, no hipótesis. Lo que sigue sin resolver es de dónde
++viene el techo: tamaño de modelo, contrato de juicio, o ambos. Las
++cuatro palancas de abajo atacan esa pregunta desde ángulos distintos.
++
++**M4 (ausencia en dos niveles) — reordenado a PREREQUISITO, APROBADO
++por Cesar 2026-08-18 (ADR-POSTV2-1)**: sin M4, ninguna de las cuatro
++palancas reduce la cola de adjudicación humana por sí sola, sea cual sea
++su resultado de recall — solo M4 lo hace. Es una decisión de secuencia
++ya tomada, no una recomendación de esta actualización. **0 código de M4
++implementado.**
++
++---
++
++## PALANCA A — Modelo local más grande (GPU)
++
++**Qué significa exactamente**: reemplazar `qwen2.5:7b-instruct-q4_K_M`
++por un modelo local de mayor tamaño (ej. Llama 3.1 70B u otro no
++especificado) corriendo sobre GPU dedicada del servidor, servido vía la
++misma `OllamaProvider` ya construida
++(`factory/engines/gmpai_integrity/model_provider.py`).
++
++**Objetivo**: probar si el techo de recall es un límite de *capacidad*
++del modelo (tamaño de parámetros) — no de arquitectura de recuperación,
++ya descartada por las 3 vías de arriba.
++
++**Problema que intenta resolver**: el techo 2/7, bajo la hipótesis
++"el modelo actual simplemente no es lo bastante grande para razonar
++semánticamente sobre paráfrasis/evidencia indirecta".
++
++**Qué cambia arquitectónicamente**: nada de software — `ModelProvider`
++Protocol ya es agnóstico al tamaño del modelo, cero refactor.
++
++**Componentes/fases que afectaría**: `model_qualification_gate.py`
++(recalificación obligatoria contra el fixture antes de cualquier uso
++real), runtime fingerprint (`model_digest` cambia).
++
++**Costo/llamadas esperadas**: hardware **NO estimado** (fuera de
++alcance técnico de Capa 8 — requiere cotización real de GPU compatible
++con `ivr-ia` o infraestructura nueva). Llamadas de recalificación: mismo
++orden de magnitud que las corridas ya hechas contra el fixture 7P+2N (9
++casos), no cuantificado con precisión aquí porque depende de la
++configuración final (k, evaluation_profile).
++
++**Riesgos y limitaciones ya documentados**: costo de hardware
++desconocido; **sin garantía de que un modelo más grande resuelva el
++techo** — podría ser de contrato/semántica (ver V2b), no de tamaño;
++tiempo de inferencia mayor.
++
++**Resultados previos que existen**: 7B→14B **sin mejora** (Palanca A,
++2026-08-15, exact-page H1-H4) — el único dato duro disponible sobre esta
++palanca, y es negativo en el rango probado.
++
++**Qué no se ha probado todavía**: 32B, 70B, o cualquier modelo más allá
++de 14B; el costo real de la GPU necesaria.
++
++**Relación con M4**: independiente técnicamente (M4 gobierna cómo se
++declara ausencia, no cómo se reconoce evidencia). M4 debe estar
++operable ANTES de habilitar `top_k_fusion` en producción con cualquier
++modelo que resulte de A (ADR-POSTV2-1) — no antes de *probar* A en el
++fixture, que es una medición diagnóstica independiente.
++
++**Clasificación**: EVIDENCIA YA DEMOSTRADA (7B→14B sin mejora) +
++HIPÓTESIS (32B/70B sin probar) + TRABAJO NO PROBADO (costo de hardware,
++recalificación real a escala mayor).
++
++---
++
++## PALANCA B — AnthropicProvider (modelo API externo)
++
++**Qué significa exactamente**: implementar un `AnthropicProvider` nuevo
++que cumpla el `ModelProvider` Protocol ya diseñado
++(`model_provider.py:26-100`, hoy solo tiene `OllamaProvider`), enviando
++el mismo tipo de fragmento (1 chunk de hasta `CHUNK_MAX_CHARS=6000`
++caracteres + Evidence Pack gobernado del requisito) a una API externa en
++vez de a `aria-ollama`. **Nunca el corpus completo, nunca el documento
++entero** — confirmado leyendo `chunked_engine.build_prompt()` real.
++
++**Objetivo**: probar si un modelo con capacidad semántica muy superior a
++cualquier opción local disponible cruza el techo — desacopla "capacidad
++de modelo" de "hardware físico disponible en el servidor".
++
++**Problema que intenta resolver**: el mismo techo 2/7, con la ventaja de
++no depender de una cotización/instalación de GPU propia.
++
++**Qué cambia arquitectónicamente**: un provider nuevo (código no
++escrito todavía) + un circuito de gobernanza completo, **ninguno
++construido**:
+ - Decisión formal separada (misma familia de gravedad que
+   `PILOT_EXECUTION`/`EMBED_EXECUTION`, nunca las sustituye).
+-- Recalificación del modelo contra el mismo fixture 7P+2N antes de
+-  cualquier uso real (mismo `model_qualification_gate.py` ya existente,
+-  extendido a un provider no-Ollama).
+-- `model_digest`/fingerprint propio (el campo ya existe en el runtime
+-  fingerprint, pero un modelo API no tiene un digest local descargable —
+-  requiere decidir qué identificador lo sustituye, ej. version string de
+-  la API).
++- Recalificación del modelo contra el fixture 7P+2N antes de cualquier
++  uso real (extensión de `model_qualification_gate.py` a un provider
++  no-Ollama).
++- `model_digest`/fingerprint propio — un modelo API no tiene digest
++  local descargable, requiere decidir qué identificador lo sustituye.
+ - Presupuesto propio, gobernado igual que `PILOT_EXECUTION`/
+   `EMBED_EXECUTION` — nunca comparte contador con las llamadas locales.
+-- Evaluación de confidencialidad formal (fuera de alcance técnico de
+-  esta corrida — es una decisión de política, no de código): documentos
+-  Rockwell son propiedad de un cliente real; enviar fragmentos a una API
+-  externa requiere su propia autorización, separada de la técnica.
+-
+-**Sin ejecutar nada** — este documento solo informa la decisión, no la
+-toma ni la prepara técnicamente más allá de lo ya diseñado en
+-`model_provider.py`.
+-
+-──────────────────────────────────────────────────────────────────────
+-PALANCA C — Tier-1 de alcance reducido (ya construido)
+-──────────────────────────────────────────────────────────────────────
+-
+-**Qué es**: operar el sistema tal como existe HOY, con el alcance
+-explícitamente acotado a lo que está medido y confiable:
+-
+-- **Confirmación automática de eco léxico** (P1, ya demostrado en
+-  producción real — cita literal o casi literal, ancla y se confirma).
+-- **Rechazo de falsos positivos** (N1/N2, 3 mecanismos deterministas
+-  independientes: `detect_reference_list_context`, umbral fuzzy 0.93,
+-  filtro de relevancia — todos verificados contra el golden dataset de 8
+-  casos, 8/8 PASS).
+-- **Recuperación semántica que entrega candidatos enriquecidos al
+-  revisor** (fusión BM25+embeddings, `retrieval_recall_at_5=7/7` medido,
+-  R2) — el revisor humano ve los candidatos correctos al frente, aunque
+-  el modelo no los confirme solo.
+-- **Todo lo demás (paráfrasis) a revisión humana con cobertura
+-  declarada** — nunca detección automática de paráfrasis, documentado
+-  como límite conocido, no oculto.
+-
+-**Costo de esta palanca**: cero — es el sistema tal como existe, con la
+-honestidad ya incorporada (Tier-1 asistido, D2 firmado 2026-08-11) de
+-que la paráfrasis está fuera de su alcance actual, ahora respaldado por
+-evidencia definitiva (4 casos por experimento directo) en vez de
+-sospecha.
+-
+-**Lo que Palanca C NO resuelve**: el mismo techo que A/B atacan
+-directamente — evidencia parafraseada o evidencia insuficiente frente a
+-criterios amplios (P7, ver `docs_plan/AUDITORIA_ARQUITECTONICA_2026-08/
+-BOTTLENECK_DIAGNOSIS.md`) sigue yendo a revisión humana, no se
+-automatiza.
+-
+-──────────────────────────────────────────────────────────────────────
+-Relación entre las tres
+-──────────────────────────────────────────────────────────────────────
++
++**Componentes/fases que afectaría**: `model_provider.py` (código
++nuevo), `model_qualification_gate.py`, `decision_families.yaml` (nueva
++familia de presupuesto), runtime fingerprint.
++
++**Costo/llamadas esperadas**: **NO cuantificado** — ni en llamadas ni en
++$ — porque el circuito de gobernanza que lo mediría no existe todavía.
++
++**Riesgos y limitaciones ya documentados**: **evaluación de
++confidencialidad formal pendiente, fuera de alcance técnico de Capa 8**
++— los documentos Rockwell son propiedad de un cliente real; enviar
++fragmentos a una API externa requiere autorización de política, separada
++de la técnica, antes de cualquier código. Es el mayor riesgo no técnico
++de las cuatro palancas.
++
++**Resultados previos que existen**: **ninguno** — nunca se corrió el
++fixture contra ningún modelo API.
++
++**Qué no se ha probado todavía**: literalmente todo — el `AnthropicProvider`
++no tiene una línea de código escrita.
++
++**Relación con M4**: igual que A — independiente técnicamente, M4
++prerequisito de producción con `top_k_fusion` bajo cualquier resultado
++de B (ADR-POSTV2-1), no de probar B en el fixture.
++
++**Clasificación**: HIPÓTESIS pura (sin ningún dato propio) +
++DECISIÓN REQUERIDA DE CAPA 9 sobre confidencialidad, anterior a
++cualquier trabajo técnico.
++
++---
++
++## PALANCA C — Tier-1 de alcance reducido (ya construido, operable hoy)
++
++**Qué significa exactamente**: operar el analizador **tal como existe
++hoy, sin ningún cambio de código**, con el alcance explícitamente
++acotado a lo que ya está medido y es confiable:
++- Confirmación automática de eco léxico (P1).
++- Rechazo de falsos positivos (N1/N2, 3 mecanismos deterministas
++  independientes).
++- Recuperación semántica entregando candidatos enriquecidos al revisor
++  (BM25+embeddings).
++- Todo lo demás (paráfrasis / evidencia indirecta) va a revisión
++  humana con cobertura declarada — nunca detección automática de
++  paráfrasis, documentado como límite conocido, no oculto.
++
++**Objetivo**: NO resolver el techo de recall — operar de forma honesta y
++segura DENTRO del techo ya confirmado, sin apostar presupuesto ni tiempo
++a una mejora de modelo incierta.
++
++**Problema que intenta resolver**: la necesidad operativa de usar el
++sistema HOY sin bloquear todo el proyecto a la espera de A/B/V2b.
++
++**Qué cambia arquitectónicamente**: **nada — cero cambios de código.**
++
++**Componentes/fases que afectaría**: ninguno nuevo.
++
++**Costo/llamadas esperadas**: **cero** — no requiere llamadas nuevas, no
++requiere hardware, no requiere ninguna autorización adicional a las ya
++vigentes.
++
++**Riesgos y limitaciones ya documentados**: **NO resuelve el techo** —
++evidencia parafraseada o insuficiente frente a criterios amplios sigue
++yendo 100% a revisión humana, nunca se automatiza. Sin M4, tampoco
++reduce la cola de adjudicación por sí sola (mismo hallazgo que aplica a
++las 4 palancas).
++
++**Resultados previos que existen**: es la ÚNICA palanca con evidencia
++100% real de producción — P1 confirmado automáticamente, N1/N2
++rechazados (golden dataset 8/8), `retrieval_recall_at_5=7/7` (V1), Tier-1
++D2 firmado 2026-08-11.
++
++**Qué no se ha probado todavía**: nada propio de C — es la única palanca
++totalmente probada. Lo no probado es M4 operando junto a ella (M4 no es
++parte de C, es una fase separada ya aprobada en secuencia).
++
++**Relación con M4**: **C es la que más se beneficia de M4** — C ya opera
++con lo que hay hoy; M4 es exactamente lo que le permitiría reducir la
++carga de revisión humana sin apostar a ningún modelo nuevo. Sin M4, C
++sigue funcionando igual, solo sin ese beneficio adicional.
++
++**Clasificación**: EVIDENCIA YA DEMOSTRADA en su totalidad — la única de
++las cuatro sin ninguna apuesta pendiente.
++
++---
++
++## PALANCA V2b — Rediseño del contrato de juicio en dos pasos (AD-12)
++
++**Qué significa exactamente**: en vez de 1 pregunta directa por chunk
++("¿este pasaje cumple el criterio X?"), descomponer en 2 llamadas:
++1. **Extracción neutra**: dado el pasaje, "describe en términos
++   operativos qué hace/registra/controla el sistema descrito, sin
++   referencia a ningún requisito regulatorio" — salida: texto libre
++   corto, sin JSON de cumplimiento.
++2. **Mapeo semántico**: dado el criterio regulatorio Y la descripción
++   neutra del paso 1 (**nunca el pasaje original directamente en este
++   paso** — fuerza el mapeo a través de la traducción intermedia),
++   "¿esta descripción satisface el criterio?" — mismo JSON de
++   cumplimiento que hoy.
++
++**Guardián obligatorio, ya diseñado**: la cita/evidencia final que
++respalda cualquier `observed` sigue siendo el **pasaje ORIGINAL**,
++verificado por `evidence_verifier` sin cambios — el paso 1 es insumo de
++razonamiento, **nunca** la evidencia citable.
++
++**Objetivo**: probar si la descomposición cruza el "puente semántico"
++que el contrato actual (1 pregunta directa pasaje→criterio) no cruza —
++hipótesis de que el modelo 7B falla en mapear directamente un pasaje
++técnico a un criterio regulatorio abstracto, pero podría describir el
++pasaje en términos operativos Y mapear esa descripción ya simplificada
++al criterio.
++
++**Problema que intenta resolver**: el mismo techo 2/7, bajo la hipótesis
++específica de que la causa es de **contrato/semántica del prompt**, no
++de tamaño de modelo (que atacan A/B) ni de arquitectura de recuperación
++(ya descartada).
++
++**Qué cambia arquitectónicamente**: 2 prompts nuevos y versionados
++(contenido gobernado, requiere aprobación de Capa 9 antes de usarse) en
++vez de 1 por chunk; `evidence_verifier` **sin cambios** — verificado
++explícitamente que sigue ligado solo al pasaje original.
++
++**Componentes/fases que afectaría**: prompts YAML
++(`common_contract`/`deltas` por agente — mismo mecanismo que M2 ya
++descompuso), `chunked_engine.py` (2 llamadas por chunk en vez de 1).
++
++**Costo/llamadas esperadas**: **2 llamadas por requisito en vez de 1**
++— documentado explícitamente como el trade-off costo/recall, nunca
++oculto. Sobre el mismo fixture que V2 (8 triples, k=3, 24 llamadas):
++aproximadamente **48 llamadas de juicio** (el doble), más margen de
++reintento.
++
++**Riesgos y limitaciones ya documentados**: el paso 1 podría convertirse
++en un canal para fabricar evidencia si no se verifica bien — por eso el
++guardián obligatorio de que la cita final SIEMPRE viene del pasaje
++original, nunca de la descripción neutra; **sin ninguna garantía de que
++funcione** — es la hipótesis con mayor valor esperado según el propio
++roadmap, no un resultado.
++
++**Resultados previos que existen**: **ninguno — 0 llamadas reales
++ejecutadas.** Solo el diseño está completo
++(`GMP_AI_FACTORY_ARQUITECTURA_OBJETIVO.md`, fase V2b).
++
++**Qué no se ha probado todavía**: toda la fase — ni un prompt fue
++escrito en código todavía (solo diseñado en el documento de
++arquitectura), ni una llamada real.
++
++**Relación con M4**: igual que A/B — independiente técnicamente del
++mecanismo de M4; M4 prerequisito de que cualquier mejora de recall de
++V2b se traduzca en producción real bajo `top_k_fusion` (ADR-POSTV2-1).
++
++**Clasificación**: HIPÓTESIS con diseño completo + TRABAJO NO PROBADO en
++su totalidad (0 código de prompt escrito, 0 llamadas).
++
++---
++
++## Tabla comparativa
++
++| PALANCA | OBJETIVO | EVIDENCIA ACTUAL | QUÉ FALTA PROBAR | COSTO PREVISTO | DEPENDENCIA DE M4 | RIESGO | DECISIÓN DE CAPA 9 |
++|---|---|---|---|---|---|---|---|
++| **A — Modelo local mayor (GPU)** | Probar si el techo es de tamaño de modelo | 7B→14B sin mejora (2026-08-15) — dato real, negativo en el rango probado | 32B/70B+, nunca probados; costo real de GPU | Hardware: NO estimado. Llamadas: ~9-25 (recalificación fixture) | No técnica para probar; SÍ para habilitar en producción (ADR-POSTV2-1) | Sin garantía de que tamaño sea la causa (podría ser contrato, ver V2b) | Autorizar cotización de GPU y/o corrida de recalificación cuando exista |
++| **B — AnthropicProvider (API externa)** | Probar si un modelo externo mucho más capaz cruza el techo | Ninguna — 0 llamadas, 0 código | Todo: provider, gobernanza, confidencialidad, recalificación | NO cuantificado (circuito no existe) | No técnica para probar; SÍ para habilitar en producción (ADR-POSTV2-1) | Confidencialidad de documentos de cliente real — decisión de política PENDIENTE, previa a cualquier código | Decidir PRIMERO la evaluación de confidencialidad; recién después autorizar código/circuito de gobernanza |
++| **C — Tier-1 alcance reducido** | Operar honesto y seguro HOY, sin apostar a mejora de modelo | Completa — producción real (P1, N1/N2, recall_at_5=7/7, D2 firmado) | Nada propio; solo M4 operando junto a ella | Cero | Es quien MÁS se beneficia de M4 (reduce cola humana sin apostar a nada) | No resuelve paráfrasis/evidencia indirecta — permanece 100% en revisión humana | Confirmar continuidad de C como piso operativo (no excluye A/B/V2b en paralelo) |
++| **V2b — Contrato de juicio en 2 pasos** | Probar si el techo es de contrato/semántica del prompt, no de tamaño | Ninguna — 0 llamadas, diseño completo únicamente | Todo: prompts en código, guardián de anclaje en ejecución real, resultado de recall | ~48 llamadas de juicio (2× V2, mismo fixture) + firma de presupuesto previa | No técnica para probar; SÍ para habilitar en producción (ADR-POSTV2-1) | Paso 1 podría fabricar evidencia si el guardián de anclaje falla — mitigado por diseño, no por ejecución todavía | Aprobar los 2 prompts (contenido gobernado) y firmar presupuesto ANTES de la primera llamada |
++
++---
++
++## Cierre
+ 
+ ```
+-Palanca C ──────── operable HOY, sin bloquear nada ───────┐
+-                                                             │
+-Palanca A ── evaluar cuando exista cotización de GPU ──────┤── decisiones
+-                                                             │   independientes,
+-Palanca B ── evaluar cuando exista autorización de       ──┘   combinables
+-              confidencialidad + decisión de gobernanza
++PALANCAS_PRESENTADAS         = A, B, C, V2b (las 4 ya definidas por el
++                                plan — ninguna nueva propuesta aquí)
++RECOMENDACIÓN_SESGADA         = ninguna (mismo criterio que D1/D2/D3/Tier-1)
++M4_STATUS                     = reordenado y APROBADO como secuencia
++                                 (ADR-POSTV2-1) -- 0 código implementado
++PALANCAS_EJECUTADAS_HOY       = 0
++LLAMADAS_LLM_ESTA_CORRIDA     = 0
++M4_IMPLEMENTADO_ESTA_CORRIDA  = NO
++V2B_EJECUTADO_ESTA_CORRIDA    = NO
++PRODUCTION_ENABLEMENT         = BLOCKED
+ ```
+ 
+-Ninguna de las tres es mutuamente excluyente. C puede operar en
+-producción mientras A y/o B se evalúan en paralelo, sin que ninguna
+-bloquee a las otras.
++**Decisión requerida de Capa 9**: cuál(es) de las 4 palancas autorizar a
++continuación, en qué orden, y con qué presupuesto — cada una firmada por
++separado antes de su primera llamada/gasto, mismo patrón ya establecido
++en todo el proyecto. Ninguna es mutuamente excluyente; C ya opera sin
++bloquear a las otras tres.

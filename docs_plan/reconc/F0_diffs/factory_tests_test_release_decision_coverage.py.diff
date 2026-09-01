@@ -1,0 +1,43 @@
+diff --git a/factory/tests/test_release_decision_coverage.py b/factory/tests/test_release_decision_coverage.py
+index fa3d7ba..ade72f4 100644
+--- a/factory/tests/test_release_decision_coverage.py
++++ b/factory/tests/test_release_decision_coverage.py
+@@ -208,7 +208,7 @@ def test_reconstructed_sources_are_distinguished_from_uncovered_ones():
+             assert sid in d1.covered_ids, f"{sid} ni cubierta ni reconstruida"
+ 
+ 
+-def test_an_unbacked_fork_blocks_and_is_named():
++def test_an_unbacked_fork_blocks_and_is_named(real_audit_chain):
+     """Una ruptura SIN excepcion bloquea, y el gate dice CUAL es.
+ 
+     `ab689c7c-…` es el fork localizado en AUDIT_FORK_REMEDIATION_SPEC.md §2. Un
+@@ -371,7 +371,7 @@ def test_chain_break_entry_ids_finds_the_break(forked_chain, clean_chain):
+     assert chain_break_entry_ids(forked_chain) == ("evt-2",)
+ 
+ 
+-def test_chain_break_ids_are_real_on_the_production_chain():
++def test_chain_break_ids_are_real_on_the_production_chain(real_audit_chain):
+     """La cadena real tiene exactamente un fork, y el helper lo identifica.
+ 
+     `verify_chain()` ya reportaba "1 ruptura"; lo nuevo es poder decir CUAL,
+@@ -464,7 +464,7 @@ def test_blocked_release_is_not_a_version_conflict():
+     assert not issubclass(rm.DecisionCoverageBlocked, ValueError)
+ 
+ 
+-def test_endpoint_returns_423_not_409(tmp_path, monkeypatch):
++def test_endpoint_returns_423_not_409(tmp_path, monkeypatch, identity_headers):
+     from fastapi import FastAPI
+     from fastapi.testclient import TestClient
+ 
+@@ -480,8 +480,10 @@ def test_endpoint_returns_423_not_409(tmp_path, monkeypatch):
+     app.include_router(releases_route.router)
+     client = TestClient(app)
+ 
++    # H-1: crear release exige X-Identity-Key; sin ella => 401.
+     resp = client.post("/api/v1/releases/proj_x/v1.0",
+-                       json={"workspace_path": str(ws)})
++                       json={"workspace_path": str(ws)},
++                       headers=identity_headers)
+     assert resp.status_code == 423, resp.text
+     assert "G15" in resp.json()["detail"]
+ 

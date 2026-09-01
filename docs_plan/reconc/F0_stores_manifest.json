@@ -1,0 +1,28 @@
+{
+  "phase": "F0",
+  "generated_at": "2026-09-01",
+  "generated_by": "Claude Code (Capa 8) - discovery only, read-only",
+  "head_real": "90960059b609b5cd921d913e176888e1f9a6c248",
+  "branch": "fix/clon-local-validacion",
+  "hash_method": {
+    "tree_byte_sha256": "sha256( sort -z( for f in find(dir,-type f): sha256sum(f) ) )  -- deterministic tree byte hash",
+    "sqlite_logical_sha256": "sha256( for table in sorted(tables): table_name + repr(rows ordered by col1,col2) )  -- excludes file-level volatile bytes; F2 will formalize"
+  },
+  "stores": [
+    {"path": "factory/regulatory/canonical_store",    "files": 6,   "size": "3.9M", "mtime": "2026-09-01 10:25", "git_tracked": false, "tree_byte_sha256": "49d3bdec5245855c", "regenerable_hypothesis": true,  "note": "6 sqlite3 (RW-0005/0006/0009/0011/0012/0014). Detalle por doc abajo."},
+    {"path": "factory/regulatory/canonical_store_v2", "files": 7,   "size": "4.8M", "mtime": "2026-08-31 15:25", "git_tracked": false, "tree_byte_sha256": "98528920ffd2d11d", "regenerable_hypothesis": true,  "note": "gitignored (.gitignore H-9/H-10)"},
+    {"path": "factory/regulatory/graph_store",        "files": 16,  "size": "17M",  "mtime": "2026-09-01 10:25", "git_tracked": false, "tree_byte_sha256": "43981f0f11945d23", "regenerable_hypothesis": true},
+    {"path": "factory/regulatory/graph_store_v2",     "files": 1,   "size": "1.2M", "mtime": "2026-08-31 11:10", "git_tracked": false, "tree_byte_sha256": "fe50eb4a09d33f9b", "regenerable_hypothesis": true,  "note": "gitignored"},
+    {"path": "factory/regulatory/corpus_run",         "files": 983, "size": "17M",  "mtime": "2026-08-20 20:06", "git_tracked": false, "tree_byte_sha256": "b3a81adb51cb128b", "regenerable_hypothesis": "UNKNOWN", "note": "983 archivos, mtime 2026-08-20 -- probable evidencia de corridas historicas"},
+    {"path": "factory/regulatory/pilot_run",          "files": 780, "size": "40M",  "mtime": "2026-08-31 21:09", "git_tracked": "PARTIAL", "tree_byte_sha256": "66ad32e363d57e53", "regenerable_hypothesis": "UNKNOWN", "note": "1 archivo trackeado (checkpoints/chunked-04210f062b48.checkpoint.json); 4 .docx bajo dry_run_validation_r4_t1_1v2/ estan MODIFICADOS (byte-diff, ver F0_diffs)"}
+  ],
+  "canonical_store_per_doc": [
+    {"db": "RW-0005.sqlite3", "byte_sha256_16": "eadff98f0eccacc9", "logical_sha256_16": "6891e0d5a2213763", "counts": {"claim": 1409, "section": 8, "table_obj": 89, "document": 1, "meta": 2}},
+    {"db": "RW-0006.sqlite3", "byte_sha256_16": "d907c05092d8c177", "logical_sha256_16": "5fefb92b71618a97", "counts": {"claim": 515,  "section": 8, "table_obj": 35, "document": 1, "meta": 2}},
+    {"db": "RW-0009.sqlite3", "byte_sha256_16": "e768e6dd0b8f908c", "logical_sha256_16": "eb0058315a792925", "counts": {"claim": 62,   "section": 0, "table_obj": 2,  "document": 1, "meta": 2}},
+    {"db": "RW-0011.sqlite3", "byte_sha256_16": "eec3f102c5359408", "logical_sha256_16": "446efdb32ecef051", "counts": {"claim": 317,  "section": 8, "table_obj": 23, "document": 1, "meta": 2}},
+    {"db": "RW-0012.sqlite3", "byte_sha256_16": "9bef2aedb9c96a17", "logical_sha256_16": "d148feb2e15168ba", "counts": {"claim": 595,  "section": 13,"table_obj": 39, "document": 1, "meta": 2}},
+    {"db": "RW-0014.sqlite3", "byte_sha256_16": "82b73176132deb45", "logical_sha256_16": "ac0e75aae0d738f8", "counts": {"claim": 369,  "section": 8, "table_obj": 21, "document": 1, "meta": 2}}
+  ],
+  "note_for_F1": "document_structure_extractor.py esta MODIFICADO en el working tree (16 lineas de patch). Los counts de section arriba fueron producidos por el estado ACTUAL del arbol (extractor con-cambio + stores en disco). F1 fijara ground truth humano de headings y re-medira HEAD-limpio vs con-cambio."
+}

@@ -1,0 +1,189 @@
+diff --git a/factory/services/remediation_directive.py b/factory/services/remediation_directive.py
+index 53bc317..6f063f2 100644
+--- a/factory/services/remediation_directive.py
++++ b/factory/services/remediation_directive.py
+@@ -19,6 +19,7 @@ nunca se reescribe, una corrección posterior se registra como una nueva
+ entrada con `status=SUPERSEDED` en la anterior."""
+ from __future__ import annotations
+ 
++import fcntl
+ import json
+ from dataclasses import dataclass
+ from datetime import datetime, timezone
+@@ -34,6 +35,21 @@ from factory.layer9.human_review_queue import get_entry
+ REPO_ROOT = Path(__file__).resolve().parents[2]
+ DIRECTIVES_FILE = REPO_ROOT / "factory" / "layer9" / "remediation_directives.jsonl"
+ 
++
++def _directives_lock_file() -> Path:
++    """Mismo patrón de lock que remediation_package_service._package_lock /
++    human_review_queue.enqueue() -- un lock file separado (nunca el propio
++    DIRECTIVES_FILE) para que fcntl.flock serialice tanto el append normal
++    como el ciclo append+_mark_superseded del supersede (Causa B): sin esto,
++    dos supersedes concurrentes sobre la MISMA directiva SUBMITTED podían
++    pisarse la reescritura (last-write-wins) o ambos pasar la validación
++    "está SUBMITTED" antes de que cualquiera escribiera. Función (no
++    constante de módulo) para leer `DIRECTIVES_FILE` en el momento de la
++    llamada -- los tests lo monkeypatchean a un tmp_path por caso; una
++    constante calculada al importar el módulo seguiría apuntando al lock
++    de producción incluso con `DIRECTIVES_FILE` ya parcheado."""
++    return DIRECTIVES_FILE.with_suffix(".lock")
++
+ _CHANGE_TYPES = {"ADD", "REPLACE", "DELETE"}
+ _STATUSES = {"DRAFT", "SUBMITTED", "SUPERSEDED"}
+ # Único disparador válido (hallazgo 2 del arco R4-T1, corregido):
+@@ -49,6 +65,18 @@ _DIRECTIVE_REQUIRED_FIELDS = {
+     "regulatory_citation", "rationale", "authored_by_id", "authored_by_display_name",
+     "authored_at", "status",
+ }
++# Mecanismo de supersede/replacement (Causa B, CALIFICACION_FINAL_CURRENT_
++# ENGINE.md continuación 2026-08-20): campos OPCIONALES, ausentes en toda
++# directiva que nunca participó de un reemplazo -- las 8 directivas ya
++# persistidas antes de este cambio siguen validando sin tocarlas, mismo
++# patrón que _CHANGE_OPTIONAL_FIELDS en remediation_package_schemas.py.
++# `supersedes_directive_id` vive en la directiva NUEVA (declara a cuál
++# reemplaza); `superseded_by`/`superseded_reason`/`superseded_at` se
++# agregan a la directiva VIEJA cuando queda reemplazada -- vínculo
++# explícito en ambos sentidos, igual que el patrón ya usado por
++# `human_review_queue.supersede_finding()`.
++_DIRECTIVE_OPTIONAL_FIELDS = {"supersedes_directive_id", "superseded_by", "superseded_reason", "superseded_at"}
++_DIRECTIVE_ALLOWED_FIELDS = _DIRECTIVE_REQUIRED_FIELDS | _DIRECTIVE_OPTIONAL_FIELDS
+ 
+ 
+ class RemediationDirectiveError(Exception):
+@@ -97,7 +125,7 @@ def validate_remediation_directive(directive: dict) -> None:
+     correr también sobre cualquier directiva ya persistida, sin volver a
+     tocar la cola/el documento."""
+     name = "RemediationDirective"
+-    extra = set(directive.keys()) - _DIRECTIVE_REQUIRED_FIELDS
++    extra = set(directive.keys()) - _DIRECTIVE_ALLOWED_FIELDS
+     if extra:
+         raise RemediationDirectiveError(f"{name}: propiedades inesperadas no permitidas: {sorted(extra)}")
+     missing = _DIRECTIVE_REQUIRED_FIELDS - set(directive.keys())
+@@ -130,13 +158,40 @@ def propose_remediation_directive(
+     *, finding_rc_id: str, change_type: str, proposed_text: str, target_location: dict,
+     regulatory_citation: list[str], rationale: str, authored_by_id: str,
+     authored_by_display_name: str | None = None, original_text: str | None = None,
++    supersedes_directive_id: str | None = None,
+ ) -> dict:
+     """ÚNICA función de creación real -- ningún otro punto del módulo
+     escribe `factory/layer9/remediation_directives.jsonl`. `proposed_text`
+     y `original_text` vienen TAL CUAL del llamador -- este módulo nunca
+-    los genera, resume ni completa."""
++    los genera, resume ni completa.
++
++    supersedes_directive_id (opcional, Causa B CALIFICACION_FINAL_CURRENT_
++    ENGINE.md 2026-08-20): cuando se provee, esta directiva reemplaza a una
++    anterior del MISMO finding_rc_id (nunca de otro -- un supersede corrige
++    una directiva propia, no sustituye la de otro hallazgo). La anterior
++    debe existir y estar SUBMITTED; queda marcada SUPERSEDED (append-only:
++    se reescribe la línea con status nuevo + superseded_by/superseded_
++    reason/superseded_at, la línea nunca se borra) SOLO después de que la
++    nueva directiva se valide y persista con éxito -- si la nueva falla,
++    la anterior sigue SUBMITTED intacta."""
+     authored_by_id = validate_identity(authored_by_id, field="authored_by_id")
+ 
++    superseded_entry = None
++    if supersedes_directive_id is not None:
++        superseded_entry = get_directive(supersedes_directive_id)
++        if superseded_entry is None:
++            raise RemediationDirectiveError(
++                f"supersedes_directive_id={supersedes_directive_id!r}: no existe ninguna directiva con ese id")
++        if superseded_entry["status"] != "SUBMITTED":
++            raise RemediationDirectiveError(
++                f"supersedes_directive_id={supersedes_directive_id!r}: solo se puede superseder una directiva "
++                f"SUBMITTED, esta tiene status={superseded_entry['status']!r}")
++        if superseded_entry["finding_rc_id"] != finding_rc_id:
++            raise RemediationDirectiveError(
++                f"supersedes_directive_id={supersedes_directive_id!r}: pertenece a finding_rc_id="
++                f"{superseded_entry['finding_rc_id']!r}, distinto del finding_rc_id={finding_rc_id!r} de esta "
++                "directiva -- un supersede solo corrige una directiva del MISMO hallazgo")
++
+     entry = get_entry(finding_rc_id)
+     if entry is None or entry.get("entry_type") != "finding_review":
+         raise RemediationDirectiveError(f"finding_rc_id={finding_rc_id!r}: no existe una entrada finding_review real")
+@@ -214,11 +269,37 @@ def propose_remediation_directive(
+         "authored_at": now,
+         "status": "SUBMITTED",
+     }
++    if supersedes_directive_id is not None:
++        directive["supersedes_directive_id"] = supersedes_directive_id
+     validate_remediation_directive(directive)
+ 
+     DIRECTIVES_FILE.parent.mkdir(parents=True, exist_ok=True)
+-    with open(DIRECTIVES_FILE, "a", encoding="utf-8") as f:
+-        f.write(json.dumps(directive, ensure_ascii=False) + "\n")
++    with open(_directives_lock_file(), "a") as lock_fh:
++        fcntl.flock(lock_fh, fcntl.LOCK_EX)
++        try:
++            if superseded_entry is not None:
++                # Re-chequeo bajo lock: la validación de arriba (líneas ~165)
++                # corrió sin lock, así que otra solicitud concurrente pudo
++                # haber superseded-eado la misma directiva mientras esta
++                # validaba (PDF, anclaje, catálogo regulatorio). Sin este
++                # segundo chequeo, dos supersedes concurrentes sobre la MISMA
++                # directiva SUBMITTED podían pasar ambos la validación inicial.
++                fresh = get_directive(supersedes_directive_id)
++                if fresh is None or fresh["status"] != "SUBMITTED":
++                    raise RemediationDirectiveError(
++                        f"supersedes_directive_id={supersedes_directive_id!r}: dejó de estar SUBMITTED "
++                        "entre la validación y la escritura (otra solicitud concurrente la superseded-eó primero)")
++
++            with open(DIRECTIVES_FILE, "a", encoding="utf-8") as f:
++                f.write(json.dumps(directive, ensure_ascii=False) + "\n")
++
++            if superseded_entry is not None:
++                _mark_superseded(
++                    supersedes_directive_id, superseded_by=directive["directive_id"],
++                    reason=f"Reemplazada por corrección de target_location -- ver {directive['directive_id']}",
++                )
++        finally:
++            fcntl.flock(lock_fh, fcntl.LOCK_UN)
+ 
+     write_event("remediation_directive_authored", document_id, {
+         "directive_id": directive["directive_id"], "finding_rc_id": finding_rc_id,
+@@ -242,6 +323,44 @@ def list_directives(*, finding_rc_id: str | None = None) -> list[dict]:
+     return out
+ 
+ 
++def _mark_superseded(directive_id: str, *, superseded_by: str, reason: str) -> dict:
++    """Reescribe UNA línea de DIRECTIVES_FILE con status=SUPERSEDED +
++    superseded_by/superseded_reason/superseded_at -- mismo patrón de
++    reescritura ya usado por `human_review_queue.supersede_finding()`
++    (leer todas las líneas, mutar una, reescribir el archivo completo).
++    La línea nunca se borra ni pierde ningún campo original -- append-only
++    a nivel de historia, aunque la implementación reescriba el archivo
++    físico. Función privada: el único llamador real es
++    `propose_remediation_directive()`, después de que la directiva
++    sustituta ya se validó y persistió con éxito, y SIEMPRE con el lock de
++    `_directives_lock_file()` ya tomado por ese llamador -- esta función no
++    adquiere el lock ella misma (evita el doble-lock/deadlock de pedirlo
++    dos veces en el mismo proceso vía fds distintos)."""
++    if not DIRECTIVES_FILE.exists():
++        raise RemediationDirectiveError(f"directive_id={directive_id!r}: no existe ({DIRECTIVES_FILE} no existe)")
++    lines = DIRECTIVES_FILE.read_text(encoding="utf-8").splitlines()
++    entries = [json.loads(line) for line in lines if line.strip()]
++    matched = None
++    for e in entries:
++        if e["directive_id"] == directive_id:
++            e["status"] = "SUPERSEDED"
++            e["superseded_by"] = superseded_by
++            e["superseded_reason"] = reason
++            e["superseded_at"] = datetime.now(timezone.utc).isoformat()
++            matched = e
++            break
++    if matched is None:
++        raise RemediationDirectiveError(f"directive_id={directive_id!r}: no encontrado en {DIRECTIVES_FILE}")
++
++    DIRECTIVES_FILE.write_text(
++        "\n".join(json.dumps(e, ensure_ascii=False) for e in entries) + "\n", encoding="utf-8")
++
++    write_event("remediation_directive_superseded", matched.get("document_id", "unknown"), {
++        "directive_id": directive_id, "superseded_by": superseded_by, "reason": reason,
++    })
++    return matched
++
++
+ def get_directive(directive_id: str) -> dict | None:
+     """R4-T1.0v2 cierre P0 (verificacion 2026-08-18, docs_plan/
+     VERIFICACION_ACOTADA_Y_PAQUETES_CIERRE.md, hallazgo I): unica funcion

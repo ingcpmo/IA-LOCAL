@@ -1,0 +1,88 @@
+ M .claude/settings.json
+ M GMP_AI_FACTORY_ARQUITECTURA_OBJETIVO.md
+ M docs_plan/M4_IMPLEMENTACION.md
+ M docs_plan/PAQUETE_DECISION_ESTRATEGICA.md
+ M factory/layer9/decisions/decisions_v2.jsonl
+ M factory/regulatory/document_structure_extractor.py
+ M factory/regulatory/pilot_run/dry_run_validation_r4_t1_1v2/v1_candidate_EXCLUDED_pending_exception.docx
+ M factory/regulatory/pilot_run/dry_run_validation_r4_t1_1v2/v1_redline_EXCLUDED_pending_exception.docx
+ M factory/regulatory/pilot_run/dry_run_validation_r4_t1_1v2/v2_candidate_INCLUDED.docx
+ M factory/regulatory/pilot_run/dry_run_validation_r4_t1_1v2/v2_redline_INCLUDED.docx
+ M factory/services/remediation_directive.py
+ M factory/tests/test_document_structure_extractor.py
+ M factory/tests/test_r4_t1_1v2_cold_chain_validation.py
+ M factory/tests/test_release_decision_coverage.py
+ M factory/tests/test_remediation_directive.py
+?? .claude/daemon/
+?? .claude/settings.local.json
+?? docs_plan/.~lock.QA40_HUMAN_REVIEW_PACKET_POST_MEJORAS_V4_20260831.md#
+?? docs_plan/ADJUDICACION_P2_P5_P6_P7_CONTEXTO_V2.md
+?? docs_plan/AUDITORIA_CONSOLIDACION_DIRECTORIO.md
+?? docs_plan/AUDITORIA_CONSOLIDACION_DIRECTORIO_REPORTE.md
+?? docs_plan/AUDITORIA_FUNCIONAL_COMPLETA_20260827/
+?? docs_plan/AUDITORIA_FUNCIONAL_E2E_INSTRUCCIONES.md
+?? docs_plan/BLOQUE4_FIX_AUDIT_TRAIL_Y_CIERRE.md
+?? docs_plan/CALIFICACION_FINAL_CURRENT_ENGINE.md
+?? docs_plan/CALIFICACION_FINAL_CURRENT_ENGINE_INSTRUCCIONES.md
+?? docs_plan/CIERRE_CONFORMIDAD_VERIFICACION_ACOTADA_Y_PAQUETES.md
+?? docs_plan/CIERRE_DEFINITIVO_TOKEN_Y_PENDIENTES_v2.md
+?? docs_plan/CIERRE_DEFINITIVO_TOKEN_Y_PENDIENTES_v2_REPORTE.md
+?? docs_plan/CIERRE_FINAL_PENDIENTES_Y_GATE_E2E.md
+?? docs_plan/CIERRE_PENDIENTES_PASO_B_Y_GATE_PRODUCCION.md
+?? docs_plan/CIERRE_PENDIENTES_PASO_B_Y_GATE_PRODUCCION_REPORTE.md
+?? docs_plan/CONTEXTO_ACTUAL_PARA_MESA_DISENO_CLAUDE_WEB_20260829.md
+?? docs_plan/CONTINUACION_POST_V2_REPORTE.md
+?? docs_plan/CONTINUACION_V0_M0_VERIFICACION_STATUS_20260818/
+?? docs_plan/DECISION_ARQUITECTONICA_CORRECCION_AD1_DESBLOQUEO_V2/
+?? docs_plan/DISENO_FORTALECIMIENTO_GMP_AI_20260829.md
+?? "docs_plan/DISENO_H1_H10_ACTUALIZADO_R0_R5_20260829 (1).md"
+?? docs_plan/DISENO_MODELO_HIBRIDO_DETERMINISTA_OLLAMA.md
+?? docs_plan/DISENO_UNIFICACION_RUNNER_FORMAL.md
+?? docs_plan/EVALUACION_FINAL_ANALIZADOR_GMP_EVIDENCIA_EJECUTADA.md
+?? docs_plan/EVALUACION_FINAL_ANALIZADOR_GMP_Y_PLAN_CIERRE.md
+?? docs_plan/EVALUACION_REFERENCIAS_EXTERNAS_V2.md
+?? docs_plan/EVIDENCIA_COMPLETA_P2_P4_P5_P6_P7_20260818.md
+?? docs_plan/FASE5_DIAGNOSTICO_CONFIGURACION.md
+?? docs_plan/GATE_PRODUCCION_ANALIZADOR_GMP.md
+?? docs_plan/HANDOFF_ARQ_HARDENING_V2_20260828.md
+?? docs_plan/INSTRUCCIONES_CLAUDE_CODE_FORTALECIMIENTO_20260829.md
+?? docs_plan/INVENTARIO_ARQUITECTURA_REAL.md
+?? docs_plan/PAQUETE_DECISION_CAPA9_20260829.md
+?? docs_plan/PASOA_RESOLUCION_K_Y_HARDSTOP.md
+?? docs_plan/PLAN_CIERRE_ESTADO_READY_20260831.md
+?? docs_plan/PLAN_MIGRACION_ARBOL_CANONICO_FASES_1_5.md
+?? docs_plan/PROVENANCE_ARTEFACTOS_LEGACY_VS_CURRENT.md
+?? docs_plan/R0_BASELINE_ANCLADO.md
+?? docs_plan/R1B_PREVIO_H5_H6_20260829.md
+?? docs_plan/R1_REVALIDACION_HALLAZGOS_HEAD.md
+?? docs_plan/R2_CONTAMINACION_AUDIT_TRAIL.md
+?? docs_plan/R3_INVENTARIO_MUTADORES.md
+?? docs_plan/R4_IMPACTO_UNICIDAD_FINDING_ID.md
+?? docs_plan/R5_DIAGNOSTICO_ARISTAS.md
+?? docs_plan/REDISENO_H5_H6_POST_R1B_20260829.md
+?? docs_plan/REPORTE_FINAL_REDIESENO_ANALIZADOR_GMP_LOCAL_V2_20260828.md
+?? docs_plan/TRACK_C_POC_GRAPHIFY_REPORTE.md
+?? docs_plan/VERIFICACION_ACOTADA_20260818/H_BLOQUE_1_4_EJECUCION.md
+?? docs_plan/reconc/
+?? factory/docs/design/regulatory_redesign_v2/fase2_2_calificacion_fresca_judgment.py
+?? factory/docs/design/regulatory_redesign_v2/fase2_3_informe_unificado.py
+?? factory/docs/design/regulatory_redesign_v2/fase2_opcion2_full_coverage_judgment.py
+?? factory/docs/design/regulatory_redesign_v2/fase5_hourly_report.py
+?? factory/docs/design/regulatory_redesign_v2/fase5_produccion_real_fixture7p2n.py
+?? factory/docs/design/regulatory_redesign_v2/n2_isolated_candidate_pool.py
+?? factory/docs/design/regulatory_redesign_v2/n2_isolated_measurement.py
+?? factory/docs/design/regulatory_redesign_v2/paso_a_run.py
+?? factory/docs/design/regulatory_redesign_v2/paso_b_run.py
+?? factory/layer9/remediation_directives.jsonl
+?? factory/regulatory/corpus_run/
+?? factory/regulatory/pilot_run/adjudication/
+?? factory/regulatory/pilot_run/fase2_2_calificacion_fresca_20260820/
+?? factory/regulatory/pilot_run/fase2_3_informe_unificado_20260820/
+?? factory/regulatory/pilot_run/fase2_3_remediation_packages_20260820/
+?? factory/regulatory/pilot_run/fase2_opcion2_full_coverage_20260820/
+?? factory/regulatory/pilot_run/fase5_produccion_real_fixture7p2n_20260820/
+?? factory/regulatory/pilot_run/n2_isolated_20260818/
+?? factory/regulatory/pilot_run/paso_a_bloque5_20260821/
+?? factory/remediation_packages/
+?? factory/tests/test_n2_isolated_candidate_pool.py
+?? software_inventory.txt

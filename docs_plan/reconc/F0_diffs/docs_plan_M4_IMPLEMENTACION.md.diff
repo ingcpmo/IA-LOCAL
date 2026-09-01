@@ -1,0 +1,108 @@
+diff --git a/docs_plan/M4_IMPLEMENTACION.md b/docs_plan/M4_IMPLEMENTACION.md
+index 6dd4b9b..54e0114 100644
+--- a/docs_plan/M4_IMPLEMENTACION.md
++++ b/docs_plan/M4_IMPLEMENTACION.md
+@@ -113,6 +113,58 @@ Los 2 `ERROR` de Playwright UI y 3 tests de gobernanza no se investigaron
+ más allá de la reproducción idéntica sin el diff (mismo criterio que
+ `29e392c` aplicó a sus 6 fallos preexistentes).
+ 
++### Commit
++
++**Autorizado por Cesar (chat, "AUTORIZO EL COMMIT") 2026-08-18.**
++Commiteado como `9718fd7` (`feat(m4): absence-in-two-levels for
++top_k_fusion (AD-3)`) — 3 archivos: `chunked_engine.py`,
++`test_gmpai_chunked_engine.py`, `docs_plan/M4_IMPLEMENTACION.md`. Alcance
++acotado a propósito: el resto del trabajo acumulado esta sesión (N2,
++adjudicaciones, CIERRE_DEFINITIVO) queda fuera de este commit —
++"causa raíz única", tal como pedía la instrucción.
++
++### Replay del fixture completo (0 LLM, post-commit)
++
++Reconstrucción directa contra los 8 triples reales de V2 (mismos
++`applicability()`/`consolidate()` de producción, records sintéticos que
++reproducen EXACTAMENTE el escenario real: 3 candidatos, ninguno con
++evidencia observada, status `verified` — verificado que el resultado
++"sin M4" coincide 1:1 con lo que V2 reportó de verdad: `P2/P5/P6/P7 →
++ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE`, `N1 → CROSS_REFERENCE_MISSING`,
++`P4 → APPLICABILITY_UNRESOLVED`):
++
++| Caso | Sin M4 (real, V2) | Con M4 |
++|---|---|---|
++| P1 | `EVALUATION_INCOMPLETE` (rama *observed*, gate de suficiencia downstream — fuera de alcance de M4) | **sin cambio** |
++| P2 | `EVALUATION_INCOMPLETE`/`ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE` | **`DOCUMENTATION_GAP`** |
++| P3 | `EVALUATION_INCOMPLETE` (rama *observed*, mismo gate que P1) | **sin cambio** |
++| P4 | `EVALUATION_INCOMPLETE`/`APPLICABILITY_UNRESOLVED` | **sin cambio** — hallazgo real: `applicability('ALCOA_ATTRIBUTABLE','DS') == 'review_required'`, no `'expected'`; M4 nunca actúa porque la rama de aplicabilidad no depende de cobertura. Fuera de alcance de M4 — es la matriz de aplicabilidad, no la señal de cobertura. |
++| P5 | `EVALUATION_INCOMPLETE`/`ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE` | **`DOCUMENTATION_GAP`** |
++| P6 | `EVALUATION_INCOMPLETE`/`ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE` | **`DOCUMENTATION_GAP`** |
++| P7 | `EVALUATION_INCOMPLETE`/`ABSENCE_BLOCKED_BY_PARTIAL_COVERAGE` | **`DOCUMENTATION_GAP`** |
++| N1 | `CROSS_REFERENCE_MISSING` (rechazo correcto) | **sin cambio** — la rama `cross_reference_expected` de `consolidate()` nunca depende de `coverage_complete`; N1 ya estaba resuelto sin M4. |
++
++**Nota honesta sobre N2**: no es una triple real independiente de
++producción (comparte documento/agente/requisito con P1) — su
++verificación aislada ya se cerró por separado (`PILOT_EXECUTION-2026-024`,
++harness fixture-only, ver `[[project-continuacion-post-v2]]`), nunca pasa
++por el mecanismo de M4 (`n2_isolated_candidate_pool.py` está guardado
++explícitamente contra uso en producción).
++
++**Riesgo operativo a nombrar, no a ocultar**: P2/P5/P6/P7 son
++exactamente los 4 hallazgos reales ya en cola de adjudicación humana
++(`docs_plan/EVIDENCIA_COMPLETA_P2_P4_P5_P6_P7_20260818.md`) donde el
++texto original completo, ya presentado a Cesar, sugiere que podría
++existir evidencia real que el modelo no reconoció (patrón de paráfrasis
++ya confirmado 3 veces). M4 los volverá `DOCUMENTATION_GAP` (una
++conclusión decisiva) en vez de `EVALUATION_INCOMPLETE` (una conclusión
++ambigua) — **nunca los cierra ni los aprueba solo**: siguen yendo a la
++misma cola de revisión humana (`_dispatch_m4_absence_review`, mismo
++principio "red de seguridad" que ya usa el modo BASELINE), ahora con el
++umbral y el ranking completo adjuntos. El cambio es de UX/urgencia del
++reporte, no de gobernanza — pero vale la pena que quede dicho aquí
++explícitamente, no descubierto después.
++
+ ### Entrega
+ 
+ ```
+@@ -120,27 +172,26 @@ M4_THRESHOLD_CALIBRATED =    3 (M4_ABSENCE_RANK_THRESHOLD, chunked_engine.py)
+                               -- evidencia: V1 recall_at_5=7/7, V2 rank
+                               máximo real de los 7 positivos = 3 (P7),
+                               mismo k ya usado por la capa de JUICIO
+-NEGATIVES_STILL_REJECTED =   pendiente de medir en el replay POST-COMMIT
+-                              (Bloque ENTREGA original lo pide después de
+-                              la aprobación -- no ejecutado todavía)
+-POSITIVES_ABOVE_THRESHOLD =  pendiente de medir en el mismo replay
+-ACTIONABLE_WITHOUT_HUMAN =   pendiente de medir en el mismo replay
+-CODE_CHANGED_THIS_RUN =      2 archivos (chunked_engine.py +145/-6,
+-                              test_gmpai_chunked_engine.py +123), NO
+-                              commiteados todavía
++NEGATIVES_STILL_REJECTED =   1/1 verificable (N1, cross_reference_expected,
++                              rama de consolidate() no depende de cobertura,
++                              sin cambio por M4). N2 no es una triple real
++                              independiente -- ver nota arriba, cerrado aparte.
++POSITIVES_ABOVE_THRESHOLD =  7/7 (bloqueante, cumplido -- ningún positivo
++                              real del fixture cae bajo rank 3 en V1/V2,
++                              evidencia ya medida, reutilizada sin gasto nuevo)
++ACTIONABLE_WITHOUT_HUMAN =   4/7 (P2, P5, P6, P7 -- EVALUATION_INCOMPLETE
++                              -> DOCUMENTATION_GAP). P1/P3 sin cambio (gate
++                              de suficiencia downstream, fuera de alcance de
++                              M4). P4 sin cambio (applicability='review_required',
++                              fuera de alcance de M4 -- hallazgo real, no
++                              defecto de esta implementación.
++                              "Actionable" = conclusión decisiva, NO cierre
++                              automático -- las 4 siguen en cola de revisión
++                              humana, ahora con ranking/umbral auditables.
++CODE_CHANGED_THIS_RUN =      3 archivos, commiteados en 9718fd7
+ TESTS_NEW =                  5/5 verdes, 130/130 en la selección
+                               relevante, 0 regresiones confirmadas contra
+                               la suite completa (14 failed/2 errors
+                               preexistentes, verificado con git stash)
+ PRODUCTION_ENABLEMENT =      BLOCKED (sin cambio)
+ ```
+-
+-## DETENERSE — pendiente de Cesar
+-
+-Diff mostrado abajo en el chat. **Sin commit sin autorización explícita.**
+-Tras la aprobación: commitear con causa raíz única, y solo entonces
+-correr el replay del fixture completo (0 LLM, sobre los 8 checkpoints
+-reales ya pagados de V2) para reportar
+-`NEGATIVES_STILL_REJECTED`/`POSITIVES_ABOVE_THRESHOLD`/
+-`ACTIONABLE_WITHOUT_HUMAN` — la métrica real de si M4 cumplió su
+-objetivo, tal como pide el bloque ENTREGA original.

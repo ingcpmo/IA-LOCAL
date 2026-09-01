@@ -1,0 +1,205 @@
+diff --git a/GMP_AI_FACTORY_ARQUITECTURA_OBJETIVO.md b/GMP_AI_FACTORY_ARQUITECTURA_OBJETIVO.md
+index 43a5f53..c63d25d 100644
+--- a/GMP_AI_FACTORY_ARQUITECTURA_OBJETIVO.md
++++ b/GMP_AI_FACTORY_ARQUITECTURA_OBJETIVO.md
+@@ -48,13 +48,57 @@ formal — no en cuánto ruido hay alrededor.
+ 
+ ## 3. Lo que NO cambia
+ 
+-**P-1 (presupuesto de salida) sigue siendo real y sigue siendo corregible.**
+-Es un defecto distinto, medido en L4 bajo perfil BASELINE (contrato
+-verboso de 20 criterios). Palanca A corrió con H2H4 (contrato liviano) y
+-no muestra truncamiento — lo que en realidad **confirma que son dos
+-limitaciones independientes**: un artefacto de configuración (P-1, barato
+-de arreglar, AD-4 se mantiene) y un techo de reconocimiento semántico
+-(P-3 revisado, mucho más difícil).
++**P-1 (downgrade de confianza, 2026-08-18, Bloque 4.1 de
++`docs_plan/CONTINUACION_V0_M0_VERIFICACION.md`, ejecutado tras V0):**
++P-1 (truncamiento) está documentado en el postmortem
++(`factory/docs/W5v2_POSTMORTEM_TRUNCAMIENTO_NUM_PREDICT.md`) y en el
++informe de la campaña de validación (L4), pero **sus artefactos crudos
++no son verificables en este repositorio** — los de L4 se perdieron con
++el reinicio de la VM (`/tmp`); los de la corrida original del fixture
++7P+2N bajo perfil BASELINE tampoco están en este repo. Dentro de las
++**247 chunk-executions persistidas y auditadas en V0**
++(`docs_plan/V0_TRUNCAMIENTO/V0_REPORTE.md`, 5 contextos de corrida
++distintos, 3 documentos reales + el experimento 14B): **CERO
++truncamientos** (`done_reason='length'`). La corrección de M1
++(presupuesto de salida dimensionado) se mantiene porque es barata y
++correcta por diseño independientemente de su magnitud histórica — pero
++**ya no se sostiene como "confirmada dentro de este entorno"**, sino
++como corrección preventiva de bajo costo sobre un defecto documentado
++narrativamente pero no reproducible con los datos disponibles hoy en
++este repositorio.
++
++Palanca A corrió con H2H4 (contrato liviano) y tampoco muestra
++truncamiento — lo que en conjunto con V0 **confirma que son dos
++limitaciones independientes**: un artefacto de configuración (P-1,
++barato de arreglar, AD-4 se mantiene, ver recalibración de su
++justificación en §6) y un techo de reconocimiento semántico (P-3
++revisado, mucho más difícil, ver upgrade de confianza abajo).
++
++**P-3 (upgrade de confianza, 2026-08-18, Bloque 4.2, ejecutado tras
++V0):** V0 aporta evidencia directa nueva, de este mismo repositorio, no
++solo de Palanca A: de las 247 chunk-executions escaneadas, **217
++tuvieron una respuesta real completa** (`ok=True`, sin corte de por
++medio) — de esas 217, **106 concluyeron `evidencia_insuficiente` y 17
++`cumple_parcialmente`** (123 en total sin evidencia plena), y **94
++quedaron `UNPARSEABLE_RAW_RESPONSE`** (fallo de parseo, no de
++presupuesto de salida — a investigar aparte, no atribuible a P-1).
++**Corrección de precisión sobre la instrucción original**: los números
++"158 respuestas / 244 evidencia insuficiente" que circulaban antes de
++esta verificación **no coinciden con los datos reales del CSV** (`v0_
++truncation_table.csv`) — se descartan, los números de este párrafo son
++los verificados. Con o sin el ajuste numérico, la conclusión cualitativa
++se sostiene: la mayoría de las respuestas completas, sin ningún corte
++de por medio, terminan sin evidencia plena — refuerza, con datos de
++este mismo repo, que el problema dominante es de juicio semántico, no
++de presupuesto de salida. **V2b (rediseño de contrato en dos pasos) sube
++de prioridad relativa frente a M1** — ver paquete de decisión
++estratégica (`docs_plan/PAQUETE_DECISION_ESTRATEGICA.md`) para cómo esto
++se refleja en la decisión de Capa 9 sobre las palancas de recall.
++
++**Nota de terminología (Bloque 4.3, verificado 2026-08-18): sin error
++detectado en este documento** — no aparece la frase incorrecta
++"BASELINE 2/7" en ningún lado. Guardrail para toda mención futura:
++BASELINE = 0/7, H2H4 = 2/7, nunca "BASELINE 2/7".
+ 
+ Los componentes C1-C9 (verificación determinista, fail-closed, gobernanza)
+ no se tocan por esta evidencia — siguen siendo el activo correcto del
+@@ -232,8 +276,15 @@ decisión de recall.
+ 
+ ## FASE M1 — Presupuesto de salida dimensionado + fix del instrumento (sin LLM para implementar)
+ 
+-**Objetivo:** eliminar P-1 como clase de fallo (AD-4) y corregir el
+-defecto de trazabilidad de página del runner exact-page.
++**Objetivo (re-etiquetado 2026-08-18, Bloque 4.4 de `docs_plan/
++CONTINUACION_V0_M0_VERIFICACION.md`, tras V0):** aplicar una **corrección
++preventiva de bajo costo sobre un defecto documentado pero no
++reproducible en este entorno** (P-1 — ver §3 arriba: 0 truncamientos en
++las 247 chunk-executions verificables de V0) y corregir el defecto de
++trazabilidad de página del runner exact-page. Ya NO se redacta como
++"eliminar P-1 como clase de fallo confirmado" — sigue siendo correcto
++por diseño y barato de implementar, pero su justificación no descansa en
++un defecto reproducible dentro de este repositorio.
+ 
+ **Instrucciones técnicas exactas:**
+ 1. En `factory/engines/gmpai_integrity/ollama_client.py` (o donde viva
+@@ -267,10 +318,12 @@ defecto de trazabilidad de página del runner exact-page.
+ - Regresión: fixture 7P+2N por replay — ningún resultado cambia (esta
+   fase no toca juicio, solo presupuesto y metadata).
+ 
+-**Qué demuestra y cómo sirve a la misión:** cierra P-1 de forma
+-verificable con datos ya pagados, sin gastar presupuesto nuevo. Corrige
+-la trazabilidad que Palanca A señaló como defecto — cualquier corrida
+-futura con el runner exact-page queda auditable por página real.
++**Qué demuestra y cómo sirve a la misión:** aplica una mitigación barata
++y correcta por diseño sobre P-1, con datos ya pagados y sin gastar
++presupuesto nuevo — sin pretender "cerrar" un defecto que V0 no pudo
++reproducir dentro de este entorno (ver §3). Corrige la trazabilidad que
++Palanca A señaló como defecto — cualquier corrida futura con el runner
++exact-page queda auditable por página real.
+ 
+ ---
+ 
+@@ -431,8 +484,41 @@ mayor/externo — que entonces se prueba informado, no especulativo.
+ 
+ ## FASE M4 — Ausencia en dos niveles (sin LLM para el mecanismo; marginal con LLM)
+ 
+-**Objetivo:** AD-3, condicionada a que M3 esté operativo. Solo se ejecuta
+-tras la decisión de Capa 9 sobre V2/V2b (§ Paquete de decisión).
++**REPRIORIZADA Y APROBADA 2026-08-18 (ADR-POSTV2-1, docs_plan/
++CONTINUACION_POST_V2.md Bloque 2, aprobación de secuencia de Cesar en
++chat — "Repriorizar M4") — de "condicionada" a PREREQUISITO.** Solo
++reordena la secuencia del plan; **ningún código de M4 se implementó con
++esta aprobación** — la instrucción técnica de abajo sigue siendo el
++alcance de una corrida separada y posterior. Redacción original de esta
++fase
++("solo se ejecuta tras la decisión de Capa 9 sobre V2/V2b") queda
++corregida por el resultado real de V2 (commit `b44071f`, ejecutado
++2026-08-17): de los 7 positivos evaluados bajo `retrieval_mode=
++top_k_fusion`, el 100% terminó en `EVALUATION_INCOMPLETE`/
++`EVIDENCE_NOT_LOCATED_IN_CANDIDATES` — **incluidos P1 y P3, los dos casos
++donde el modelo SÍ ancló evidencia real**. Bajo `top_k_fusion` sin M4, el
++consolidador nunca puede emitir `CONFIRMED` ni `DOCUMENTATION_GAP`,
++porque `verify_sufficiency_aggregated()` exige cobertura completa del
++documento y `k<total_chunks` no puede darla por diseño — esto no depende
++de qué palanca de recall se elija (V2b, modelo mayor, alcance reducido):
++es una propiedad estructural del modo `top_k_fusion` en sí.
++
++**Consecuencia para la misión, corregida:** `top_k_fusion` ahorra
++llamadas LLM (81→24 por corpus equivalente al fixture) pero **no reduce
++la cola de adjudicación humana** sin M4 — el cuello de botella operativo
++(P-9) permanece intacto. Cualquier narrativa previa que prometiera
++reducción de carga humana solo por AD-1/AD-2/M3 queda corregida aquí:
++esos ahorran costo de cómputo, no carga de revisión — dos objetivos
++distintos que se habían tratado como uno.
++
++**Objetivo:** AD-3. **Prerequisito antes de considerar el modo
++`top_k_fusion` operable en producción** — independientemente de qué
++palanca de recall se decida después (V2b, modelo mayor, proveedor
++externo, o Tier-1 de alcance reducido). Esto NO es una fase nueva no
++prevista — ya estaba diseñada íntegramente más abajo (ausencia en dos
++niveles, umbral gobernado, calibrado contra el fixture) — solo cambia su
++orden en la secuencia: antes de habilitar producción con `top_k_fusion`,
++no después de la decisión de recall.
+ 
+ **Instrucción técnica exacta:**
+ 1. En el consumidor de `absence_consolidator.py`: cuando el modo
+@@ -480,6 +566,14 @@ decisión de recall.
+ 
+ # PARTE III — PAQUETE DE DECISIÓN (tras V2 + V2b)
+ 
++**Orden de secuencia corregido y APROBADO 2026-08-18 (ADR-POSTV2-1,
++Bloque 2/5, docs_plan/CONTINUACION_POST_V2.md, aprobación de Cesar en
++chat): M4 va PRIMERO**, antes de esta tabla de decisión de recall — hace
++que el sistema actual sea operable y reduce carga humana con lo que YA
++se tiene (incluidos los aciertos de P1/P3), independiente de qué se
++decida abajo. La tabla de recall sigue siendo la decisión que
++corresponde después de M4:
++
+ No ejecutar sin el resultado real de ambas fases. Presentar a Capa 9:
+ 
+ | Resultado V2 | Resultado V2b | Recomendación |
+@@ -490,7 +584,11 @@ No ejecutar sin el resultado real de ambas fases. Presentar a Capa 9:
+ 
+ **Ninguna corrida de modelo mayor ni proveedor externo se autoriza sin
+ que V2b haya corrido primero con resultado real.** Es la secuencia que la
+-propia evidencia de Palanca A recomienda.
++propia evidencia de Palanca A recomienda. **Resultado real ya obtenido de
++V2 (commit `b44071f`, 2026-08-17): 2/7 (P1, P3)** — misma fila que
++Palanca A, confirmada una tercera vez (ver `docs_plan/
++DECISION_ARQUITECTONICA_CORRECCION_AD1_DESBLOQUEO_V2/
++REPORTE_CONSOLIDADO.md` §4). V2b sigue NO autorizado.
+ 
+ ---
+ 
+@@ -503,9 +601,26 @@ HIPÓTESIS_REVISADA          = P-3 revisado (techo semántico contrato↔criteri
+ DECISIÓN_NUEVA              = AD-12 (contrato de dos pasos, V2b)
+ EXPECTATIVA_V2_RECALIBRADA  = costo: éxito esperado; recall: sin expectativa
+ DEFECTO_INSTRUMENTAL        = evidence_page persistido incorrecto (fix M1)
+-FASES                       = V0, M0, M1, M2+V1, M3, V2, V2b, M4, M5-M9
++V0_RESULTADO_REAL           = 2026-08-18 (Bloque 4 de docs_plan/
++                               CONTINUACION_V0_M0_VERIFICACION.md, ejecutado):
++                               P-1 downgrade (0/247 truncamientos verificables
++                               en este repo, raw original no recuperable);
++                               P-3 upgrade (217 respuestas ok=True reales,
++                               123 sin evidencia plena, 94 unparseable --
++                               números verificados contra v0_truncation_
++                               table.csv, corrigen la cifra asumida
++                               originalmente de 158/244); M1 re-etiquetado
++                               de "cierra defecto confirmado" a "mitigación
++                               preventiva de bajo costo"
++FASES                       = V0, M0, M1, M2+V1, M3, V2, M4, V2b, M5-M9
++SECUENCIA_CORREGIDA         = 2026-08-18 (ADR-POSTV2-1, APROBADA por
++                               Cesar): M4 pasa de "tras V2/V2b" a
++                               PREREQUISITO de top_k_fusion en producción
++                               (docs_plan/CONTINUACION_POST_V2.md, Bloque 2)
++                               -- reorden de plan únicamente, 0 código
++                               de M4 implementado por esta aprobación
+ FASES_SIN_COSTO_LLM         = V0, M0, M1, M2+V1, M3, M4(mecanismo), M5-M9
+-FASES_CON_COSTO_LLM         = V2 (~25 llamadas), V2b (~14-25×2 llamadas)
++FASES_CON_COSTO_LLM         = V2 (~25 llamadas, YA EJECUTADO, 2/7), V2b (~14-25×2 llamadas)
+ DECISIÓN_DE_HARDWARE_MAYOR  = pospuesta hasta V2b con resultado real
+ CODE_CHANGED                = 0
+ PRODUCTION_ENABLEMENT       = BLOCKED (sin cambio)

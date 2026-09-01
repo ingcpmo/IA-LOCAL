@@ -1,0 +1,31 @@
+F0 — TARGETED HONESTO (número real, no "~")
+==========================================
+Fecha: 2026-09-01
+HEAD_REAL: 90960059b609b5cd921d913e176888e1f9a6c248
+Condición: working tree TAL CUAL (sucio, 15 M / 73 ??), stores en disco, SIN copiar stores extra.
+Runtime: .venv/bin/python (venv del repo), PYTHONPATH=.
+
+--- SET v1.2 (D3): ---
+comando:
+  PYTHONPATH=. .venv/bin/python -m pytest -q \
+    factory/tests/test_completeness_rules_v1_2.py \
+    factory/tests/test_technical_findings.py \
+    factory/tests/test_run_fingerprint.py \
+    factory/tests/test_wp_e_measurement_independence.py \
+    factory/tests/test_extraction_adequacy.py
+
+RESULTADO REAL: 124 passed, 24 warnings in 34.41s
+  -> el número "124/124" de D3 SE REPRODUCE en el árbol actual con los stores en disco.
+  -> F2 debe verificar que 124 es reproducible desde git + VALIDATION_BASELINE_MANIFEST
+     (materialización limpia de stores), no solo con los stores que ya están en disco.
+
+--- test_document_structure_extractor.py (D2 / F1): ---
+comando:
+  PYTHONPATH=. .venv/bin/python -m pytest -q factory/tests/test_document_structure_extractor.py
+
+RESULTADO REAL: 10 passed, 1 skipped in 0.30s
+  -> corrido con el extractor MODIFICADO en el working tree (16 líneas de patch, sin commitear).
+  -> F1 re-medirá HEAD-limpio vs con-cambio contra ground truth humano de headings.
+
+NOTA DE HONESTIDAD: no se copió ningún store adicional, no se regeneró nada, no se tocó código.
+El número es el que produce el entorno tal como está hoy.

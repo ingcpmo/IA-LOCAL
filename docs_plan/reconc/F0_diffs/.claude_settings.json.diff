@@ -1,0 +1,46 @@
+diff --git a/.claude/settings.json b/.claude/settings.json
+index a60aae4..b12a16c 100644
+--- a/.claude/settings.json
++++ b/.claude/settings.json
+@@ -2,5 +2,40 @@
+   "model": "sonnet",
+   "effortLevel": "medium",
+   "tui": "fullscreen",
+-  "theme": "dark"
++  "theme": "dark",
++  "agentPushNotifEnabled": true,
++  "autoMode": {
++    "environment": [
++      "### Org-wide",
++      "**Organization**: None configured",
++      "**Cloud provider(s)**: None configured",
++      "**Repository visibility**: not queryable here — assume private for ingcpmo/hotelbot and ingcpmo/gmp-ai-factory (both under a personal GitHub account, no visibility check succeeded)",
++      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
++      "**Secrets management**: None configured",
++      "**Default / protected branches**: not queryable here (gh visibility/rulesets check did not return data) — treat as unknown, do not assume unprotected",
++      "**CI/CD deploy targets**: None configured",
++      "**Network posture**: None configured",
++      "**Source control**: The trusted repo (/home/ing_cpmo, remotes gmpgithub → ingcpmo/gmp-ai-factory.git and origin → ingcpmo/hotelbot.git) — no additional orgs configured",
++      "**Trusted internal domains**: None configured",
++      "**Trusted cloud buckets**: None configured — bucket config scan did not complete cleanly, no evidence collected",
++      "**Key internal services**: gmp-api (localhost:8000, base product, do not modify), factory-api (localhost:9000, GMP AI Factory layers 7-9), gmp-postgres, gmp-redis, aria-ollama (localhost:11434, shared Ollama — never modify), containers aria-* and hotelbot-* (never modify)",
++      "**Internal package registry**: None configured",
++      "**Sensitive data locations & audiences**: .env, factory/.env, factory/deployments/lab_qc_project/.env, factory/deployments/oos_hplc_investigator/.env, .claude/.credentials.json, .secrets/, factory/config/identity_keys.yaml — credentials/config, never display or commit; audit trail in factory/audit/ (hash-chained, GMP/21 CFR Part 11) is append-only evidence, share only with QA/Cesar (Layer 9)",
++      "**Data retention / declassification**: None configured",
++      "**Sensitive remote targets**: any namespace/host/container with `prod`/`production` as a whole word or segment; also treat aria-*, hotelbot-*, and the base gmp-api/factory-api stack (app/, docker-compose.yml base, Dockerfile base, data/chroma, data/audit_logs, backups/) as protected-equivalent per CLAUDE.md — no modification without explicit human approval",
++      "**Protected deployment namespaces / environments**: k8s namespace `factory` (seen in this project's usage) plus the base Docker stack (gmp-api :8000, factory-api :9000, gmp-postgres, gmp-redis, aria-ollama) — release/deploy requires explicit human (Cesar) approval per project rules",
++      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or segment; also factory/registry/ports.yaml reserved ports (8000, 9000, 11434, 5432, 6379) per project rules",
++      "### User-specific",
++      "**Primary use of Claude Code**: software development (GMP-regulated document analysis / AI Factory tooling)",
++      "**Trusted repo**: /home/ing_cpmo (remotes: github-gmp:ingcpmo/gmp-ai-factory.git, github.com:ingcpmo/hotelbot.git) — visibility not confirmed, treat as private by default; confidential material (non-secret) OK to commit here, but secrets/credentials are never cleared into the repo regardless of visibility",
++      "**Org-specific CLIs**: None configured",
++      "routine under /home/ing_cpmo/factory/workspaces/<project_id>/ prefix (per-project isolated workspace, per CLAUDE.md and gmp-factory skill)"
++    ],
++    "soft_deny": [
++      "$defaults",
++      "Bash(docker compose build:*) in /home/ing_cpmo — rebuilding the base gmp-api/factory-api stack should be confirmed per CLAUDE.md 'confirm what changed before rebuild'",
++      "Writes to /home/ing_cpmo/app/, docker-compose.yml (base), Dockerfile (base), .env (base), data/chroma, data/audit_logs, backups/ — explicitly protected per CLAUDE.md/gmp-factory skill",
++      "Bash(docker *) targeting containers matching aria-* or hotelbot-* — explicitly prohibited from modification per CLAUDE.md"
++    ]
++  }
+ }

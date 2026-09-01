@@ -1,0 +1,131 @@
+diff --git a/factory/tests/test_remediation_directive.py b/factory/tests/test_remediation_directive.py
+index 6675c95..73ccf1d 100644
+--- a/factory/tests/test_remediation_directive.py
++++ b/factory/tests/test_remediation_directive.py
+@@ -269,3 +269,126 @@ def test_schema_rejects_missing_keys():
+ 
+ def test_schema_valid_directive_passes():
+     rd.validate_remediation_directive(_valid_directive_dict())
++
++
++# ── Supersede/replacement (Causa B, CALIFICACION_FINAL_CURRENT_ENGINE.md
++# continuación 2026-08-20): reemplazo trazable de una directiva propia,
++# sin borrar la anterior. ──────────────────────────────────────────────────
++
++def test_supersede_marks_old_directive_superseded_and_links_new_one(
++        isolated_review_queue, isolated_directives, fake_document):
++    finding_rc = _enqueue_confirmed(conclusion="PROVISIONAL_GAP")
++    old = rd.propose_remediation_directive(**_base_kwargs(finding_rc))
++    assert old["status"] == "SUBMITTED"
++
++    new = rd.propose_remediation_directive(**_base_kwargs(
++        finding_rc, target_location={"page_start": 5, "page_end": 5, "section": None},
++        supersedes_directive_id=old["directive_id"],
++    ))
++    assert new["status"] == "SUBMITTED"
++    assert new["supersedes_directive_id"] == old["directive_id"]
++
++    reloaded_old = rd.get_directive(old["directive_id"])
++    assert reloaded_old["status"] == "SUPERSEDED"
++    assert reloaded_old["superseded_by"] == new["directive_id"]
++    assert reloaded_old["superseded_reason"]
++    assert reloaded_old["superseded_at"]
++    # Append-only: la linea vieja sigue teniendo TODOS sus campos originales.
++    assert reloaded_old["proposed_text"] == old["proposed_text"]
++    assert reloaded_old["target_location"] == old["target_location"]
++
++
++def test_supersede_race_detected_under_lock_is_rejected(
++        isolated_review_queue, isolated_directives, fake_document, monkeypatch):
++    """El chequeo inicial (status SUBMITTED) corre SIN lock, antes de la
++    validacion lenta (PDF, anclaje, catalogo). Este test simula que, entre
++    ese chequeo y la escritura real, otra solicitud concurrente ya
++    superseded-eo la misma directiva -- el re-chequeo hecho DENTRO del lock
++    (justo antes de escribir) debe detectarlo y rechazar, en vez de pisar
++    el supersede ajeno."""
++    finding_rc = _enqueue_confirmed(conclusion="PROVISIONAL_GAP")
++    old = rd.propose_remediation_directive(**_base_kwargs(finding_rc))
++
++    real_get_directive = rd.get_directive
++    calls = []
++
++    def _flaky_get_directive(directive_id):
++        calls.append(directive_id)
++        result = real_get_directive(directive_id)
++        if len(calls) == 2 and result is not None:
++            # Segunda llamada = el re-chequeo bajo lock: simula que otra
++            # solicitud ya lo superseded-eo justo en ese instante.
++            result = dict(result)
++            result["status"] = "SUPERSEDED"
++        return result
++
++    monkeypatch.setattr(rd, "get_directive", _flaky_get_directive)
++
++    with pytest.raises(rd.RemediationDirectiveError, match="dejó de estar SUBMITTED"):
++        rd.propose_remediation_directive(**_base_kwargs(
++            finding_rc, supersedes_directive_id=old["directive_id"]))
++    assert len(calls) == 2
++
++    # La directiva original nunca se tocó -- el rechazo bajo lock no dejó
++    # ninguna escritura a medias.
++    reloaded_old = real_get_directive(old["directive_id"])
++    assert reloaded_old["status"] == "SUBMITTED"
++
++
++def test_supersede_unknown_directive_id_is_rejected(isolated_review_queue, isolated_directives, fake_document):
++    finding_rc = _enqueue_confirmed(conclusion="PROVISIONAL_GAP")
++    with pytest.raises(rd.RemediationDirectiveError, match="no existe ninguna directiva"):
++        rd.propose_remediation_directive(**_base_kwargs(finding_rc, supersedes_directive_id="DIR-no-existe"))
++
++
++def test_supersede_directive_from_different_finding_is_rejected(
++        isolated_review_queue, isolated_directives, fake_document):
++    # rc_id = f"finding-{run_id}-{requirement_id}" (human_review_queue.
++    # enqueue_finding_for_review) -- document_id NO participa del id, asi
++    # que dos findings realmente distintos exigen requirement_id distinto
++    # aqui (ambos catalogados de verdad, ver requirements.yaml).
++    finding_rc_a = _enqueue_confirmed(conclusion="PROVISIONAL_GAP", requirement_id="21_CFR_11.10(e)")
++    finding_rc_b = _enqueue_confirmed(conclusion="PROVISIONAL_GAP", requirement_id="21_CFR_11.10(g)")
++    assert finding_rc_a != finding_rc_b
++    directive_a = rd.propose_remediation_directive(**_base_kwargs(finding_rc_a))
++
++    with pytest.raises(rd.RemediationDirectiveError, match="MISMO hallazgo"):
++        rd.propose_remediation_directive(**_base_kwargs(finding_rc_b, supersedes_directive_id=directive_a["directive_id"]))
++
++
++def test_supersede_already_superseded_directive_is_rejected(
++        isolated_review_queue, isolated_directives, fake_document):
++    finding_rc = _enqueue_confirmed(conclusion="PROVISIONAL_GAP")
++    original = rd.propose_remediation_directive(**_base_kwargs(finding_rc))
++    replacement = rd.propose_remediation_directive(
++        **_base_kwargs(finding_rc, supersedes_directive_id=original["directive_id"]))
++
++    with pytest.raises(rd.RemediationDirectiveError, match="SUBMITTED"):
++        rd.propose_remediation_directive(
++            **_base_kwargs(finding_rc, supersedes_directive_id=original["directive_id"]))
++    # La sustituta vigente (replacement) sí puede volver a superseder-se.
++    third = rd.propose_remediation_directive(
++        **_base_kwargs(finding_rc, supersedes_directive_id=replacement["directive_id"]))
++    assert third["supersedes_directive_id"] == replacement["directive_id"]
++
++
++def test_new_directive_without_supersede_has_no_extra_fields(
++        isolated_review_queue, isolated_directives, fake_document):
++    """Regresión de forma: crear una directiva NORMAL (sin supersede) no
++    agrega ninguna de las 4 llaves opcionales nuevas -- las 8 directivas ya
++    persistidas antes de este cambio, y cualquier caller que no use
++    supersede, quedan exactamente iguales que antes."""
++    finding_rc = _enqueue_confirmed(conclusion="PROVISIONAL_GAP")
++    directive = rd.propose_remediation_directive(**_base_kwargs(finding_rc))
++    extra_keys = set(directive.keys()) - rd._DIRECTIVE_REQUIRED_FIELDS
++    assert extra_keys == set()
++
++
++def test_historical_directive_without_optional_fields_still_validates():
++    """Una directiva persistida ANTES de este cambio (sin ninguna de las 4
++    llaves opcionales) sigue validando -- el fix es aditivo, nunca exige
++    retroactivamente los campos nuevos."""
++    d = _valid_directive_dict()
++    assert "supersedes_directive_id" not in d
++    assert "superseded_by" not in d
++    rd.validate_remediation_directive(d)  # no debe lanzar

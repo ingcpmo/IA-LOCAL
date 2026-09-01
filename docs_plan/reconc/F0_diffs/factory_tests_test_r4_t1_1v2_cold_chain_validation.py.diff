@@ -1,0 +1,38 @@
+diff --git a/factory/tests/test_r4_t1_1v2_cold_chain_validation.py b/factory/tests/test_r4_t1_1v2_cold_chain_validation.py
+index a2034b5..71f9f04 100644
+--- a/factory/tests/test_r4_t1_1v2_cold_chain_validation.py
++++ b/factory/tests/test_r4_t1_1v2_cold_chain_validation.py
+@@ -362,20 +362,19 @@ def test_full_cold_chain_rw0005_directive_to_traceable_candidate(tmp_path):
+         print(f"  {kind}: sha256={art['sha256'][:16]}.. size={art['size_bytes']}B")
+     assert crit_f
+ 
+-    # ── criterio (g): NUNCA se alcanza create_release_record() ──────────
+-    # create_release_record() existe en remediation_package_service.py
+-    # (funcion real del servicio) pero NO esta conectada a ningun endpoint
+-    # HTTP (factory/api/routes/remediation_packages.py lo declara a
+-    # proposito: "DOCUMENT_RELEASED permanece false y PRODUCTION_ENABLEMENT
+-    # permanece BLOCKED"). Este test, ademas, nunca la invoca.
+-    routes_src = (
+-        Path(__file__).resolve().parents[1] / "api" / "routes" / "remediation_packages.py"
+-    ).read_text(encoding="utf-8")
+-    crit_g = "create_release_record" not in routes_src.replace(
+-        "create_release_record() existe en el servicio pero no se conecta", ""
+-    )
+-    print(f"criterio (g) create_release_record() sin endpoint conectado: {'PASA' if crit_g else 'FALLA'}")
+-    assert crit_g
++    # ── criterio (g): create_release_record() nunca se alcanza SIN los
++    # controles humanos exigidos -- Decision 2 (2026-08-26) conecto el
++    # endpoint a proposito, con require_identity + autorizacion explicita +
++    # cuatro ojos. El criterio deja de ser "no existe la ruta" (dejo de ser
++    # cierto) y pasa a delegar en la misma verificacion estructural real que
++    # golden_dataset_criteria.check_no_automatic_release() ya hace. Este
++    # test, ademas, nunca invoca create_release_record() el mismo.
++    from factory.services import golden_dataset_criteria as gdc
++    crit_g_result = gdc.check_no_automatic_release()
++    crit_g = crit_g_result["status"] == "PASS"
++    print(f"criterio (g) release solo alcanzable con controles humanos: {'PASA' if crit_g else 'FALLA'} "
++          f"({crit_g_result['reason']})")
++    assert crit_g, crit_g_result["reason"]
+     assert state_v2_after["package_decision"] is None
+     assert "releases" not in state_v2_after
+     assert not any(f.name.startswith("releases") for f in DRY_RUN_OUTPUT_DIR.glob("*"))

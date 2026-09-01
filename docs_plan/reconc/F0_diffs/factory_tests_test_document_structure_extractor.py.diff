@@ -1,0 +1,55 @@
+diff --git a/factory/tests/test_document_structure_extractor.py b/factory/tests/test_document_structure_extractor.py
+index ad72769..f514186 100644
+--- a/factory/tests/test_document_structure_extractor.py
++++ b/factory/tests/test_document_structure_extractor.py
+@@ -49,6 +49,50 @@ def test_toc_anchored_extraction_ignores_table_false_positive():
+     assert "2 Monitoring" in result["secciones"][2]["parrafos"]
+ 
+ 
++def test_heading_with_period_after_number_is_recognized():
++    """Causa A (CALIFICACION_FINAL_CURRENT_ENGINE.md, continuacion 2026-08-20):
++    plantillas tipo MAVERICK "Control Block Narrative" (RW-0011/RW-0012)
++    numeran "1. OBJECTIVE" (punto entre el numero y el titulo), tanto en la
++    Tabla de Contenido como en el cuerpo -- a diferencia de "1 Introduction"
++    (sin punto) de los FS de Rockwell (RW-0005). Ambas formas deben
++    reconocerse como el mismo tipo de encabezado de nivel 1, con titulos en
++    MAYUSCULAS incluidos (ya soportado por _is_title_case, que solo exige
++    mayuscula inicial por palabra)."""
++    toc_page_con_punto = (
++        "TABLE OF CONTENTS\n"
++        "1. OBJECTIVE ................................................. 3\n"
++        "2. TERMINOLOGY ............................................... 3\n"
++        "3. INPUT CONSIDERATIONS ...................................... 3\n"
++    )
++    per_page_text = [
++        toc_page_con_punto,
++        "1. OBJECTIVE\nTexto real del objetivo.",
++        "2. TERMINOLOGY\nTexto real de terminologia.",
++        "3. INPUT CONSIDERATIONS\nTexto real de consideraciones de entrada.",
++    ]
++    result = extractor.extract_structure(per_page_text)
++    assert result["toc_anchored"] is True
++    numeros = [s["numero"] for s in result["secciones"]]
++    titulos = [s["titulo"] for s in result["secciones"]]
++    assert numeros == ["1", "2", "3"]
++    assert titulos == ["OBJECTIVE", "TERMINOLOGY", "INPUT CONSIDERATIONS"]
++
++
++def test_heading_with_period_does_not_match_subsection_numbers():
++    """El punto opcional no debe ampliar el match a sub-secciones tipo
++    "4.1 Titulo" -- el caracter inmediatamente despues del punto opcional
++    debe seguir siendo espacio, y en "4.1" es un digito, nunca deberia
++    tratarse como una repeticion de la seccion 4."""
++    per_page_text = [
++        "1. Objective\ntexto",
++        "2. Description\n4.1 Process Description And Strategy Design\nmas texto de la subseccion",
++    ]
++    result = extractor.extract_structure(per_page_text)
++    numeros = [s["numero"] for s in result["secciones"]]
++    assert numeros == ["1", "2"]
++    assert "4.1 Process Description And Strategy Design" in result["secciones"][1]["parrafos"]
++
++
+ def test_toc_anchored_rejects_title_mismatch():
+     """Una linea con el numero secuencial correcto pero titulo distinto al
+     de la TOC nunca se acepta como encabezado (aunque sea Title Case)."""
