@@ -137,7 +137,7 @@ def test_consumed_artifact_scoping_per_entrypoint():
         assert "risk_matrix.yaml" in s
     # los artefactos reales existen y traen version+sha256 (no ABSENT)
     assert v2["technical_completeness_rules.yaml"]["sha256"] != "ABSENT"
-    assert v2["technical_completeness_rules.yaml"]["version"] == "1.1"
+    assert v2["technical_completeness_rules.yaml"]["version"] == "1.2"   # D5-D remediation (PENDIENTE aprobacion)
 
 
 def test_consumed_artifacts_tier1_requirements_hash_is_order_independent():

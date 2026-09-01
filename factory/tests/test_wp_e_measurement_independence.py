@@ -183,8 +183,9 @@ def test_labeled_emitted_review_yields_precision_only_recall_stays_unknown(_run_
     me.require_envelope(sc["metric_envelope_precision"])
 
 
-def test_score_recall_fail_closed_without_signed_opportunities(_run_dir):
-    r = adj.score_recall(_run_dir)                              # opportunities yaml = DRAFT_UNSIGNED
+def test_score_recall_fail_closed_without_signed_opportunities(_run_dir, tmp_path):
+    opps = _write_unsigned_opps(tmp_path)                       # opportunities yaml = DRAFT_UNSIGNED
+    r = adj.score_recall(_run_dir, opps)
     assert r["opportunities_status"] in ("DRAFT_UNSIGNED", "ABSENT")
     assert r["usable"] is False
     assert r["RECALL_REPORTABLE"] == "UNKNOWN"
@@ -193,8 +194,8 @@ def test_score_recall_fail_closed_without_signed_opportunities(_run_dir):
     me.require_envelope(r["metric_envelope"])
 
 
-def test_opportunities_template_is_draft_empty_and_declares_protocol():
-    d = adj.load_opportunities()
+def test_opportunities_template_is_draft_empty_and_declares_protocol(tmp_path):
+    d = adj.load_opportunities(_write_unsigned_opps(tmp_path))
     assert str(d["status"]).upper() in ("DRAFT_UNSIGNED", "ABSENT")
     assert d["opportunities"] == [] and d["negative_units"] == []
     assert d.get("adjudicator") in (None, "null")
@@ -222,6 +223,20 @@ def _write_opps(tmp_path, opps, *, negatives=None, tol=0, name="opps.yaml"):
     d = {"artifact": "real_corpus_opportunities", "version": "test", "status": "SIGNED",
          "adjudicator": "QA sim", "page_match_policy": {"tolerance_pages": tol},
          "opportunities": opps, "negative_units": negatives or []}
+    p = tmp_path / name
+    p.write_text(yaml.safe_dump(d), encoding="utf-8")
+    return p
+
+
+def _write_unsigned_opps(tmp_path, *, name="opps_unsigned.yaml"):
+    """Plantilla DRAFT_UNSIGNED y vacía: replica la declaración de protocolo del
+    artefacto que se entrega para adjudicación, SIN depender del catálogo real
+    (que ya está SIGNED tras la adjudicación D5-B/D5-C de Cesar)."""
+    import yaml
+    d = {"artifact": "real_corpus_opportunities", "version": "0.2-draft",
+         "status": "DRAFT_UNSIGNED", "adjudicator": None,
+         "page_match_policy": {"tolerance_pages": 0},
+         "opportunities": [], "negative_units": []}
     p = tmp_path / name
     p.write_text(yaml.safe_dump(d), encoding="utf-8")
     return p

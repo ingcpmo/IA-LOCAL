@@ -41,12 +41,62 @@
 # =============================================================================
 
 artifact: technical_completeness_rules
-version: "1.1"
+version: "1.2"
 status: SIGNED
 authored_by: "Capa 8"
-signed_by: "Capa 9 (Cesar)"
+signed_by: "Capa 9 (Cesar)"          # firma vigente de v1.1 (2026-08-27); v1.2 PENDIENTE de aprobacion
 signed_at: "2026-08-27"
-supersedes_version: "1.0"
+supersedes_version: "1.1"
+
+# --- v1.2 APROBADA POR CAPA 9 (gate APPROVE_REMEDIATION_V1_2) ---
+# Mecanismo de registro: NO existe servicio de gobernanza ni panel de Mission
+# Control para este artefacto -- technical_completeness_rules.yaml NO es una clase
+# ARTIFACT_VERSION (ARTIFACT_CLASSES = catalog / applicability_matrix /
+# evidence_pack / prompt / golden_dataset; ver factory/core/artifact_version_guard.py).
+# El registro valido para este gate a la medida es esta misma metadata + commit,
+# identico al precedente D5-A/B/C (qa40_adjudication_sheet.yaml,
+# real_corpus_opportunities.yaml).
+pending_approval:
+  gate: APPROVE_REMEDIATION_V1_2
+  approved: true
+  approved_by: "Capa 9 (Cesar)"
+  approved_at: "2026-09-01"
+  approval_channel: "metadata + commit (sin servicio/panel de gobernanza para este artefacto -- verificado)"
+  approval_authorization: "AUTORIZACION Capa 9 -- 'continuar ejecucion' 2026-09-01: 'Apruebo formalmente H1 -- APPROVE_REMEDIATION_V1_2'"
+  scope: "D5-D analyzer remediation -- 3 causas raiz demostradas (BACKUP_RECOVERY_GAP FN, AUTHORITY_CHECK_GAP FN, ACCESS_CONTROL_GAP FP)"
+  design_ref: "docs_plan/D5_D_ANALYZER_REMEDIATION_DESIGN_20260831.md"
+  diagnostic_ref: "docs_plan/D5_D_DIAGNOSTIC_FAIL_20260831.md"
+  downstream_condition: >
+    D5-D2 (held-out fresco, ground truth de autor independiente; umbrales
+    TECHNICAL_RECALL_MIN 0.90 / TECHNICAL_FALSE_POSITIVE_MAX 0.05 /
+    FABRICATED_CITATIONS_MAX 0) sigue siendo CONFIRMACION INDEPENDIENTE OBLIGATORIA
+    aguas abajo, DEFERRED / NON_BLOCKING_FOR_DEVELOPMENT por Capa 9 (2026-09-01).
+    Esta aprobacion NO equivale a aprobar D5-D2 ni a declarar completada la
+    validacion independiente. Si D5-D2 falla los umbrales -> rollback de v1.2.
+  requalification_note: >
+    Cambiar este archivo dispara requalification per qualification_contract.yaml
+    (requalification_triggers.rules). El contrato ya lo cubre con
+    CT-HELD-OUT-PENDING (reportable_range = SYNTHETIC_ONLY hasta held-out firmado);
+    ese contingente permanece ABIERTO.
+
+change_note_v1_2: >
+  v1.2 (D5-D remediation): corrige 3 DEFECTOS REALES del detector, demostrados por un held-out
+  independiente (diagnostico, contaminado para tuning). (1A) C03 no reconocia la parafrasis del
+  concepto backup sin la palabra literal "backup" -> se agrega un tier `topic_anchor_patterns`
+  (regex compuesto determinista: OBJETO_DE_DATOS + COPIA/REPLICACION + PERIODICIDAD|DESTINO_EXTERNO).
+  (1B) C05 exigia la frase "role based access" y no anclaba sobre un modelo de roles/autorizacion
+  parafraseado -> C05 recibe `topic_anchor_patterns` para el modelo de roles/niveles y su
+  `topic_anchor` literal se acota (se retiran terminos de MECANISMO de auth -- "login",
+  "authentication", "electronic signature", "access control" a secas -- que no son el modelo de
+  autorizacion); ademas C05 se SUPRIME si `per_operation_authorization` esta presente en el scope
+  (el modelo por operacion ya cubre el objetivo). NO es "C04 anclado -> C05 automatico".
+  (3C) el token debil "role" en una frase cuyo sujeto es otro control gobernado (p.ej. inmutabilidad
+  del audit trail: "...cannot be ... by any role") anclaba C04 de forma incidental -> `incidental_anchor_guard`
+  (declarativo) + `family_signals.access_control_enforced` como supresor adicional de C04 (AND-groups,
+  nunca un substring aislado). Se generaliza el caso especial hardcodeado de C09 a
+  `additional_suppressor_families` (declarativo). NO cambia REQUIRED_BEHAVIOR, SOURCE_REQUIREMENT_ID,
+  CONTROL_OBJECTIVE, scope_policy, thresholds regulatorios ni el fail-closed.
+
 change_note: >
   v1.1 (OD-6): corrige un DEFECTO REAL del detector. En v1.0 la deteccion del
   comportamiento requerido (y su supresion) opera DOCUMENT-WIDE: en un FS real
@@ -56,6 +106,12 @@ change_note: >
   referencia cruzada explicita valida). NO cambia ningun REQUIRED_BEHAVIOR,
   SOURCE_REQUIREMENT_ID, family_signals ni cross_reference_suppressors --
   solo el ALCANCE de la evaluacion. fail-closed sin cambios.
+
+# --- runtime / egress (invariantes -- sin cambios en v1.2) ---
+AI_RUNTIME: LOCAL_ONLY
+DOCUMENT_EGRESS: FORBIDDEN
+EXTERNAL_LLM_API: FORBIDDEN
+
 authorization_note: >
   Capa 9, 2026-08-27: firma v1.0 (7 reglas) y luego v1.1 (OD-6, context_scoped).
   Contenido gobernado: cambiar REQUIRED_BEHAVIOR / SOURCE_REQUIREMENT_ID /
@@ -141,6 +197,18 @@ family_signals:
     - ["named user account"]
     - ["identificacion individual"]
     - ["each action", "individual user"]
+  # v1.2 (D5-D remediation 3B): evidencia AFIRMATIVA de que el control de acceso se aplica y
+  # cubre a todos los roles. AND-groups -- nunca un substring aislado como "by any role".
+  # Suprime C04 (el modelo de acceso esta descrito como vinculante, no es un hueco).
+  access_control_enforced:
+    - ["cannot be", "by any role"]
+    - ["cannot be", "by any user role"]
+    - ["cannot be", "regardless of", "role"]
+    - ["no role", "permitted to"]
+    - ["no role", "is allowed to"]
+    - ["enforced for", "every role"]
+    - ["enforced for", "all roles"]
+    - ["restricted", "for all roles"]
 
 # Guarda comun: si el texto del claim del tema (o su seccion) remite el
 # comportamiento a otro documento, se SUPRIME (no es un hueco, es un puntero).
@@ -155,6 +223,33 @@ cross_reference_suppressors:
   - "ver documento"
   - "cubierto por el documento"
 
+# v1.2 (D5-D remediation 3C): guarda de ANCLA INCIDENTAL. Un `topic_anchor` de UN SOLO
+# token debil no ancla una regla si TODAS sus ocurrencias caen tras un conector de
+# subordinacion/exclusion Y la clausula principal contiene un ancla FUERTE de OTRA familia
+# gobernada. Determinista; nunca depende de un substring aislado. None -> desactivada (v1.0/v1.1).
+incidental_anchor_guard:
+  weak_single_tokens: ["role", "roles", "user", "access", "login"]
+  subordinating_connectives:
+    - " by "
+    - " including "
+    - " regardless of "
+    - " except "
+    - " such as "
+    - " other than "
+    - " nor "
+    - " even by "
+  strong_foreign_anchors:
+    - "audit trail"
+    - "audit log"
+    - "audit record"
+    - "registro de auditoria"
+    - "backup"
+    - "back-up"
+    - "retention period"
+    - "electronic signature"
+    - "time stamp"
+    - "timestamp"
+
 # Downgrade a MACHINE_INCONCLUSIVE (en vez del machine_state por defecto de la
 # regla) si aparece cualquiera de estos junto al tema y la familia esta ausente:
 inconclusive_downgraders:
@@ -168,7 +263,8 @@ inconclusive_downgraders:
   - "referenced validation plan"
 
 # --- ilustracion legible (NO es el matcher; ver family_signals arriba) ---
-neutral_evidence_families:
+# v1.2: se elimina una clave `neutral_evidence_families:` vacia duplicada que arrastraba v1.1
+#       (el loader no la consume; safe_load ya tomaba la definicion de abajo). YAML_DUPLICATE_KEYS=0.
 neutral_evidence_families:
   restore_verified:
     - "restore is tested"
@@ -289,8 +385,16 @@ rules:
       - "frecuencia de backup especifica (nightly, hourly) como requisito"
     DETERMINISTIC_DETECTION_RULE:
       topic_anchor: ["backup", "back-up", "back up", "respaldo", "copia de seguridad"]
+      # v1.2 (D5-D remediation 1A): tier de patron compuesto -- reconoce la parafrasis del
+      # concepto backup SIN la palabra literal. Exige OBJETO_DE_DATOS + COPIA/REPLICACION +
+      # (PERIODICIDAD | DESTINO_EXTERNO). Un token aislado (copied / network / periodically /
+      # "file copy") NO activa la regla.
+      topic_anchor_patterns:
+        - '\b(data|records?|database|configuration|system state)\b[^.]{0,80}\b(cop(y|ied|ies)|replicat\w*|mirror\w*|export\w*|dump\w*|snapshot\w*)\b[^.]{0,80}\b(daily|nightly|weekly|hourly|monthly|periodic\w*|scheduled|regular\w*|automatic\w*|off-?site|remote|network share|external (drive|disk|server|storage)|tape|secondary (site|server))\b'
+        - '\b(cop(y|ied|ies)|replicat\w*|mirror\w*|snapshot\w*|dump\w*)\b[^.]{0,80}\b(data|records?|database)\b[^.]{0,80}\b(daily|nightly|weekly|monthly|periodic\w*|scheduled|off-?site|remote|network share|tape)\b'
+        - '\bdisaster recovery (plan|procedure|process|capability)\b'
       scope: document
-      emit_when: "topic_anchor presente AND ningun miembro de family:restore_verified presente en el documento"
+      emit_when: "(topic_anchor OR topic_anchor_patterns) presente AND ningun miembro de family:restore_verified presente en el documento"
       excluded_from_rule:
         - "NO se evalua presencia/ausencia de RTO ni RPO -- fuera de alcance por decision de Capa 9"
       guards:
@@ -328,10 +432,13 @@ rules:
       - "un producto de RBAC concreto (FactoryTalk Security, LDAP groups, etc.)"
     DETERMINISTIC_DETECTION_RULE:
       topic_anchor: ["role", "roles", "access level", "user group", "perfil de acceso", "nivel de acceso"]
+      # v1.2 (D5-D remediation 3B/3C): supresor afirmativo + guarda de ancla incidental.
+      additional_suppressor_families: ["access_control_enforced"]
       scope: document
-      emit_when: "topic_anchor presente AND ningun miembro de family:per_operation_authorization presente AND ninguna Table con roles de columna rol/permiso"
+      emit_when: "topic_anchor presente (no incidental -- ver incidental_anchor_guard) AND ningun miembro de family:per_operation_authorization NI de family:access_control_enforced presente AND ninguna Table con roles de columna rol/permiso"
       applicability_guard:
         - "'segun aplique' (11.10(g)[0]): si el alcance del sistema es trivial (p.ej. un unico rol operativo declarado) -> emitir INCONCLUSIVE, no CANDIDATE"
+        - "v1.2: un token debil ('role') cuya unica aparicion es tras un conector de exclusion en una frase cuyo sujeto es otro control gobernado (p.ej. inmutabilidad del audit trail) NO ancla la regla"
       finding:
         finding_class: SecurityFinding
         subtype: ACCESS_CONTROL_GAP
@@ -361,13 +468,31 @@ rules:
       - "un middleware o framework de autorizacion concreto"
       - "tokens con scopes / claims especificos"
     DETERMINISTIC_DETECTION_RULE:
-      topic_anchor: ["access control", "role based access", "authentication", "login", "electronic signature", "control de acceso"]
+      # v1.2 (D5-D remediation 1B): el anchor literal se ACOTA al modelo de roles/autorizacion
+      # (se retiran terminos de MECANISMO de auth -- "login", "authentication", "electronic
+      # signature", "access control" a secas -- que no describen el modelo de autorizacion).
+      topic_anchor: ["role based access", "control de acceso basado en roles"]
+      # tier de patron: reconoce un MODELO de roles/niveles parafraseado (p.ej. "named roles",
+      # "user roles", "security levels are defined"). Tokens aislados (role / user / access /
+      # login) NO son suficientes.
+      topic_anchor_patterns:
+        - '\b(named|defined|configured|available|separate|multiple|distinct|individual|three|four|five|several)\s+(user\s+|operator\s+|security\s+|access\s+|application\s+|system\s+)?roles?\b'
+        - '\b(user|operator|security|privilege|authorization|access)\s+(roles?|levels?|groups?|profiles?)\b'
+        - '\broles?\s+(are|is)\s+(defined|configured|assigned|established|available)\b'
+        - '\brole[-\s]?based\s+access\b'
+        - '\brole\s+configuration\b'
+        - '\b(security|privilege|authorization|access)\s+levels?\s+(are|is)\s+(defined|configured|assigned)\b'
+      # v1.2: si el modelo de autorizacion POR OPERACION ya esta descrito, el objetivo de C05
+      # (verificacion en tiempo de operacion) queda cubierto por el modelo -> se suprime.
+      additional_suppressor_families: ["per_operation_authorization"]
       scope: document
-      emit_when: "topic_anchor presente AND ningun miembro de family:authority_check_at_operation presente en el documento"
+      emit_when: "(topic_anchor OR topic_anchor_patterns) presente (modelo de roles/autorizacion, no un token aislado) AND ningun miembro de family:authority_check_at_operation NI de family:per_operation_authorization presente en el scope"
       precision_note: >
         Riesgo de falso positivo alto: 'role based access' generico puede
         satisfacer el requisito sin nombrarlo. Por eso el estado es
-        INCONCLUSIVE (candidato debil), no CANDIDATE.
+        INCONCLUSIVE (candidato debil), no CANDIDATE. v1.2 acota el anchor al
+        MODELO de autorizacion y lo suprime si el modelo por operacion ya esta
+        descrito o si el token es incidental (incidental_anchor_guard).
       finding:
         finding_class: SecurityFinding
         subtype: AUTHORITY_CHECK_GAP
@@ -446,6 +571,9 @@ rules:
       SOLO verifica la presencia del COMPORTAMIENTO neutro.
     DETERMINISTIC_DETECTION_RULE:
       topic_anchor: ["audit trail", "audit log", "registro de auditoria"]
+      # v1.2: el caso especial hardcodeado de C09 (proteccion privilegiada fuerte cubre
+      # parcialmente la deteccion) se vuelve DECLARATIVO. El motor conserva el fallback.
+      additional_suppressor_families: ["audit_trail_privileged_protection"]
       scope: document
       emit_when: "topic_anchor presente AND ningun miembro de family:audit_trail_tamper_detection presente en el documento AND ningun miembro de family:audit_trail_privileged_protection presente (proteccion privilegiada fuerte cubre parcialmente la deteccion)"
       guards:

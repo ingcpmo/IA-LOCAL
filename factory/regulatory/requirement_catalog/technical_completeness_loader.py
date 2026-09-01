@@ -71,6 +71,8 @@ def _shape(d: dict) -> dict:
         "cross_reference_suppressors": [s.lower() for s in d["cross_reference_suppressors"]],
         "inconclusive_downgraders": [s.lower() for s in d["inconclusive_downgraders"]],
         "scope_policy": d.get("scope_policy"),
+        # v1.2 (D5-D remediation 3C): guarda de ancla incidental. None -> desactivada (v1.0/v1.1).
+        "incidental_anchor_guard": d.get("incidental_anchor_guard"),
     }
 
 

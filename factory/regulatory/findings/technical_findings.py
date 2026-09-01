@@ -100,6 +100,29 @@ def _family_present(doc_text_lower: str, family_name: str, family_signals: dict)
     return False
 
 
+def _incidental_anchor(text: str, rule_tokens: list[str], guard: dict | None) -> bool:
+    """v1.2 (D5-D remediation 3C): un `topic_anchor` de UN SOLO token debil
+    (p.ej. "role") NO ancla la regla si TODAS sus ocurrencias caen tras un
+    conector de subordinacion/exclusion Y la clausula principal contiene un
+    ancla FUERTE de OTRA familia gobernada (p.ej. "audit trail ... by any role").
+    Determinista. Nunca depende de un solo substring aislado."""
+    if not guard:
+        return False
+    low = (text or "").lower()
+    weak = [t for t in rule_tokens if t in set(guard.get("weak_single_tokens", []))]
+    present_weak = [t for t in weak if t in low]
+    if not present_weak:
+        return False
+    conns = guard.get("subordinating_connectives", [])
+    cuts = [low.find(c) for c in conns if c in low]
+    if not cuts:
+        return False
+    head = low[: min(cuts)]
+    if any(t in head for t in present_weak):
+        return False            # el token debil tambien esta en la clausula principal
+    return any(s in head for s in guard.get("strong_foreign_anchors", []))
+
+
 _XREF_SECTION_RE = re.compile(r"\b(?:see|refer to|per)\s+section\s+([0-9]+(?:\.[0-9]+)*)", re.I)
 # fila de indice / tabla de trazabilidad del FS ("...-F12.00, 45" al final)
 _TRACE_INDEX_RE = re.compile(r"-\s*F\d{1,2}\.\d{2}\s*,\s*\d{1,3}\s*$")
@@ -213,17 +236,38 @@ def completeness_findings(document_ids: list[str], *, extraction_version: str,
     xref = art["cross_reference_suppressors"]
     downg = art["inconclusive_downgraders"]
     fam_sig = art["family_signals"]
+    guard = art.get("incidental_anchor_guard")            # v1.2 (D5-D remediation 3C); None -> desactivado
     c01_doc_finding: dict[str, str] = {}
 
     for rule in art["rules"]:
         case_id = rule["CASE_ID"]
         ddr = rule["DETERMINISTIC_DETECTION_RULE"]
         topics = [t.lower() for t in ddr["topic_anchor"]]
+        # v1.2 (D5-D remediation 1A/1B): tier de patron compuesto ADEMAS del anchor literal.
+        patterns = [re.compile(p, re.IGNORECASE) for p in (ddr.get("topic_anchor_patterns") or [])]
+        weak_tokens = set((guard or {}).get("weak_single_tokens", []))
+        # v1.2 (D5-D remediation 3B): supresores de familia adicionales, declarativos por regla.
+        extra_supp = list(ddr.get("additional_suppressor_families") or [])
+        if case_id == "C09" and "audit_trail_privileged_protection" not in extra_supp:
+            extra_supp.append("audit_trail_privileged_protection")   # compat v1.0/v1.1 (era caso especial)
         fam_name = (rule["ACCEPTABLE_EVIDENCE_PATTERNS"] or {}).get("family")
         fclass = ddr["finding"]["finding_class"]
         subtype = ddr["finding"]["subtype"]
         severity = ddr["finding"]["severity"]
         default_ms = rule["HUMAN_REVIEW_STATE"]["machine_state"]
+
+        def _anchors_here(r) -> bool:
+            txt = r["source_text"] or ""
+            low = txt.lower()
+            lit_hits = [t for t in topics if t in low]
+            pat_hit = any(p.search(txt) for p in patterns)
+            if not lit_hits and not pat_hit:
+                return False
+            strong_lit = [t for t in lit_hits if t not in weak_tokens]
+            if strong_lit or pat_hit:
+                return True
+            # solo anclo por token(s) debil(es) -> descartar si es incidental
+            return not _incidental_anchor(txt, topics, guard)
 
         for d in document_ids:
             recs = by_doc.get(d) or []
@@ -232,9 +276,7 @@ def completeness_findings(document_ids: list[str], *, extraction_version: str,
             _stats["completeness_rules_evaluated"] += 1
             # ancla determinista: la PRIMERA mencion del tema por numero de pagina
             recs_by_page = sorted(recs, key=lambda r: (r.get("pagina") or 0))
-            anchor_rec = next(
-                (r for r in recs_by_page if _anchorable(r)
-                 and any(t in (r["source_text"] or "").lower() for t in topics)), None)
+            anchor_rec = next((r for r in recs_by_page if _anchorable(r) and _anchors_here(r)), None)
             if anchor_rec is None:
                 continue
             anchor_low = (anchor_rec["source_text"] or "").lower()
@@ -247,7 +289,7 @@ def completeness_findings(document_ids: list[str], *, extraction_version: str,
             if fam_name and _family_present(scope_text, fam_name, fam_sig):
                 _stats["completeness_suppressed_family_present"] += 1
                 continue
-            if case_id == "C09" and _family_present(scope_text, "audit_trail_privileged_protection", fam_sig):
+            if any(_family_present(scope_text, fn, fam_sig) for fn in extra_supp):
                 _stats["completeness_suppressed_family_present"] += 1
                 continue
             machine_state = default_ms

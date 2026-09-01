@@ -1,0 +1,1720 @@
+artifact: real_corpus_adjudication
+version: "0.2"
+status: SIGNED
+sample_type: EMITTED_FINDINGS_REVIEW
+adjudicator: "Cesar (Capa 9)"
+adjudicated_at: "2026-08-31"
+source_run_dir: /tmp/h8enf-7ju0jyy1/r
+source_input_config_fingerprint: 3c8b0036107b824f0919dafba3bc7ebb12f3ec9af62be973e934cc8cc889fcaf
+sample_size: 40
+seed: 7
+label_options:
+- TP
+- FP
+- COVERAGE_LIMITED
+methodology: 'Muestra de FINDINGS EMITIDOS. Mide DIRECTAMENTE: TP, FP, PRECISION/PPV,
+  proporción COVERAGE_LIMITED. NO mide recall / FN / TN -- eso requiere el conjunto
+  DETECTION_OPPORTUNITIES (real_corpus_opportunities.yaml), revisado por QA sobre
+  el corpus, NO sobre los findings. Etiquetas FN/TN aquí = error de método -> score_emitted_review()
+  falla cerrado.'
+notes: COVERAGE_LIMITED = el finding no es sólidamente evaluable en este corpus (p.ej.
+  depende de la mitad de prueba vacía / RW-0009 NOT_ANALYZABLE). Se excluye del numerador
+  y denominador de precision.
+cases:
+- case_id: ADJ-34140454ec
+  finding_record_id: rec-8c79d376a707b7f3
+  finding_id: fnd-dda4452c2717e340
+  finding_class: DataIntegrityFinding
+  subtype: ALCOA_ATTRIBUTABLE_GAP
+  criterion: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d)
+  subcriterion_ref: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d)
+  regulatory_basis: null
+  technical_basis: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d)
+  document: RW-0012
+  section: sec-a82a30b1cff7d458
+  page: 5
+  source_hash: 721d38e3a1967615bb9b9a8f7ae08c92b604d9a5cba6e709d64ec6e92fa68698
+  anchored_quote: with the proper credentials, the input points can be simulated for
+    troubleshooting or other
+  evidence_ids: []
+  evidence_basis: INDETERMINATE
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path: null
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: '[C10] Cada dato de accion humana es atribuible a un individuo unico.
+      Fuente: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d). El documento describe el tema
+      pero NO se encontro el comportamiento requerido: Toda accion humana registrada
+      queda atribuida a una identidad individual y unica, sostenida por un mecanismo
+      tecnico (no un campo de texto libre), para crear / modificar / eliminar. Regla
+      determinista de completitud (artefacto gobernado v1.1). BORRADOR ASISTIDO --
+      revision humana requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: "El fragmento menciona credenciales, pero no permite confirmar ni descartar atribución individual única en el documento completo."
+  human_evidence_anchor: ''
+- case_id: ADJ-55a654a957
+  finding_record_id: rec-a3965dbc0f624005
+  finding_id: fnd-3416d726b78c9075
+  finding_class: DataIntegrityFinding
+  subtype: ALCOA_ATTRIBUTABLE_GAP
+  criterion: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d)
+  subcriterion_ref: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d)
+  regulatory_basis: null
+  technical_basis: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d)
+  document: RW-0014
+  section: sec-5fa50879acbbdf49
+  page: 5
+  source_hash: 721d38e3a1967615bb9b9a8f7ae08c92b604d9a5cba6e709d64ec6e92fa68698
+  anchored_quote: with the proper credentials, the input points can be simulated for
+    troubleshooting or other
+  evidence_ids: []
+  evidence_basis: INDETERMINATE
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path: null
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: '[C10] Cada dato de accion humana es atribuible a un individuo unico.
+      Fuente: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d). El documento describe el tema
+      pero NO se encontro el comportamiento requerido: Toda accion humana registrada
+      queda atribuida a una identidad individual y unica, sostenida por un mecanismo
+      tecnico (no un campo de texto libre), para crear / modificar / eliminar. Regla
+      determinista de completitud (artefacto gobernado v1.1). BORRADOR ASISTIDO --
+      revision humana requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: "Mismo criterio: evidencia local insuficiente para demostrar ausencia global de atribución individual."
+  human_evidence_anchor: ''
+- case_id: ADJ-1c2aa0e630
+  finding_record_id: rec-920e1c069c888afb
+  finding_id: fnd-abb5097dbc517700
+  finding_class: DataIntegrityFinding
+  subtype: ALCOA_ATTRIBUTABLE_GAP
+  criterion: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d)
+  subcriterion_ref: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d)
+  regulatory_basis: null
+  technical_basis: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d)
+  document: RW-0011
+  section: sec-7b6ab0b994c72e1c
+  page: 4
+  source_hash: 75173e98eb1859b5a347abfca55dd163032bfc5b4a9049239fb35f3758e41122
+  anchored_quote: previously, with the proper credentials, the input points can be
+    simulated for calibration or other
+  evidence_ids: []
+  evidence_basis: INDETERMINATE
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path: null
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: '[C10] Cada dato de accion humana es atribuible a un individuo unico.
+      Fuente: ALCOA_ATTRIBUTABLE ; 21_CFR_11.10(d). El documento describe el tema
+      pero NO se encontro el comportamiento requerido: Toda accion humana registrada
+      queda atribuida a una identidad individual y unica, sostenida por un mecanismo
+      tecnico (no un campo de texto libre), para crear / modificar / eliminar. Regla
+      determinista de completitud (artefacto gobernado v1.1). BORRADOR ASISTIDO --
+      revision humana requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: "\"proper credentials\" no basta para confirmar una brecha de atribución individual; requiere revisión documental completa."
+  human_evidence_anchor: ''
+- case_id: ADJ-24e294a87c
+  finding_record_id: rec-f7eff6b9be225492
+  finding_id: fnd-849265b0882684c8
+  finding_class: DataIntegrityFinding
+  subtype: AUDIT_TRAIL_INTEGRITY_GAP
+  criterion: 21_CFR_11.10(e)
+  subcriterion_ref: 21_CFR_11.10(e)
+  regulatory_basis: null
+  technical_basis: 21_CFR_11.10(e)
+  document: RW-0005
+  section: sec-093b99ec7b7d30a8
+  page: 45
+  source_hash: 62d02b3a6118a2d53016a1e89845e8bc696cd8f38fe80cdaa675f506fa252b01
+  anchored_quote: 'The Critical Alarm Threshold Change Audit Trail entry will contain
+    the following information:'
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0005
+    subject_page: 45
+    edge_family_checked: null
+    conclusion_depends_on: GRAPH_STATE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: CRITICAL
+    risk_band_pre_enforce: CRITICAL
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: '[C09] Se puede detectar si el audit trail fue manipulado. Fuente:
+      21_CFR_11.10(e). El documento describe el tema pero NO se encontro el comportamiento
+      requerido: El audit trail tiene capacidad de deteccion de manipulacion -- por
+      CUALQUIER medio. El comportamiento requerido es "una alteracion no autorizada
+      de los registros de auditoria es detectable"; el medio tecnico es libre. Regla
+      determinista de completitud (artefacto gobernado v1.1). BORRADOR ASISTIDO --
+      revision humana requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: "Se describe el contenido del audit trail, pero no se demuestra ausencia global de controles de detección de manipulación."
+  human_evidence_anchor: ''
+- case_id: ADJ-772aa4b353
+  finding_record_id: rec-956eeeb5e5b98cbe
+  finding_id: fnd-1eadbe72ea101557
+  finding_class: DataIntegrityFinding
+  subtype: AUDIT_TRAIL_INTEGRITY_GAP
+  criterion: 21_CFR_11.10(e)
+  subcriterion_ref: 21_CFR_11.10(e)
+  regulatory_basis: null
+  technical_basis: 21_CFR_11.10(e)
+  document: RW-0006
+  section: sec-14bd4af9588d4f02
+  page: 6
+  source_hash: a34aa169b3516a586c58960db331539d98b9fff8a55b32449d0885379e95ab1c
+  anchored_quote: 3.3.3 Audit trail records shall be archived.
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 6
+    edge_family_checked: null
+    conclusion_depends_on: GRAPH_STATE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: CRITICAL
+    risk_band_pre_enforce: CRITICAL
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: '[C09] Se puede detectar si el audit trail fue manipulado. Fuente:
+      21_CFR_11.10(e). El documento describe el tema pero NO se encontro el comportamiento
+      requerido: El audit trail tiene capacidad de deteccion de manipulacion -- por
+      CUALQUIER medio. El comportamiento requerido es "una alteracion no autorizada
+      de los registros de auditoria es detectable"; el medio tecnico es libre. Regla
+      determinista de completitud (artefacto gobernado v1.1). BORRADOR ASISTIDO --
+      revision humana requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: "Se exige archivado, pero el fragmento no demuestra ausencia global de mecanismos de integridad/detección de alteración."
+  human_evidence_anchor: ''
+- case_id: ADJ-9a9e84e8e2
+  finding_record_id: rec-2fcf74a9418a658d
+  finding_id: fnd-e34477fdf4f5d2d9
+  finding_class: FunctionalFinding
+  subtype: IMPLEMENTATION_WITHOUT_REQUIREMENT
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0005
+  section: sec-f96d78fd0640c05f
+  page: 54
+  source_hash: aa5510da7a94feaff3f59e76753d0dd2cd46391ca3a29167aac67b37ecd394da
+  anchored_quote: UR4.10.1 [URS-PCS-HR-022] The field inputs and outputs to the PCS
+    Miscellaneous PLC shall be hardwired I/O-F01.06, 15
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - source_ref_extraction
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0005
+    subject_page: 54
+    edge_family_checked: implemented_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MINOR
+    risk_band: MEDIUM
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: 'Claim de un documento de implementación/diseño sin arista `implemented_by`/`designed_by`
+      entrante: no traza a ningún requisito aguas arriba. BORRADOR ASISTIDO -- revisión
+      humana requerida.'
+  held_out_provenance_tag: null
+  label: TP
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-c77d65ffb6
+  finding_record_id: rec-87f4b9520c95085d
+  finding_id: fnd-40c59b1146635c9c
+  finding_class: FunctionalFinding
+  subtype: IMPLEMENTATION_WITHOUT_REQUIREMENT
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0005
+  section: sec-f96d78fd0640c05f
+  page: 54
+  source_hash: 1d22b9ffa0d22c2c17a0a803d58f5b6c310121d3fd7dc10c46e7157069fe3af4
+  anchored_quote: with general purpose area classification.-F01.03, 13
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - source_ref_extraction
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0005
+    subject_page: 54
+    edge_family_checked: implemented_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MINOR
+    risk_band: MEDIUM
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: 'Claim de un documento de implementación/diseño sin arista `implemented_by`/`designed_by`
+      entrante: no traza a ningún requisito aguas arriba. BORRADOR ASISTIDO -- revisión
+      humana requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-05837ed165
+  finding_record_id: rec-ec4bea464032cbc8
+  finding_id: fnd-bb9c5086ccfd86f6
+  finding_class: FunctionalFinding
+  subtype: IMPLEMENTATION_WITHOUT_REQUIREMENT
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0005
+  section: sec-d2e8bd5d70ae783c
+  page: 13
+  source_hash: 7126fb6c935c06de85863c9fa5cb952c7c47692258386a9fcbdb6f558e0fb4b1
+  anchored_quote: UR4.6.1 [URS-PCS-HR-017] All indicator lights shall be suitable
+    for operation on 24VDC.
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - source_ref_extraction
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0005
+    subject_page: 13
+    edge_family_checked: implemented_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MINOR
+    risk_band: MEDIUM
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: 'Claim de un documento de implementación/diseño sin arista `implemented_by`/`designed_by`
+      entrante: no traza a ningún requisito aguas arriba. BORRADOR ASISTIDO -- revisión
+      humana requerida.'
+  held_out_provenance_tag: null
+  label: TP
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-839496ed03
+  finding_record_id: rec-be5aba51fbd24d21
+  finding_id: fnd-5177e7d22eb230ef
+  finding_class: RegulatoryFinding
+  subtype: REGULATORY_INCONCLUSIVE
+  criterion: ANNEX11_7.1
+  subcriterion_ref: ANNEX11_7.1::sc2
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: null
+  page: 23
+  source_hash: 101e6515a347ccd69bb2c4b65f3b41a86613d42db385ba0ddebc1e7815c25485
+  anchored_quote: SCADA Supervisory Control and Data Acquisition
+  evidence_ids: []
+  evidence_basis: INDETERMINATE
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path: null
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: 'Sin eco léxico anclado para ANNEX11_7.1::sc2. Candidatos de RECUPERACIÓN
+      (no evidencia validada): [clm-cd487a06d06fc548 p.23]; [clm-f8542442c6e9dabc
+      p.6]; [clm-be683e057fa8dc3d p.6]. A revisión humana. MODO TIER-1 (Palanca C).
+      El análisis regulatorio automatizado se limita a: (a) confirmación de eco léxico
+      anclado por el verificador determinista; (b) recuperación semántica de candidatos
+      entregada al revisor. La detección automática de evidencia PARAFRASEADA NO está
+      incluida — el modelo local no la resuelve (medido 6 veces). Todo sub-criterio
+      sin eco léxico anclado va a revisión humana. NUNCA hay declaración de cumplimiento
+      ni aprobación automática.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-30649d4225
+  finding_record_id: rec-5ee41dfa43c9fe97
+  finding_id: fnd-c73cc58847d641e7
+  finding_class: RegulatoryFinding
+  subtype: REGULATORY_INCONCLUSIVE
+  criterion: ALCOA_ATTRIBUTABLE
+  subcriterion_ref: ALCOA_ATTRIBUTABLE::sc1
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0014
+  section: null
+  page: 5
+  source_hash: d45a85b60c80b2929dd6f5eeea7df0241b9bc26183c469828049b5358e9e0b3c
+  anchored_quote: Since an Administrator or Maintenance person may put any input point
+    in SIMULATE and
+  evidence_ids: []
+  evidence_basis: INDETERMINATE
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path: null
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: 'Sin eco léxico anclado para ALCOA_ATTRIBUTABLE::sc1. Candidatos de
+      RECUPERACIÓN (no evidencia validada): [clm-a5e567beed1f0f3a p.5]; [clm-9de770b2c52024e6
+      p.5]; [clm-64a38108e7af5e6f p.4]. A revisión humana. MODO TIER-1 (Palanca C).
+      El análisis regulatorio automatizado se limita a: (a) confirmación de eco léxico
+      anclado por el verificador determinista; (b) recuperación semántica de candidatos
+      entregada al revisor. La detección automática de evidencia PARAFRASEADA NO está
+      incluida — el modelo local no la resuelve (medido 6 veces). Todo sub-criterio
+      sin eco léxico anclado va a revisión humana. NUNCA hay declaración de cumplimiento
+      ni aprobación automática.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-ca963eedbe
+  finding_record_id: rec-f9f8810af5fe98d5
+  finding_id: fnd-63caabcb2bccea24
+  finding_class: RegulatoryFinding
+  subtype: REGULATORY_INCONCLUSIVE
+  criterion: 21_CFR_11.10(g)
+  subcriterion_ref: 21_CFR_11.10(g)::sc1
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0005
+  section: null
+  page: 40
+  source_hash: 7afacd9ea7a387bc2569ef03abba5b61ae970327a3229b3b3c04ef32682d2519
+  anchored_quote: To ensure that only operators with the proper
+  evidence_ids: []
+  evidence_basis: INDETERMINATE
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path: null
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: 'Sin eco léxico anclado para 21_CFR_11.10(g)::sc1. Candidatos de RECUPERACIÓN
+      (no evidencia validada): [clm-421c20ceb0f900eb p.40]; [clm-a205b909f698f80c
+      p.51]; [clm-5592beb472896fc9 p.45]. A revisión humana. MODO TIER-1 (Palanca
+      C). El análisis regulatorio automatizado se limita a: (a) confirmación de eco
+      léxico anclado por el verificador determinista; (b) recuperación semántica de
+      candidatos entregada al revisor. La detección automática de evidencia PARAFRASEADA
+      NO está incluida — el modelo local no la resuelve (medido 6 veces). Todo sub-criterio
+      sin eco léxico anclado va a revisión humana. NUNCA hay declaración de cumplimiento
+      ni aprobación automática.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-4172aced07
+  finding_record_id: rec-339740a9d90545c3
+  finding_id: fnd-c9108665b1eda22c
+  finding_class: SecurityFinding
+  subtype: ACCESS_CONTROL_GAP
+  criterion: 21_CFR_11.10(g)
+  subcriterion_ref: 21_CFR_11.10(g)
+  regulatory_basis: null
+  technical_basis: 21_CFR_11.10(g)
+  document: RW-0005
+  section: sec-d2e8bd5d70ae783c
+  page: 13
+  source_hash: bd6c2fa60ed4267b48490f09ea5d481f6ae9c6404c030b1a4e6fb96f397f5f04
+  anchored_quote: Process interlocks may be overridden with appropriate access level.
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0005
+    subject_page: 13
+    edge_family_checked: null
+    conclusion_depends_on: GRAPH_STATE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: '[C04] Cada operacion aplicable del sistema tiene un nivel de autorizacion
+      definido. Fuente: 21_CFR_11.10(g). El documento describe el tema pero NO se
+      encontro el comportamiento requerido: Se describe, para cada operacion aplicable
+      del sistema, el nivel de autorizacion requerido -- en cualquier forma (prosa
+      enumerada, lista, tabla). El artefacto llamado literalmente "matriz" NO es obligatorio.
+      Regla determinista de completitud (artefacto gobernado v1.1). BORRADOR ASISTIDO
+      -- revision humana requerida.'
+  held_out_provenance_tag: null
+  label: TP
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-27c86ef081
+  finding_record_id: rec-9416222090670306
+  finding_id: fnd-1f93d95910fcc543
+  finding_class: SecurityFinding
+  subtype: ACCESS_CONTROL_GAP
+  criterion: 21_CFR_11.10(g)
+  subcriterion_ref: 21_CFR_11.10(g)
+  regulatory_basis: null
+  technical_basis: 21_CFR_11.10(g)
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: 921d71faf8282901b4edcb26dc430636437ce4ba4f74ccf2138caa1000eaa8c7
+  anchored_quote: 'following operator access levels:'
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: null
+    conclusion_depends_on: GRAPH_STATE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: '[C04] Cada operacion aplicable del sistema tiene un nivel de autorizacion
+      definido. Fuente: 21_CFR_11.10(g). El documento describe el tema pero NO se
+      encontro el comportamiento requerido: Se describe, para cada operacion aplicable
+      del sistema, el nivel de autorizacion requerido -- en cualquier forma (prosa
+      enumerada, lista, tabla). El artefacto llamado literalmente "matriz" NO es obligatorio.
+      Regla determinista de completitud (artefacto gobernado v1.1). BORRADOR ASISTIDO
+      -- revision humana requerida.'
+  held_out_provenance_tag: null
+  label: TP
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-6e9cae87e0
+  finding_record_id: rec-e50eb1f506d5ab42
+  finding_id: fnd-5b04c8582e40822c
+  finding_class: SecurityFinding
+  subtype: AUTHORITY_CHECK_GAP
+  criterion: 21_CFR_11.10(g)
+  subcriterion_ref: 21_CFR_11.10(g)
+  regulatory_basis: null
+  technical_basis: 21_CFR_11.10(g)
+  document: RW-0005
+  section: sec-d2e8bd5d70ae783c
+  page: 13
+  source_hash: 036322553783cf6a8b22caba88dea1605c429c8ab768c08aba4f2e8f375c0790
+  anchored_quote: Administrator and Maintenance login security levels.
+  evidence_ids: []
+  evidence_basis: INDETERMINATE
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path: null
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: '[C05] El sistema verifica tecnicamente la autoridad del usuario en
+      el momento de ejecutar cada operacion aplicable (no solo en el login inicial).
+      Fuente: 21_CFR_11.10(g). El documento describe el tema pero NO se encontro el
+      comportamiento requerido: Se describe un chequeo de autoridad ejecutado por
+      el sistema en el momento de cada operacion aplicable. Regla determinista de
+      completitud (artefacto gobernado v1.1). BORRADOR ASISTIDO -- revision humana
+      requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-2db49caa65
+  finding_record_id: rec-d4644bc4e980d24f
+  finding_id: fnd-87da61c0074699cc
+  finding_class: SecurityFinding
+  subtype: AUTHORITY_CHECK_GAP
+  criterion: 21_CFR_11.10(g)
+  subcriterion_ref: 21_CFR_11.10(g)
+  regulatory_basis: null
+  technical_basis: 21_CFR_11.10(g)
+  document: RW-0006
+  section: sec-e32114a96b4cb3a5
+  page: 5
+  source_hash: be74556350142909d9e5b46c49a50b46b8f3513e6dc79343bbf1ed9c7e01fe34
+  anchored_quote: 21CFRP11 21 CFR Part 11 Electronic Records, Electronic Signatures
+  evidence_ids: []
+  evidence_basis: INDETERMINATE
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path: null
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: '[C05] El sistema verifica tecnicamente la autoridad del usuario en
+      el momento de ejecutar cada operacion aplicable (no solo en el login inicial).
+      Fuente: 21_CFR_11.10(g). El documento describe el tema pero NO se encontro el
+      comportamiento requerido: Se describe un chequeo de autoridad ejecutado por
+      el sistema en el momento de cada operacion aplicable. Regla determinista de
+      completitud (artefacto gobernado v1.1). BORRADOR ASISTIDO -- revision humana
+      requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-3911795970
+  finding_record_id: rec-41020224b0ac1d19
+  finding_id: fnd-d1f4bec631a26e74
+  finding_class: TechnicalFinding
+  subtype: AUDIT_TRAIL_DESIGN_GAP
+  criterion: 21_CFR_11.10(e)
+  subcriterion_ref: 21_CFR_11.10(e)
+  regulatory_basis: null
+  technical_basis: 21_CFR_11.10(e)
+  document: RW-0005
+  section: sec-093b99ec7b7d30a8
+  page: 45
+  source_hash: 62d02b3a6118a2d53016a1e89845e8bc696cd8f38fe80cdaa675f506fa252b01
+  anchored_quote: 'The Critical Alarm Threshold Change Audit Trail entry will contain
+    the following information:'
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0005
+    subject_page: 45
+    edge_family_checked: null
+    conclusion_depends_on: GRAPH_STATE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: '[C01] El audit trail no puede ser alterado, borrado ni desactivado
+      -- ni siquiera por usuarios privilegiados -- y toda modificacion silenciosa
+      es imposible o detectable. Fuente: 21_CFR_11.10(e). El documento describe el
+      tema pero NO se encontro el comportamiento requerido: Existe (a) control de
+      acceso privilegiado sobre el propio audit trail y (b) un mecanismo -- de cualquier
+      naturaleza -- que impide o hace detectable la modificacion o el borrado de sus
+      entradas. Regla determinista de completitud (artefacto gobernado v1.1). BORRADOR
+      ASISTIDO -- revision humana requerida.'
+  held_out_provenance_tag: null
+  label: TP
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-908473d5b1
+  finding_record_id: rec-f346c55d235c03e3
+  finding_id: fnd-c9c1b1b9a0f4ae75
+  finding_class: TechnicalFinding
+  subtype: AUDIT_TRAIL_DESIGN_GAP
+  criterion: 21_CFR_11.10(e)
+  subcriterion_ref: 21_CFR_11.10(e)
+  regulatory_basis: null
+  technical_basis: 21_CFR_11.10(e)
+  document: RW-0006
+  section: sec-14bd4af9588d4f02
+  page: 6
+  source_hash: a34aa169b3516a586c58960db331539d98b9fff8a55b32449d0885379e95ab1c
+  anchored_quote: 3.3.3 Audit trail records shall be archived.
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 6
+    edge_family_checked: null
+    conclusion_depends_on: GRAPH_STATE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: '[C01] El audit trail no puede ser alterado, borrado ni desactivado
+      -- ni siquiera por usuarios privilegiados -- y toda modificacion silenciosa
+      es imposible o detectable. Fuente: 21_CFR_11.10(e). El documento describe el
+      tema pero NO se encontro el comportamiento requerido: Existe (a) control de
+      acceso privilegiado sobre el propio audit trail y (b) un mecanismo -- de cualquier
+      naturaleza -- que impide o hace detectable la modificacion o el borrado de sus
+      entradas. Regla determinista de completitud (artefacto gobernado v1.1). BORRADOR
+      ASISTIDO -- revision humana requerida.'
+  held_out_provenance_tag: null
+  label: TP
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-be3193e1f9
+  finding_record_id: rec-31be76e58d138850
+  finding_id: fnd-b44979d8457f80b4
+  finding_class: TechnicalFinding
+  subtype: BACKUP_RECOVERY_GAP
+  criterion: ANNEX11_7 (Section 7.2)
+  subcriterion_ref: ANNEX11_7 (Section 7.2)
+  regulatory_basis: null
+  technical_basis: ANNEX11_7 (Section 7.2)
+  document: RW-0005
+  section: sec-d2e8bd5d70ae783c
+  page: 13
+  source_hash: fb81b0dd9f1f40309876c48afe93a5a220defa3630ba37d1d29de2e91ddc5353
+  anchored_quote: UR4.3.4 [MCCPDC 3.2.2] The PCS Miscellaneous PLC panel shall have
+    a UPS battery back-up system
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0005
+    subject_page: 13
+    edge_family_checked: null
+    conclusion_depends_on: GRAPH_STATE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: '[C03] Los datos se pueden recuperar tras una perdida: hay backups
+      regulares Y se verifica la capacidad de restaurarlos. Fuente: ANNEX11_7 (Section
+      7.2). El documento describe el tema pero NO se encontro el comportamiento requerido:
+      Se realizan backups regulares Y se verifica -- durante validacion y de forma
+      periodica -- la capacidad de RESTAURAR los datos. Regla determinista de completitud
+      (artefacto gobernado v1.1). BORRADOR ASISTIDO -- revision humana requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-6356c53fa7
+  finding_record_id: rec-634d962c7160732a
+  finding_id: fnd-3a3c186220f5b0e4
+  finding_class: TechnicalFinding
+  subtype: BACKUP_RECOVERY_GAP
+  criterion: ANNEX11_7 (Section 7.2)
+  subcriterion_ref: ANNEX11_7 (Section 7.2)
+  regulatory_basis: null
+  technical_basis: ANNEX11_7 (Section 7.2)
+  document: RW-0006
+  section: sec-47734156bc4c11fc
+  page: 11
+  source_hash: 68b516309372054e795f2f1c34cdbcdf33951836f82b7fa3b8d28a01047e46cb
+  anchored_quote: have a UPS battery back-up system
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 11
+    edge_family_checked: null
+    conclusion_depends_on: GRAPH_STATE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: HIGH
+    risk_band_pre_enforce: HIGH
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: '[C03] Los datos se pueden recuperar tras una perdida: hay backups
+      regulares Y se verifica la capacidad de restaurarlos. Fuente: ANNEX11_7 (Section
+      7.2). El documento describe el tema pero NO se encontro el comportamiento requerido:
+      Se realizan backups regulares Y se verifica -- durante validacion y de forma
+      periodica -- la capacidad de RESTAURAR los datos. Regla determinista de completitud
+      (artefacto gobernado v1.1). BORRADOR ASISTIDO -- revision humana requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-95040a50aa
+  finding_record_id: rec-9e664cfb5c0d6420
+  finding_id: fnd-fe16ab66a3339008
+  finding_class: TechnicalFinding
+  subtype: TECHNICAL_DESIGN_GAP
+  criterion: ANNEX11_7 (Section 7.1) ; ANNEX11_17
+  subcriterion_ref: ANNEX11_7 (Section 7.1) ; ANNEX11_17
+  regulatory_basis: null
+  technical_basis: ANNEX11_7 (Section 7.1) ; ANNEX11_17
+  document: RW-0005
+  section: sec-d2e8bd5d70ae783c
+  page: 13
+  source_hash: 6bd974145ed0b3ef47e5c6dc6e0e01e8873e06f656e9ea95d8836547b050502b
+  anchored_quote: UR5.4.1 [URS-PCS-SR-035] The system shall provide for an interface
+    for the collection and archival of
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0005
+    subject_page: 13
+    edge_family_checked: null
+    conclusion_depends_on: GRAPH_STATE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: MEDIUM
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: '[C08] Los registros siguen accesibles, legibles e integros durante
+      todo el periodo de retencion declarado. Fuente: ANNEX11_7 (Section 7.1) ; ANNEX11_17.
+      El documento describe el tema pero NO se encontro el comportamiento requerido:
+      El periodo de retencion esta declarado Y hay verificacion documentada de que
+      los registros permanecen accesibles / legibles / integros durante ese periodo.
+      Regla determinista de completitud (artefacto gobernado v1.1). BORRADOR ASISTIDO
+      -- revision humana requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-820001ac29
+  finding_record_id: rec-0c617339da88a074
+  finding_id: fnd-6e8f9a36b92148e0
+  finding_class: TechnicalFinding
+  subtype: TECHNICAL_DESIGN_GAP
+  criterion: ANNEX11_7 (Section 7.1) ; ANNEX11_17
+  subcriterion_ref: ANNEX11_7 (Section 7.1) ; ANNEX11_17
+  regulatory_basis: null
+  technical_basis: ANNEX11_7 (Section 7.1) ; ANNEX11_17
+  document: RW-0006
+  section: sec-14bd4af9588d4f02
+  page: 6
+  source_hash: a9f42f6ad62881d58c57af5507d958ad41221ce4d3e935c1e5346edff9f12d09
+  anchored_quote: locally before it is archived in an alternate location for safe
+    keeping.
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: false
+  coverage_status: OK
+  coverage_required_capabilities:
+  - section_scoping
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 6
+    edge_family_checked: null
+    conclusion_depends_on: GRAPH_STATE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: MEDIUM
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: '[C08] Los registros siguen accesibles, legibles e integros durante
+      todo el periodo de retencion declarado. Fuente: ANNEX11_7 (Section 7.1) ; ANNEX11_17.
+      El documento describe el tema pero NO se encontro el comportamiento requerido:
+      El periodo de retencion esta declarado Y hay verificacion documentada de que
+      los registros permanecen accesibles / legibles / integros durante ese periodo.
+      Regla determinista de completitud (artefacto gobernado v1.1). BORRADOR ASISTIDO
+      -- revision humana requerida.'
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-dbbd6a52b3
+  finding_record_id: rec-dd15186e2f57cebc
+  finding_id: fnd-58ddaf537112761c
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: 4ab1462cb582133725a3cb4d80d1977c532844fe0bcf93b1308223d83528a1aa
+  anchored_quote: 5.1.2 URS-PCS-SR-002 Distinction shall be drawn between,
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-f600892264
+  finding_record_id: rec-aa9b6df94e4a702e
+  finding_id: fnd-970cb0218559d467
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-47734156bc4c11fc
+  page: 11
+  source_hash: 91634647954d3f57c2f9c554af2a314291b29cefe8aeb1fede7cafaa16514d46
+  anchored_quote: 4.9.2 URS-PCS-HR-021 All switching and cabling shall be capable
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 11
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-1a2f161797
+  finding_record_id: rec-5135a9f631e88e7a
+  finding_id: fnd-ae5ca98eb7c57254
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: 59323d2fbd44cb87a361229373a439e6a74b2c43c603b81fc0f29545fd596990
+  anchored_quote: 5.2.15 URS-PCS-SR-021 The system must be compatible with
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-5a1f8e2abd
+  finding_record_id: rec-8a4bbe1c1d01735b
+  finding_id: fnd-e80c46a27f404903
+  finding_class: TraceabilityFinding
+  subtype: ORPHAN_DESIGN_ELEMENT
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0012
+  section: sec-344fdf1c11b59fd1
+  page: 5
+  source_hash: 746f1cbd965e6f61299ce90ff82219ff308885867e3d4c0c88d91ea4d224fce2
+  anchored_quote: 4.1.5.4 Clean Steam Generator WFI Request
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  - graph.implemented_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0012
+    subject_page: 5
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MINOR
+    risk_band: LOW
+    risk_band_pre_enforce: LOW
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: 'Elemento de diseño con identificador propio, sin arista `tested_by`
+      saliente y sin requisito/diseño aguas arriba: nadie lo pidió y nadie lo prueba.
+      refs: [''4.1.5.4'']. BORRADOR ASISTIDO -- revisión humana requerida.'
+  held_out_provenance_tag: null
+  label: TP
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-42505f9e53
+  finding_record_id: rec-bb015a19fef0dae9
+  finding_id: fnd-1b445d1f35cd771b
+  finding_class: TraceabilityFinding
+  subtype: ORPHAN_DESIGN_ELEMENT
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0005
+  section: sec-f96d78fd0640c05f
+  page: 54
+  source_hash: 1b88194aec3345935b9b929dbf2ece93d0066eed33d91400dcd0e1d635372d32
+  anchored_quote: UR5.2.20 [URS-PCS-SR-026] The following colors shall be utilized
+    when indicating states of dynamic objects…(see below)-F05.02,
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  - graph.implemented_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0005
+    subject_page: 54
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MINOR
+    risk_band: LOW
+    risk_band_pre_enforce: LOW
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: 'Elemento de diseño con identificador propio, sin arista `tested_by`
+      saliente y sin requisito/diseño aguas arriba: nadie lo pidió y nadie lo prueba.
+      refs: [''5.2.20'', ''F05.02'', ''PCSSR026'', ''UR5.2.20'']. BORRADOR ASISTIDO
+      -- revisión humana requerida.'
+  held_out_provenance_tag: null
+  label: TP
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-bd478d983a
+  finding_record_id: rec-da2dd36165ffbc37
+  finding_id: fnd-584c2d9c13ff5f76
+  finding_class: TraceabilityFinding
+  subtype: ORPHAN_DESIGN_ELEMENT
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0012
+  section: sec-344fdf1c11b59fd1
+  page: 5
+  source_hash: 43386897c4d0a4fcac82126916785e50ce648283d160148c60aedffde0207806
+  anchored_quote: 4.1.3 WFI Generation, Storage, and Distribution Signals
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  - graph.implemented_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0012
+    subject_page: 5
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MINOR
+    risk_band: LOW
+    risk_band_pre_enforce: LOW
+    risk_mode: ENFORCE
+    machine_state: MACHINE_INCONCLUSIVE
+    confidence: LOW
+    rationale: 'Elemento de diseño con identificador propio, sin arista `tested_by`
+      saliente y sin requisito/diseño aguas arriba: nadie lo pidió y nadie lo prueba.
+      refs: [''4.1.3'']. BORRADOR ASISTIDO -- revisión humana requerida.'
+  held_out_provenance_tag: null
+  label: TP
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-4c73f03606
+  finding_record_id: rec-53df6ca63f939637
+  finding_id: fnd-7e2a9275627ef922
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: 54630b70682e2628e76d3b5f13b598b19fd09505e2a8fba71c1da8b68f845917
+  anchored_quote: 5.2.10 URS-PCS-SR-016 Alarm presentation shall be visual and
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-886b6747b3
+  finding_record_id: rec-957e59b5e43589d1
+  finding_id: fnd-21b0289a18c29e47
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-14bd4af9588d4f02
+  page: 6
+  source_hash: 9e6adf9effd19784d83e03959dbbfb12ff2db342c6f0d3d7b7770749b0a5b62e
+  anchored_quote: 3.6.7 [MCCPDC 3.3.1] - The system shall interface with an OEM vendor
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 6
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-1cf04a72ba
+  finding_record_id: rec-05a16f1db0e9b326
+  finding_id: fnd-57710f257981d3d6
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: 0498f1763ca852632472f75a090b0ef2701dc8df4aee18b0b33202e8ec6e9268
+  anchored_quote: 5.3.4 URS-PCS-SR-033 Alarms shall be classified into three
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-d9ee1220fa
+  finding_record_id: rec-2da01b9db05de4cb
+  finding_id: fnd-8cb8d247673a516a
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: f137fb00e9f66eeba3efd5af5d414edfc4e6db7b54d4ac043d688ae3768e15eb
+  anchored_quote: 5.2.4 URS-PCS-SR-010 The user identification must consist of
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-0a370c32b3
+  finding_record_id: rec-4e6f08779e6216df
+  finding_id: fnd-b1060f3083e1039a
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-14bd4af9588d4f02
+  page: 6
+  source_hash: d96500fa57fb572a2bb7b4ca177c3c029ed51dc0138e72297e21b2887a8452bb
+  anchored_quote: 3.5.2 [MCCPDC 1.4.2.4] - The SI shall implement thin client architecture
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 6
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-2b84522dc6
+  finding_record_id: rec-aa552232061efbef
+  finding_id: fnd-1e1aa6b5abfb4855
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: 97b6924cf47e529f95dbad193b0e2448d47f332a97960e7773235de74b9e848e
+  anchored_quote: 5.4.3 URS-PCS-SR-037 All data communication shall be via
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-399f54e33a
+  finding_record_id: rec-d61477197db51b76
+  finding_id: fnd-29b99dbd603f84f5
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: 10739e4dc90ee5a932d0f232760dd52a931fc22f8bfa74d62801454b63cf1bc4
+  anchored_quote: 5.2.6 URS-PCS-SR-012 The system must have an automatic
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-e8776e1eb6
+  finding_record_id: rec-d8eee555b489b272
+  finding_id: fnd-5fe1e772d38e09e8
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-47734156bc4c11fc
+  page: 11
+  source_hash: 40d6f8c5ccfa407722798edbe07ed1cb61799656458c4bd52f1ab5ebc2b6b217
+  anchored_quote: 4.2.4 System shall include three portable Microsoft Surface Pro
+    wireless
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 11
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-0404376af9
+  finding_record_id: rec-a2a0c552f2c24730
+  finding_id: fnd-ab8cf4fc0bdd4ad6
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: f3581149640adfcbee754996a6a6786638cb4042c99388948a723e5f23a6e179
+  anchored_quote: 5.4.5 URS-PCS-SR-039 The system shall monitor and alarm the
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-87255e81ae
+  finding_record_id: rec-d822fcc2267dde6a
+  finding_id: fnd-7c950abaeb6c5ac3
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-47734156bc4c11fc
+  page: 11
+  source_hash: 3de19c86c9ac91f6b465d2dfb0c1899d4d796a597fce6a80d7a15a207c64a254
+  anchored_quote: 4.5.6 [MCCPDC 3.2.2] Completed, assembled panel shall be UL
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 11
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-fbf0cbcf4e
+  finding_record_id: rec-ecefe24588a642ea
+  finding_id: fnd-e0b958f4781a6d58
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: 7efb698993c84bd248c76d04ee2edb685b9b4272a0b3c32b1d386d64279c5857
+  anchored_quote: 5.4.1 URS-PCS-SR-035 The system shall provide for an interface
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-1bbe528ea5
+  finding_record_id: rec-a35ef0d478eadef8
+  finding_id: fnd-5e23a1b4f8228b5a
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: ee83b2dfd9682f66b483e14a3aa1910fdda68ebfb87c7606aab52c89428ef3e2
+  anchored_quote: 5.4.9 URS-PCS-SR-043 A secured level access manual override
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+- case_id: ADJ-d2205cb7cd
+  finding_record_id: rec-c8ab28098ea26220
+  finding_id: fnd-39c063f3f8824484
+  finding_class: TestCoverageFinding
+  subtype: REQUIREMENT_NOT_TESTED
+  criterion: null
+  subcriterion_ref: null
+  regulatory_basis: null
+  technical_basis: null
+  document: RW-0006
+  section: sec-caa61dcd3e461fab
+  page: 16
+  source_hash: 307f49e37ae8a56e0660ffff9b7b438a3a0b97ed5d337c8fb9f97fba427624fd
+  anchored_quote: 5.4.8 URS-PCS-SR-042 The control system shall have a historian
+  evidence_ids: []
+  evidence_basis: ABSENCE_DEPENDENT
+  would_degrade: true
+  coverage_status: MISSING
+  coverage_required_capabilities:
+  - test_object_extraction
+  - graph.tested_by_edges
+  graph_path:
+  - graph_snapshot/graph_snapshot.json
+  - graph_snapshot_fingerprint: 88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05
+    subject_document: RW-0006
+    subject_page: 16
+    edge_family_checked: tested_by
+    conclusion_depends_on: ABSENCE_OF_EDGE
+  proposed_machine_finding:
+    severity: MAJOR
+    risk_band: LOW
+    risk_band_pre_enforce: MEDIUM
+    risk_mode: ENFORCE
+    machine_state: MACHINE_DEVIATION_CANDIDATE
+    confidence: MEDIUM
+    rationale: Requisito de documento fuente con implementación aguas abajo pero SIN
+      ningún `test` transitivo en el grafo. BORRADOR ASISTIDO -- revisión humana requerida.
+  held_out_provenance_tag: null
+  label: COVERAGE_LIMITED
+  adjudicator_note: ''
+  human_evidence_anchor: ''
+adjudication_gate: D-5
+qa40_finding_ids_sha256: 02b6d3d0b6fadb1f882c4e63b7f7421dd387268ddabe5b5f16abfa5d9d360d32
+governed_mode_at_generation: ENFORCE
+no_resample_note: 'Muestra QA40 canónica (SHA 02b6d3d0...). NO se re-muestrea. Direccionamiento
+  por finding_record_id (H-3). Generada bajo la config gobernada REAL (ENFORCE, D-2-H7-20260830):
+  proposed_machine_finding refleja la banda post-ENFORCE; el conjunto de finding_id
+  NO cambia porque no depende de la banda de riesgo.'

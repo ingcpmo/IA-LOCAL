@@ -37,14 +37,64 @@
 #     No se inventan TN. Sin ellas: SPECIFICITY_REPORTABLE = UNKNOWN.
 
 artifact: real_corpus_opportunities
-version: "0.2-draft"
-status: DRAFT_UNSIGNED
-adjudicator: null
-adjudicated_at: null
+version: "0.2"
+status: SIGNED
+adjudicator: "Cesar (Capa 9)"
+adjudicated_at: "2026-08-31"
 
 corpus:
   name: "Rockwell 6-doc"
   document_ids: [RW-0005, RW-0006, RW-0009, RW-0011, RW-0012, RW-0014]
+
+# --- D5-B: alcance de la revisión humana READ-ONLY del corpus real (para RECALL/FN) ---
+# Documenta QUÉ se revisó antes de declarar cualquier FN. Cesar (Capa 9) adjudicó QA40 D5-A
+# (40/40; 9 TP / 31 COVERAGE_LIMITED / 0 FP) y revisó el barrido de claims de tópico regulado
+# del corpus para identificar oportunidades adicionales NO detectadas por el sistema.
+corpus_review_scope:
+  reviewed_by: "Cesar (Capa 9)"
+  reviewed_at: "2026-08-31"
+  method: >
+    Barrido READ-ONLY de canonical_store_v2 de los 6 documentos, filtrado por tópico
+    regulado (audit trail / backup-recovery / access-control / authority-check /
+    electronic-signature-ALCOA / retención) y cruzado contra los findings emitidos
+    del escenario D (candidato H-10 +tests-v1). Loci con tópico regulado y SIN finding
+    co-localizado del subtipo correspondiente se presentaron como candidatos de oportunidad.
+  documents_reviewed: [RW-0005, RW-0006, RW-0009, RW-0011, RW-0012, RW-0014]
+  regulated_topic_claim_counts:
+    RW-0005: 92
+    RW-0006: 26
+    RW-0011: 4
+    RW-0012: 3
+    RW-0014: 2
+    RW-0009: 0
+  additional_opportunity_candidates_surfaced: 2   # B-EXT-01, B-EXT-02
+  additional_opportunities_confirmed_by_human: 0
+  note: >
+    Cesar adjudicó los 2 candidatos adicionales como OPPORTUNITY_NO (ver
+    rejected_opportunity_candidates). No se declara FN=0 por inferencia: se declara
+    con alcance de revisión humana documentado arriba. Las 9 oportunidades reales son
+    los 9 TP ya confirmados en QA40 D5-A, todas con match confirmado -> FN = 0 en este alcance.
+
+# Candidatos de oportunidad adicionales revisados y RECHAZADOS por el humano (no son FN).
+rejected_opportunity_candidates:
+  - candidate_id: B-EXT-01
+    document: RW-0006
+    page: 5
+    expected_class: DataIntegrityFinding
+    expected_subtype: ALCOA_ATTRIBUTABLE_GAP
+    source_text: "21CFRP11 21 CFR Part 11 Electronic Records, Electronic Signatures"
+    human_decision: OPPORTUNITY_NO
+    basis: REG
+    reviewer_note: "Entrada de glosario/referencia normativa; no constituye por sí misma evidencia de una desviación ALCOA atribuible."
+  - candidate_id: B-EXT-02
+    document: RW-0006
+    page: 6
+    expected_class: DataIntegrityFinding
+    expected_subtype: ALCOA_ATTRIBUTABLE_GAP
+    source_text: "3.2.5 System must implement electronic signatures"
+    human_decision: OPPORTUNITY_NO
+    basis: REG
+    reviewer_note: "Requisito afirmativo de implementar firmas electrónicas; el texto aislado no demuestra una brecha ALCOA atribuible."
 
 # --- parámetro EXPLÍCITO del protocolo de coincidencia de página ---
 page_match_policy:
@@ -65,7 +115,118 @@ methodology: >
 #   expected_topic_or_requirement · human_evidence_anchor · basis · reviewer_note
 # Campos de adjudicación (los rellena QA al confirmar el match; vacíos = FN):
 #   matched_finding_id · match_confirmed_by · match_note
-opportunities: []
+# D5-B B-SEED: las 9 oportunidades reales = los 9 findings adjudicados TP humanamente en QA40 D5-A.
+# match_confirmed_by / match_note fijados por Cesar (Capa 9). basis = provenance REG (criterio
+# regulatorio 21 CFR / Annex 11 explícito) | DOM (trazabilidad/arquitectura sin criterio directo).
+opportunities:
+  - opportunity_id: OPP-0001
+    expected_class: FunctionalFinding
+    expected_subtype: IMPLEMENTATION_WITHOUT_REQUIREMENT
+    document: RW-0005
+    page_band: [54, 54]
+    expected_topic_or_requirement: "Elemento de implementación (hardwired I/O de la PCS Miscellaneous PLC) sin requisito de usuario trazable"
+    human_evidence_anchor: "UR4.10.1 [URS-PCS-HR-022] The field inputs and outputs to the PCS Miscellaneous PLC shall be hardwired I/O-F01.06, 15"
+    basis: DOM
+    reviewer_note: "Oportunidad de detección = hallazgo emitido y adjudicado TP humanamente en QA40 D5-A (case_id ADJ-9a9e84e8e2)."
+    matched_finding_id: "fnd-e34477fdf4f5d2d9"
+    match_confirmed_by: "Cesar"
+    match_note: "Confirmado humanamente como TP en QA40 D5-A"
+  - opportunity_id: OPP-0002
+    expected_class: FunctionalFinding
+    expected_subtype: IMPLEMENTATION_WITHOUT_REQUIREMENT
+    document: RW-0005
+    page_band: [13, 13]
+    expected_topic_or_requirement: "Elemento de implementación (indicator lights 24VDC) sin requisito de usuario trazable"
+    human_evidence_anchor: "UR4.6.1 [URS-PCS-HR-017] All indicator lights shall be suitable for operation on 24VDC."
+    basis: DOM
+    reviewer_note: "Oportunidad de detección = hallazgo emitido y adjudicado TP humanamente en QA40 D5-A (case_id ADJ-05837ed165)."
+    matched_finding_id: "fnd-bb9c5086ccfd86f6"
+    match_confirmed_by: "Cesar"
+    match_note: "Confirmado humanamente como TP en QA40 D5-A"
+  - opportunity_id: OPP-0003
+    expected_class: SecurityFinding
+    expected_subtype: ACCESS_CONTROL_GAP
+    document: RW-0005
+    page_band: [13, 13]
+    expected_topic_or_requirement: "Anulación de interlocks de proceso por nivel de acceso -- control de acceso (21 CFR 11.10(g))"
+    human_evidence_anchor: "Process interlocks may be overridden with appropriate access level."
+    basis: REG
+    reviewer_note: "Oportunidad de detección = hallazgo emitido y adjudicado TP humanamente en QA40 D5-A (case_id ADJ-4172aced07)."
+    matched_finding_id: "fnd-c9108665b1eda22c"
+    match_confirmed_by: "Cesar"
+    match_note: "Confirmado humanamente como TP en QA40 D5-A"
+  - opportunity_id: OPP-0004
+    expected_class: SecurityFinding
+    expected_subtype: ACCESS_CONTROL_GAP
+    document: RW-0006
+    page_band: [16, 16]
+    expected_topic_or_requirement: "Niveles de acceso de operador -- control de acceso por rol (21 CFR 11.10(g))"
+    human_evidence_anchor: "following operator access levels:"
+    basis: REG
+    reviewer_note: "Oportunidad de detección = hallazgo emitido y adjudicado TP humanamente en QA40 D5-A (case_id ADJ-27c86ef081)."
+    matched_finding_id: "fnd-1f93d95910fcc543"
+    match_confirmed_by: "Cesar"
+    match_note: "Confirmado humanamente como TP en QA40 D5-A"
+  - opportunity_id: OPP-0005
+    expected_class: TechnicalFinding
+    expected_subtype: AUDIT_TRAIL_DESIGN_GAP
+    document: RW-0005
+    page_band: [45, 45]
+    expected_topic_or_requirement: "Diseño del audit trail de cambio de umbral de alarma crítica -- contenido del registro (21 CFR 11.10(e))"
+    human_evidence_anchor: "The Critical Alarm Threshold Change Audit Trail entry will contain the following information:"
+    basis: REG
+    reviewer_note: "Oportunidad de detección = hallazgo emitido y adjudicado TP humanamente en QA40 D5-A (case_id ADJ-3911795970)."
+    matched_finding_id: "fnd-d1f4bec631a26e74"
+    match_confirmed_by: "Cesar"
+    match_note: "Confirmado humanamente como TP en QA40 D5-A"
+  - opportunity_id: OPP-0006
+    expected_class: TechnicalFinding
+    expected_subtype: AUDIT_TRAIL_DESIGN_GAP
+    document: RW-0006
+    page_band: [6, 6]
+    expected_topic_or_requirement: "Archivado de registros de audit trail -- diseño (21 CFR 11.10(e))"
+    human_evidence_anchor: "3.3.3 Audit trail records shall be archived."
+    basis: REG
+    reviewer_note: "Oportunidad de detección = hallazgo emitido y adjudicado TP humanamente en QA40 D5-A (case_id ADJ-908473d5b1)."
+    matched_finding_id: "fnd-c9c1b1b9a0f4ae75"
+    match_confirmed_by: "Cesar"
+    match_note: "Confirmado humanamente como TP en QA40 D5-A"
+  - opportunity_id: OPP-0007
+    expected_class: TraceabilityFinding
+    expected_subtype: ORPHAN_DESIGN_ELEMENT
+    document: RW-0012
+    page_band: [5, 5]
+    expected_topic_or_requirement: "Elemento de diseño (Clean Steam Generator WFI Request) sin traza a requisito o prueba"
+    human_evidence_anchor: "4.1.5.4 Clean Steam Generator WFI Request"
+    basis: DOM
+    reviewer_note: "Oportunidad de detección = hallazgo emitido y adjudicado TP humanamente en QA40 D5-A (case_id ADJ-5a1f8e2abd)."
+    matched_finding_id: "fnd-e80c46a27f404903"
+    match_confirmed_by: "Cesar"
+    match_note: "Confirmado humanamente como TP en QA40 D5-A"
+  - opportunity_id: OPP-0008
+    expected_class: TraceabilityFinding
+    expected_subtype: ORPHAN_DESIGN_ELEMENT
+    document: RW-0005
+    page_band: [54, 54]
+    expected_topic_or_requirement: "Elemento de diseño (código de colores de objetos dinámicos, UR5.2.20) sin traza a requisito o prueba"
+    human_evidence_anchor: "UR5.2.20 [URS-PCS-SR-026] The following colors shall be utilized when indicating states of dynamic objects…(see below)-F05.02,"
+    basis: DOM
+    reviewer_note: "Oportunidad de detección = hallazgo emitido y adjudicado TP humanamente en QA40 D5-A (case_id ADJ-42505f9e53)."
+    matched_finding_id: "fnd-1b445d1f35cd771b"
+    match_confirmed_by: "Cesar"
+    match_note: "Confirmado humanamente como TP en QA40 D5-A"
+  - opportunity_id: OPP-0009
+    expected_class: TraceabilityFinding
+    expected_subtype: ORPHAN_DESIGN_ELEMENT
+    document: RW-0012
+    page_band: [5, 5]
+    expected_topic_or_requirement: "Elemento de diseño (WFI Generation, Storage, and Distribution Signals) sin traza a requisito o prueba"
+    human_evidence_anchor: "4.1.3 WFI Generation, Storage, and Distribution Signals"
+    basis: DOM
+    reviewer_note: "Oportunidad de detección = hallazgo emitido y adjudicado TP humanamente en QA40 D5-A (case_id ADJ-bd478d983a)."
+    matched_finding_id: "fnd-584c2d9c13ff5f76"
+    match_confirmed_by: "Cesar"
+    match_note: "Confirmado humanamente como TP en QA40 D5-A"
 #   - opportunity_id: OPP-0001
 #     expected_class: TechnicalFinding
 #     expected_subtype: BACKUP_RECOVERY_GAP
@@ -79,10 +240,85 @@ opportunities: []
 #     match_confirmed_by: "QA Validation Lead" # <- QA
 #     match_note: "El finding tech-000123 en p.42 describe exactamente esta brecha de restore."   # <- QA
 
+# --- D5-C: candidatos de unidad negativa revisados y ADJUDICADOS por Cesar (Capa 9) ---
+# Se adjudicaron 4 candidatos. SOLO NEG-CAND-03 = NEGATIVE_YES se materializa como
+# negative_unit válida (ver `negative_units`). NEG-CAND-01 / NEG-CAND-02 / NEG-CAND-04 =
+# NEGATIVE_NO: NO se convierten en TN, no entran en el cálculo de especificidad.
+# expected_class / expected_subtype de los rechazados = deducidos de la nota del revisor
+# (verdicto + nota los fijó el humano; el locus no se ancló porque el candidato se rechaza).
+rejected_negative_unit_candidates:
+  - candidate_id: NEG-CAND-01
+    expected_class: SecurityFinding
+    expected_subtype: AUTHORITY_CHECK_GAP
+    human_decision: NEGATIVE_NO
+    adjudicator: "Cesar (Capa 9)"
+    adjudicated_at: "2026-08-31"
+    reviewer_note: >-
+      Los controles de autenticación, contraseña y lockout no demuestran verificación
+      técnica de autoridad en el momento de cada operación aplicable.
+  - candidate_id: NEG-CAND-02
+    expected_class: TechnicalFinding
+    expected_subtype: BACKUP_RECOVERY_GAP
+    human_decision: NEGATIVE_NO
+    adjudicator: "Cesar (Capa 9)"
+    adjudicated_at: "2026-08-31"
+    reviewer_note: >-
+      Se documentan backups y mecanismos de recuperación, pero la evidencia presentada
+      no acredita verificación de la capacidad de restauración exigida por Annex 11 §7.2.
+  - candidate_id: NEG-CAND-04
+    expected_class: TechnicalFinding
+    expected_subtype: BACKUP_RECOVERY_GAP
+    human_decision: NEGATIVE_NO
+    adjudicator: "Cesar (Capa 9)"
+    adjudicated_at: "2026-08-31"
+    reviewer_note: >-
+      La frase únicamente establece un mecanismo general de recuperación y no demuestra
+      backup más verificación de restauración; además se solapa con NEG-CAND-02.
+
 # Unidades negativas explícitas (opcional; SOLO con esto se publican TN/especificidad).
 # Campos obligatorios por unidad: unit_id · analysis_unit · document · scope · expected_class ·
 #   expected_subtype · human_evidence_anchor · basis · reviewer_note
-negative_units: []
+# D5-C: NEG-CAND-03 = NEGATIVE_YES adjudicado por Cesar (Capa 9). Anclaje = §F10.04
+# "Security/Access Levels" / Tabla 4-1 de RW-0005 (FS 215115305-FS V1.2) p.40, claim real
+# emitido por el analizador (fnd-e210a32255e15785) — la matriz de acceso ESTÁ presente.
+negative_units:
+  - unit_id: NEG-CAND-03
+    analysis_unit: section
+    document: RW-0005
+    scope: [40, 40]
+    expected_class: SecurityFinding
+    expected_subtype: ACCESS_CONTROL_GAP
+    human_evidence_anchor: >-
+      RW-0005 (FS 215115305-FS V1.2) p.40, §F10.04 "Security/Access Levels":
+      "FactoryTalk Security software provides access based on the system user level.
+      The following security levels are identified for this SCADA project:
+      Security level | Allowed access/action level | Security Code" — Tabla 4-1
+      "Security levels for this system" con filas DEFAULT User (A), Operator (A,B),
+      Supervisor (A,B,C), Maintenance (A,B,C,D) y Administrator (A,B,C,D,E),
+      enumerando privilegios por rol y códigos de seguridad por operación.
+    basis: REG
+    reviewer_note: >-
+      La unidad describe explícitamente niveles de acceso, privilegios por rol,
+      matriz de acceso/acción y códigos de seguridad; constituye una unidad negativa
+      válida para ACCESS_CONTROL_GAP.
+    human_verified: true
+    verdict: NEGATIVE_YES
+    adjudicator: "Cesar (Capa 9)"
+    adjudicated_at: "2026-08-31"
+    # D5-C paso 1 — confirmación humana explícita del anclaje (no altera verdict / basis /
+    # reviewer_note / human_verified; solo ratifica que human_evidence_anchor corresponde a
+    # evidencia existente y verificada de RW-0005 p.40 §F10.04 / Tabla 4-1).
+    human_anchor_confirmation:
+      confirmed_by: "Cesar (Capa 9)"
+      confirmed_at: "2026-08-31"
+      statement: >-
+        Confirmo como human_evidence_anchor de NEG-CAND-03 el contenido verificado de
+        RW-0005 p.40, §F10.04 "Security/Access Levels" / Tabla 4-1, que documenta niveles
+        DEFAULT User, Operator, Supervisor, Maintenance y Administrator y sus
+        privilegios/códigos de seguridad.
+      evidence_cross_check:
+        - "Claim real emitido por el analizador en RW-0005 p.40: fnd-e210a32255e15785 — source_text 'Security level Allowed access/action level Security Code' (H-10 run1 y wpe4-qa-20260828)."
+        - "Texto fuente íntegro en docs_plan/EVIDENCIA_COMPLETA_P2_P4_P5_P6_P7_20260818.md: 'F10.04: Security/Access Levels ... FactoryTalk Security software provides access based on the system user level ... DEFAULT User ... Operator ... Supervisor ... Maintenance ... Administrator ... Table 4-1: Security levels for this system' con códigos A–E."
 #   - unit_id: NEG-0001
 #     analysis_unit: "section"          # qué ES una unidad negativa aquí (section | document | page_range)
 #     document: RW-0006

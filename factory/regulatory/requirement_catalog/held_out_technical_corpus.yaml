@@ -9,9 +9,13 @@
 #       revisor) / ADV (propuesto por máquina -> entra solo con `human_approved: true`).
 #     - Umbrales fijados ANTES de correr (`thresholds`).
 #
-# ESTADO: DRAFT_UNSIGNED. NO es un gate. Requiere que un autor independiente (QA/Validation, != Capa 9)
-#   pueble los casos reales, cite las cláusulas de los REG, apruebe los ADV, fije los umbrales y firme.
-#   Hasta entonces el runner produce solo números INDICATIVOS marcados NOT_A_GATE.
+# ESTADO: DRAFT_UNSIGNED. Ground truth PRE-RUN CONGELADO por la autora independiente
+#   Maria Torres (QA Validation Engineer) el 2026-08-31 (decisión compacta "HO-T-001 through
+#   HO-T-N01 all CONFIRM as skeleton", expandida literalmente en D5-D punto 1).
+#   Existió una corrida del analizador ANTES de recibir la confirmación explícita de
+#   materialización -> esa corrida es DIAGNÓSTICA, NO un gate formal (ver current_run_classification).
+#   D5-D = REMEDIATION_REQUIRED. Estos 5 casos quedan CONTAMINADOS para tuning: no vuelven a
+#   usarse como prueba final independiente (ver current_held_out_reuse_for_final_gate).
 
 artifact: held_out_technical_corpus
 version: "0.1-draft"
@@ -21,7 +25,36 @@ signed_at: null
 excluded_authors: ["Capa 9 (Cesar)"]          # el autor de las reglas NO puede ser el autor del held-out
 independent_author_required: true
 
-thresholds:                                    # fijados ex-ante; solo aplican cuando status == SIGNED
+# --- autora independiente designada (validez NOMINAL / a nivel de repo; Git no acredita
+#     identidad física ni rol QA -- la condición de gobernanza es que las decisiones las
+#     emitiera realmente ella y no Cesar ni la IA) ---
+independent_author: "Maria Torres (QA Validation Engineer)"
+independent_author_declaration: "HO-T-001 through HO-T-N01 all CONFIRM as skeleton"
+independent_author_declared_at: "2026-08-31"
+
+# --- freeze del ground truth PRE-RUN ---
+ground_truth_frozen: true
+ground_truth_frozen_at: "2026-08-31"
+# Algoritmo determinista de la huella (reproducible desde disco):
+#   frozen = {
+#     "cases": [ { "case_id", "expected_finding", "expected_class", "expected_subtype",
+#                  "provenance", "source_clause_or_rationale", "human_reviewed", "human_approved" } ... ],
+#     "thresholds": {...}, "match_policy": {...} }
+#   canon = json.dumps(frozen, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
+#   pre_run_ground_truth_sha256 = sha256(canon.encode("utf-8")).hexdigest()
+#   EXCLUYE: page_band (real o provisional), findings / resultados del analizador,
+#            timestamps mutables, cualquier estado post-run.
+pre_run_ground_truth_sha256: "125accf9d08cca76dde5f5fdc441f154fafa0a4099e2c4fdd93016013ce05b6e"
+
+# page_band canónico: RESUELTO desde el store canónico REAL de la corrida diagnóstica
+# (held_out_d5d_20260831/canonical), verificado por lectura de los .sqlite3 -- NO desde comentarios.
+# Etiqueta _DIAGNOSTIC porque la confirmación humana de materialización llegó DESPUÉS de la corrida
+# -> no es una resolución de gate formal.
+page_bands_canonical: RESOLVED_DIAGNOSTIC
+canonical_materialization_verifiable: true
+held_out_canonical: "factory/regulatory/pilot_run/held_out_d5d_20260831/"   # dir usado por analyzer_run
+
+thresholds:                                    # fijados ex-ante; CONGELADOS -- no cambian con el resultado
   TECHNICAL_RECALL_MIN: 0.90
   TECHNICAL_FALSE_POSITIVE_MAX: 0.05
   FABRICATED_CITATIONS_MAX: 0
@@ -30,41 +63,200 @@ match_policy:
   by: [finding_class, subtype, document, page_band]   # estructural; el ground truth NO aporta texto
   page_band_tolerance: 3
 
-# --- SEMILLA SINTÉTICA (independiente por construcción; se reemplaza con casos reales al firmar) ---
-# Nota: el corpus lo construye un builder SEPARADO (held_out_corpus.build_seed_corpus); estos casos
-#   describen QUÉ debe encontrar el analizador, por posición y tipo, sin dictar la redacción.
+# --- GROUND TRUTH PRE-RUN (congelado). `match` = UNA definición operativa por caso, con el
+#     page_band REAL verificado desde el store canónico. `provisional_match` = SOLO trazabilidad
+#     histórica del esqueleto; el scorer NUNCA lo lee. `match_operational_resolved: false`
+#     porque la secuencia de gate formal no fue válida (confirmación post-run). ---
 cases:
   - case_id: HO-T-001
     provenance_tag: REG
-    source_clause: "21 CFR 11.10(e) -- audit trail: fecha/hora, quién, qué (valor anterior/nuevo)"
+    source_clause: "21 CFR 11.10(e) — audit trail: fecha/hora, quién, valor anterior/nuevo"
     expected: {finding: true, finding_class: DataIntegrityFinding, subtype: AUDIT_TRAIL_INTEGRITY_GAP}
-    match: {document: HO-FS, page_band: [10, 16]}
+    match: {document: HO-FS, page_band: [12, 12]}   # REAL, verificado desde canonical/HO-FS.sqlite3
+    provisional_match: {document: HO-FS, page_band: [10, 16]}   # trazabilidad histórica; scorer NO lo lee
+    match_operational_resolved: false
+    human_reviewed: true
+    human_decision: CONFIRM
 
   - case_id: HO-T-002
     provenance_tag: REG
-    source_clause: "EU GMP Annex 11 §7.2 -- backups: realización regular y verificación de restauración"
+    source_clause: "EU GMP Annex 11 §7.2 — backups regulares y verificación de restauración"
     expected: {finding: true, finding_class: TechnicalFinding, subtype: BACKUP_RECOVERY_GAP}
-    match: {document: HO-FS, page_band: [10, 16]}
+    match: {document: HO-FS, page_band: [14, 14]}   # REAL, verificado desde canonical/HO-FS.sqlite3
+    provisional_match: {document: HO-FS, page_band: [10, 16]}
+    match_operational_resolved: false
+    human_reviewed: true
+    human_decision: CONFIRM
 
   - case_id: HO-T-003
     provenance_tag: DOM
     source_clause: null
     reviewer_rationale: "El FS nombra 'roles' pero no describe verificación de autoridad por operación."
     expected: {finding: true, finding_class: SecurityFinding, subtype: AUTHORITY_CHECK_GAP}
-    match: {document: HO-FS, page_band: [10, 16]}
+    match: {document: HO-FS, page_band: [15, 15]}   # REAL, verificado desde canonical/HO-FS.sqlite3
+    provisional_match: {document: HO-FS, page_band: [10, 16]}
+    match_operational_resolved: false
+    human_reviewed: true
+    human_decision: CONFIRM
 
   - case_id: HO-T-004
     provenance_tag: ADV
+    human_reviewed: true
     human_approved: true
+    human_decision: CONFIRM
     source_clause: null
     machine_proposal_note: "Detector de completitud propuso ACCESS_CONTROL_GAP; revisor humano lo aprobó."
     expected: {finding: true, finding_class: SecurityFinding, subtype: ACCESS_CONTROL_GAP}
-    match: {document: HO-FS, page_band: [10, 16]}
+    match: {document: HO-FS, page_band: [15, 15]}   # REAL, verificado desde canonical/HO-FS.sqlite3
+    provisional_match: {document: HO-FS, page_band: [10, 16]}
+    match_operational_resolved: false
 
   # --- negativo: control descrito por completo -> el analizador NO debe emitir nada ---
   - case_id: HO-T-N01
     provenance_tag: DOM
     source_clause: null
     reviewer_rationale: "FS conforme separado: audit trail completo + protección anti-modificación."
-    expected: {finding: false}
-    match: {document: HO-FSOK, page_band: [1, 10]}
+    expected: {finding: false, finding_class: null, subtype: null}
+    match: {document: HO-FSOK, page_band: [3, 3]}   # REAL, verificado desde canonical/HO-FSOK.sqlite3
+    provisional_match: {document: HO-FSOK, page_band: [1, 10]}
+    match_operational_resolved: false
+    human_reviewed: true
+    human_decision: CONFIRM
+
+# --- MATERIALIZACIÓN CANÓNICA (verificada desde los .sqlite3 reales, no desde comentarios) ---
+materialization:
+  canonical_store: "factory/regulatory/pilot_run/held_out_d5d_20260831/canonical/"
+  graph_dir: "factory/regulatory/pilot_run/held_out_d5d_20260831/graph/"
+  builder: "held_out_corpus.build_seed_corpus"
+  analyzer_version: "canonical-v1-2026-08"
+  canonical_documents: [HO-URS, HO-FS, HO-FSOK]
+  source_sha256:                                # canonical_content_sha256, verificado por lectura de claims
+    HO-URS: "21424264c47b1454cb4088091a2854bc9491800f88399e9a9c357507416731cd"
+    HO-FS: "14519b03b704ad671063cdef2556729a86acdbfceaf8ceccc9c684c068612f9d"
+    HO-FSOK: "9dba93d05acf2a42be6d2ba3fe843efc849ce912f8e7f7db1bbe2feaf241401d"
+  page_band_real:
+    HO-T-001: {document: HO-FS, page_band: [12, 12]}
+    HO-T-002: {document: HO-FS, page_band: [14, 14]}
+    HO-T-003: {document: HO-FS, page_band: [15, 15]}
+    HO-T-004: {document: HO-FS, page_band: [15, 15]}
+    HO-T-N01: {document: HO-FSOK, page_band: [3, 3]}
+  redundant_rematerialization:
+    path: "factory/regulatory/pilot_run/held_out_d5d_canonical_20260831/"
+    note: "re-materialización posterior sin corrida; contenido canónico byte-idéntico (mismos source_sha256). No es el store usado por analyzer_run."
+
+# --- CLASIFICACIÓN DE LA CORRIDA EXISTENTE ---
+current_run_classification:
+  value: NON_GATE_DIAGNOSTIC_FAIL
+  reason: "analyzer/post-run evidence existed before the explicit MATERIALIZATION_MATCHES_GROUND_TRUTH confirmation was received"
+  analyzer_run_dir: "factory/regulatory/pilot_run/held_out_d5d_20260831/analyzer_run/"
+  preserve_unmodified: true
+  findings_fingerprint: "2f3fb8b35c82d03d69c40cae7efbbe4c294d9eb85832fc8473c69a9990073701"
+  input_config_fingerprint: "cc7b31849f262905aaa5e7e630b811b7cebed63cb025fe23cd4d0a5aeebfc08b"
+  graph_snapshot_fingerprint: "a5e4046f34a39ddc1320399f4b276b2eae7db994463093b02b3dda1c4606e05f"
+  document_egress_bytes: 0
+  per_case:
+    HO-T-001: TP
+    HO-T-002: FN
+    HO-T-003: FN
+    HO-T-004: TP
+    HO-T-N01: FP
+  diagnostic_metrics:                            # DIAGNÓSTICOS -- NO son métricas finales D5
+    DIAGNOSTIC_RECALL: 0.50
+    DIAGNOSTIC_FALSE_POSITIVE_RATE: 1.0
+    DIAGNOSTIC_FABRICATED_CITATIONS: 0
+
+# --- CONFIRMACIÓN HUMANA DE MATERIALIZACIÓN (sin backdating) ---
+materialization_confirmation:
+  statement: "MATERIALIZATION_MATCHES_GROUND_TRUTH=YES for all five"
+  confirmed_by: "Maria Torres (QA Validation Engineer)"
+  received_at: "2026-08-31"                      # timestamp real de recepción por Capa 8
+  timing: POST_ANALYZER_RUN
+  formal_gate_sequence_valid: false
+  note: "No se afirma que esta confirmación ocurriera antes de la corrida. No cambia el ground truth."
+
+# --- REMEDIATION ---
+analyzer_remediation:
+  status: IMPLEMENTED_PENDING_APPROVAL      # OPEN -> RCA -> v1.2 implementada; gate humano APPROVE_REMEDIATION_V1_2
+  opened_at: "2026-08-31"
+  implemented_at: "2026-08-31"
+  d5_d_status: REMEDIATION_REQUIRED
+  rules_version: "1.2"                      # technical_completeness_rules.yaml (pending_approval.approved=false)
+  approval_gate: APPROVE_REMEDIATION_V1_2
+  approval_package: "docs_plan/D5_D_REMEDIATION_V1_2_APPROVAL_PACKAGE_20260831.md"
+  design_ref: "docs_plan/D5_D_ANALYZER_REMEDIATION_DESIGN_20260831.md"
+  root_cause_analysis: READ_ONLY_DONE
+  diagnostic_remediation_check:             # NO es gate -- held-out contaminado
+    run_with: "technical_completeness_rules v1.2"
+    document_egress_bytes: 0
+    per_case: {HO-T-001: TP, HO-T-002: TP, HO-T-003: TP, HO-T-004: TP, HO-T-N01: TN}
+    diagnostic_recall: 1.0                  # 0.50 -> 1.0
+    diagnostic_false_positive_rate: 0.0     # 1.0 -> 0.0
+    diagnostic_fabricated_citations: 0
+    note: "Diagnostico. El cierre formal de D5-D exige D5-D2 (held-out fresco, casos nuevos)."
+  targets:
+    - case_id: HO-T-002
+      outcome: FN
+      subtype: BACKUP_RECOVERY_GAP
+      rule: C03
+      root_cause_category: RULE_TRIGGER__TOPIC_ANCHOR_LEXICAL_COVERAGE
+      detail: >-
+        Claim HO-FS p.14 "System data is copied to a network share periodically." NO contiene
+        ningún término de C03.topic_anchor ["backup","back-up","back up","respaldo","copia de
+        seguridad"] -> no se ancla la regla -> la lógica absence-dependent (family:restore_verified)
+        NUNCA se evalúa -> FN. Extracción/canonicalización correctas (claim literal). La brecha
+        está en la cobertura léxica del topic_anchor: no reconoce la paráfrasis
+        "copied ... periodically / to a network share" como el tópico de backup.
+    - case_id: HO-T-003
+      outcome: FN
+      subtype: AUTHORITY_CHECK_GAP
+      rule: C05
+      root_cause_category: SUBTYPE_DISCRIMINATION__TOPIC_ANCHOR_SCOPE
+      detail: >-
+        Claim HO-FS p.15 "Three named roles are available in the configuration screen." ancla C04
+        (topic_anchor incluye el token "role"/"roles" -> emitió ACCESS_CONTROL_GAP = HO-T-004 TP)
+        pero NO ancla C05 (topic_anchor exige la frase "role based access"; "named roles are
+        available" no coincide) -> sin ancla C05 en HO-FS -> FN. C05 sí disparó en HO-URS p.2
+        ("role based access") pero fuera del scope del caso. La misma evidencia ("existen roles")
+        ancla C04 y no C05: el set de topic_anchor de C05 es más estrecho que el de C04 para
+        evidencia equivalente.
+    - case_id: HO-T-N01
+      outcome: FP
+      subtype: ACCESS_CONTROL_GAP
+      rule: C04
+      root_cause_category: TOPIC_ANCHOR_OVER_BROAD__MISSING_CROSS_TOPIC_SUPPRESSION
+      detail: >-
+        Claim HO-FSOK p.3 (inmutabilidad del audit trail) contiene el token "role" en
+        "...cannot be modified or disabled by any role including administrators" -> C04.topic_anchor
+        ["role","roles",...] ancla de forma incidental. scope = ese único claim; no hay señales de
+        family:per_operation_authorization -> C04 concluye "tópico presente, comportamiento ausente"
+        y emite ACCESS_CONTROL_GAP -> FP. El tópico real del claim es protección del audit trail
+        (C01/C09), no estructura de control de acceso. Falta un supresor cruzado / de evidencia
+        negativa que reconozca que el match de "role" es incidental en una frase sobre otro control.
+  do_not_touch:
+    - "ground truth / held-out expected"
+    - "thresholds"
+    - "technical_completeness_rules.yaml (todavía -- solo RCA read-only)"
+  current_held_out_reuse_for_final_gate: PROHIBITED
+  reuse_note: >-
+    Una vez usados HO-T-002 / HO-T-003 / HO-T-N01 para diseñar/modificar el analizador, estos 5
+    casos quedan contaminados. El cierre formal de D5 requerirá un D5-D2 FRESH INDEPENDENT HELD-OUT
+    con casos nuevos no observados durante la remediation, definidos por la autora independiente.
+
+# --- D5-D2: estado del gate tras la AUTORIZACION Capa 9 "continuar ejecucion" (2026-09-01) ---
+d5d2_gate_status:
+  status: DEFERRED
+  classification: NON_BLOCKING_FOR_DEVELOPMENT
+  authorized_by: "Capa 9 (Cesar)"
+  authorized_at: "2026-09-01"
+  authorization_text: >-
+    "D5-D2 deja de ser bloqueo para desarrollo. Registralo como DEFERRED --
+    NON_BLOCKING_FOR_DEVELOPMENT. Esto NO equivale a aprobar D5-D2 ni a declarar
+    completada la validacion independiente. D5-D2 queda pendiente para cualificacion
+    final o hasta decision posterior de Capa 9."
+  gate_scope_change:
+    was: "D5-D2 (held-out fresco, ground truth de autora independiente) = bloqueo para continuar E5/E6/WP-F/D6 y para el cierre formal de D5."
+    now: "D5-D2 NO bloquea trabajo de desarrollo. SIGUE siendo requisito para: (a) cualificacion final (qualification_contract.yaml qualified_version != null), (b) mover reportable_range fuera de SYNTHETIC_ONLY (CT-HELD-OUT-PENDING), (c) cierre formal de D5."
+    still_required_for: [FINAL_QUALIFICATION, "reportable_range != SYNTHETIC_ONLY", D5_FORMAL_CLOSURE]
+  independent_author_still_required: true    # no se relaja: sigue siendo Maria Torres o autora independiente real != Cesar
+  decision_sheet: "docs_plan/D5_D2_FRESH_HELD_OUT_DECISION_SHEET_20260831.md"
+  does_not_imply: "aprobacion de v1.2 sin confirmacion independiente; v1.2 aprobada bajo downstream_condition (ver technical_completeness_rules.yaml pending_approval)."

@@ -322,7 +322,11 @@ def test_suite_c_dry_run_with_b6b_v2(tmp_path):
     assert r["MISSED_SEMANTIC_OUT_OF_SCOPE"] == ["C07"]
     assert r["stats"]["completeness_artifact_signed"] is True
     assert r["stats"]["completeness_emitted"] == 7
-    assert r["stats"]["completeness_suppressed_family_present"] == 4
+    # v1.2 (D5-D remediation): C05 ahora ancla tambien sobre el negativo C15 via el tier
+    # `topic_anchor_patterns` de modelo de roles ("Roles are defined ...") y se SUPRIME
+    # correctamente porque `per_operation_authorization` esta presente en ese scope
+    # -> +1 supresion. Sin cambios en findings emitidos (7), 0 falsos positivos, recall 0.9.
+    assert r["stats"]["completeness_suppressed_family_present"] == 5
 
     gates = {g["name"]: g for g in r["gate_report"]["gates"]}
     assert gates["TECHNICAL_RECALL"]["passed"] is True     # 0.90 >= 0.90
