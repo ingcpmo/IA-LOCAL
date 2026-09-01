@@ -38,9 +38,15 @@ def run_tests(
         }
 
     start = time.monotonic()
+    # Portabilidad: un `python`/`python3` literal apunta al python del sistema, que en un
+    # host con venv NO tiene pytest ni las deps. Se normaliza al intérprete que corre este
+    # manager (bajo el venv del proyecto sí tiene todo).
+    parts = cmd.split()
+    if parts and parts[0] in ("python", "python3"):
+        parts[0] = sys.executable
     try:
         proc = subprocess.run(
-            cmd.split(),
+            parts,
             cwd=str(ws_path),
             capture_output=True,
             text=True,

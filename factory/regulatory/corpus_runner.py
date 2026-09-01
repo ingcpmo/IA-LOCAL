@@ -59,10 +59,18 @@ from factory.regulatory.requirement_catalog.citation_locator import sha256_file
 from factory.services import decision_store_v2 as decision_store
 
 ALLOWLIST_PATH = Path(__file__).parent / "scope" / "source_baseline_allowlist.yaml"
-#: Raíz declarada por el propio inventario de Fase A
-#: (`build_source_baseline_allowlist.py --manifest-root`, default real,
+#: Raíz del árbol fuente (Fase A, `build_source_baseline_allowlist.py --manifest-root`;
 #: NUNCA modificado por esta corrida -- solo lectura).
-GMPAI_ROOT = Path("/home/ing_cpmo/GMPAI")
+#: Portable: `GMPAI_ROOT` env var  >  `<repo>/GMPAI`  >  `/home/ing_cpmo/GMPAI` (origen).
+#: Los SHA-256 de la allowlist se re-verifican contra el archivo real: un árbol distinto
+#: con hashes que no coinciden sigue fallando cerrado (drift), como debe ser.
+import os as _os
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+GMPAI_ROOT = Path(
+    _os.getenv("GMPAI_ROOT")
+    or next((str(p) for p in (_REPO_ROOT / "GMPAI", Path("/home/ing_cpmo/GMPAI"))
+             if p.is_dir()), str(_REPO_ROOT / "GMPAI"))
+)
 
 DEFAULT_CHECKPOINT_DIR = Path(__file__).parent / "corpus_run" / "checkpoints"
 DEFAULT_MANIFEST_DIR = Path(__file__).parent / "corpus_run" / "manifests"

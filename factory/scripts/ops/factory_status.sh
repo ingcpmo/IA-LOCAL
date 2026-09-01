@@ -55,7 +55,10 @@ if [[ -f "$BASE_ENV" ]]; then
     BASE_KEY=$(grep -m1 "^GMP_API_KEY=" "$BASE_ENV" 2>/dev/null | cut -d= -f2- | tr -d '"' || true)
 fi
 
-for ctr in gmp-api gmp-postgres gmp-redis aria-ollama; do
+# Ollama NO va en este bucle: es una decisión arquitectónica del proyecto que corra como
+# proceso NATIVO del host (no contenedor). Se valida más abajo vía curl :11434/api/tags.
+# `aria-ollama` además es de otro proyecto (PROHIBIDO tocarlo).
+for ctr in gmp-api gmp-postgres gmp-redis; do
     STATUS=$(docker inspect --format='{{.State.Status}}' "$ctr" 2>/dev/null || echo "missing")
     if [[ "$STATUS" == "running" ]]; then
         pass "docker ps: $ctr → running"
@@ -63,6 +66,12 @@ for ctr in gmp-api gmp-postgres gmp-redis aria-ollama; do
         fail "docker ps: $ctr → $STATUS"
     fi
 done
+# Ollama nativo (arquitectura confirmada del proyecto): PASS si responde, FAIL si no.
+if curl -sf --max-time 6 "http://localhost:11434/api/tags" >/dev/null 2>&1; then
+    pass "ollama (nativo :11434) → responde"
+else
+    fail "ollama (nativo :11434) → no responde"
+fi
 
 _curl_check "GET /health (base)" "http://localhost:8000/health" "$BASE_KEY"
 _curl_check "GET /api/v1/audit/verify (base)" "http://localhost:8000/api/v1/audit/verify" "$BASE_KEY"

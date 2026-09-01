@@ -7,6 +7,8 @@
 
 **Actualización 2026-08-26 (post-aprobación):** B1 y B2 aplicados. `gmp-api` operativo, `/health` todo OK, consulta LLM E2E funcionando (83 s, dentro de la referencia 20-120 s CPU). Detalle al final. Brecha nueva de seguridad: UFW inactivo + Ollama ahora en `0.0.0.0:11434` → expuesto a la LAN.
 
+**Cierre del plan — 2026-08-31 (repo `main` @ `3ba40b3`):** Gate 0 y Bloque 6 re-ejecutados sobre el estado actual. Ver **§9. Cierre del plan**. Resultado: `PLAN_ORIGINAL_CERRADO=SÍ` · `GATE_0=FAIL` (v2: PASS=5 WARN=2 FAIL=1 tras correcciones; 0 defectos de código/config del clon) · `CLON_FUNCIONAL_DEMOSTRADO=SÍ` (Bloque 6 E2E completo). Sin commit.
+
 ---
 
 ## 1. Resumen ejecutivo
@@ -50,7 +52,7 @@ Gate 0 (`factory_selfcheck.sh`): **FAILED** (`PASS=2 WARN=1 FAIL=3`). Los 3 FAIL
 
 | # | Brecha | Corrección aplicada | Verificación |
 |---|---|---|---|
-| B3 | **Sin entorno Python para tests** | DNS del host estaba roto (stub `systemd-resolved` en timeout) → `resolvectl dns wlp1s0 8.8.8.8 1.1.1.1 192.168.1.1` (runtime, **no persistente**). `.venv` roto eliminado; recreado con `python3.12 -m venv` + `get-pip.py` (pip 26.2.1); `pip install -r requirements.txt -r factory/requirements.txt pytest pyyaml`. | Suite completa: **2594 passed / 12 failed / 79 skipped / 1 xfailed** (4m12s). Referencia "169 passed" obsoleta (~15×). |
+| B3 | **Sin entorno Python para tests** | DNS del host estaba roto (stub `systemd-resolved` en timeout) → `resolvectl dns wlp1s0 8.8.8.8 1.1.1.1 192.168.1.1` (runtime, **no persistente**). `.venv` roto eliminado; recreado. **Nota:** primero en Python 3.12, luego (ver B7) **rehecho en Python 3.11.15** (deadsnakes) para alinear con la cualificación del modelo. Deps: `requirements.txt` + `factory/requirements.txt` + `pytest` + `pyyaml` + `pdfplumber`. | Suite completa: **2599 passed / 7 failed / 79 skipped** (4m15s). Referencia "169 passed" obsoleta (~15×). |
 | B4 | **Cadena de auditoría de `factory` en FAIL** | Era **solo la falta de `jsonschema`** (resuelto por B3). Las `identity_keys` estaban presentes. | Gate 0 paso 3: `CHAIN_CONTINUITY = ACCEPTED_WITH_DOCUMENTED_EXCEPTION`, `PART11 = ACCEPTED_WITH_DOCUMENTED_EXCEPTION`, "contenido auténtico (77325 entradas, excepción vigente)". PASS+WARN, ya no FAIL. |
 
 ### Bloqueantes / importantes pendientes
@@ -59,7 +61,7 @@ Gate 0 (`factory_selfcheck.sh`): **FAILED** (`PASS=2 WARN=1 FAIL=3`). Los 3 FAIL
 |---|---|---|---|
 | B5 | **UFW inactivo + Ollama en `0.0.0.0` (introducido por B1)** | Tras B1 Ollama escucha en todas las interfaces, incluida `wlp1s0` (192.168.1.104). `ufw status` → **inactivo**. `:11434` sin auth → cualquiera en la LAN puede consumir el modelo. | Exposición de recurso LLM a la red local. Requiere decisión: activar UFW con ruleset (cuidado con SSH), o re-bind a la IP del bridge Docker. |
 | B6 | **DNS fix no persistente** | `resolvectl dns wlp1s0 …` se pierde al reiniciar la red / el host. El stub `systemd-resolved` seguía sin resolver `pypi.org`/`archive.ubuntu.com` (uplink `192.168.1.1` no responde para esos nombres). | Tras reboot, `pip`/`apt` vuelven a fallar. Persistir en `/etc/systemd/resolved.conf` (`DNS=8.8.8.8 1.1.1.1`) — requiere aprobación (bloqueado por el clasificador en esta sesión). |
-| B7 | **Inconsistencia de trazabilidad en `golden_dataset`** | `artifact_version_guard`: `semantic_verification_golden_dataset.py` → `CONTENT_CHANGED_VERSION_SAME` (hash cambió, `version_record` no se bumpeó). El archivo está limpio en git → el store de `version_record` quedó desfasado respecto al código commiteado (o se copió incompleto). Causa el FAIL 6/6 de Gate 0 y 4 de los 12 tests fallidos (`test_gate0_extended`, `test_artifact_versioning`, `test_evidence_pack_governance`, `test_model_qualification_gate`). | Gate 0 en rojo por versionado. Requiere decisión Layer 9: bumpear el `version_record` con decisión aprobatoria, o restaurar el baseline correcto del store. |
+| ~~B7~~ | ~~Inconsistencia de trazabilidad en `golden_dataset`~~ **RESUELTO** | Causa raíz: `canonical_hash_golden()` usa `ast.dump(ast.parse(...))`, cuya salida **cambia entre Python 3.11 y 3.12**. El `.venv` de B3 quedó en 3.12 → hash distinto al de la cualificación (hecha en 3.11). El archivo golden **nunca cambió** (limpio en git desde 2026-07-29). **Fix:** `.venv` rehecho en Python 3.11.15. Verificado: hash vuelve a `c28379acc…`, `requalification_preconditions().ready=True`, `model qualification = QUALIFIED`, guard `fail_count=0`. Arregló el FAIL 6/6 de Gate 0 y 4 tests. El contenedor `factory-api` ya corría Python 3.11.16. |
 | B8 | **Dep faltante `pdfplumber`** | No está en `requirements.txt` ni `factory/requirements.txt`. Rompe `test_m2_section_aware_chunking`. | 1 test en error de colección. Añadir a `factory/requirements.txt` y `pip install`. |
 | B9 | **Tests con rutas `/home/ing_cpmo` hardcodeadas** | `test_artifact_type_mismatch_report`, `test_broken_link_report`, `test_source_currency_checker` leen archivos vía `Path("/home/ing_cpmo/factory/...")`. `test_corpus_runner` espera `/home/ing_cpmo/GMPAI/source/Rockwell/…pdf`. | 4 tests fallan por ruta, no por defecto de código. Son bugs de test (deberían usar ruta relativa al repo). |
 
@@ -157,6 +159,114 @@ Ninguno de los 12 indica corrupción de código. 8 son de entorno/ruta/dep/servi
 | I4 | `ollama pull qwen2.5:7b-instruct-q4_K_M` (si se confirma su uso) | OK de Cesar |
 | — | Revisar `sources: []` en `/api/v1/query` | investigación |
 | — | Levantar `lab_qc` (:8101) / `oos_hplc` (:8102) para BLOQUE 6.4 | OK de Cesar |
+
+---
+
+## 9. Cierre del plan — 2026-08-31 (repo `main` @ `3ba40b3`)
+
+Re-ejecución de **Gate 0** (`factory/scripts/ops/factory_selfcheck.sh`) y **Bloque 6** sobre el
+estado actual del repo. **Sin commit, sin push.** Nota: el working tree lleva además el trabajo
+en curso D5-D / reglas v1.2 (workstream distinto, en gate humano `APPROVE_REMEDIATION_V1_2`) —
+se identifica su efecto por separado abajo.
+
+### 9.1 Gate 0 — `factory_selfcheck.sh`
+
+Dos corridas: **v1** (estado tal cual) y **v2** (tras 3 correcciones de código/config — §9.6).
+
+| Paso | v1 | v2 (tras correcciones) |
+|---|---|---|
+| 1/6 `py_compile` | PASS (2404 `.py`) | **PASS** (2404 `.py`) |
+| 2/6 `pytest` | FAIL — `3021 passed / 12 failed` (391 s) | **FAIL — `3024 passed / 9 failed / 82 skipped / 1 xfailed`** (347 s). Desglose §9.2 |
+| 3/6 `audit chain` | PASS+WARN | **PASS+WARN** — `CONTENT_HASH_INTEGRITY=VERIFIED` · `CHAIN_CONTINUITY=ACCEPTED_WITH_DOCUMENTED_EXCEPTION` · `NEW_FORKS_SINCE_BASELINE=0` · 101 089 entradas auténticas. **0 corrupción.** |
+| 4/6 `factory_status.sh` | **FAIL** (1 FAIL: `aria-ollama` container) | **PASS** — `PASS 19 · WARN 10 · FAIL 0` (check de Ollama nativo). 3 modelos Ollama, 5 workspaces, `headless=False`, `mode=manual_assisted` |
+| 5/6 `git-safety scan` | PASS | **PASS** — solo allowlist tracked, sin contenido prohibido |
+| 6/6 `artifact versions` | PASS+WARN | **PASS+WARN** — **0 inconsistencias de trazabilidad**; WARN = 24 artefactos `version_record` sin decisión aprobatoria (G4c/G5, fotografiados no aprobados) |
+| **Total** | `PASS=4 WARN=2 FAIL=2` | **`PASS=5 WARN=2 FAIL=1`** (único FAIL restante: paso 2 pytest) |
+
+**`GATE_0 = FAIL`** (por `pytest`). Pero tras §9.6 la composición del FAIL es **100 % o bien
+gobernada/aceptada, o bien un workstream distinto en gate humano; 0 defectos de código/config
+del clon** (§9.2). Por `CT-PYTEST-EXIT-1` (`qualification_contract.yaml`, `status: ACCEPTED`,
+*"pytest devuelve exit code 1 por CT-EXCEPTIONS-1-5; la suite global NO se declara PASS — regla
+explícita de Capa 9"*), un Gate 0 en FAIL por este set es el **estado terminal aceptado** de
+este clon, no un bloqueante.
+
+### 9.2 Desglose de los 9 fallos de `pytest` (v2)
+
+| Categoría | Tests | ¿Defecto del clon? |
+|---|---|---|
+| **Ledger de gobernanza divergido de HEAD** (4) | `test_artifact_version_signing::test_no_test_in_this_file_wrote_to_the_real_store` · `test_governance_endpoints::test_the_two_stores_stayed_independent` · `test_governance_signature_flow_g21::test_n13_…` · `test_resignature_g2prime::test_no_test_in_this_file_wrote_to_the_real_store` | **NO** — `factory/layer9/decisions/decisions_v2.jsonl` tiene **11 entradas sin commitear = revisiones humanas E1-2 / E1-3** (los commits E1 no incluyeron el fichero del ledger). Diff **estable**, ningún test lo escribe. Los tests son **correctos**: el ledger ≠ HEAD. **Solución: `git add factory/layer9/decisions/decisions_v2.jsonl && git commit` — acción de gobernanza (Cesar).** Bloqueado por la regla NO-COMMIT. |
+| **Workstream D5-D / reglas v1.2** (4) — en gate `APPROVE_REMEDIATION_V1_2` | `test_h4_graph_snapshot::test_e2e_findings_fingerprint_matches_post_h1h2h3_baseline` · `test_h5f_hardening::…` · `test_h7_coverage_governance::{test_e2e_observe_…, test_e2e_enforce_…}` | **NO** — cambio intencional de las reglas de completitud (v1.2); los 4 sólo pinnean `findings_fingerprint`; `graph_snapshot_fingerprint` **no se mueve** (`88f15b69…`); determinismo intacto. Se re-pinnean tras la aprobación humana H1. **Ajeno al plan de clon.** |
+| **Servicio no desplegable en el clon** (1) — `CT-EXCEPTIONS-1-5` | `test_mission_evidence_readers::test_deployment_exists_and_health` (`oos_hplc_investigator` :8102 `health_ok=False`) | **NO** — el workspace `oos_hplc_investigator` tiene módulos de dominio pero **ni `main.py`/FastAPI, ni compose, ni start script** en el clon → no hay nada que levantar. Aceptado por Capa 9; re-verificar en el origen. |
+
+`0` fallos por corrupción de código, sintaxis, dependencia faltante o ruta rota (tras §9.6).
+Referencia histórica del plan ("169 tests passed") **obsoleta** (~18×); baseline real ≈ 3024 passed.
+
+### 9.3 Bloque 6 — Smoke test E2E → **PASS**
+
+Stack base + `factory-api` levantados (Up ~3 h). `GMP_API_KEY` del `.env` local (no expuesta).
+
+| Prueba | Resultado |
+|---|---|
+| `GET :8000/health` | `{"api":"ok","postgres":"ok","redis":"ok","ollama":"ok"}` |
+| Auth `/api/v1/knowledge/stats` | **401** sin key · **200** con `X-API-Key` |
+| `/api/v1/knowledge/stats` (cuerpo) | **6 colecciones · 578 chunks** (`gmp_fda_regulations` 152, `gmp_iq_oq_pq` 153, `gmp_data_integrity` 80, `gmp_capa` 65, `gmp_qa_system` 65, `gmp_automation` 63) |
+| `/api/v1/audit/verify` | `verified:true · log_count:118 · hash_errors:0 · chain_errors:0 · part11_compliant:true` |
+| **`POST /api/v1/query` (E2E RAG→LLM→audit)** | **HTTP 200 en 69 s** (dentro de 20-120 s CPU). `model=mistral:7b-instruct-q4_K_M` · agente enrutado `csv` (CSV/CSA Validation Agent) · `context_used=True` · `rules_count=1` · `highest_risk=CRITICAL` · respuesta 1040 chars coherente (21 CFR Part 11) |
+| **`sources` (resuelve brecha 6.3)** | **2 fuentes ANCLADAS**: `fda_483_patterns_guide.txt` (`gmp_fda_regulations`, chunk 5) + `fda_data_integrity_alcoa.txt` (`gmp_fda_regulations`, chunk 5). El `sources: []` del 2026-08-26 era **dependiente de la pregunta** (enrutaba a una colección de agente vacía), no un defecto: con una pregunta GMP bien formada el pipeline devuelve fuentes ancladas. |
+| `factory-api :9000 /health` | `{"api":"ok","service":"factory"}` |
+| `lab_qc :8101` / `oos_hplc :8102` (BLOQUE 6.4) | **NO EJECUTABLE en este repo** — no son servicios de `docker-compose.yml` (sólo `postgres`/`redis`/`api`); son workspaces generados por la Factory. "Servicios en vivo" ∈ `CT-EXCEPTIONS-1-5`. |
+
+`CLON_FUNCIONAL_DEMOSTRADO = SÍ` para el camino principal (producto base `gmp-api` + `factory-api`),
+extremo a extremo, con fuentes ancladas y cadena de auditoría íntegra.
+
+### 9.4 Estado final de todos los pendientes del plan
+
+| # | Pendiente | Estado 2026-08-31 |
+|---|---|---|
+| B1, B2, B3, B4, B7 | (varios) | ✅ RESUELTOS (ver §3; B7 fija `.venv` en Py 3.11.15) |
+| **B8** | `pdfplumber` sin declarar | ✅ **HECHO** — `pdfplumber>=0.11.0` añadido a `factory/requirements.txt` |
+| **I4** | Modelos Ollama incompletos | ✅ **HECHO** — `nomic-embed-text` pulled (lo usa `factory/regulatory/retrieval/embed.py`); `qwen2.5:7b` ya estaba. 3/3 modelos presentes |
+| **I1** (parcial) | `.claude/daemon/control.key` versionado | ✅ **DE-INDEXADO** — `git rm --cached` control.key + roster.json; `.claude/daemon/` en `.gitignore`. **Rotación del valor: pendiente (manual).** |
+| **6.3** | `sources: []` en `/api/v1/query` | ✅ **RESUELTO / INVESTIGADO** — no es defecto (§9.3); depende de la pregunta/colección |
+| **B5** | Ollama expuesto en LAN (`ss` → `LISTEN *:11434`) | 🔴 BLOQUEADO — requiere `sudo` (UFW ruleset o re-bind al bridge) |
+| **B6** | DNS no persistente | 🔴 BLOQUEADO — requiere `sudo` (`/etc/systemd/resolved.conf`) |
+| **B9** | Ruta `/home/ing_cpmo/GMPAI` hardcodeada en `corpus_runner.py` | ✅ **CORREGIDO (§9.6)** — `GMPAI_ROOT` portable (env → `<repo>/GMPAI` → origen). El corpus Rockwell **está en el clon**; RW-0005 encontrado, SHA-256 coincide → `test_plan_corpus_units…232` **PASA**. (`CT-EXCEPTIONS-1-5` sigue cubriendo la re-verificación en origen.) |
+| **6.4** | Levantar `lab_qc` / `oos_hplc` | ⚪ NO EJECUTABLE aquí — sin `main.py`/compose/start en el workspace `oos_hplc_investigator`; ∈ `CT-EXCEPTIONS-1-5` |
+| **I2 / I3** | Rotar secretos del origen + limpiar `ARIA/`,`GMPAI/`,`backups/` (~1.7 GB) | 🔴 BLOQUEADO — decisión de Cesar; destructivo/irreversible. (`GMPAI/` NO se debe borrar: ahora es la raíz del corpus del clon — ver B9.) |
+| **I5** | `factory_status.sh` asume Ollama contenedor | ✅ **CORREGIDO (§9.6)** — quitado `aria-ollama` del bucle + check nativo `curl :11434/api/tags`. Paso 4/6 de Gate 0 FAIL → **PASS**. |
+| **I6** | `.venv` roto | 🟢 RESUELTO — venv Py 3.11.15 válido |
+| **`decisions_v2.jsonl ≠ HEAD`** (nuevo, post-2026-08-26) | 11 entradas E1-2/E1-3 sin commitear → 4 tests de gobernanza en FAIL | ⚠️ **Solución identificada: commit del ledger (Cesar).** Bloqueado por NO-COMMIT. |
+| **`TestTestExecutionManager`** (era "entorno") | `run_tests()` usaba `python3` literal (sistema, sin pytest) | ✅ **CORREGIDO (§9.6)** — normaliza a `sys.executable`. 2 tests PASAN. |
+| **M1–M5** | Menores | 🟡 Informativos (M1/M2 no defectos; M3 `aiofiles` drift; M4 Redis overcommit; M5 working tree no limpio) |
+
+### 9.5 Correcciones aplicadas en esta sesión — sin commit
+
+| Archivo | Cambio | Efecto en Gate 0 |
+|---|---|---|
+| `factory/scripts/ops/factory_status.sh` | `aria-ollama` fuera del bucle de contenedores + check nativo `curl :11434/api/tags` (brecha I5) | paso 4/6 `factory_status.sh` **FAIL → PASS** |
+| `factory/layer8/test_execution_manager.py` | `run_tests()` normaliza `python`/`python3` → `sys.executable` | `TestTestExecutionManager` ×2 **FAIL → PASS** |
+| `factory/regulatory/corpus_runner.py` | `GMPAI_ROOT` portable: `env GMPAI_ROOT` → `<repo>/GMPAI` → `/home/ing_cpmo/GMPAI` (los SHA-256 se re-verifican; drift real sigue fallando cerrado) | `test_plan_corpus_units…232` **FAIL → PASS** |
+| `factory/requirements.txt` | `+ pdfplumber>=0.11.0` (B8) | — (ya instalado; hygiene) |
+| `.gitignore` | `+ .claude/daemon/` (I1) | — |
+| `.claude/daemon/{control.key,roster.json}` | `git rm --cached` (I1) | — |
+
+`pytest`: **12 fallos → 9** · `factory_status.sh`: **1 FAIL → 0** · Gate 0: `PASS=4/FAIL=2` → **`PASS=5/FAIL=1`**.
+
+### 9.6 Veredicto de cierre
+
+```
+PLAN_ORIGINAL_CERRADO       = SÍ
+GATE_0                      = FAIL  (v2: PASS=5 WARN=2 FAIL=1 — único FAIL = pytest;
+                                     composición: 4 ledger-sin-commit (Cesar) + 4 workstream D5-D en gate H1
+                                     + 1 servicio :8102 no desplegable en el clon (CT-EXCEPTIONS-1-5).
+                                     0 defectos de código/config del clon; CT-PYTEST-EXIT-1 = ACEPTADO por Capa 9)
+CLON_FUNCIONAL_DEMOSTRADO   = SÍ  (Bloque 6 E2E: /health, auth 401/200, knowledge/stats 578 chunks,
+                                   audit/verify hash_errors=0 part11_compliant=true,
+                                   /api/v1/query 200 en 69 s con 2 fuentes ancladas, factory-api :9000 OK)
+CORRECCIONES_APLICADAS      = factory_status.sh (I5) · test_execution_manager (python->venv) · corpus_runner (GMPAI_ROOT portable) · B8 · I1
+PENDIENTES REALES BLOQUEADOS = B5, B6 (sudo) · commit del ledger decisions_v2.jsonl, I1-rotación, I2/I3 (Cesar) · workstream D5-D v1.2 (gate H1)
+NO COMMIT · NO PUSH
+```
 
 ---
 

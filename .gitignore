@@ -42,6 +42,7 @@ __pycache__/
 .claude/.last-*
 .claude/backups/
 .claude/cache/
+.claude/daemon/          # I1: secreto local del daemon (control.key) + roster runtime -- fuera de git
 .claude/file-history/
 .claude/history.jsonl
 .claude/mcp-needs-auth-cache.json
