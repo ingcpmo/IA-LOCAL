@@ -1,0 +1,20 @@
+{
+  "artifact": "F6_R_PAR_output_hashes",
+  "phase": "F6",
+  "head": "ab8a896",
+  "note": "docs_plan/_r_par/ es gitignored (findings de cliente). Estos son los hashes de sus salidas para trazabilidad; el análisis sanitizado está en F6_R_PAR_DELTA_FINAL.md.",
+  "outputs": {
+    "R_PAR_RAW.json":   {"bytes": 15696,  "sha256": "213fc6b02308d90980a36afc0acc81073b364bfa16aa40ed576c31b66c16ca4c"},
+    "findings_A.json":  {"bytes": 287193, "sha256": "b43b548b63e90014e7e9fc3b8cc9f98d8a24c2699a5e1711069336efc6cd4558"},
+    "findings_B.json":  {"bytes": 287193, "sha256": "b43b548b63e90014e7e9fc3b8cc9f98d8a24c2699a5e1711069336efc6cd4558"},
+    "findings_C.json":  {"bytes": 287806, "sha256": "e0dd292483ac7546bff47da705c4f07889ad258af3209186ce24379172bdba0d"},
+    "findings_D.json":  {"bytes": 118,    "sha256": "2ba3a8bd02ace0acefc0069edd7f0a1d2470d806a6e3532cb69dcf921aa11f10"}
+  },
+  "a_equals_b": "findings_A.json y findings_B.json son BYTE-IDÉNTICOS (sha256 b43b548b...) -> clone-drift 0 también a nivel de findings, no solo de fingerprints.",
+  "scenario_fingerprints": {
+    "A": {"input_config": "3fcb3ae8...", "graph_snapshot": "2fdda0e2...", "findings": "235f724a...", "note": "== F5 ENFORCE baseline"},
+    "B": {"input_config": "3fcb3ae8...", "graph_snapshot": "2fdda0e2...", "findings": "235f724a...", "note": "== A == F5 ENFORCE baseline"},
+    "C": {"input_config": "3fcb3ae8...", "graph_snapshot": "530459cc...", "findings": "9e46a1cd...", "note": "extract_tests=ON: +201 refers_to, +1 TEST_WITHOUT_REQUIREMENT"},
+    "D": "SKIPPED_NO_STORE"
+  }
+}
