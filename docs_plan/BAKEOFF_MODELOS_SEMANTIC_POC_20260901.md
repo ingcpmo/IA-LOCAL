@@ -2,9 +2,9 @@
 
 **Fecha:** 2026-09-01
 **Alcance:** Mesa de Diseño «Modelo Híbrido Determinista + Ollama», FASE 2 — prototipo aislado.
-**Estado:** COMPLETO — bake-off (2 corridas: gate original + gate endurecido
-H-1/H-2/H-3), H-4 (§8) y prueba dirigida de recall (§9, **refutada**).
-Checkpoint humano pendiente (§9): decisión de rol + modelo por mensaje.
+**Estado:** **FASE 2 CERRADA = PASS / PARKED** por Capa 9 (2026-09-01). No FASE 3,
+no integración. Bake-off (2 corridas), H-4 (§8) y prueba de recall (§9,
+**refutada**: 1/7 < 2/7). Foco activo → R1.5 / R2. Ver §10.
 **No se modificó** producto, reglas, findings, provenance ni audit trail real.
 **AI_RUNTIME:** LOCAL_ONLY · **DOCUMENT_EGRESS:** 0 · **EXTERNAL_LLM_API:** 0.
 
@@ -329,26 +329,22 @@ convierten esto en una solución de recall.
 
 ---
 
-## 10. Checkpoint
+## 10. Checkpoint — CERRADO por Capa 9 (2026-09-01)
 
-**Pendiente de Cesar — decisión por mensaje (Mesa de Diseño, NO gate formal):**
+**Decisión de Cesar (Capa 9), autorización "continuar ejecución" 2026-09-01:**
 
-1. **¿Rol de la capa?** El bake-off (§2–§6) muestra que como **decision-support /
-   filtro anti-fabricación** funciona (0 fabricaciones sobreviven, 79 % señal útil
-   con qwen). La prueba §9 **refuta** el rol de "red de seguridad de recall"
-   (1/7 < 2/7 baseline). Opciones:
-   - (a) seguir a FASE 3 (A/B) sólo con el rol decision-support acotado, o
-   - (b) **parar aquí** el híbrido y volcar el esfuerzo a **R1.5 / R2** (las
-     únicas palancas de recall) — recomendación de esta capa, consistente con que
-     R2 es el gate bloqueante declarado del objetivo.
-2. **Si (a): ¿modelo?** Recomendación: **qwen2.5:7b-instruct-q4_K_M**.
-3. Estado técnico: H-1/H-2/H-3/H-4 **incorporados y medidos**. H-5/H-6 quedarían
-   para la muestra del A/B.
+> Cierre del track híbrido en **FASE 2 = PASS / PARKED**. **No** iniciar FASE 3 ni
+> integración del híbrido por ahora. Conservar prototipo, evidencia y resultados.
+> **Priorizar R1.5 / R2** como trabajo activo para mejorar recall.
 
-**Nada de esto se firma en la UI de gobernanza.** No hay artefacto gobernado: el
-prototipo es aislado. El panel de gobernanza para esta capa sólo se crearía en
-FASE 4 (integración a `run_v2_pipeline`), que además está tras **H1 =
-APPROVE_REMEDIATION_V1_2** + misión Mission Control.
+**Estado final FASE 2:**
+- PASS en seguridad + decision-support: `format`=JSON Schema 1.00, 0 citas
+  fabricadas sobreviven al gate R5 (2 corridas + repeticiones + §9), cache R7 OK,
+  H-1..H-4 incorporados y medidos, `test_poc.py` 18/18.
+- **NEGATIVO en recall** (§9): 1/7 < 2/7 baseline → la capa no arregla recall;
+  es filtro anti-fabricación / decision-support.
+- Modelo, si se retoma: `qwen2.5:7b-instruct-q4_K_M`. H-5/H-6 quedan sin evaluar.
+- **PARKED**: no se toca más código del prototipo sin nueva decisión de Capa 9.
 
-Commit `647b710` (prototipo + informe) pusheado. El trabajo D5-D / v1.2 en árbol
-de trabajo no se tocó.
+Commits `647b710` + `9d6c86f` pusheados. Prototipo aislado, sin artefacto
+gobernado → sin panel de gobernanza (sólo se crearía en FASE 4, que no se hará).
