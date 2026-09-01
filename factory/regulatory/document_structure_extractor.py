@@ -44,9 +44,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-_HEADING_RE = re.compile(r"^(\d{1,2})\s+([A-Za-z][A-Za-z0-9 ,;:/\-\(\)'\.]{1,90})$")
+_HEADING_RE = re.compile(r"^(\d{1,2})\.?\s+([A-Za-z][A-Za-z0-9 ,;:/\-\(\)'\.]{1,90})$")
 _TOC_ENTRY_RE = re.compile(
-    r"^(\d{1,2})\s+([A-Za-z][A-Za-z0-9 ,;:/\-\(\)'\.]{1,90}?)\s*\.{3,}\s*[\d ]+$"
+    r"^(\d{1,2})\.?\s+([A-Za-z][A-Za-z0-9 ,;:/\-\(\)'\.]{1,90}?)\s*\.{3,}\s*[\d ]+$"
 )
 _DOT_LEADER = "...."
 _CONNECTOR_WORDS = {"and", "of", "for", "the", "to", "in", "on", "a", "an", "or", "with"}

@@ -49,6 +49,50 @@ def test_toc_anchored_extraction_ignores_table_false_positive():
     assert "2 Monitoring" in result["secciones"][2]["parrafos"]
 
 
+def test_heading_with_period_after_number_is_recognized():
+    """Causa A (CALIFICACION_FINAL_CURRENT_ENGINE.md, continuacion 2026-08-20):
+    plantillas tipo MAVERICK "Control Block Narrative" (RW-0011/RW-0012)
+    numeran "1. OBJECTIVE" (punto entre el numero y el titulo), tanto en la
+    Tabla de Contenido como en el cuerpo -- a diferencia de "1 Introduction"
+    (sin punto) de los FS de Rockwell (RW-0005). Ambas formas deben
+    reconocerse como el mismo tipo de encabezado de nivel 1, con titulos en
+    MAYUSCULAS incluidos (ya soportado por _is_title_case, que solo exige
+    mayuscula inicial por palabra)."""
+    toc_page_con_punto = (
+        "TABLE OF CONTENTS\n"
+        "1. OBJECTIVE ................................................. 3\n"
+        "2. TERMINOLOGY ............................................... 3\n"
+        "3. INPUT CONSIDERATIONS ...................................... 3\n"
+    )
+    per_page_text = [
+        toc_page_con_punto,
+        "1. OBJECTIVE\nTexto real del objetivo.",
+        "2. TERMINOLOGY\nTexto real de terminologia.",
+        "3. INPUT CONSIDERATIONS\nTexto real de consideraciones de entrada.",
+    ]
+    result = extractor.extract_structure(per_page_text)
+    assert result["toc_anchored"] is True
+    numeros = [s["numero"] for s in result["secciones"]]
+    titulos = [s["titulo"] for s in result["secciones"]]
+    assert numeros == ["1", "2", "3"]
+    assert titulos == ["OBJECTIVE", "TERMINOLOGY", "INPUT CONSIDERATIONS"]
+
+
+def test_heading_with_period_does_not_match_subsection_numbers():
+    """El punto opcional no debe ampliar el match a sub-secciones tipo
+    "4.1 Titulo" -- el caracter inmediatamente despues del punto opcional
+    debe seguir siendo espacio, y en "4.1" es un digito, nunca deberia
+    tratarse como una repeticion de la seccion 4."""
+    per_page_text = [
+        "1. Objective\ntexto",
+        "2. Description\n4.1 Process Description And Strategy Design\nmas texto de la subseccion",
+    ]
+    result = extractor.extract_structure(per_page_text)
+    numeros = [s["numero"] for s in result["secciones"]]
+    assert numeros == ["1", "2"]
+    assert "4.1 Process Description And Strategy Design" in result["secciones"][1]["parrafos"]
+
+
 def test_toc_anchored_rejects_title_mismatch():
     """Una linea con el numero secuencial correcto pero titulo distinto al
     de la TOC nunca se acepta como encabezado (aunque sea Title Case)."""
@@ -141,3 +185,56 @@ def test_real_fs_v1_2_pdf_reproduces_toc_section_numbering():
         (s["numero"], s["titulo"], s["pagina_inicio"]) for s in result["secciones"]
     ]
     assert actual == expected
+
+
+# ── F1 (plan de reconciliación v1.1): regression guard de los 3 DS MAVERICK
+#    "Control Block Narrative" (RW-0011/0012/0014), que numeran "1. OBJECTIVE"
+#    con punto. Ground truth congelado en docs_plan/reconc/F1_ground_truth_headings.json
+#    (GROUND_TRUTH_SHA256 = 2f7a00dc9aad66bca7ee7195f9a19518fa0228bb0e5430a43fef772ab0b28f39).
+#    Con el extractor de HEAD (sin `\.?`) estos 3 documentos dan 0 secciones
+#    (toc_anchored=False). Con el fix dan las 8 reales. ──────────────────────────
+_DS_GROUND_TRUTH = {
+    "MCCPDC EMS Control Block Narrative revB.pdf": [
+        "OBJECTIVE", "TERMINOLOGY", "INPUT CONSIDERATIONS", "EMS CONTROL DESCRIPTION",
+        "SOFTWARE PERMISSIVES", "INTER-NETWORK RELATIONSHIPS", "HARDWARE INTERLOCKS", "REFERENCES",
+    ],
+    "MCCPDC PCS Signal Interface Control Block Narrative.pdf": [
+        "OBJECTIVE", "TERMINOLOGY", "INPUT CONSIDERATIONS",
+        "PCS SIGNAL INTERFACE CONTROL DESCRIPTION",
+        "SOFTWARE PERMISSIVES", "INTER-NETWORK RELATIONSHIPS", "HARDWARE INTERLOCKS", "REFERENCES",
+    ],
+    "MCCPDC WFI Control Block Narrative revB.pdf": [
+        "OBJECTIVE", "TERMINOLOGY", "INPUT CONSIDERATIONS", "WFI CONTROL DESCRIPTION",
+        "SOFTWARE PERMISSIVES", "INTER-NETWORK RELATIONSHIPS", "HARDWARE INTERLOCKS", "REFERENCES",
+    ],
+}
+
+
+def _find_rockwell_pdf(fname: str):
+    for base in (
+        Path("GMPAI/source/Rockwell"),
+        Path(__file__).parent.parent.parent / "GMPAI" / "source" / "Rockwell",
+        Path("/home/ing_cpmo/GMPAI/source/Rockwell"),
+    ):
+        p = base / fname
+        if p.exists():
+            return p
+    return None
+
+
+def test_maverick_control_block_narratives_reproduce_8_level1_sections():
+    import pytest
+    checked = 0
+    for fname, expected_titles in _DS_GROUND_TRUTH.items():
+        pdf_path = _find_rockwell_pdf(fname)
+        if pdf_path is None:
+            continue
+        checked += 1
+        result = extractor.extract_structure_from_pdf(pdf_path)
+        assert result["toc_anchored"] is True, f"{fname}: TOC no anclado (regresión del fix `\\.?`)"
+        titulos = [s["titulo"] for s in result["secciones"]]
+        numeros = [s["numero"] for s in result["secciones"]]
+        assert numeros == [str(i) for i in range(1, 9)], f"{fname}: {numeros}"
+        assert titulos == expected_titles, f"{fname}: {titulos}"
+    if checked == 0:
+        pytest.skip("PDFs DS de Rockwell no disponibles en este entorno")

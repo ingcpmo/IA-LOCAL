@@ -1,0 +1,636 @@
+{
+  "doc_extractor_head_re": "no `\\.?`",
+  "doc_extractor_wt_re": "con `\\.?`",
+  "docs": {
+    "RW-0011": {
+      "pdf_path": "GMPAI/source/Rockwell/MCCPDC EMS Control Block Narrative revB.pdf",
+      "pdf_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
+      "n_paginas": 14,
+      "ground_truth": {
+        "contents_pages": [
+          2
+        ],
+        "toc_entries": [
+          {
+            "numero": 1,
+            "titulo": "OBJECTIVE",
+            "pagina_declarada": "3",
+            "page_found": 2
+          },
+          {
+            "numero": 2,
+            "titulo": "TERMINOLOGY",
+            "pagina_declarada": "3",
+            "page_found": 2
+          },
+          {
+            "numero": 3,
+            "titulo": "INPUT CONSIDERATIONS",
+            "pagina_declarada": "3",
+            "page_found": 2
+          },
+          {
+            "numero": 4,
+            "titulo": "EMS CONTROL DESCRIPTION",
+            "pagina_declarada": "4",
+            "page_found": 2
+          },
+          {
+            "numero": 5,
+            "titulo": "SOFTWARE PERMISSIVES",
+            "pagina_declarada": "14",
+            "page_found": 2
+          },
+          {
+            "numero": 6,
+            "titulo": "INTER-NETWORK RELATIONSHIPS",
+            "pagina_declarada": "14",
+            "page_found": 2
+          },
+          {
+            "numero": 7,
+            "titulo": "HARDWARE INTERLOCKS",
+            "pagina_declarada": "14",
+            "page_found": 2
+          },
+          {
+            "numero": 8,
+            "titulo": "REFERENCES",
+            "pagina_declarada": "14",
+            "page_found": 2
+          }
+        ],
+        "body_heading_candidates": [
+          {
+            "numero": 1,
+            "titulo": "OBJECTIVE",
+            "page_found": 3,
+            "raw": "1. OBJECTIVE"
+          },
+          {
+            "numero": 2,
+            "titulo": "TERMINOLOGY",
+            "page_found": 3,
+            "raw": "2. TERMINOLOGY"
+          },
+          {
+            "numero": 3,
+            "titulo": "INPUT CONSIDERATIONS",
+            "page_found": 3,
+            "raw": "3. INPUT CONSIDERATIONS"
+          },
+          {
+            "numero": 4,
+            "titulo": "EMS CONTROL DESCRIPTION",
+            "page_found": 4,
+            "raw": "4. EMS CONTROL DESCRIPTION"
+          },
+          {
+            "numero": 5,
+            "titulo": "SOFTWARE PERMISSIVES",
+            "page_found": 14,
+            "raw": "5. SOFTWARE PERMISSIVES"
+          },
+          {
+            "numero": 6,
+            "titulo": "INTER-NETWORK RELATIONSHIPS",
+            "page_found": 14,
+            "raw": "6. INTER-NETWORK RELATIONSHIPS"
+          },
+          {
+            "numero": 7,
+            "titulo": "HARDWARE INTERLOCKS",
+            "page_found": 14,
+            "raw": "7. HARDWARE INTERLOCKS"
+          },
+          {
+            "numero": 8,
+            "titulo": "REFERENCES",
+            "page_found": 14,
+            "raw": "8. REFERENCES"
+          }
+        ],
+        "level1_from_toc_sequential": [
+          {
+            "numero": 1,
+            "titulo": "OBJECTIVE"
+          },
+          {
+            "numero": 2,
+            "titulo": "TERMINOLOGY"
+          },
+          {
+            "numero": 3,
+            "titulo": "INPUT CONSIDERATIONS"
+          },
+          {
+            "numero": 4,
+            "titulo": "EMS CONTROL DESCRIPTION"
+          },
+          {
+            "numero": 5,
+            "titulo": "SOFTWARE PERMISSIVES"
+          },
+          {
+            "numero": 6,
+            "titulo": "INTER-NETWORK RELATIONSHIPS"
+          },
+          {
+            "numero": 7,
+            "titulo": "HARDWARE INTERLOCKS"
+          },
+          {
+            "numero": 8,
+            "titulo": "REFERENCES"
+          }
+        ]
+      },
+      "HEAD": {
+        "toc_anchored": false,
+        "n_secciones": 0,
+        "secciones": [],
+        "n_lineas_pre_primera_seccion": 558
+      },
+      "WT": {
+        "toc_anchored": true,
+        "n_secciones": 8,
+        "secciones": [
+          {
+            "numero": "1",
+            "titulo": "OBJECTIVE",
+            "pagina_inicio": 3,
+            "n_parrafos": 3
+          },
+          {
+            "numero": "2",
+            "titulo": "TERMINOLOGY",
+            "pagina_inicio": 3,
+            "n_parrafos": 19
+          },
+          {
+            "numero": "3",
+            "titulo": "INPUT CONSIDERATIONS",
+            "pagina_inicio": 3,
+            "n_parrafos": 22
+          },
+          {
+            "numero": "4",
+            "titulo": "EMS CONTROL DESCRIPTION",
+            "pagina_inicio": 4,
+            "n_parrafos": 424
+          },
+          {
+            "numero": "5",
+            "titulo": "SOFTWARE PERMISSIVES",
+            "pagina_inicio": 14,
+            "n_parrafos": 1
+          },
+          {
+            "numero": "6",
+            "titulo": "INTER-NETWORK RELATIONSHIPS",
+            "pagina_inicio": 14,
+            "n_parrafos": 3
+          },
+          {
+            "numero": "7",
+            "titulo": "HARDWARE INTERLOCKS",
+            "pagina_inicio": 14,
+            "n_parrafos": 1
+          },
+          {
+            "numero": "8",
+            "titulo": "REFERENCES",
+            "pagina_inicio": 14,
+            "n_parrafos": 11
+          }
+        ],
+        "n_lineas_pre_primera_seccion": 66
+      },
+      "delta_n_secciones": 8,
+      "delta_toc_anchored": [
+        false,
+        true
+      ]
+    },
+    "RW-0012": {
+      "pdf_path": "GMPAI/source/Rockwell/MCCPDC PCS Signal Interface Control Block Narrative.pdf",
+      "pdf_sha256": "de7b70c297f0fbf1269d47e334a7575d4de3429bff6ed797fc663b85fea15c71",
+      "n_paginas": 14,
+      "ground_truth": {
+        "contents_pages": [
+          2
+        ],
+        "toc_entries": [
+          {
+            "numero": 1,
+            "titulo": "OBJECTIVE",
+            "pagina_declarada": "4",
+            "page_found": 2
+          },
+          {
+            "numero": 2,
+            "titulo": "TERMINOLOGY",
+            "pagina_declarada": "4",
+            "page_found": 2
+          },
+          {
+            "numero": 3,
+            "titulo": "INPUT CONSIDERATIONS",
+            "pagina_declarada": "4",
+            "page_found": 2
+          },
+          {
+            "numero": 4,
+            "titulo": "PCS SIGNAL INTERFACE CONTROL DESCRIPTION",
+            "pagina_declarada": "5",
+            "page_found": 2
+          },
+          {
+            "numero": 5,
+            "titulo": "SOFTWARE PERMISSIVES",
+            "pagina_declarada": "14",
+            "page_found": 2
+          },
+          {
+            "numero": 6,
+            "titulo": "INTER-NETWORK RELATIONSHIPS",
+            "pagina_declarada": "14",
+            "page_found": 2
+          },
+          {
+            "numero": 7,
+            "titulo": "HARDWARE INTERLOCKS",
+            "pagina_declarada": "14",
+            "page_found": 2
+          },
+          {
+            "numero": 8,
+            "titulo": "REFERENCES",
+            "pagina_declarada": "14",
+            "page_found": 2
+          }
+        ],
+        "body_heading_candidates": [
+          {
+            "numero": 1,
+            "titulo": "OBJECTIVE",
+            "page_found": 4,
+            "raw": "1. OBJECTIVE"
+          },
+          {
+            "numero": 2,
+            "titulo": "TERMINOLOGY",
+            "page_found": 4,
+            "raw": "2. TERMINOLOGY"
+          },
+          {
+            "numero": 3,
+            "titulo": "INPUT CONSIDERATIONS",
+            "page_found": 4,
+            "raw": "3. INPUT CONSIDERATIONS"
+          },
+          {
+            "numero": 4,
+            "titulo": "PCS SIGNAL INTERFACE CONTROL DESCRIPTION",
+            "page_found": 5,
+            "raw": "4. PCS SIGNAL INTERFACE CONTROL DESCRIPTION"
+          },
+          {
+            "numero": 5,
+            "titulo": "SOFTWARE PERMISSIVES",
+            "page_found": 14,
+            "raw": "5. SOFTWARE PERMISSIVES"
+          },
+          {
+            "numero": 6,
+            "titulo": "INTER-NETWORK RELATIONSHIPS",
+            "page_found": 14,
+            "raw": "6. INTER-NETWORK RELATIONSHIPS"
+          },
+          {
+            "numero": 7,
+            "titulo": "HARDWARE INTERLOCKS",
+            "page_found": 14,
+            "raw": "7. HARDWARE INTERLOCKS"
+          },
+          {
+            "numero": 8,
+            "titulo": "REFERENCES",
+            "page_found": 14,
+            "raw": "8. REFERENCES"
+          }
+        ],
+        "level1_from_toc_sequential": [
+          {
+            "numero": 1,
+            "titulo": "OBJECTIVE"
+          },
+          {
+            "numero": 2,
+            "titulo": "TERMINOLOGY"
+          },
+          {
+            "numero": 3,
+            "titulo": "INPUT CONSIDERATIONS"
+          },
+          {
+            "numero": 4,
+            "titulo": "PCS SIGNAL INTERFACE CONTROL DESCRIPTION"
+          },
+          {
+            "numero": 5,
+            "titulo": "SOFTWARE PERMISSIVES"
+          },
+          {
+            "numero": 6,
+            "titulo": "INTER-NETWORK RELATIONSHIPS"
+          },
+          {
+            "numero": 7,
+            "titulo": "HARDWARE INTERLOCKS"
+          },
+          {
+            "numero": 8,
+            "titulo": "REFERENCES"
+          }
+        ]
+      },
+      "HEAD": {
+        "toc_anchored": false,
+        "n_secciones": 0,
+        "secciones": [],
+        "n_lineas_pre_primera_seccion": 543
+      },
+      "WT": {
+        "toc_anchored": true,
+        "n_secciones": 8,
+        "secciones": [
+          {
+            "numero": "1",
+            "titulo": "OBJECTIVE",
+            "pagina_inicio": 4,
+            "n_parrafos": 3
+          },
+          {
+            "numero": "2",
+            "titulo": "TERMINOLOGY",
+            "pagina_inicio": 4,
+            "n_parrafos": 18
+          },
+          {
+            "numero": "3",
+            "titulo": "INPUT CONSIDERATIONS",
+            "pagina_inicio": 4,
+            "n_parrafos": 22
+          },
+          {
+            "numero": "4",
+            "titulo": "PCS SIGNAL INTERFACE CONTROL DESCRIPTION",
+            "pagina_inicio": 5,
+            "n_parrafos": 389
+          },
+          {
+            "numero": "5",
+            "titulo": "SOFTWARE PERMISSIVES",
+            "pagina_inicio": 14,
+            "n_parrafos": 1
+          },
+          {
+            "numero": "6",
+            "titulo": "INTER-NETWORK RELATIONSHIPS",
+            "pagina_inicio": 14,
+            "n_parrafos": 4
+          },
+          {
+            "numero": "7",
+            "titulo": "HARDWARE INTERLOCKS",
+            "pagina_inicio": 14,
+            "n_parrafos": 1
+          },
+          {
+            "numero": "8",
+            "titulo": "REFERENCES",
+            "pagina_inicio": 14,
+            "n_parrafos": 9
+          }
+        ],
+        "n_lineas_pre_primera_seccion": 88
+      },
+      "delta_n_secciones": 8,
+      "delta_toc_anchored": [
+        false,
+        true
+      ]
+    },
+    "RW-0014": {
+      "pdf_path": "GMPAI/source/Rockwell/MCCPDC WFI Control Block Narrative revB.pdf",
+      "pdf_sha256": "8a67414d90ba28c8ee3cf9939d3be0d670ed7c8794a61f049b07ebe07ebf4ccb",
+      "n_paginas": 18,
+      "ground_truth": {
+        "contents_pages": [
+          2
+        ],
+        "toc_entries": [
+          {
+            "numero": 1,
+            "titulo": "OBJECTIVE",
+            "pagina_declarada": "4",
+            "page_found": 2
+          },
+          {
+            "numero": 2,
+            "titulo": "TERMINOLOGY",
+            "pagina_declarada": "4",
+            "page_found": 2
+          },
+          {
+            "numero": 3,
+            "titulo": "INPUT CONSIDERATIONS",
+            "pagina_declarada": "4",
+            "page_found": 2
+          },
+          {
+            "numero": 4,
+            "titulo": "WFI CONTROL DESCRIPTION",
+            "pagina_declarada": "5",
+            "page_found": 2
+          },
+          {
+            "numero": 5,
+            "titulo": "SOFTWARE PERMISSIVES",
+            "pagina_declarada": "17",
+            "page_found": 2
+          },
+          {
+            "numero": 6,
+            "titulo": "INTER-NETWORK RELATIONSHIPS",
+            "pagina_declarada": "18",
+            "page_found": 2
+          },
+          {
+            "numero": 7,
+            "titulo": "HARDWARE INTERLOCKS",
+            "pagina_declarada": "18",
+            "page_found": 2
+          },
+          {
+            "numero": 8,
+            "titulo": "REFERENCES",
+            "pagina_declarada": "18",
+            "page_found": 2
+          }
+        ],
+        "body_heading_candidates": [
+          {
+            "numero": 1,
+            "titulo": "OBJECTIVE",
+            "page_found": 4,
+            "raw": "1. OBJECTIVE"
+          },
+          {
+            "numero": 2,
+            "titulo": "TERMINOLOGY",
+            "page_found": 4,
+            "raw": "2. TERMINOLOGY"
+          },
+          {
+            "numero": 3,
+            "titulo": "INPUT CONSIDERATIONS",
+            "page_found": 4,
+            "raw": "3. INPUT CONSIDERATIONS"
+          },
+          {
+            "numero": 4,
+            "titulo": "WFI CONTROL DESCRIPTION",
+            "page_found": 5,
+            "raw": "4. WFI CONTROL DESCRIPTION"
+          },
+          {
+            "numero": 5,
+            "titulo": "SOFTWARE PERMISSIVES",
+            "page_found": 17,
+            "raw": "5. SOFTWARE PERMISSIVES"
+          },
+          {
+            "numero": 6,
+            "titulo": "INTER-NETWORK RELATIONSHIPS",
+            "page_found": 18,
+            "raw": "6. INTER-NETWORK RELATIONSHIPS"
+          },
+          {
+            "numero": 7,
+            "titulo": "HARDWARE INTERLOCKS",
+            "page_found": 18,
+            "raw": "7. HARDWARE INTERLOCKS"
+          },
+          {
+            "numero": 8,
+            "titulo": "REFERENCES",
+            "page_found": 18,
+            "raw": "8. REFERENCES"
+          }
+        ],
+        "level1_from_toc_sequential": [
+          {
+            "numero": 1,
+            "titulo": "OBJECTIVE"
+          },
+          {
+            "numero": 2,
+            "titulo": "TERMINOLOGY"
+          },
+          {
+            "numero": 3,
+            "titulo": "INPUT CONSIDERATIONS"
+          },
+          {
+            "numero": 4,
+            "titulo": "WFI CONTROL DESCRIPTION"
+          },
+          {
+            "numero": 5,
+            "titulo": "SOFTWARE PERMISSIVES"
+          },
+          {
+            "numero": 6,
+            "titulo": "INTER-NETWORK RELATIONSHIPS"
+          },
+          {
+            "numero": 7,
+            "titulo": "HARDWARE INTERLOCKS"
+          },
+          {
+            "numero": 8,
+            "titulo": "REFERENCES"
+          }
+        ]
+      },
+      "HEAD": {
+        "toc_anchored": false,
+        "n_secciones": 0,
+        "secciones": [],
+        "n_lineas_pre_primera_seccion": 706
+      },
+      "WT": {
+        "toc_anchored": true,
+        "n_secciones": 8,
+        "secciones": [
+          {
+            "numero": "1",
+            "titulo": "OBJECTIVE",
+            "pagina_inicio": 4,
+            "n_parrafos": 3
+          },
+          {
+            "numero": "2",
+            "titulo": "TERMINOLOGY",
+            "pagina_inicio": 4,
+            "n_parrafos": 17
+          },
+          {
+            "numero": "3",
+            "titulo": "INPUT CONSIDERATIONS",
+            "pagina_inicio": 4,
+            "n_parrafos": 22
+          },
+          {
+            "numero": "4",
+            "titulo": "WFI CONTROL DESCRIPTION",
+            "pagina_inicio": 5,
+            "n_parrafos": 537
+          },
+          {
+            "numero": "5",
+            "titulo": "SOFTWARE PERMISSIVES",
+            "pagina_inicio": 17,
+            "n_parrafos": 19
+          },
+          {
+            "numero": "6",
+            "titulo": "INTER-NETWORK RELATIONSHIPS",
+            "pagina_inicio": 18,
+            "n_parrafos": 5
+          },
+          {
+            "numero": "7",
+            "titulo": "HARDWARE INTERLOCKS",
+            "pagina_inicio": 18,
+            "n_parrafos": 1
+          },
+          {
+            "numero": "8",
+            "titulo": "REFERENCES",
+            "pagina_inicio": 18,
+            "n_parrafos": 10
+          }
+        ],
+        "n_lineas_pre_primera_seccion": 84
+      },
+      "delta_n_secciones": 8,
+      "delta_toc_anchored": [
+        false,
+        true
+      ]
+    }
+  }
+}
