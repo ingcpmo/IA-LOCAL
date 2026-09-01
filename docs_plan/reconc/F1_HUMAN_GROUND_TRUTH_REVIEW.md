@@ -6,11 +6,40 @@
 cualquier re-medición**. La corrida anterior lo derivó mecánicamente; esta hoja lo presenta
 para que Capa 9 lo verifique contra los PDF reales y lo apruebe (o corrija).
 
-**Mientras esto NO esté aprobado:**
-- El veredicto F1 (`CORRECCIÓN`) queda **PROVISIONAL**.
-- NO se corre `F1_measure.py` ni ninguna medición nueva.
-- NO se toca extractor, tests, stores ni F2.
-- `reconc-F1` (commit `09656e1`) queda **pendiente de gate humano** — no habilita F2.
+---
+
+## ✅ APROBADO POR CAPA 9 — 2026-09-01T18:48:28Z
+
+```
+GROUND_TRUTH_F1_HUMAN_APPROVED   = SÍ
+CORRECCIONES                     = ninguna
+JERARQUÍA                        = F1 valida ÚNICAMENTE los 8 encabezados de NIVEL 1 por documento.
+                                   Existen subencabezados N.M / N.M.N legítimos en los 3 PDF ->
+                                   EXPLÍCITAMENTE FUERA DEL ALCANCE de F1 (por decisión de Capa 9).
+APROBADO_POR                     = Capa 9 (Cesar)
+FECHA_HORA                       = 2026-09-01T18:48:28Z
+```
+
+**PDF verificados en el momento de la aprobación (hashes sin cambio vs §1):**
+
+| doc_id | SHA256 |
+|---|---|
+| RW-0011 | `13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53` |
+| RW-0012 | `de7b70c297f0fbf1269d47e334a7575d4de3429bff6ed797fc663b85fea15c71` |
+| RW-0014 | `8a67414d90ba28c8ee3cf9939d3be0d670ed7c8794a61f049b07ebe07ebf4ccb` |
+
+**Efecto de esta aprobación:**
+- El ground truth de §2 (8 encabezados de nivel 1 por documento) queda **CONGELADO y
+  HUMANO-APROBADO**.
+- El veredicto F1 (`CORRECCIÓN`) pasa de PROVISIONAL a **pendiente sólo de la re-medición
+  reproducible** contra este ground truth ya humano-aprobado.
+- Orden obligatorio de cierre (Capa 9): (1) registrar esta aprobación → (2) **commit** de la
+  aprobación SIN medir → (3) recién entonces re-ejecutar `F1_measure.py` → (4) verificar
+  PRE-fix 0/8 y POST-fix 8/8 exacto, sin sobre-segmentación de nivel 1 → (5) reporte
+  correctivo + segundo commit → (6) tag nuevo `reconc-F1-r1` (NO se mueve `reconc-F1`) →
+  (7) NO ejecutar F2.
+
+*(Este bloque se commitea ANTES de correr ninguna medición — commit 1 del cierre corregido.)*
 
 ---
 
@@ -91,20 +120,15 @@ página "Contents" (pág. 2) como en el cuerpo. 8 encabezados de nivel 1 por doc
 
 ---
 
-## 4. Bloque de aprobación (Capa 9)
+## 4. Bloque de aprobación (Capa 9) — RESUELTO
 
-```
-GROUND_TRUTH_F1_HUMAN_APPROVED   = SÍ | NO | CON CORRECCIONES
-CORRECCIONES                     = (listar por doc_id / #, o "ninguna")
-JERARQUÍA_NIVEL_1_UNICAMENTE     = CONFIRMADO | HAY NIVEL 2 (detallar)
-APROBADO_POR                     = Capa 9 (Cesar)
-FECHA                            =
-```
+Ver bloque **"✅ APROBADO POR CAPA 9 — 2026-09-01T18:48:28Z"** arriba.
 
-**Al aprobar:** se congela el ground truth humano con su hash, se marca el veredicto F1
-(`CORRECCIÓN`) como **CONFIRMADO por evidencia humana**, y RECIÉN ENTONCES se re-corre
-`F1_measure.py` (o se acepta la medición previa como reproducible contra el ground truth ya
-humano-aprobado) → gate F1 → F2.
+- `GROUND_TRUTH_F1_HUMAN_APPROVED = SÍ` · `CORRECCIONES = ninguna`.
+- Respuestas a las 4 preguntas de §3: (1) títulos exactos = confirmados; (2) sin nivel-1
+  adicional fuera del listado; (3) **sí hay** sub-encabezados N.M / N.M.N legítimos →
+  **fuera del alcance de F1** por decisión de Capa 9; (4) forma `N. TÍTULO` (con punto) =
+  correcta en los 3.
 
-**Si NO se aprueba / hay correcciones:** se ajusta esta hoja, se re-mide contra el ground truth
-corregido, y el veredicto F1 se recalcula.
+**Al aprobar:** se congela el ground truth humano, se marca el veredicto F1 (`CORRECCIÓN`)
+como **CONFIRMADO por evidencia humana** tras la re-medición reproducible → gate F1 → F2.
