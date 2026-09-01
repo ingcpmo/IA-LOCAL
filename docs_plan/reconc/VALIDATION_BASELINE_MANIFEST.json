@@ -217,18 +217,121 @@
     }
   },
   "fingerprints": {
-    "note": "medidos con build.py fijado (F2-r1). El rebaseline FORMAL es F5.",
-    "contaminated_store": {
-      "input_config": "3fcb3ae859091000b0e6c6cf2b4f51515e74665d658451b753c723d6e6e51668",
-      "graph_snapshot": "88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05",
-      "findings_ENFORCE": "3d8988045f85655021e6da889bf9048739c6f6c2c1c4c58e75d5974316a5543d"
+    "baseline": {
+      "phase": "F5",
+      "head": "6b34051",
+      "branch": "fix/clon-local-validacion",
+      "stores": "canonical_store + graph_store LIMPIOS (F2-r1: RW-0012 des-contaminado, 8 secc/258 claims)",
+      "counts": {
+        "regulatory": 342,
+        "functional": 90,
+        "technical": 25
+      },
+      "deterministic_r1_eq_r2": true,
+      "project_id_independent": true,
+      "ENFORCE": {
+        "input_config_fingerprint": "3fcb3ae859091000b0e6c6cf2b4f51515e74665d658451b753c723d6e6e51668",
+        "graph_snapshot_fingerprint": "2fdda0e2ce513bc48b54038c5890a0b060e87a6e5c0d6d98b3d31fb149be3620",
+        "findings_fingerprint": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+      },
+      "OBSERVE": {
+        "input_config_fingerprint": "3fcb3ae859091000b0e6c6cf2b4f51515e74665d658451b753c723d6e6e51668",
+        "graph_snapshot_fingerprint": "2fdda0e2ce513bc48b54038c5890a0b060e87a6e5c0d6d98b3d31fb149be3620",
+        "findings_fingerprint": "693fc746e645b168386537c7dbce8c6394b582fb6c031ebf62e44189b748a368"
+      },
+      "findings_fingerprint_note": "LÓGICO (independiente del orden; test_run_fingerprint lo prueba). Los *_findings.json tienen BYTE_HASH distinto entre corridas -- la baseline fija el lógico, no el byte (coherente F2_HASH_DEFINITION §2.2)."
     },
-    "clean_store": {
-      "input_config": "3fcb3ae859091000b0e6c6cf2b4f51515e74665d658451b753c723d6e6e51668",
-      "graph_snapshot": "2fdda0e2ce513bc48b54038c5890a0b060e87a6e5c0d6d98b3d31fb149be3620",
-      "findings_ENFORCE": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
-    },
-    "observacion_input_config": "input_config_fingerprint = 3fcb3ae8 con canon_dir explicito; = e9305f45 con canon_dir por defecto -> sensible a la ruta. Para F5."
+    "historical_invalid_for_head_6b34051": [
+      {
+        "digest": "8f1fe9bbd91999490c4c8c1b9852326bd703ebe3e40b60c4696588d4e848d95e",
+        "kind": "input_config",
+        "context": "PRE v1.1 (REPORTE_COMPARATIVO_PRE_POST_MEJORAS)"
+      },
+      {
+        "digest": "df76bebf74981ced286c49d81d0c7be2399b8503c63253de2f05f4c908470a34",
+        "kind": "input_config",
+        "context": "POST v1.2 store contaminado"
+      },
+      {
+        "digest": "0de04225362a6f863617d63717e5da82a7e829a2594f95e53f8f36cd5d07598f",
+        "kind": "input_config",
+        "context": "escenario D del R-PAR (RW-0003)"
+      },
+      {
+        "digest": "88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05",
+        "kind": "graph_snapshot",
+        "context": "store RW-0012 CONTAMINADO (D-2 ; test_h4/h5f/h7)"
+      },
+      {
+        "digest": "8ce23f30202991d87f6d867525306e50be1cdf191a40d57b6bd191a2d7b327f4",
+        "kind": "graph_snapshot",
+        "context": "escenario D del R-PAR"
+      },
+      {
+        "digest": "fdc29721e9566dfea6f4969c74c2324f348fc00827ccbd36e35730deb512f08d",
+        "kind": "findings",
+        "context": "ENFORCE, store contaminado (D-2 ; test_h7)"
+      },
+      {
+        "digest": "3d8988045f85655021e6da889bf9048739c6f6c2c1c4c58e75d5974316a5543d",
+        "kind": "findings",
+        "context": "ENFORCE, store contaminado (F2 --apply intermedio)"
+      },
+      {
+        "digest": "b5196a7177c92a913de638637a071d2027a78eb1b9f1233d814812d3ff6dc21e",
+        "kind": "findings",
+        "context": "OBSERVE post-H1/H2/H3, store contaminado (test_h5f/h7)"
+      },
+      {
+        "digest": "2b1a300ae26f76cbf09c6c7fac84053c7edf8603e893bcf75244e161127c834f",
+        "kind": "findings",
+        "context": "escenario D del R-PAR"
+      }
+    ],
+    "stale_test_baselines_for_capa9_authorization": [
+      {
+        "file": "test_h5f_hardening.py",
+        "line": 33,
+        "const": "_FINDINGS_FP_BASELINE",
+        "from": "b5196a71...",
+        "to": "693fc746..."
+      },
+      {
+        "file": "test_h5f_hardening.py",
+        "line": 34,
+        "const": "_GRAPH_FP_BASELINE",
+        "from": "88f15b69...",
+        "to": "2fdda0e2..."
+      },
+      {
+        "file": "test_h7_coverage_governance.py",
+        "line": 21,
+        "const": "_FINDINGS_FP_OBSERVE",
+        "from": "b5196a71...",
+        "to": "693fc746..."
+      },
+      {
+        "file": "test_h7_coverage_governance.py",
+        "line": 23,
+        "const": "_FINDINGS_FP_ENFORCE",
+        "from": "fdc29721...",
+        "to": "235f724a..."
+      },
+      {
+        "file": "test_h7_coverage_governance.py",
+        "line": 24,
+        "const": "_GRAPH_FP",
+        "from": "88f15b69...",
+        "to": "2fdda0e2..."
+      },
+      {
+        "file": "test_h4_graph_snapshot.py",
+        "line": null,
+        "const": "baseline graph/findings",
+        "from": "88f15b69 / b5196a71",
+        "to": "2fdda0e2 / 693fc746 (OBSERVE) o 235f724a (ENFORCE)"
+      }
+    ]
   },
   "targeted_v1_2": {
     "result_on_clean_stores": "124 passed",
