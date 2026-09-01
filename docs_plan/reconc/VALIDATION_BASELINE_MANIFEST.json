@@ -258,5 +258,11 @@
     "factory/regulatory/_reconc_backup_20260901T210343Z (pre-F2-r1 apply)"
   ],
   "b4b_runner_bug": "b4b_runner.py:_PDF_BY_DOC[\"RW-0012\"] -> WFI PDF (doc de RW-0014). Causa de la contaminacion. Fuera del alcance editable de F2.",
-  "provenance": "F2-r1 plan de reconciliacion v1.1; extraccion determinista sin LLM; network_locked."
+  "provenance": "F2-r1 plan de reconciliacion v1.1; extraccion determinista sin LLM; network_locked.",
+  "rw0003_store": {
+    "status": "NO_DISPONIBLE",
+    "reason": "RW-0003 (SAT 215115305-T-041, 204 pág imagen) requiere OCR docling + salto de EXTRACTION_VERSION -> BLOQUEADO EN GOBERNANZA (qualification_contract.yaml CT-WP-D-REAL, decisión D-4-H9-20260830 no ejecutada). F2 NO lo materializó.",
+    "path": null,
+    "effect_on_r_par": "escenario D = SKIPPED_NO_STORE. A/B/C corren igual. Para habilitar D, declarar aquí status=AVAILABLE + path a un store RW-0003 gobernado (F6)."
+  }
 }

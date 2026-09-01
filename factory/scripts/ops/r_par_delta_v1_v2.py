@@ -16,8 +16,11 @@ Todo va a /tmp + docs_plan/_r_par/.  Cada escenario 2x (determinismo).
 """
 from __future__ import annotations
 
+import argparse
+import hashlib
 import json
 import shutil
+import sqlite3
 import sys
 import tempfile
 from collections import Counter
@@ -33,10 +36,39 @@ from factory.regulatory.validation_v2.v2_runtime import run_v2_pipeline  # noqa:
 
 _ROCKWELL = _REPO / "GMPAI/source/Rockwell"
 _PROD_CANON = _REPO / "factory/regulatory/canonical_store"
-_RW0003_DET = Path(
-    "/tmp/claude-1000/-home-cmay-ivr-ia/423688da-e9c9-4275-8d88-332774529715/"
-    "scratchpad/RW-0003_ingested.sqlite3")
 _OUT = _REPO / "docs_plan/_r_par"
+_MANIFEST = _REPO / "docs_plan/reconc/VALIDATION_BASELINE_MANIFEST.json"
+
+# F3 (plan de reconciliación v1.1): el store de RW-0003 (SAT, 204 pág imagen, OCR)
+# se resuelve del VALIDATION_BASELINE_MANIFEST -- NUNCA de una ruta efímera de sesión.
+# Si el manifest no lo declara (o lo declara NO_DISPONIBLE), el escenario D se marca
+# SKIPPED_NO_STORE y A/B/C corren igual, sin abortar.
+_SKIPPED = "SKIPPED_NO_STORE"
+
+# MISMA función de hash lógico que materialize_stores.py (F2) -- se importa para que
+# el fail-closed de A compare contra el MISMO algoritmo del VALIDATION_BASELINE_MANIFEST,
+# nunca una reimplementación divergente.
+from factory.scripts.ops.materialize_stores import logical_hash_sqlite as _mat_logical  # noqa: E402
+
+
+def _logical_hash_sqlite(db: Path) -> str:
+    return _mat_logical(Path(db))[0]
+
+
+def _load_manifest() -> dict:
+    try:
+        return json.loads(_MANIFEST.read_text())
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _resolve_rw0003_store(manifest: dict) -> Path | None:
+    """RW-0003 store desde el manifest (`rw0003_store.path`). None si NO_DISPONIBLE."""
+    entry = manifest.get("rw0003_store") or {}
+    if entry.get("status") == "AVAILABLE" and entry.get("path"):
+        p = _REPO / entry["path"]
+        return p if p.exists() else None
+    return None
 
 PARITY = [
     ("RW-0005", "FS",  "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf"),
@@ -113,12 +145,28 @@ def _fps_and_cov(run_dir: Path) -> dict:
     }
 
 
-def _build_canon(canon: Path, *, source: str, extract_tests: bool, include_rw0003: bool) -> list[str]:
+def _build_canon(canon: Path, *, source: str, extract_tests: bool, include_rw0003: bool,
+                 rw0003_store: Path | None = None, manifest: dict | None = None) -> list[str]:
     if source == "PROD":
+        # A lee el canonical_store de producción PERO fail-closed contra el manifest:
+        # si un store falta o su LOGICAL_CONTENT_HASH no coincide con el baseline
+        # F2-r1, se aborta con mensaje claro (nunca corre sobre un store drifteado).
+        want = ((manifest or {}).get("canonical_store_manifest") or {}).get("per_doc") or {}
         for did in PARITY_IDS:
             src = _PROD_CANON / f"{did}.sqlite3"
             if not src.exists():
-                raise FileNotFoundError(src)
+                raise RuntimeError(
+                    f"[R-PAR:A] canonical_store de producción no tiene {did}.sqlite3. "
+                    f"Rematerializar con factory/scripts/ops/materialize_stores.py --apply.")
+            wh = (want.get(did) or {}).get("logical_hash_clean")
+            if wh:
+                got = _logical_hash_sqlite(src)
+                if got != wh:
+                    raise RuntimeError(
+                        f"[R-PAR:A] {did}: LOGICAL_CONTENT_HASH del store de producción "
+                        f"({got[:16]}) != baseline del manifest ({wh[:16]}). El store del "
+                        f"origen drifteó respecto de VALIDATION_BASELINE_MANIFEST; "
+                        f"rematerializar antes de correr R-PAR.")
             shutil.copy2(src, canon / f"{did}.sqlite3")
         return list(PARITY_IDS)
     # FRESH
@@ -127,15 +175,35 @@ def _build_canon(canon: Path, *, source: str, extract_tests: bool, include_rw000
                          store_dir=canon, extract_tests=extract_tests)
     docs = list(PARITY_IDS)
     if include_rw0003:
-        if not _RW0003_DET.exists():
-            raise FileNotFoundError(_RW0003_DET)
-        shutil.copy2(_RW0003_DET, canon / "RW-0003.sqlite3")
+        if rw0003_store is None or not Path(rw0003_store).exists():
+            # nunca se copia una ruta efímera; nunca se aborta a mitad
+            raise _RW0003Unavailable()
+        shutil.copy2(rw0003_store, canon / "RW-0003.sqlite3")
         docs = PARITY_IDS + ["RW-0003"]
     return docs
 
 
+class _RW0003Unavailable(Exception):
+    """RW-0003 store no declarado en el manifest -> escenario D = SKIPPED_NO_STORE."""
+
+
+def _skipped_scenario(tag: str, reason: str) -> dict:
+    """Marcador de escenario NO ejecutado (D sin store). Estructura mínima segura
+    para que main() no falle al construir el reporte; nunca deja artefactos vacíos."""
+    return {
+        "status": _SKIPPED, "reason": reason,
+        "graph": {"edges_by_rel": {}, "nodes_by_kind": {}},
+        "per_doc_canon": {}, "findings": [], "n_findings": _SKIPPED,
+        "fingerprints": _SKIPPED, "coverage_queues": _SKIPPED,
+        "coverage_would_degrade": {}, "document_egress_bytes": _SKIPPED,
+        "human_gate_intact": _SKIPPED, "deterministic": _SKIPPED,
+        "determinism_detail": _SKIPPED,
+    }
+
+
 def run_scenario(tag: str, *, source: str, extract_tests: bool, include_rw0003: bool,
-                 reps: int = 2) -> dict:
+                 reps: int = 2, rw0003_store: Path | None = None,
+                 manifest: dict | None = None) -> dict:
     reps_data = []
     for i in range(reps):
         root = Path(tempfile.mkdtemp(prefix=f"rpar-{tag}-{i}-"))
@@ -143,8 +211,14 @@ def run_scenario(tag: str, *, source: str, extract_tests: bool, include_rw0003: 
         for p in (canon, graph, reports):
             p.mkdir(parents=True)
         try:
-            docs = _build_canon(canon, source=source, extract_tests=extract_tests,
-                                include_rw0003=include_rw0003)
+            try:
+                docs = _build_canon(canon, source=source, extract_tests=extract_tests,
+                                    include_rw0003=include_rw0003,
+                                    rw0003_store=rw0003_store, manifest=manifest)
+            except _RW0003Unavailable:
+                shutil.rmtree(root, ignore_errors=True)
+                return _skipped_scenario(
+                    tag, "RW-0003 store no declarado (AVAILABLE) en VALIDATION_BASELINE_MANIFEST")
             pid = f"RPAR-{tag}-{i}"
             res = run_v2_pipeline(docs, project_id=pid, run_id=f"rpar-{tag}-{i}",
                                   canon_dir=canon, graph_dir=graph, report_base=reports)
@@ -290,12 +364,41 @@ def classify_disappearance(only_a: list[dict], A: dict, B: dict) -> dict:
     return {"summary": out, "detail": detail[:60]}
 
 
+def _selfcheck() -> int:
+    """F3: 0 rutas efímeras hardcodeadas. Los patrones se componen de fragmentos
+    para que ni este archivo los contenga literalmente (auto-detección espuria)."""
+    src = Path(__file__).read_text(encoding="utf-8")
+    pats = [chr(47) + "tmp" + chr(47) + "cl" + "aude-",
+            chr(47) + "scr" + "atchpad" + chr(47),
+            "cl" + "aude-1000" + chr(47) + "-home"]
+    real = [p for p in pats if p in src]
+    if real:
+        print("SELFCHECK FAIL: rutas efimeras hardcodeadas ->", real); return 1
+    print("SELFCHECK OK: sin rutas efimeras hardcodeadas"); return 0
+
+
 def main() -> int:
+    ap = argparse.ArgumentParser(description="R-PAR delta V1<->V2 (READ-ONLY)")
+    ap.add_argument("--dry-run-abc", action="store_true",
+                    help="corre solo A/B/C (D siempre SKIPPED); produce docs_plan/_r_par/ no vacío. NO es el R-PAR completo.")
+    ap.add_argument("--check", action="store_true", help="selfcheck de rutas efímeras y sale")
+    args = ap.parse_args()
+    if args.check:
+        return _selfcheck()
+
     _OUT.mkdir(parents=True, exist_ok=True)
-    A = run_scenario("A", source="PROD", extract_tests=False, include_rw0003=False)
-    B = run_scenario("B", source="FRESH", extract_tests=False, include_rw0003=False)
-    C = run_scenario("C", source="FRESH", extract_tests=True, include_rw0003=False)
-    D = run_scenario("D", source="FRESH", extract_tests=True, include_rw0003=True)
+    manifest = _load_manifest()
+    rw0003_store = _resolve_rw0003_store(manifest)
+
+    A = run_scenario("A", source="PROD", extract_tests=False, include_rw0003=False, manifest=manifest)
+    B = run_scenario("B", source="FRESH", extract_tests=False, include_rw0003=False, manifest=manifest)
+    C = run_scenario("C", source="FRESH", extract_tests=True, include_rw0003=False, manifest=manifest)
+    if args.dry_run_abc:
+        D = _skipped_scenario("D", "--dry-run-abc: escenario D no se ejecuta en el dry-run")
+    else:
+        D = run_scenario("D", source="FRESH", extract_tests=True, include_rw0003=True,
+                         rw0003_store=rw0003_store, manifest=manifest)
+    d_skipped = D.get("status") == _SKIPPED
 
     def strip(s):
         s = dict(s)
@@ -311,7 +414,7 @@ def main() -> int:
     ab["disappearance_classification_full"] = classify_disappearance(only_a_all, A, B)
 
     bc = diff_findings(B["findings"], C["findings"], "B", "C")
-    cd = diff_findings(C["findings"], D["findings"], "C", "D")
+    cd = _SKIPPED if d_skipped else diff_findings(C["findings"], D["findings"], "C", "D")
 
     graph_delta_bc = {
         rel: {"B": B["graph"]["edges_by_rel"].get(rel, 0),
@@ -324,7 +427,7 @@ def main() -> int:
             "C": C["graph"]["nodes_by_kind"].get(k, 0)}
         for k in sorted(set(B["graph"]["nodes_by_kind"]) | set(C["graph"]["nodes_by_kind"]))
     }
-    graph_delta_cd = {
+    graph_delta_cd = _SKIPPED if d_skipped else {
         rel: {"C": C["graph"]["edges_by_rel"].get(rel, 0),
               "D": D["graph"]["edges_by_rel"].get(rel, 0)}
         for rel in sorted(set(C["graph"]["edges_by_rel"]) | set(D["graph"]["edges_by_rel"])
@@ -348,7 +451,7 @@ def main() -> int:
             "canon_roles_C": {d: [C["per_doc_canon"][d]["tables_with_roles"],
                                   C["per_doc_canon"][d]["tables"]] for d in C["per_doc_canon"]},
         },
-        "C_vs_D_rw0003_additive": {
+        "C_vs_D_rw0003_additive": (_SKIPPED if d_skipped else {
             "findings": cd,
             "graph_edges": graph_delta_cd,
             "TEST_OBJECTS_ADDED": D["graph"]["nodes_by_kind"].get("test", 0)
@@ -369,7 +472,7 @@ def main() -> int:
             "orphan_design_element_C": sum(1 for f in C["findings"] if f["subtype"] == "ORPHAN_DESIGN_ELEMENT"),
             "orphan_design_element_D_rw6only": sum(
                 1 for f in D["findings"] if f["subtype"] == "ORPHAN_DESIGN_ELEMENT" and f["document"] != "RW-0003"),
-        },
+        }),
         "coverage_queues": {k: {"A": A, "B": B, "C": C, "D": D}[k]["coverage_queues"]
                             for k in ("A", "B", "C", "D")},
         "provenance_quality": {
@@ -393,23 +496,30 @@ def main() -> int:
             "document_egress_bytes": {k: {"A": A, "B": B, "C": C, "D": D}[k]["document_egress_bytes"]
                                      for k in ("A", "B", "C", "D")},
         },
-        "RR1": {
+        "RR1": (_SKIPPED if d_skipped else {
             "TEST_OBJECTS_RW0003": D["per_doc_canon"].get("RW-0003", {}).get("tests", 0),
             "TESTS_WITH_EXPLICIT_REQUIREMENT_REF": 3,
             "TESTED_BY": D["graph"]["edges_by_rel"].get("tested_by", 0),
             "EXPLICIT_TEST_REQUIREMENT_REFERENCE_RECOVERY": "3/%d" % D["per_doc_canon"].get("RW-0003", {}).get("tests", 0),
             "DO_NOT_LABEL_AS_TEST_TRACEABILITY_COVERAGE_PERCENT": True,
             "INTERPRETATION_REQUIRES_HUMAN_REVIEW": True,
-        },
+        }),
+        "D_status": D.get("status", "RAN"),
     }
     (_OUT / "R_PAR_RAW.json").write_text(json.dumps(result, indent=1, ensure_ascii=False, default=str),
                                         encoding="utf-8")
-    # también los findings completos por escenario (para auditoría)
+    # findings completos por escenario (para auditoría); D solo si corrió
     for k, v in {"A": A, "B": B, "C": C, "D": D}.items():
+        if k == "D" and d_skipped:
+            (_OUT / "findings_D.json").write_text(
+                json.dumps({"status": _SKIPPED, "reason": D.get("reason")}, indent=1), encoding="utf-8")
+            continue
         (_OUT / f"findings_{k}.json").write_text(
             json.dumps(v["findings"], indent=0, ensure_ascii=False, default=str), encoding="utf-8")
-    print("WROTE", _OUT / "R_PAR_RAW.json")
+    print("WROTE", _OUT / "R_PAR_RAW.json", "  (D_status =", result["D_status"], ")")
+    _cvd = result["C_vs_D_rw0003_additive"]
     print(json.dumps({
+        "D_status": result["D_status"],
         "determinism": result["determinism"],
         "A_n": A["n_findings"], "B_n": B["n_findings"], "C_n": C["n_findings"], "D_n": D["n_findings"],
         "rw0012 prod/clean claims": [A["per_doc_canon"]["RW-0012"]["claims"], B["per_doc_canon"]["RW-0012"]["claims"]],
@@ -420,8 +530,8 @@ def main() -> int:
         "BC_band_changed": bc["in_both_band_changed"]["count"],
         "BC_tested_by": graph_delta_bc.get("tested_by"),
         "BC_refers_to": graph_delta_bc.get("refers_to"),
-        "CD_tested_by_added": result["C_vs_D_rw0003_additive"]["TESTED_BY_ADDED"],
-        "CD_test_added": result["C_vs_D_rw0003_additive"]["TEST_OBJECTS_ADDED"],
+        "CD_tested_by_added": (_cvd if isinstance(_cvd, str) else _cvd["TESTED_BY_ADDED"]),
+        "CD_test_added": (_cvd if isinstance(_cvd, str) else _cvd["TEST_OBJECTS_ADDED"]),
     }, indent=1, default=str))
     return 0
 

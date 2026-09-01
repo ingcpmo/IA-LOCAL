@@ -1,0 +1,745 @@
+{
+ "scenarios": {
+  "A": {
+   "tag": "A",
+   "reps": 2,
+   "deterministic": true,
+   "determinism_detail": {
+    "input_config": true,
+    "graph_snapshot": true,
+    "findings": true,
+    "n_findings": true
+   },
+   "docs": [
+    "RW-0005",
+    "RW-0006",
+    "RW-0009",
+    "RW-0011",
+    "RW-0012",
+    "RW-0014"
+   ],
+   "fingerprints": {
+    "input_config_fingerprint": "3fcb3ae859091000b0e6c6cf2b4f51515e74665d658451b753c723d6e6e51668",
+    "graph_snapshot_fingerprint": "2fdda0e2ce513bc48b54038c5890a0b060e87a6e5c0d6d98b3d31fb149be3620",
+    "findings_fingerprint": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+   },
+   "coverage_queues": {
+    "effective_mode": "ENFORCE",
+    "ACTIONABLE_NOW": 30,
+    "BLOCKED_BY_COVERAGE_OR_EVIDENCE": 427,
+    "by_reason": {
+     "missing_or_degraded_coverage": 78,
+     "method_indeterminate": 349
+    },
+    "rw0009_subset_count": 57
+   },
+   "coverage_would_degrade": {
+    "would_degrade_true": 78,
+    "would_degrade_false": 379,
+    "by_basis": {
+     "INDETERMINATE": 349,
+     "ABSENCE_DEPENDENT": 108
+    },
+    "by_status": {
+     "OK": 379,
+     "MISSING": 78
+    }
+   },
+   "graph": {
+    "nodes_by_kind": {
+     "claim": 2930,
+     "document": 6,
+     "regulation": 4,
+     "requirement": 20,
+     "section": 40
+    },
+    "edges_by_rel": {
+     "designed_by": 190,
+     "implemented_by": 1120,
+     "regulated_by": 20
+    }
+   },
+   "per_doc_canon": {
+    "RW-0005": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 1409,
+     "sections": 8,
+     "tables": 89,
+     "tables_with_roles": 28,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    },
+    "RW-0006": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 515,
+     "sections": 8,
+     "tables": 35,
+     "tables_with_roles": 29,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    },
+    "RW-0009": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 62,
+     "sections": 0,
+     "tables": 2,
+     "tables_with_roles": 0,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    },
+    "RW-0011": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 317,
+     "sections": 8,
+     "tables": 23,
+     "tables_with_roles": 10,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    },
+    "RW-0012": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 258,
+     "sections": 8,
+     "tables": 18,
+     "tables_with_roles": 16,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    },
+    "RW-0014": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 369,
+     "sections": 8,
+     "tables": 21,
+     "tables_with_roles": 14,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    }
+   },
+   "n_findings": 457,
+   "document_egress_bytes": 0,
+   "human_gate_intact": true
+  },
+  "B": {
+   "tag": "B",
+   "reps": 2,
+   "deterministic": true,
+   "determinism_detail": {
+    "input_config": true,
+    "graph_snapshot": true,
+    "findings": true,
+    "n_findings": true
+   },
+   "docs": [
+    "RW-0005",
+    "RW-0006",
+    "RW-0009",
+    "RW-0011",
+    "RW-0012",
+    "RW-0014"
+   ],
+   "fingerprints": {
+    "input_config_fingerprint": "3fcb3ae859091000b0e6c6cf2b4f51515e74665d658451b753c723d6e6e51668",
+    "graph_snapshot_fingerprint": "2fdda0e2ce513bc48b54038c5890a0b060e87a6e5c0d6d98b3d31fb149be3620",
+    "findings_fingerprint": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+   },
+   "coverage_queues": {
+    "effective_mode": "ENFORCE",
+    "ACTIONABLE_NOW": 30,
+    "BLOCKED_BY_COVERAGE_OR_EVIDENCE": 427,
+    "by_reason": {
+     "missing_or_degraded_coverage": 78,
+     "method_indeterminate": 349
+    },
+    "rw0009_subset_count": 57
+   },
+   "coverage_would_degrade": {
+    "would_degrade_true": 78,
+    "would_degrade_false": 379,
+    "by_basis": {
+     "INDETERMINATE": 349,
+     "ABSENCE_DEPENDENT": 108
+    },
+    "by_status": {
+     "OK": 379,
+     "MISSING": 78
+    }
+   },
+   "graph": {
+    "nodes_by_kind": {
+     "claim": 2930,
+     "document": 6,
+     "regulation": 4,
+     "requirement": 20,
+     "section": 40
+    },
+    "edges_by_rel": {
+     "designed_by": 190,
+     "implemented_by": 1120,
+     "regulated_by": 20
+    }
+   },
+   "per_doc_canon": {
+    "RW-0005": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 1409,
+     "sections": 8,
+     "tables": 89,
+     "tables_with_roles": 28,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    },
+    "RW-0006": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 515,
+     "sections": 8,
+     "tables": 35,
+     "tables_with_roles": 29,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    },
+    "RW-0009": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 62,
+     "sections": 0,
+     "tables": 2,
+     "tables_with_roles": 0,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    },
+    "RW-0011": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 317,
+     "sections": 8,
+     "tables": 23,
+     "tables_with_roles": 10,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    },
+    "RW-0012": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 258,
+     "sections": 8,
+     "tables": 18,
+     "tables_with_roles": 16,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    },
+    "RW-0014": {
+     "extraction_version": "canonical-v1-2026-08",
+     "claims": 369,
+     "sections": 8,
+     "tables": 21,
+     "tables_with_roles": 14,
+     "tests": 0,
+     "system_component": 0,
+     "actor": 0
+    }
+   },
+   "n_findings": 457,
+   "document_egress_bytes": 0,
+   "human_gate_intact": true
+  },
+  "C": {
+   "tag": "C",
+   "reps": 2,
+   "deterministic": true,
+   "determinism_detail": {
+    "input_config": true,
+    "graph_snapshot": true,
+    "findings": true,
+    "n_findings": true
+   },
+   "docs": [
+    "RW-0005",
+    "RW-0006",
+    "RW-0009",
+    "RW-0011",
+    "RW-0012",
+    "RW-0014"
+   ],
+   "fingerprints": {
+    "input_config_fingerprint": "3fcb3ae859091000b0e6c6cf2b4f51515e74665d658451b753c723d6e6e51668",
+    "graph_snapshot_fingerprint": "530459cc57547cc5ad7f752023878e41d77b2730003b59c36a5770fba8bc7cef",
+    "findings_fingerprint": "9e46a1cdd403827c1053083796c7a2216ea34c37b076aebfbf9fdd623f6bc074"
+   },
+   "coverage_queues": {
+    "effective_mode": "ENFORCE",
+    "ACTIONABLE_NOW": 30,
+    "BLOCKED_BY_COVERAGE_OR_EVIDENCE": 428,
+    "by_reason": {
+     "missing_or_degraded_coverage": 79,
+     "method_indeterminate": 349
+    },
+    "rw0009_subset_count": 58
+   },
+   "coverage_would_degrade": {
+    "would_degrade_true": 79,
+    "would_degrade_false": 379,
+    "by_basis": {
+     "INDETERMINATE": 349,
+     "ABSENCE_DEPENDENT": 109
+    },
+    "by_status": {
+     "OK": 379,
+     "MISSING": 79
+    }
+   },
+   "graph": {
+    "nodes_by_kind": {
+     "actor": 13,
+     "claim": 2930,
+     "document": 6,
+     "regulation": 4,
+     "requirement": 20,
+     "section": 40,
+     "system_component": 51,
+     "test": 1
+    },
+    "edges_by_rel": {
+     "designed_by": 190,
+     "implemented_by": 1120,
+     "refers_to": 201,
+     "regulated_by": 20
+    }
+   },
+   "per_doc_canon": {
+    "RW-0005": {
+     "extraction_version": "canonical-v1-2026-08+tests-v1",
+     "claims": 1409,
+     "sections": 8,
+     "tables": 89,
+     "tables_with_roles": 28,
+     "tests": 0,
+     "system_component": 20,
+     "actor": 4
+    },
+    "RW-0006": {
+     "extraction_version": "canonical-v1-2026-08+tests-v1",
+     "claims": 515,
+     "sections": 8,
+     "tables": 35,
+     "tables_with_roles": 29,
+     "tests": 0,
+     "system_component": 11,
+     "actor": 4
+    },
+    "RW-0009": {
+     "extraction_version": "canonical-v1-2026-08+tests-v1",
+     "claims": 62,
+     "sections": 0,
+     "tables": 2,
+     "tables_with_roles": 0,
+     "tests": 1,
+     "system_component": 2,
+     "actor": 0
+    },
+    "RW-0011": {
+     "extraction_version": "canonical-v1-2026-08+tests-v1",
+     "claims": 317,
+     "sections": 8,
+     "tables": 23,
+     "tables_with_roles": 10,
+     "tests": 0,
+     "system_component": 8,
+     "actor": 2
+    },
+    "RW-0012": {
+     "extraction_version": "canonical-v1-2026-08+tests-v1",
+     "claims": 258,
+     "sections": 8,
+     "tables": 18,
+     "tables_with_roles": 16,
+     "tests": 0,
+     "system_component": 6,
+     "actor": 1
+    },
+    "RW-0014": {
+     "extraction_version": "canonical-v1-2026-08+tests-v1",
+     "claims": 369,
+     "sections": 8,
+     "tables": 21,
+     "tables_with_roles": 14,
+     "tests": 0,
+     "system_component": 4,
+     "actor": 2
+    }
+   },
+   "n_findings": 458,
+   "document_egress_bytes": 0,
+   "human_gate_intact": true
+  },
+  "D": {
+   "status": "SKIPPED_NO_STORE",
+   "reason": "RW-0003 store no declarado (AVAILABLE) en VALIDATION_BASELINE_MANIFEST",
+   "graph": {
+    "edges_by_rel": {},
+    "nodes_by_kind": {}
+   },
+   "per_doc_canon": {},
+   "n_findings": "SKIPPED_NO_STORE",
+   "fingerprints": "SKIPPED_NO_STORE",
+   "coverage_queues": "SKIPPED_NO_STORE",
+   "coverage_would_degrade": {},
+   "document_egress_bytes": "SKIPPED_NO_STORE",
+   "human_gate_intact": "SKIPPED_NO_STORE",
+   "deterministic": "SKIPPED_NO_STORE",
+   "determinism_detail": "SKIPPED_NO_STORE"
+  }
+ },
+ "determinism": {
+  "A": true,
+  "B": true,
+  "C": true,
+  "D": "SKIPPED_NO_STORE"
+ },
+ "determinism_detail": {
+  "A": {
+   "input_config": true,
+   "graph_snapshot": true,
+   "findings": true,
+   "n_findings": true
+  },
+  "B": {
+   "input_config": true,
+   "graph_snapshot": true,
+   "findings": true,
+   "n_findings": true
+  },
+  "C": {
+   "input_config": true,
+   "graph_snapshot": true,
+   "findings": true,
+   "n_findings": true
+  },
+  "D": "SKIPPED_NO_STORE"
+ },
+ "A_vs_B_clone_drift": {
+  "n_A": 457,
+  "n_B": 457,
+  "matched_by_finding_record_id": 457,
+  "matched_by_semantic_fallback": 0,
+  "only_in_A": {
+   "count": 0,
+   "hist": {
+    "by_document": {},
+    "by_class": {},
+    "by_subtype": {},
+    "by_band": {}
+   },
+   "sample": []
+  },
+  "only_in_B": {
+   "count": 0,
+   "hist": {
+    "by_document": {},
+    "by_class": {},
+    "by_subtype": {},
+    "by_band": {}
+   },
+   "sample": []
+  },
+  "in_both_same_band": 457,
+  "in_both_band_changed": {
+   "count": 0,
+   "sample": []
+  },
+  "evidence_basis_changed": {
+   "count": 0,
+   "sample": []
+  },
+  "coverage_status_changed": {
+   "count": 0,
+   "sample": []
+  },
+  "disappearance_classification": {
+   "summary": {
+    "CLONE_DRIFT": 0,
+    "SOURCE_STATE_DIFFERENCE": 0,
+    "IDENTITY_CHANGE": 0,
+    "UNEXPLAINED": 0
+   },
+   "detail": []
+  },
+  "disappearance_classification_full": {
+   "summary": {
+    "CLONE_DRIFT": 0,
+    "SOURCE_STATE_DIFFERENCE": 0,
+    "IDENTITY_CHANGE": 0,
+    "UNEXPLAINED": 0
+   },
+   "detail": []
+  }
+ },
+ "B_vs_C_h10_effect": {
+  "findings": {
+   "n_B": 457,
+   "n_C": 458,
+   "matched_by_finding_record_id": 457,
+   "matched_by_semantic_fallback": 0,
+   "only_in_B": {
+    "count": 0,
+    "hist": {
+     "by_document": {},
+     "by_class": {},
+     "by_subtype": {},
+     "by_band": {}
+    },
+    "sample": []
+   },
+   "only_in_C": {
+    "count": 1,
+    "hist": {
+     "by_document": {
+      "RW-0009": 1
+     },
+     "by_class": {
+      "TestCoverageFinding": 1
+     },
+     "by_subtype": {
+      "TEST_WITHOUT_REQUIREMENT": 1
+     },
+     "by_band": {
+      "LOW": 1
+     }
+    },
+    "sample": [
+     {
+      "finding_record_id": "rec-b192b0eda6e0d549",
+      "finding_id": "fnd-ba522dc8edc32b71",
+      "class": "TestCoverageFinding",
+      "subtype": "TEST_WITHOUT_REQUIREMENT",
+      "document": "RW-0009",
+      "page": 1,
+      "section": null,
+      "source_hash": "42032c590ff8652e77975ed130f66b003a359c63a571d348bbacb220d08fe006",
+      "requirement": null,
+      "subcriterion_ref": null,
+      "band": "LOW",
+      "band_pre_enforce": "LOW",
+      "band_changed": false,
+      "evidence_basis": "ABSENCE_DEPENDENT",
+      "coverage_status": "MISSING",
+      "machine_state": "MACHINE_DEVIATION_CANDIDATE",
+      "human_state": "UNREVIEWED",
+      "has_anchor": true,
+      "has_page": true,
+      "has_source_hash": true
+     }
+    ]
+   },
+   "in_both_same_band": 457,
+   "in_both_band_changed": {
+    "count": 0,
+    "sample": []
+   },
+   "evidence_basis_changed": {
+    "count": 0,
+    "sample": []
+   },
+   "coverage_status_changed": {
+    "count": 0,
+    "sample": []
+   }
+  },
+  "graph_edges": {
+   "designed_by": {
+    "B": 190,
+    "C": 190
+   },
+   "implemented_by": {
+    "B": 1120,
+    "C": 1120
+   },
+   "refers_to": {
+    "B": 0,
+    "C": 201
+   },
+   "regulated_by": {
+    "B": 20,
+    "C": 20
+   },
+   "tested_by": {
+    "B": 0,
+    "C": 0
+   },
+   "verifies": {
+    "B": 0,
+    "C": 0
+   }
+  },
+  "graph_nodes": {
+   "actor": {
+    "B": 0,
+    "C": 13
+   },
+   "claim": {
+    "B": 2930,
+    "C": 2930
+   },
+   "document": {
+    "B": 6,
+    "C": 6
+   },
+   "regulation": {
+    "B": 4,
+    "C": 4
+   },
+   "requirement": {
+    "B": 20,
+    "C": 20
+   },
+   "section": {
+    "B": 40,
+    "C": 40
+   },
+   "system_component": {
+    "B": 0,
+    "C": 51
+   },
+   "test": {
+    "B": 0,
+    "C": 1
+   }
+  },
+  "canon_tests_C": {
+   "RW-0005": 0,
+   "RW-0006": 0,
+   "RW-0009": 1,
+   "RW-0011": 0,
+   "RW-0012": 0,
+   "RW-0014": 0
+  },
+  "canon_syscomp_C": {
+   "RW-0005": 20,
+   "RW-0006": 11,
+   "RW-0009": 2,
+   "RW-0011": 8,
+   "RW-0012": 6,
+   "RW-0014": 4
+  },
+  "canon_actor_C": {
+   "RW-0005": 4,
+   "RW-0006": 4,
+   "RW-0009": 0,
+   "RW-0011": 2,
+   "RW-0012": 1,
+   "RW-0014": 2
+  },
+  "canon_roles_C": {
+   "RW-0005": [
+    28,
+    89
+   ],
+   "RW-0006": [
+    29,
+    35
+   ],
+   "RW-0009": [
+    0,
+    2
+   ],
+   "RW-0011": [
+    10,
+    23
+   ],
+   "RW-0012": [
+    16,
+    18
+   ],
+   "RW-0014": [
+    14,
+    21
+   ]
+  }
+ },
+ "C_vs_D_rw0003_additive": "SKIPPED_NO_STORE",
+ "coverage_queues": {
+  "A": {
+   "effective_mode": "ENFORCE",
+   "ACTIONABLE_NOW": 30,
+   "BLOCKED_BY_COVERAGE_OR_EVIDENCE": 427,
+   "by_reason": {
+    "missing_or_degraded_coverage": 78,
+    "method_indeterminate": 349
+   },
+   "rw0009_subset_count": 57
+  },
+  "B": {
+   "effective_mode": "ENFORCE",
+   "ACTIONABLE_NOW": 30,
+   "BLOCKED_BY_COVERAGE_OR_EVIDENCE": 427,
+   "by_reason": {
+    "missing_or_degraded_coverage": 78,
+    "method_indeterminate": 349
+   },
+   "rw0009_subset_count": 57
+  },
+  "C": {
+   "effective_mode": "ENFORCE",
+   "ACTIONABLE_NOW": 30,
+   "BLOCKED_BY_COVERAGE_OR_EVIDENCE": 428,
+   "by_reason": {
+    "missing_or_degraded_coverage": 79,
+    "method_indeterminate": 349
+   },
+   "rw0009_subset_count": 58
+  },
+  "D": "SKIPPED_NO_STORE"
+ },
+ "provenance_quality": {
+  "A": {
+   "n_findings": 457,
+   "with_anchor": 457,
+   "with_valid_page": 457,
+   "with_source_hash": 457
+  },
+  "B": {
+   "n_findings": 457,
+   "with_anchor": 457,
+   "with_valid_page": 457,
+   "with_source_hash": 457
+  },
+  "C": {
+   "n_findings": 458,
+   "with_anchor": 458,
+   "with_valid_page": 458,
+   "with_source_hash": 458
+  },
+  "D": {
+   "n_findings": "SKIPPED_NO_STORE",
+   "with_anchor": 0,
+   "with_valid_page": 0,
+   "with_source_hash": 0
+  }
+ },
+ "consistency_check": {
+  "prod_canonical_unchanged": null,
+  "rw0012_clean_claims": 258,
+  "rw0012_prod_claims": 258,
+  "D_fingerprints": "SKIPPED_NO_STORE",
+  "D_fingerprints_expected": {
+   "input_config_fingerprint": "0de04225362a6f863617d63717e5da82a7e829a2594f95e53f8f36cd5d07598f",
+   "graph_snapshot_fingerprint": "8ce23f30202991d87f6d867525306e50be1cdf191a40d57b6bd191a2d7b327f4",
+   "findings_fingerprint": "2b1a300ae26f76cbf09c6c7fac84053c7edf8603e893bcf75244e161127c834f"
+  },
+  "document_egress_bytes": {
+   "A": 0,
+   "B": 0,
+   "C": 0,
+   "D": "SKIPPED_NO_STORE"
+  }
+ },
+ "RR1": "SKIPPED_NO_STORE",
+ "D_status": "SKIPPED_NO_STORE"
+}
