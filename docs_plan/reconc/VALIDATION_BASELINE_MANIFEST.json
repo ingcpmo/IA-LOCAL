@@ -1,8 +1,8 @@
 {
   "artifact": "VALIDATION_BASELINE_MANIFEST",
-  "phase": "F2",
-  "generated_at": "2026-09-01T20:10:40.006946+00:00",
-  "git_commit": "9ab7c2bacdffded1d75a717173b14ffbc1476b93",
+  "phase": "F2-r1",
+  "generated_at": "2026-09-01T21:02:06.507233+00:00",
+  "git_commit": "8c4e7abcde82b57fbd128b598211b74920780c55",
   "branch": "fix/clon-local-validacion",
   "hash_definition": {
     "ref": "docs_plan/reconc/F2_HASH_DEFINITION.md",
@@ -18,67 +18,59 @@
     "document_structure_extractor.py": "56236c1ace2800ed32c5be9712a0761a2084c969cb6527954c6f64104552a11a",
     "canonical/extract_document.py": "ee909cbc049c0461d2e072ae795d06c684281e8d632f9c22384b0f2c2aa7da20",
     "canonical/normalize_claims.py": "86671564f3b7bd71aa58d64f261bf5146c91565464823fce28183c8eeea7e232",
-    "graph/build.py": "e3fca5e7c6dbdf1ffcc66aafe744fedfc2dbf5db19e791c7a8a04d036f3b7b8f"
+    "graph/build.py": "64d9e7d90a543879e06022a8fd4f8865af0bc9ea8e4a74d64abf67c9bde0a5c5"
+  },
+  "graph_build_fix": {
+    "file": "factory/regulatory/graph/build.py",
+    "change": "3x sorted() en iteracion de sets de refs (_link_chain L246, _link_to_tests L368, _link_contradictions L520) -> attrs.via_ref estable",
+    "proof_determinism": "3 corridas PYTHONHASHSEED=random -> LOGICAL_CONTENT_HASH identico (ver runs[])",
+    "proof_no_topology_change": "con el store CONTAMINADO, graph_snapshot_fingerprint = 88f15b69... (== baseline previo) -> el fix NO mueve la topologia, solo elimina la no-determinacion"
   },
   "commands": [
-    "PYTHONPATH=. .venv/bin/python factory/scripts/ops/materialize_stores.py --apply --report docs_plan/reconc/F2_materialization_report_apply.json",
+    "PYTHONHASHSEED=random PYTHONPATH=. .venv/bin/python factory/scripts/ops/materialize_stores.py --runs 3",
+    "PYTHONPATH=. .venv/bin/python factory/scripts/ops/materialize_stores.py --apply   # paso controlado, con backup",
     "PYTHONPATH=. .venv/bin/python -m pytest -q factory/tests/test_completeness_rules_v1_2.py factory/tests/test_technical_findings.py factory/tests/test_run_fingerprint.py factory/tests/test_wp_e_measurement_independence.py factory/tests/test_extraction_adequacy.py"
   ],
-  "corpus_pdfs": {
+  "pdf_map": {
     "RW-0005": {
       "pdf_name": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
-      "pdf_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
-      "matches_canonical_meta": true
+      "expected_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+      "tipo": "FS"
     },
     "RW-0006": {
       "pdf_name": "215115305 SCADA-PCS Misc PLC System URS v2.1.pdf",
-      "pdf_sha256": "d9e24467a66d52fb1a641b6de901ceff1dcdaf66af1ae80cb94a433c40c939c8",
-      "matches_canonical_meta": true
+      "expected_sha256": "d9e24467a66d52fb1a641b6de901ceff1dcdaf66af1ae80cb94a433c40c939c8",
+      "tipo": "URS"
     },
     "RW-0009": {
       "pdf_name": "215115305-T-041 SAT3 Completed.pdf",
-      "pdf_sha256": "2edb00a3eae471926f41f6d6b707874e52c78c29ebc583ad6da6c4cf961009eb",
-      "matches_canonical_meta": true
+      "expected_sha256": "2edb00a3eae471926f41f6d6b707874e52c78c29ebc583ad6da6c4cf961009eb",
+      "tipo": "SAT"
     },
     "RW-0011": {
       "pdf_name": "MCCPDC EMS Control Block Narrative revB.pdf",
-      "pdf_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
-      "matches_canonical_meta": true
+      "expected_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
+      "tipo": "DS"
     },
     "RW-0012": {
       "pdf_name": "MCCPDC PCS Signal Interface Control Block Narrative.pdf",
-      "pdf_sha256": "de7b70c297f0fbf1269d47e334a7575d4de3429bff6ed797fc663b85fea15c71",
-      "matches_canonical_meta": true
+      "expected_sha256": "de7b70c297f0fbf1269d47e334a7575d4de3429bff6ed797fc663b85fea15c71",
+      "tipo": "DS"
     },
     "RW-0014": {
       "pdf_name": "MCCPDC WFI Control Block Narrative revB.pdf",
-      "pdf_sha256": "8a67414d90ba28c8ee3cf9939d3be0d670ed7c8794a61f049b07ebe07ebf4ccb",
-      "matches_canonical_meta": true
+      "expected_sha256": "8a67414d90ba28c8ee3cf9939d3be0d670ed7c8794a61f049b07ebe07ebf4ccb",
+      "tipo": "DS"
     }
   },
   "canonical_store_manifest": {
     "class": "REGENERABLE",
-    "procedure": "materialize_stores.py -> extract_document(pdf, doc_id, tipo, store_dir)",
+    "procedure": "materialize_stores.py::materialize_once -> extract_document(pdf, doc_id, tipo, store_dir)  [temp dir aislado]",
+    "deterministic_over_3_runs": true,
     "per_doc": {
       "RW-0005": {
-        "byte_hash_new": "6e7378f689e9584eed09493cf34f143d2387d8f087381c9eaad73b3984821a29",
-        "byte_hash_pre": "eadff98f0eccacc90b9975d15a095ff068f87a8effb99617db368c1542fc1971",
-        "logical_hash_new": "8e7196a007f02274240a492b19ee5f459d2b72b8573f02a729c21b4698901ffa",
-        "logical_hash_pre": "8e7196a007f02274240a492b19ee5f459d2b72b8573f02a729c21b4698901ffa",
-        "logical_match_new_vs_pre": true,
-        "counts_new": {
-          "actor": 0,
-          "claim": 1409,
-          "control": 0,
-          "document": 1,
-          "evidence": 0,
-          "meta": 2,
-          "section": 8,
-          "system_component": 0,
-          "table_obj": 89,
-          "test": 0
-        },
-        "counts_pre": {
+        "logical_hash_clean": "8e7196a007f02274240a492b19ee5f459d2b72b8573f02a729c21b4698901ffa",
+        "counts_clean": {
           "actor": 0,
           "claim": 1409,
           "control": 0,
@@ -92,24 +84,8 @@
         }
       },
       "RW-0006": {
-        "byte_hash_new": "f583f5e201f90b1444fd80ce692b546f0eb6d78bf5bb7c10f340630bade5c4f3",
-        "byte_hash_pre": "d907c05092d8c177d5fb197f26e48f37dc4a43254ba48f26db5acbbe15379fae",
-        "logical_hash_new": "7da433b41c111d29224c66ab5dd794ef26de51c33cb6a2e993d8066a6b0ee6c8",
-        "logical_hash_pre": "7da433b41c111d29224c66ab5dd794ef26de51c33cb6a2e993d8066a6b0ee6c8",
-        "logical_match_new_vs_pre": true,
-        "counts_new": {
-          "actor": 0,
-          "claim": 515,
-          "control": 0,
-          "document": 1,
-          "evidence": 0,
-          "meta": 2,
-          "section": 8,
-          "system_component": 0,
-          "table_obj": 35,
-          "test": 0
-        },
-        "counts_pre": {
+        "logical_hash_clean": "7da433b41c111d29224c66ab5dd794ef26de51c33cb6a2e993d8066a6b0ee6c8",
+        "counts_clean": {
           "actor": 0,
           "claim": 515,
           "control": 0,
@@ -123,24 +99,8 @@
         }
       },
       "RW-0009": {
-        "byte_hash_new": "ccbe49e709f7fa20e51b770a7fd00e3eeef42dcfb3b252f0b0bc060655a496a0",
-        "byte_hash_pre": "e768e6dd0b8f908ca4fe6a7b9f8a172f7c4b97db41cfb1e382ccbc9dc4fcf878",
-        "logical_hash_new": "4922562de36feaa7bdc91ac67d01cec9e8a42ab8806eea45b44c80fcf6eb03c9",
-        "logical_hash_pre": "4922562de36feaa7bdc91ac67d01cec9e8a42ab8806eea45b44c80fcf6eb03c9",
-        "logical_match_new_vs_pre": true,
-        "counts_new": {
-          "actor": 0,
-          "claim": 62,
-          "control": 0,
-          "document": 1,
-          "evidence": 0,
-          "meta": 2,
-          "section": 0,
-          "system_component": 0,
-          "table_obj": 2,
-          "test": 0
-        },
-        "counts_pre": {
+        "logical_hash_clean": "4922562de36feaa7bdc91ac67d01cec9e8a42ab8806eea45b44c80fcf6eb03c9",
+        "counts_clean": {
           "actor": 0,
           "claim": 62,
           "control": 0,
@@ -154,24 +114,8 @@
         }
       },
       "RW-0011": {
-        "byte_hash_new": "38f6e71a146bc5fcff7b59695012e0c027670da57e13d39d7f77b1146cad3ce8",
-        "byte_hash_pre": "eec3f102c535940849f045081c86ca63f2d5e678f8f260b8bf40cdba867a1232",
-        "logical_hash_new": "1f2676308d557f7d8a53776f27bd0b64b24bc562ae57fd0494885e3386632492",
-        "logical_hash_pre": "1f2676308d557f7d8a53776f27bd0b64b24bc562ae57fd0494885e3386632492",
-        "logical_match_new_vs_pre": true,
-        "counts_new": {
-          "actor": 0,
-          "claim": 317,
-          "control": 0,
-          "document": 1,
-          "evidence": 0,
-          "meta": 2,
-          "section": 8,
-          "system_component": 0,
-          "table_obj": 23,
-          "test": 0
-        },
-        "counts_pre": {
+        "logical_hash_clean": "1f2676308d557f7d8a53776f27bd0b64b24bc562ae57fd0494885e3386632492",
+        "counts_clean": {
           "actor": 0,
           "claim": 317,
           "control": 0,
@@ -185,12 +129,8 @@
         }
       },
       "RW-0012": {
-        "byte_hash_new": "8427216c96ed63d756f1173d8fd69b9902eb8ad4a3dbf2db8c1e0e0cb728d558",
-        "byte_hash_pre": "9bef2aedb9c96a175a6649b9f26c81748fdb4917abe4a1b446e44cd2c69569b9",
-        "logical_hash_new": "155eb281df9105e26804c9f812db14b5e183758ab49a03bdf0308c915bcdbda4",
-        "logical_hash_pre": "81fe5ad424eff1938c70a0c8de1b8e60f0c63958232f4ec3d3b77574e36289ac",
-        "logical_match_new_vs_pre": false,
-        "counts_new": {
+        "logical_hash_clean": "155eb281df9105e26804c9f812db14b5e183758ab49a03bdf0308c915bcdbda4",
+        "counts_clean": {
           "actor": 0,
           "claim": 258,
           "control": 0,
@@ -201,39 +141,11 @@
           "system_component": 0,
           "table_obj": 18,
           "test": 0
-        },
-        "counts_pre": {
-          "actor": 0,
-          "claim": 595,
-          "control": 0,
-          "document": 1,
-          "evidence": 0,
-          "meta": 2,
-          "section": 13,
-          "system_component": 0,
-          "table_obj": 39,
-          "test": 0
         }
       },
       "RW-0014": {
-        "byte_hash_new": "3e318b5ce8f279304dec557c05436e2f31c583ba8b8e91113924ca947f83c1bb",
-        "byte_hash_pre": "82b73176132deb45bbbaccc29807dfa21fbca05a459d45e306836d1d736edf48",
-        "logical_hash_new": "a180fdc1c5d0be286f84c6dd20eb684f84f0b1488b5b53d73ee6ab0ebf724e12",
-        "logical_hash_pre": "a180fdc1c5d0be286f84c6dd20eb684f84f0b1488b5b53d73ee6ab0ebf724e12",
-        "logical_match_new_vs_pre": true,
-        "counts_new": {
-          "actor": 0,
-          "claim": 369,
-          "control": 0,
-          "document": 1,
-          "evidence": 0,
-          "meta": 2,
-          "section": 8,
-          "system_component": 0,
-          "table_obj": 21,
-          "test": 0
-        },
-        "counts_pre": {
+        "logical_hash_clean": "a180fdc1c5d0be286f84c6dd20eb684f84f0b1488b5b53d73ee6ab0ebf724e12",
+        "counts_clean": {
           "actor": 0,
           "claim": 369,
           "control": 0,
@@ -251,7 +163,8 @@
   "graph_store_manifest": {
     "class": "REGENERABLE",
     "procedure": "build_project_graph(RW-TECH-REAL, RW_DOCS, canon_dir, graph_dir) sobre canonical regenerado",
-    "build_counts": {
+    "deterministic_over_3_runs": true,
+    "build_counts_clean": {
       "nodes": 3000,
       "edges": 1330,
       "nodes_by_kind": {
@@ -269,57 +182,81 @@
     },
     "per_db": {
       "RW-TECH-REAL.sqlite3": {
-        "logical_hash_new": "2e099e3395c360dd7631b82c9ae2dbf0a114d12d8fbddc8e028b6b0ec6d4eebf",
-        "logical_hash_pre": "b799b5ee4d1794dcdf36a9612c7c13bcdb97986cf9ab7c9e748ce62dca556aa5",
-        "logical_match_new_vs_pre": false,
-        "counts_new": {
-          "edges": 1330,
-          "nodes": 3000
-        },
-        "counts_pre": {
-          "edges": 1344,
-          "nodes": 3342
-        }
+        "logical_hash_clean": "3ead71532cf44fab4eea71867ef572b96aab3f69bfc0524739ea7b4e69224081"
       }
-    },
-    "tree_byte_hash_new": "d0ed6963ad8dff2e59dbbfbe14c574bfc064e8fa41ca4251c38a11c6a835e3b3",
-    "tree_byte_hash_pre": "22767f5a4ee80d146957b49f7cb7f2798bc40258cf6fee2de037cc23606228d4"
+    }
   },
   "corpus_run_manifest": {
     "class": "EVIDENCIA_CONGELADA",
     "files": 983,
     "tree_byte_sha256": "07a695ddc3ab3addfd8d5394a66ca6de31d06e9f0d6b264c7c693ff925d05a29",
-    "note": "salida de corridas historicas (mtime 2026-08-20); NO insumo del nº targeted v1.2. Hash con metodo F2_HASH_DEFINITION §1."
+    "note": "salida historica (mtime 2026-08-20); NO insumo del nº targeted v1.2. Hash metodo F2_HASH_DEFINITION §1."
   },
   "pilot_run_manifest": {
     "class": "EVIDENCIA_CONGELADA",
-    "files_at_capture": 780,
-    "tree_byte_sha256_moving": "729aa081446e80d18eecd999b4449f4f897e32361e12ffe45681b2530180b2c9",
-    "note": "acumula dirs de salida por corrida (run_v2_pipeline escribe aqui); hash es blanco movil. 4 .docx bajo dry_run_validation_r4_t1_1v2/ = LOGICAL_CONTENT_HASH del texto (D-F0-03)."
+    "files": 780,
+    "tree_byte_sha256": "729aa081446e80d18eecd999b4449f4f897e32361e12ffe45681b2530180b2c9",
+    "note": "acumula dirs de salida por corrida; hash es blanco movil por diseño. NO insumo del nº targeted.",
+    "docx": {
+      "v1_candidate_EXCLUDED_pending_exception.docx": {
+        "byte_hash": "8237e6635f2a1e48e058aae77179894f5781697b080b01499baf8e8ab0e5bbbf",
+        "logical_text_hash": "0d2423de2a495b1f3855540bacd2d22ab0c3df9ca2e5985f5f17c7bd71233668"
+      },
+      "v1_redline_EXCLUDED_pending_exception.docx": {
+        "byte_hash": "a8d64bcb3be0586552305f29fae243c9f8bf83aa50fd241dadcb75542afc8e41",
+        "logical_text_hash": "a24daa9dc98de4381a316a2689bfc1fc1a8966a4c7af6ef1b29f4ea2c9ba1f42"
+      },
+      "v2_candidate_INCLUDED.docx": {
+        "byte_hash": "5da54a1e484128019efc9938a93ca16dcde33dfb320a44ec39b758a59d3a47b6",
+        "logical_text_hash": "7fea20b8319078ba314716dcb28c34020376e0bed5f07163632abbb2da626583"
+      },
+      "v2_redline_INCLUDED.docx": {
+        "byte_hash": "5c13d0f02babc1ef958906c71d3508bb4b4b50633821bd3c306a4c9b8ed45a04",
+        "logical_text_hash": "f5a3123184476c6a0cf3f12eb79ceeabf106c4cbec76c8b1c60e7989ae4b7d70"
+      }
+    }
   },
-  "fingerprints_clean_stores": {
-    "INPUT_CONFIG_FINGERPRINT": "e9305f45b4ae13e8dd20357697b2b8d821dad6e4bd7584d5715a387118fbd965",
-    "GRAPH_SNAPSHOT_FINGERPRINT": "2fdda0e2ce513bc48b54038c5890a0b060e87a6e5c0d6d98b3d31fb149be3620",
-    "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23",
-    "note": "sobre stores materializados LIMPIOS (RW-0012 des-contaminado). GRAPH_SNAPSHOT y FINDINGS distintos del historico 88f15b69/fdc29721 (esos eran sobre el store contaminado). Rebaseline formal = F5."
+  "fingerprints": {
+    "note": "medidos con build.py fijado (F2-r1). El rebaseline FORMAL es F5.",
+    "contaminated_store": {
+      "input_config": "3fcb3ae859091000b0e6c6cf2b4f51515e74665d658451b753c723d6e6e51668",
+      "graph_snapshot": "88f15b69bf2cea9a09d5a179300496d3685b18c58c1adb1dfa601f191b73ae05",
+      "findings_ENFORCE": "3d8988045f85655021e6da889bf9048739c6f6c2c1c4c58e75d5974316a5543d"
+    },
+    "clean_store": {
+      "input_config": "3fcb3ae859091000b0e6c6cf2b4f51515e74665d658451b753c723d6e6e51668",
+      "graph_snapshot": "2fdda0e2ce513bc48b54038c5890a0b060e87a6e5c0d6d98b3d31fb149be3620",
+      "findings_ENFORCE": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+    },
+    "observacion_input_config": "input_config_fingerprint = 3fcb3ae8 con canon_dir explicito; = e9305f45 con canon_dir por defecto -> sensible a la ruta. Para F5."
   },
-  "expected_counts": {
-    "targeted_v1_2_on_contaminated_disk": "124 passed (pre-F2)",
-    "targeted_v1_2_on_clean_materialized": "123 passed, 1 failed",
-    "the_1_failure": "test_extraction_adequacy.py::test_v2_runtime_observe_effect -> actual (342,90,25) vs expected (342,90,26)",
-    "reason": "el (342,90,26) fue afinado contra el store RW-0012 CONTAMINADO (595 claims incl. contenido WFI). El nº correcto es (342,90,25): el RW-0012 p.5 AUTHORITY_CHECK_GAP era artefacto de la contaminacion.",
+  "targeted_v1_2": {
+    "result_on_clean_stores": "124 passed",
+    "baseline_correction": "test_extraction_adequacy.py:214  (342,90,26) -> (342,90,25)  [F2-r1 §4; el 26 era artefacto de la contaminacion RW-0012 p.5 AUTHORITY_CHECK_GAP]",
     "reg": 342,
     "func": 90,
-    "tech_clean": 25,
-    "tech_contaminated": 26,
-    "determinista": "si — (342,90,25) en 2/2 corridas",
-    "fix_needed_outside_F2_scope": "test_extraction_adequacy.py:214 assert -> (342,90,25). test-file, fuera del CLAUDE_CODE_PUEDE_TOCAR de F2. Hand a Capa 9 / F5."
+    "tech": 25
   },
-  "backup": {
-    "dir": "/home/cmay/ivr-ia/factory/regulatory/_reconc_backup_20260901T201038Z",
-    "contents": "estado PRE-F2 (RW-0012 contaminado + graph 3342/1344)",
-    "note": "restaurable si Capa 9 lo pide; el estado LIMPIO es el autoritativo."
+  "other_tests_needing_F5_rebaseline": {
+    "note": "3 tests de hardening con fingerprint hardcodeado contra el store CONTAMINADO. NO son \"los targeted\". Rebaseline = F5.",
+    "tests": [
+      "test_h4_graph_snapshot.py::test_e2e_findings_fingerprint_matches_post_h1h2h3_baseline",
+      "test_h5f_hardening.py::test_h5f_does_not_move_findings_or_graph_fingerprint",
+      "test_h7_coverage_governance.py::test_e2e_observe_does_not_move_findings_or_graph"
+    ],
+    "old_baseline": {
+      "graph": "88f15b69...",
+      "findings_ENFORCE": "fdc29721.../3d898804..."
+    },
+    "new_clean": {
+      "graph": "2fdda0e2...",
+      "findings_ENFORCE": "235f724a..."
+    }
   },
-  "b4b_runner_bug": "b4b_runner.py:_PDF_BY_DOC['RW-0012'] apunta a 'MCCPDC WFI Control Block Narrative revB.pdf' (documento de RW-0014). Causa del canonical_store/RW-0012 contaminado (13 secciones). b4b_runner.py fuera del alcance editable de F2.",
-  "provenance": "F2 plan de reconciliacion v1.1; extraction determinista sin LLM; network_locked; DOCUMENT_EGRESS observado."
+  "backups": [
+    "factory/regulatory/_reconc_backup_20260901T201038Z (pre-F2)",
+    "factory/regulatory/_reconc_backup_20260901T210343Z (pre-F2-r1 apply)"
+  ],
+  "b4b_runner_bug": "b4b_runner.py:_PDF_BY_DOC[\"RW-0012\"] -> WFI PDF (doc de RW-0014). Causa de la contaminacion. Fuera del alcance editable de F2.",
+  "provenance": "F2-r1 plan de reconciliacion v1.1; extraccion determinista sin LLM; network_locked."
 }

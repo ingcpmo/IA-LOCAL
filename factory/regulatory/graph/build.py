@@ -243,7 +243,12 @@ def _link_chain(g: GraphStore, ups: list[dict], downs: list[dict], rel: str) -> 
     for u in ups:
         for d in downs:
             shared = set(u["claims_by_ref"]) & set(d["claims_by_ref"])
-            for ref in shared:
+            # `shared` es un set de strings -> su orden de iteración varía entre
+            # procesos (aleatorización de hash). Como (su, sd, rel) puede
+            # producirse vía varios `ref`, el último gana sobre `attrs.via_ref`;
+            # sin orden estable el grafo NO es determinista. `sorted` fija la causa
+            # mínima (F2-r1, plan de reconciliación v1.1 §2).
+            for ref in sorted(shared):
                 for su in u["claims_by_ref"][ref]:
                     for sd in d["claims_by_ref"][ref]:
                         _safe_edge(g, su, sd, rel, {"via_ref": ref})
@@ -360,7 +365,7 @@ def _link_to_tests(g: GraphStore, ups: list[dict], tests_idx: list[dict]) -> Non
                 trefs = extract_refs(t.get("descripcion", ""))
                 if t.get("identificador"):
                     trefs.add(_norm_ref(t["identificador"]))
-                for ref in trefs & set(u["claims_by_ref"]):
+                for ref in sorted(trefs & set(u["claims_by_ref"])):   # F2-r1: orden estable de `via_ref`
                     for su in u["claims_by_ref"][ref]:
                         if not _tested_by_anchored(u["claim_texts"].get(su, ""),
                                                    t.get("descripcion", ""), ref):
@@ -499,7 +504,7 @@ def _link_contradictions(g: GraphStore, indices: list[dict]) -> None:
             for cid in claim_ids:
                 ref_claims.setdefault(ref, []).append(
                     (cid, texts.get(cid, ""), doc, lids.get(cid)))
-    for ref, items in ref_claims.items():
+    for ref, items in sorted(ref_claims.items()):   # F2-r1: mismo patrón que _link_chain (via_ref estable)
         for i in range(len(items)):
             for j in range(i + 1, len(items)):
                 (ci, ti, di, li), (cj, tj, dj, lj) = items[i], items[j]

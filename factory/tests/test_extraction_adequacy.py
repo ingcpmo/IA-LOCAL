@@ -206,12 +206,17 @@ def test_v2_runtime_observe_effect(tmp_path, monkeypatch):
     reg = json.loads((rd / "regulatory_findings.json").read_text())
     func = json.loads((rd / "functional_findings.json").read_text())
     tech = json.loads((rd / "technical_findings.json").read_text())
-    # población esperada (baseline WP-B; tech 24 -> 26 con reglas de completitud v1.2:
-    # C05 v1.2 ancla el modelo de roles/niveles parafraseado -> +3 AUTHORITY_CHECK_GAP
-    # (RW-0006 p.16, RW-0012 p.5, RW-0014 p.5) y retira 1 C05 anclado en una linea de
-    # glosario "21 CFR Part 11 Electronic Records, Electronic Signatures" (RW-0006 p.5).
-    # Neto +2. Todos MACHINE_INCONCLUSIVE -> revision humana. 0 nuevos ACCESS_CONTROL_GAP.
-    assert (len(reg), len(func), len(tech)) == (342, 90, 26)
+    # poblacion esperada (baseline WP-B; tech 24 -> 25 con reglas de completitud v1.2).
+    # C05 v1.2 ancla el modelo de roles/niveles parafraseado -> +2 AUTHORITY_CHECK_GAP
+    # (RW-0006 p.16, RW-0014 p.5) y retira 1 C05 anclado en una linea de glosario
+    # "21 CFR Part 11 Electronic Records, Electronic Signatures" (RW-0006 p.5). Neto +1.
+    # (F2-r1, plan de reconciliacion v1.1: el "+3 ... RW-0012 p.5" del baseline anterior
+    #  (342,90,26) era ARTEFACTO de la contaminacion de canonical_store/RW-0012 -- 13 secc.
+    #  = 8 WFI de RW-0014 + 5 PCS reales. Con RW-0012 des-contaminado (8 secc / 258 claims,
+    #  materialize_stores.py) el numero correcto y determinista es (342,90,25). Ver
+    #  docs_plan/reconc/F2_materialization_log.md y VALIDATION_BASELINE_MANIFEST.json.)
+    # Todos MACHINE_INCONCLUSIVE -> revision humana. 0 nuevos ACCESS_CONTROL_GAP.
+    assert (len(reg), len(func), len(tech)) == (342, 90, 25)
     # todo finding lleva evidence_basis con un valor válido
     for f in reg + func + tech:
         assert f["evidence_basis"] in eb.EVIDENCE_BASES
