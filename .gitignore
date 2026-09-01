@@ -117,3 +117,10 @@ docs_plan/_gates_prep/
 # prototipo (factory/prototypes/semantic_hybrid_poc/*.py) SI se versiona.
 factory/prototypes/semantic_hybrid_poc/poc_log*.jsonl
 factory/prototypes/semantic_hybrid_poc/bakeoff_results/
+
+# Plan de reconciliación v1.1 F2: stores materializados / backups — contienen
+# contenido del store canónico (texto de cliente). El código (materialize_stores.py)
+# y los reportes de hashes SÍ se versionan.
+factory/regulatory/_reconc_materialized/
+factory/regulatory/_reconc_backup_*/
+docs_plan/reconc/F2_materialization_report*.json

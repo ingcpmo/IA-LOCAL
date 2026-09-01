@@ -1,0 +1,325 @@
+{
+  "artifact": "VALIDATION_BASELINE_MANIFEST",
+  "phase": "F2",
+  "generated_at": "2026-09-01T20:10:40.006946+00:00",
+  "git_commit": "9ab7c2bacdffded1d75a717173b14ffbc1476b93",
+  "branch": "fix/clon-local-validacion",
+  "hash_definition": {
+    "ref": "docs_plan/reconc/F2_HASH_DEFINITION.md",
+    "commit": "9ab7c2b"
+  },
+  "runtime": {
+    "python": "3.11.15",
+    "platform": "Linux-6.14.0-29-generic-x86_64-with-glibc2.39",
+    "pdfplumber": "0.11.10",
+    "sqlite3": "3.45.1"
+  },
+  "code_hashes": {
+    "document_structure_extractor.py": "56236c1ace2800ed32c5be9712a0761a2084c969cb6527954c6f64104552a11a",
+    "canonical/extract_document.py": "ee909cbc049c0461d2e072ae795d06c684281e8d632f9c22384b0f2c2aa7da20",
+    "canonical/normalize_claims.py": "86671564f3b7bd71aa58d64f261bf5146c91565464823fce28183c8eeea7e232",
+    "graph/build.py": "e3fca5e7c6dbdf1ffcc66aafe744fedfc2dbf5db19e791c7a8a04d036f3b7b8f"
+  },
+  "commands": [
+    "PYTHONPATH=. .venv/bin/python factory/scripts/ops/materialize_stores.py --apply --report docs_plan/reconc/F2_materialization_report_apply.json",
+    "PYTHONPATH=. .venv/bin/python -m pytest -q factory/tests/test_completeness_rules_v1_2.py factory/tests/test_technical_findings.py factory/tests/test_run_fingerprint.py factory/tests/test_wp_e_measurement_independence.py factory/tests/test_extraction_adequacy.py"
+  ],
+  "corpus_pdfs": {
+    "RW-0005": {
+      "pdf_name": "215115305 SCADA-PCS Misc PLC System FS_v1.2.pdf",
+      "pdf_sha256": "56095a7541fbb62e30d00e77308fde4c2ac0f4ec945adbf19a968b79debc82eb",
+      "matches_canonical_meta": true
+    },
+    "RW-0006": {
+      "pdf_name": "215115305 SCADA-PCS Misc PLC System URS v2.1.pdf",
+      "pdf_sha256": "d9e24467a66d52fb1a641b6de901ceff1dcdaf66af1ae80cb94a433c40c939c8",
+      "matches_canonical_meta": true
+    },
+    "RW-0009": {
+      "pdf_name": "215115305-T-041 SAT3 Completed.pdf",
+      "pdf_sha256": "2edb00a3eae471926f41f6d6b707874e52c78c29ebc583ad6da6c4cf961009eb",
+      "matches_canonical_meta": true
+    },
+    "RW-0011": {
+      "pdf_name": "MCCPDC EMS Control Block Narrative revB.pdf",
+      "pdf_sha256": "13bc6f50c4cee50211d6877249cbacd19e797b0cb93e58e3579c037be68fbf53",
+      "matches_canonical_meta": true
+    },
+    "RW-0012": {
+      "pdf_name": "MCCPDC PCS Signal Interface Control Block Narrative.pdf",
+      "pdf_sha256": "de7b70c297f0fbf1269d47e334a7575d4de3429bff6ed797fc663b85fea15c71",
+      "matches_canonical_meta": true
+    },
+    "RW-0014": {
+      "pdf_name": "MCCPDC WFI Control Block Narrative revB.pdf",
+      "pdf_sha256": "8a67414d90ba28c8ee3cf9939d3be0d670ed7c8794a61f049b07ebe07ebf4ccb",
+      "matches_canonical_meta": true
+    }
+  },
+  "canonical_store_manifest": {
+    "class": "REGENERABLE",
+    "procedure": "materialize_stores.py -> extract_document(pdf, doc_id, tipo, store_dir)",
+    "per_doc": {
+      "RW-0005": {
+        "byte_hash_new": "6e7378f689e9584eed09493cf34f143d2387d8f087381c9eaad73b3984821a29",
+        "byte_hash_pre": "eadff98f0eccacc90b9975d15a095ff068f87a8effb99617db368c1542fc1971",
+        "logical_hash_new": "8e7196a007f02274240a492b19ee5f459d2b72b8573f02a729c21b4698901ffa",
+        "logical_hash_pre": "8e7196a007f02274240a492b19ee5f459d2b72b8573f02a729c21b4698901ffa",
+        "logical_match_new_vs_pre": true,
+        "counts_new": {
+          "actor": 0,
+          "claim": 1409,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 8,
+          "system_component": 0,
+          "table_obj": 89,
+          "test": 0
+        },
+        "counts_pre": {
+          "actor": 0,
+          "claim": 1409,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 8,
+          "system_component": 0,
+          "table_obj": 89,
+          "test": 0
+        }
+      },
+      "RW-0006": {
+        "byte_hash_new": "f583f5e201f90b1444fd80ce692b546f0eb6d78bf5bb7c10f340630bade5c4f3",
+        "byte_hash_pre": "d907c05092d8c177d5fb197f26e48f37dc4a43254ba48f26db5acbbe15379fae",
+        "logical_hash_new": "7da433b41c111d29224c66ab5dd794ef26de51c33cb6a2e993d8066a6b0ee6c8",
+        "logical_hash_pre": "7da433b41c111d29224c66ab5dd794ef26de51c33cb6a2e993d8066a6b0ee6c8",
+        "logical_match_new_vs_pre": true,
+        "counts_new": {
+          "actor": 0,
+          "claim": 515,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 8,
+          "system_component": 0,
+          "table_obj": 35,
+          "test": 0
+        },
+        "counts_pre": {
+          "actor": 0,
+          "claim": 515,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 8,
+          "system_component": 0,
+          "table_obj": 35,
+          "test": 0
+        }
+      },
+      "RW-0009": {
+        "byte_hash_new": "ccbe49e709f7fa20e51b770a7fd00e3eeef42dcfb3b252f0b0bc060655a496a0",
+        "byte_hash_pre": "e768e6dd0b8f908ca4fe6a7b9f8a172f7c4b97db41cfb1e382ccbc9dc4fcf878",
+        "logical_hash_new": "4922562de36feaa7bdc91ac67d01cec9e8a42ab8806eea45b44c80fcf6eb03c9",
+        "logical_hash_pre": "4922562de36feaa7bdc91ac67d01cec9e8a42ab8806eea45b44c80fcf6eb03c9",
+        "logical_match_new_vs_pre": true,
+        "counts_new": {
+          "actor": 0,
+          "claim": 62,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 0,
+          "system_component": 0,
+          "table_obj": 2,
+          "test": 0
+        },
+        "counts_pre": {
+          "actor": 0,
+          "claim": 62,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 0,
+          "system_component": 0,
+          "table_obj": 2,
+          "test": 0
+        }
+      },
+      "RW-0011": {
+        "byte_hash_new": "38f6e71a146bc5fcff7b59695012e0c027670da57e13d39d7f77b1146cad3ce8",
+        "byte_hash_pre": "eec3f102c535940849f045081c86ca63f2d5e678f8f260b8bf40cdba867a1232",
+        "logical_hash_new": "1f2676308d557f7d8a53776f27bd0b64b24bc562ae57fd0494885e3386632492",
+        "logical_hash_pre": "1f2676308d557f7d8a53776f27bd0b64b24bc562ae57fd0494885e3386632492",
+        "logical_match_new_vs_pre": true,
+        "counts_new": {
+          "actor": 0,
+          "claim": 317,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 8,
+          "system_component": 0,
+          "table_obj": 23,
+          "test": 0
+        },
+        "counts_pre": {
+          "actor": 0,
+          "claim": 317,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 8,
+          "system_component": 0,
+          "table_obj": 23,
+          "test": 0
+        }
+      },
+      "RW-0012": {
+        "byte_hash_new": "8427216c96ed63d756f1173d8fd69b9902eb8ad4a3dbf2db8c1e0e0cb728d558",
+        "byte_hash_pre": "9bef2aedb9c96a175a6649b9f26c81748fdb4917abe4a1b446e44cd2c69569b9",
+        "logical_hash_new": "155eb281df9105e26804c9f812db14b5e183758ab49a03bdf0308c915bcdbda4",
+        "logical_hash_pre": "81fe5ad424eff1938c70a0c8de1b8e60f0c63958232f4ec3d3b77574e36289ac",
+        "logical_match_new_vs_pre": false,
+        "counts_new": {
+          "actor": 0,
+          "claim": 258,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 8,
+          "system_component": 0,
+          "table_obj": 18,
+          "test": 0
+        },
+        "counts_pre": {
+          "actor": 0,
+          "claim": 595,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 13,
+          "system_component": 0,
+          "table_obj": 39,
+          "test": 0
+        }
+      },
+      "RW-0014": {
+        "byte_hash_new": "3e318b5ce8f279304dec557c05436e2f31c583ba8b8e91113924ca947f83c1bb",
+        "byte_hash_pre": "82b73176132deb45bbbaccc29807dfa21fbca05a459d45e306836d1d736edf48",
+        "logical_hash_new": "a180fdc1c5d0be286f84c6dd20eb684f84f0b1488b5b53d73ee6ab0ebf724e12",
+        "logical_hash_pre": "a180fdc1c5d0be286f84c6dd20eb684f84f0b1488b5b53d73ee6ab0ebf724e12",
+        "logical_match_new_vs_pre": true,
+        "counts_new": {
+          "actor": 0,
+          "claim": 369,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 8,
+          "system_component": 0,
+          "table_obj": 21,
+          "test": 0
+        },
+        "counts_pre": {
+          "actor": 0,
+          "claim": 369,
+          "control": 0,
+          "document": 1,
+          "evidence": 0,
+          "meta": 2,
+          "section": 8,
+          "system_component": 0,
+          "table_obj": 21,
+          "test": 0
+        }
+      }
+    }
+  },
+  "graph_store_manifest": {
+    "class": "REGENERABLE",
+    "procedure": "build_project_graph(RW-TECH-REAL, RW_DOCS, canon_dir, graph_dir) sobre canonical regenerado",
+    "build_counts": {
+      "nodes": 3000,
+      "edges": 1330,
+      "nodes_by_kind": {
+        "claim": 2930,
+        "document": 6,
+        "regulation": 4,
+        "requirement": 20,
+        "section": 40
+      },
+      "edges_by_rel": {
+        "designed_by": 190,
+        "implemented_by": 1120,
+        "regulated_by": 20
+      }
+    },
+    "per_db": {
+      "RW-TECH-REAL.sqlite3": {
+        "logical_hash_new": "2e099e3395c360dd7631b82c9ae2dbf0a114d12d8fbddc8e028b6b0ec6d4eebf",
+        "logical_hash_pre": "b799b5ee4d1794dcdf36a9612c7c13bcdb97986cf9ab7c9e748ce62dca556aa5",
+        "logical_match_new_vs_pre": false,
+        "counts_new": {
+          "edges": 1330,
+          "nodes": 3000
+        },
+        "counts_pre": {
+          "edges": 1344,
+          "nodes": 3342
+        }
+      }
+    },
+    "tree_byte_hash_new": "d0ed6963ad8dff2e59dbbfbe14c574bfc064e8fa41ca4251c38a11c6a835e3b3",
+    "tree_byte_hash_pre": "22767f5a4ee80d146957b49f7cb7f2798bc40258cf6fee2de037cc23606228d4"
+  },
+  "corpus_run_manifest": {
+    "class": "EVIDENCIA_CONGELADA",
+    "files": 983,
+    "tree_byte_sha256": "07a695ddc3ab3addfd8d5394a66ca6de31d06e9f0d6b264c7c693ff925d05a29",
+    "note": "salida de corridas historicas (mtime 2026-08-20); NO insumo del nº targeted v1.2. Hash con metodo F2_HASH_DEFINITION §1."
+  },
+  "pilot_run_manifest": {
+    "class": "EVIDENCIA_CONGELADA",
+    "files_at_capture": 780,
+    "tree_byte_sha256_moving": "729aa081446e80d18eecd999b4449f4f897e32361e12ffe45681b2530180b2c9",
+    "note": "acumula dirs de salida por corrida (run_v2_pipeline escribe aqui); hash es blanco movil. 4 .docx bajo dry_run_validation_r4_t1_1v2/ = LOGICAL_CONTENT_HASH del texto (D-F0-03)."
+  },
+  "fingerprints_clean_stores": {
+    "INPUT_CONFIG_FINGERPRINT": "e9305f45b4ae13e8dd20357697b2b8d821dad6e4bd7584d5715a387118fbd965",
+    "GRAPH_SNAPSHOT_FINGERPRINT": "2fdda0e2ce513bc48b54038c5890a0b060e87a6e5c0d6d98b3d31fb149be3620",
+    "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23",
+    "note": "sobre stores materializados LIMPIOS (RW-0012 des-contaminado). GRAPH_SNAPSHOT y FINDINGS distintos del historico 88f15b69/fdc29721 (esos eran sobre el store contaminado). Rebaseline formal = F5."
+  },
+  "expected_counts": {
+    "targeted_v1_2_on_contaminated_disk": "124 passed (pre-F2)",
+    "targeted_v1_2_on_clean_materialized": "123 passed, 1 failed",
+    "the_1_failure": "test_extraction_adequacy.py::test_v2_runtime_observe_effect -> actual (342,90,25) vs expected (342,90,26)",
+    "reason": "el (342,90,26) fue afinado contra el store RW-0012 CONTAMINADO (595 claims incl. contenido WFI). El nº correcto es (342,90,25): el RW-0012 p.5 AUTHORITY_CHECK_GAP era artefacto de la contaminacion.",
+    "reg": 342,
+    "func": 90,
+    "tech_clean": 25,
+    "tech_contaminated": 26,
+    "determinista": "si — (342,90,25) en 2/2 corridas",
+    "fix_needed_outside_F2_scope": "test_extraction_adequacy.py:214 assert -> (342,90,25). test-file, fuera del CLAUDE_CODE_PUEDE_TOCAR de F2. Hand a Capa 9 / F5."
+  },
+  "backup": {
+    "dir": "/home/cmay/ivr-ia/factory/regulatory/_reconc_backup_20260901T201038Z",
+    "contents": "estado PRE-F2 (RW-0012 contaminado + graph 3342/1344)",
+    "note": "restaurable si Capa 9 lo pide; el estado LIMPIO es el autoritativo."
+  },
+  "b4b_runner_bug": "b4b_runner.py:_PDF_BY_DOC['RW-0012'] apunta a 'MCCPDC WFI Control Block Narrative revB.pdf' (documento de RW-0014). Causa del canonical_store/RW-0012 contaminado (13 secciones). b4b_runner.py fuera del alcance editable de F2.",
+  "provenance": "F2 plan de reconciliacion v1.1; extraction determinista sin LLM; network_locked; DOCUMENT_EGRESS observado."
+}
