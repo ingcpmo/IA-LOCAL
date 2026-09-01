@@ -111,3 +111,9 @@ factory/regulatory/pilot_run/held_out_d5d_canonical_20260831/
 docs_plan/_h9_full/
 docs_plan/_r_par/
 docs_plan/_gates_prep/
+
+# Mesa de Diseno FASE 2: logs/resultados del prototipo semantico -- pueden
+# contener excertos del store canonico (texto de cliente). El codigo del
+# prototipo (factory/prototypes/semantic_hybrid_poc/*.py) SI se versiona.
+factory/prototypes/semantic_hybrid_poc/poc_log*.jsonl
+factory/prototypes/semantic_hybrid_poc/bakeoff_results/
