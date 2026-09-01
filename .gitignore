@@ -104,6 +104,10 @@ factory/regulatory/canonical_store_v2/
 factory/regulatory/graph_store_v2/
 factory/regulatory/validation_v2/_h9_assets/
 factory/regulatory/pilot_run/h10_extraction_v2_20260830/
+# corridas PRE/POST-mejoras y held-out D5-D: artefactos con texto de cliente, NO a git
+factory/regulatory/pilot_run/postmejoras_v4_20260831/
+factory/regulatory/pilot_run/held_out_d5d_20260831/
+factory/regulatory/pilot_run/held_out_d5d_canonical_20260831/
 docs_plan/_h9_full/
 docs_plan/_r_par/
 docs_plan/_gates_prep/
