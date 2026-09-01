@@ -13,6 +13,7 @@ from factory.prototypes.semantic_hybrid_poc.citation_gate import (
 )
 from factory.prototypes.semantic_hybrid_poc.validator import validate
 from factory.prototypes.semantic_hybrid_poc.runner import assess, _cache_key
+from factory.prototypes.semantic_hybrid_poc import stability as stab
 
 _REAL_TEXT = ("The system enforces role based access for the operator interface. "
               "Three named roles are available: Operator, Supervisor and Engineer.")
@@ -207,6 +208,46 @@ def test_cache_key_is_content_addressed_and_shared_on_same_source_hash():
     f3 = {"source_hash": "def", "subtype": "AUTHORITY_CHECK_GAP", "finding_id": "f3"}
     assert _cache_key(f1, "D") == _cache_key(f2, "D")
     assert _cache_key(f1, "D") != _cache_key(f3, "D")
+
+
+# ----------------------------------------------------------------------- H-4
+
+def _rec(status, verdicts, ohash):
+    return {"assessment_status": status, "semantic_coverage": status,
+            "output_hash": ohash, "wall_time_s": 1.0,
+            "required_elements": [{"element_id": k, "verdict": v} for k, v in verdicts.items()]}
+
+
+def test_h4_stable_when_status_and_verdicts_agree(monkeypatch):
+    seq = iter([_rec("COMPLETED", {"e1": "PRESENT"}, "h1"),
+                _rec("COMPLETED", {"e1": "PRESENT"}, "h2")])  # distinto hash, mismo status/verdict
+    monkeypatch.setattr(stab, "assess", lambda f, m, **kw: next(seq))
+    out = stab.assess_stable({"finding_id": "x"}, "qwen2.5:7b-instruct-q4_K_M", n=2)
+    assert out["stability"]["stable"] is True
+    assert out["stability_flag"] is False
+    assert out["assessment_status"] == "COMPLETED"
+    assert out["stability"]["output_bit_identical"] is False  # se reporta, no degrada
+
+
+def test_h4_degrades_to_indeterminate_when_status_flips(monkeypatch):
+    seq = iter([_rec("COMPLETED", {"e1": "PRESENT"}, "h1"),
+                _rec("INDETERMINATE", {"e1": "UNCLEAR"}, "h2")])
+    monkeypatch.setattr(stab, "assess", lambda f, m, **kw: next(seq))
+    out = stab.assess_stable({"finding_id": "x"}, "qwen2.5:7b-instruct-q4_K_M", n=2)
+    assert out["stability"]["stable"] is False
+    assert out["stability_flag"] is True
+    assert out["assessment_status"] == "INDETERMINATE"
+    assert out["semantic_coverage"] == "INDETERMINATE"
+    assert out["assessment_status_raw"] == "COMPLETED"      # se conserva el crudo
+
+
+def test_h4_degrades_when_a_single_verdict_differs(monkeypatch):
+    seq = iter([_rec("COMPLETED", {"e1": "PRESENT", "e2": "ABSENT"}, "h1"),
+                _rec("COMPLETED", {"e1": "PRESENT", "e2": "UNCLEAR"}, "h2")])
+    monkeypatch.setattr(stab, "assess", lambda f, m, **kw: next(seq))
+    out = stab.assess_stable({"finding_id": "x"}, "qwen2.5:7b-instruct-q4_K_M", n=2)
+    assert out["stability_flag"] is True
+    assert out["assessment_status"] == "INDETERMINATE"
 
 
 # ------------------------------------------------- test obligatorio (inyeccion)

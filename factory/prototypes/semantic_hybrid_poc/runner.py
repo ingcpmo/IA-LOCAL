@@ -26,12 +26,15 @@ def _cache_key(finding: dict, model_digest: str) -> str:
 
 
 def assess(finding: dict, model: str, *, inject_response: dict | None = None,
-           options: dict | None = None) -> dict:
+           options: dict | None = None, context_override: dict | None = None) -> dict:
     """inject_response: si se pasa, se salta Ollama y se usa ese dict como respuesta
     del modelo (para el test de cita fabricada, R5). options: override de pinning
-    (para probar num_ctx variable, etc.)."""
+    (para probar num_ctx variable, etc.). context_override: si se pasa, se usa ese
+    dict como contexto (mismo shape que compose(): scope_texts, analyzed_section,
+    document_scope_status, ...) en vez de la composicion por pagina/seccion --
+    lo usa recall_probe.py para retrieval por palabra clave a nivel de documento (R9)."""
     t0 = time.time()
-    ctx = compose(finding)
+    ctx = context_override if context_override is not None else compose(finding)
     prompt = build_prompt(finding, ctx)
 
     if inject_response is not None:

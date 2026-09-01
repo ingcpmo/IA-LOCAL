@@ -2,8 +2,9 @@
 
 **Fecha:** 2026-09-01
 **Alcance:** Mesa de Diseño «Modelo Híbrido Determinista + Ollama», FASE 2 — prototipo aislado.
-**Estado:** COMPLETO — dos corridas (gate original + gate endurecido H-1/H-2/H-3).
-Checkpoint humano pendiente (Cesar elige modelo antes de A/B, FASE 3).
+**Estado:** COMPLETO — bake-off (2 corridas: gate original + gate endurecido
+H-1/H-2/H-3), H-4 (§8) y prueba dirigida de recall (§9, **refutada**).
+Checkpoint humano pendiente (§9): decisión de rol + modelo por mensaje.
 **No se modificó** producto, reglas, findings, provenance ni audit trail real.
 **AI_RUNTIME:** LOCAL_ONLY · **DOCUMENT_EGRESS:** 0 · **EXTERNAL_LLM_API:** 0.
 
@@ -132,7 +133,7 @@ en las dos corridas.
 | H-1 | `emitted=0 → INDETERMINATE` mezcla "el modelo confirma ausencia" con "el modelo no produjo evidencia". | **HECHO** (corrida B) | Estado `CONFIRMS_ABSENCE` distinto de `INDETERMINATE`. Rescató 7 findings en qwen. |
 | H-2 | `verify_quote` aceptaba `method=fuzzy` ≥ 0.93 como "verificada"; R5 pide substring **literal**. | **HECHO** (corrida B) | Sólo `is_literally_anchored` cuenta; fuzzy ≥ 0.93 → `near_match`, descartada. Corrigió 1 falso `COMPLETED` en qwen, 2 en mistral. |
 | H-3 | El gate no degradaba `verdict=PRESENT` con `supporting_quote=null`. | **HECHO** (corrida B) | `PRESENT`/`CONTRADICTORY` sin cita verificada → `UNCLEAR`. 5 elementos degradados en qwen, 7 en mistral. |
-| H-4 | Deriva run-to-run con pinning completo (ver §2). El endurecimiento **no** lo corrige. | **PENDIENTE (FASE 3)** | (a) inferencia de calentamiento antes del lote; (b) para findings de cola humana, correr 2× y si `status`/`verdict` difieren → `INDETERMINATE` + nota "modelo inestable". |
+| H-4 | Deriva run-to-run con pinning completo (ver §2). El endurecimiento **no** lo corrige. | **HECHO** (§8) | `stability.py`: `warmup()` + `assess_stable(n=2)`. status/verdict discrepan entre corridas → `INDETERMINATE` + `stability_flag`. 3 tests. Marcó 2 inestables en §9. |
 | H-5 | `contradictory_evidence` nunca se pobló (0/28, ambas corridas). | **PENDIENTE (FASE 3)** | Añadir a la muestra A/B ≥ 2 findings donde el documento sí describe el comportamiento. |
 | H-6 | `REQUIREMENT_NOT_TESTED` no evaluado (0 instancias en el corpus). | **PENDIENTE (FASE 3)** | Evaluarlo cuando aparezca, o construir 1–2 casos sintéticos. |
 
@@ -215,11 +216,13 @@ cola de revisión humana. No es interactivo. Compatible con el diseño de FASE 1
 | `reproducibility_rate` reportado (no asumido) | **PASS** (N=3; qwen 0.33 salida / 0.67 status, mistral 0.67 / 1.00 — valor bajo, lo ataca H-4) |
 | Cache verificado (RW-0012/RW-0014 → 1 inferencia) | **PASS** (ambas corridas) |
 | Test obligatorio: cita fabricada inyectada → gate la rechaza → `INDETERMINATE` | **PASS** (`test_poc.py`, 15/15) |
-| Ninguna cita no verificada sobrevive al gate | **PASS** |
+| Ninguna cita no verificada sobrevive al gate | **PASS** (incl. §10: 20 fabricadas pre-gate → 0 sobreviven) |
+| H-4 gate de estabilidad | **PASS** — incorporado (§8), 3 tests, marca inestables → `INDETERMINATE` |
+| Prueba de red de seguridad de recall (§9) | **REFUTADA** — 1/7 < 2/7 baseline. La capa NO arregla recall. |
 
-**FASE 2 = PASS.** H-1/H-2/H-3 incorporados y **re-medidos** (§6-bis + §2 gate B).
-H-4 (verificación 2× + calentamiento) y H-5/H-6 (ampliar muestra) quedan para
-FASE 3.
+**FASE 2 = PASS** en su alcance de seguridad y decision-support; **NEGATIVO** para
+recall (§9). H-1/H-2/H-3/H-4 incorporados y medidos. La decisión de rol/modelo
+es de Cesar (§9).
 
 ---
 
@@ -265,6 +268,8 @@ ortogonal a la estabilidad del modelo).
 | `…/bakeoff_results/bakeoff_{qwen,mistral}_*.json` | 14 assessments por modelo, corrida B (crudo + gated) | no (gitignored) |
 | `…/bakeoff_results/bakeoff_reproducibility.json`, `…_cache_check.json`, `…_meta.json` | reproducibilidad, cache, pinning/digests | no (gitignored) |
 | `…/bakeoff_results/pre_hardening_20260901/` | **corrida A** completa (gate previo) para comparación | no (gitignored) |
+| `…/bakeoff_results/recall_probe_summary.json` | prueba de red de seguridad de recall (§9) | no (gitignored) |
+| `factory/prototypes/semantic_hybrid_poc/stability.py`, `recall_probe.py` | H-4 + prueba dirigida | **sí** |
 | `…/poc_log.jsonl`, `…/poc_log_pre_hardening.jsonl` | log propio del prototipo (NO es el audit trail real) | no (gitignored) |
 
 Los resultados crudos citan texto del store canónico (texto de cliente) → quedan
@@ -272,17 +277,78 @@ fuera del repo público. El código y este informe no contienen citas verbatim.
 
 ---
 
-## 8. Checkpoint
+## 8. H-4 — gate de estabilidad (incorporado)
 
-**Pendiente de Cesar:** revisar este bake-off y **elegir modelo** antes del A/B de
-FASE 3.
+`stability.py`: `warmup(model)` (inferencia trivial descartada, saca al modelo del
+arranque en frío) + `assess_stable(finding, model, n=2)` — corre `assess` n veces;
+si `assessment_status` o algún `verdict` por elemento discrepa entre corridas →
+degrada a `INDETERMINATE` con `stability_flag=True` y conserva el crudo
+(`assessment_status_raw`). **Nunca "elige" una corrida.** Tests: 3 nuevos en
+`test_poc.py` (18/18). No corrige la deriva del modelo — la **contiene** en
+dirección fail-safe.
 
-- Recomendación de esta capa: **qwen2.5:7b-instruct-q4_K_M** — bajo el gate que
-  respeta R5, da señal útil en 79 % de los findings vs 14 % de mistral.
-- H-1/H-2/H-3 **incorporados y re-medidos** (corrida B). Falta **H-4**
-  (verificación 2× + calentamiento) antes del A/B.
-- H-5 (casos de contradicción) y H-6 (`REQUIREMENT_NOT_TESTED`) se cubren
-  ampliando la muestra del A/B.
+---
 
-No se hace commit ni push. HEAD sigue en `6891422`. El trabajo D5-D / v1.2 en
-árbol de trabajo no se tocó.
+## 9. La capa como RED DE SEGURIDAD DE RECALL — prueba dirigida (REFUTADA)
+
+**Hipótesis:** para los findings donde el motor determinista marca GAP porque no
+ancló evidencia que SÍ está en el documento (recall de juicio **2/7**), ¿un LLM
+local pinneado + gate R5 recupera la cita literal?
+
+**Instrumento:** el mismo fixture set del roadmap —
+`docs_plan/W5V2_RECALL_FIXTURE_SET_DRAFT.md`, **7 positivos + 2 negativos**
+(verif. 2026-08-08). Retrieval por **código**, overlap de términos a nivel de
+**documento** (R9; el `pagina` del canonical store de este corpus es grueso),
+top-40 claims. qwen, gate endurecido, H-4 con n=2. `recall_probe.py`.
+
+| | Resultado |
+|---|---|
+| **Positivos recuperados** | **1 / 7** (solo P2, `21_CFR_11.10(g)`, con cita literal verificada: *"…protected through the FactoryTalk Security software"*) |
+| vs. baseline pipeline de juicio | **2 / 7** — la capa recupera **menos** |
+| Positivos perdidos | P1, P3, P4, P5, P6, P7 |
+| **Negativos manejados OK** | **2 / 2** (N1 → `CONFIRMS_ABSENCE`; N2 → `INDETERMINATE`, **no** citó la línea del índice, **no** afirmó soporte falso) |
+| Citas fabricadas (pre-gate) | 20 → **0 sobreviven** al gate R5 |
+| Marcados inestables por H-4 | 2 (P6, N2) — ambos `status` oscilante → `INDETERMINATE` |
+
+**Lectura:** la capa **NO** funciona como red de seguridad de recall. El modo de
+fallo es consistente: qwen **parafrasea cuando se le pide citar literal**, el gate
+R5 rechaza la paráfrasis (correcto) y el resultado degrada a `INDETERMINATE`. El
+gate hace su trabajo (0 fabricaciones sobreviven, 2/2 negativos correctos), pero
+"seguro" aquí significa "produce nada útil de forma segura" en 6 de 7 positivos.
+
+Esto **confirma con el instrumento del propio roadmap** la lectura previa: la capa
+semántica es un **filtro anti-fabricación / decision-support**, no un arreglo de
+recall. La causa raíz (el modelo no copia substrings literales) es la misma que
+está detrás del 2/7 de juicio. **R1.5 (productización H2+H4) y R2 siguen siendo
+las únicas palancas de recall.**
+
+Matices de justicia: retrieval por keyword simple (no el RRF BM25+embeddings del
+`judgment_candidate_pool` real), n=2, una sola versión de prompt. Un retriever
+mejor + un prompt que fuerce "copia exacta" podrían subir el número — pero no
+convierten esto en una solución de recall.
+
+---
+
+## 10. Checkpoint
+
+**Pendiente de Cesar — decisión por mensaje (Mesa de Diseño, NO gate formal):**
+
+1. **¿Rol de la capa?** El bake-off (§2–§6) muestra que como **decision-support /
+   filtro anti-fabricación** funciona (0 fabricaciones sobreviven, 79 % señal útil
+   con qwen). La prueba §9 **refuta** el rol de "red de seguridad de recall"
+   (1/7 < 2/7 baseline). Opciones:
+   - (a) seguir a FASE 3 (A/B) sólo con el rol decision-support acotado, o
+   - (b) **parar aquí** el híbrido y volcar el esfuerzo a **R1.5 / R2** (las
+     únicas palancas de recall) — recomendación de esta capa, consistente con que
+     R2 es el gate bloqueante declarado del objetivo.
+2. **Si (a): ¿modelo?** Recomendación: **qwen2.5:7b-instruct-q4_K_M**.
+3. Estado técnico: H-1/H-2/H-3/H-4 **incorporados y medidos**. H-5/H-6 quedarían
+   para la muestra del A/B.
+
+**Nada de esto se firma en la UI de gobernanza.** No hay artefacto gobernado: el
+prototipo es aislado. El panel de gobernanza para esta capa sólo se crearía en
+FASE 4 (integración a `run_v2_pipeline`), que además está tras **H1 =
+APPROVE_REMEDIATION_V1_2** + misión Mission Control.
+
+Commit `647b710` (prototipo + informe) pusheado. El trabajo D5-D / v1.2 en árbol
+de trabajo no se tocó.
