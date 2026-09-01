@@ -75,3 +75,50 @@ sin producto que resolver — límite de extracción, no defecto de modelo).
 - UI: panel `gate-e1`, `E1_SAMPLE_SHA = da11837a…`, `E1_SAMPLE_SIZE = 67`,
   `decision_ref = E1-3-H10-RELATIONS-20260831`, payload lleva `prior_reviews = [E1-1, E1-2]`.
 - Registro: `propose → confirm` de `ARTIFACT_VERSION` con la Identity Key del humano.
+
+---
+
+## E1-3 · post FIX-A + FIX-B (RC-3) + FIX-C (RC-2) · **FIRMADA** — 2026-09-01 (registrado en F4)
+
+> Actualización D8 (plan de reconciliación v1.1, FASE 4): la sección E1-3 de arriba quedó en
+> `PENDING` / `verdict_set_sha256 = (pendiente)`. El ledger `decisions_v2.jsonl` **sí** tiene
+> E1-3 firmada por Mission Control. Este bloque alinea el doc al payload gobernado. **No altera
+> la decisión firmada.**
+
+```
+sample_sha256       = 77e8324f333f08edb4115a1dcb65962c9daf61bc4c6b0c584af8668b783dd0a4
+sample_size         = 67
+verdict_set_sha256  = 4e23a1466ef12bc4286f25ba1700a768df0a794eb16a5d58c46e63d3d287bd97
+verdict_counts      = { CORRECT: 66, WRONG_NODE: 1, SPURIOUS: 0, AMBIGUOUS: 0 }
+ledger              = ARTIFACT_VERSION-2026-022 (propose, mission_control_ui)
+                      + ARTIFACT_VERSION-2026-023 (confirm, Cesar / "cesar may")
+fecha               = 2026-09-01T15:57:50Z (propose) / 15:57:54Z (confirm)
+target_set_hash     = 84c54618241ca29af25df5fbc6fbb47440b888b8eeca479c3ba5448025b7a8e0
+                      (factory/regulatory/pilot_run/h10_extraction_v2_20260830/H10_NEW_RELATIONS_SAMPLE_FOR_HUMAN.json)
+meaning             = authenticated_confirmation_of_this_human_verdict_set
+does_not_imply      = [E1_ACCEPTANCE ya declarado abajo, graph_incorporation, flip, qa40_adjudication, production]
+```
+
+- El único `WRONG_NODE` (fila 18) = claim truncado en el OCR de RW-0012 p.5 ("…the FactoryTalk",
+  sin producto que resolver) — límite de extracción, no defecto de H-10.
+- **Aviso de colisión de `instance_id`** (`docs_plan/reconc/F4_id_collision_analysis.md`): los ids
+  `ARTIFACT_VERSION-2026-022/023` fueron usados el **2026-08-31** para **E1-2** y reutilizados el
+  **2026-09-01** para **E1-3** por un defecto del generador (`decision_store_v2.next_instance_id`
+  deriva el siguiente id del `decisions_v2.jsonl` mutable, no del audit trail append-only). El
+  audit trail conserva ambos eventos. La corrección es a nivel del generador; el ledger NO se
+  reescribe.
+
+## E1_ACCEPTANCE · **PASS** — 2026-09-01 (registrado en F4)
+
+```
+e1_acceptance       = PASS
+based_on            = E1-3 verdict_set 4e23a1466ef1… (66/67 CORRECT, 0 WRONG_NODE material,
+                      0 SPURIOUS, 1 WRONG_NODE por truncación OCR no atribuible a H-10)
+rc2                 = RESOLVED       rc3 = RESOLVED
+ledger              = ARTIFACT_VERSION-2026-024 (propose) + ARTIFACT_VERSION-2026-025 (confirm, Cesar)
+fecha               = 2026-09-01T16:00:52Z / 16:00:56Z
+not_authorized      = [flip, qa40_adjudication, production]
+```
+
+Cierra E1. E1-2 (2026-08-31, ledger histórico `022/023` en el audit trail) queda **supersedida**
+por E1-3; se conserva en el audit trail append-only, no se re-emite.
