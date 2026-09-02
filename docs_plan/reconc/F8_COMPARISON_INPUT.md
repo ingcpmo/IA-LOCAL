@@ -192,3 +192,33 @@ EXPECTED_VS_ACTUAL:
 PROPOSED_VERDICT = (lo emite LA MESA / Claude Web ; Claude Code no adjudica F8)
 SIGUIENTE_GATE  = F9 (gate humano Capa 9: E2_READY / E3A_READY / R2_READY_TO_RESUME)
 ```
+
+---
+
+## 7. VEREDICTO DE LA MESA — F8 (relevado, no adjudicado por Claude Code)
+
+Emitido por LA MESA / Claude Web sobre este insumo (arco `reconc-F0..F8`, commit `4233df7`):
+
+| discrepancia | adjudicación de la mesa |
+|---|---|
+| D1 — rutas efímeras / R-PAR | **PASS** |
+| D2 — extractor `\.?` | **PASS** |
+| D3 — stores + doble hash / RW-0012 | **PASS** |
+| D4 — rebaseline de fingerprints | **PASS** |
+| D5 — reconciliación del ledger | **PASS** |
+| D6 — asiento gobernado de H1 | **PASS** |
+| D7 — fork histórico | **PASS** |
+| D8 — `E1_SIGNATURE_HISTORY.md` | **PASS** |
+| F7 acumulativa (coherencia del arco) | **PASS** |
+
+```
+ALL_CRITICAL_PASS        = YES
+BLOCKING_INCONSISTENCIES = 0
+VERDICT_F8               = PASS
+F8_CAN_ADVANCE_TO_F9     = YES
+```
+
+Las 8 discrepancias concuerdan entre **Plan v1.1**, **Claude Code** y **Devin**; 0
+inconsistencias bloqueantes; invariantes congeladas intactas (§4). Habilita **F9** (gate humano
+de Capa 9). Los 7 ítems abiertos de §5 pasan a F9 como consideraciones, **no** como bloqueos de
+F8.
