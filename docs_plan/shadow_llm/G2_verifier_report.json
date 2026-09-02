@@ -1,0 +1,54 @@
+{
+ "schema": "SHADOW_G2_VERIFIER_DEMO/v1",
+ "G2_1_fail_closed_verifier": {
+  "positive_control": {
+   "status": "SHADOW_ACCEPTED",
+   "reasons": []
+  },
+  "adversarial": {
+   "citation_or_hash_nonexistent": {
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'TEXTO QUE NO EXISTE EN NINGUN CLAIM NI EVIDENCIA L1/L2'"
+    ]
+   },
+   "must_not_change_altered": {
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [
+     "MUST_NOT_CHANGE.risk_band = 'LOW__tampered' != L2 'HIGH'"
+    ],
+    "anchoring_violations": []
+   },
+   "empty_evidence": {
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "empty_evidence: >=1 cita anclada no vacía es obligatoria"
+    ]
+   }
+  },
+  "all_adversarial_rejected": true,
+  "EXPECTED": "100% -> SHADOW_REJECTED; positive_control -> SHADOW_ACCEPTED",
+  "PASS": true
+ },
+ "G2_2_coverage_verifier": {
+  "full_457": {
+   "covered": true,
+   "total_l2": 457,
+   "referenced_valid": 457,
+   "missing": [],
+   "unsupported": []
+  },
+  "omit_one": {
+   "omitted_finding_record_id": "rec-3d6ae852c098f83d",
+   "covered": false,
+   "missing": [
+    "rec-3d6ae852c098f83d"
+   ],
+   "assert_full_coverage_raised": true
+  },
+  "EXPECTED": "full -> covered; omitir 1 -> covered=False y assert_full_coverage falla",
+  "PASS": true
+ }
+}
