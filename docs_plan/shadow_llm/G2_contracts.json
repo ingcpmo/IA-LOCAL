@@ -18,7 +18,8 @@
   "human_state",
   "document",
   "page",
-  "source_hash"
+  "source_hash",
+  "related_finding_ids"
  ],
  "forbidden_assessment_tokens": [
   "COMPLIANT",
@@ -105,6 +106,7 @@
   "document",
   "page",
   "source_hash",
+  "related_finding_ids",
   "section",
   "anchored_quote",
   "evidence_basis",

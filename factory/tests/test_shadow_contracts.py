@@ -46,8 +46,21 @@ def _well_formed_envelope(finding, expert="TECHNICAL", assessment="INDETERMINATE
 def test_must_not_change_covers_l2_immutable_set():
     for k in ("finding_record_id", "finding_class", "subtype", "severity",
               "risk_band", "requirement_id", "machine_state", "human_state",
-              "document", "page", "source_hash"):
+              "document", "page", "source_hash",
+              "related_finding_ids"):  # shadow-G2-r1
         assert k in C.MUST_NOT_CHANGE_FIELDS
+
+
+def test_related_finding_ids_in_must_not_change_block_and_tamper_rejected():
+    f = _a_technical_finding()
+    block = C.must_not_change_block(f)
+    assert "related_finding_ids" in block
+    assert block["related_finding_ids"] == list(f.get("related_finding_ids") or [])
+    env = _well_formed_envelope(f)
+    env["MUST_NOT_CHANGE"] = dict(env["MUST_NOT_CHANGE"])
+    env["MUST_NOT_CHANGE"]["related_finding_ids"] = ["tampered"]
+    viol = C.validate_output_envelope(env, l2_finding=f)
+    assert any("MUST_NOT_CHANGE.related_finding_ids" in x for x in viol)
 
 
 def test_no_expert_assessment_is_a_compliance_verdict():

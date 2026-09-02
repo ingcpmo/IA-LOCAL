@@ -26,10 +26,17 @@
     "anchoring_violations": [
      "empty_evidence: >=1 cita anclada no vacía es obligatoria"
     ]
+   },
+   "related_finding_ids_altered": {
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [
+     "MUST_NOT_CHANGE.related_finding_ids = ['injected-cross-domain-link'] != L2 []"
+    ],
+    "anchoring_violations": []
    }
   },
   "all_adversarial_rejected": true,
-  "EXPECTED": "100% -> SHADOW_REJECTED; positive_control -> SHADOW_ACCEPTED",
+  "EXPECTED": "100% de los 4 fixtures adversariales -> SHADOW_REJECTED (cita/hash inexistente · MUST_NOT_CHANGE alterado · evidencia vacía · related_finding_ids alterado [shadow-G2-r1]); positive_control -> SHADOW_ACCEPTED",
   "PASS": true
  },
  "G2_2_coverage_verifier": {

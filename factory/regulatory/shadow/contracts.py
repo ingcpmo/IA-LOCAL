@@ -42,6 +42,11 @@ MUST_NOT_CHANGE_FIELDS = (
     "document",
     "page",
     "source_hash",
+    # shadow-G2-r1 (carry-forward de la auditoría de G2): `related_finding_ids` es
+    # un campo de L2 y la capa shadow no lo escribe (corr. 2). Se añade al bloque
+    # inmutable para que el verificador fail-closed rechace cualquier envoltura
+    # que lo altere.
+    "related_finding_ids",
 )
 
 #: nunca deben aparecer como valor de `assessment` en ningún experto —
@@ -150,6 +155,8 @@ def _l2_snapshot(finding: dict) -> "OrderedDict[str, object]":
             return finding.get("requirement") or finding.get("requirement_id")
         if k == "risk_band":
             return (finding.get("risk") or {}).get("band")
+        if k == "related_finding_ids":
+            return list(finding.get("related_finding_ids") or [])
         if k == "anchored_quote":
             return (finding.get("evidence") or {}).get("anchored_quote") or finding.get("source_text")
         if k == "rationale_l2":

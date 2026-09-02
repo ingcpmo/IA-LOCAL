@@ -224,8 +224,14 @@ def adversarial_demo(findings: list[dict]) -> dict:
     adv_empty["anchored_citations"] = []
     r_empty = verify_expert_envelope(adv_empty, l2_finding=f)
 
+    # fixture 4 — related_finding_ids alterado (shadow-G2-r1)
+    adv_rel = _base_envelope(f)
+    adv_rel["MUST_NOT_CHANGE"] = dict(adv_rel["MUST_NOT_CHANGE"])
+    adv_rel["MUST_NOT_CHANGE"]["related_finding_ids"] = ["injected-cross-domain-link"]
+    r_rel = verify_expert_envelope(adv_rel, l2_finding=f)
+
     adv = {"citation_or_hash_nonexistent": r_cite, "must_not_change_altered": r_mnc,
-           "empty_evidence": r_empty}
+           "empty_evidence": r_empty, "related_finding_ids_altered": r_rel}
     all_rejected = all(v.status == SHADOW_REJECTED for v in adv.values())
 
     # G2.2
@@ -248,7 +254,9 @@ def adversarial_demo(findings: list[dict]) -> dict:
                                 "anchoring_violations": v.anchoring_violations}
                             for k, v in adv.items()},
             "all_adversarial_rejected": all_rejected,
-            "EXPECTED": "100% -> SHADOW_REJECTED; positive_control -> SHADOW_ACCEPTED",
+            "EXPECTED": ("100% de los 4 fixtures adversariales -> SHADOW_REJECTED "
+                         "(cita/hash inexistente · MUST_NOT_CHANGE alterado · evidencia vacía · "
+                         "related_finding_ids alterado [shadow-G2-r1]); positive_control -> SHADOW_ACCEPTED"),
             "PASS": all_rejected and ok.status == SHADOW_ACCEPTED,
         },
         "G2_2_coverage_verifier": {

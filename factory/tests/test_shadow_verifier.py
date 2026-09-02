@@ -94,14 +94,25 @@ def test_g21_empty_evidence_is_rejected():
         assert r.status == V.SHADOW_REJECTED
 
 
-def test_g21_all_three_mandatory_adversarial_fixtures_100pct_rejected():
+def test_g21_all_mandatory_adversarial_fixtures_100pct_rejected():
     demo = V.adversarial_demo(_findings())["G2_1_fail_closed_verifier"]
     assert demo["positive_control"]["status"] == V.SHADOW_ACCEPTED
     assert set(demo["adversarial"]) == {
-        "citation_or_hash_nonexistent", "must_not_change_altered", "empty_evidence"}
+        "citation_or_hash_nonexistent", "must_not_change_altered", "empty_evidence",
+        "related_finding_ids_altered"}  # shadow-G2-r1
     assert all(v["status"] == V.SHADOW_REJECTED for v in demo["adversarial"].values())
     assert demo["all_adversarial_rejected"] is True
     assert demo["PASS"] is True
+
+
+def test_g21_related_finding_ids_altered_is_rejected():
+    f = _tech_finding()
+    env = _anchored_envelope(f)
+    env["MUST_NOT_CHANGE"] = dict(env["MUST_NOT_CHANGE"])
+    env["MUST_NOT_CHANGE"]["related_finding_ids"] = ["injected-cross-domain-link"]
+    r = V.verify_expert_envelope(env, l2_finding=f)
+    assert r.status == V.SHADOW_REJECTED
+    assert any("MUST_NOT_CHANGE.related_finding_ids" in x for x in r.structural_violations)
 
 
 def test_g21_filter_accepted_drops_rejected_before_report():
