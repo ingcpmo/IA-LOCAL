@@ -358,7 +358,12 @@ _BLACKLIST = OrderedDict([
     ("Q3_internal_vocab", re.compile(
         r"(candidate[_\s]rank\w*|ranking\s+de\s+candidatos|CANDIDATE_RANKING_PROVIDED|"
         r"NO_USEFUL_CANDIDATE|NEEDS_HUMAN_SEARCH|BEHAVIOR_(?:NOT_FOUND_IN_SCOPE|LIKELY_PRESENT_PARAPHRASED)|"
-        r"LIKELY_(?:REAL_GAP|EXTRACTION_LIMIT)|audit[oó]lico)")),
+        r"LIKELY_(?:REAL_GAP|EXTRACTION_LIMIT)|audit[oó]lico|"
+        # CF6-1-r1 (D3): fugas conceptuales del candidate-ranking interno de G4d
+        # tal como afloran en la prosa v1 — "rango de candidatos" (sec-0016) y las
+        # formas equivalentes "clasificación/ordenamiento de(l) candidato(s)".
+        r"rango\s+de\s+candidatos?|"
+        r"(?:clasificaci[oó]n(?:es)?|ordenamiento|ordenaci[oó]n)\s+(?:de\s+(?:los\s+)?|del\s+)candidatos?)")),
     ("Q4_record_id_leak", re.compile(r"\brec-[0-9a-f]{8,}\b")),
     ("Q5_machine_token_leak", re.compile(
         r"(MACHINE_INCONCLUSIVE|MACHINE_DEVIATION_CANDIDATE|MACHINE_CONFIRMED|EVIDENCE_NOT_FOUND|"
@@ -462,11 +467,20 @@ def compose_section(structured: dict | None, section: dict, l2_by_rid: dict) -> 
 # heurística de "violación de estado" para narrativa v1 en prosa libre (no hay
 # contrato estructurado en v1): la narrativa v1 no puede afirmar cumplimiento /
 # incumplimiento / desviación confirmada ni proponer CAPA.
+# CF6-1-r1 (D3): ampliado para capturar las expresiones reales presentes en v1
+# que elevan INCONCLUSIVE — "no estaban en conformidad con las regulaciones…"
+# (sec-0018) y "no se cumplió con la regulación…" / "falta de conformidad…"
+# (sec-0062). Detector de la LÍNEA BASE v1 únicamente; NO toca Q-STATE.
 _V1_STATE_VIOLATION = re.compile(
-    r"(no\s+cumple|incumple|incumplimiento|no\s+(?:es\s+)?conforme|s[ií]\s+cumple|"
-    r"cumple\s+con|satisface\s+(?:el|los|las)\s+requisito|inconsistencias?\s+en\s+el\s+cumplimiento|"
+    r"("
+    r"no\s+cumpl\w+|no\s+se\s+cumpl\w+|incumpl\w+|"
+    r"no\s+(?:es\s+|est\w+\s+)?(?:en\s+)?conform\w+|"
+    r"falta\s+de\s+conformidad|no\s+.{0,40}?\bconformidad\b|"
+    r"s[ií]\s+cumple|cumple\s+con|satisface\s+(?:el|los|las)\s+requisito|"
+    r"inconsistencias?\s+en\s+el\s+cumplimiento|"
     r"desviaci[oó]n\s+confirmada|se\s+confirma\s+(?:la\s+)?desviaci[oó]n|"
-    r"acci[oó]n(?:es)?\s+correctivas?|medidas?\s+correctivas?|\bCAPA\b)",
+    r"acci[oó]n(?:es)?\s+correctivas?|medidas?\s+correctivas?|\bCAPA\b"
+    r")",
     re.IGNORECASE,
 )
 
@@ -492,7 +506,7 @@ def measure_v1_baseline(shadow_dir: str | Path) -> dict:
 
     per_section = []
     v1_blacklist_total: Counter = Counter()
-    n_state_violation = n_blocked = n_recid_leak = n_double_mark = 0
+    n_state_violation = n_blocked = n_recid_leak = n_double_mark = n_internal_vocab = 0
     for row in g4e_rows:
         sid = row.get("section_id") or row.get("_unit")
         narrative = row.get("narrative") or ""
@@ -501,10 +515,12 @@ def measure_v1_baseline(shadow_dir: str | Path) -> dict:
         for h in hits:
             v1_blacklist_total[h["rule"]] += 1
         state_violation = bool(_V1_STATE_VIOLATION.search(narrative))
+        internal_vocab = any(h["rule"] == "Q3_internal_vocab" for h in hits)
         recid_leak = bool(re.search(r"\brec-[0-9a-f]{8,}\b", narrative))
         double_mark = "[[SHADOW" in narrative
         n_blocked += blocked
         n_state_violation += state_violation
+        n_internal_vocab += internal_vocab
         n_recid_leak += recid_leak
         n_double_mark += double_mark
         sec = sec_by_id.get(sid, {})
@@ -515,13 +531,39 @@ def measure_v1_baseline(shadow_dir: str | Path) -> dict:
             "v1_assessment": row.get("assessment"),
             "v1_blocked": blocked,
             "v1_state_violation": state_violation,
+            "v1_internal_vocab_violation": internal_vocab,
             "v1_record_id_leak": recid_leak,
             "v1_double_shadow_mark": double_mark,
             "v1_blacklist_hits": hits,
         })
 
+    import hashlib as _hl
+    l2_bytes = (SL / "FINAL_GMP_CORPUS_FINDINGS.json").read_bytes()
+    l2_sha256 = _hl.sha256(l2_bytes).hexdigest()
+    human_states = {f.get("human_state") for f in findings}
+
+    ps_by_id = {p["section_id"]: p for p in per_section}
+    d3 = {
+        "sec-0018": {
+            "v1_state_violation": ps_by_id.get("sec-0018", {}).get("v1_state_violation"),
+            "expected": True,
+        },
+        "sec-0062": {
+            "v1_state_violation": ps_by_id.get("sec-0062", {}).get("v1_state_violation"),
+            "expected": True,
+        },
+        "sec-0016": {
+            "v1_internal_vocab_violation": ps_by_id.get("sec-0016", {}).get("v1_internal_vocab_violation"),
+            "expected": True,
+        },
+    }
+    d3["PASS"] = (d3["sec-0018"]["v1_state_violation"] is True
+                  and d3["sec-0062"]["v1_state_violation"] is True
+                  and d3["sec-0016"]["v1_internal_vocab_violation"] is True)
+
     return {
         "schema": "SHADOW_CF6_1_V1_BASELINE/v1",
+        "revision": "cf6-G1-r1",
         "generated_without_llm": True,
         "source": {
             "g4e_composer": str(SL / "G4" / "g4e_composer.jsonl"),
@@ -533,10 +575,28 @@ def measure_v1_baseline(shadow_dir: str | Path) -> dict:
         "v1_sections_total": len(g4e_rows),
         "v1_sections_narrative_blocked": n_blocked,
         "v1_sections_with_state_violation": n_state_violation,
+        "v1_sections_with_internal_vocab_violation": n_internal_vocab,
         "v1_sections_with_record_id_leak": n_recid_leak,
         "v1_sections_with_double_shadow_mark": n_double_mark,
         "v1_blacklist_hits_by_rule": dict(v1_blacklist_total),
         "post_qstate_llm_calls": 0,
+        "D3_demonstration": d3,
+        "integrity": {
+            "l2_source": "docs_plan/shadow_llm/FINAL_GMP_CORPUS_FINDINGS.json",
+            "l2_sha256": l2_sha256,
+            "l2_sha256_expected_G0": "95a79f9b6276ff2a7972100764b308fa4b09f0027c6679ea831b441eb880f02c",
+            "l2_byte_identical_to_G0": (
+                l2_sha256 == "95a79f9b6276ff2a7972100764b308fa4b09f0027c6679ea831b441eb880f02c"),
+            "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23",
+            "FINDINGS_FINGERPRINT_basis": (
+                "ancla G0 (docs_plan/shadow_llm/G0_BASELINE_CONSOLIDATION.md); "
+                "L2 byte-idéntico -> fingerprint sin mover"),
+            "human_states_present": sorted(str(h) for h in human_states),
+            "HUMAN_STATE_CHANGES": 0,
+            "L2_MUTATIONS": 0,
+            "G4D_CALLS": 0,
+            "LLM_CALLS": 0,
+        },
         "per_section": per_section,
     }
 
@@ -574,5 +634,6 @@ if __name__ == "__main__":  # pragma: no cover
     print(json.dumps({k: base[k] for k in (
         "SECTION_TYPE_COUNTS", "REGULATORY_STATE_COUNTS_EXPECTED", "v1_sections_total",
         "v1_sections_narrative_blocked", "v1_sections_with_state_violation",
-        "v1_sections_with_record_id_leak", "v1_sections_with_double_shadow_mark",
-        "v1_blacklist_hits_by_rule")}, indent=1, ensure_ascii=False))
+        "v1_sections_with_internal_vocab_violation", "v1_sections_with_record_id_leak",
+        "v1_sections_with_double_shadow_mark", "v1_blacklist_hits_by_rule",
+        "D3_demonstration", "integrity")}, indent=1, ensure_ascii=False))

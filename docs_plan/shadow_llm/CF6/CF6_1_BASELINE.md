@@ -98,26 +98,36 @@ Un hit en cualquier regla → la sección va a **modo determinista seguro**.
 
 ---
 
-## 6 · Línea base v1 — el fallo, cuantificado (§1)
+## 6 · Línea base v1 — el fallo, cuantificado (§1) · **medición cf6-G1-r1**
 
 Medido sobre `G4/g4e_composer.jsonl` (66 secciones v1). **No** se re-ejecutó nada.
+Cifras tras la corrección D3 (detectores de línea base ampliados; ver §9).
 
-| Métrica | Valor |
+| Métrica | Valor (r1) |
 |---|---|
 | Secciones v1 totales | 66 |
-| Secciones con **violación de estado** (afirman cumplimiento/incumplimiento/desviación/CAPA) | **9** — `sec-0002, 0004, 0011, 0024, 0028, 0034, 0044, 0050, 0064` |
+| Secciones con **violación de estado** (elevan `INCONCLUSIVE` / afirman conformidad / proponen CAPA) | **17** — incl. `sec-0018`, `sec-0062` (nuevas en r1), `sec-0002, 0004, 0011, 0024, 0025, 0028, 0034, 0035, 0036, 0041, 0044, 0049, 0050, 0059, 0064` |
+| Secciones con **fuga de vocabulario interno** (Q3) | **37** — incl. `sec-0016` (`rango de candidatos…`, nueva en r1) |
 | Hits blacklist **Q1** (conclusión de cumplimiento) | 5 secciones — `sec-0002, 0024, 0028, 0044, 0050` |
-| Hits blacklist **Q2** (acción correctiva/CAPA) | 5 secciones — `sec-0002, 0004, 0011, 0034, 0064` |
-| Hits blacklist **Q3** (vocabulario interno) | 13 secciones |
+| Hits blacklist **Q2** (acción correctiva/CAPA) | 6 |
+| Hits blacklist **Q3** (vocabulario interno) | 46 ocurrencias / 37 secciones |
 | Hits blacklist **Q4** (fuga `rec-…` en prosa) | 63 secciones · 305 ocurrencias |
+| Hits blacklist **Q5** (token de máquina) | 63 |
 | Secciones con marca corrupta `[[SHADOW` (doble corchete) | 63 |
 | Secciones con narrativa `NARRATIVE_BLOCKED` | 3 — `sec-0001, 0015, 0029` |
-| `post_qstate_llm_calls` | 0 |
+| `post_qstate_llm_calls` · `G4D_CALLS` · `LLM_CALLS` · `L2_MUTATIONS` · `HUMAN_STATE_CHANGES` | 0 / 0 / 0 / 0 / 0 |
 
-Ejemplo (`sec-0002`, `REGULATORY`, estado esperado `INCONCLUSIVE`): la narrativa v1
-dice *"Se observaron inconsistencias en el cumplimiento de la regulación 21 CFR 11.10(d)
-… se recomienda … la implementación de medidas correctivas"* — eleva `INCONCLUSIVE` a
-incumplimiento (Q1) y propone CAPA (Q2), con `human_state = UNREVIEWED`.
+Ejemplos:
+- `sec-0002` (`REGULATORY`, esperado `INCONCLUSIVE`): *"Se observaron inconsistencias en el
+  cumplimiento de la regulación 21 CFR 11.10(d) … la implementación de medidas correctivas"* — Q1 + Q2.
+- `sec-0018` (`REGULATORY`, esperado `INCONCLUSIVE`): *"el control de acceso y el chequeo de
+  autoridad **no estaban en conformidad con las regulaciones** 21 CFR 11.10(g)"* — elevación
+  de `INCONCLUSIVE` (detectada en r1).
+- `sec-0062` (`REGULATORY`, esperado `INCONCLUSIVE`): *"se proporcionó la clasificación del
+  candidato, pero **no se cumplió con la regulación** ALCOA_ORIGINAL … la **falta de
+  conformidad** …"* — elevación de `INCONCLUSIVE` (detectada en r1).
+- `sec-0016` (`REGULATORY`): *"…con un **rango de candidatos** no resueltos…"* — fuga
+  conceptual del candidate-ranking interno de G4d (detectada en r1).
 
 ---
 
@@ -127,7 +137,7 @@ incumplimiento (Q1) y propone CAPA (Q2), con `human_state = UNREVIEWED`.
 |---|---|
 | ESTRUCTURAL — cobertura 457/457, L2 sin mutar, fingerprint sin mover, G4d no re-ejecutado | ✅ (CF6-1 no toca L2/core; esqueleto G3.1 intacto) |
 | PUNTO DE NO-RETORNO — 0 llamadas LLM tras Q-STATE | ✅ implementado y testeado |
-| SEGURIDAD SEMÁNTICA — Q-STATE-1..6 + blacklist + modo seguro | ✅ implementado y testeado (20/20) |
+| SEGURIDAD SEMÁNTICA — Q-STATE-1..6 + blacklist + modo seguro | ✅ implementado y testeado (23/23) |
 | VALOR — SAMPLE_MANIFEST + HUMAN_QUALITY_GATE por sección | ⏳ CF6-2.5 (requiere firma humana) |
 | GOBERNANZA — `PILOT_SCOPE_MATCH_CF6`, firma CF6-2 congelada en tag `cf6-G2` | ⏳ CF6-2 / CF6-2.G (requiere Capa 9) |
 | COMPARATIVO v1 vs v2 | ⏳ CF6-4 (tras CF6-3) |
@@ -140,20 +150,59 @@ firma de Capa 9 y verificación de scope de la PILOT.
 ## 8 · Archivos de esta corrida (CF6-0 + CF6-1)
 
 ```
-NUEVOS
-  factory/regulatory/shadow/composer_gate.py          gate + render + blacklist + fallback + baseline
-  factory/tests/test_shadow_composer_gate.py          20 tests (pasan con .venv del repo)
-  docs_plan/shadow_llm/CF6/CF6_0_PROTOTYPE_MARKER.md
-  docs_plan/shadow_llm/CF6/CF6_1_BASELINE.json        artefacto de datos (generado)
-  docs_plan/shadow_llm/CF6/CF6_1_BASELINE.md          este documento
+cf6-G1 (commit 50417c6)
+  NUEVOS
+    factory/regulatory/shadow/composer_gate.py
+    factory/tests/test_shadow_composer_gate.py
+    docs_plan/shadow_llm/CF6/CF6_0_PROTOTYPE_MARKER.md
+    docs_plan/shadow_llm/CF6/CF6_1_BASELINE.{json,md}
+  MODIFICADOS (solo marca CF6-0 — PROTOTIPO — NO PRODUCTO)
+    docs_plan/shadow_llm/G4/INFORME_NARRATIVO_SHADOW_v1.md   banner + sufijo en H1
+    factory/regulatory/shadow/render_narrative.py            nota en docstring
+    factory/regulatory/shadow/experts.py                     nota en docstring de run_composer
 
-MODIFICADOS (solo marca CF6-0 — PROTOTIPO — NO PRODUCTO)
-  docs_plan/shadow_llm/G4/INFORME_NARRATIVO_SHADOW_v1.md   banner + sufijo en H1
-  factory/regulatory/shadow/render_narrative.py            nota en docstring
-  factory/regulatory/shadow/experts.py                     nota en docstring de run_composer
+cf6-G1-r1 (corrección D3 — solo detector de línea base)
+  MODIFICADOS
+    factory/regulatory/shadow/composer_gate.py     _V1_STATE_VIOLATION + Q3_internal_vocab ampliados;
+                                                   integrity + D3_demonstration en el baseline
+    factory/tests/test_shadow_composer_gate.py     +3 tests (D3 / integrity)
+    docs_plan/shadow_llm/CF6/CF6_1_BASELINE.{json,md}   re-generado (r1)
 ```
 
 Nota de entorno: `factory/tests/test_shadow_and_cutover.py::test_shadow_run_v2_no_effects_and_reversible`
 falla en este checkout por `current_real_run_calls == None` (esperado 158) — depende de un
 store persistido ausente, **no relacionado con CF6-1** (los archivos nuevos no son
-importados por ese test). Resto de la suite `-k shadow`: 100 passed.
+importados por ese test). Resto de la suite `-k shadow`: 103 passed.
+
+---
+
+## 9 · CF6-1-r1 — corrección D3 (auditoría externa de cf6-G1 = PARTIAL, CRIT-* = YES)
+
+**Alcance:** corrección mínima al **detector determinista de la línea base v1** para cerrar
+el criterio de aceptación ya definido de CF6-1. **D1 y D2** aceptadas por Capa 9 como
+desviaciones no críticas documentadas — sin cambio. **No** se tocó Q-STATE, arquitectura,
+normalización, renderer, G4d, L2 ni `human_state`.
+
+| Cambio | Antes | Después (r1) |
+|---|---|---|
+| `_V1_STATE_VIOLATION` (detector de línea base v1, **no** Q-STATE) | no capturaba "no estaban en conformidad con…" ni "no se cumplió con…" / "falta de conformidad" | añadidos `no\s+…conform\w+`, `no\s+…\bconformidad\b`, `falta de conformidad`, `no se cumpl\w+` → **`sec-0018` y `sec-0062` detectadas** |
+| `Q3_internal_vocab` (blacklist) | no capturaba "rango de candidatos" | añadidos `rango de candidatos` y las formas equivalentes `clasificación/ordenamiento de(l) candidato(s)` → **`sec-0016` detectada** como fuga conceptual del candidate-ranking interno |
+
+**Demostración** (`CF6_1_BASELINE.json` → `D3_demonstration` / `integrity`, tests
+`test_d3_*`):
+
+```
+sec-0018 → v1_state_violation             = True   ✅
+sec-0062 → v1_state_violation             = True   ✅
+sec-0016 → v1_internal_vocab_violation    = True   ✅
+D3_demonstration.PASS                     = True
+
+l2_sha256 = 95a79f9b6276ff2a7972100764b308fa4b09f0027c6679ea831b441eb880f02c  (byte-idéntico a G0)
+FINDINGS_FINGERPRINT = 235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23  (sin mover)
+human_states_present = ["UNREVIEWED"]
+G4D_CALLS = 0 · LLM_CALLS = 0 · L2_MUTATIONS = 0 · HUMAN_STATE_CHANGES = 0 · post_qstate_llm_calls = 0
+```
+
+**Efecto de la ampliación** (todo son verdaderos positivos reales en la prosa v1):
+violaciones de estado 9 → **17**; secciones con fuga de vocabulario interno 13 → **37**.
+El `tag cf6-G1` **no se movió ni se borró**; la corrección se congela en `cf6-G1-r1`.

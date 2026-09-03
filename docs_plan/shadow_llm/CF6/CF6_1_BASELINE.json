@@ -1,5 +1,6 @@
 {
  "schema": "SHADOW_CF6_1_V1_BASELINE/v1",
+ "revision": "cf6-G1-r1",
  "generated_without_llm": true,
  "source": {
   "g4e_composer": "docs_plan/shadow_llm/G4/g4e_composer.jsonl",
@@ -19,7 +20,8 @@
  },
  "v1_sections_total": 66,
  "v1_sections_narrative_blocked": 3,
- "v1_sections_with_state_violation": 9,
+ "v1_sections_with_state_violation": 17,
+ "v1_sections_with_internal_vocab_violation": 37,
  "v1_sections_with_record_id_leak": 63,
  "v1_sections_with_double_shadow_mark": 63,
  "v1_blacklist_hits_by_rule": {
@@ -27,9 +29,39 @@
   "Q2_corrective_action": 6,
   "Q4_record_id_leak": 305,
   "Q5_machine_token_leak": 63,
-  "Q3_internal_vocab": 17
+  "Q3_internal_vocab": 46
  },
  "post_qstate_llm_calls": 0,
+ "D3_demonstration": {
+  "sec-0018": {
+   "v1_state_violation": true,
+   "expected": true
+  },
+  "sec-0062": {
+   "v1_state_violation": true,
+   "expected": true
+  },
+  "sec-0016": {
+   "v1_internal_vocab_violation": true,
+   "expected": true
+  },
+  "PASS": true
+ },
+ "integrity": {
+  "l2_source": "docs_plan/shadow_llm/FINAL_GMP_CORPUS_FINDINGS.json",
+  "l2_sha256": "95a79f9b6276ff2a7972100764b308fa4b09f0027c6679ea831b441eb880f02c",
+  "l2_sha256_expected_G0": "95a79f9b6276ff2a7972100764b308fa4b09f0027c6679ea831b441eb880f02c",
+  "l2_byte_identical_to_G0": true,
+  "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23",
+  "FINDINGS_FINGERPRINT_basis": "ancla G0 (docs_plan/shadow_llm/G0_BASELINE_CONSOLIDATION.md); L2 byte-idéntico -> fingerprint sin mover",
+  "human_states_present": [
+   "UNREVIEWED"
+  ],
+  "HUMAN_STATE_CHANGES": 0,
+  "L2_MUTATIONS": 0,
+  "G4D_CALLS": 0,
+  "LLM_CALLS": 0
+ },
  "per_section": [
   {
    "section_id": "sec-0001",
@@ -38,6 +70,7 @@
    "v1_assessment": "NARRATIVE_BLOCKED",
    "v1_blocked": true,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": false,
    "v1_double_shadow_mark": false,
    "v1_blacklist_hits": []
@@ -49,6 +82,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -101,6 +135,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -173,12 +208,17 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
     {
      "rule": "Q2_corrective_action",
      "match": "acciones correctivas"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
     },
     {
      "rule": "Q4_record_id_leak",
@@ -213,6 +253,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -277,6 +318,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -313,9 +355,14 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-5f59722c74597726"
@@ -341,9 +388,14 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-342fadf7d85959b7"
@@ -373,6 +425,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -401,6 +454,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -433,6 +487,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -473,6 +528,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -493,6 +549,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -533,9 +590,18 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de los candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-1205689abcec84de"
@@ -569,6 +635,7 @@
    "v1_assessment": "NARRATIVE_BLOCKED",
    "v1_blocked": true,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": false,
    "v1_double_shadow_mark": false,
    "v1_blacklist_hits": []
@@ -580,9 +647,14 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-5bfe094286d91b6d"
@@ -628,9 +700,14 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-0d33883aca3b7338"
@@ -691,10 +768,19 @@
    "regulatory_state_expected": "INCONCLUSIVE",
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
-   "v1_state_violation": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificaciones de candidatos"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificaciones de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-9b47c0444e9ae107"
@@ -728,6 +814,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -772,6 +859,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -812,6 +900,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -840,6 +929,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -868,9 +958,18 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-e1bdf8285b40ff3a"
@@ -892,12 +991,17 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
     {
      "rule": "Q1_compliance_conclusion",
      "match": "cumple con los"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
     },
     {
      "rule": "Q4_record_id_leak",
@@ -923,10 +1027,15 @@
    "regulatory_state_expected": "INCONCLUSIVE",
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
-   "v1_state_violation": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-6f5b3b82eda630cc"
@@ -960,6 +1069,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -984,6 +1094,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1024,6 +1135,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1064,6 +1176,7 @@
    "v1_assessment": "NARRATIVE_BLOCKED",
    "v1_blocked": true,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": false,
    "v1_double_shadow_mark": false,
    "v1_blacklist_hits": []
@@ -1075,9 +1188,14 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-2d562fca466ce961"
@@ -1127,9 +1245,18 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-061e25c113d8dff1"
@@ -1179,6 +1306,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1207,6 +1335,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1259,6 +1388,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1298,10 +1428,15 @@
    "regulatory_state_expected": "INCONCLUSIVE",
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
-   "v1_state_violation": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-87279db34937bf9f"
@@ -1326,7 +1461,8 @@
    "regulatory_state_expected": "INCONCLUSIVE",
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
-   "v1_state_violation": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1355,6 +1491,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1383,6 +1520,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1411,6 +1549,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1443,6 +1582,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1498,10 +1638,15 @@
    "regulatory_state_expected": "INCONCLUSIVE",
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
-   "v1_state_violation": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-2a3e51a6af531b7b"
@@ -1535,6 +1680,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1567,6 +1713,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1591,6 +1738,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1619,9 +1767,14 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-207d02811ef3d149"
@@ -1647,9 +1800,14 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-284aedafa8dddd56"
@@ -1691,9 +1849,14 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-74ff2a0592937823"
@@ -1727,6 +1890,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1754,7 +1918,8 @@
    "regulatory_state_expected": "INCONCLUSIVE",
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
-   "v1_state_violation": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1783,12 +1948,17 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
     {
      "rule": "Q1_compliance_conclusion",
      "match": "si cumple"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación del candidato"
     },
     {
      "rule": "Q4_record_id_leak",
@@ -1811,6 +1981,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1839,6 +2010,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1871,9 +2043,14 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-56c5e933aa2819de"
@@ -1919,6 +2096,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -1955,9 +2133,14 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-416802c94910cdde"
@@ -2007,9 +2190,14 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-0f8854eda6750a93"
@@ -2059,6 +2247,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -2091,9 +2280,18 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificaciones de candidatos"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificaciones de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-6858133e127e6d20"
@@ -2134,10 +2332,15 @@
    "regulatory_state_expected": "INCONCLUSIVE",
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
-   "v1_state_violation": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-5ee41dfa43c9fe97"
@@ -2171,6 +2374,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -2199,6 +2403,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -2226,10 +2431,15 @@
    "regulatory_state_expected": "INCONCLUSIVE",
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
-   "v1_state_violation": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación del candidato"
+    },
     {
      "rule": "Q4_record_id_leak",
      "match": "rec-79f3c3e1583037f5"
@@ -2251,6 +2461,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -2283,6 +2494,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -2323,6 +2535,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [
@@ -2359,6 +2572,7 @@
    "v1_assessment": "NARRATIVE_DRAFTED",
    "v1_blocked": false,
    "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
    "v1_record_id_leak": true,
    "v1_double_shadow_mark": true,
    "v1_blacklist_hits": [

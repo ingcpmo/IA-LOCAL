@@ -271,3 +271,45 @@ def test_contract_spec_declares_no_retorno():
     assert spec["post_qstate_llm_calls"] == 0
     assert spec["g4d_reexecuted"] is False
     assert spec["qstate_checks"] == [f"Q-STATE-{i}" for i in range(1, 7)]
+
+
+# ───────────────────────── CF6-1-r1 · D3 ────────────────────────────
+
+def test_d3_target_sections_are_detected():
+    """cf6-G1-r1 (D3): las expresiones reales de v1 en sec-0018/0062 elevan
+    INCONCLUSIVE y las de sec-0016 fugan el candidate-ranking interno."""
+    base = CG.measure_v1_baseline(_SL)
+    d3 = base["D3_demonstration"]
+    assert d3["sec-0018"]["v1_state_violation"] is True
+    assert d3["sec-0062"]["v1_state_violation"] is True
+    assert d3["sec-0016"]["v1_internal_vocab_violation"] is True
+    assert d3["PASS"] is True
+
+
+def test_d3_integrity_block():
+    base = CG.measure_v1_baseline(_SL)
+    it = base["integrity"]
+    assert it["l2_byte_identical_to_G0"] is True
+    assert it["FINDINGS_FINGERPRINT"].startswith("235f724a738ce783")
+    assert it["human_states_present"] == ["UNREVIEWED"]
+    assert it["HUMAN_STATE_CHANGES"] == 0
+    assert it["L2_MUTATIONS"] == 0
+    assert it["G4D_CALLS"] == 0
+    assert it["LLM_CALLS"] == 0
+    assert base["post_qstate_llm_calls"] == 0
+
+
+def test_d3_widened_detectors_are_real_phrase_anchored():
+    # sec-0018 real: "no estaban en conformidad con las regulaciones 21 CFR 11.10(g)"
+    assert CG._V1_STATE_VIOLATION.search("no estaban en conformidad con las regulaciones")
+    # sec-0062 real: "no se cumplió con la regulación ALCOA_ORIGINAL" / "falta de conformidad"
+    assert CG._V1_STATE_VIOLATION.search("no se cumplió con la regulación")
+    assert CG._V1_STATE_VIOLATION.search("la falta de conformidad con la regulación")
+    # sec-0016 real: "rango de candidatos no resueltos"
+    assert any(h["rule"] == "Q3_internal_vocab"
+               for h in CG.blacklist_scan("un rango de candidatos no resueltos"))
+    # equivalentes conceptuales
+    assert any(h["rule"] == "Q3_internal_vocab"
+               for h in CG.blacklist_scan("clasificaciones de candidatos"))
+    # el detector de estado v1 NO se aplica al render de producción (Q-STATE intacto)
+    assert "_V1_STATE_VIOLATION" not in dir(CG.verify_qstate)
