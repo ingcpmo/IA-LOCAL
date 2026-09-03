@@ -1,0 +1,4812 @@
+[
+ {
+  "call_id": "llm-884c8a89ef73",
+  "expert": "TECHNICAL",
+  "unit": "rec-41020224b0ac1d19",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.8,
+  "raw_len": 427,
+  "error": null
+ },
+ {
+  "call_id": "llm-5d5184d5ea0c",
+  "expert": "TECHNICAL",
+  "unit": "rec-f346c55d235c03e3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 21.39,
+  "raw_len": 344,
+  "error": null
+ },
+ {
+  "call_id": "llm-5c186acf11b2",
+  "expert": "TECHNICAL",
+  "unit": "rec-31be76e58d138850",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.94,
+  "raw_len": 338,
+  "error": null
+ },
+ {
+  "call_id": "llm-f2675c638238",
+  "expert": "TECHNICAL",
+  "unit": "rec-634d962c7160732a",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 21.35,
+  "raw_len": 344,
+  "error": null
+ },
+ {
+  "call_id": "llm-192cd3d2c92b",
+  "expert": "TECHNICAL",
+  "unit": "rec-339740a9d90545c3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.72,
+  "raw_len": 347,
+  "error": null
+ },
+ {
+  "call_id": "llm-0c3e79dda701",
+  "expert": "TECHNICAL",
+  "unit": "rec-9416222090670306",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 21.85,
+  "raw_len": 389,
+  "error": null
+ },
+ {
+  "call_id": "llm-fc197503a403",
+  "expert": "TECHNICAL",
+  "unit": "rec-e50eb1f506d5ab42",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 19.26,
+  "raw_len": 225,
+  "error": null
+ },
+ {
+  "call_id": "llm-492c2ea7b1c1",
+  "expert": "TECHNICAL",
+  "unit": "rec-52ba086fc5d66df9",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 20.33,
+  "raw_len": 292,
+  "error": null
+ },
+ {
+  "call_id": "llm-80eb84bfd647",
+  "expert": "TECHNICAL",
+  "unit": "rec-a5724dd2e1502ae2",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.86,
+  "raw_len": 406,
+  "error": null
+ },
+ {
+  "call_id": "llm-f692e113a77d",
+  "expert": "TECHNICAL",
+  "unit": "rec-9e664cfb5c0d6420",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.03,
+  "raw_len": 311,
+  "error": null
+ },
+ {
+  "call_id": "llm-75eee2aa0263",
+  "expert": "TECHNICAL",
+  "unit": "rec-0c617339da88a074",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.07,
+  "raw_len": 437,
+  "error": null
+ },
+ {
+  "call_id": "llm-b7fc1bc1310f",
+  "expert": "TECHNICAL",
+  "unit": "rec-f7eff6b9be225492",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.29,
+  "raw_len": 372,
+  "error": null
+ },
+ {
+  "call_id": "llm-6843b4ffa025",
+  "expert": "TECHNICAL",
+  "unit": "rec-956eeeb5e5b98cbe",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 18.63,
+  "raw_len": 306,
+  "error": null
+ },
+ {
+  "call_id": "llm-0b53ac662cb7",
+  "expert": "TECHNICAL",
+  "unit": "rec-217cb698afa8658d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.78,
+  "raw_len": 336,
+  "error": null
+ },
+ {
+  "call_id": "llm-6103f150332d",
+  "expert": "TECHNICAL",
+  "unit": "rec-920e1c069c888afb",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 18.58,
+  "raw_len": 305,
+  "error": null
+ },
+ {
+  "call_id": "llm-5fa76e44f90f",
+  "expert": "TECHNICAL",
+  "unit": "rec-38ca5f4b1bcdecb3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 15.85,
+  "raw_len": 305,
+  "error": null
+ },
+ {
+  "call_id": "llm-361a06d21165",
+  "expert": "TECHNICAL",
+  "unit": "rec-a3965dbc0f624005",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 21.06,
+  "raw_len": 336,
+  "error": null
+ },
+ {
+  "call_id": "llm-3ff69ad292f8",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0001",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.93,
+  "raw_len": 338,
+  "error": null
+ },
+ {
+  "call_id": "llm-a3418a2b264a",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0002",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 35.76,
+  "raw_len": 420,
+  "error": null
+ },
+ {
+  "call_id": "llm-7ebf4b9bcd7c",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0003",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.28,
+  "raw_len": 417,
+  "error": null
+ },
+ {
+  "call_id": "llm-e105cfcc963a",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0004",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 20.19,
+  "raw_len": 417,
+  "error": null
+ },
+ {
+  "call_id": "llm-227f659563d0",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0005",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.67,
+  "raw_len": 387,
+  "error": null
+ },
+ {
+  "call_id": "llm-5e4e24bcd8ee",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0006",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.94,
+  "raw_len": 384,
+  "error": null
+ },
+ {
+  "call_id": "llm-3ea345a1ca7e",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0007",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 23.08,
+  "raw_len": 357,
+  "error": null
+ },
+ {
+  "call_id": "llm-b820bdd8fa47",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0008",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.23,
+  "raw_len": 364,
+  "error": null
+ },
+ {
+  "call_id": "llm-e7970fb7bc42",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0009",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 18.77,
+  "raw_len": 364,
+  "error": null
+ },
+ {
+  "call_id": "llm-8279725aa2ee",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0010",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 23.63,
+  "raw_len": 367,
+  "error": null
+ },
+ {
+  "call_id": "llm-c0bca857a330",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0011",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 20.78,
+  "raw_len": 285,
+  "error": null
+ },
+ {
+  "call_id": "llm-ac3f20c5a5a7",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0012",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.94,
+  "raw_len": 423,
+  "error": null
+ },
+ {
+  "call_id": "llm-e16391f0dff6",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0013",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.72,
+  "raw_len": 429,
+  "error": null
+ },
+ {
+  "call_id": "llm-78bf646c81a1",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0014",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.8,
+  "raw_len": 411,
+  "error": null
+ },
+ {
+  "call_id": "llm-c4b46800f35a",
+  "expert": "CROSS_DOMAIN",
+  "unit": "cdl-0015",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 22.74,
+  "raw_len": 368,
+  "error": null
+ },
+ {
+  "call_id": "llm-47c1663c7b5d",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-e2df7a21e64f1e98",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 23.03,
+  "raw_len": 306,
+  "error": null
+ },
+ {
+  "call_id": "llm-e87b41049670",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-3cb1b917e2416e5c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 20.94,
+  "raw_len": 332,
+  "error": null
+ },
+ {
+  "call_id": "llm-17d4ca4cf8e0",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-8e22ec103a79bbc6",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 18.22,
+  "raw_len": 308,
+  "error": null
+ },
+ {
+  "call_id": "llm-a3bbfe221e5e",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-973f755d0ad81532",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 15.43,
+  "raw_len": 241,
+  "error": null
+ },
+ {
+  "call_id": "llm-7d18d939aee9",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-f3c58a51c874430c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.25,
+  "raw_len": 247,
+  "error": null
+ },
+ {
+  "call_id": "llm-98830c6e8ad2",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-19a87dcef39613d5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 17.49,
+  "raw_len": 295,
+  "error": null
+ },
+ {
+  "call_id": "llm-825a0c87c31b",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-5a74b7173187042a",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 17.47,
+  "raw_len": 325,
+  "error": null
+ },
+ {
+  "call_id": "llm-0617c481be8a",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-8627b9de52404b82",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.74,
+  "raw_len": 264,
+  "error": null
+ },
+ {
+  "call_id": "llm-f11dbc061aa4",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-eb5fa71bac6f0c43",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 19.54,
+  "raw_len": 321,
+  "error": null
+ },
+ {
+  "call_id": "llm-0633de03cad5",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-0c4e12ad8dc35916",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 17.12,
+  "raw_len": 317,
+  "error": null
+ },
+ {
+  "call_id": "llm-384147e9064d",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-0413babd4c28e531",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.59,
+  "raw_len": 257,
+  "error": null
+ },
+ {
+  "call_id": "llm-d91926061615",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-60a5112bda3e6e60",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.6,
+  "raw_len": 304,
+  "error": null
+ },
+ {
+  "call_id": "llm-e922dd74444b",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-a03aa5e134361563",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 18.83,
+  "raw_len": 295,
+  "error": null
+ },
+ {
+  "call_id": "llm-1f333f5fc091",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-a2a0c552f2c24730",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 20.59,
+  "raw_len": 320,
+  "error": null
+ },
+ {
+  "call_id": "llm-d3ab4cbd80ab",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-4c37187698a1c6ec",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 17.76,
+  "raw_len": 280,
+  "error": null
+ },
+ {
+  "call_id": "llm-9e11cb92d5bc",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-5f3baed982dac65c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 20.91,
+  "raw_len": 415,
+  "error": null
+ },
+ {
+  "call_id": "llm-c743f32252c4",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-fe61603a4abc8c57",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.99,
+  "raw_len": 260,
+  "error": null
+ },
+ {
+  "call_id": "llm-a3cf1aec1855",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-bffa481e34f68794",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 17.71,
+  "raw_len": 293,
+  "error": null
+ },
+ {
+  "call_id": "llm-d1db646b9bd9",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-9fa7371575d45ce9",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 17.22,
+  "raw_len": 281,
+  "error": null
+ },
+ {
+  "call_id": "llm-92954d64cd0f",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-1db0cc2f40a2a1d7",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 19.83,
+  "raw_len": 330,
+  "error": null
+ },
+ {
+  "call_id": "llm-54cb3c5f70a9",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-ca55852bdfd9f019",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.16,
+  "raw_len": 252,
+  "error": null
+ },
+ {
+  "call_id": "llm-d4cf2e6b1577",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-9d07f8bae536fc94",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.24,
+  "raw_len": 264,
+  "error": null
+ },
+ {
+  "call_id": "llm-341faff13224",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-c8ab28098ea26220",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 15.79,
+  "raw_len": 258,
+  "error": null
+ },
+ {
+  "call_id": "llm-d1a7e9603a30",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-d2b6de9d08640151",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.61,
+  "raw_len": 270,
+  "error": null
+ },
+ {
+  "call_id": "llm-74479d21a6bb",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-ecefe24588a642ea",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.21,
+  "raw_len": 273,
+  "error": null
+ },
+ {
+  "call_id": "llm-29c2493ab563",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-04970c8250471907",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.44,
+  "raw_len": 317,
+  "error": null
+ },
+ {
+  "call_id": "llm-9b8d94e42656",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-1149f32ece8bee9f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 19.12,
+  "raw_len": 339,
+  "error": null
+ },
+ {
+  "call_id": "llm-ca7a253cc67a",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-74dd59a7fdee959a",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.48,
+  "raw_len": 246,
+  "error": null
+ },
+ {
+  "call_id": "llm-70d5174ff6ed",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-9ba2f6dff476a535",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.49,
+  "raw_len": 259,
+  "error": null
+ },
+ {
+  "call_id": "llm-e112603da84e",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-d8eee555b489b272",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.8,
+  "raw_len": 356,
+  "error": null
+ },
+ {
+  "call_id": "llm-e4748d477895",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-7d600e7c996fc0ef",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.49,
+  "raw_len": 285,
+  "error": null
+ },
+ {
+  "call_id": "llm-654c44bb164e",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-851109b681db6d49",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.35,
+  "raw_len": 309,
+  "error": null
+ },
+ {
+  "call_id": "llm-04008cdb13fd",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-decfa5efb604756e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.4,
+  "raw_len": 253,
+  "error": null
+ },
+ {
+  "call_id": "llm-11d79627c33b",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-d61477197db51b76",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.79,
+  "raw_len": 302,
+  "error": null
+ },
+ {
+  "call_id": "llm-7851629396e6",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-45c57345ce796f55",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 11.72,
+  "raw_len": 241,
+  "error": null
+ },
+ {
+  "call_id": "llm-f94aee831e7f",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-76238333b5d2a3e4",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 11.79,
+  "raw_len": 244,
+  "error": null
+ },
+ {
+  "call_id": "llm-ddac001a33a2",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-7e586d19fc84efb9",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.71,
+  "raw_len": 331,
+  "error": null
+ },
+ {
+  "call_id": "llm-0c2350b1d76f",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-dd15186e2f57cebc",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 17.17,
+  "raw_len": 405,
+  "error": null
+ },
+ {
+  "call_id": "llm-e38984062ff5",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-c6ebe7672b7d7405",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.09,
+  "raw_len": 329,
+  "error": null
+ },
+ {
+  "call_id": "llm-e49e7729487c",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-86475ea742967d1f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.86,
+  "raw_len": 261,
+  "error": null
+ },
+ {
+  "call_id": "llm-2ef7a3f2c684",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-5546685d77bd1eb9",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.66,
+  "raw_len": 269,
+  "error": null
+ },
+ {
+  "call_id": "llm-8c0a2fd1b041",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-4e6f08779e6216df",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 15.03,
+  "raw_len": 339,
+  "error": null
+ },
+ {
+  "call_id": "llm-72f786c38968",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-c4eb93ac7b7f0aea",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.36,
+  "raw_len": 309,
+  "error": null
+ },
+ {
+  "call_id": "llm-125c64948b4f",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-5135a9f631e88e7a",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 10.42,
+  "raw_len": 227,
+  "error": null
+ },
+ {
+  "call_id": "llm-0e7985fcf9db",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-957e59b5e43589d1",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 15.33,
+  "raw_len": 329,
+  "error": null
+ },
+ {
+  "call_id": "llm-6411f0b21e05",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-1d83d05908e9fb9f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 11.92,
+  "raw_len": 241,
+  "error": null
+ },
+ {
+  "call_id": "llm-5bb8acbfbf8f",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-9b6ed5baf0f645f8",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 15.06,
+  "raw_len": 338,
+  "error": null
+ },
+ {
+  "call_id": "llm-849d1291866b",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-15b7275d18436165",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.39,
+  "raw_len": 253,
+  "error": null
+ },
+ {
+  "call_id": "llm-788708e92070",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-aa9b6df94e4a702e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.64,
+  "raw_len": 300,
+  "error": null
+ },
+ {
+  "call_id": "llm-fed128fa3536",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-d822fcc2267dde6a",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.57,
+  "raw_len": 308,
+  "error": null
+ },
+ {
+  "call_id": "llm-68d356a06e56",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-7951300e949d5285",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.01,
+  "raw_len": 292,
+  "error": null
+ },
+ {
+  "call_id": "llm-0b78c7266514",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-a166879425c5e5ef",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.62,
+  "raw_len": 298,
+  "error": null
+ },
+ {
+  "call_id": "llm-c8c088eeded2",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-a39106c32d2f92c3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.19,
+  "raw_len": 296,
+  "error": null
+ },
+ {
+  "call_id": "llm-3c33057151ca",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-aa552232061efbef",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.54,
+  "raw_len": 301,
+  "error": null
+ },
+ {
+  "call_id": "llm-ebf50377c83d",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-b63eba6ff75ba2ac",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 11.93,
+  "raw_len": 251,
+  "error": null
+ },
+ {
+  "call_id": "llm-ad3ad9dce97e",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-96b4d07902e72b10",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 11.85,
+  "raw_len": 262,
+  "error": null
+ },
+ {
+  "call_id": "llm-ef7f8de4d74b",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-53df6ca63f939637",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.16,
+  "raw_len": 251,
+  "error": null
+ },
+ {
+  "call_id": "llm-c5c72606fd1f",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-9bdb03a7cc5c1a5e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.21,
+  "raw_len": 293,
+  "error": null
+ },
+ {
+  "call_id": "llm-91f26508676f",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-6f55fc40da5f9b5b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 15.3,
+  "raw_len": 329,
+  "error": null
+ },
+ {
+  "call_id": "llm-6bb03e9b987f",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-fbf1041ccd1ae55f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 10.49,
+  "raw_len": 232,
+  "error": null
+ },
+ {
+  "call_id": "llm-dae86923f40d",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-f37ca9a9e8980b8f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.73,
+  "raw_len": 293,
+  "error": null
+ },
+ {
+  "call_id": "llm-ad010d873939",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-05a16f1db0e9b326",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 11.98,
+  "raw_len": 244,
+  "error": null
+ },
+ {
+  "call_id": "llm-a9bc4e3d000c",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-1dc7b3ea3b394a49",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 10.85,
+  "raw_len": 255,
+  "error": null
+ },
+ {
+  "call_id": "llm-52453a7b66ae",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-2da01b9db05de4cb",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.61,
+  "raw_len": 259,
+  "error": null
+ },
+ {
+  "call_id": "llm-09e12e79feb0",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-5a0d2ab5bb127554",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.68,
+  "raw_len": 307,
+  "error": null
+ },
+ {
+  "call_id": "llm-43fd3532ba32",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-e16e569a77914b57",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.43,
+  "raw_len": 319,
+  "error": null
+ },
+ {
+  "call_id": "llm-e1d03b9cb0ea",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-c622ea2b905e9d6b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 11.66,
+  "raw_len": 275,
+  "error": null
+ },
+ {
+  "call_id": "llm-a665b03ec295",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-babd33981dc3d582",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.89,
+  "raw_len": 264,
+  "error": null
+ },
+ {
+  "call_id": "llm-e197a42e0bd8",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-a35ef0d478eadef8",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 15.25,
+  "raw_len": 349,
+  "error": null
+ },
+ {
+  "call_id": "llm-ec1966855c2d",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-738efaf1335616ab",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.74,
+  "raw_len": 337,
+  "error": null
+ },
+ {
+  "call_id": "llm-f3292c0d01d1",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-c9d4fe2c6b136249",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.65,
+  "raw_len": 285,
+  "error": null
+ },
+ {
+  "call_id": "llm-d87584ffbb5e",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-d1f96fcb91bd1ef7",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.08,
+  "raw_len": 271,
+  "error": null
+ },
+ {
+  "call_id": "llm-e1d6cd9aeb1c",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-75a13dca836e54de",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 11.66,
+  "raw_len": 271,
+  "error": null
+ },
+ {
+  "call_id": "llm-ffd640e5c471",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-3e4096ff72c1914d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.5,
+  "raw_len": 355,
+  "error": null
+ },
+ {
+  "call_id": "llm-2799c4b12e5e",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-7b63775b7bfbeea0",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.62,
+  "raw_len": 316,
+  "error": null
+ },
+ {
+  "call_id": "llm-be99ea3fa868",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-d3a4e83432a3193e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.48,
+  "raw_len": 297,
+  "error": null
+ },
+ {
+  "call_id": "llm-915bb237dc9d",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-15ccd4e61ba50a2c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.37,
+  "raw_len": 299,
+  "error": null
+ },
+ {
+  "call_id": "llm-af75836768e6",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-9d62cdb1e9e911b3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.61,
+  "raw_len": 292,
+  "error": null
+ },
+ {
+  "call_id": "llm-afaa9f8fc026",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-2fcf74a9418a658d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.25,
+  "raw_len": 317,
+  "error": null
+ },
+ {
+  "call_id": "llm-c133599bbcc5",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-ec4bea464032cbc8",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.13,
+  "raw_len": 287,
+  "error": null
+ },
+ {
+  "call_id": "llm-c487f0dffba7",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-b2f2da44deebeea5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.76,
+  "raw_len": 257,
+  "error": null
+ },
+ {
+  "call_id": "llm-466a70a66973",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-a06ff5768729a6e2",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.61,
+  "raw_len": 314,
+  "error": null
+ },
+ {
+  "call_id": "llm-3aad75f6ffec",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-cb9d3f14aac49901",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.52,
+  "raw_len": 289,
+  "error": null
+ },
+ {
+  "call_id": "llm-703cfae79879",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-db496364ca1cbba5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 11.9,
+  "raw_len": 271,
+  "error": null
+ },
+ {
+  "call_id": "llm-8465cee584e6",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-ba3304874b21c70e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.61,
+  "raw_len": 289,
+  "error": null
+ },
+ {
+  "call_id": "llm-a5a70d32df6b",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-a5d31c1634788d60",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.61,
+  "raw_len": 305,
+  "error": null
+ },
+ {
+  "call_id": "llm-a69764a4dd35",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-193158d07fc3db36",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.73,
+  "raw_len": 291,
+  "error": null
+ },
+ {
+  "call_id": "llm-6113277ccd54",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-b3b2ce220aa1eb7e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.21,
+  "raw_len": 282,
+  "error": null
+ },
+ {
+  "call_id": "llm-290129393bc0",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-89023d3f5fbfd3a0",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.69,
+  "raw_len": 353,
+  "error": null
+ },
+ {
+  "call_id": "llm-e58efd134440",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-87f4b9520c95085d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 12.27,
+  "raw_len": 284,
+  "error": null
+ },
+ {
+  "call_id": "llm-caf266b7fe21",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-b25013391bd96f37",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 15.53,
+  "raw_len": 326,
+  "error": null
+ },
+ {
+  "call_id": "llm-2fccfbc56641",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-87a14e007bfe2eb9",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.61,
+  "raw_len": 305,
+  "error": null
+ },
+ {
+  "call_id": "llm-7db670260cdc",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-bb015a19fef0dae9",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 18.98,
+  "raw_len": 395,
+  "error": null
+ },
+ {
+  "call_id": "llm-3905528f8d4f",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-8a4bbe1c1d01735b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.08,
+  "raw_len": 294,
+  "error": null
+ },
+ {
+  "call_id": "llm-4d6a58091a9e",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-a8e916c56f97ce20",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 17.01,
+  "raw_len": 344,
+  "error": null
+ },
+ {
+  "call_id": "llm-2046c7a2ebab",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-7ded92991edc4cb3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 14.06,
+  "raw_len": 344,
+  "error": null
+ },
+ {
+  "call_id": "llm-7483caaf1237",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-da2dd36165ffbc37",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.52,
+  "raw_len": 304,
+  "error": null
+ },
+ {
+  "call_id": "llm-5a9b33db216a",
+  "expert": "FUNCTIONAL_TRACEABILITY",
+  "unit": "rec-5820a4fbed2462f8",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 13.64,
+  "raw_len": 328,
+  "error": null
+ },
+ {
+  "call_id": "llm-aadfc2d7d45d",
+  "expert": "REGULATORY",
+  "unit": "rec-2bd352f6e733c687",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.96,
+  "raw_len": 476,
+  "error": null
+ },
+ {
+  "call_id": "llm-73d54ad4e849",
+  "expert": "REGULATORY",
+  "unit": "rec-9c49b5fd7ac0a824",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.16,
+  "raw_len": 487,
+  "error": null
+ },
+ {
+  "call_id": "llm-4e0bd0a84380",
+  "expert": "REGULATORY",
+  "unit": "rec-178d3dea7ec94c42",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.25,
+  "raw_len": 489,
+  "error": null
+ },
+ {
+  "call_id": "llm-b951f1a97957",
+  "expert": "REGULATORY",
+  "unit": "rec-c12602a523915b31",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.73,
+  "raw_len": 446,
+  "error": null
+ },
+ {
+  "call_id": "llm-d2e0a4b80081",
+  "expert": "REGULATORY",
+  "unit": "rec-7d6cb2d2d0fe0d19",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 36.36,
+  "raw_len": 487,
+  "error": null
+ },
+ {
+  "call_id": "llm-a761bcd4f53e",
+  "expert": "REGULATORY",
+  "unit": "rec-3a9d7ff05dc9ffff",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.46,
+  "raw_len": 410,
+  "error": null
+ },
+ {
+  "call_id": "llm-1897506defb8",
+  "expert": "REGULATORY",
+  "unit": "rec-f373a57af429034f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 36.34,
+  "raw_len": 645,
+  "error": null
+ },
+ {
+  "call_id": "llm-0c047a86252e",
+  "expert": "REGULATORY",
+  "unit": "rec-c499382e9bf65d87",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.73,
+  "raw_len": 528,
+  "error": null
+ },
+ {
+  "call_id": "llm-408b96e6e9e9",
+  "expert": "REGULATORY",
+  "unit": "rec-c0ebc0542c593cec",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 41.09,
+  "raw_len": 711,
+  "error": null
+ },
+ {
+  "call_id": "llm-af4ade1e1621",
+  "expert": "REGULATORY",
+  "unit": "rec-cb15e1c9d46388bd",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 37.5,
+  "raw_len": 733,
+  "error": null
+ },
+ {
+  "call_id": "llm-e6b7f9ff2786",
+  "expert": "REGULATORY",
+  "unit": "rec-22973e44240a927b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.29,
+  "raw_len": 528,
+  "error": null
+ },
+ {
+  "call_id": "llm-beb6fe98cbec",
+  "expert": "REGULATORY",
+  "unit": "rec-d837b5c02fd073ef",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.85,
+  "raw_len": 606,
+  "error": null
+ },
+ {
+  "call_id": "llm-f8740b0990b4",
+  "expert": "REGULATORY",
+  "unit": "rec-0bc1edb6dc1f3451",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.14,
+  "raw_len": 563,
+  "error": null
+ },
+ {
+  "call_id": "llm-dd8473cc5447",
+  "expert": "REGULATORY",
+  "unit": "rec-30ddb198378f540d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.47,
+  "raw_len": 589,
+  "error": null
+ },
+ {
+  "call_id": "llm-bfe29f1b5d6c",
+  "expert": "REGULATORY",
+  "unit": "rec-084489099054b585",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.25,
+  "raw_len": 581,
+  "error": null
+ },
+ {
+  "call_id": "llm-0effc3e2e65c",
+  "expert": "REGULATORY",
+  "unit": "rec-d9856e0887157253",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 38.47,
+  "raw_len": 635,
+  "error": null
+ },
+ {
+  "call_id": "llm-aae3006afc9b",
+  "expert": "REGULATORY",
+  "unit": "rec-0a82ed48f065b045",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.91,
+  "raw_len": 606,
+  "error": null
+ },
+ {
+  "call_id": "llm-c414ea330cb8",
+  "expert": "REGULATORY",
+  "unit": "rec-f9f8810af5fe98d5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.91,
+  "raw_len": 511,
+  "error": null
+ },
+ {
+  "call_id": "llm-646fcceac7bf",
+  "expert": "REGULATORY",
+  "unit": "rec-252fddba98df1d69",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.91,
+  "raw_len": 490,
+  "error": null
+ },
+ {
+  "call_id": "llm-e51803c90c89",
+  "expert": "REGULATORY",
+  "unit": "rec-50552b00e6ae9f4b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.06,
+  "raw_len": 473,
+  "error": null
+ },
+ {
+  "call_id": "llm-35f4bb3e2330",
+  "expert": "REGULATORY",
+  "unit": "rec-f2c131db4e52163d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.81,
+  "raw_len": 571,
+  "error": null
+ },
+ {
+  "call_id": "llm-ab36ee1add20",
+  "expert": "REGULATORY",
+  "unit": "rec-33acbc832665ade8",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.23,
+  "raw_len": 640,
+  "error": null
+ },
+ {
+  "call_id": "llm-1b256a8c909e",
+  "expert": "REGULATORY",
+  "unit": "rec-ba0f8a3fd5568ec5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.85,
+  "raw_len": 479,
+  "error": null
+ },
+ {
+  "call_id": "llm-9ccc9dcb44ae",
+  "expert": "REGULATORY",
+  "unit": "rec-2e7a9b8faabae026",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.05,
+  "raw_len": 516,
+  "error": null
+ },
+ {
+  "call_id": "llm-afd28e00c8a5",
+  "expert": "REGULATORY",
+  "unit": "rec-8b65c861175f856f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.21,
+  "raw_len": 525,
+  "error": null
+ },
+ {
+  "call_id": "llm-f07439366561",
+  "expert": "REGULATORY",
+  "unit": "rec-95102a2c01cbeb36",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.09,
+  "raw_len": 495,
+  "error": null
+ },
+ {
+  "call_id": "llm-d79ef5f8ab3b",
+  "expert": "REGULATORY",
+  "unit": "rec-5b4b226466d6ec5b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 21.07,
+  "raw_len": 382,
+  "error": null
+ },
+ {
+  "call_id": "llm-17328ce9c8fe",
+  "expert": "REGULATORY",
+  "unit": "rec-e44befac41382590",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.4,
+  "raw_len": 526,
+  "error": null
+ },
+ {
+  "call_id": "llm-1a6968278aa1",
+  "expert": "REGULATORY",
+  "unit": "rec-8b4c0c51d7d4464f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.18,
+  "raw_len": 475,
+  "error": null
+ },
+ {
+  "call_id": "llm-6414f4d04343",
+  "expert": "REGULATORY",
+  "unit": "rec-c2f228e47e500ddf",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.24,
+  "raw_len": 487,
+  "error": null
+ },
+ {
+  "call_id": "llm-9da8b2dd8e57",
+  "expert": "REGULATORY",
+  "unit": "rec-3985d34037205aff",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.67,
+  "raw_len": 540,
+  "error": null
+ },
+ {
+  "call_id": "llm-100854e9b6bc",
+  "expert": "REGULATORY",
+  "unit": "rec-01f70fdfe1b795fe",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.97,
+  "raw_len": 523,
+  "error": null
+ },
+ {
+  "call_id": "llm-517d8ab1f924",
+  "expert": "REGULATORY",
+  "unit": "rec-8c15fcfddf18ad7c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.87,
+  "raw_len": 513,
+  "error": null
+ },
+ {
+  "call_id": "llm-4be1264eacf0",
+  "expert": "REGULATORY",
+  "unit": "rec-1205689abcec84de",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.58,
+  "raw_len": 495,
+  "error": null
+ },
+ {
+  "call_id": "llm-692a42c7ba18",
+  "expert": "REGULATORY",
+  "unit": "rec-8dd53df9991ab844",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.54,
+  "raw_len": 493,
+  "error": null
+ },
+ {
+  "call_id": "llm-cb627cdf05b3",
+  "expert": "REGULATORY",
+  "unit": "rec-c257fc11e0273388",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.0,
+  "raw_len": 509,
+  "error": null
+ },
+ {
+  "call_id": "llm-ad8aa99adf05",
+  "expert": "REGULATORY",
+  "unit": "rec-dc728da9851c448a",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.59,
+  "raw_len": 495,
+  "error": null
+ },
+ {
+  "call_id": "llm-9ea4254f7568",
+  "expert": "REGULATORY",
+  "unit": "rec-2b74b830e44c61e5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.93,
+  "raw_len": 548,
+  "error": null
+ },
+ {
+  "call_id": "llm-9cd50db5b70e",
+  "expert": "REGULATORY",
+  "unit": "rec-03508ec3cf35c334",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.22,
+  "raw_len": 554,
+  "error": null
+ },
+ {
+  "call_id": "llm-61ec49704c28",
+  "expert": "REGULATORY",
+  "unit": "rec-a637f215b233f7ad",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.63,
+  "raw_len": 578,
+  "error": null
+ },
+ {
+  "call_id": "llm-7c1bf36da142",
+  "expert": "REGULATORY",
+  "unit": "rec-3db7cf9280933212",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.96,
+  "raw_len": 489,
+  "error": null
+ },
+ {
+  "call_id": "llm-abb00b494ce6",
+  "expert": "REGULATORY",
+  "unit": "rec-0e0ef587cb8086aa",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 35.93,
+  "raw_len": 591,
+  "error": null
+ },
+ {
+  "call_id": "llm-75c82b5fcf4f",
+  "expert": "REGULATORY",
+  "unit": "rec-b1c607356d75ee79",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.08,
+  "raw_len": 494,
+  "error": null
+ },
+ {
+  "call_id": "llm-9cfa78a22eea",
+  "expert": "REGULATORY",
+  "unit": "rec-77ada55bf2af598f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.31,
+  "raw_len": 589,
+  "error": null
+ },
+ {
+  "call_id": "llm-d18a9e7f0482",
+  "expert": "REGULATORY",
+  "unit": "rec-e7ac5efd05dda7a5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.79,
+  "raw_len": 543,
+  "error": null
+ },
+ {
+  "call_id": "llm-97b1c272375f",
+  "expert": "REGULATORY",
+  "unit": "rec-816d307ecbcefbf1",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.89,
+  "raw_len": 556,
+  "error": null
+ },
+ {
+  "call_id": "llm-b8204633c109",
+  "expert": "REGULATORY",
+  "unit": "rec-74af01b300c13761",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.41,
+  "raw_len": 603,
+  "error": null
+ },
+ {
+  "call_id": "llm-dec5af835f71",
+  "expert": "REGULATORY",
+  "unit": "rec-ba61f401a08e5bc2",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.51,
+  "raw_len": 602,
+  "error": null
+ },
+ {
+  "call_id": "llm-6ce6075e44f6",
+  "expert": "REGULATORY",
+  "unit": "rec-13bdda659c1242f2",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.79,
+  "raw_len": 466,
+  "error": null
+ },
+ {
+  "call_id": "llm-772efe352380",
+  "expert": "REGULATORY",
+  "unit": "rec-57b0ac53cbfaa895",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 16.24,
+  "raw_len": 277,
+  "error": null
+ },
+ {
+  "call_id": "llm-62e0fe6202ea",
+  "expert": "REGULATORY",
+  "unit": "rec-342fadf7d85959b7",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.19,
+  "raw_len": 381,
+  "error": null
+ },
+ {
+  "call_id": "llm-2a1240c0cf0d",
+  "expert": "REGULATORY",
+  "unit": "rec-b6dbf81d4b5cdd03",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.29,
+  "raw_len": 522,
+  "error": null
+ },
+ {
+  "call_id": "llm-353becab3154",
+  "expert": "REGULATORY",
+  "unit": "rec-5f59722c74597726",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.77,
+  "raw_len": 548,
+  "error": null
+ },
+ {
+  "call_id": "llm-ce5432af5a49",
+  "expert": "REGULATORY",
+  "unit": "rec-5f26dd2da038f4bd",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.79,
+  "raw_len": 520,
+  "error": null
+ },
+ {
+  "call_id": "llm-875e4805f56d",
+  "expert": "REGULATORY",
+  "unit": "rec-7d0222f7855cc12c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.03,
+  "raw_len": 482,
+  "error": null
+ },
+ {
+  "call_id": "llm-7c129206e2dd",
+  "expert": "REGULATORY",
+  "unit": "rec-f0bb391d02108b8a",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.56,
+  "raw_len": 549,
+  "error": null
+ },
+ {
+  "call_id": "llm-cae3cfcc9f04",
+  "expert": "REGULATORY",
+  "unit": "rec-1f8c66b351356ce1",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 35.51,
+  "raw_len": 645,
+  "error": null
+ },
+ {
+  "call_id": "llm-d8b3e874740a",
+  "expert": "REGULATORY",
+  "unit": "rec-5bfe094286d91b6d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.72,
+  "raw_len": 424,
+  "error": null
+ },
+ {
+  "call_id": "llm-49634ecce9f5",
+  "expert": "REGULATORY",
+  "unit": "rec-8f15c82009c5642f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.81,
+  "raw_len": 537,
+  "error": null
+ },
+ {
+  "call_id": "llm-4477e39cc2ae",
+  "expert": "REGULATORY",
+  "unit": "rec-6b0c9965fd2f4e05",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.54,
+  "raw_len": 454,
+  "error": null
+ },
+ {
+  "call_id": "llm-6b061b4083db",
+  "expert": "REGULATORY",
+  "unit": "rec-af05e920bad158fb",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.61,
+  "raw_len": 484,
+  "error": null
+ },
+ {
+  "call_id": "llm-d571acb2d446",
+  "expert": "REGULATORY",
+  "unit": "rec-d86dfb79cc5b4996",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.44,
+  "raw_len": 513,
+  "error": null
+ },
+ {
+  "call_id": "llm-93204b8f647b",
+  "expert": "REGULATORY",
+  "unit": "rec-8e51ef14590a270e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.59,
+  "raw_len": 432,
+  "error": null
+ },
+ {
+  "call_id": "llm-7381fea37e7a",
+  "expert": "REGULATORY",
+  "unit": "rec-4c6611081bdfdeec",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.79,
+  "raw_len": 444,
+  "error": null
+ },
+ {
+  "call_id": "llm-6b6f58a6d933",
+  "expert": "REGULATORY",
+  "unit": "rec-e0b35452eeb06071",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.91,
+  "raw_len": 487,
+  "error": null
+ },
+ {
+  "call_id": "llm-1beedea27885",
+  "expert": "REGULATORY",
+  "unit": "rec-3703724a0fc3dcbf",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.26,
+  "raw_len": 525,
+  "error": null
+ },
+ {
+  "call_id": "llm-27097002736c",
+  "expert": "REGULATORY",
+  "unit": "rec-bff2bcf00c3551c6",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.98,
+  "raw_len": 485,
+  "error": null
+ },
+ {
+  "call_id": "llm-0ca4fd754ab0",
+  "expert": "REGULATORY",
+  "unit": "rec-2ae4dafb094a42d1",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.01,
+  "raw_len": 433,
+  "error": null
+ },
+ {
+  "call_id": "llm-3d506304d9ed",
+  "expert": "REGULATORY",
+  "unit": "rec-3d0e2d726cb42d3b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.57,
+  "raw_len": 511,
+  "error": null
+ },
+ {
+  "call_id": "llm-1ebfcf786f96",
+  "expert": "REGULATORY",
+  "unit": "rec-6910785c7536afb3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.16,
+  "raw_len": 495,
+  "error": null
+ },
+ {
+  "call_id": "llm-0d50279fddc3",
+  "expert": "REGULATORY",
+  "unit": "rec-0d33883aca3b7338",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.51,
+  "raw_len": 509,
+  "error": null
+ },
+ {
+  "call_id": "llm-76681c175129",
+  "expert": "REGULATORY",
+  "unit": "rec-3813b618834b37a1",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.92,
+  "raw_len": 436,
+  "error": null
+ },
+ {
+  "call_id": "llm-729b942427dd",
+  "expert": "REGULATORY",
+  "unit": "rec-11afa6aa04b93304",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.88,
+  "raw_len": 434,
+  "error": null
+ },
+ {
+  "call_id": "llm-4ea2793bdaf5",
+  "expert": "REGULATORY",
+  "unit": "rec-83616af03e7a0581",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.61,
+  "raw_len": 509,
+  "error": null
+ },
+ {
+  "call_id": "llm-bcd1d4af0fac",
+  "expert": "REGULATORY",
+  "unit": "rec-7e228ed0de7cf255",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.52,
+  "raw_len": 424,
+  "error": null
+ },
+ {
+  "call_id": "llm-3611b558b79c",
+  "expert": "REGULATORY",
+  "unit": "rec-103f4e4193dd83b5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.28,
+  "raw_len": 499,
+  "error": null
+ },
+ {
+  "call_id": "llm-9c6399e3130f",
+  "expert": "REGULATORY",
+  "unit": "rec-9b47c0444e9ae107",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.36,
+  "raw_len": 519,
+  "error": null
+ },
+ {
+  "call_id": "llm-e0c489d9fd72",
+  "expert": "REGULATORY",
+  "unit": "rec-539e1a8dcb703601",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.46,
+  "raw_len": 475,
+  "error": null
+ },
+ {
+  "call_id": "llm-17308161c8fa",
+  "expert": "REGULATORY",
+  "unit": "rec-c207c15eaf6bc897",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.92,
+  "raw_len": 472,
+  "error": null
+ },
+ {
+  "call_id": "llm-aafce29a78c5",
+  "expert": "REGULATORY",
+  "unit": "rec-ea59da4854892e06",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.93,
+  "raw_len": 536,
+  "error": null
+ },
+ {
+  "call_id": "llm-2b2a9600c9b5",
+  "expert": "REGULATORY",
+  "unit": "rec-157a4d39cae21b68",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.57,
+  "raw_len": 528,
+  "error": null
+ },
+ {
+  "call_id": "llm-abff6f1de1ae",
+  "expert": "REGULATORY",
+  "unit": "rec-812fcc2e12616221",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.9,
+  "raw_len": 440,
+  "error": null
+ },
+ {
+  "call_id": "llm-29e798331c2b",
+  "expert": "REGULATORY",
+  "unit": "rec-aacc63841414b6ba",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.03,
+  "raw_len": 517,
+  "error": null
+ },
+ {
+  "call_id": "llm-c6beb30fd84a",
+  "expert": "REGULATORY",
+  "unit": "rec-0c773e615ad58481",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.01,
+  "raw_len": 447,
+  "error": null
+ },
+ {
+  "call_id": "llm-e5ee35ec3cb8",
+  "expert": "REGULATORY",
+  "unit": "rec-3e9b04bcf43fa43f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.48,
+  "raw_len": 486,
+  "error": null
+ },
+ {
+  "call_id": "llm-aeb3e312fdf7",
+  "expert": "REGULATORY",
+  "unit": "rec-be5aba51fbd24d21",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.04,
+  "raw_len": 485,
+  "error": null
+ },
+ {
+  "call_id": "llm-476860196993",
+  "expert": "REGULATORY",
+  "unit": "rec-ae4c39a2a8fc4332",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.66,
+  "raw_len": 572,
+  "error": null
+ },
+ {
+  "call_id": "llm-fdc156ff7786",
+  "expert": "REGULATORY",
+  "unit": "rec-7bba6f676b105fbe",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.18,
+  "raw_len": 485,
+  "error": null
+ },
+ {
+  "call_id": "llm-28032c62e1b3",
+  "expert": "REGULATORY",
+  "unit": "rec-5205dc443feda22c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.52,
+  "raw_len": 458,
+  "error": null
+ },
+ {
+  "call_id": "llm-9e6e5a6ba603",
+  "expert": "REGULATORY",
+  "unit": "rec-e5c98bdbc39928c4",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.34,
+  "raw_len": 562,
+  "error": null
+ },
+ {
+  "call_id": "llm-15f1b108d740",
+  "expert": "REGULATORY",
+  "unit": "rec-36961bd26132e93e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.99,
+  "raw_len": 548,
+  "error": null
+ },
+ {
+  "call_id": "llm-8ed5619749c8",
+  "expert": "REGULATORY",
+  "unit": "rec-1112f4cb7bcfb5e5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.35,
+  "raw_len": 499,
+  "error": null
+ },
+ {
+  "call_id": "llm-419655eeb41d",
+  "expert": "REGULATORY",
+  "unit": "rec-056e624f52aed934",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.68,
+  "raw_len": 562,
+  "error": null
+ },
+ {
+  "call_id": "llm-325259f861b1",
+  "expert": "REGULATORY",
+  "unit": "rec-658ad8c8f5bd6842",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.29,
+  "raw_len": 562,
+  "error": null
+ },
+ {
+  "call_id": "llm-da52b393f9d1",
+  "expert": "REGULATORY",
+  "unit": "rec-3ad7d11d28c743bf",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.46,
+  "raw_len": 609,
+  "error": null
+ },
+ {
+  "call_id": "llm-b3ea1b76773c",
+  "expert": "REGULATORY",
+  "unit": "rec-1c9fa7ed8fd951e8",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.85,
+  "raw_len": 485,
+  "error": null
+ },
+ {
+  "call_id": "llm-ec2fe8bcf7df",
+  "expert": "REGULATORY",
+  "unit": "rec-fa586a385d5dd192",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.09,
+  "raw_len": 419,
+  "error": null
+ },
+ {
+  "call_id": "llm-b5a09da818a9",
+  "expert": "REGULATORY",
+  "unit": "rec-42c2eff011a7efd7",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.49,
+  "raw_len": 518,
+  "error": null
+ },
+ {
+  "call_id": "llm-142ee500af13",
+  "expert": "REGULATORY",
+  "unit": "rec-f7bc368b97cf57db",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.8,
+  "raw_len": 554,
+  "error": null
+ },
+ {
+  "call_id": "llm-6a49cdb361cb",
+  "expert": "REGULATORY",
+  "unit": "rec-6f5b3b82eda630cc",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.39,
+  "raw_len": 461,
+  "error": null
+ },
+ {
+  "call_id": "llm-64213a0a8b9c",
+  "expert": "REGULATORY",
+  "unit": "rec-af177b43bdef9aed",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.15,
+  "raw_len": 490,
+  "error": null
+ },
+ {
+  "call_id": "llm-7dd0fe7b77d9",
+  "expert": "REGULATORY",
+  "unit": "rec-f378c9c3d43dd5c8",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.86,
+  "raw_len": 558,
+  "error": null
+ },
+ {
+  "call_id": "llm-6c1730aea6f9",
+  "expert": "REGULATORY",
+  "unit": "rec-a9d520669a15977c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.23,
+  "raw_len": 437,
+  "error": null
+ },
+ {
+  "call_id": "llm-26435c9688ff",
+  "expert": "REGULATORY",
+  "unit": "rec-0f571ab6b3bec210",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.6,
+  "raw_len": 463,
+  "error": null
+ },
+ {
+  "call_id": "llm-a070ac461fc1",
+  "expert": "REGULATORY",
+  "unit": "rec-50f6675b23a58ff2",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.13,
+  "raw_len": 514,
+  "error": null
+ },
+ {
+  "call_id": "llm-8277c3cabf6d",
+  "expert": "REGULATORY",
+  "unit": "rec-28d5f84f402d6489",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 23.61,
+  "raw_len": 452,
+  "error": null
+ },
+ {
+  "call_id": "llm-79bbc3004c45",
+  "expert": "REGULATORY",
+  "unit": "rec-0cc42bfb3d8b64f4",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.74,
+  "raw_len": 536,
+  "error": null
+ },
+ {
+  "call_id": "llm-032de278a2a3",
+  "expert": "REGULATORY",
+  "unit": "rec-9f0b5f1a41660f20",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 21.35,
+  "raw_len": 364,
+  "error": null
+ },
+ {
+  "call_id": "llm-99271bd59856",
+  "expert": "REGULATORY",
+  "unit": "rec-b79068ec770ab757",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.94,
+  "raw_len": 447,
+  "error": null
+ },
+ {
+  "call_id": "llm-94451d6cba01",
+  "expert": "REGULATORY",
+  "unit": "rec-3c98d0075f63264d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.65,
+  "raw_len": 564,
+  "error": null
+ },
+ {
+  "call_id": "llm-42c631d1612c",
+  "expert": "REGULATORY",
+  "unit": "rec-8cbaab669219ab31",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.46,
+  "raw_len": 492,
+  "error": null
+ },
+ {
+  "call_id": "llm-899388d91267",
+  "expert": "REGULATORY",
+  "unit": "rec-536b01d6dd13e51a",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.91,
+  "raw_len": 540,
+  "error": null
+ },
+ {
+  "call_id": "llm-623eb35167be",
+  "expert": "REGULATORY",
+  "unit": "rec-e1bdf8285b40ff3a",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.9,
+  "raw_len": 482,
+  "error": null
+ },
+ {
+  "call_id": "llm-587744e641f8",
+  "expert": "REGULATORY",
+  "unit": "rec-8d75a6b1992bcc0d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.27,
+  "raw_len": 468,
+  "error": null
+ },
+ {
+  "call_id": "llm-5eab1a93e581",
+  "expert": "REGULATORY",
+  "unit": "rec-5a1265bfec571542",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.75,
+  "raw_len": 497,
+  "error": null
+ },
+ {
+  "call_id": "llm-967837b12b88",
+  "expert": "REGULATORY",
+  "unit": "rec-f82f7501f3c739cd",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.94,
+  "raw_len": 442,
+  "error": null
+ },
+ {
+  "call_id": "llm-b4b1c3e2040b",
+  "expert": "REGULATORY",
+  "unit": "rec-2d562fca466ce961",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.26,
+  "raw_len": 538,
+  "error": null
+ },
+ {
+  "call_id": "llm-f7cfa6530964",
+  "expert": "REGULATORY",
+  "unit": "rec-9cd53e2277178add",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.8,
+  "raw_len": 445,
+  "error": null
+ },
+ {
+  "call_id": "llm-0de2db98b7c9",
+  "expert": "REGULATORY",
+  "unit": "rec-8aa5603c54329893",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.17,
+  "raw_len": 499,
+  "error": null
+ },
+ {
+  "call_id": "llm-e11bf1a2d671",
+  "expert": "REGULATORY",
+  "unit": "rec-352cd5dd619ff083",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.99,
+  "raw_len": 534,
+  "error": null
+ },
+ {
+  "call_id": "llm-8305fadc660f",
+  "expert": "REGULATORY",
+  "unit": "rec-2d160f0034fc009b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.57,
+  "raw_len": 488,
+  "error": null
+ },
+ {
+  "call_id": "llm-913c9221dd73",
+  "expert": "REGULATORY",
+  "unit": "rec-f21a74c8f8efcc10",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.98,
+  "raw_len": 459,
+  "error": null
+ },
+ {
+  "call_id": "llm-a5297843773b",
+  "expert": "REGULATORY",
+  "unit": "rec-1e739d1ed49aa50d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.16,
+  "raw_len": 408,
+  "error": null
+ },
+ {
+  "call_id": "llm-f9e3dd71622a",
+  "expert": "REGULATORY",
+  "unit": "rec-e860db2601b6cebf",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.18,
+  "raw_len": 401,
+  "error": null
+ },
+ {
+  "call_id": "llm-3f2ab0e45ede",
+  "expert": "REGULATORY",
+  "unit": "rec-91ab6e8d4f31d742",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.45,
+  "raw_len": 440,
+  "error": null
+ },
+ {
+  "call_id": "llm-4ae7e7a5a214",
+  "expert": "REGULATORY",
+  "unit": "rec-24116cb9a303d852",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.06,
+  "raw_len": 530,
+  "error": null
+ },
+ {
+  "call_id": "llm-5f55662e7b25",
+  "expert": "REGULATORY",
+  "unit": "rec-7b239c5feb66e3b8",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.03,
+  "raw_len": 384,
+  "error": null
+ },
+ {
+  "call_id": "llm-0fa9db71f302",
+  "expert": "REGULATORY",
+  "unit": "rec-a3d760284cd0b9a5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.68,
+  "raw_len": 494,
+  "error": null
+ },
+ {
+  "call_id": "llm-a2ae850db088",
+  "expert": "REGULATORY",
+  "unit": "rec-061e25c113d8dff1",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.37,
+  "raw_len": 454,
+  "error": null
+ },
+ {
+  "call_id": "llm-67014d2c0b53",
+  "expert": "REGULATORY",
+  "unit": "rec-5be5e7022728dc5f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.01,
+  "raw_len": 505,
+  "error": null
+ },
+ {
+  "call_id": "llm-0d0f70c50624",
+  "expert": "REGULATORY",
+  "unit": "rec-3369a8711e5f16a3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.7,
+  "raw_len": 445,
+  "error": null
+ },
+ {
+  "call_id": "llm-a48c1948d05e",
+  "expert": "REGULATORY",
+  "unit": "rec-ea678422db053342",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.59,
+  "raw_len": 480,
+  "error": null
+ },
+ {
+  "call_id": "llm-10d587fe8e4e",
+  "expert": "REGULATORY",
+  "unit": "rec-c0f9fd9ea1057bbc",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.02,
+  "raw_len": 470,
+  "error": null
+ },
+ {
+  "call_id": "llm-6d3db162d320",
+  "expert": "REGULATORY",
+  "unit": "rec-a7d75820b994631e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.44,
+  "raw_len": 475,
+  "error": null
+ },
+ {
+  "call_id": "llm-949feddcdc28",
+  "expert": "REGULATORY",
+  "unit": "rec-5c58709c0f26b0e2",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 20.55,
+  "raw_len": 380,
+  "error": null
+ },
+ {
+  "call_id": "llm-d75b71b893df",
+  "expert": "REGULATORY",
+  "unit": "rec-39b4c3e7f96aa8b3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 21.25,
+  "raw_len": 402,
+  "error": null
+ },
+ {
+  "call_id": "llm-9c215ea34bdc",
+  "expert": "REGULATORY",
+  "unit": "rec-e338bab622e8f0a3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 19.07,
+  "raw_len": 327,
+  "error": null
+ },
+ {
+  "call_id": "llm-0ee638c354cc",
+  "expert": "REGULATORY",
+  "unit": "rec-9d54faaa859430c4",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.89,
+  "raw_len": 472,
+  "error": null
+ },
+ {
+  "call_id": "llm-974ce4078712",
+  "expert": "REGULATORY",
+  "unit": "rec-59c9aa61a71b51a5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 20.37,
+  "raw_len": 378,
+  "error": null
+ },
+ {
+  "call_id": "llm-3a40f9138dd2",
+  "expert": "REGULATORY",
+  "unit": "rec-d27023368407f14a",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 18.71,
+  "raw_len": 323,
+  "error": null
+ },
+ {
+  "call_id": "llm-d30bc9c0416e",
+  "expert": "REGULATORY",
+  "unit": "rec-1897ca8cd56cce11",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 18.68,
+  "raw_len": 327,
+  "error": null
+ },
+ {
+  "call_id": "llm-7f819b7a9920",
+  "expert": "REGULATORY",
+  "unit": "rec-4f8f919fcbdb5251",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.42,
+  "raw_len": 503,
+  "error": null
+ },
+ {
+  "call_id": "llm-5496caa46879",
+  "expert": "REGULATORY",
+  "unit": "rec-1bf3040f43d66b37",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.9,
+  "raw_len": 461,
+  "error": null
+ },
+ {
+  "call_id": "llm-0d31fc54bc60",
+  "expert": "REGULATORY",
+  "unit": "rec-8754e94a09ec1476",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.95,
+  "raw_len": 488,
+  "error": null
+ },
+ {
+  "call_id": "llm-3e1ac62c8291",
+  "expert": "REGULATORY",
+  "unit": "rec-6d3f2454352a323f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.72,
+  "raw_len": 488,
+  "error": null
+ },
+ {
+  "call_id": "llm-2bcf888d2bae",
+  "expert": "REGULATORY",
+  "unit": "rec-c1919381b368941d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.24,
+  "raw_len": 443,
+  "error": null
+ },
+ {
+  "call_id": "llm-0cd0fa96e771",
+  "expert": "REGULATORY",
+  "unit": "rec-9d6bb68c2fc4c91e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.47,
+  "raw_len": 491,
+  "error": null
+ },
+ {
+  "call_id": "llm-aaa6d5129ba8",
+  "expert": "REGULATORY",
+  "unit": "rec-7215ca09abf3eada",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.19,
+  "raw_len": 510,
+  "error": null
+ },
+ {
+  "call_id": "llm-6d116edc8d59",
+  "expert": "REGULATORY",
+  "unit": "rec-d9b05cf15b265a23",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.27,
+  "raw_len": 541,
+  "error": null
+ },
+ {
+  "call_id": "llm-89e4e35965a7",
+  "expert": "REGULATORY",
+  "unit": "rec-2a3e51a6af531b7b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.23,
+  "raw_len": 425,
+  "error": null
+ },
+ {
+  "call_id": "llm-4fcbd269d567",
+  "expert": "REGULATORY",
+  "unit": "rec-7c2407fc9cfcf753",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.27,
+  "raw_len": 504,
+  "error": null
+ },
+ {
+  "call_id": "llm-383de2e4d8ef",
+  "expert": "REGULATORY",
+  "unit": "rec-2841ffacd63643f9",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.04,
+  "raw_len": 511,
+  "error": null
+ },
+ {
+  "call_id": "llm-57cdd75af7c3",
+  "expert": "REGULATORY",
+  "unit": "rec-c0b890725d182db8",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.82,
+  "raw_len": 492,
+  "error": null
+ },
+ {
+  "call_id": "llm-6aba36a9e4e8",
+  "expert": "REGULATORY",
+  "unit": "rec-89eeff10645763f5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.7,
+  "raw_len": 540,
+  "error": null
+ },
+ {
+  "call_id": "llm-b4be0ca460a5",
+  "expert": "REGULATORY",
+  "unit": "rec-a58915157a5f9925",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.56,
+  "raw_len": 470,
+  "error": null
+ },
+ {
+  "call_id": "llm-9696a17b8800",
+  "expert": "REGULATORY",
+  "unit": "rec-d123f4c83da7b42f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.08,
+  "raw_len": 423,
+  "error": null
+ },
+ {
+  "call_id": "llm-975e927b3700",
+  "expert": "REGULATORY",
+  "unit": "rec-d318608f50818dee",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.77,
+  "raw_len": 463,
+  "error": null
+ },
+ {
+  "call_id": "llm-ed13d539fae3",
+  "expert": "REGULATORY",
+  "unit": "rec-04f5b119e455528c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.28,
+  "raw_len": 502,
+  "error": null
+ },
+ {
+  "call_id": "llm-c599b435f5a7",
+  "expert": "REGULATORY",
+  "unit": "rec-870a752d32280cc4",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.5,
+  "raw_len": 543,
+  "error": null
+ },
+ {
+  "call_id": "llm-03adfdf57aba",
+  "expert": "REGULATORY",
+  "unit": "rec-6f5a13fa19b88b0f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 22.38,
+  "raw_len": 420,
+  "error": null
+ },
+ {
+  "call_id": "llm-28658c899e5c",
+  "expert": "REGULATORY",
+  "unit": "rec-3130c124cd7e849f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.15,
+  "raw_len": 501,
+  "error": null
+ },
+ {
+  "call_id": "llm-c828cb19ec57",
+  "expert": "REGULATORY",
+  "unit": "rec-d1b35865734b8946",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.55,
+  "raw_len": 547,
+  "error": null
+ },
+ {
+  "call_id": "llm-ff3fda2f17ab",
+  "expert": "REGULATORY",
+  "unit": "rec-784c37f77b476a88",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.97,
+  "raw_len": 451,
+  "error": null
+ },
+ {
+  "call_id": "llm-04deaf086293",
+  "expert": "REGULATORY",
+  "unit": "rec-32add0c9ea3290f7",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.98,
+  "raw_len": 529,
+  "error": null
+ },
+ {
+  "call_id": "llm-947aea7a4a14",
+  "expert": "REGULATORY",
+  "unit": "rec-3c0d7fd4b8734fad",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 22.36,
+  "raw_len": 412,
+  "error": null
+ },
+ {
+  "call_id": "llm-643b80dc502a",
+  "expert": "REGULATORY",
+  "unit": "rec-46c33ac6c8feadfd",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.6,
+  "raw_len": 524,
+  "error": null
+ },
+ {
+  "call_id": "llm-26ad7a943511",
+  "expert": "REGULATORY",
+  "unit": "rec-87279db34937bf9f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.48,
+  "raw_len": 517,
+  "error": null
+ },
+ {
+  "call_id": "llm-915afb3270cc",
+  "expert": "REGULATORY",
+  "unit": "rec-8afa4e3f69dda00f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.61,
+  "raw_len": 495,
+  "error": null
+ },
+ {
+  "call_id": "llm-1e6f6c70c0a2",
+  "expert": "REGULATORY",
+  "unit": "rec-9abe728bb97911ac",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.42,
+  "raw_len": 463,
+  "error": null
+ },
+ {
+  "call_id": "llm-7320f9555755",
+  "expert": "REGULATORY",
+  "unit": "rec-a9a5b6ec78fff8bc",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.81,
+  "raw_len": 490,
+  "error": null
+ },
+ {
+  "call_id": "llm-1e45dafeb3f3",
+  "expert": "REGULATORY",
+  "unit": "rec-54bce3115e65e603",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.61,
+  "raw_len": 545,
+  "error": null
+ },
+ {
+  "call_id": "llm-2fec50b34a8c",
+  "expert": "REGULATORY",
+  "unit": "rec-3d6ae852c098f83d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.66,
+  "raw_len": 475,
+  "error": null
+ },
+ {
+  "call_id": "llm-cf39593f6fc4",
+  "expert": "REGULATORY",
+  "unit": "rec-ea2dafd1240cf815",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.41,
+  "raw_len": 503,
+  "error": null
+ },
+ {
+  "call_id": "llm-06bb064eb3f8",
+  "expert": "REGULATORY",
+  "unit": "rec-da4175c93dafe329",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.83,
+  "raw_len": 560,
+  "error": null
+ },
+ {
+  "call_id": "llm-cc4137bf0b4f",
+  "expert": "REGULATORY",
+  "unit": "rec-9075cee0316abcaf",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.96,
+  "raw_len": 512,
+  "error": null
+ },
+ {
+  "call_id": "llm-9539a52b45fc",
+  "expert": "REGULATORY",
+  "unit": "rec-411917426851148b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.49,
+  "raw_len": 512,
+  "error": null
+ },
+ {
+  "call_id": "llm-ff3c39382eee",
+  "expert": "REGULATORY",
+  "unit": "rec-c0648bd0c52e2066",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.6,
+  "raw_len": 444,
+  "error": null
+ },
+ {
+  "call_id": "llm-710438ff3f34",
+  "expert": "REGULATORY",
+  "unit": "rec-0d875c94fade4821",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.21,
+  "raw_len": 525,
+  "error": null
+ },
+ {
+  "call_id": "llm-f833b1dd8a69",
+  "expert": "REGULATORY",
+  "unit": "rec-f4d66183d27514b4",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.7,
+  "raw_len": 465,
+  "error": null
+ },
+ {
+  "call_id": "llm-bcc335df4675",
+  "expert": "REGULATORY",
+  "unit": "rec-c25c79bd5c4aae8c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.09,
+  "raw_len": 459,
+  "error": null
+ },
+ {
+  "call_id": "llm-6755254a3004",
+  "expert": "REGULATORY",
+  "unit": "rec-e8ecf749a07e4de1",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.23,
+  "raw_len": 503,
+  "error": null
+ },
+ {
+  "call_id": "llm-27087b805d00",
+  "expert": "REGULATORY",
+  "unit": "rec-f6077836a943d3b6",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.13,
+  "raw_len": 519,
+  "error": null
+ },
+ {
+  "call_id": "llm-79eb15858088",
+  "expert": "REGULATORY",
+  "unit": "rec-62e1389d12a09da5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.38,
+  "raw_len": 531,
+  "error": null
+ },
+ {
+  "call_id": "llm-53bbb79694ba",
+  "expert": "REGULATORY",
+  "unit": "rec-03917c0e17bd1a63",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 21.24,
+  "raw_len": 414,
+  "error": null
+ },
+ {
+  "call_id": "llm-fb1239886838",
+  "expert": "REGULATORY",
+  "unit": "rec-4b45c830027bcbc3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.54,
+  "raw_len": 506,
+  "error": null
+ },
+ {
+  "call_id": "llm-167d00d227ca",
+  "expert": "REGULATORY",
+  "unit": "rec-2a087800e25837ae",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.72,
+  "raw_len": 526,
+  "error": null
+ },
+ {
+  "call_id": "llm-a63a76c9cfb1",
+  "expert": "REGULATORY",
+  "unit": "rec-eb7af134db18fbd0",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.45,
+  "raw_len": 502,
+  "error": null
+ },
+ {
+  "call_id": "llm-3b956350ea4d",
+  "expert": "REGULATORY",
+  "unit": "rec-814e1e0e05380e78",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.99,
+  "raw_len": 459,
+  "error": null
+ },
+ {
+  "call_id": "llm-84a4badae12a",
+  "expert": "REGULATORY",
+  "unit": "rec-207d02811ef3d149",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.95,
+  "raw_len": 467,
+  "error": null
+ },
+ {
+  "call_id": "llm-0d36a54f65bc",
+  "expert": "REGULATORY",
+  "unit": "rec-a5b4dfbb2f5ad5d3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.14,
+  "raw_len": 472,
+  "error": null
+ },
+ {
+  "call_id": "llm-dcefce544bf1",
+  "expert": "REGULATORY",
+  "unit": "rec-b9f11dd9d3963b94",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 22.09,
+  "raw_len": 347,
+  "error": null
+ },
+ {
+  "call_id": "llm-c63815255f07",
+  "expert": "REGULATORY",
+  "unit": "rec-284aedafa8dddd56",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.61,
+  "raw_len": 505,
+  "error": null
+ },
+ {
+  "call_id": "llm-e4fb681b90e0",
+  "expert": "REGULATORY",
+  "unit": "rec-0cd391eb90f3c9c3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.73,
+  "raw_len": 481,
+  "error": null
+ },
+ {
+  "call_id": "llm-0b1b55403f5d",
+  "expert": "REGULATORY",
+  "unit": "rec-fb8002f6d8d67ca3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.89,
+  "raw_len": 420,
+  "error": null
+ },
+ {
+  "call_id": "llm-0ab206d51835",
+  "expert": "REGULATORY",
+  "unit": "rec-0dabdffc2499e72d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.48,
+  "raw_len": 374,
+  "error": null
+ },
+ {
+  "call_id": "llm-4a9d47058b05",
+  "expert": "REGULATORY",
+  "unit": "rec-7b1d0018e0a7b892",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.59,
+  "raw_len": 456,
+  "error": null
+ },
+ {
+  "call_id": "llm-b3a665c46a71",
+  "expert": "REGULATORY",
+  "unit": "rec-e0b2f74690c62d12",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.53,
+  "raw_len": 531,
+  "error": null
+ },
+ {
+  "call_id": "llm-2bd5072db9fe",
+  "expert": "REGULATORY",
+  "unit": "rec-401acfb9ab836af3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.88,
+  "raw_len": 401,
+  "error": null
+ },
+ {
+  "call_id": "llm-842d68f3499b",
+  "expert": "REGULATORY",
+  "unit": "rec-104ec2e369553178",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.77,
+  "raw_len": 600,
+  "error": null
+ },
+ {
+  "call_id": "llm-4cb42e642d62",
+  "expert": "REGULATORY",
+  "unit": "rec-56c5e933aa2819de",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.34,
+  "raw_len": 584,
+  "error": null
+ },
+ {
+  "call_id": "llm-76c2617c9e4e",
+  "expert": "REGULATORY",
+  "unit": "rec-fe5d4ee6d92f122e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.16,
+  "raw_len": 574,
+  "error": null
+ },
+ {
+  "call_id": "llm-481004528a56",
+  "expert": "REGULATORY",
+  "unit": "rec-b0bd7d132fff70f8",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.24,
+  "raw_len": 598,
+  "error": null
+ },
+ {
+  "call_id": "llm-59ea2392985f",
+  "expert": "REGULATORY",
+  "unit": "rec-2914af68576cb5b4",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.34,
+  "raw_len": 608,
+  "error": null
+ },
+ {
+  "call_id": "llm-27d710fc96fd",
+  "expert": "REGULATORY",
+  "unit": "rec-18d1cb0cbc537d07",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.56,
+  "raw_len": 514,
+  "error": null
+ },
+ {
+  "call_id": "llm-eae434e22934",
+  "expert": "REGULATORY",
+  "unit": "rec-c6fea3d236535532",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.95,
+  "raw_len": 514,
+  "error": null
+ },
+ {
+  "call_id": "llm-4f282b48cdfd",
+  "expert": "REGULATORY",
+  "unit": "rec-a97cc563d49e86fe",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.39,
+  "raw_len": 526,
+  "error": null
+ },
+ {
+  "call_id": "llm-c409a4f13929",
+  "expert": "REGULATORY",
+  "unit": "rec-e58810852f84eec9",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.58,
+  "raw_len": 528,
+  "error": null
+ },
+ {
+  "call_id": "llm-a5512ba17940",
+  "expert": "REGULATORY",
+  "unit": "rec-c2b7d491973850b2",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.78,
+  "raw_len": 461,
+  "error": null
+ },
+ {
+  "call_id": "llm-e551cedd8383",
+  "expert": "REGULATORY",
+  "unit": "rec-3085302a6a1a41d7",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.34,
+  "raw_len": 613,
+  "error": null
+ },
+ {
+  "call_id": "llm-c450630f000b",
+  "expert": "REGULATORY",
+  "unit": "rec-d793d4dfdbe58a55",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.22,
+  "raw_len": 450,
+  "error": null
+ },
+ {
+  "call_id": "llm-a250bcf653d4",
+  "expert": "REGULATORY",
+  "unit": "rec-642f2def6cd789a5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.78,
+  "raw_len": 482,
+  "error": null
+ },
+ {
+  "call_id": "llm-4eec190a3a60",
+  "expert": "REGULATORY",
+  "unit": "rec-72d639d67763e8c5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.47,
+  "raw_len": 487,
+  "error": null
+ },
+ {
+  "call_id": "llm-4478a985747e",
+  "expert": "REGULATORY",
+  "unit": "rec-e331cd2c6767296f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.99,
+  "raw_len": 458,
+  "error": null
+ },
+ {
+  "call_id": "llm-d28dae295827",
+  "expert": "REGULATORY",
+  "unit": "rec-46e04aeaafab5400",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.29,
+  "raw_len": 458,
+  "error": null
+ },
+ {
+  "call_id": "llm-f68c42d1340f",
+  "expert": "REGULATORY",
+  "unit": "rec-ccc1eaf9f98fd503",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.96,
+  "raw_len": 458,
+  "error": null
+ },
+ {
+  "call_id": "llm-86580332ee4c",
+  "expert": "REGULATORY",
+  "unit": "rec-b64c4f3071c70007",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.65,
+  "raw_len": 525,
+  "error": null
+ },
+ {
+  "call_id": "llm-1a1d9d02637c",
+  "expert": "REGULATORY",
+  "unit": "rec-ac00a59b618d0b09",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.06,
+  "raw_len": 518,
+  "error": null
+ },
+ {
+  "call_id": "llm-b6f51e56417d",
+  "expert": "REGULATORY",
+  "unit": "rec-74ff2a0592937823",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.14,
+  "raw_len": 514,
+  "error": null
+ },
+ {
+  "call_id": "llm-8e1fe9051bf4",
+  "expert": "REGULATORY",
+  "unit": "rec-83bfd3889ed3654f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.8,
+  "raw_len": 500,
+  "error": null
+ },
+ {
+  "call_id": "llm-56794c7b3383",
+  "expert": "REGULATORY",
+  "unit": "rec-f276eb609aef848a",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.97,
+  "raw_len": 503,
+  "error": null
+ },
+ {
+  "call_id": "llm-100a19a8f71d",
+  "expert": "REGULATORY",
+  "unit": "rec-32e1df2adaaa6b49",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.72,
+  "raw_len": 532,
+  "error": null
+ },
+ {
+  "call_id": "llm-d17971b6d08a",
+  "expert": "REGULATORY",
+  "unit": "rec-bfb54c580e7d5b82",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 23.55,
+  "raw_len": 419,
+  "error": null
+ },
+ {
+  "call_id": "llm-786fe731cd2a",
+  "expert": "REGULATORY",
+  "unit": "rec-6a37e3199c0c0802",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.08,
+  "raw_len": 520,
+  "error": null
+ },
+ {
+  "call_id": "llm-5ed3777bfe5a",
+  "expert": "REGULATORY",
+  "unit": "rec-9b9b6b70c63a1f85",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.77,
+  "raw_len": 702,
+  "error": null
+ },
+ {
+  "call_id": "llm-d7aaff8681f8",
+  "expert": "REGULATORY",
+  "unit": "rec-0404b41c0265d1d8",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.57,
+  "raw_len": 553,
+  "error": null
+ },
+ {
+  "call_id": "llm-c8fdec7709cd",
+  "expert": "REGULATORY",
+  "unit": "rec-800a035cf11819d9",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.16,
+  "raw_len": 555,
+  "error": null
+ },
+ {
+  "call_id": "llm-dc8a2b7f4145",
+  "expert": "REGULATORY",
+  "unit": "rec-57426835d127558d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.16,
+  "raw_len": 488,
+  "error": null
+ },
+ {
+  "call_id": "llm-2202e4bddcb8",
+  "expert": "REGULATORY",
+  "unit": "rec-bef00229b74e19fc",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.24,
+  "raw_len": 464,
+  "error": null
+ },
+ {
+  "call_id": "llm-2a3123f3db92",
+  "expert": "REGULATORY",
+  "unit": "rec-5709a42354003b15",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.13,
+  "raw_len": 541,
+  "error": null
+ },
+ {
+  "call_id": "llm-149b71cee506",
+  "expert": "REGULATORY",
+  "unit": "rec-560c2c68926d3c1e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.35,
+  "raw_len": 524,
+  "error": null
+ },
+ {
+  "call_id": "llm-2bd573f2eac5",
+  "expert": "REGULATORY",
+  "unit": "rec-104e0c05174a0f6c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.58,
+  "raw_len": 528,
+  "error": null
+ },
+ {
+  "call_id": "llm-e43a02353b56",
+  "expert": "REGULATORY",
+  "unit": "rec-21c842f02794aa67",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.63,
+  "raw_len": 546,
+  "error": null
+ },
+ {
+  "call_id": "llm-071104668495",
+  "expert": "REGULATORY",
+  "unit": "rec-416802c94910cdde",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.28,
+  "raw_len": 501,
+  "error": null
+ },
+ {
+  "call_id": "llm-d1d788f624dd",
+  "expert": "REGULATORY",
+  "unit": "rec-cfabd45ba589d838",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.71,
+  "raw_len": 544,
+  "error": null
+ },
+ {
+  "call_id": "llm-ca3aed9675e7",
+  "expert": "REGULATORY",
+  "unit": "rec-c7941a0eff0bc22c",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.81,
+  "raw_len": 437,
+  "error": null
+ },
+ {
+  "call_id": "llm-a65804985ea5",
+  "expert": "REGULATORY",
+  "unit": "rec-a8c6782050e06757",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 23.85,
+  "raw_len": 433,
+  "error": null
+ },
+ {
+  "call_id": "llm-471abe3e5a8d",
+  "expert": "REGULATORY",
+  "unit": "rec-5615bf4d8c4aff5b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.4,
+  "raw_len": 455,
+  "error": null
+ },
+ {
+  "call_id": "llm-bea1c2522965",
+  "expert": "REGULATORY",
+  "unit": "rec-b06097a7cfc498be",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.1,
+  "raw_len": 464,
+  "error": null
+ },
+ {
+  "call_id": "llm-3a49855d488d",
+  "expert": "REGULATORY",
+  "unit": "rec-2434de3a732b7dda",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.75,
+  "raw_len": 509,
+  "error": null
+ },
+ {
+  "call_id": "llm-16b98a7fa7cc",
+  "expert": "REGULATORY",
+  "unit": "rec-8845834af32cbbc7",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.34,
+  "raw_len": 470,
+  "error": null
+ },
+ {
+  "call_id": "llm-7492f47ca49c",
+  "expert": "REGULATORY",
+  "unit": "rec-42aead7c958c5c8e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.47,
+  "raw_len": 506,
+  "error": null
+ },
+ {
+  "call_id": "llm-54f1f2c8c2ab",
+  "expert": "REGULATORY",
+  "unit": "rec-0f8854eda6750a93",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.3,
+  "raw_len": 499,
+  "error": null
+ },
+ {
+  "call_id": "llm-58a9cab9debd",
+  "expert": "REGULATORY",
+  "unit": "rec-f8f7de5378f256e2",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.38,
+  "raw_len": 512,
+  "error": null
+ },
+ {
+  "call_id": "llm-9e11df87e7a5",
+  "expert": "REGULATORY",
+  "unit": "rec-4b825308bdc2e0a3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.42,
+  "raw_len": 411,
+  "error": null
+ },
+ {
+  "call_id": "llm-860e0f3e1a64",
+  "expert": "REGULATORY",
+  "unit": "rec-850828e07185d641",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.43,
+  "raw_len": 523,
+  "error": null
+ },
+ {
+  "call_id": "llm-e5d760c6c0dc",
+  "expert": "REGULATORY",
+  "unit": "rec-447eb2c62d2754df",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.87,
+  "raw_len": 508,
+  "error": null
+ },
+ {
+  "call_id": "llm-36a7af688b2b",
+  "expert": "REGULATORY",
+  "unit": "rec-3bcc8a52126f218f",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.33,
+  "raw_len": 500,
+  "error": null
+ },
+ {
+  "call_id": "llm-d1ee6ac83640",
+  "expert": "REGULATORY",
+  "unit": "rec-fcdb52df110efcf4",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.46,
+  "raw_len": 485,
+  "error": null
+ },
+ {
+  "call_id": "llm-0afc130abda6",
+  "expert": "REGULATORY",
+  "unit": "rec-f9863e040e25a3ca",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 18.74,
+  "raw_len": 324,
+  "error": null
+ },
+ {
+  "call_id": "llm-dc05fb321963",
+  "expert": "REGULATORY",
+  "unit": "rec-6858133e127e6d20",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 18.74,
+  "raw_len": 328,
+  "error": null
+ },
+ {
+  "call_id": "llm-bd2cea1fbc4f",
+  "expert": "REGULATORY",
+  "unit": "rec-798ba8ec531ec5f1",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 20.3,
+  "raw_len": 383,
+  "error": null
+ },
+ {
+  "call_id": "llm-37760606ceef",
+  "expert": "REGULATORY",
+  "unit": "rec-dc5765d37bebfb3b",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 18.55,
+  "raw_len": 328,
+  "error": null
+ },
+ {
+  "call_id": "llm-54798370da24",
+  "expert": "REGULATORY",
+  "unit": "rec-df9944d70ec10520",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 19.89,
+  "raw_len": 387,
+  "error": null
+ },
+ {
+  "call_id": "llm-853098ca8884",
+  "expert": "REGULATORY",
+  "unit": "rec-7b6d158e5df2c34e",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 19.06,
+  "raw_len": 324,
+  "error": null
+ },
+ {
+  "call_id": "llm-cc7dfa1c5312",
+  "expert": "REGULATORY",
+  "unit": "rec-ad5c75e429b497fd",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 19.07,
+  "raw_len": 324,
+  "error": null
+ },
+ {
+  "call_id": "llm-b5d761f7f97e",
+  "expert": "REGULATORY",
+  "unit": "rec-917a939d46c3ca72",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.67,
+  "raw_len": 526,
+  "error": null
+ },
+ {
+  "call_id": "llm-a78efb95eb0e",
+  "expert": "REGULATORY",
+  "unit": "rec-5992f149a0e54dd2",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.07,
+  "raw_len": 579,
+  "error": null
+ },
+ {
+  "call_id": "llm-5a448b91128d",
+  "expert": "REGULATORY",
+  "unit": "rec-8695e22d41c0f411",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.3,
+  "raw_len": 574,
+  "error": null
+ },
+ {
+  "call_id": "llm-8471f8999ba1",
+  "expert": "REGULATORY",
+  "unit": "rec-977e1772519662b2",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.92,
+  "raw_len": 526,
+  "error": null
+ },
+ {
+  "call_id": "llm-e3b4bcd76095",
+  "expert": "REGULATORY",
+  "unit": "rec-13306f6b569de9d3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.34,
+  "raw_len": 574,
+  "error": null
+ },
+ {
+  "call_id": "llm-79ffaf175a97",
+  "expert": "REGULATORY",
+  "unit": "rec-7267a5fff23eb259",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.1,
+  "raw_len": 493,
+  "error": null
+ },
+ {
+  "call_id": "llm-0da82aa280a7",
+  "expert": "REGULATORY",
+  "unit": "rec-8c1a0d7079eca9a3",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.44,
+  "raw_len": 574,
+  "error": null
+ },
+ {
+  "call_id": "llm-0a742e901a83",
+  "expert": "REGULATORY",
+  "unit": "rec-97a0c75e8a9ae838",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.48,
+  "raw_len": 554,
+  "error": null
+ },
+ {
+  "call_id": "llm-d1144a5a0742",
+  "expert": "REGULATORY",
+  "unit": "rec-a5903de70687e288",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.52,
+  "raw_len": 543,
+  "error": null
+ },
+ {
+  "call_id": "llm-1614b0f391de",
+  "expert": "REGULATORY",
+  "unit": "rec-9f38c6420acd1b68",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.29,
+  "raw_len": 471,
+  "error": null
+ },
+ {
+  "call_id": "llm-fcf3238c89e9",
+  "expert": "REGULATORY",
+  "unit": "rec-e2da65ebac952e02",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.02,
+  "raw_len": 518,
+  "error": null
+ },
+ {
+  "call_id": "llm-0e503755b121",
+  "expert": "REGULATORY",
+  "unit": "rec-e0a9bccca8043c22",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.25,
+  "raw_len": 507,
+  "error": null
+ },
+ {
+  "call_id": "llm-1f2158ba1eec",
+  "expert": "REGULATORY",
+  "unit": "rec-59e67770a61ea9eb",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.0,
+  "raw_len": 499,
+  "error": null
+ },
+ {
+  "call_id": "llm-37a123132980",
+  "expert": "REGULATORY",
+  "unit": "rec-c31770f6f675026d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.27,
+  "raw_len": 567,
+  "error": null
+ },
+ {
+  "call_id": "llm-5dfa6da07a9e",
+  "expert": "REGULATORY",
+  "unit": "rec-3e1d1a134fc57900",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.12,
+  "raw_len": 498,
+  "error": null
+ },
+ {
+  "call_id": "llm-93e00d233c78",
+  "expert": "REGULATORY",
+  "unit": "rec-5dc17e549507f538",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.4,
+  "raw_len": 585,
+  "error": null
+ },
+ {
+  "call_id": "llm-87733e2ad846",
+  "expert": "REGULATORY",
+  "unit": "rec-d1a37985e1667811",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.91,
+  "raw_len": 563,
+  "error": null
+ },
+ {
+  "call_id": "llm-19b2dffe57fb",
+  "expert": "REGULATORY",
+  "unit": "rec-5ee41dfa43c9fe97",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.94,
+  "raw_len": 621,
+  "error": null
+ },
+ {
+  "call_id": "llm-da86eea1a3a9",
+  "expert": "REGULATORY",
+  "unit": "rec-d8fe552c906febf7",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.39,
+  "raw_len": 452,
+  "error": null
+ },
+ {
+  "call_id": "llm-0acca5c6b578",
+  "expert": "REGULATORY",
+  "unit": "rec-6d7871310ba4c551",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.53,
+  "raw_len": 483,
+  "error": null
+ },
+ {
+  "call_id": "llm-38bebf77306c",
+  "expert": "REGULATORY",
+  "unit": "rec-8564996784209916",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.19,
+  "raw_len": 574,
+  "error": null
+ },
+ {
+  "call_id": "llm-df80207ed835",
+  "expert": "REGULATORY",
+  "unit": "rec-73b4f0fd3665646d",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.01,
+  "raw_len": 472,
+  "error": null
+ },
+ {
+  "call_id": "llm-e7474e61670a",
+  "expert": "REGULATORY",
+  "unit": "rec-39cdac49f3d89c46",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.87,
+  "raw_len": 741,
+  "error": null
+ },
+ {
+  "call_id": "llm-ea9366f61c15",
+  "expert": "REGULATORY",
+  "unit": "rec-9460e6ea9b3238f0",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.54,
+  "raw_len": 448,
+  "error": null
+ },
+ {
+  "call_id": "llm-8078cc865a9d",
+  "expert": "REGULATORY",
+  "unit": "rec-5232d7f4e2992b47",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 22.53,
+  "raw_len": 384,
+  "error": null
+ },
+ {
+  "call_id": "llm-e3bbff32efbb",
+  "expert": "REGULATORY",
+  "unit": "rec-927e377a7e8b9de0",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.67,
+  "raw_len": 687,
+  "error": null
+ },
+ {
+  "call_id": "llm-b6a7b1ac8832",
+  "expert": "REGULATORY",
+  "unit": "rec-9043a86b040996f4",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.55,
+  "raw_len": 462,
+  "error": null
+ },
+ {
+  "call_id": "llm-6bf2bd820aeb",
+  "expert": "REGULATORY",
+  "unit": "rec-a645e1b67f98cd16",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.12,
+  "raw_len": 466,
+  "error": null
+ },
+ {
+  "call_id": "llm-b8e83f6b3f83",
+  "expert": "REGULATORY",
+  "unit": "rec-79f3c3e1583037f5",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.83,
+  "raw_len": 518,
+  "error": null
+ },
+ {
+  "call_id": "llm-34789d1e9452",
+  "expert": "REGULATORY",
+  "unit": "rec-d656513a62d17de6",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.85,
+  "raw_len": 461,
+  "error": null
+ },
+ {
+  "call_id": "llm-4e21fb804d19",
+  "expert": "COMPOSER",
+  "unit": "sec-0001",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 150.2,
+  "raw_len": 1674,
+  "error": null
+ },
+ {
+  "call_id": "llm-f825656aaab6",
+  "expert": "COMPOSER",
+  "unit": "sec-0002",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 53.3,
+  "raw_len": 801,
+  "error": null
+ },
+ {
+  "call_id": "llm-9be10131fde2",
+  "expert": "COMPOSER",
+  "unit": "sec-0003",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 71.81,
+  "raw_len": 1070,
+  "error": null
+ },
+ {
+  "call_id": "llm-ba355e0a7c5c",
+  "expert": "COMPOSER",
+  "unit": "sec-0004",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 42.93,
+  "raw_len": 739,
+  "error": null
+ },
+ {
+  "call_id": "llm-b6228dcedfd7",
+  "expert": "COMPOSER",
+  "unit": "sec-0005",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 58.59,
+  "raw_len": 841,
+  "error": null
+ },
+ {
+  "call_id": "llm-7543d7c90df4",
+  "expert": "COMPOSER",
+  "unit": "sec-0006",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 39.6,
+  "raw_len": 712,
+  "error": null
+ },
+ {
+  "call_id": "llm-ef8c31de1455",
+  "expert": "COMPOSER",
+  "unit": "sec-0007",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.34,
+  "raw_len": 586,
+  "error": null
+ },
+ {
+  "call_id": "llm-b5503423a31b",
+  "expert": "COMPOSER",
+  "unit": "sec-0008",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.31,
+  "raw_len": 578,
+  "error": null
+ },
+ {
+  "call_id": "llm-cfa5568d6aca",
+  "expert": "COMPOSER",
+  "unit": "sec-0009",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.73,
+  "raw_len": 613,
+  "error": null
+ },
+ {
+  "call_id": "llm-707f978f5b0a",
+  "expert": "COMPOSER",
+  "unit": "sec-0010",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.82,
+  "raw_len": 587,
+  "error": null
+ },
+ {
+  "call_id": "llm-82ad30dd5fd3",
+  "expert": "COMPOSER",
+  "unit": "sec-0011",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 43.99,
+  "raw_len": 818,
+  "error": null
+ },
+ {
+  "call_id": "llm-7fc216b95e3e",
+  "expert": "COMPOSER",
+  "unit": "sec-0012",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 20.94,
+  "raw_len": 513,
+  "error": null
+ },
+ {
+  "call_id": "llm-5c0d83de60c0",
+  "expert": "COMPOSER",
+  "unit": "sec-0013",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 39.4,
+  "raw_len": 699,
+  "error": null
+ },
+ {
+  "call_id": "llm-f00a57e07b16",
+  "expert": "COMPOSER",
+  "unit": "sec-0014",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 38.63,
+  "raw_len": 699,
+  "error": null
+ },
+ {
+  "call_id": "llm-8ab25627f310",
+  "expert": "COMPOSER",
+  "unit": "sec-0015",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 198.99,
+  "raw_len": 1511,
+  "error": null
+ },
+ {
+  "call_id": "llm-1a0ede6c64b3",
+  "expert": "COMPOSER",
+  "unit": "sec-0016",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 59.83,
+  "raw_len": 912,
+  "error": null
+ },
+ {
+  "call_id": "llm-aa33a6e23da9",
+  "expert": "COMPOSER",
+  "unit": "sec-0017",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 73.62,
+  "raw_len": 1069,
+  "error": null
+ },
+ {
+  "call_id": "llm-c54b5082232b",
+  "expert": "COMPOSER",
+  "unit": "sec-0018",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 47.37,
+  "raw_len": 901,
+  "error": null
+ },
+ {
+  "call_id": "llm-565790522f3c",
+  "expert": "COMPOSER",
+  "unit": "sec-0019",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 53.69,
+  "raw_len": 866,
+  "error": null
+ },
+ {
+  "call_id": "llm-5c994fc02f00",
+  "expert": "COMPOSER",
+  "unit": "sec-0020",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 43.84,
+  "raw_len": 780,
+  "error": null
+ },
+ {
+  "call_id": "llm-423e7e96d1ca",
+  "expert": "COMPOSER",
+  "unit": "sec-0021",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.56,
+  "raw_len": 539,
+  "error": null
+ },
+ {
+  "call_id": "llm-ce739e3c2b26",
+  "expert": "COMPOSER",
+  "unit": "sec-0022",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 31.81,
+  "raw_len": 640,
+  "error": null
+ },
+ {
+  "call_id": "llm-c6bd3d3d2bca",
+  "expert": "COMPOSER",
+  "unit": "sec-0023",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 22.39,
+  "raw_len": 464,
+  "error": null
+ },
+ {
+  "call_id": "llm-4907940989d9",
+  "expert": "COMPOSER",
+  "unit": "sec-0024",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.94,
+  "raw_len": 586,
+  "error": null
+ },
+ {
+  "call_id": "llm-640d92c72756",
+  "expert": "COMPOSER",
+  "unit": "sec-0025",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 43.84,
+  "raw_len": 875,
+  "error": null
+ },
+ {
+  "call_id": "llm-626f01c59231",
+  "expert": "COMPOSER",
+  "unit": "sec-0026",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 23.69,
+  "raw_len": 583,
+  "error": null
+ },
+ {
+  "call_id": "llm-ee99fcb705ca",
+  "expert": "COMPOSER",
+  "unit": "sec-0027",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 39.46,
+  "raw_len": 708,
+  "error": null
+ },
+ {
+  "call_id": "llm-0ab6a8585801",
+  "expert": "COMPOSER",
+  "unit": "sec-0028",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 38.84,
+  "raw_len": 633,
+  "error": null
+ },
+ {
+  "call_id": "llm-c38d95043f07",
+  "expert": "COMPOSER",
+  "unit": "sec-0029",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 194.2,
+  "raw_len": 1465,
+  "error": null
+ },
+ {
+  "call_id": "llm-6c80f717d7eb",
+  "expert": "COMPOSER",
+  "unit": "sec-0030",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 59.55,
+  "raw_len": 868,
+  "error": null
+ },
+ {
+  "call_id": "llm-7dedee28a679",
+  "expert": "COMPOSER",
+  "unit": "sec-0031",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 61.87,
+  "raw_len": 877,
+  "error": null
+ },
+ {
+  "call_id": "llm-bcd9d143adbc",
+  "expert": "COMPOSER",
+  "unit": "sec-0032",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.23,
+  "raw_len": 544,
+  "error": null
+ },
+ {
+  "call_id": "llm-826e399f2e0b",
+  "expert": "COMPOSER",
+  "unit": "sec-0033",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 53.9,
+  "raw_len": 832,
+  "error": null
+ },
+ {
+  "call_id": "llm-7f6279619eba",
+  "expert": "COMPOSER",
+  "unit": "sec-0034",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 39.61,
+  "raw_len": 608,
+  "error": null
+ },
+ {
+  "call_id": "llm-139c88077e94",
+  "expert": "COMPOSER",
+  "unit": "sec-0035",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.23,
+  "raw_len": 587,
+  "error": null
+ },
+ {
+  "call_id": "llm-05a266d2d596",
+  "expert": "COMPOSER",
+  "unit": "sec-0036",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.55,
+  "raw_len": 639,
+  "error": null
+ },
+ {
+  "call_id": "llm-6040cfee7aad",
+  "expert": "COMPOSER",
+  "unit": "sec-0037",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 25.33,
+  "raw_len": 599,
+  "error": null
+ },
+ {
+  "call_id": "llm-1d045a0d68c7",
+  "expert": "COMPOSER",
+  "unit": "sec-0038",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 28.92,
+  "raw_len": 583,
+  "error": null
+ },
+ {
+  "call_id": "llm-f157bae852b9",
+  "expert": "COMPOSER",
+  "unit": "sec-0039",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 34.42,
+  "raw_len": 627,
+  "error": null
+ },
+ {
+  "call_id": "llm-c3eead70b50b",
+  "expert": "COMPOSER",
+  "unit": "sec-0040",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 48.95,
+  "raw_len": 781,
+  "error": null
+ },
+ {
+  "call_id": "llm-4e47a2182893",
+  "expert": "COMPOSER",
+  "unit": "sec-0041",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 36.05,
+  "raw_len": 586,
+  "error": null
+ },
+ {
+  "call_id": "llm-3ad76f955a4b",
+  "expert": "COMPOSER",
+  "unit": "sec-0042",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 36.2,
+  "raw_len": 774,
+  "error": null
+ },
+ {
+  "call_id": "llm-2373280dd235",
+  "expert": "COMPOSER",
+  "unit": "sec-0043",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 44.77,
+  "raw_len": 751,
+  "error": null
+ },
+ {
+  "call_id": "llm-5b2affef7fd3",
+  "expert": "COMPOSER",
+  "unit": "sec-0044",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 44.79,
+  "raw_len": 654,
+  "error": null
+ },
+ {
+  "call_id": "llm-bff7e5702773",
+  "expert": "COMPOSER",
+  "unit": "sec-0045",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.78,
+  "raw_len": 508,
+  "error": null
+ },
+ {
+  "call_id": "llm-f1a607aa039b",
+  "expert": "COMPOSER",
+  "unit": "sec-0046",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 43.94,
+  "raw_len": 660,
+  "error": null
+ },
+ {
+  "call_id": "llm-14bf72a34769",
+  "expert": "COMPOSER",
+  "unit": "sec-0047",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 36.12,
+  "raw_len": 586,
+  "error": null
+ },
+ {
+  "call_id": "llm-6ccc22fdbdc0",
+  "expert": "COMPOSER",
+  "unit": "sec-0048",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.55,
+  "raw_len": 565,
+  "error": null
+ },
+ {
+  "call_id": "llm-09140f604429",
+  "expert": "COMPOSER",
+  "unit": "sec-0049",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 30.28,
+  "raw_len": 640,
+  "error": null
+ },
+ {
+  "call_id": "llm-8ebe5ca6d35e",
+  "expert": "COMPOSER",
+  "unit": "sec-0050",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 23.99,
+  "raw_len": 529,
+  "error": null
+ },
+ {
+  "call_id": "llm-4923375f2e84",
+  "expert": "COMPOSER",
+  "unit": "sec-0051",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 32.7,
+  "raw_len": 759,
+  "error": null
+ },
+ {
+  "call_id": "llm-b510fa7d096a",
+  "expert": "COMPOSER",
+  "unit": "sec-0052",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.33,
+  "raw_len": 512,
+  "error": null
+ },
+ {
+  "call_id": "llm-66ab6257b6ef",
+  "expert": "COMPOSER",
+  "unit": "sec-0053",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 42.73,
+  "raw_len": 740,
+  "error": null
+ },
+ {
+  "call_id": "llm-3f4ee29f946c",
+  "expert": "COMPOSER",
+  "unit": "sec-0054",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 38.95,
+  "raw_len": 764,
+  "error": null
+ },
+ {
+  "call_id": "llm-38cdaadaf8fa",
+  "expert": "COMPOSER",
+  "unit": "sec-0055",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 55.77,
+  "raw_len": 792,
+  "error": null
+ },
+ {
+  "call_id": "llm-a40f7cf8ad43",
+  "expert": "COMPOSER",
+  "unit": "sec-0056",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 54.15,
+  "raw_len": 759,
+  "error": null
+ },
+ {
+  "call_id": "llm-c9f76e450a55",
+  "expert": "COMPOSER",
+  "unit": "sec-0057",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.05,
+  "raw_len": 692,
+  "error": null
+ },
+ {
+  "call_id": "llm-26ca5c35da24",
+  "expert": "COMPOSER",
+  "unit": "sec-0058",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 47.01,
+  "raw_len": 806,
+  "error": null
+ },
+ {
+  "call_id": "llm-afcd3ac030b2",
+  "expert": "COMPOSER",
+  "unit": "sec-0059",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 37.61,
+  "raw_len": 683,
+  "error": null
+ },
+ {
+  "call_id": "llm-88e911831fab",
+  "expert": "COMPOSER",
+  "unit": "sec-0060",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 27.38,
+  "raw_len": 536,
+  "error": null
+ },
+ {
+  "call_id": "llm-6b7146f82f90",
+  "expert": "COMPOSER",
+  "unit": "sec-0061",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 29.96,
+  "raw_len": 640,
+  "error": null
+ },
+ {
+  "call_id": "llm-d9e45cd8b091",
+  "expert": "COMPOSER",
+  "unit": "sec-0062",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 24.72,
+  "raw_len": 585,
+  "error": null
+ },
+ {
+  "call_id": "llm-6220825e6147",
+  "expert": "COMPOSER",
+  "unit": "sec-0063",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 26.21,
+  "raw_len": 562,
+  "error": null
+ },
+ {
+  "call_id": "llm-924f4ec228a0",
+  "expert": "COMPOSER",
+  "unit": "sec-0064",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 33.98,
+  "raw_len": 651,
+  "error": null
+ },
+ {
+  "call_id": "llm-54900bf8fdd8",
+  "expert": "COMPOSER",
+  "unit": "sec-0065",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 37.49,
+  "raw_len": 629,
+  "error": null
+ },
+ {
+  "call_id": "llm-4317b64e4095",
+  "expert": "COMPOSER",
+  "unit": "sec-0066",
+  "prompt_id": "shadow-g4-interp-v1",
+  "ok": true,
+  "seconds": 41.48,
+  "raw_len": 759,
+  "error": null
+ }
+]
