@@ -1,0 +1,64 @@
+{
+ "schema": "SHADOW_CF6_2_PROMPT_PROPOSE/v1",
+ "action": "propose",
+ "prompt_id": "composer_structured_v2",
+ "prompt_version": "shadow-cf6-composer-struct-v2",
+ "prompt_path": "factory/regulatory/shadow/prompts/composer_structured_v2.yaml",
+ "prompt_sha256": "694000793697ecf87a33ac6c00a33b17e735aeda82332392eaaa317b4ccf6c79",
+ "schema_version": "SHADOW_CF6_COMPOSER_CONTRACT/v1.2",
+ "supersedes": "shadow-g4-interp-v1 (COMPOSER, prosa libre — PROTOTIPO/CF6-0)",
+ "status_at_propose": "DRAFT_UNSIGNED",
+ "few_shot_present": true,
+ "few_shot_based_on": "21_CFR_11.10(e) — sección real sec-0031 (RW-0011), CF-6 v1.2 CF6-2",
+ "contract": {
+  "required_keys": [
+   "section_type",
+   "regulatory_state",
+   "evidence_observed",
+   "evidence_limitation",
+   "technical_findings",
+   "reviewer_action",
+   "prohibited_conclusion"
+  ],
+  "forbidden_keys": [
+   "narrative",
+   "assessment",
+   "conclusion",
+   "verdict",
+   "compliance",
+   "capa"
+  ],
+  "section_type_values": [
+   "REGULATORY",
+   "FUNCTIONAL_TRACEABILITY",
+   "TECHNICAL",
+   "CROSS_DOMAIN"
+  ],
+  "regulatory_state_values": [
+   "INCONCLUSIVE",
+   "NOT_ANALYZABLE",
+   "NOT_APPLICABLE"
+  ],
+  "output": "json_only",
+  "temperature": 0.0
+ },
+ "structure_contract_unchanged_vs_cf6_G2_draft": true,
+ "qstate_unchanged": true,
+ "renderer_unchanged": true,
+ "g4d_unchanged": true,
+ "routing_unchanged": true,
+ "proposed_by": "Capa 8 (Claude Code)",
+ "proposed_at": "2026-09-03T23:46:22Z",
+ "invariants": {
+  "LLM_CALLS": 0,
+  "G4D_CALLS": 0,
+  "L2_MUTATIONS": 0,
+  "HUMAN_STATE_CHANGES": 0,
+  "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+ },
+ "awaiting": {
+  "action": "human_confirmed",
+  "authority": "Capa 9 (Cesar)",
+  "then": "congelar prompt firmado + evidencia propose→human_confirmed en el tag cf6-G2"
+ }
+}

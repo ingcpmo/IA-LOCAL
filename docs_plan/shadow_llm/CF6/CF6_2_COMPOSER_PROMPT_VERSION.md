@@ -86,7 +86,7 @@ Según CF-6 v1.2 §6:
 
 ---
 
-## 6 · Verificación de esta corrida
+## 6 · Verificación (cf6-G2-draft)
 
 ```
 LLM_CALLS = 0 · G4D_CALLS = 0 · L2_MUTATIONS = 0 · HUMAN_STATE_CHANGES = 0
@@ -94,3 +94,89 @@ FINDINGS_FINGERPRINT = 235f724a738ce783…  (sin mover; no se tocó L2)
 tags cf6-G1 y cf6-G1-r1 intactos ; tag cf6-G2 NO creado
 tests: test_shadow_composer_prompt.py 12/12 · test_shadow_composer_gate.py 23/23
 ```
+
+---
+
+## 7 · Completado de CF6-2 — few-shot profesional + registro `propose` (sin LLM)
+
+Tras la auditoría de `cf6-G2-draft` (implementación técnica correcta, CF6-2 incompleto),
+se incorporan **solo los faltantes ya definidos por el plan**. Sin cambiar contrato
+estructural, Q-STATE, renderer, G4d, L2, routing ni ningún otro componente.
+
+### 7.1 · Few-shot profesional (`21 CFR 11.10(e)`)
+
+`composer_structured_v2.yaml` → clave `few_shot`, basada en la sección **real**
+`sec-0031` (RW-0011, `21_CFR_11.10(e)`, 9 findings `REGULATORY_INCONCLUSIVE`). Demuestra
+el comportamiento correcto que v1 no tenía:
+
+| Aspecto | Qué modela el ejemplo |
+|---|---|
+| Estado | `regulatory_state = INCONCLUSIVE` **preservado** — no elevado a incumplimiento |
+| Citas | cada `quote` de `evidence_observed` es **subcadena EXACTA** de la cita anclada L2 (`"setpoint, and any time-delay associated with the alarm."`, `"When, after a configurable time"`) |
+| Límite de evidencia | lenguaje neutro (representación normalizada de G4d): *"no se ancló eco léxico … solo hay pasajes de recuperación pendientes de verificación humana"* |
+| Acción | `reviewer_action` = verificación **para el revisor**, sin acción correctiva/CAPA/desviación |
+| `prohibited_conclusion` | `"NONE"` |
+
+**Demostración doble** (tests `test_few_shot_expected_output_passes_*`):
+el `expected_output` del few-shot pasa `validate_structure_contract()` **y**
+`composer_gate.verify_qstate()` contra la sección real `sec-0031` (Q-STATE-1..6 = PASS,
+0 violaciones). `render()` inserta el bloque `EJEMPLO DE REFERENCIA` en el prompt.
+
+### 7.2 · Registro `propose`
+
+`docs_plan/shadow_llm/CF6/CF6_2_PROPOSE_shadow-cf6-composer-struct-v2.json`
+(`composer_prompt.propose_record()`) — mitad `propose` de la evidencia gobernada
+`propose → human_confirmed`:
+
+```
+prompt_version = shadow-cf6-composer-struct-v2
+prompt_sha256  = <sha256 del YAML>            (recalculado al firmar)
+status_at_propose = DRAFT_UNSIGNED
+few_shot_present = YES ; few_shot_based_on = 21_CFR_11.10(e) (sec-0031)
+structure_contract_unchanged / qstate_unchanged / renderer_unchanged /
+  g4d_unchanged / routing_unchanged = true
+invariants = { LLM_CALLS 0 · G4D_CALLS 0 · L2_MUTATIONS 0 · HUMAN_STATE_CHANGES 0 ·
+               FINDINGS_FINGERPRINT 235f724a738ce783… }
+proposed_by = Capa 8 (Claude Code)
+awaiting = { action: human_confirmed · authority: Capa 9 (Cesar) }
+```
+
+### 7.3 · Firma de Capa 9 y evidencia `propose → human_confirmed` — CERRADO
+
+Capa 9 (Cesar) aprobó explícitamente el `composer_prompt_version` con el few-shot
+(mensaje de sesión, 2026-09-03). Capa 8 registró:
+
+- **YAML firmado** (`composer_structured_v2.yaml`): `status: SIGNED`,
+  `signed_by: "Capa 9 (Cesar)"`, `signed_at: "2026-09-03"`,
+  `signed_on: "aprobación explícita … registro propose sha256 694000…f6c79"`.
+  `composer_prompt.assert_signed()` ya **no** falla.
+- **Registro `propose`** congelado:
+  `CF6_2_PROPOSE_shadow-cf6-composer-struct-v2.json`
+  (`status_at_propose = DRAFT_UNSIGNED`, `prompt_sha256 = 694000…f6c79`).
+- **Registro `human_confirmed`** + **bundle gobernado**:
+  `CF6_2_GOVERNED_EVIDENCE_shadow-cf6-composer-struct-v2.json` —
+  `propose_to_human_confirmed_consistent = true`,
+  `signed_prompt_sha256 = b363d2a6…c2b693`,
+  `confirms_propose.proposed_prompt_sha256 = 694000…f6c79`,
+  `frozen_in_tag = cf6-G2`.
+
+Todo congelado en **un único commit + tag `cf6-G2`**. `cf6-G2-draft` intacto.
+
+### 7.4 · Confirmación de cierre CF6-2
+
+```
+PROMPT_VERSION           = shadow-cf6-composer-struct-v2
+FEW_SHOT_PRESENT         = YES   (21 CFR 11.10(e) / sec-0031, pasa contrato + Q-STATE)
+PROPOSE_PRESENT          = YES
+HUMAN_CONFIRMED          = YES   (Capa 9 · Cesar · 2026-09-03 · mensaje de sesión)
+SIGNATURE_FROZEN_IN_TAG  = YES
+TAG                      = cf6-G2
+LLM_CALLS                = 0
+G4D_CALLS                = 0
+L2_MUTATIONS             = 0
+HUMAN_STATE_CHANGES      = 0
+FINDINGS_FINGERPRINT     = 235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23
+```
+
+`experts.run_composer` **no** se reconecta a este prompt: ese wiring es **CF6-3**.
+**No** se ejecuta CF6-2.G ni CF6-2.5. STOP después de `cf6-G2`.
