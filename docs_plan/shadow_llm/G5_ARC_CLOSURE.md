@@ -95,7 +95,7 @@ Historia lineal, sin merges. Ningún tag previo se movió en ninguna corrección
 | **G4a Technical** | 17 findings, 17 llamadas | `BEHAVIOR_NOT_FOUND_IN_SCOPE` ×17 · 17/17 `SHADOW_ACCEPTED` | El 7B **no encontró** el comportamiento requerido parafraseado en el alcance de ninguna de las 17 reglas de completitud → **concuerda con el gap determinista**; no aporta señal nueva más allá de confirmar la ausencia. |
 | **G4b Cross-domain** | 15 relaciones, 15 llamadas | `DISAGREEMENT_PERSISTS` ×15 · 15/15 `SHADOW_ACCEPTED` | El modelo consideró que las 15 señales "gap técnico" ↔ "INCONCLUSIVE regulatorio" **no se reconcilian solas** → **las 15 a revisión humana**. Conservador (fail-toward-human), sin resolver ninguna. |
 | **G4c Functional/Traceability** | 98 findings, 98 llamadas | `LIKELY_REAL_GAP` ×64 · `LIKELY_EXTRACTION_LIMIT` ×34 · 98/98 `SHADOW_ACCEPTED` | **Señal diferenciada real:** el modelo separa "hueco de trazabilidad real" (64) de "límite de extracción, el id existe pero la arista no se trazó" (34). Es la contribución de asistencia más sustantiva del arco — **priorización para el revisor**, no conclusión. |
-| **G4d Regulatory-triage** | 285 findings, 285 llamadas | `CANDIDATE_RANKING_PROVIDED` ×278 · `NO_USEFUL_CANDIDATE` ×7 · **242 `SHADOW_ACCEPTED` / 43 `SHADOW_REJECTED`** (todas por anclaje) | Ordena los ≤5 candidatos de recuperación para el revisor. **43 opiniones rechazadas** porque el modelo citó texto que no ancla literalmente — el verificador fail-closed es indispensable como gate duro. **0 `INCONCLUSIVE → observed`**: los 285 findings L2 no se tocan. |
+| **G4d Regulatory-triage** | 285 findings, 285 llamadas | `CANDIDATE_RANKING_PROVIDED` ×278 · `NO_USEFUL_CANDIDATE` ×7 · **242 `SHADOW_ACCEPTED` / 43 `SHADOW_REJECTED`** (todas por anclaje) · **re-verificado offline en shadow-G5.1: stored == recomputed, 0 divergencias, `HALLUCINATION_COUNT = 43` reproducible** | Ordena los ≤5 candidatos de recuperación para el revisor. **43 opiniones rechazadas** porque el modelo citó texto que no ancla literalmente — el verificador fail-closed es indispensable como gate duro. **0 `INCONCLUSIVE → observed`**: los 285 findings L2 no se tocan. |
 | **G4e Composer** | 66 secciones, 66 llamadas | 63 `NARRATIVE_DRAFTED` · 3 `NARRATIVE_BLOCKED` · cobertura 457/457 · 0 citas fuera de sección · marca `[SHADOW / NO GOBERNADO]` en las 63 | Borrador narrativo por documento × regulación, cada afirmación anclada a `finding_record_id`. Es un **borrador asistido para revisión humana**, nunca un informe aprobado. |
 
 **Coste:** ~13469 s de wall LLM (~3,7 h), `qwen2.5:7b-q4` en CPU local.
@@ -123,6 +123,7 @@ Historia lineal, sin merges. Ningún tag previo se movió en ninguna corrección
 | CF-2 | G3 | faltaba el Composer esqueleto determinista del plan | `composer.py` — 66 secciones documento × regulación, cobertura 457/457, `no_rejudge_l2`, `report_v2` verificado | `shadow-G3.1` (`9e819bf`) — CERRADO |
 | CF-3 | G2 (G2.1/G2.2) | faltaba demostrar los verificadores deterministas | `verifier.py` — G2.1 fail-closed (3 fixtures adversariales obligatorios → 100% `SHADOW_REJECTED`) + G2.2 cobertura (457/457, omisión detectada) | incluido en `shadow-G2` / `-r1` — CERRADO |
 | CF-4 | G4.PILOT | el tag `shadow-G4` congeló una copia antigua del ledger sin `-035`/`-036` | copia verbatim (append-only, +11/-0) del ledger autoritativo vivo al worktree + `G4_PILOT_AUDIT_RECONCILIATION.md` (reconcilia también el draft histórico `03_PROPUESTA_PILOT_EXECUTION_035.md`, cap≤20 ≠ instancia oficial `max_calls=1000`) | `shadow-G4.1` (`393dfb6`) — CERRADO |
+| CF-5 | G5 (PARTIAL) | (A) el `ev_index` real de G4d no estaba congelado → el anclaje no era reproducible; (B) los 15 `DISAGREEMENT_PERSISTS → HUMAN_REVIEW_REQUIRED` no estaban materializados en un artefacto verificable | (A) `g4d_evidence_bundle.json` — candidate claims BM25 deterministas sobre los **mismos** canonical stores (sha256 == producción), rebuild determinista; re-verificación offline `g4d_reverification.json`: **242/43 stored == recomputed, 0 divergencias, `HALLUCINATION_COUNT = 43`**. (B) `g4b_human_review_queue.json` — 15 relaciones `status = HUMAN_REVIEW_REQUIRED`, `human_review_performed = false` (la revisión humana NO ha ocurrido), ambas opiniones preservadas. 0 LLM, 0 cambio de L2/human_state | `shadow-G5.1` — CERRADO |
 
 ---
 
@@ -176,10 +177,19 @@ LLM_PROVIDER           = LOCAL
 HUMAN_STATE_CHANGES    = 0   ·  L2_MUTATIONS = 0  ·  related_finding_ids sin cambios
 GOVERNANCE             = PILOT_EXECUTION-2026-035/-036 auditables desde shadow-G4.1 (ledger congelado 266 líneas, sha d7a15efa…)
 CRIT                   = CRIT-0 ✅ · CRIT-H ✅ · CRIT-L2 ✅ · CRIT-E1 ✅ · CRIT-E2 ✅ · CRIT-E3 ✅ · CRIT-E4 ✅
-CORRECCIONES DE AUDITORÍA = CF-1 (shadow-G2-r1) · CF-2 (shadow-G3.1) · CF-3 (G2.1/G2.2) · CF-4 (shadow-G4.1)  — todas CERRADAS
+CORRECCIONES DE AUDITORÍA = CF-1 (shadow-G2-r1) · CF-2 (shadow-G3.1) · CF-3 (G2.1/G2.2) ·
+                         CF-4 (shadow-G4.1) · CF-5 (shadow-G5.1)  — todas CERRADAS
 DEVIATIONS             = ninguna
-PROPOSED_VERDICT       = PASS — arco completo, L2 intacto, gate humano intacto, gobernanza auditable.
-                         La adopción del reporte narrativo shadow (§8) es DECISIÓN DE CAPA 9.
+G5 (shadow-G5)         = PARTIAL en la auditoría externa por 2 huecos de auditabilidad (§12).
+SHADOW-G5.1            = cierra CF-5: G4d anchoring re-verificado offline (stored == recomputed, 0 divergencias,
+                         HALLUCINATION_COUNT = 43) + 15 HUMAN_REVIEW_REQUIRED materializados
+                         (human_review_performed = false).
+PROPOSED_VERDICT       = PASS  (con la corrección shadow-G5.1 aplicada) — arco completo, L2 byte-idéntico,
+                         gate humano intacto, gobernanza auditable, anclaje G4d reproducible desde el
+                         EvidenceBundle congelado. La adopción del reporte narrativo shadow (§8) es
+                         DECISIÓN DE CAPA 9. Limitación declarada: las salidas LLM de G4 no son
+                         byte-reproducibles (temp 0 ≠ determinista en Ollama); están CONGELADAS en
+                         artefactos y su verificación de anclaje SÍ es reproducible (§12.A).
 ```
 
 ---
@@ -197,3 +207,81 @@ no la toma.
 
 *G5 · cierre del arco. Sin LLM, sin re-ejecución, sin tocar L2/human_state, sin mover el
 fingerprint. Detenido en el gate de Capa 9.*
+
+---
+
+## 12 · Cierre de huecos de auditabilidad — `shadow-G5.1` (CF-5)
+
+La auditoría externa de `shadow-G5` dio **PARTIAL** por dos huecos de auditabilidad. `shadow-G5.1`
+los cierra **sin re-ejecutar G4a–G4e, sin nuevas llamadas LLM, sin tocar L2 ni `human_state`**.
+
+### 12.A · G4d — reproducibilidad del anclaje
+
+El `ev_index` que el verificador de G4d usó (los `source_text` de los candidate claims por
+finding) no se había congelado. **Recuperado exactamente:** los canonical stores usados en la
+corrida G4d siguen en `scratchpad/g4_canon/` y son **byte-idénticos** (sha256) a
+`factory/regulatory/canonical_store/` (que coincide con `VALIDATION_BASELINE_MANIFEST`).
+`build_bundles_for_requirement` es BM25 determinista sobre esos stores inmutables → el `ev_index`
+se reconstruye sin regenerar ni inventar texto.
+
+| Artefacto | sha256 | contenido |
+|---|---|---|
+| `docs_plan/shadow_llm/G4/g4d_evidence_bundle.json` | `caaa794530ff5c75fd5381769be83020a3a688005e36062524b2bd1f8920d86c` | 285 bundles · por finding: `claim_id` + `source_text` + `pagina` + `section_id` + `provenance` de los ≤5 candidatos · `canon_store_sha256` · `deterministic_rebuild = true` |
+| `docs_plan/shadow_llm/G4/g4d_reverification.json` | `bbc55f82517fc17a72dc991f42f0f0b966e64c34688a280953223a01a8f7922a` | re-ejecución offline de `verify_expert_envelope` sobre las 285 salidas G4d con el EvidenceBundle congelado |
+
+```
+stored       242 SHADOW_ACCEPTED · 43 SHADOW_REJECTED
+recomputed   242 SHADOW_ACCEPTED · 43 SHADOW_REJECTED
+divergencias 0
+HALLUCINATION_COUNT = 43   (verificable: cita del modelo que NO ancla literalmente en L1/L2 —
+                            candidate claims + cita anclada L2; las 43 quedan SHADOW_REJECTED y
+                            NO entran al composer)
+```
+
+**El anclaje de G4d es reproducible.** 0 divergencias entre lo almacenado y lo recomputado.
+
+### 12.B · G4b — `HUMAN_REVIEW_REQUIRED` materializado
+
+`docs_plan/shadow_llm/G4/g4b_human_review_queue.json`
+(sha256 `7d279b0bf82c64194841524626ffa572b25a9f53eb8ffa146760ec06bcbedca5`)
+
+- **15 relaciones**, todas `cross_domain_assessment = DISAGREEMENT_PERSISTS` → `status =
+  HUMAN_REVIEW_REQUIRED`, `human_review_required = true`.
+- **`human_review_performed = false` en las 15** — declara explícitamente que la revisión humana
+  **NO ha ocurrido**; el artefacto solo materializa la *necesidad* de revisión, no una transición
+  humana ejecutada.
+- **Ambas opiniones preservadas** por relación: `opinion_technical` (finding técnico + cita
+  anclada + `technical_basis`), `opinion_regulatory_counterparts` (los `REGULATORY_INCONCLUSIVE`
+  del mismo documento/regla), `opinion_cross_domain_reviewer_g4b` (assessment + rationale +
+  `verifier_status` del modelo).
+- Vinculado a los 15 `cross_domain_links` por `link_id` (`cdl-0001..0015`);
+  `l2_finding_record_ids_involved` lista los findings L2 de cada relación.
+- Generado con `cross_domain.apply_review_outcome` (flujo congelado de G3). **`l2_untouched =
+  true`, `human_state_untouched = true`.**
+
+### 12.C · Verificaciones (D)
+
+```
+L2 byte-idéntico             FINAL_GMP_CORPUS_FINDINGS.json sha 95a79f9b6276ff2a7972100764b308fa4b09f0027c6679ea831b441eb880f02c  (== baseline)
+CHANGED_L2_CONCLUSIONS       0   (subtype/machine_state/human_state de los 457 sin cambio)
+cobertura                    457/457
+HUMAN_STATE_CHANGES          0   (457 UNREVIEWED)
+L2_MUTATIONS                 0
+CLIENT_DATA_EGRESS           0   (solo lectura de ficheros locales + BM25 sobre stores locales)
+FINDINGS_FINGERPRINT         235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23  (sin mover)
+INPUT_CONFIG / GRAPH_SNAPSHOT 3fcb3ae8… / 2fdda0e2…  (sin mover)
+nuevas llamadas LLM          0   (g4_call_log.json sha 242df99f… sin cambio · 481 llamadas totales, sin cambio)
+tests shadow                 70 passed
+```
+
+### 12.D · Limitación que permanece
+
+Las salidas LLM de G4 (`g4{a..e}.jsonl`) **no son byte-reproducibles** — `temperature = 0` no
+garantiza determinismo en Ollama. Están **congeladas** como evidencia de la corrida
+`PILOT_EXECUTION-2026-035` (481 llamadas). Lo que **sí** es reproducible tras `shadow-G5.1`: la
+**verificación de anclaje** de esas salidas contra el EvidenceBundle congelado (§12.A, 0
+divergencias). No hay forma de re-derivar el texto que el modelo generó; sí de comprobar que el
+verificador fail-closed lo trató igual.
+
+*`shadow-G5.1` · cierre de CF-5. Sin re-ejecución, sin LLM, sin tocar L2/human_state, sin mover
+`shadow-G5`. Detenido.*
