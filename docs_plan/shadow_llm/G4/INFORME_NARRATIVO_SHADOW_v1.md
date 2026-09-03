@@ -1,4 +1,16 @@
-# INFORME NARRATIVO SHADOW — BORRADOR ASISTIDO · v1
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CF-6 v1.2 · CF6-0 — ESTE ARTEFACTO ES **PROTOTIPO — NO PRODUCTO**.
+     La narrativa v1 (G4e) se generó con prosa libre del LLM y elevó
+     `INCONCLUSIVE` a incumplimiento, filtró vocabulario interno y dejó
+     fugas de `rec-…` y de la marca `[[SHADOW`. Diagnóstico y línea base:
+     `docs_plan/shadow_llm/CF6/CF6_1_BASELINE.{json,md}`.
+     El Composer de producción (CF-6 v1.2) emite SOLO estructura JSON,
+     validada por Q-STATE-1..6, y la prosa se RENDERIZA de forma 100%
+     determinista (cero LLM tras el gate). NO usar este informe v1 como
+     salida gobernada.
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+# INFORME NARRATIVO SHADOW — BORRADOR ASISTIDO · v1  ·  ⚠ PROTOTIPO — NO PRODUCTO (CF-6 v1.2 / CF6-0)
 
 > **BORRADOR ASISTIDO.** Generado por máquina con un modelo LLM **local no gobernado** (`qwen2.5:7b-instruct-q4_K_M`, LOCAL). **NO** es una declaración de cumplimiento GMP, **NO** aprueba documentos, **NO** cierra CAPA, **NO** libera lote.
 >

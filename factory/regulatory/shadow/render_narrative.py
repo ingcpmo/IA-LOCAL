@@ -1,5 +1,13 @@
 """SHADOW · G5.2 — render determinista del informe narrativo para el revisor humano.
 
+⚠ CF-6 v1.2 · CF6-0 — el informe que produce este módulo (`INFORME_NARRATIVO_SHADOW_v1`)
+es **PROTOTIPO — NO PRODUCTO**: ensambla la narrativa v1 de G4e, que se generó con prosa
+libre del LLM y presenta el fallo diagnosticado en CF-6 (eleva `INCONCLUSIVE` a
+incumplimiento, filtra vocabulario interno, fuga `rec-…`). La ruta de producción usa el
+gate de estado + render determinista de `factory/regulatory/shadow/composer_gate.py`
+(CF-6 v1.2). Línea base del fallo: `docs_plan/shadow_llm/CF6/CF6_1_BASELINE.{json,md}`.
+
+
 Ensambla, SIN LLM y SIN re-juzgar L2, un único markdown a partir de los
 artefactos congelados del arco:
 

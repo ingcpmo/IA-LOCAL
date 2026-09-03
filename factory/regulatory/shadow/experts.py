@@ -265,6 +265,13 @@ def run_cross_domain(link, tech_result, reg_results, f_tech, provider, clog):
 
 # ── G4e Composer ─────────────────────────────────────────────────────
 def run_composer(section, verified_by_rid, provider, clog):
+    """⚠ CF-6 v1.2 · CF6-0 — PROTOTIPO. Esta función pide al LLM PROSA LIBRE
+    (`narrative`), lo que en v1 elevó `INCONCLUSIVE` a incumplimiento y filtró
+    vocabulario interno. En CF-6 v1.2 el Composer emite SOLO estructura JSON,
+    verificada por `composer_gate.verify_qstate`, y la prosa se RENDERIZA de forma
+    100% determinista (cero LLM tras el gate). No usar esta ruta para salida
+    gobernada; se conserva como referencia de la línea base v1 (CF6-1).
+    """
     lines = []
     for e in section["entries"]:
         rid = e["finding_record_id"]
