@@ -19,12 +19,32 @@ _LEDGER = _REPO / "factory" / "layer9" / "decisions" / "decisions_v2.jsonl"
 _SL = _REPO / "docs_plan" / "shadow_llm"
 
 
+def _ledger_snapshot_at(n_lines: int, tmp_path: Path) -> Path:
+    """`PS.evaluate()` (a diagnostic helper, NOT `decision_scope_resolver`) solo
+    inspecciona el ÚLTIMO registro `human_confirmed` de la familia PILOT_EXECUTION
+    (`latest_pilot()`), no la unión de todos los ACTIVE. Es un comportamiento
+    documentado, no un defecto: cada ADDENDUM posterior (p.ej.
+    PILOT_EXECUTION-2026-042, CF6-v2 R2) es más específico y dominante para esta
+    herramienta puntual, aunque -037/-038/-039/-040 sigan ACTIVE en el ledger real
+    (verificado en `test_original_pilot_035_036_still_active_traceability_preserved`).
+    Estos dos tests pinnean una afirmación HISTÓRICA ("el gate pasaba justo
+    después de -040") -- se corren contra un snapshot de esa altura del ledger,
+    no contra el HEAD en movimiento, para no quedar rotos por cada ADDENDUM
+    futuro legítimo."""
+    lines = _LEDGER.read_text(encoding="utf-8").splitlines()[:n_lines]
+    p = tmp_path / "decisions_v2_snapshot.jsonl"
+    p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return p
+
+
 # ───────────────────────── CF6-2.G ─────────────────────────────────
 
-def test_pilot_scope_gate_passes_vs_v2_after_addenda():
+def test_pilot_scope_gate_passes_vs_v2_after_addenda(tmp_path):
     # ADDENDA de la familia PILOT_EXECUTION (-037/-038 para v2, -039/-040 para v3),
-    # todos ACTIVE, ninguno supersede (I-7). El gate vs v2 (default) sigue PASS.
-    res = PS.evaluate(_LEDGER)
+    # todos ACTIVE, ninguno supersede (I-7). El gate vs v2 (default) sigue PASS
+    # -- en el snapshot inmediatamente posterior a -040 (ver _ledger_snapshot_at).
+    ledger = _ledger_snapshot_at(270, tmp_path)
+    res = PS.evaluate(ledger)
     assert res["gate"] == "CF6-2.G"
     assert res["llm_calls"] == 0
     assert res["pilot_instance"] == "PILOT_EXECUTION-2026-040"   # el ADDENDUM confirmado más reciente
@@ -37,10 +57,12 @@ def test_pilot_scope_gate_passes_vs_v2_after_addenda():
     assert res["GATE_RESULT"] == "PASS"
 
 
-def test_pilot_scope_gate_passes_vs_v3_after_addendum_2026_040():
+def test_pilot_scope_gate_passes_vs_v3_after_addendum_2026_040(tmp_path):
     # ADDENDUM PILOT_EXECUTION-2026-039 propose / -040 human_confirmed (cesar)
-    # nombra EXPLÍCITAMENTE shadow-cf6-composer-struct-v3.
-    res = PS.evaluate(_LEDGER, required_composer_prompt_version="shadow-cf6-composer-struct-v3")
+    # nombra EXPLÍCITAMENTE shadow-cf6-composer-struct-v3. Snapshot a esa altura
+    # (ver _ledger_snapshot_at) -- el ledger real avanzó desde entonces (CF6-v2 R2).
+    ledger = _ledger_snapshot_at(270, tmp_path)
+    res = PS.evaluate(ledger, required_composer_prompt_version="shadow-cf6-composer-struct-v3")
     assert res["PILOT_SCOPE_MATCH_CF6"] == "YES"
     assert res["scope_checks"]["a_composer_prompt_version"] == "YES"
     assert res["GATE_RESULT"] == "PASS"

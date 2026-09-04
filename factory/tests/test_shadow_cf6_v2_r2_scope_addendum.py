@@ -55,14 +55,21 @@ def test_package_stops_before_human_confirmed():
         "LLM_CALLS": 0, "G4D_CALLS": 0, "L2_MUTATIONS": 0, "HUMAN_STATE_CHANGES": 0}
 
 
-def test_signing_this_addendum_alone_does_not_flip_the_gate_to_pass():
-    """Firmar SOLO esta ADDENDUM no basta -- el prompt reservado no existe
-    todavía. `cf6_pilot_scope.evaluate()` contra el ledger REAL (sin este
-    propose escrito en él) debe seguir en NO/FAIL para el nombre reservado."""
+def test_addendum_confirmed_in_real_ledger_matches_check_a_by_name_only():
+    """Aprobado por Capa 9 (2026-09-04) y formalizado vía `governance_service`:
+    `PILOT_EXECUTION-2026-041` (propose) / `-042` (human_confirmed, cesar).
+    `cf6_pilot_scope.evaluate()` hace COINCIDENCIA DE TEXTO contra el ledger,
+    no verifica en disco si el prompt existe -- por eso el chequeo (a) da YES
+    en cuanto el nombre aparece en el payload firmado, aunque el YAML del
+    prompt se redacte por separado (ver `composer_prompt_v2_0_relevance_
+    filtered.py`, `status: DRAFT_UNSIGNED`, congelado NO firmado)."""
     res = scope.evaluate(required_composer_prompt_version=AD.RESERVED_COMPOSER_PROMPT_VERSION)
-    assert res["PILOT_SCOPE_MATCH_CF6"] == "NO"
-    assert res["scope_checks"]["a_composer_prompt_version"] == "NO"
-    assert res["GATE_RESULT"] == "FAIL"
+    assert res["pilot_instance"] == "PILOT_EXECUTION-2026-042"
+    assert res["pilot_decision_origin"] == "human_confirmed"
+    assert res["scope_checks"]["a_composer_prompt_version"] == "YES"
+    assert res["ACTIVE"] == "YES"
+    assert res["NOT_SUPERSEDED"] == "YES"
+    assert res["REMAINING_BUDGET_SUFFICIENT"] == "YES"
 
 
 def test_building_the_package_does_not_touch_the_real_ledger():
