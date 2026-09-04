@@ -1,0 +1,380 @@
+{
+ "schema": "SHADOW_CF6_V2_R2_LABELED_SAMPLE_CANDIDATE_POOL/v1",
+ "purpose": "Poblacion completa de pares requisito x evidencia (candidatos del Relevance Model, R1) de las 5 secciones dentro de alcance de R2 -- base para que Capa 9 / QA etiquete la muestra pequena que mide evidence_relevance_accuracy (diseno CF6_v2_REDISENO_AUDITORIA_PROFESIONAL.md paragrafo 4/6). human_label = null en TODOS: Claude Code no etiqueta.",
+ "n_candidates": 27,
+ "candidates": [
+  {
+   "section_id": "sec-0004",
+   "requirement_id": "21_CFR_11.10(g)",
+   "finding_record_id": "rec-252fddba98df1d69",
+   "candidate_quote": "and analog input and output cards to meet the hardwired system I/O requirements.",
+   "matched_subcriterion_id": null,
+   "n_matched": 0,
+   "weighted_ratio": 0.0,
+   "matched_terms": [],
+   "model_relevance_state": "IRRELEVANT",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0004",
+   "requirement_id": "21_CFR_11.10(g)",
+   "finding_record_id": "rec-339740a9d90545c3",
+   "candidate_quote": "Process interlocks may be overridden with appropriate access level.",
+   "matched_subcriterion_id": "sc1",
+   "n_matched": 1,
+   "weighted_ratio": 0.087,
+   "matched_terms": [
+    "level"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0004",
+   "requirement_id": "21_CFR_11.10(g)",
+   "finding_record_id": "rec-e50eb1f506d5ab42",
+   "candidate_quote": "Administrator and Maintenance login security levels.",
+   "matched_subcriterion_id": null,
+   "n_matched": 0,
+   "weighted_ratio": 0.0,
+   "matched_terms": [],
+   "model_relevance_state": "IRRELEVANT",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0004",
+   "requirement_id": "21_CFR_11.10(g)",
+   "finding_record_id": "rec-50552b00e6ae9f4b",
+   "candidate_quote": "To ensure that only operators with the proper",
+   "matched_subcriterion_id": null,
+   "n_matched": 0,
+   "weighted_ratio": 0.0,
+   "matched_terms": [],
+   "model_relevance_state": "IRRELEVANT",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0004",
+   "requirement_id": "21_CFR_11.10(g)",
+   "finding_record_id": "rec-f9f8810af5fe98d5",
+   "candidate_quote": "To ensure that only operators with the proper",
+   "matched_subcriterion_id": null,
+   "n_matched": 0,
+   "weighted_ratio": 0.0,
+   "matched_terms": [],
+   "model_relevance_state": "IRRELEVANT",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0005",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "finding_record_id": "rec-2e7a9b8faabae026",
+   "candidate_quote": "record shall contain the following fields",
+   "matched_subcriterion_id": "sc4",
+   "n_matched": 1,
+   "weighted_ratio": 0.0274,
+   "matched_terms": [
+    "record"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0005",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "finding_record_id": "rec-33acbc832665ade8",
+   "candidate_quote": "With the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View",
+   "matched_subcriterion_id": "sc2",
+   "n_matched": 3,
+   "weighted_ratio": 0.0811,
+   "matched_terms": [
+    "each",
+    "electronic",
+    "signature"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0005",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "finding_record_id": "rec-5b4b226466d6ec5b",
+   "candidate_quote": "Date and time stamps of the change",
+   "matched_subcriterion_id": null,
+   "n_matched": 0,
+   "weighted_ratio": 0.0,
+   "matched_terms": [],
+   "model_relevance_state": "IRRELEVANT",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0005",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "finding_record_id": "rec-8b65c861175f856f",
+   "candidate_quote": "record shall contain the following fields",
+   "matched_subcriterion_id": "sc5",
+   "n_matched": 1,
+   "weighted_ratio": 0.0205,
+   "matched_terms": [
+    "record"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0005",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "finding_record_id": "rec-95102a2c01cbeb36",
+   "candidate_quote": "record shall contain the following fields",
+   "matched_subcriterion_id": "sc6",
+   "n_matched": 1,
+   "weighted_ratio": 0.0333,
+   "matched_terms": [
+    "record"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0005",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "finding_record_id": "rec-ba0f8a3fd5568ec5",
+   "candidate_quote": "With the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View",
+   "matched_subcriterion_id": "sc3",
+   "n_matched": 3,
+   "weighted_ratio": 0.0545,
+   "matched_terms": [
+    "each",
+    "electronic",
+    "signature"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0005",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "finding_record_id": "rec-f2c131db4e52163d",
+   "candidate_quote": "With the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View",
+   "matched_subcriterion_id": "sc1",
+   "n_matched": 3,
+   "weighted_ratio": 0.0909,
+   "matched_terms": [
+    "each",
+    "electronic",
+    "signature"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0016",
+   "requirement_id": "21_CFR_11.10(d)",
+   "finding_record_id": "rec-5bfe094286d91b6d",
+   "candidate_quote": "3.4.1 The system shall implement the security and access control",
+   "matched_subcriterion_id": "sc1",
+   "n_matched": 2,
+   "weighted_ratio": 0.1231,
+   "matched_terms": [
+    "access",
+    "control"
+   ],
+   "model_relevance_state": "PARTIALLY_RELEVANT",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0016",
+   "requirement_id": "21_CFR_11.10(d)",
+   "finding_record_id": "rec-6b0c9965fd2f4e05",
+   "candidate_quote": "3.1.1 The system shall measure the critical process parameters for the",
+   "matched_subcriterion_id": "sc3",
+   "n_matched": 1,
+   "weighted_ratio": 0.0645,
+   "matched_terms": [
+    "process"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0016",
+   "requirement_id": "21_CFR_11.10(d)",
+   "finding_record_id": "rec-8e51ef14590a270e",
+   "candidate_quote": "3.4.1 The system shall implement the security and access control",
+   "matched_subcriterion_id": null,
+   "n_matched": 0,
+   "weighted_ratio": 0.0,
+   "matched_terms": [],
+   "model_relevance_state": "IRRELEVANT",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0016",
+   "requirement_id": "21_CFR_11.10(d)",
+   "finding_record_id": "rec-8f15c82009c5642f",
+   "candidate_quote": "Process Automation Control Server System",
+   "matched_subcriterion_id": "sc2",
+   "n_matched": 1,
+   "weighted_ratio": 0.08,
+   "matched_terms": [
+    "process"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0016",
+   "requirement_id": "21_CFR_11.10(d)",
+   "finding_record_id": "rec-af05e920bad158fb",
+   "candidate_quote": "3.4.1 The system shall implement the security and access control",
+   "matched_subcriterion_id": "sc4",
+   "n_matched": 1,
+   "weighted_ratio": 0.0488,
+   "matched_terms": [
+    "access"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0016",
+   "requirement_id": "21_CFR_11.10(d)",
+   "finding_record_id": "rec-d86dfb79cc5b4996",
+   "candidate_quote": "Process Automation Control Server System",
+   "matched_subcriterion_id": "sc5",
+   "n_matched": 1,
+   "weighted_ratio": 0.08,
+   "matched_terms": [
+    "process"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0016",
+   "requirement_id": "21_CFR_11.10(d)",
+   "finding_record_id": "rec-e0b35452eeb06071",
+   "candidate_quote": "3.4.1 The system shall implement the security and access control",
+   "matched_subcriterion_id": "sc8",
+   "n_matched": 1,
+   "weighted_ratio": 0.0377,
+   "matched_terms": [
+    "access"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0016",
+   "requirement_id": "21_CFR_11.10(d)",
+   "finding_record_id": "rec-4c6611081bdfdeec",
+   "candidate_quote": "5.2.2 URS-PCS-SR-008 Control and privilege access shall be",
+   "matched_subcriterion_id": "sc7",
+   "n_matched": 1,
+   "weighted_ratio": 0.0392,
+   "matched_terms": [
+    "privilege"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0018",
+   "requirement_id": "21_CFR_11.10(g)",
+   "finding_record_id": "rec-9b47c0444e9ae107",
+   "candidate_quote": "PLC System implementation and operation.",
+   "matched_subcriterion_id": "sc3",
+   "n_matched": 1,
+   "weighted_ratio": 0.0312,
+   "matched_terms": [
+    "operation"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0018",
+   "requirement_id": "21_CFR_11.10(g)",
+   "finding_record_id": "rec-103f4e4193dd83b5",
+   "candidate_quote": "A list of software settings or suitable configuration file(s) for each device",
+   "matched_subcriterion_id": "sc2",
+   "n_matched": 1,
+   "weighted_ratio": 0.0213,
+   "matched_terms": [
+    "each"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0018",
+   "requirement_id": "21_CFR_11.10(g)",
+   "finding_record_id": "rec-7e228ed0de7cf255",
+   "candidate_quote": "access for level 1 and level 2 alarms only.",
+   "matched_subcriterion_id": "sc1",
+   "n_matched": 1,
+   "weighted_ratio": 0.087,
+   "matched_terms": [
+    "level"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0018",
+   "requirement_id": "21_CFR_11.10(g)",
+   "finding_record_id": "rec-52ba086fc5d66df9",
+   "candidate_quote": "Engineer security level privileges.",
+   "matched_subcriterion_id": "sc1",
+   "n_matched": 1,
+   "weighted_ratio": 0.087,
+   "matched_terms": [
+    "level"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0018",
+   "requirement_id": "21_CFR_11.10(g)",
+   "finding_record_id": "rec-9416222090670306",
+   "candidate_quote": "following operator access levels:",
+   "matched_subcriterion_id": "sc2",
+   "n_matched": 1,
+   "weighted_ratio": 0.0426,
+   "matched_terms": [
+    "access"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0062",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "finding_record_id": "rec-79f3c3e1583037f5",
+   "candidate_quote": "actively being sent to a user for process use or sampling.",
+   "matched_subcriterion_id": "sc1",
+   "n_matched": 1,
+   "weighted_ratio": 0.0526,
+   "matched_terms": [
+    "process"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  },
+  {
+   "section_id": "sec-0062",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "finding_record_id": "rec-d656513a62d17de6",
+   "candidate_quote": "The only current copy of this document is maintained electronically.",
+   "matched_subcriterion_id": "sc2",
+   "n_matched": 1,
+   "weighted_ratio": 0.0455,
+   "matched_terms": [
+    "copy"
+   ],
+   "model_relevance_state": "INCONCLUSIVE",
+   "human_label": null
+  }
+ ]
+}
