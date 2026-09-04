@@ -103,11 +103,25 @@ def _adapt_r1_to_legacy_view(structured: dict, section: dict) -> dict:
     }
 
 
+_REAL_OUT_DIR = "docs_plan/shadow_llm/CF6"
+_DRY_RUN_OUT_DIR = "docs_plan/shadow_llm/CF6/_dry_run"
+
+
 def run_r2(shadow_dir: str | Path = "docs_plan/shadow_llm",
           manifest_path: str | Path = "docs_plan/shadow_llm/CF6/CF6_2_5_SAMPLE_MANIFEST.json",
-          *, out_dir: str | Path = "docs_plan/shadow_llm/CF6",
+          *, out_dir: str | Path | None = None,
           dry_run: bool = False) -> dict:
+    """`out_dir`: si no se especifica, se elige automáticamente según `dry_run`
+    -- `_REAL_OUT_DIR` (artefactos de una corrida real, con LLM) o
+    `_DRY_RUN_OUT_DIR` (sub-carpeta separada, NUNCA la misma ruta). Esto es a
+    propósito: un `dry_run=True` (p.ej. desde un test) jamás debe poder
+    sobrescribir `CF6_v2_R2_RUN.json`/`CF6_v2_R2_B_OUTPUTS.jsonl` de una
+    corrida real, sin importar el orden en que se invoquen. Pasar `out_dir`
+    explícitamente (p.ej. un `tmp_path` de test) lo respeta siempre, para
+    aislamiento total en pruebas."""
     _cp.assert_signed()  # fail-closed
+    if out_dir is None:
+        out_dir = _DRY_RUN_OUT_DIR if dry_run else _REAL_OUT_DIR
     SL, OUT = Path(shadow_dir), Path(out_dir)
     OUT.mkdir(parents=True, exist_ok=True)
 

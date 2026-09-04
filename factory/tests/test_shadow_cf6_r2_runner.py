@@ -4,6 +4,7 @@ audita por separado, ver CF6_v2_R2_RUN.json)."""
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from factory.regulatory.shadow import cf6_r2_runner as R2
 from factory.regulatory.shadow import composer as _skel
@@ -59,8 +60,14 @@ class TestAdapter:
 
 
 class TestDryRun:
-    def test_dry_run_matches_manifest_shape_no_llm(self):
-        s = R2.run_r2(dry_run=True)
+    """`out_dir=tmp_path` en TODAS las llamadas de test: aislamiento explícito,
+    en dos capas -- (1) `run_r2` ya nunca usa la ruta de una corrida real para
+    `dry_run=True` por defecto (ver `_DRY_RUN_OUT_DIR`), y (2) aquí, además,
+    se fuerza una carpeta de test efímera para que ni siquiera comparta
+    `_DRY_RUN_OUT_DIR` entre corridas de test."""
+
+    def test_dry_run_matches_manifest_shape_no_llm(self, tmp_path):
+        s = R2.run_r2(dry_run=True, out_dir=tmp_path)
         assert s["LLM_CALLS_TOTAL"] == 0
         assert s["POST_QSTATE_LLM_CALLS"] == 0
         assert s["sections_out_of_scope_r2"] == 2
@@ -68,12 +75,28 @@ class TestDryRun:
         assert "sec-0042" in s["OUT_OF_SCOPE_SECTIONS"]
         assert s["within_budget"] is True
 
-    def test_dry_run_does_not_touch_decomposition_yaml(self):
+    def test_dry_run_does_not_touch_decomposition_yaml(self, tmp_path):
         import hashlib
         from factory.regulatory.requirement_catalog.requirement_decomposition_loader import (
             DECOMPOSITION_PATH,
         )
         before = hashlib.sha256(DECOMPOSITION_PATH.read_bytes()).hexdigest()
-        R2.run_r2(dry_run=True)
+        R2.run_r2(dry_run=True, out_dir=tmp_path)
         after = hashlib.sha256(DECOMPOSITION_PATH.read_bytes()).hexdigest()
         assert before == after
+
+    def test_dry_run_never_writes_to_real_output_dir(self, tmp_path):
+        import hashlib
+        real_run_json = Path(R2._REAL_OUT_DIR) / "CF6_v2_R2_RUN.json"
+        real_b_outputs = Path(R2._REAL_OUT_DIR) / "CF6_v2_R2_B_OUTPUTS.jsonl"
+        before = {p: (hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else None)
+                  for p in (real_run_json, real_b_outputs)}
+        R2.run_r2(dry_run=True, out_dir=tmp_path)               # out_dir explícito
+        R2.run_r2(dry_run=True)                                  # SIN out_dir -- default debe seguir siendo seguro
+        after = {p: (hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else None)
+                 for p in (real_run_json, real_b_outputs)}
+        assert before == after, "un dry_run (con o sin out_dir explícito) escribió sobre artefactos de la corrida real"
+
+    def test_dry_run_default_out_dir_is_separate_from_real(self):
+        assert R2._DRY_RUN_OUT_DIR != R2._REAL_OUT_DIR
+        assert Path(R2._DRY_RUN_OUT_DIR) != Path(R2._REAL_OUT_DIR)

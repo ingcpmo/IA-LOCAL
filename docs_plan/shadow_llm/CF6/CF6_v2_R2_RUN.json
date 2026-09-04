@@ -5,7 +5,7 @@
  "PROMPT_VERSION": "shadow-cf6-composer-v2.0-relevance-filtered",
  "prompt_signed": true,
  "prompt_sha256_frozen_content": "907e2c30fe9d158366f78afebef53364e1d221db7cbb73de6e6c8e48f57814be",
- "model": "dry-run",
+ "model": "qwen2.5:7b-instruct-q4_K_M",
  "SAMPLE_MANIFEST_HASH": "7422faaf569430dbc8a19647a2d2b64ff6b53b5231fc4e7962b4486e3165f5a0",
  "sections": [
   "sec-0004",
@@ -16,11 +16,11 @@
   "sec-0042",
   "sec-0062"
  ],
- "LLM_CALLS_TOTAL": 0,
+ "LLM_CALLS_TOTAL": 1,
  "LLM_CALLS_BY_SECTION": {
   "sec-0004": 0,
   "sec-0005": 0,
-  "sec-0016": 0,
+  "sec-0016": 1,
   "sec-0018": 0,
   "sec-0026": 0,
   "sec-0042": 0,
@@ -28,8 +28,8 @@
  },
  "llm_budget_cap_cf6": 250,
  "within_budget": true,
- "sections_rendered": 0,
- "sections_safe_mode": 7,
+ "sections_rendered": 1,
+ "sections_safe_mode": 6,
  "sections_out_of_scope_r2": 2,
  "OUT_OF_SCOPE_SECTIONS": {
   "sec-0026": "'ANNEX11_7' sin descomposición en decomposition.yaml — fuera de alcance de R1/R2",
@@ -42,9 +42,7 @@
   "sec-0005": [
    "relevant_evidence_empty"
   ],
-  "sec-0016": [
-   "dry_run: no LLM"
-  ],
+  "sec-0016": "OK",
   "sec-0018": [
    "relevant_evidence_empty"
   ],
@@ -61,7 +59,7 @@
  "QSTATE_RESULT_BY_SECTION": {
   "sec-0004": "n/a (sin estructura)",
   "sec-0005": "n/a (sin estructura)",
-  "sec-0016": "n/a (sin estructura)",
+  "sec-0016": "PASS",
   "sec-0018": "n/a (sin estructura)",
   "sec-0026": "n/a (sin estructura)",
   "sec-0042": "n/a (sin estructura)",
@@ -79,7 +77,6 @@
  "SAFE_MODE_SECTIONS": [
   "sec-0004",
   "sec-0005",
-  "sec-0016",
   "sec-0018",
   "sec-0026",
   "sec-0042",
