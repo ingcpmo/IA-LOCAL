@@ -80,3 +80,38 @@ firmado ni cubierto por scope).
 **Decisión pendiente de Capa 9**, no de Claude Code: autorizar el diseño de un
 `composer_prompt_version` para el Composer de 4 pasos, y el mecanismo de scope (ADDENDUM o
 nueva PILOT) que lo cubra.
+
+## Actualización — ADDENDUM propuesto (mecanismo elegido por Cesar: ADDENDUM, no nueva PILOT)
+
+`factory/regulatory/shadow/cf6_scope_addendum_v2_r1.py` (7 tests,
+`factory/tests/test_shadow_cf6_v2_r2_scope_addendum.py`) — mismo patrón que
+`cf6_scope_addendum.py`/`cf6_scope_addendum_v3.py`: `propose` de un ADDENDUM que extiende
+`PILOT_EXECUTION-2026-035/-036/-037/-038/-039/-040` (no las supersede — I-7), sin tocar el
+ledger real, sin `human_confirmed`. Artefacto:
+`docs_plan/shadow_llm/CF6/CF6_v2_R2_SCOPE_ADDENDUM_PROPOSE.json`.
+
+**Diferencia deliberada con los dos precedentes** (importante para Capa 9 al decidir): en v2 y
+v3, el `composer_prompt_version` referenciado por el ADDENDUM ya existía como archivo YAML
+(`DRAFT_UNSIGNED`) en el momento del propose. Aquí, por instrucción explícita de esta sesión
+("no rediseñar R1 ni CF-6 v2.0, no implementar"), **no se redactó ningún prompt YAML nuevo**.
+`RESERVED_COMPOSER_PROMPT_VERSION = "shadow-cf6-composer-v2.0-relevance-filtered"` es un
+**nombre reservado**, marcado explícitamente `composer_prompt_version_status:
+RESERVED_NAME_NOT_YET_DRAFTED` en el payload — no un artefacto existente.
+
+**Consecuencia verificada en código** (`test_signing_this_addendum_alone_does_not_flip_the_gate_to_pass`):
+firmar esta ADDENDUM, por sí sola, **no** deja `PILOT_SCOPE_MATCH_CF6 = YES` — el chequeo (a)
+de `cf6_pilot_scope.evaluate()` exige que el `composer_prompt_version` exista con ese nombre
+exacto (al menos `DRAFT_UNSIGNED`), y hoy no existe. Orden correcto, análogo al histórico
+v2→v3:
+
+```
+1. Capa 9 firma este ADDENDUM (human_confirmed) — reserva el scope, NO reabre R1 ni implementa nada
+2. Capa 9 decide, por separado, si autoriza redactar el prompt 'shadow-cf6-composer-v2.0-relevance-filtered'
+3. (si se autoriza) se redacta y eventualmente se firma ese prompt
+4. recién entonces cf6_pilot_scope.evaluate(required_composer_prompt_version=
+   'shadow-cf6-composer-v2.0-relevance-filtered') puede dar GATE_RESULT=PASS
+```
+
+Este ADDENDUM resuelve la parte del gate que corresponde a esta sesión (scope reservado,
+trazabilidad intacta, 0 LLM, 0 escrituras al ledger/decomposition.yaml) sin tocar R1 ni escribir
+ningún prompt — el paso 2 sigue siendo, explícitamente, decisión de Capa 9.

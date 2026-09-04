@@ -1,0 +1,231 @@
+{
+ "schema": "SHADOW_CF6_V2_R2_SCOPE_RESOLUTION/v1",
+ "trigger": "CF6-v2 R2 punto 1 · PILOT_SCOPE_MATCH_CF6 = NO (CF6_v2_R2_SCOPE_CHECK.md)",
+ "llm_calls": 0,
+ "mechanism_check": {
+  "SCOPE_EXTENSION_SUPPORTED": "YES",
+  "mechanism": "decision_type=ADDENDUM en la familia PILOT_EXECUTION",
+  "evidence": {
+   "COVERING_TYPES": [
+    "ADDENDUM",
+    "CORRECTION",
+    "ORIGINAL",
+    "SUPERSESSION"
+   ],
+   "AMENDING_TYPES": [
+    "CORRECTION",
+    "REVOCATION",
+    "SUPERSESSION"
+   ],
+   "ADDENDUM_is_covering_type": true,
+   "ADDENDUM_not_amending (no supersede)": true,
+   "I-7": "ADDENDUM amplía, no supersede — sin supersedes_*, amendment_sequence>=1",
+   "resolver": "decision_scope_resolver une target_ids de los COVERING_TYPES human_confirmed ACTIVE (union de otorgantes menos revocaciones)",
+   "family_PILOT_EXECUTION": {
+    "requires_human_confirmation": true,
+    "selection_modes": [
+     "EXPLICIT_LIST"
+    ],
+    "decision_type_allowlist": null
+   }
+  },
+  "traceability": "-035/-036 permanecen ACTIVE y cubriendo; el ADDENDUM referencia ['PILOT_EXECUTION-2026-035', 'PILOT_EXECUTION-2026-036'] en `reason` y NO los supersede"
+ },
+ "propose": {
+  "schema": "SHADOW_CF6_V2_R2_SCOPE_ADDENDUM_PROPOSE/v1",
+  "action": "propose",
+  "decision_origin": "agent_proposed",
+  "written_to_ledger": false,
+  "submit_via": "canal gobernado (governance_service.propose ADDENDUM PILOT_EXECUTION) — firma de Capa 9",
+  "family": "PILOT_EXECUTION",
+  "decision": "APPROVE",
+  "decision_type": "ADDENDUM",
+  "amendment_sequence": 1,
+  "selection_mode": "EXPLICIT_LIST",
+  "supersedes_instance_id": null,
+  "proposed_by_id": "Capa 8 (Claude Code)",
+  "target_ids": [
+   "RW-0005",
+   "RW-0006",
+   "RW-0009",
+   "RW-0011",
+   "RW-0012",
+   "RW-0014"
+  ],
+  "payload": {
+   "scope": [
+    {
+     "document_id": "RW-0005",
+     "agent_id": "shadow_composer_expert",
+     "requirement_id": "SHADOW_CF6_COMPOSER",
+     "purpose": "structured_json_composer_relevance_filtered",
+     "execution_phase": "CF6-v2-R2",
+     "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+     "selection_reason": "regeneración de la muestra CF6-2.5 bajo el Composer de 4 pasos + Relevance Model (R1)"
+    },
+    {
+     "document_id": "RW-0006",
+     "agent_id": "shadow_composer_expert",
+     "requirement_id": "SHADOW_CF6_COMPOSER",
+     "purpose": "structured_json_composer_relevance_filtered",
+     "execution_phase": "CF6-v2-R2",
+     "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+     "selection_reason": "regeneración de la muestra CF6-2.5 bajo el Composer de 4 pasos + Relevance Model (R1)"
+    },
+    {
+     "document_id": "RW-0012",
+     "agent_id": "shadow_composer_expert",
+     "requirement_id": "SHADOW_CF6_COMPOSER",
+     "purpose": "structured_json_composer_relevance_filtered",
+     "execution_phase": "CF6-v2-R2",
+     "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+     "selection_reason": "regeneración de la muestra CF6-2.5 bajo el Composer de 4 pasos + Relevance Model (R1)"
+    },
+    {
+     "document_id": "RW-0014",
+     "agent_id": "shadow_composer_expert",
+     "requirement_id": "SHADOW_CF6_COMPOSER",
+     "purpose": "structured_json_composer_relevance_filtered",
+     "execution_phase": "CF6-v2-R2",
+     "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+     "selection_reason": "regeneración de la muestra CF6-2.5 bajo el Composer de 4 pasos + Relevance Model (R1)"
+    },
+    {
+     "document_id": "RW-0005",
+     "agent_id": "shadow_composer_expert",
+     "requirement_id": "SHADOW_CF6_COMPOSER",
+     "purpose": "structured_json_composer_relevance_filtered",
+     "execution_phase": "CF6-v2-R5",
+     "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+     "selection_reason": "corrida completa bajo la arquitectura R1-R3 (diseño §13, R5) — 66 secciones documento × regulación"
+    },
+    {
+     "document_id": "RW-0006",
+     "agent_id": "shadow_composer_expert",
+     "requirement_id": "SHADOW_CF6_COMPOSER",
+     "purpose": "structured_json_composer_relevance_filtered",
+     "execution_phase": "CF6-v2-R5",
+     "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+     "selection_reason": "corrida completa bajo la arquitectura R1-R3 (diseño §13, R5) — 66 secciones documento × regulación"
+    },
+    {
+     "document_id": "RW-0009",
+     "agent_id": "shadow_composer_expert",
+     "requirement_id": "SHADOW_CF6_COMPOSER",
+     "purpose": "structured_json_composer_relevance_filtered",
+     "execution_phase": "CF6-v2-R5",
+     "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+     "selection_reason": "corrida completa bajo la arquitectura R1-R3 (diseño §13, R5) — 66 secciones documento × regulación"
+    },
+    {
+     "document_id": "RW-0011",
+     "agent_id": "shadow_composer_expert",
+     "requirement_id": "SHADOW_CF6_COMPOSER",
+     "purpose": "structured_json_composer_relevance_filtered",
+     "execution_phase": "CF6-v2-R5",
+     "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+     "selection_reason": "corrida completa bajo la arquitectura R1-R3 (diseño §13, R5) — 66 secciones documento × regulación"
+    },
+    {
+     "document_id": "RW-0012",
+     "agent_id": "shadow_composer_expert",
+     "requirement_id": "SHADOW_CF6_COMPOSER",
+     "purpose": "structured_json_composer_relevance_filtered",
+     "execution_phase": "CF6-v2-R5",
+     "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+     "selection_reason": "corrida completa bajo la arquitectura R1-R3 (diseño §13, R5) — 66 secciones documento × regulación"
+    },
+    {
+     "document_id": "RW-0014",
+     "agent_id": "shadow_composer_expert",
+     "requirement_id": "SHADOW_CF6_COMPOSER",
+     "purpose": "structured_json_composer_relevance_filtered",
+     "execution_phase": "CF6-v2-R5",
+     "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+     "selection_reason": "corrida completa bajo la arquitectura R1-R3 (diseño §13, R5) — 66 secciones documento × regulación"
+    }
+   ],
+   "max_calls": 250,
+   "authorizes_corpus": false,
+   "authorizes_baseline": false,
+   "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+   "composer_prompt_version_status": "RESERVED_NAME_NOT_YET_DRAFTED",
+   "execution_type": "structured_json_composer_relevance_filtered",
+   "authorizes": [
+    "CF6-v2 R2 regeneración de CF6-2.5 bajo Relevance Model",
+    "CF6-v2 R5 corrida completa post-gate (diseño §13)"
+   ],
+   "extends_instances": [
+    "PILOT_EXECUTION-2026-035",
+    "PILOT_EXECUTION-2026-036",
+    "PILOT_EXECUTION-2026-037",
+    "PILOT_EXECUTION-2026-038",
+    "PILOT_EXECUTION-2026-039",
+    "PILOT_EXECUTION-2026-040"
+   ],
+   "parent_hard_cap": {
+    "instance": "PILOT_EXECUTION-2026-035",
+    "max_calls": 1000,
+    "used_by_g4": 481,
+    "used_by_cf6_2_5_v2": 7,
+    "used_by_cf6_2_5_v3": 7,
+    "still_binds": true
+   },
+   "relevance_model_ref": "factory/regulatory/shadow/relevance_model.py, tag cf6-v2-R1 (auditado externamente PASS)",
+   "not_authorized": [
+    "CORPUS_AUTHORIZATION",
+    "D4",
+    "FORMAL_BASELINE_READY",
+    "flip/adjudication/production",
+    "D-ADJ (GMP Adjudication Expert)",
+    "D-M4+ (benchmark modelo mayor/LoRA/qualification)",
+    "D-REPORT-EXT (distribución externa)",
+    "redacción/firma del prompt RESERVED_COMPOSER_PROMPT_VERSION (decisión separada, no cubierta por este ADDENDUM)"
+   ]
+  },
+  "reason": "ADDENDUM a la familia PILOT_EXECUTION (extiende -035/-036/-037/-038/-039/-040; NO las supersede — I-7). Responde a PILOT_SCOPE_MATCH_CF6=NO verificado explícitamente para el nuevo tipo de ejecución de R1 (CF6_v2_R2_SCOPE_CHECK.md): el Composer de 4 pasos con Relevance Model activo (R1, tag cf6-v2-R1, auditado externamente PASS) recibe SOLO relevant_evidence[] -- tipo de ejecución distinto del previo ('structured_json_composer_relevance_filtered' vs. 'structured_json_composer'). Reserva el nombre 'shadow-cf6-composer-v2.0-relevance-filtered' en el scope para cuando exista un prompt firmado con ese nombre exacto -- esta ADDENDUM NO redacta ni firma ningún YAML de prompt nuevo (fuera del mandato de esta sesión: 'no rediseñar R1 ni CF-6 v2.0, no implementar'). Tope duro aditivo: 250 llamadas; el tope de 1000 de -035 sigue acotando el total de la familia. NO autoriza corpus, D4, baseline formal, flip, adjudicación, producción, ni ninguna de las decisiones D-ADJ/D-M4+/D-REPORT-EXT (diseño §13, explícitamente fuera de alcance de R1-R6).",
+  "mechanism_check": {
+   "SCOPE_EXTENSION_SUPPORTED": "YES",
+   "mechanism": "decision_type=ADDENDUM en la familia PILOT_EXECUTION",
+   "evidence": {
+    "COVERING_TYPES": [
+     "ADDENDUM",
+     "CORRECTION",
+     "ORIGINAL",
+     "SUPERSESSION"
+    ],
+    "AMENDING_TYPES": [
+     "CORRECTION",
+     "REVOCATION",
+     "SUPERSESSION"
+    ],
+    "ADDENDUM_is_covering_type": true,
+    "ADDENDUM_not_amending (no supersede)": true,
+    "I-7": "ADDENDUM amplía, no supersede — sin supersedes_*, amendment_sequence>=1",
+    "resolver": "decision_scope_resolver une target_ids de los COVERING_TYPES human_confirmed ACTIVE (union de otorgantes menos revocaciones)",
+    "family_PILOT_EXECUTION": {
+     "requires_human_confirmation": true,
+     "selection_modes": [
+      "EXPLICIT_LIST"
+     ],
+     "decision_type_allowlist": null
+    }
+   },
+   "traceability": "-035/-036 permanecen ACTIVE y cubriendo; el ADDENDUM referencia ['PILOT_EXECUTION-2026-035', 'PILOT_EXECUTION-2026-036'] en `reason` y NO los supersede"
+  },
+  "equivalent_call": "governance_service.propose(family='PILOT_EXECUTION', target_ids=['RW-0005', 'RW-0006', 'RW-0009', 'RW-0011', 'RW-0012', 'RW-0014'], decision='APPROVE', decision_type='ADDENDUM', selection_mode='EXPLICIT_LIST', amendment_sequence=1, proposed_by_id='Capa 8 (Claude Code)', reason=<reason>, payload=<payload>)",
+  "awaiting": {
+   "action": "human_confirmed",
+   "authority": "Capa 9 (Cesar)",
+   "note": "NO confirmar aquí."
+  },
+  "invariants": {
+   "LLM_CALLS": 0,
+   "G4D_CALLS": 0,
+   "L2_MUTATIONS": 0,
+   "HUMAN_STATE_CHANGES": 0
+  }
+ },
+ "STOP_RESIDUAL": "Firmar este ADDENDUM (human_confirmed) NO deja por sí solo PILOT_SCOPE_MATCH_CF6=YES: el chequeo (a) de cf6_pilot_scope.evaluate() exige que 'shadow-cf6-composer-v2.0-relevance-filtered' exista como composer_prompt_version real (al menos DRAFT_UNSIGNED). Esa redacción es una decisión y un trabajo separados, explícitamente NO incluidos en este propose ('no implementar'). Orden esperado, igual que el precedente v2→v3: (1) Capa 9 decide si autoriza redactar ese prompt; (2) si lo autoriza, se redacta y (eventualmente) se firma; (3) este ADDENDUM (o uno análogo) se firma human_confirmed; (4) recién entonces cf6_pilot_scope.evaluate(required_composer_prompt_version='shadow-cf6-composer-v2.0-relevance-filtered') puede dar GATE_RESULT=PASS.",
+ "STOP": "detenerse para decisión de Capa 9 — NO registrar human_confirmed; NO redactar el prompt; NO ejecutar R2.2/R5."
+}
