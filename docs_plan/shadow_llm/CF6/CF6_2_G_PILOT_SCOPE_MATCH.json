@@ -1,0 +1,183 @@
+{
+ "schema": "SHADOW_CF6_2_G_PILOT_SCOPE_MATCH/v1",
+ "gate": "CF6-2.G",
+ "llm_calls": 0,
+ "ledger": "factory/layer9/decisions/decisions_v2.jsonl",
+ "pilot_instance": "PILOT_EXECUTION-2026-035",
+ "pilot_scope_summary": [
+  {
+   "document_id": "RW-0005",
+   "agent_id": "shadow_technical_expert",
+   "requirement_id": "SHADOW_G4A",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "7 findings TECHNICAL (G1_routing.json)"
+  },
+  {
+   "document_id": "RW-0006",
+   "agent_id": "shadow_technical_expert",
+   "requirement_id": "SHADOW_G4A",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "6 findings TECHNICAL"
+  },
+  {
+   "document_id": "RW-0011",
+   "agent_id": "shadow_technical_expert",
+   "requirement_id": "SHADOW_G4A",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "1 finding TECHNICAL"
+  },
+  {
+   "document_id": "RW-0012",
+   "agent_id": "shadow_technical_expert",
+   "requirement_id": "SHADOW_G4A",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "1 finding TECHNICAL"
+  },
+  {
+   "document_id": "RW-0014",
+   "agent_id": "shadow_technical_expert",
+   "requirement_id": "SHADOW_G4A",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "2 findings TECHNICAL"
+  },
+  {
+   "document_id": "RW-0005",
+   "agent_id": "shadow_cross_domain_reviewer",
+   "requirement_id": "SHADOW_G4B",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "6 relaciones cross_domain_links.json"
+  },
+  {
+   "document_id": "RW-0006",
+   "agent_id": "shadow_cross_domain_reviewer",
+   "requirement_id": "SHADOW_G4B",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "5 relaciones"
+  },
+  {
+   "document_id": "RW-0011",
+   "agent_id": "shadow_cross_domain_reviewer",
+   "requirement_id": "SHADOW_G4B",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "1 relacion"
+  },
+  {
+   "document_id": "RW-0012",
+   "agent_id": "shadow_cross_domain_reviewer",
+   "requirement_id": "SHADOW_G4B",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "1 relacion"
+  },
+  {
+   "document_id": "RW-0014",
+   "agent_id": "shadow_cross_domain_reviewer",
+   "requirement_id": "SHADOW_G4B",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "2 relaciones"
+  },
+  {
+   "document_id": "RW-0005",
+   "agent_id": "shadow_functional_traceability_expert",
+   "requirement_id": "SHADOW_G4C",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "24 findings FUNCTIONAL_TRACEABILITY"
+  },
+  {
+   "document_id": "RW-0006",
+   "agent_id": "shadow_functional_traceability_expert",
+   "requirement_id": "SHADOW_G4C",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "70 findings"
+  },
+  {
+   "document_id": "RW-0012",
+   "agent_id": "shadow_functional_traceability_expert",
+   "requirement_id": "SHADOW_G4C",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "4 findings"
+  },
+  {
+   "document_id": "RW-0005",
+   "agent_id": "shadow_regulatory_triage_expert",
+   "requirement_id": "SHADOW_G4D",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "57 findings REGULATORY_INCONCLUSIVE - triage <=5, sin observed"
+  },
+  {
+   "document_id": "RW-0006",
+   "agent_id": "shadow_regulatory_triage_expert",
+   "requirement_id": "SHADOW_G4D",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "57 findings"
+  },
+  {
+   "document_id": "RW-0011",
+   "agent_id": "shadow_regulatory_triage_expert",
+   "requirement_id": "SHADOW_G4D",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "57 findings"
+  },
+  {
+   "document_id": "RW-0012",
+   "agent_id": "shadow_regulatory_triage_expert",
+   "requirement_id": "SHADOW_G4D",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "57 findings"
+  },
+  {
+   "document_id": "RW-0014",
+   "agent_id": "shadow_regulatory_triage_expert",
+   "requirement_id": "SHADOW_G4D",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "57 findings"
+  },
+  {
+   "document_id": "RW-0005",
+   "agent_id": "shadow_report_composer",
+   "requirement_id": "SHADOW_G4E",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "narrativa [SHADOW] anclada a finding_record_id"
+  },
+  {
+   "document_id": "RW-0006",
+   "agent_id": "shadow_report_composer",
+   "requirement_id": "SHADOW_G4E",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "narrativa [SHADOW] anclada a finding_record_id"
+  },
+  {
+   "document_id": "RW-0011",
+   "agent_id": "shadow_report_composer",
+   "requirement_id": "SHADOW_G4E",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "narrativa [SHADOW] anclada a finding_record_id"
+  },
+  {
+   "document_id": "RW-0012",
+   "agent_id": "shadow_report_composer",
+   "requirement_id": "SHADOW_G4E",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "narrativa [SHADOW] anclada a finding_record_id"
+  },
+  {
+   "document_id": "RW-0014",
+   "agent_id": "shadow_report_composer",
+   "requirement_id": "SHADOW_G4E",
+   "purpose": "shadow_expert_interpretation",
+   "selection_reason": "narrativa [SHADOW] anclada a finding_record_id"
+  }
+ ],
+ "PILOT_SCOPE_MATCH_CF6": "NO",
+ "scope_checks": {
+  "a_composer_prompt_version": "NO",
+  "b_cf6_2_5": "NO",
+  "c_cf6_3": "NO",
+  "d_execution_type_json_structure": "NO"
+ },
+ "REMAINING_BUDGET_SUFFICIENT": "YES",
+ "remaining_calls": 519,
+ "ACTIVE": "YES",
+ "NOT_SUPERSEDED": "YES",
+ "GATE_RESULT": "FAIL",
+ "decision": "STOP — no proceder con la PILOT existente; Capa 9 decide el mecanismo (ampliar scope vía canal gobernado o nueva PILOT). Claude Code NO propone una nueva PILOT automáticamente (§6)."
+}
