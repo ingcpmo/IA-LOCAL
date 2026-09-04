@@ -1,6 +1,11 @@
 # CF-6 v1.2 · CF6-2 (corrección) — `shadow-cf6-composer-struct-v3` (DRAFT_UNSIGNED)
 
 **Fecha:** 2026-09-04 · **Autoridad:** Capa 9 = Cesar · **Corrida:** sin LLM.
+**Disparador:** `HUMAN_QUALITY_GATE = FAIL` declarado por Capa 9 para el CF6-2.5 con
+`shadow-cf6-composer-struct-v2` — **7/7 secciones fallan ≥1 umbral §4.2**
+(`sec-0062` con `Sobreafirmación regulatoria ≠ 0`). Detalle:
+`CF6_2_5_HUMAN_QUALITY_GATE_VERDICT.json`. Regla §4.2 FAIL → STOP → Capa 9:
+ajustar prompt (vuelta a CF6-2 con nuevo `prompt_version`).
 **Sustituye** a `shadow-cf6-composer-struct-v2` (firmado, tag `cf6-G2`) — **no lo modifica**.
 `composer_structured_v2.yaml` queda intacto y `SIGNED`.
 
@@ -112,6 +117,32 @@ validada con `allowed_technical_findings` de la sección):
 
 Regresión global `-k shadow`: **181 passed** (1 fallo pre-existente no relacionado:
 `test_shadow_and_cutover::test_shadow_run_v2_no_effects_and_reversible`).
+
+---
+
+## 6bis · Demostración de invariantes (`CF6_2_CORRECTION_DEMONSTRATION.json`)
+
+Verificado por sha256 de git (HEAD vs `cf6-G2.5-manifest`, el estado previo a la corrección):
+
+```
+OLD_PROMPT_VERSION   = shadow-cf6-composer-struct-v2
+NEW_PROMPT_VERSION   = shadow-cf6-composer-struct-v3   (status DRAFT_UNSIGNED, sha 1008f0be…→ver JSON)
+QSTATE_UNCHANGED     = YES   (composer_gate.py byte-idéntico; último cambio 415fe35 / CF6-1-r1)
+RENDERER_UNCHANGED   = YES   (composer_gate.render_section byte-idéntico)
+G4D_UNCHANGED        = YES   (experts.py sin cambios desde 50417c6; g4d_*.jsonl sin cambios)
+L2_MUTATIONS         = 0     (FINAL_GMP_CORPUS_FINDINGS.json byte-idéntico, sha 95a79f9b…)
+HUMAN_STATE_CHANGES  = 0     (457 findings UNREVIEWED)
+LLM_CALLS            = 0
+FINDINGS_FINGERPRINT = 235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23
+composer_structured_v2.yaml  = byte-idéntico (SIGNED, NO modificado)
+decisions_v2.jsonl           = byte-idéntico (sin escritura)
+tags preservados             = cf6-G1 · cf6-G1-r1 · cf6-G2-draft · cf6-G2 · cf6-G2G · cf6-G2.5-manifest
+```
+
+Nota `input_has_pages`: `validate_structure_contract(..., input_has_pages=False)` por defecto —
+el contrato de entrada de CF6-2.5/CF6-3 nunca entrega páginas, así que `reviewer_action`
+no puede mencionar ninguna. `input_has_pages=True` desactiva ese chequeo para un contrato futuro
+que sí las entregue.
 
 ---
 

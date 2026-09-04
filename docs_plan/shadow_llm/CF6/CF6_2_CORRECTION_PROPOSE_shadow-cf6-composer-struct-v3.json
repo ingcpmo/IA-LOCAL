@@ -16,7 +16,7 @@
   "ANNEX11_7 — sección real sec-0012 (RW-0005), TECHNICAL",
   "trazabilidad sin regulación directa — sección real sec-0001 (RW-0005), FUNCTIONAL_TRACEABILITY"
  ],
- "CORRECTION_REASON": "HUMAN_QUALITY_GATE / diagnóstico de CF6-2.5: el prompt v2 no daba reglas explícitas para technical_findings (volcó section_type / REGULATORY_INCONCLUSIVE en 5/7 secciones), para páginas en reviewer_action (2 páginas fabricadas), ni para deduplicación de evidencia (citas repetidas ×3 y ×4). v3 añade SOLO esas reglas + `allowed_technical_findings` determinista + 2 few-shots (TECHNICAL, FUNCTIONAL_TRACEABILITY). No toca arquitectura, Q-STATE, renderer, G4d, L2, routing, fingerprint ni human_state.",
+ "CORRECTION_REASON": "HUMAN_QUALITY_GATE = FAIL declarado por Capa 9 para el CF6-2.5 con shadow-cf6-composer-struct-v2 (7/7 secciones fallan >=1 umbral §4.2; sec-0062 con sobreafirmación regulatoria != 0). Ver CF6_2_5_HUMAN_QUALITY_GATE_VERDICT.json. v3 añade SOLO las reglas diagnosticadas (technical_findings ⊆ allowed_technical_findings; reviewer_action sin cumplimiento/CAPA/páginas/hechos nuevos; evidence_observed dedupe; evidence_limitation neutro) + 2 few-shots (TECHNICAL, FUNCTIONAL_TRACEABILITY).",
  "does_not_touch": [
   "arquitectura",
   "Q-STATE",
@@ -31,19 +31,7 @@
  ],
  "TEST_RESULTS": {
   "file": "factory/tests/test_shadow_composer_prompt_v3.py",
-  "passed": 37,
-  "failed": 0,
-  "covers": [
-   "technical_findings ⊄ section_type/regulatory_state/subtype regulatorio",
-   "technical_findings ⊆ allowed_technical_findings",
-   "[] cuando allowed vacío",
-   "reviewer_action rechaza 'cumple' / 'cumplimiento'/'incumplimiento'",
-   "reviewer_action rechaza 'acción correctiva'/'CAPA'",
-   "reviewer_action rechaza páginas no presentes en input",
-   "evidence_observed elimina duplicados textuales",
-   "regresiones sec-0004/0005/0016/0018/0026/0042/0062",
-   "few-shots v3 pasan validate_structure_contract + verify_qstate"
-  ]
+  "note": "ver TEST_RESULTS tras re-run"
  },
  "invariants": {
   "LLM_CALLS": 0,
@@ -53,10 +41,11 @@
   "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
  },
  "proposed_by_id": "Capa 8 (Claude Code)",
- "proposed_at": "2026-09-04T03:26:32Z",
+ "proposed_at": "2026-09-04T03:43:32Z",
  "awaiting": {
   "action": "human_confirmed",
   "authority": "Capa 9 (Cesar)",
   "note": "NO firmar aquí. NO ejecutar nuevo CF6-2.5 ni CF6-3."
- }
+ },
+ "triggered_by": "CF6_2_5_HUMAN_QUALITY_GATE_VERDICT.json (verdict=FAIL, Capa 9)"
 }

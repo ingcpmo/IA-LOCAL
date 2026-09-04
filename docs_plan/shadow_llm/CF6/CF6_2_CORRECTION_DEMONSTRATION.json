@@ -1,0 +1,31 @@
+{
+ "schema": "SHADOW_CF6_2_CORRECTION_DEMONSTRATION/v1",
+ "OLD_PROMPT_VERSION": "shadow-cf6-composer-struct-v2",
+ "NEW_PROMPT_VERSION": "shadow-cf6-composer-struct-v3",
+ "new_prompt_status": "DRAFT_UNSIGNED",
+ "new_prompt_sha256": "1008f0be6f0d88a1091fa35a6ecd8ece054b32c27de3dc7e5f0355da7bdcf721",
+ "old_prompt_status": "SIGNED",
+ "old_prompt_sha256": "b363d2a6848a7dfd13bb38b98977170dd35f9f1e20c3fbf1ff6fc8a216c2b693",
+ "old_prompt_yaml_unchanged": true,
+ "QSTATE_UNCHANGED": "YES",
+ "RENDERER_UNCHANGED": "YES",
+ "verifier_py_unchanged": true,
+ "G4D_UNCHANGED": "YES",
+ "g4d_code_last_commit": "50417c6",
+ "L2_MUTATIONS": 0,
+ "L2_sha256_unchanged": true,
+ "HUMAN_STATE_CHANGES": 0,
+ "LLM_CALLS": 0,
+ "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23",
+ "ledger_unchanged": true,
+ "tags_preserved": [
+  "cf6-G1",
+  "cf6-G1-r1",
+  "cf6-G2-draft",
+  "cf6-G2",
+  "cf6-G2G",
+  "cf6-G2.5-manifest"
+ ],
+ "correction_commit": "0a457ec (+ este commit: verdict + demostración + param input_has_pages)",
+ "human_confirmed": "NO — propose preparado, STOP antes de human_confirmed"
+}

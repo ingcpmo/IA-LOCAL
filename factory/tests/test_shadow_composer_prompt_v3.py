@@ -156,6 +156,17 @@ def test_reviewer_action_rejects_page_references_not_in_input(ra):
     assert any("página no presente en el input" in x for x in v), (ra, v)
 
 
+def test_page_rule_is_conditional_on_input_has_pages():
+    o = _ok_base()
+    o["reviewer_action"] = "Revisar en RW-0005 (pág. 2) si los pasajes cubren el requisito"
+    # contrato CF6-2.5/CF6-3: el input NO entrega páginas -> se marca
+    assert any("página no presente" in x for x in
+               V3.validate_structure_contract(o, allowed_technical_findings=[]))
+    # si un contrato futuro sí entregara páginas -> no se marca por este motivo
+    assert not any("página no presente" in x for x in
+                   V3.validate_structure_contract(o, allowed_technical_findings=[], input_has_pages=True))
+
+
 def test_reviewer_action_without_pages_or_compliance_passes():
     o = _ok_base()
     o["reviewer_action"] = ("Revisar en RW-0005 si los pasajes recuperados cubren el sub-criterio "

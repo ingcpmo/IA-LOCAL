@@ -178,8 +178,15 @@ def normalize_evidence_observed(obj: dict) -> dict:
     return out
 
 
-def validate_structure_contract(obj, *, allowed_technical_findings: list[str] | None = None) -> list[str]:
-    """Validación ESTRUCTURAL v3 (sin L2 / sin Q-STATE). Lista vacía = ok."""
+def validate_structure_contract(obj, *, allowed_technical_findings: list[str] | None = None,
+                                input_has_pages: bool = False) -> list[str]:
+    """Validación ESTRUCTURAL v3 (sin L2 / sin Q-STATE). Lista vacía = ok.
+
+    `input_has_pages`: el contrato de entrada de CF6-2.5 / CF6-3 NUNCA entrega
+    números de página (`cf6_pilot_runner._section_context` sólo pasa citas), así
+    que por defecto `reviewer_action` no puede mencionar páginas. Si un contrato
+    futuro entregara páginas, pasar `input_has_pages=True` desactiva ese chequeo
+    (queda cubierto por "no hechos nuevos fuera del input")."""
     allowed = set(allowed_technical_findings or [])
     v: list[str] = []
     if not isinstance(obj, dict):
@@ -252,7 +259,7 @@ def validate_structure_contract(obj, *, allowed_technical_findings: list[str] | 
         if _CAPA_RE.search(ra):
             v.append(f"reviewer_action menciona CAPA/acción correctiva/desviación: "
                      f"{_CAPA_RE.search(ra).group(0)!r}")
-        if _PAGE_RE.search(ra):
+        if not input_has_pages and _PAGE_RE.search(ra):
             v.append(f"reviewer_action introduce una página no presente en el input: "
                      f"{_PAGE_RE.search(ra).group(0)!r}")
 
