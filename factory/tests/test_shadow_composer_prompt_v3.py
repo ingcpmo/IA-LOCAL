@@ -57,15 +57,28 @@ def _ok_base(section_type="REGULATORY", regulatory_state="INCONCLUSIVE"):
 
 # ───────────────────── gobernanza / no-solape con v2 ──────────────────
 
-def test_v3_is_draft_unsigned_and_supersedes_v2():
+def test_v3_is_signed_by_layer9_and_supersedes_v2():
     p = V3.load()
-    assert p["status"] == "DRAFT_UNSIGNED"
-    assert V3.is_signed() is False
-    with pytest.raises(V3.PromptNotSignedError):
-        V3.assert_signed()
+    assert p["status"] == "SIGNED"
+    assert V3.is_signed() is True
+    V3.assert_signed()  # no raise
+    sig = V3.signature()
+    assert sig["signed_by"] == "Capa 9 (Cesar)"
+    assert sig["signed_at"] == "2026-09-04"
     assert p["supersedes"] == "shadow-cf6-composer-struct-v2" == V3.SUPERSEDES
     assert V3.PROMPT_VERSION == "shadow-cf6-composer-struct-v3"
     assert len(V3.few_shot()) == 3
+
+
+def test_v3_governed_evidence_propose_to_human_confirmed_consistent():
+    ev = V3.governed_evidence()
+    assert ev["propose_to_human_confirmed_consistent"] is True
+    assert ev["propose"]["status_at_propose"] == "DRAFT_UNSIGNED"
+    assert ev["human_confirmed"]["approved_by_id"] == "Capa 9 (Cesar)"
+    assert ev["human_confirmed"]["signed_prompt_sha256"] == V3.prompt_sha256()
+    assert (ev["human_confirmed"]["confirms_propose"]["proposed_prompt_sha256"]
+            != ev["human_confirmed"]["signed_prompt_sha256"])
+    assert ev["tag"] == "cf6-G2-r1"
 
 
 def test_v2_signed_prompt_is_untouched():
@@ -267,12 +280,13 @@ def test_v3_technical_and_functional_few_shots_have_real_nonempty_technical_find
     assert reg["expected_output"]["technical_findings"] == []
 
 
-def test_propose_record_shape():
-    r = V3.propose_record()
+def test_frozen_propose_record_is_unsigned_and_wellformed():
+    r = json.loads((_SL / "CF6" / "CF6_2_CORRECTION_PROPOSE_shadow-cf6-composer-struct-v3.json")
+                   .read_text(encoding="utf-8"))
     assert r["NEW_PROMPT_VERSION"] == "shadow-cf6-composer-struct-v3"
     assert r["OLD_PROMPT_VERSION"] == "shadow-cf6-composer-struct-v2"
-    assert r["status_at_propose"] == "DRAFT_UNSIGNED"
+    assert r["status_at_propose"] == "DRAFT_UNSIGNED"   # el propose se hizo sobre el prompt sin firmar
+    assert r["prompt_sha256"] == "1008f0be6f0d88a1091fa35a6ecd8ece054b32c27de3dc7e5f0355da7bdcf721"
     assert r["written_to_ledger"] is False
     assert r["awaiting"]["action"] == "human_confirmed"
-    assert "composer_structured_v2.yaml (firmado)" in r["does_not_touch"]
     assert r["invariants"]["FINDINGS_FINGERPRINT"].startswith("235f724a738ce783")

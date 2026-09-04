@@ -1,0 +1,109 @@
+{
+ "schema": "SHADOW_CF6_2_CORRECTION_GOVERNED_EVIDENCE/v1",
+ "NEW_PROMPT_VERSION": "shadow-cf6-composer-struct-v3",
+ "OLD_PROMPT_VERSION": "shadow-cf6-composer-struct-v2",
+ "propose": {
+  "schema": "SHADOW_CF6_2_CORRECTION_PROMPT_PROPOSE/v1",
+  "action": "propose",
+  "decision_origin": "agent_proposed",
+  "written_to_ledger": false,
+  "submit_via": "firma de Capa 9 sobre el YAML + evidencia propose→human_confirmed congelada en tag propio",
+  "NEW_PROMPT_VERSION": "shadow-cf6-composer-struct-v3",
+  "OLD_PROMPT_VERSION": "shadow-cf6-composer-struct-v2",
+  "prompt_path": "factory/regulatory/shadow/prompts/composer_structured_v3.yaml",
+  "prompt_sha256": "1008f0be6f0d88a1091fa35a6ecd8ece054b32c27de3dc7e5f0355da7bdcf721",
+  "status_at_propose": "DRAFT_UNSIGNED",
+  "schema_version": "SHADOW_CF6_COMPOSER_CONTRACT/v1.2",
+  "few_shot_count": 3,
+  "few_shot_based_on": [
+   "21_CFR_11.10(e) — sección real sec-0031 (RW-0011)",
+   "ANNEX11_7 — sección real sec-0012 (RW-0005), TECHNICAL",
+   "trazabilidad sin regulación directa — sección real sec-0001 (RW-0005), FUNCTIONAL_TRACEABILITY"
+  ],
+  "CORRECTION_REASON": "Diagnóstico técnico (Capa 8 / Claude Code) del CF6-2.5 con shadow-cf6-composer-struct-v2: 7/7 secciones del SAMPLE_MANIFEST con defectos frente a §4.2 (technical_findings = section_type/REGULATORY_INCONCLUSIVE; páginas fabricadas; 'cumple'/'cumplen'; citas duplicadas; sec-0062 sobreafirmación regulatoria). v3 añade SOLO las reglas diagnosticadas + 2 few-shots (TECHNICAL, FUNCTIONAL_TRACEABILITY). La ADJUDICACIÓN HUMANA del HUMAN_QUALITY_GATE (FAIL) queda PENDIENTE de confirmación explícita de Capa 9 — ver CF6_2_5_HUMAN_QUALITY_GATE_VERDICT.json.",
+  "does_not_touch": [
+   "arquitectura",
+   "Q-STATE",
+   "renderer determinista",
+   "G4d",
+   "L2",
+   "routing",
+   "FINDINGS_FINGERPRINT",
+   "human_state",
+   "composer_structured_v2.yaml (firmado)",
+   "tags previos"
+  ],
+  "TEST_RESULTS": {
+   "file": "factory/tests/test_shadow_composer_prompt_v3.py",
+   "note": "ver TEST_RESULTS tras re-run"
+  },
+  "invariants": {
+   "LLM_CALLS": 0,
+   "G4D_CALLS": 0,
+   "L2_MUTATIONS": 0,
+   "HUMAN_STATE_CHANGES": 0,
+   "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+  },
+  "proposed_by_id": "Capa 8 (Claude Code)",
+  "proposed_at": "2026-09-04T03:43:32Z",
+  "awaiting": {
+   "action": "human_confirmed",
+   "authority": "Capa 9 (Cesar)",
+   "note": "NO firmar aquí. NO ejecutar nuevo CF6-2.5 ni CF6-3."
+  },
+  "triggered_by": "diagnóstico técnico de Capa 8 (CF6_2_5_HUMAN_QUALITY_GATE_VERDICT.json, status PENDING_HUMAN_CONFIRMATION)",
+  "human_quality_gate_adjudication": "PENDING — no atribuir FAIL a Capa 9 sin confirmación explícita"
+ },
+ "human_confirmed": {
+  "schema": "SHADOW_CF6_2_CORRECTION_PROMPT_HUMAN_CONFIRMED/v1",
+  "action": "human_confirmed",
+  "NEW_PROMPT_VERSION": "shadow-cf6-composer-struct-v3",
+  "OLD_PROMPT_VERSION": "shadow-cf6-composer-struct-v2",
+  "confirms_propose": {
+   "path": "docs_plan/shadow_llm/CF6/CF6_2_CORRECTION_PROPOSE_shadow-cf6-composer-struct-v3.json",
+   "record_sha256": "e05f27e4e002797e97b56bf824f61f652248d08652f2ba5bed1197cd6318b0d5",
+   "proposed_prompt_sha256": "1008f0be6f0d88a1091fa35a6ecd8ece054b32c27de3dc7e5f0355da7bdcf721",
+   "proposed_status": "DRAFT_UNSIGNED"
+  },
+  "signed_prompt_sha256": "0f1ecd72c81ffbae43d47cec7d71c9eb9f30e05d3083f3b87b53209bb662bafe",
+  "authority": "Capa 9 (Cesar)",
+  "approved_by_id": "Capa 9 (Cesar)",
+  "signed_at": "2026-09-04",
+  "signed_on": "confirmación explícita de Capa 9 en mensaje de sesión (2026-09-04): FAIL del HUMAN_QUALITY_GATE de CF6-2.5 + autorización de shadow-cf6-composer-struct-v3; registro propose sha256 1008f0be6f0d88a1091fa35a6ecd8ece054b32c27de3dc7e5f0355da7bdcf721",
+  "does_not_touch": [
+   "Q-STATE",
+   "renderer determinista",
+   "G4d",
+   "L2",
+   "routing",
+   "FINDINGS_FINGERPRINT",
+   "human_state",
+   "composer_structured_v2.yaml (firmado)",
+   "tags previos"
+  ],
+  "invariants": {
+   "LLM_CALLS": 0,
+   "G4D_CALLS": 0,
+   "L2_MUTATIONS": 0,
+   "HUMAN_STATE_CHANGES": 0,
+   "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+  },
+  "frozen_in_tag": "cf6-G2-r1"
+ },
+ "propose_to_human_confirmed_consistent": true,
+ "signature": {
+  "status": "SIGNED",
+  "signed_by": "Capa 9 (Cesar)",
+  "signed_at": "2026-09-04",
+  "signed_on": "confirmación explícita de Capa 9 en mensaje de sesión (2026-09-04): FAIL del HUMAN_QUALITY_GATE de CF6-2.5 + autorización de shadow-cf6-composer-struct-v3; registro propose sha256 1008f0be6f0d88a1091fa35a6ecd8ece054b32c27de3dc7e5f0355da7bdcf721"
+ },
+ "tag": "cf6-G2-r1",
+ "prior_tags_kept_intact": [
+  "cf6-G1",
+  "cf6-G1-r1",
+  "cf6-G2-draft",
+  "cf6-G2",
+  "cf6-G2G",
+  "cf6-G2.5-manifest"
+ ]
+}

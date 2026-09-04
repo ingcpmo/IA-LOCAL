@@ -1,0 +1,45 @@
+{
+ "schema": "SHADOW_CF6_2_5_HUMAN_QUALITY_GATE_ADJUDICATION/v1",
+ "gate": "HUMAN_QUALITY_GATE (CF-6 v1.2 §4.2)",
+ "decision_origin": "human_confirmed",
+ "governed_mechanism": "artefacto de adjudicación firmado por Capa 9 + commit + tag cf6-G2-r1 (no existe decision_family de 'quality gate' en decision_families.yaml ni id en w5_human_decisions.DECISION_IDS; mismo patrón git-anclado que la firma del prompt en CF6-2)",
+ "HUMAN_GATE_RESULT": "FAIL",
+ "HUMAN_GATE_DECLARED_BY": "cesar",
+ "HUMAN_GATE_DECLARED_BY_DISPLAY": "Capa 9 (Cesar)",
+ "HUMAN_GATE_DECLARED_AT": "2026-09-04T04:03:09Z",
+ "HUMAN_GATE_EVIDENCE_PATH": "docs_plan/shadow_llm/CF6/CF6_2_5_HUMAN_QUALITY_GATE_ADJUDICATION.json",
+ "capa9_confirmation_verbatim": "Capa 9 confirma HUMAN_QUALITY_GATE = FAIL para el CF6-2.5 ejecutado con shadow-cf6-composer-struct-v2, con base en los hallazgos técnicos documentados por sección. Autorizo continuar con la propuesta shadow-cf6-composer-struct-v3.",
+ "basis": "hallazgos técnicos documentados por sección — diagnóstico de Capa 8 (Claude Code) en CF6_2_5_HUMAN_QUALITY_GATE_VERDICT.json.technical_diagnosis_per_section; paquete A/B en CF6_2_5_HUMAN_QUALITY_GATE.md",
+ "rule_reference": "CF-6 v1.2 §4.2 — PASS sólo si CADA sección pasa TODOS los umbrales; Sobreafirmación regulatoria = 0 por sección",
+ "pilot_prompt_version": "shadow-cf6-composer-struct-v2",
+ "sample_manifest_hash": "7422faaf569430dbc8a19647a2d2b64ff6b53b5231fc4e7962b4486e3165f5a0",
+ "sample_manifest_tag": "cf6-G2.5-manifest",
+ "sections_fail": [
+  "sec-0004",
+  "sec-0005",
+  "sec-0016",
+  "sec-0018",
+  "sec-0026",
+  "sec-0042",
+  "sec-0062"
+ ],
+ "sections_pass": [],
+ "authorizes": "continuar con la propuesta shadow-cf6-composer-struct-v3 (hasta propose→human_confirmed y firma)",
+ "does_not_modify": [
+  "CF6_2_5_HUMAN_QUALITY_GATE.md",
+  "CF6_2_5_B_OUTPUTS.jsonl",
+  "CF6_2_5_PILOT_RUN.json",
+  "cf6-G2",
+  "cf6-G2G",
+  "cf6-G2.5-manifest",
+  "composer_structured_v2.yaml"
+ ],
+ "invariants": {
+  "LLM_CALLS": 0,
+  "G4D_CALLS": 0,
+  "L2_MUTATIONS": 0,
+  "HUMAN_STATE_CHANGES": 0,
+  "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+ },
+ "frozen_in_tag": "cf6-G2-r1"
+}

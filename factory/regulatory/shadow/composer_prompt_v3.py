@@ -352,14 +352,78 @@ def propose_record(*, proposed_by_id: str = "Capa 8 (Claude Code)",
     }
 
 
+_PROPOSE_PATH = Path("docs_plan/shadow_llm/CF6/CF6_2_CORRECTION_PROPOSE_shadow-cf6-composer-struct-v3.json")
+
+
+def signature(prompt_id: str = PROMPT_ID) -> dict:
+    p = load(prompt_id)
+    return {k: p.get(k) for k in ("status", "signed_by", "signed_at", "signed_on")}
+
+
+def human_confirmed_record(*, propose_path: Path = _PROPOSE_PATH) -> dict:
+    """Mitad `human_confirmed` de la evidencia gobernada de v3. Exige YAML SIGNED."""
+    assert_signed()
+    sig = signature()
+    prop = json.loads(Path(propose_path).read_text(encoding="utf-8"))
+    return {
+        "schema": "SHADOW_CF6_2_CORRECTION_PROMPT_HUMAN_CONFIRMED/v1",
+        "action": "human_confirmed",
+        "NEW_PROMPT_VERSION": PROMPT_VERSION,
+        "OLD_PROMPT_VERSION": SUPERSEDES,
+        "confirms_propose": {
+            "path": str(propose_path),
+            "record_sha256": hashlib.sha256(Path(propose_path).read_bytes()).hexdigest(),
+            "proposed_prompt_sha256": prop.get("prompt_sha256"),
+            "proposed_status": prop.get("status_at_propose"),
+        },
+        "signed_prompt_sha256": prompt_sha256(),
+        "authority": "Capa 9 (Cesar)",
+        "approved_by_id": sig["signed_by"],
+        "signed_at": sig["signed_at"],
+        "signed_on": sig["signed_on"],
+        "does_not_touch": ["Q-STATE", "renderer determinista", "G4d", "L2", "routing",
+                           "FINDINGS_FINGERPRINT", "human_state",
+                           "composer_structured_v2.yaml (firmado)", "tags previos"],
+        "invariants": {
+            "LLM_CALLS": 0, "G4D_CALLS": 0, "L2_MUTATIONS": 0, "HUMAN_STATE_CHANGES": 0,
+            "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23",
+        },
+        "frozen_in_tag": "cf6-G2-r1",
+    }
+
+
+def governed_evidence(*, propose_path: Path = _PROPOSE_PATH) -> dict:
+    prop = json.loads(Path(propose_path).read_text(encoding="utf-8"))
+    conf = human_confirmed_record(propose_path=propose_path)
+    consistent = (
+        prop.get("NEW_PROMPT_VERSION") == conf["NEW_PROMPT_VERSION"] == PROMPT_VERSION
+        and conf["confirms_propose"]["proposed_prompt_sha256"] == prop.get("prompt_sha256")
+        and prop.get("status_at_propose") == "DRAFT_UNSIGNED")
+    return {
+        "schema": "SHADOW_CF6_2_CORRECTION_GOVERNED_EVIDENCE/v1",
+        "NEW_PROMPT_VERSION": PROMPT_VERSION,
+        "OLD_PROMPT_VERSION": SUPERSEDES,
+        "propose": prop,
+        "human_confirmed": conf,
+        "propose_to_human_confirmed_consistent": consistent,
+        "signature": signature(),
+        "tag": "cf6-G2-r1",
+        "prior_tags_kept_intact": ["cf6-G1", "cf6-G1-r1", "cf6-G2-draft", "cf6-G2",
+                                   "cf6-G2G", "cf6-G2.5-manifest"],
+    }
+
+
 if __name__ == "__main__":  # pragma: no cover
     import sys
-    if len(sys.argv) > 1 and sys.argv[1] == "propose":
-        out = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(
-            "docs_plan/shadow_llm/CF6/CF6_2_CORRECTION_PROPOSE_shadow-cf6-composer-struct-v3.json")
-        out.parent.mkdir(parents=True, exist_ok=True)
-        rec = propose_record()
-        out.write_text(json.dumps(rec, indent=1, ensure_ascii=False), encoding="utf-8")
-        print("WROTE", out)
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "spec"
+    if cmd == "propose":
+        _PROPOSE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _PROPOSE_PATH.write_text(json.dumps(propose_record(), indent=1, ensure_ascii=False), encoding="utf-8")
+        print("WROTE", _PROPOSE_PATH)
+    elif cmd == "evidence":
+        out = Path("docs_plan/shadow_llm/CF6/CF6_2_CORRECTION_GOVERNED_EVIDENCE_shadow-cf6-composer-struct-v3.json")
+        ev = governed_evidence()
+        out.write_text(json.dumps(ev, indent=1, ensure_ascii=False), encoding="utf-8")
+        print("WROTE", out, "| consistent:", ev["propose_to_human_confirmed_consistent"])
     else:
         print(json.dumps(spec(), indent=1, ensure_ascii=False))

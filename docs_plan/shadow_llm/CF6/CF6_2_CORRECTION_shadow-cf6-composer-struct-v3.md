@@ -1,14 +1,21 @@
 # CF-6 v1.2 · CF6-2 (corrección) — `shadow-cf6-composer-struct-v3` (DRAFT_UNSIGNED)
 
 **Fecha:** 2026-09-04 · **Autoridad:** Capa 9 = Cesar · **Corrida:** sin LLM.
-**Disparador:** **diagnóstico técnico de Capa 8 (Claude Code)** del CF6-2.5 con
-`shadow-cf6-composer-struct-v2` — 7/7 secciones del SAMPLE_MANIFEST con defectos
-documentados frente a los umbrales §4.2 (`sec-0062` con sobreafirmación regulatoria
-en `reviewer_action`). Detalle: `CF6_2_5_HUMAN_QUALITY_GATE_VERDICT.json`.
-**La ADJUDICACIÓN HUMANA del HUMAN_QUALITY_GATE queda `PENDING_HUMAN_CONFIRMATION`** —
-no hay registro gobernado ni artefacto firmado de adjudicación de Capa 9. La
-corrección v3 se prepara sobre el diagnóstico técnico; su firma y el veredicto del
-gate requieren confirmación explícita de Capa 9.
+
+**HUMAN_QUALITY_GATE = FAIL — adjudicación humana registrada.** Capa 9 (`cesar`) confirmó
+explícitamente el FAIL del CF6-2.5 con `shadow-cf6-composer-struct-v2` sobre el diagnóstico
+técnico por sección (Capa 8). Evidencia gobernada: `CF6_2_5_HUMAN_QUALITY_GATE_ADJUDICATION.json`
+(`decision_origin: human_confirmed`, `HUMAN_GATE_DECLARED_BY: cesar`, cita verbatim de la
+confirmación), congelada en el tag `cf6-G2-r1`. No existe `decision_family` de "quality gate"
+ni id en `w5_human_decisions`; el mecanismo gobernado del arco para este gate es el artefacto
+firmado + commit + tag (mismo patrón que la firma del prompt en CF6-2). Los artefactos del
+piloto (`CF6_2_5_HUMAN_QUALITY_GATE.md`, `CF6_2_5_B_OUTPUTS.jsonl`, `CF6_2_5_PILOT_RUN.json`)
+**no se modificaron**.
+
+**`shadow-cf6-composer-struct-v3` = SIGNED** por Capa 9 (Cesar), 2026-09-04. Evidencia
+`propose → human_confirmed` en `CF6_2_CORRECTION_GOVERNED_EVIDENCE_shadow-cf6-composer-struct-v3.json`
+(`consistent = true`): propose sha `1008f0be…` (DRAFT_UNSIGNED) → firmado sha `0f1ecd72…`.
+Congelado en el tag **`cf6-G2-r1`** (sin mover ningún tag anterior).
 **Sustituye** a `shadow-cf6-composer-struct-v2` (firmado, tag `cf6-G2`) — **no lo modifica**.
 `composer_structured_v2.yaml` queda intacto y `SIGNED`.
 
@@ -165,3 +172,39 @@ Para cerrar la corrección, Capa 9:
 
 **No** se ejecutó un nuevo CF6-2.5. **No** se ejecutó CF6-3. **No** se sobrescribió `cf6-G2`,
 `cf6-G2G`, `cf6-G2.5-manifest` ni los artefactos del piloto fallido.
+
+---
+
+## 8 · Revalidación de `PILOT_SCOPE_MATCH_CF6` contra v3 — **NO**
+
+`cf6_pilot_scope.evaluate(required_composer_prompt_version="shadow-cf6-composer-struct-v3")`
+sobre el ledger (`CF6_2_G_PILOT_SCOPE_MATCH_v3.json`):
+
+```
+vs v2 (default) : PILOT_SCOPE_MATCH_CF6 = YES  (cf6-G2G se preserva)
+vs v3           : PILOT_SCOPE_MATCH_CF6 = NO   -> GATE FAIL
+  a_composer_prompt_version         = NO   (el ADDENDUM -037/-038 nombra explícitamente
+                                            shadow-cf6-composer-struct-v2, NO v3)
+  b_cf6_2_5 = YES · c_cf6_3 = YES · d_execution_type_json_structure = YES
+```
+
+**El scope NO cubre explícitamente v3.** Per instrucción → STOP + preparar únicamente la
+ampliación gobernada necesaria (no ejecutarla):
+
+`CF6_2_G_SCOPE_ADDENDUM_V3_PROPOSE.json` (`cf6_scope_addendum_v3.build_addendum_propose`):
+- `family: PILOT_EXECUTION` · `decision_type: ADDENDUM` · `amendment_sequence: 1` ·
+  `supersedes_instance_id: null` (I-7: amplía, no supersede) · `decision_origin: agent_proposed` ·
+  `written_to_ledger: false`.
+- `payload.composer_prompt_version = shadow-cf6-composer-struct-v3` ·
+  `supersedes_prompt_version = shadow-cf6-composer-struct-v2` · `execution_type = structured_json_composer` ·
+  `extends_instances = [-035, -036, -037, -038]` · `sample_manifest_hash = 7422faaf…` (mismo) ·
+  `max_calls = 250` aditivo (tope 1000 de -035 sigue acotando: 481 G4 + 7 piloto v2).
+- `SCOPE_EXTENSION_SUPPORTED = YES` (ADDENDUM, mismo mecanismo que cf6-G2G).
+- `awaiting: human_confirmed / Capa 9`.
+
+Tras la confirmación de Capa 9: re-ejecutar
+`evaluate(required_composer_prompt_version="shadow-cf6-composer-struct-v3")` → debe pasar a `YES`;
+entonces queda habilitado un nuevo CF6-2.5 (re-generación de B con v3 sobre el mismo
+SAMPLE_MANIFEST congelado).
+
+**No** se ejecuta LLM, **no** el nuevo CF6-2.5, **no** CF6-3.

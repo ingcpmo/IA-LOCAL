@@ -2,7 +2,7 @@
  "schema": "SHADOW_CF6_2_CORRECTION_DEMONSTRATION/v1",
  "OLD_PROMPT_VERSION": "shadow-cf6-composer-struct-v2",
  "NEW_PROMPT_VERSION": "shadow-cf6-composer-struct-v3",
- "new_prompt_status": "DRAFT_UNSIGNED",
+ "new_prompt_status": "SIGNED",
  "new_prompt_sha256": "1008f0be6f0d88a1091fa35a6ecd8ece054b32c27de3dc7e5f0355da7bdcf721",
  "old_prompt_status": "SIGNED",
  "old_prompt_sha256": "b363d2a6848a7dfd13bb38b98977170dd35f9f1e20c3fbf1ff6fc8a216c2b693",
@@ -28,6 +28,11 @@
  ],
  "correction_commit": "0a457ec (+ este commit: verdict + demostración + param input_has_pages)",
  "human_confirmed": "NO — propose preparado, STOP antes de human_confirmed",
- "human_quality_gate_status": "PENDING_HUMAN_CONFIRMATION (adjudicación de Capa 9 NO registrada)",
- "trigger_note": "El diagnóstico técnico (Capa 8) del CF6-2.5 muestra defectos por sección; la corrección v3 se prepara sobre ese diagnóstico. La adjudicación humana del HUMAN_QUALITY_GATE queda PENDIENTE de confirmación explícita de Capa 9."
+ "human_quality_gate_status": "HUMAN_CONFIRMED = FAIL (Capa 9 · cesar · ver CF6_2_5_HUMAN_QUALITY_GATE_ADJUDICATION.json)",
+ "trigger_note": "El diagnóstico técnico (Capa 8) del CF6-2.5 muestra defectos por sección; la corrección v3 se prepara sobre ese diagnóstico. La adjudicación humana del HUMAN_QUALITY_GATE queda PENDIENTE de confirmación explícita de Capa 9.",
+ "new_prompt_sha256_signed": "0f1ecd72c81ffbae43d47cec7d71c9eb9f30e05d3083f3b87b53209bb662bafe",
+ "new_prompt_sha256_at_propose": "1008f0be6f0d88a1091fa35a6ecd8ece054b32c27de3dc7e5f0355da7bdcf721",
+ "v3_signed_frozen_in_tag": "cf6-G2-r1",
+ "PILOT_SCOPE_MATCH_CF6_vs_v3": "NO — el ADDENDUM -037/-038 nombra shadow-cf6-composer-struct-v2, no v3; ver CF6_2_G_PILOT_SCOPE_MATCH_v3.json",
+ "scope_extension_v3_propose": "CF6_2_G_SCOPE_ADDENDUM_V3_PROPOSE.json (agent_proposed, written_to_ledger=false, awaiting human_confirmed)"
 }

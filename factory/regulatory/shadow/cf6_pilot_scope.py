@@ -60,14 +60,23 @@ def latest_pilot(ledger: Path = _DEFAULT_LEDGER) -> dict | None:
     return (confirms or pilots)[-1]
 
 
-def evaluate(ledger: Path = _DEFAULT_LEDGER, *, g4_calls_used: int = 481) -> dict:
+def evaluate(ledger: Path = _DEFAULT_LEDGER, *, g4_calls_used: int = 481,
+             required_composer_prompt_version: str = COMPOSER_PROMPT_VERSION) -> dict:
+    """`required_composer_prompt_version`: qué composer_prompt_version debe cubrir
+    EXPLÍCITAMENTE el scope firmado de la PILOT. Por defecto el v2 (comportamiento
+    de cf6-G2G). Para revalidar contra v3, pasar 'shadow-cf6-composer-struct-v3':
+    el chequeo (a) exige entonces la cadena EXACTA (no el prefijo genérico
+    'cf6-composer-struct')."""
     pilot = latest_pilot(ledger)
     scope_blob = json.dumps(pilot or {}, ensure_ascii=False).lower()
 
     def covered(tokens) -> bool:
         return any(t.lower() in scope_blob for t in tokens if t and t != "cf6")
 
-    checks = {k: ("YES" if covered(v) else "NO") for k, v in _SCOPE_TOKENS.items()}
+    _tok = dict(_SCOPE_TOKENS)
+    # (a) coincidencia EXACTA de la versión requerida (sin prefijo genérico)
+    _tok["a_composer_prompt_version"] = (required_composer_prompt_version,)
+    checks = {k: ("YES" if covered(v) else "NO") for k, v in _tok.items()}
     pilot_scope_match = "YES" if all(v == "YES" for v in checks.values()) else "NO"
 
     payload = (pilot or {}).get("payload") or {}

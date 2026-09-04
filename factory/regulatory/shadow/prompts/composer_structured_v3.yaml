@@ -8,16 +8,17 @@
 # arquitectura, Q-STATE, el renderer determinista, G4d, L2, el routing, el
 # fingerprint ni human_state.
 #
-# ESTADO: DRAFT_UNSIGNED — pendiente de firma de Capa 9. Ninguna corrida LLM
-# (nuevo CF6-2.5 / CF6-3) puede usarlo mientras siga sin firmar.
+# ESTADO: SIGNED — firmado por Capa 9 (Cesar) el 2026-09-04, tras HUMAN_QUALITY_GATE=FAIL
+# de CF6-2.5. Evidencia propose→human_confirmed congelada en el tag cf6-G2-r1.
+# NO cambia arquitectura, Q-STATE, renderer, G4d, L2, routing, fingerprint ni human_state.
 
 prompt_id: shadow_cf6_composer_structured_v3
 prompt_version: "shadow-cf6-composer-struct-v3"
 supersedes: "shadow-cf6-composer-struct-v2"
-status: DRAFT_UNSIGNED
-signed_by: null
-signed_at: null
-signed_on: null
+status: SIGNED
+signed_by: "Capa 9 (Cesar)"
+signed_at: "2026-09-04"
+signed_on: "confirmación explícita de Capa 9 en mensaje de sesión (2026-09-04): FAIL del HUMAN_QUALITY_GATE de CF6-2.5 + autorización de shadow-cf6-composer-struct-v3; registro propose sha256 1008f0be6f0d88a1091fa35a6ecd8ece054b32c27de3dc7e5f0355da7bdcf721"
 schema_version: "SHADOW_CF6_COMPOSER_CONTRACT/v1.2"
 temperature: 0.0
 output: json_only
