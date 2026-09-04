@@ -1,11 +1,14 @@
 # CF-6 v1.2 · CF6-2 (corrección) — `shadow-cf6-composer-struct-v3` (DRAFT_UNSIGNED)
 
 **Fecha:** 2026-09-04 · **Autoridad:** Capa 9 = Cesar · **Corrida:** sin LLM.
-**Disparador:** `HUMAN_QUALITY_GATE = FAIL` declarado por Capa 9 para el CF6-2.5 con
-`shadow-cf6-composer-struct-v2` — **7/7 secciones fallan ≥1 umbral §4.2**
-(`sec-0062` con `Sobreafirmación regulatoria ≠ 0`). Detalle:
-`CF6_2_5_HUMAN_QUALITY_GATE_VERDICT.json`. Regla §4.2 FAIL → STOP → Capa 9:
-ajustar prompt (vuelta a CF6-2 con nuevo `prompt_version`).
+**Disparador:** **diagnóstico técnico de Capa 8 (Claude Code)** del CF6-2.5 con
+`shadow-cf6-composer-struct-v2` — 7/7 secciones del SAMPLE_MANIFEST con defectos
+documentados frente a los umbrales §4.2 (`sec-0062` con sobreafirmación regulatoria
+en `reviewer_action`). Detalle: `CF6_2_5_HUMAN_QUALITY_GATE_VERDICT.json`.
+**La ADJUDICACIÓN HUMANA del HUMAN_QUALITY_GATE queda `PENDING_HUMAN_CONFIRMATION`** —
+no hay registro gobernado ni artefacto firmado de adjudicación de Capa 9. La
+corrección v3 se prepara sobre el diagnóstico técnico; su firma y el veredicto del
+gate requieren confirmación explícita de Capa 9.
 **Sustituye** a `shadow-cf6-composer-struct-v2` (firmado, tag `cf6-G2`) — **no lo modifica**.
 `composer_structured_v2.yaml` queda intacto y `SIGNED`.
 

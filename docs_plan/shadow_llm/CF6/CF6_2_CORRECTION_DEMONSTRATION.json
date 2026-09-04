@@ -27,5 +27,7 @@
   "cf6-G2.5-manifest"
  ],
  "correction_commit": "0a457ec (+ este commit: verdict + demostración + param input_has_pages)",
- "human_confirmed": "NO — propose preparado, STOP antes de human_confirmed"
+ "human_confirmed": "NO — propose preparado, STOP antes de human_confirmed",
+ "human_quality_gate_status": "PENDING_HUMAN_CONFIRMATION (adjudicación de Capa 9 NO registrada)",
+ "trigger_note": "El diagnóstico técnico (Capa 8) del CF6-2.5 muestra defectos por sección; la corrección v3 se prepara sobre ese diagnóstico. La adjudicación humana del HUMAN_QUALITY_GATE queda PENDIENTE de confirmación explícita de Capa 9."
 }
