@@ -1,0 +1,62 @@
+{
+ "schema": "SHADOW_CF6_2_CORRECTION_PROMPT_PROPOSE/v1",
+ "action": "propose",
+ "decision_origin": "agent_proposed",
+ "written_to_ledger": false,
+ "submit_via": "firma de Capa 9 sobre el YAML + evidencia propose→human_confirmed congelada en tag propio",
+ "NEW_PROMPT_VERSION": "shadow-cf6-composer-struct-v3",
+ "OLD_PROMPT_VERSION": "shadow-cf6-composer-struct-v2",
+ "prompt_path": "factory/regulatory/shadow/prompts/composer_structured_v3.yaml",
+ "prompt_sha256": "1008f0be6f0d88a1091fa35a6ecd8ece054b32c27de3dc7e5f0355da7bdcf721",
+ "status_at_propose": "DRAFT_UNSIGNED",
+ "schema_version": "SHADOW_CF6_COMPOSER_CONTRACT/v1.2",
+ "few_shot_count": 3,
+ "few_shot_based_on": [
+  "21_CFR_11.10(e) — sección real sec-0031 (RW-0011)",
+  "ANNEX11_7 — sección real sec-0012 (RW-0005), TECHNICAL",
+  "trazabilidad sin regulación directa — sección real sec-0001 (RW-0005), FUNCTIONAL_TRACEABILITY"
+ ],
+ "CORRECTION_REASON": "HUMAN_QUALITY_GATE / diagnóstico de CF6-2.5: el prompt v2 no daba reglas explícitas para technical_findings (volcó section_type / REGULATORY_INCONCLUSIVE en 5/7 secciones), para páginas en reviewer_action (2 páginas fabricadas), ni para deduplicación de evidencia (citas repetidas ×3 y ×4). v3 añade SOLO esas reglas + `allowed_technical_findings` determinista + 2 few-shots (TECHNICAL, FUNCTIONAL_TRACEABILITY). No toca arquitectura, Q-STATE, renderer, G4d, L2, routing, fingerprint ni human_state.",
+ "does_not_touch": [
+  "arquitectura",
+  "Q-STATE",
+  "renderer determinista",
+  "G4d",
+  "L2",
+  "routing",
+  "FINDINGS_FINGERPRINT",
+  "human_state",
+  "composer_structured_v2.yaml (firmado)",
+  "tags previos"
+ ],
+ "TEST_RESULTS": {
+  "file": "factory/tests/test_shadow_composer_prompt_v3.py",
+  "passed": 37,
+  "failed": 0,
+  "covers": [
+   "technical_findings ⊄ section_type/regulatory_state/subtype regulatorio",
+   "technical_findings ⊆ allowed_technical_findings",
+   "[] cuando allowed vacío",
+   "reviewer_action rechaza 'cumple' / 'cumplimiento'/'incumplimiento'",
+   "reviewer_action rechaza 'acción correctiva'/'CAPA'",
+   "reviewer_action rechaza páginas no presentes en input",
+   "evidence_observed elimina duplicados textuales",
+   "regresiones sec-0004/0005/0016/0018/0026/0042/0062",
+   "few-shots v3 pasan validate_structure_contract + verify_qstate"
+  ]
+ },
+ "invariants": {
+  "LLM_CALLS": 0,
+  "G4D_CALLS": 0,
+  "L2_MUTATIONS": 0,
+  "HUMAN_STATE_CHANGES": 0,
+  "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+ },
+ "proposed_by_id": "Capa 8 (Claude Code)",
+ "proposed_at": "2026-09-04T03:26:32Z",
+ "awaiting": {
+  "action": "human_confirmed",
+  "authority": "Capa 9 (Cesar)",
+  "note": "NO firmar aquí. NO ejecutar nuevo CF6-2.5 ni CF6-3."
+ }
+}
