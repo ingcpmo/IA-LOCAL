@@ -70,12 +70,24 @@ def test_latest_pilot_is_a_pilot_execution_record():
 
 # ───────────────────────── CF6-2.5 SAMPLE_MANIFEST ────────────────
 
-def test_manifest_is_draft_and_llm_free():
+def test_manifest_builder_is_llm_free():
     m = SM.build(_SL)
-    assert m["status"] == "DRAFT_PENDING_CF6_2_G_PASS"
     assert m["llm_calls"] == 0
     assert m["integrity"]["LLM_CALLS"] == 0
     assert m["integrity"]["FINDINGS_FINGERPRINT"].startswith("235f724a738ce783")
+
+
+def test_frozen_manifest_artifact_is_locked_and_hash_matches_draft():
+    import json
+    art = json.loads((_REPO / "docs_plan" / "shadow_llm" / "CF6"
+                      / "CF6_2_5_SAMPLE_MANIFEST.json").read_text(encoding="utf-8"))
+    assert art["status"].upper().startswith("FROZEN")
+    assert "PASS" in art["cf6_2_g"]
+    # el hash NO incluye `status` -> el frozen y el que produce build() coinciden:
+    # prueba de que la selección de secciones no cambió al congelar.
+    assert art["sample_manifest_hash"] == SM.build(_SL)["sample_manifest_hash"]
+    assert art["inclusion_criteria_pass"] is True
+    assert set(SM.MANDATORY_SECTIONS) <= set(art["sections_selected"])
 
 
 def test_manifest_meets_all_mandatory_inclusion_criteria():

@@ -1,8 +1,9 @@
 {
  "schema": "SHADOW_CF6_2_5_SAMPLE_MANIFEST/v1",
- "status": "DRAFT_PENDING_CF6_2_G_PASS",
+ "status": "FROZEN@cf6-G2G",
  "llm_calls": 0,
- "note": "Congelar (commit + tag) ANTES de cualquier salida del piloto. Bloqueado por CF6-2.G (PILOT_SCOPE_MATCH_CF6 = NO): no se genera B hasta que Capa 9 resuelva el scope de la PILOT.",
+ "note": "CONGELADO antes de cualquier salida del piloto (§4.1). El hash es sobre sections_selected + rows + criteria_pass — NO incluye `status`, así que es idéntico al del DRAFT: prueba de que la selección no cambió.",
+ "cf6_2_g": "PASS — ADDENDUM PILOT_EXECUTION-2026-037/-038 human_confirmed (cesar); tag cf6-G2G",
  "sample_manifest_hash": "7422faaf569430dbc8a19647a2d2b64ff6b53b5231fc4e7962b4486e3165f5a0",
  "sections_selected": [
   "sec-0004",

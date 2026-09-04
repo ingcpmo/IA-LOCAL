@@ -100,13 +100,19 @@ def build(shadow_dir: str | Path = "docs_plan/shadow_llm", *,
         sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     manifest_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
+    frozen = status.upper().startswith("FROZEN")
     return {
         "schema": "SHADOW_CF6_2_5_SAMPLE_MANIFEST/v1",
         "status": status,
         "llm_calls": 0,
-        "note": ("Congelar (commit + tag) ANTES de cualquier salida del piloto. "
-                 "Bloqueado por CF6-2.G (PILOT_SCOPE_MATCH_CF6 = NO): no se genera B "
-                 "hasta que Capa 9 resuelva el scope de la PILOT."),
+        "note": ("CONGELADO antes de cualquier salida del piloto (§4.1). El hash es sobre "
+                 "sections_selected + rows + criteria_pass — NO incluye `status`, así que "
+                 "es idéntico al del DRAFT: prueba de que la selección no cambió."
+                 if frozen else
+                 "Congelar (commit + tag) ANTES de cualquier salida del piloto. Requiere "
+                 "CF6-2.G PASS (PILOT_SCOPE_MATCH_CF6 = YES)."),
+        "cf6_2_g": ("PASS — ADDENDUM PILOT_EXECUTION-2026-037/-038 human_confirmed (cesar); "
+                    "tag cf6-G2G" if frozen else "PENDIENTE"),
         "sample_manifest_hash": manifest_hash,
         "sections_selected": sections_selected,
         "n_sections": len(sections_selected),
