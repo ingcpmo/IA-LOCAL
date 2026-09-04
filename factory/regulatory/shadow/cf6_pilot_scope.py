@@ -30,7 +30,7 @@ _SCOPE_TOKENS = {
     "b_cf6_2_5": ("CF6-2.5", "cf6_2_5", "quality pilot", "human_quality_gate"),
     "c_cf6_3": ("CF6-3", "cf6_3", "corrida completa cf6", "full cf6"),
     "d_execution_type_json_structure": ("json structure", "estructura json", "structured_composer",
-                                        "composer_structured", "cf6"),
+                                        "composer_structured", "structured_json_composer", "cf6"),
 }
 
 
@@ -72,7 +72,19 @@ def evaluate(ledger: Path = _DEFAULT_LEDGER, *, g4_calls_used: int = 481) -> dic
 
     payload = (pilot or {}).get("payload") or {}
     max_calls = payload.get("max_calls")
-    remaining = (max_calls - g4_calls_used) if isinstance(max_calls, int) else None
+    # Un ADDENDUM trae su PROPIA asignación de llamadas (aditiva); las 481 de G4
+    # se consumieron contra la instancia ORIGINAL -035, no contra esta. Para el
+    # ADDENDUM, 0 llamadas CF-6 hechas -> disponible = max_calls, acotado además
+    # por el remanente del tope duro del padre si lo declara.
+    is_addendum = (str((pilot or {}).get("decision_type") or "").upper() == "ADDENDUM"
+                   or bool(payload.get("extends_instances")))
+    calls_used = 0 if is_addendum else g4_calls_used
+    remaining = (max_calls - calls_used) if isinstance(max_calls, int) else None
+    parent = payload.get("parent_hard_cap") or {}
+    if is_addendum and isinstance(parent.get("max_calls"), int):
+        parent_remaining = parent["max_calls"] - (parent.get("used_by_g4") or 0)
+        if remaining is not None:
+            remaining = min(remaining, parent_remaining)
     budget_sufficient = "YES" if (remaining is not None and remaining >= 10) else ("NO" if remaining is not None else "UNKNOWN")
     status = str((pilot or {}).get("status") or "").upper()
     active = "YES" if status == "ACTIVE" else "NO"
@@ -88,9 +100,12 @@ def evaluate(ledger: Path = _DEFAULT_LEDGER, *, g4_calls_used: int = 481) -> dic
         "gate": "CF6-2.G",
         "llm_calls": 0,
         "ledger": str(ledger),
-        "pilot_instance": (pilot or {}).get("confirms_instance_id")
+        "pilot_instance": (pilot or {}).get("decision_instance_id")
                           or (pilot or {}).get("instance_id")
-                          or (pilot or {}).get("decision_instance_id"),
+                          or (pilot or {}).get("confirms_instance_id"),
+        "pilot_confirms_instance_id": (pilot or {}).get("confirms_instance_id"),
+        "pilot_decision_type": (pilot or {}).get("decision_type"),
+        "pilot_decision_origin": (pilot or {}).get("decision_origin"),
         "pilot_scope_summary": payload.get("scope") if isinstance(payload.get("scope"), list) else None,
         "PILOT_SCOPE_MATCH_CF6": pilot_scope_match,
         "scope_checks": checks,

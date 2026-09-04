@@ -21,33 +21,51 @@ _SL = _REPO / "docs_plan" / "shadow_llm"
 
 # ───────────────────────── CF6-2.G ─────────────────────────────────
 
-def test_pilot_scope_gate_fails_closed_on_current_ledger():
+def test_pilot_scope_gate_passes_after_addendum_2026_038():
+    # El ADDENDUM PILOT_EXECUTION-2026-037 propose / -038 human_confirmed (cesar)
+    # amplió el scope de -035/-036 SIN superseder (I-7): CF6-2.G ahora PASA.
     res = PS.evaluate(_LEDGER)
     assert res["gate"] == "CF6-2.G"
     assert res["llm_calls"] == 0
-    # -035/-036 autorizaron SHADOW_G4A..G4E (interpretación experta), NO el
-    # composer_prompt_version nuevo ni CF6-2.5/CF6-3 ni la emisión de estructura JSON.
-    assert res["PILOT_SCOPE_MATCH_CF6"] == "NO"
+    assert res["pilot_instance"] == "PILOT_EXECUTION-2026-038"
+    assert res["pilot_decision_type"] == "ADDENDUM"
+    assert res["pilot_decision_origin"] == "human_confirmed"
+    assert res["PILOT_SCOPE_MATCH_CF6"] == "YES"
     assert res["scope_checks"] == {
-        "a_composer_prompt_version": "NO", "b_cf6_2_5": "NO",
-        "c_cf6_3": "NO", "d_execution_type_json_structure": "NO"}
-    assert res["GATE_RESULT"] == "FAIL"
-    assert "STOP" in res["decision"]
+        "a_composer_prompt_version": "YES", "b_cf6_2_5": "YES",
+        "c_cf6_3": "YES", "d_execution_type_json_structure": "YES"}
+    assert res["GATE_RESULT"] == "PASS"
+    assert "CF6-2.5" in res["decision"]
 
 
-def test_pilot_scope_gate_reports_budget_active_not_superseded():
+def test_pilot_scope_gate_budget_active_not_superseded_after_addendum():
     res = PS.evaluate(_LEDGER)
     assert res["REMAINING_BUDGET_SUFFICIENT"] == "YES"
-    assert res["remaining_calls"] == 519          # 1000 - 481 (G4)
+    assert res["remaining_calls"] == 250          # asignación CF-6 aditiva del ADDENDUM (0 usadas)
     assert res["ACTIVE"] == "YES"
     assert res["NOT_SUPERSEDED"] == "YES"
+
+
+def test_original_pilot_035_036_still_active_traceability_preserved():
+    import json
+    recs = [json.loads(l) for l in _LEDGER.read_text(encoding="utf-8").splitlines() if l.strip()]
+    by_id = {r.get("decision_instance_id"): r for r in recs}
+    for iid in ("PILOT_EXECUTION-2026-035", "PILOT_EXECUTION-2026-036"):
+        assert by_id[iid]["status"] == "ACTIVE"
+        assert not by_id[iid].get("superseded_by")
+        assert not by_id[iid].get("invalid_reason")
+    add = by_id["PILOT_EXECUTION-2026-038"]
+    assert add["decision_type"] == "ADDENDUM"
+    assert add["decision_origin"] == "human_confirmed"
+    assert add["approved_by_id"] == "cesar"
+    assert add["supersedes_instance_id"] is None          # I-7: amplía, no supersede
 
 
 def test_latest_pilot_is_a_pilot_execution_record():
     p = PS.latest_pilot(_LEDGER)
     assert p is not None
     blob = str(p)
-    assert "PILOT_EXECUTION" in blob and "scope" in blob
+    assert "PILOT_EXECUTION" in blob
 
 
 # ───────────────────────── CF6-2.5 SAMPLE_MANIFEST ────────────────
