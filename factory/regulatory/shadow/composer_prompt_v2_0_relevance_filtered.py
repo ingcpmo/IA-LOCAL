@@ -256,5 +256,101 @@ def spec() -> dict:
     }
 
 
+# ── evidencia de firma (mismo patrón que composer_prompt_v3.py) ──────────
+
+_FROZEN_CONTENT_SHA256 = "907e2c30fe9d158366f78afebef53364e1d221db7cbb73de6e6c8e48f57814be"
+_PROPOSE_PATH = Path("docs_plan/shadow_llm/CF6/CF6_v2_R2_PROMPT_SIGN_PROPOSE.json")
+
+
+def propose_record(*, proposed_by_id: str = "Capa 8 (Claude Code)",
+                   correction_reason: str | None = None) -> dict:
+    """Registro `propose` de la FIRMA (no del contenido -- el contenido ya
+    está congelado y no se toca). Captura `prompt_sha256()` ANTES de editar
+    `status`/`signed_by`/`signed_at`/`signed_on` -- debe coincidir con
+    `_FROZEN_CONTENT_SHA256` (el hash reportado en `CF6_v2_R2_PROMPT_FREEZE.
+    json`). Llamar SOLO antes de editar el YAML."""
+    import time
+    p = load()
+    current_hash = prompt_sha256()
+    return {
+        "schema": "SHADOW_CF6_V2_R2_PROMPT_SIGN_PROPOSE/v1",
+        "action": "propose",
+        "decision_origin": "agent_proposed",
+        "written_to_ledger": False,
+        "submit_via": "firma de Capa 9 sobre el YAML (status/signed_by/signed_at/signed_on) "
+                      "+ evidencia propose→human_confirmed",
+        "PROMPT_VERSION": PROMPT_VERSION,
+        "prompt_path": str(prompt_path()),
+        "prompt_sha256_before_signing": current_hash,
+        "matches_frozen_content_sha256": current_hash == _FROZEN_CONTENT_SHA256,
+        "status_at_propose": p.get("status"),
+        "schema_version": p.get("schema_version"),
+        "CORRECTION_REASON": correction_reason or (
+            "Autorización explícita de Capa 9 (2026-09-04): 'Formalizar mediante el mecanismo "
+            "de gobernanza existente el prompt ya congelado... El contenido congelado no debe "
+            "modificarse. Debe quedar aprobado/firmado, no DRAFT_UNSIGNED.' Se edita SOLO "
+            "status/signed_by/signed_at/signed_on -- el contrato (system/user_template/"
+            "contract/few_shot) permanece byte-idéntico (verificable por diff)."),
+        "does_not_touch": ["contract", "system", "user_template", "few_shot",
+                           "shadow-cf6-composer-struct-v2 (firmado, tag cf6-G2)",
+                           "shadow-cf6-composer-struct-v3 (firmado, tag cf6-G2-r1)",
+                           "Q-STATE", "renderer determinista", "G4d", "L2", "routing",
+                           "FINDINGS_FINGERPRINT", "human_state"],
+        "invariants": {"LLM_CALLS": 0, "G4D_CALLS": 0, "L2_MUTATIONS": 0, "HUMAN_STATE_CHANGES": 0},
+        "proposed_by_id": proposed_by_id,
+        "proposed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "awaiting": {"action": "human_confirmed", "authority": "Capa 9 (Cesar)"},
+    }
+
+
+def signature(prompt_id: str = PROMPT_ID) -> dict:
+    p = load(prompt_id)
+    return {k: p.get(k) for k in ("status", "signed_by", "signed_at", "signed_on")}
+
+
+def human_confirmed_record(*, propose_path: Path = _PROPOSE_PATH) -> dict:
+    """Mitad `human_confirmed` de la evidencia. Llamar DESPUÉS de editar el
+    YAML (status: SIGNED). Exige que el YAML ya esté SIGNED."""
+    assert_signed()
+    sig = signature()
+    prop = json.loads(Path(propose_path).read_text(encoding="utf-8"))
+    return {
+        "schema": "SHADOW_CF6_V2_R2_PROMPT_SIGN_HUMAN_CONFIRMED/v1",
+        "action": "human_confirmed",
+        "PROMPT_VERSION": PROMPT_VERSION,
+        "confirms_propose": {
+            "path": str(propose_path),
+            "record_sha256": hashlib.sha256(Path(propose_path).read_bytes()).hexdigest(),
+            "proposed_prompt_sha256_before_signing": prop.get("prompt_sha256_before_signing"),
+            "matched_frozen_content_sha256": prop.get("matches_frozen_content_sha256"),
+        },
+        "live_prompt_sha256_after_signing": prompt_sha256(),
+        "content_unchanged_by_signing": True,  # verificado aparte por diff (ver reporte de fase)
+        "authority": "Capa 9 (Cesar)",
+        "approved_by_id": sig["signed_by"],
+        "signed_at": sig["signed_at"],
+        "signed_on": sig["signed_on"],
+        "invariants": {"LLM_CALLS": 0, "G4D_CALLS": 0, "L2_MUTATIONS": 0, "HUMAN_STATE_CHANGES": 0},
+    }
+
+
+def governed_evidence(*, propose_path: Path = _PROPOSE_PATH) -> dict:
+    prop = json.loads(Path(propose_path).read_text(encoding="utf-8"))
+    conf = human_confirmed_record(propose_path=propose_path)
+    consistent = (
+        prop.get("PROMPT_VERSION") == conf["PROMPT_VERSION"] == PROMPT_VERSION
+        and prop.get("prompt_sha256_before_signing") == _FROZEN_CONTENT_SHA256
+        and prop.get("status_at_propose") == "DRAFT_UNSIGNED")
+    return {
+        "schema": "SHADOW_CF6_V2_R2_PROMPT_SIGN_GOVERNED_EVIDENCE/v1",
+        "PROMPT_VERSION": PROMPT_VERSION,
+        "propose": prop,
+        "human_confirmed": conf,
+        "propose_to_human_confirmed_consistent": consistent,
+        "signature": signature(),
+        "FROZEN_CONTENT_SHA256": _FROZEN_CONTENT_SHA256,
+    }
+
+
 if __name__ == "__main__":  # pragma: no cover
     print(json.dumps(spec(), indent=1, ensure_ascii=False))

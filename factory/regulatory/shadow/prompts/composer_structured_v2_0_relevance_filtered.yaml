@@ -34,7 +34,10 @@
 prompt_id: shadow_cf6_composer_structured_v2_0_relevance_filtered
 prompt_version: "shadow-cf6-composer-v2.0-relevance-filtered"
 pipeline: "requirement-centric (R1) — NO es una revisión de v2/v3 (document×regulación); coexisten"
-status: DRAFT_UNSIGNED
+status: SIGNED
+signed_by: "Capa 9 (Cesar)"
+signed_at: "2026-09-04"
+signed_on: "confirmación explícita de Capa 9 en mensaje de sesión (2026-09-04): formalizar mediante el mecanismo de gobernanza existente el prompt ya congelado (contenido sin modificar); registro propose sha256 (prompt, pre-firma) 907e2c30fe9d158366f78afebef53364e1d221db7cbb73de6e6c8e48f57814be"
 schema_version: "SHADOW_CF6_V2_COMPOSER_CONTRACT/v1"
 temperature: 0.0
 output: json_only

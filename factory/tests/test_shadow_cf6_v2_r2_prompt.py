@@ -19,14 +19,24 @@ from factory.regulatory.shadow import composer_prompt as cp_v2
 from factory.regulatory.shadow import composer_prompt_v3 as cp_v3
 
 
-class TestDraftUnsigned:
-    def test_status_is_draft_unsigned(self):
-        assert cp.load()["status"] == "DRAFT_UNSIGNED"
-        assert cp.is_signed() is False
+class TestSigned:
+    """Firmado por Capa 9 (2026-09-04) tras el mensaje de sesión que autoriza
+    'formalizar mediante el mecanismo de gobernanza existente el prompt ya
+    congelado... Debe quedar aprobado/firmado, no DRAFT_UNSIGNED'. Se editó
+    ÚNICAMENTE status/signed_by/signed_at/signed_on -- el contrato
+    (system/user_template/contract/few_shot) es byte-idéntico al congelado
+    (ver CF6_v2_R2_PROMPT_SIGN_GOVERNED_EVIDENCE.json, prompt_sha256_before_
+    signing == 907e2c30...)."""
 
-    def test_assert_signed_raises(self):
-        with pytest.raises(cp.PromptNotSignedError):
-            cp.assert_signed()
+    def test_status_is_signed(self):
+        assert cp.load()["status"] == "SIGNED"
+        assert cp.is_signed() is True
+
+    def test_assert_signed_does_not_raise(self):
+        cp.assert_signed()
+
+    def test_signed_by_capa_9(self):
+        assert cp.load()["signed_by"] == "Capa 9 (Cesar)"
 
     def test_temperature_zero(self):
         assert cp.temperature() == 0.0

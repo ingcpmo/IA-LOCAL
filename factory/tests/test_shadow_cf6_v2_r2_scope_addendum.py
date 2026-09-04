@@ -57,14 +57,14 @@ def test_package_stops_before_human_confirmed():
 
 def test_addendum_confirmed_in_real_ledger_matches_check_a_by_name_only():
     """Aprobado por Capa 9 (2026-09-04) y formalizado vía `governance_service`:
-    `PILOT_EXECUTION-2026-041` (propose) / `-042` (human_confirmed, cesar).
-    `cf6_pilot_scope.evaluate()` hace COINCIDENCIA DE TEXTO contra el ledger,
-    no verifica en disco si el prompt existe -- por eso el chequeo (a) da YES
-    en cuanto el nombre aparece en el payload firmado, aunque el YAML del
-    prompt se redacte por separado (ver `composer_prompt_v2_0_relevance_
-    filtered.py`, `status: DRAFT_UNSIGNED`, congelado NO firmado)."""
+    `PILOT_EXECUTION-2026-041` (propose) / `-042` (human_confirmed, cesar), y
+    posteriormente el ADDENDUM correctivo `-043`/`-044` (añade el token legado
+    'CF6-3' exigido por el chequeo c_cf6_3, sin editar -041/-042 -- append-only).
+    `cf6_pilot_scope.evaluate()` hace COINCIDENCIA DE TEXTO contra el ÚLTIMO
+    registro `human_confirmed` del ledger -- por eso `pilot_instance` avanza a
+    `-044` tras la corrección, aunque `-042` sigue ACTIVE y sin editar."""
     res = scope.evaluate(required_composer_prompt_version=AD.RESERVED_COMPOSER_PROMPT_VERSION)
-    assert res["pilot_instance"] == "PILOT_EXECUTION-2026-042"
+    assert res["pilot_instance"] == "PILOT_EXECUTION-2026-044"
     assert res["pilot_decision_origin"] == "human_confirmed"
     assert res["scope_checks"]["a_composer_prompt_version"] == "YES"
     assert res["ACTIVE"] == "YES"
