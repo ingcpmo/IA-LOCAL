@@ -1,0 +1,123 @@
+{
+ "schema": "SHADOW_CF6_2_5_PILOT_RUN/v1",
+ "cf6_2_g": "PASS (tag cf6-G2G)",
+ "pilot_instance": "PILOT_EXECUTION-2026-038",
+ "pilot_propose": "PILOT_EXECUTION-2026-037",
+ "authorized_by_tag": "cf6-G2G",
+ "composer_prompt_version": "shadow-cf6-composer-struct-v2",
+ "prompt_signed": true,
+ "prompt_sha256": "b363d2a6848a7dfd13bb38b98977170dd35f9f1e20c3fbf1ff6fc8a216c2b693",
+ "model": "qwen2.5:7b-instruct-q4_K_M",
+ "sample_manifest_hash": "7422faaf569430dbc8a19647a2d2b64ff6b53b5231fc4e7962b4486e3165f5a0",
+ "sample_manifest_committed_before_llm": true,
+ "sections": [
+  "sec-0004",
+  "sec-0005",
+  "sec-0016",
+  "sec-0018",
+  "sec-0026",
+  "sec-0042",
+  "sec-0062"
+ ],
+ "n_sections": 7,
+ "sections_rendered": 5,
+ "sections_safe_mode": 2,
+ "sections_in_safe_mode": [
+  "sec-0026",
+  "sec-0042"
+ ],
+ "llm_calls": 7,
+ "llm_budget_cap_cf6": 250,
+ "within_budget": true,
+ "post_qstate_llm_calls_total": 0,
+ "qstate_violations_in_published": 0,
+ "blacklist_hits_in_published": 0,
+ "g4d_reexecuted": false,
+ "integrity": {
+  "L2_MUTATIONS": 0,
+  "HUMAN_STATE_CHANGES": 0,
+  "G4D_CALLS": 0,
+  "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+ },
+ "b_outputs": "docs_plan/shadow_llm/CF6/CF6_2_5_B_OUTPUTS.jsonl",
+ "per_section": [
+  {
+   "section_id": "sec-0004",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state": "INCONCLUSIVE",
+   "mode": "RENDERED",
+   "reason": null,
+   "llm_calls_section": 1,
+   "post_qstate_llm_calls": 0,
+   "structure_contract_violations": [],
+   "blacklist_hits": []
+  },
+  {
+   "section_id": "sec-0005",
+   "section_type": "REGULATORY",
+   "regulatory_state": "INCONCLUSIVE",
+   "mode": "RENDERED",
+   "reason": null,
+   "llm_calls_section": 1,
+   "post_qstate_llm_calls": 0,
+   "structure_contract_violations": [],
+   "blacklist_hits": []
+  },
+  {
+   "section_id": "sec-0016",
+   "section_type": "REGULATORY",
+   "regulatory_state": "INCONCLUSIVE",
+   "mode": "RENDERED",
+   "reason": null,
+   "llm_calls_section": 1,
+   "post_qstate_llm_calls": 0,
+   "structure_contract_violations": [],
+   "blacklist_hits": []
+  },
+  {
+   "section_id": "sec-0018",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state": "INCONCLUSIVE",
+   "mode": "RENDERED",
+   "reason": null,
+   "llm_calls_section": 1,
+   "post_qstate_llm_calls": 0,
+   "structure_contract_violations": [],
+   "blacklist_hits": []
+  },
+  {
+   "section_id": "sec-0026",
+   "section_type": "TECHNICAL",
+   "regulatory_state": "NOT_APPLICABLE",
+   "mode": "SAFE_MODE",
+   "reason": "qstate_reject",
+   "llm_calls_section": 1,
+   "post_qstate_llm_calls": 0,
+   "structure_contract_violations": [],
+   "blacklist_hits": []
+  },
+  {
+   "section_id": "sec-0042",
+   "section_type": "FUNCTIONAL_TRACEABILITY",
+   "regulatory_state": "NOT_APPLICABLE",
+   "mode": "SAFE_MODE",
+   "reason": "qstate_reject",
+   "llm_calls_section": 1,
+   "post_qstate_llm_calls": 0,
+   "structure_contract_violations": [],
+   "blacklist_hits": []
+  },
+  {
+   "section_id": "sec-0062",
+   "section_type": "REGULATORY",
+   "regulatory_state": "INCONCLUSIVE",
+   "mode": "RENDERED",
+   "reason": null,
+   "llm_calls_section": 1,
+   "post_qstate_llm_calls": 0,
+   "structure_contract_violations": [],
+   "blacklist_hits": []
+  }
+ ],
+ "human_quality_gate": "PENDIENTE — evaluación humana por sección (Capa 9), rúbrica §4.2"
+}
