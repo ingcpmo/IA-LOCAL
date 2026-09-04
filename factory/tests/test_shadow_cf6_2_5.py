@@ -21,13 +21,13 @@ _SL = _REPO / "docs_plan" / "shadow_llm"
 
 # ───────────────────────── CF6-2.G ─────────────────────────────────
 
-def test_pilot_scope_gate_passes_after_addendum_2026_038():
-    # El ADDENDUM PILOT_EXECUTION-2026-037 propose / -038 human_confirmed (cesar)
-    # amplió el scope de -035/-036 SIN superseder (I-7): CF6-2.G ahora PASA.
+def test_pilot_scope_gate_passes_vs_v2_after_addenda():
+    # ADDENDA de la familia PILOT_EXECUTION (-037/-038 para v2, -039/-040 para v3),
+    # todos ACTIVE, ninguno supersede (I-7). El gate vs v2 (default) sigue PASS.
     res = PS.evaluate(_LEDGER)
     assert res["gate"] == "CF6-2.G"
     assert res["llm_calls"] == 0
-    assert res["pilot_instance"] == "PILOT_EXECUTION-2026-038"
+    assert res["pilot_instance"] == "PILOT_EXECUTION-2026-040"   # el ADDENDUM confirmado más reciente
     assert res["pilot_decision_type"] == "ADDENDUM"
     assert res["pilot_decision_origin"] == "human_confirmed"
     assert res["PILOT_SCOPE_MATCH_CF6"] == "YES"
@@ -35,7 +35,18 @@ def test_pilot_scope_gate_passes_after_addendum_2026_038():
         "a_composer_prompt_version": "YES", "b_cf6_2_5": "YES",
         "c_cf6_3": "YES", "d_execution_type_json_structure": "YES"}
     assert res["GATE_RESULT"] == "PASS"
-    assert "CF6-2.5" in res["decision"]
+
+
+def test_pilot_scope_gate_passes_vs_v3_after_addendum_2026_040():
+    # ADDENDUM PILOT_EXECUTION-2026-039 propose / -040 human_confirmed (cesar)
+    # nombra EXPLÍCITAMENTE shadow-cf6-composer-struct-v3.
+    res = PS.evaluate(_LEDGER, required_composer_prompt_version="shadow-cf6-composer-struct-v3")
+    assert res["PILOT_SCOPE_MATCH_CF6"] == "YES"
+    assert res["scope_checks"]["a_composer_prompt_version"] == "YES"
+    assert res["GATE_RESULT"] == "PASS"
+    assert res["ACTIVE"] == "YES" and res["NOT_SUPERSEDED"] == "YES"
+    assert res["REMAINING_BUDGET_SUFFICIENT"] == "YES"
+    assert res["remaining_calls"] == 250
 
 
 def test_pilot_scope_gate_budget_active_not_superseded_after_addendum():
