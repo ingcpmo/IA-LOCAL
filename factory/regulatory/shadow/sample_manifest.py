@@ -111,8 +111,10 @@ def build(shadow_dir: str | Path = "docs_plan/shadow_llm", *,
                  if frozen else
                  "Congelar (commit + tag) ANTES de cualquier salida del piloto. Requiere "
                  "CF6-2.G PASS (PILOT_SCOPE_MATCH_CF6 = YES)."),
-        "cf6_2_g": ("PASS — ADDENDUM PILOT_EXECUTION-2026-037/-038 human_confirmed (cesar); "
-                    "tag cf6-G2G" if frozen else "PENDIENTE"),
+        "freeze_tag": "cf6-G2.5-manifest" if frozen else None,
+        "cf6_2_g": ("PASS (CF6-2.G, tag cf6-G2G — cierre de scope previo). La congelación del "
+                    "SAMPLE_MANIFEST se etiquetó por separado en cf6-G2.5-manifest."
+                    if frozen else "PENDIENTE"),
         "sample_manifest_hash": manifest_hash,
         "sections_selected": sections_selected,
         "n_sections": len(sections_selected),

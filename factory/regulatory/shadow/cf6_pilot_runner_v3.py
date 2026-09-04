@@ -3,9 +3,11 @@
 Igual que `cf6_pilot_runner` pero:
   - prompt FIRMADO `shadow-cf6-composer-struct-v3` (`composer_prompt_v3`, assert_signed);
   - pasa `allowed_technical_findings` (determinista) al prompt;
-  - valida el contrato ESTRUCTURAL v3 (`composer_prompt_v3.validate_structure_contract`
-    con `technical_findings ⊆ allowed_technical_findings`) ANTES de Q-STATE;
-  - deduplica `evidence_observed` (`normalize_evidence_observed`) antes de Q-STATE;
+  - **Fix A (CF-6 v1.2 §3.1): UNA sola llamada LLM por sección — sin reintento**;
+  - **Fix B: orden `normalize_evidence_observed` (dedupe) → `validate_structure_contract`
+    v3 (con `technical_findings ⊆ allowed_technical_findings`) → Q-STATE**. La dedup
+    corre ANTES de validar, para que el validador vea la estructura ya deduplicada
+    (si no, rechaza los duplicados y la dedup nunca actúa);
   - Q-STATE-1..6 SIN CAMBIOS (`composer_gate.verify_qstate`), render determinista,
     blacklist Q1–Q5, modo seguro; CERO LLM tras Q-STATE; G4d NO se re-ejecuta.
 
@@ -109,20 +111,23 @@ def run_cf6_2_5_v3(shadow_dir: str | Path = "docs_plan/shadow_llm",
         struct_violations = ["dry_run: no LLM"] if dry_run else []
         raw_llm_obj = None
         if not dry_run:
-            for attempt in (1, 2):
-                raw, secs, _ = _call_llm(prompt if attempt == 1 else
-                                         prompt + "\n\nCorrige: devuelve SOLO el objeto JSON del contrato, sin texto.")
-                llm_calls += 1
-                calls_this += 1
-                if llm_calls > CF6_MAX_CALLS:
-                    raise RuntimeError(f"CF6-2.5 v3 excedió el tope duro CF-6 ({CF6_MAX_CALLS})")
-                obj = _extract_json(raw)
-                raw_llm_obj = obj
+            # Fix A (CF-6 v1.2 §3.1): UNA sola llamada LLM por sección. Sin reintento.
+            raw, secs, _ = _call_llm(prompt)
+            llm_calls += 1
+            calls_this += 1
+            if llm_calls > CF6_MAX_CALLS:
+                raise RuntimeError(f"CF6-2.5 v3 excedió el tope duro CF-6 ({CF6_MAX_CALLS})")
+            raw_llm_obj = _extract_json(raw)
+            if raw_llm_obj is None:
+                struct_violations = ["salida no es JSON"]
+            else:
+                # Fix B: normalizar (dedupe determinista) ANTES de validar el contrato,
+                # para que `validate_structure_contract` vea la estructura ya deduplicada.
+                normalized = _cp3.normalize_evidence_observed(raw_llm_obj)
                 struct_violations = _cp3.validate_structure_contract(
-                    obj, allowed_technical_findings=allowed) if obj is not None else ["salida no es JSON"]
+                    normalized, allowed_technical_findings=allowed)
                 if not struct_violations:
-                    structured = _cp3.normalize_evidence_observed(obj)   # dedupe textual
-                    break
+                    structured = normalized
 
         gate = _cg.compose_section(structured, section, l2_by_rid)
         rows.append({

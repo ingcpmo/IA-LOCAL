@@ -1,28 +1,12 @@
 # CF-6 v1.2 · CF6-2.5 (v3) — HUMAN_QUALITY_GATE (paquete para Capa 9)
 
-PROMPT_VERSION `shadow-cf6-composer-struct-v3` (SIGNED, tag cf6-G2-r1) · SAMPLE_MANIFEST `FROZEN@cf6-G2.5-manifest` (congelado en tag **cf6-G2.5-manifest**, commit e356b3f) · hash `7422faaf569430dbc8a19647a2d2b64ff6b53b5231fc4e7962b4486e3165f5a0` · scope ADDENDUM PILOT_EXECUTION-2026-039/-040 (tag cf6-G2G-r1). `cf6-G2G` fue el cierre de scope previo, no la congelación del manifest.
+PROMPT_VERSION `shadow-cf6-composer-struct-v3` (SIGNED, tag cf6-G2-r1) · SAMPLE_MANIFEST `FROZEN@cf6-G2G` · hash `7422faaf569430dbc8a19647a2d2b64ff6b53b5231fc4e7962b4486e3165f5a0` · PILOT_EXECUTION-2026-040 (tag cf6-G2G-r1)
 
 > **Regla §4.2:** PASS del conjunto solo si CADA sección pasa TODOS los umbrales; `Sobreafirmación regulatoria` = 0 por sección (cero tolerancia). PASS (todas) → autoriza CF6-3. FAIL (alguna) → STOP; reportar sección/dimensión; decisión de Capa 9.
 >
 > El revisor adjudica sobre los **findings L2** (columna A), nunca sobre la narrativa.
 
 > Claude Code **no** puntúa ni declara PASS/FAIL. La rúbrica va vacía.
-
----
-
-## Resumen comparativo v2 → v3 (factual)
-
-| Sección | v2 | v3 | Cambio observado |
-|---|---|---|---|
-| sec-0004 | RENDERED | RENDERED | technical_findings corregidos + página inventada eliminada |
-| sec-0005 | RENDERED | RENDERED | technical_findings corregidos |
-| sec-0016 | RENDERED | RENDERED | technical_findings corregidos + página inventada eliminada |
-| sec-0018 | RENDERED | RENDERED | technical_findings corregidos |
-| sec-0026 | SAFE_MODE | RENDERED | modo seguro anterior superado (v3 pasa contrato v3 + Q-STATE) |
-| sec-0042 | SAFE_MODE | RENDERED | modo seguro anterior superado (v3 pasa contrato v3 + Q-STATE) |
-| sec-0062 | RENDERED | SAFE_MODE | v3 detiene antes de publicar (reviewer_action menciona cumplimiento/conformidad) — seguridad, no regresión |
-
-> Los `SAFE_MODE` **nuevos** en v3 (v2 RENDERED → v3 SAFE_MODE) son el gate determinista deteniendo salida insegura del modelo — **mejor seguridad, no regresión**.
 
 ---
 
@@ -82,7 +66,7 @@ ACCIÓN PARA EL REVISOR: Revisar en RW-0005 si los pasajes recuperados cubren lo
 
 ---
 
-## sec-0005 · RW-0005 · 21_CFR_11.50_11.70  (section_type REGULATORY · regulatory_state INCONCLUSIVE · B = **RENDERED**)
+## sec-0005 · RW-0005 · 21_CFR_11.50_11.70  (section_type REGULATORY · regulatory_state INCONCLUSIVE · B = **SAFE_MODE** — no_structured_input)
 
 `allowed_technical_findings` = [] · `technical_findings` (v3) = [] · `duplicate_quotes_raw` = ['With the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View']
 
@@ -105,19 +89,24 @@ Todos `human_state = UNREVIEWED`. Estado regulatorio determinista de la sección
 ```
 ## RW-0005 · 21_CFR_11.50_11.70
 
+[NARRATIVA LLM NO DISPONIBLE — no superó el control]
 ESTADO REGULATORIO: permanece INCONCLUSIVE. No se concluye cumplimiento ni incumplimiento.
 
-EVIDENCIA OBSERVADA:
-- "With the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View"
-- "Date and time stamps of the change"
+EVIDENCIA ANCLADA (L2, verbatim):
+- "record shall contain the following fields" (pág. 45)
+- "With the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View" (pág. 45)
+- "Date and time stamps of the change" (pág. 45)
+- "record shall contain the following fields" (pág. 45)
+- "record shall contain the following fields" (pág. 45)
+- "With the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View" (pág. 45)
+- "With the FactoryTalk View SE electronic signature feature, each entry into the FactoryTalk View" (pág. 45)
 
-LIMITACIÓN DE EVIDENCIA:
-- Se recuperaron pasajes potencialmente relevantes que requieren revisión humana; no se ancló eco léxico para distinguir huecos reales de límites de extracción.
-
-ACCIÓN PARA EL REVISOR: Revisar en RW-0005 si los pasajes recuperados cubren los requisitos de registro de cambios y firmas electrónicas según 21 CFR 11.50 y 11.70; confirmar si se incluyen los campos de fecha y hora de los cambios.
+ACCIÓN PARA EL REVISOR: revisar directamente los findings L2 de esta sección.
 ```
 
-`reviewer_action` (v3, emitido por el modelo, pre-render): 'Revisar en RW-0005 si los pasajes recuperados cubren los requisitos de registro de cambios y firmas electrónicas según 21 CFR 11.50 y 11.70; confirmar si se incluyen los campos de fecha y hora de los cambios.'
+_structure_contract_violations (v3): ["evidence_observed: citas textualmente duplicadas: ['With the FactoryTalk View SE electronic signature ']", "reviewer_action menciona cumplimiento/conformidad: 'cumplen'"]_
+
+`reviewer_action` (v3, emitido por el modelo, pre-render): 'Revisar en RW-0005 si los pasajes recuperados cumplen con los requisitos regulativos de 21 CFR 11.50 y 11.70; confirmar si los pasajes faltantes son huecos reales o límites de extracción.'
 
 **Rúbrica §4.2 — sec-0005 (POR SECCIÓN)**
 
@@ -136,7 +125,7 @@ ACCIÓN PARA EL REVISOR: Revisar en RW-0005 si los pasajes recuperados cubren lo
 
 ---
 
-## sec-0016 · RW-0006 · 21_CFR_11.10(d)  (section_type REGULATORY · regulatory_state INCONCLUSIVE · B = **RENDERED**)
+## sec-0016 · RW-0006 · 21_CFR_11.10(d)  (section_type REGULATORY · regulatory_state INCONCLUSIVE · B = **SAFE_MODE** — no_structured_input)
 
 `allowed_technical_findings` = [] · `technical_findings` (v3) = [] · `duplicate_quotes_raw` = ['Process Automation Control Server System', 'The system shall implement the security and access control']
 
@@ -160,21 +149,25 @@ Todos `human_state = UNREVIEWED`. Estado regulatorio determinista de la sección
 ```
 ## RW-0006 · 21_CFR_11.10(d)
 
+[NARRATIVA LLM NO DISPONIBLE — no superó el control]
 ESTADO REGULATORIO: permanece INCONCLUSIVE. No se concluye cumplimiento ni incumplimiento.
 
-EVIDENCIA OBSERVADA:
-- "The system shall implement the security and access control"
-- "The system shall measure the critical process parameters for the"
-- "Process Automation Control Server System"
-- "Control and privilege access shall be"
+EVIDENCIA ANCLADA (L2, verbatim):
+- "3.4.1 The system shall implement the security and access control" (pág. 6)
+- "3.1.1 The system shall measure the critical process parameters for the" (pág. 6)
+- "3.4.1 The system shall implement the security and access control" (pág. 6)
+- "Process Automation Control Server System" (pág. 6)
+- "3.4.1 The system shall implement the security and access control" (pág. 6)
+- "Process Automation Control Server System" (pág. 6)
+- "3.4.1 The system shall implement the security and access control" (pág. 6)
+- "5.2.2 URS-PCS-SR-008 Control and privilege access shall be" (pág. 16)
 
-LIMITACIÓN DE EVIDENCIA:
-- Se recuperaron pasajes potencialmente relevantes que requieren revisión humana; no se ancló eco léxico para distinguir huecos reales de límites de extracción.
-
-ACCIÓN PARA EL REVISOR: Revisar en RW-0006 si los sub-criterios de 21 CFR 11.10(d) sobre seguridad y control de acceso, y medición de parámetros críticos quedan cubiertos por los pasajes recuperados; el motor automático no ancló evidencia léxica para ninguno.
+ACCIÓN PARA EL REVISOR: revisar directamente los findings L2 de esta sección.
 ```
 
-`reviewer_action` (v3, emitido por el modelo, pre-render): 'Revisar en RW-0006 si los sub-criterios de 21 CFR 11.10(d) sobre seguridad y control de acceso, y medición de parámetros críticos quedan cubiertos por los pasajes recuperados; el motor automático no ancló evidencia léxica para ninguno.'
+_structure_contract_violations (v3): ["evidence_observed: citas textualmente duplicadas: ['Process Automation Control Server System', 'The system shall implement the security and access']"]_
+
+`reviewer_action` (v3, emitido por el modelo, pre-render): 'Revisar en RW-0006 si los sub-criterios de 21 CFR 11.10(d) sobre seguridad y control de acceso quedan cubiertos por los pasajes recuperados; el motor automático no ancló evidencia léxica para ninguno.'
 
 **Rúbrica §4.2 — sec-0016 (POR SECCIÓN)**
 
@@ -385,7 +378,7 @@ ACCIÓN PARA EL REVISOR: revisar directamente los findings L2 de esta sección.
 
 _structure_contract_violations (v3): ["reviewer_action menciona cumplimiento/conformidad: 'cumplen'"]_
 
-`reviewer_action` (v3, emitido por el modelo, pre-render): 'Revisar en RW-0014 si los pasajes recuperados cumplen con los requisitos regulativos; se requiere revisión humana de los pasajes recuperados.'
+`reviewer_action` (v3, emitido por el modelo, pre-render): 'Revisar en RW-0014 si los pasajes recuperados cumplen con los requisitos regulativos; se recuperaron pasajes potencialmente relevantes que requieren revisión humana.'
 
 **Rúbrica §4.2 — sec-0062 (POR SECCIÓN)**
 
