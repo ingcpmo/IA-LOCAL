@@ -1,0 +1,522 @@
+{
+ "schema": "SHADOW_CF6_V2_R4_RANDOM_STRATIFIED_40_RESULT/v1",
+ "TP": 1,
+ "FP": 1,
+ "FN": 2,
+ "TN": 36,
+ "precision": 0.5,
+ "recall": 0.3333333333333333,
+ "specificity": 0.972972972972973,
+ "FPR": 0.02702702702702703,
+ "exact_label_agreement": 0.375,
+ "by_requirement_id": {
+  "21_CFR_11.10(d)": {
+   "tp": 0,
+   "fp": 0,
+   "fn": 0,
+   "tn": 3,
+   "n": 3
+  },
+  "21_CFR_11.50_11.70": {
+   "tp": 0,
+   "fp": 0,
+   "fn": 0,
+   "tn": 4,
+   "n": 4
+  },
+  "ANNEX11_7.1": {
+   "tp": 0,
+   "fp": 0,
+   "fn": 0,
+   "tn": 4,
+   "n": 4
+  },
+  "21_CFR_11.10(e)": {
+   "tp": 0,
+   "fp": 0,
+   "fn": 0,
+   "tn": 3,
+   "n": 3
+  },
+  "ALCOA_LEGIBLE": {
+   "tp": 0,
+   "fp": 0,
+   "fn": 0,
+   "tn": 3,
+   "n": 3
+  },
+  "ALCOA_ATTRIBUTABLE": {
+   "tp": 0,
+   "fp": 0,
+   "fn": 0,
+   "tn": 4,
+   "n": 4
+  },
+  "21_CFR_11.10(g)": {
+   "tp": 0,
+   "fp": 0,
+   "fn": 1,
+   "tn": 2,
+   "n": 3
+  },
+  "ANNEX11_12": {
+   "tp": 0,
+   "fp": 0,
+   "fn": 0,
+   "tn": 4,
+   "n": 4
+  },
+  "ALCOA_ORIGINAL": {
+   "tp": 0,
+   "fp": 0,
+   "fn": 0,
+   "tn": 4,
+   "n": 4
+  },
+  "ALCOA_CONTEMPORANEOUS": {
+   "tp": 1,
+   "fp": 0,
+   "fn": 0,
+   "tn": 1,
+   "n": 2
+  },
+  "ANNEX11_17": {
+   "tp": 0,
+   "fp": 1,
+   "fn": 0,
+   "tn": 2,
+   "n": 3
+  },
+  "ANNEX11_9": {
+   "tp": 0,
+   "fp": 0,
+   "fn": 1,
+   "tn": 2,
+   "n": 3
+  }
+ },
+ "FP_list": [
+  [
+   "rec-42c2eff011a7efd7",
+   "ANNEX11_17",
+   "PARTIALLY_RELEVANT",
+   "INCONCLUSIVE"
+  ]
+ ],
+ "FN_list": [
+  [
+   "rec-8dd53df9991ab844",
+   "ANNEX11_9",
+   "IRRELEVANT",
+   "RELEVANT"
+  ],
+  [
+   "rec-b9f11dd9d3963b94",
+   "21_CFR_11.10(g)",
+   "IRRELEVANT",
+   "RELEVANT"
+  ]
+ ],
+ "rows": [
+  {
+   "finding_record_id": "rec-da4175c93dafe329",
+   "requirement_id": "21_CFR_11.10(d)",
+   "document": "RW-0012",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0645,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-7b6d158e5df2c34e",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "document": "RW-0014",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-8b4c0c51d7d4464f",
+   "requirement_id": "ANNEX11_7.1",
+   "document": "RW-0005",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0909,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-2ae4dafb094a42d1",
+   "requirement_id": "21_CFR_11.10(e)",
+   "document": "RW-0006",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0653,
+   "n_matched": 3,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-9460e6ea9b3238f0",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "document": "RW-0014",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-977e1772519662b2",
+   "requirement_id": "ANNEX11_7.1",
+   "document": "RW-0014",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-6f5a13fa19b88b0f",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "document": "RW-0011",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0183,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-c0f9fd9ea1057bbc",
+   "requirement_id": "21_CFR_11.10(g)",
+   "document": "RW-0011",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-f378c9c3d43dd5c8",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "document": "RW-0006",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0879,
+   "n_matched": 2,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-157a4d39cae21b68",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "document": "RW-0006",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0274,
+   "n_matched": 1,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-2d160f0034fc009b",
+   "requirement_id": "21_CFR_11.10(d)",
+   "document": "RW-0011",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0392,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-50f6675b23a58ff2",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "document": "RW-0006",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0174,
+   "n_matched": 1,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-03508ec3cf35c334",
+   "requirement_id": "ANNEX11_12",
+   "document": "RW-0005",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-bef00229b74e19fc",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "document": "RW-0012",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0455,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-30ddb198378f540d",
+   "requirement_id": "21_CFR_11.10(e)",
+   "document": "RW-0005",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.027,
+   "n_matched": 2,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-3c98d0075f63264d",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "document": "RW-0006",
+   "model_relevance_state": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1509,
+   "n_matched": 2,
+   "human_label": "RELEVANT",
+   "confusion_class": "TP"
+  },
+  {
+   "finding_record_id": "rec-d27023368407f14a",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "document": "RW-0011",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-57426835d127558d",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "document": "RW-0012",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0526,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-42c2eff011a7efd7",
+   "requirement_id": "ANNEX11_17",
+   "document": "RW-0006",
+   "model_relevance_state": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2,
+   "n_matched": 2,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "FP"
+  },
+  {
+   "finding_record_id": "rec-a9a5b6ec78fff8bc",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "document": "RW-0011",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0263,
+   "n_matched": 1,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-8dd53df9991ab844",
+   "requirement_id": "ANNEX11_9",
+   "document": "RW-0005",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "RELEVANT",
+   "confusion_class": "FN"
+  },
+  {
+   "finding_record_id": "rec-1897ca8cd56cce11",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "document": "RW-0011",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-1bf3040f43d66b37",
+   "requirement_id": "ANNEX11_7.1",
+   "document": "RW-0011",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0909,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-8c1a0d7079eca9a3",
+   "requirement_id": "ANNEX11_9",
+   "document": "RW-0014",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-416802c94910cdde",
+   "requirement_id": "21_CFR_11.10(d)",
+   "document": "RW-0014",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.08,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-f7bc368b97cf57db",
+   "requirement_id": "ANNEX11_17",
+   "document": "RW-0006",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0312,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-2841ffacd63643f9",
+   "requirement_id": "ANNEX11_12",
+   "document": "RW-0011",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0312,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-fcdb52df110efcf4",
+   "requirement_id": "21_CFR_11.10(g)",
+   "document": "RW-0014",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0312,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-e1bdf8285b40ff3a",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "document": "RW-0006",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0526,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-d9b05cf15b265a23",
+   "requirement_id": "ANNEX11_9",
+   "document": "RW-0011",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-e0a9bccca8043c22",
+   "requirement_id": "ANNEX11_12",
+   "document": "RW-0014",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.05,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-d318608f50818dee",
+   "requirement_id": "ANNEX11_17",
+   "document": "RW-0011",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-46c33ac6c8feadfd",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "document": "RW-0011",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-7d0222f7855cc12c",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "document": "RW-0005",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0336,
+   "n_matched": 2,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-b9f11dd9d3963b94",
+   "requirement_id": "21_CFR_11.10(g)",
+   "document": "RW-0012",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "RELEVANT",
+   "confusion_class": "FN"
+  },
+  {
+   "finding_record_id": "rec-a637f215b233f7ad",
+   "requirement_id": "ANNEX11_12",
+   "document": "RW-0005",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0192,
+   "n_matched": 1,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-11afa6aa04b93304",
+   "requirement_id": "21_CFR_11.10(e)",
+   "document": "RW-0006",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0644,
+   "n_matched": 3,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-3c0d7fd4b8734fad",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "document": "RW-0011",
+   "model_relevance_state": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-f276eb609aef848a",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "document": "RW-0012",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0294,
+   "n_matched": 1,
+   "human_label": "INCONCLUSIVE",
+   "confusion_class": "TN"
+  },
+  {
+   "finding_record_id": "rec-2914af68576cb5b4",
+   "requirement_id": "ANNEX11_7.1",
+   "document": "RW-0012",
+   "model_relevance_state": "INCONCLUSIVE",
+   "weighted_ratio": 0.0227,
+   "n_matched": 1,
+   "human_label": "IRRELEVANT",
+   "confusion_class": "TN"
+  }
+ ]
+}
