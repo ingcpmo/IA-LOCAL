@@ -73,6 +73,14 @@ _BASIC_STOPWORDS = frozenset({
     "the", "a", "an", "is", "are", "of", "for", "with", "to", "and", "or",
     "this", "that", "shall", "system", "there", "if", "any", "be", "by",
     "on", "as", "its",
+    # precision-fix (R4, 2026-09-05): "can" -- verbo modal auxiliar puro en
+    # las 3 ubicaciones donde aparece en decomposition.yaml (21_CFR_11.10(a)
+    # ::sc5, 21_CFR_11.10(e)::sc9, 21_CFR_211.68(b)::sc1); demostrado sin
+    # valor discriminante en 3 falsos positivos independientes
+    # (DIAGNOSTIC_15). NO se añaden "must"/"may" -- riesgo de significado
+    # regulatorio no descartado para esos dos, por instrucción explícita de
+    # Capa 9.
+    "can",
 })
 
 
