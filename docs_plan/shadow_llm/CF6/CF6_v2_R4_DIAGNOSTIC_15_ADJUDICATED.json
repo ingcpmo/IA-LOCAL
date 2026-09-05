@@ -1,0 +1,179 @@
+{
+ "rows": [
+  {
+   "#": 1,
+   "finding_record_id": "rec-cb15e1c9d46388bd",
+   "requirement_id": "21_CFR_11.10(e)",
+   "doc": "RW-0005",
+   "model": "INCONCLUSIVE",
+   "human": "INCONCLUSIVE",
+   "ratio": 0.1196,
+   "n": 3,
+   "cls": "TN"
+  },
+  {
+   "#": 2,
+   "finding_record_id": "rec-41020224b0ac1d19",
+   "requirement_id": "21_CFR_11.10(e)",
+   "doc": "RW-0005",
+   "model": "INCONCLUSIVE",
+   "human": "INCONCLUSIVE",
+   "ratio": 0.1196,
+   "n": 3,
+   "cls": "TN"
+  },
+  {
+   "#": 3,
+   "finding_record_id": "rec-f7eff6b9be225492",
+   "requirement_id": "21_CFR_11.10(e)",
+   "doc": "RW-0005",
+   "model": "INCONCLUSIVE",
+   "human": "INCONCLUSIVE",
+   "ratio": 0.1196,
+   "n": 3,
+   "cls": "TN"
+  },
+  {
+   "#": 4,
+   "finding_record_id": "rec-bff2bcf00c3551c6",
+   "requirement_id": "21_CFR_11.10(e)",
+   "doc": "RW-0006",
+   "model": "INCONCLUSIVE",
+   "human": "INCONCLUSIVE",
+   "ratio": 0.1196,
+   "n": 3,
+   "cls": "TN"
+  },
+  {
+   "#": 5,
+   "finding_record_id": "rec-284aedafa8dddd56",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "doc": "RW-0012",
+   "model": "PARTIALLY_RELEVANT",
+   "human": "IRRELEVANT",
+   "ratio": 0.1212,
+   "n": 1,
+   "cls": "FP"
+  },
+  {
+   "#": 6,
+   "finding_record_id": "rec-3369a8711e5f16a3",
+   "requirement_id": "21_CFR_11.10(e)",
+   "doc": "RW-0011",
+   "model": "PARTIALLY_RELEVANT",
+   "human": "IRRELEVANT",
+   "ratio": 0.1216,
+   "n": 1,
+   "cls": "FP"
+  },
+  {
+   "#": 7,
+   "finding_record_id": "rec-814e1e0e05380e78",
+   "requirement_id": "21_CFR_11.10(e)",
+   "doc": "RW-0012",
+   "model": "PARTIALLY_RELEVANT",
+   "human": "IRRELEVANT",
+   "ratio": 0.1216,
+   "n": 1,
+   "cls": "FP"
+  },
+  {
+   "#": 8,
+   "finding_record_id": "rec-850828e07185d641",
+   "requirement_id": "21_CFR_11.10(e)",
+   "doc": "RW-0014",
+   "model": "PARTIALLY_RELEVANT",
+   "human": "IRRELEVANT",
+   "ratio": 0.1216,
+   "n": 1,
+   "cls": "FP"
+  },
+  {
+   "#": 9,
+   "finding_record_id": "rec-2bd352f6e733c687",
+   "requirement_id": "21_CFR_11.10(d)",
+   "doc": "RW-0005",
+   "model": "PARTIALLY_RELEVANT",
+   "human": "RELEVANT",
+   "ratio": 0.1231,
+   "n": 2,
+   "cls": "TP"
+  },
+  {
+   "#": 10,
+   "finding_record_id": "rec-5f59722c74597726",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "doc": "RW-0005",
+   "model": "INCONCLUSIVE",
+   "human": "IRRELEVANT",
+   "ratio": 0.1132,
+   "n": 1,
+   "cls": "TN"
+  },
+  {
+   "#": 11,
+   "finding_record_id": "rec-87279db34937bf9f",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "doc": "RW-0011",
+   "model": "INCONCLUSIVE",
+   "human": "IRRELEVANT",
+   "ratio": 0.1132,
+   "n": 1,
+   "cls": "TN"
+  },
+  {
+   "#": 12,
+   "finding_record_id": "rec-9b9b6b70c63a1f85",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "doc": "RW-0012",
+   "model": "INCONCLUSIVE",
+   "human": "IRRELEVANT",
+   "ratio": 0.1132,
+   "n": 1,
+   "cls": "TN"
+  },
+  {
+   "#": 13,
+   "finding_record_id": "rec-e44befac41382590",
+   "requirement_id": "ANNEX11_7.1",
+   "doc": "RW-0005",
+   "model": "INCONCLUSIVE",
+   "human": "IRRELEVANT",
+   "ratio": 0.1098,
+   "n": 2,
+   "cls": "TN"
+  },
+  {
+   "#": 14,
+   "finding_record_id": "rec-39b4c3e7f96aa8b3",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "doc": "RW-0011",
+   "model": "INCONCLUSIVE",
+   "human": "IRRELEVANT",
+   "ratio": 0.1081,
+   "n": 1,
+   "cls": "TN"
+  },
+  {
+   "#": 15,
+   "finding_record_id": "rec-870a752d32280cc4",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "doc": "RW-0011",
+   "model": "PARTIALLY_RELEVANT",
+   "human": "INCONCLUSIVE",
+   "ratio": 0.1319,
+   "n": 2,
+   "cls": "FP"
+  }
+ ],
+ "TP": 1,
+ "FP": 5,
+ "FN": 0,
+ "TN": 9,
+ "precision": 0.16666666666666666,
+ "recall": 1.0,
+ "exact_label_agreement": 0.26666666666666666,
+ "schema": "SHADOW_CF6_V2_R4_DIAGNOSTIC_NEAR_THRESHOLD_15/v1",
+ "status": "ADJUDICATED",
+ "note": "Tratado UNICAMENTE como DIAGNOSTIC_NEAR_THRESHOLD_SAMPLE -- no representativo, no usar para seleccionar threshold ni como estimacion global."
+}
