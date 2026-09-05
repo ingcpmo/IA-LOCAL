@@ -133,3 +133,19 @@ def test_human_gate_v3_package_is_per_section_llm_free_and_unscored(tmp_path):
     assert "A — reporte determinista L2" in md
     assert "B — resultado CF6 v3" in md
     assert "HUMAN_QUALITY_GATE (v3) = PENDIENTE" in md
+
+
+class TestOutputPathIsolationR4E1:
+    """Barrido de integridad R4/E1 (mismo defecto que cf6_r2_runner.py)."""
+
+    def test_default_out_dirs_are_disjoint(self):
+        assert PR3._DRY_RUN_OUT_DIR != PR3._REAL_OUT_DIR
+
+    def test_dry_run_without_out_dir_never_touches_real_dir(self, tmp_path, monkeypatch):
+        import hashlib
+        monkeypatch.setattr(PR3, "_DRY_RUN_OUT_DIR", str(tmp_path / "_dry_run"))
+        real_file = Path(PR3._REAL_OUT_DIR) / "CF6_2_5_v3_PILOT_RUN.json"
+        before = hashlib.sha256(real_file.read_bytes()).hexdigest() if real_file.is_file() else None
+        PR3.run_cf6_2_5_v3(_SL, _MANIFEST, dry_run=True)
+        after = hashlib.sha256(real_file.read_bytes()).hexdigest() if real_file.is_file() else None
+        assert before == after

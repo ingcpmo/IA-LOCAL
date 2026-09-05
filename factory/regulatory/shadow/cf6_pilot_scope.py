@@ -21,14 +21,20 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from factory.regulatory.shadow import phase_equivalence_table as _phases
+
 COMPOSER_PROMPT_VERSION = "shadow-cf6-composer-struct-v2"
 _DEFAULT_LEDGER = Path("factory/layer9/decisions/decisions_v2.jsonl")
 
-# marcadores que, de aparecer en el scope firmado, cubrirían cada ítem CF-6
+# marcadores que, de aparecer en el scope firmado, cubrirían cada ítem CF-6.
+# c_cf6_3 y b_cf6_2_5 se resuelven contra la tabla de equivalencia de fases
+# versionada (R4/E1, Capa 9 2026-09-04) -- reconcilia vocabulario entre
+# nomenclaturas de distinta generación (v1.2/v1.3 vs v2.0) SIN relajar la
+# exigencia semántica de cada chequeo (sigue exigiendo cobertura EXPLÍCITA).
 _SCOPE_TOKENS = {
     "a_composer_prompt_version": (COMPOSER_PROMPT_VERSION, "cf6-composer-struct", "cf6_composer_structured"),
-    "b_cf6_2_5": ("CF6-2.5", "cf6_2_5", "quality pilot", "human_quality_gate"),
-    "c_cf6_3": ("CF6-3", "cf6_3", "corrida completa cf6", "full cf6"),
+    "b_cf6_2_5": tuple(_phases.tokens_for("QUALITY_PILOT_SAMPLE")),
+    "c_cf6_3": tuple(_phases.tokens_for("FULL_CORPUS_RUN_POST_GATE")),
     "d_execution_type_json_structure": ("json structure", "estructura json", "structured_composer",
                                         "composer_structured", "structured_json_composer", "cf6"),
 }

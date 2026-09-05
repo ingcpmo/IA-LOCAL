@@ -109,11 +109,21 @@ def _call_llm(prompt: str, *, num_predict: int = 1024, num_ctx: int = 8192):
     return resp.get("response", "") or "", round(time.time() - t0, 2), resp
 
 
+_REAL_OUT_DIR = "docs_plan/shadow_llm/CF6"
+_DRY_RUN_OUT_DIR = "docs_plan/shadow_llm/CF6/_dry_run"
+
+
 def run_cf6_2_5(shadow_dir: str | Path = "docs_plan/shadow_llm",
                 manifest_path: str | Path = "docs_plan/shadow_llm/CF6/CF6_2_5_SAMPLE_MANIFEST.json",
-                *, out_dir: str | Path = "docs_plan/shadow_llm/CF6",
+                *, out_dir: str | Path | None = None,
                 dry_run: bool = False) -> dict:
+    """`out_dir=None` (defecto): se elige automáticamente según `dry_run`
+    -- nunca comparte ruta con una corrida real (barrido de integridad R4/E1,
+    mismo mecanismo aplicado en cf6_r2_runner.py). Pasar `out_dir` explícito
+    (p.ej. tmp_path de test) se respeta siempre."""
     _cp.assert_signed()                                   # fail-closed
+    if out_dir is None:
+        out_dir = _DRY_RUN_OUT_DIR if dry_run else _REAL_OUT_DIR
     SL = Path(shadow_dir)
     OUT = Path(out_dir)
     OUT.mkdir(parents=True, exist_ok=True)

@@ -77,11 +77,21 @@ def _dupe_quotes(obj: dict | None) -> list[str]:
     return sorted({q for q in qs if q and qs.count(q) > 1})
 
 
+_REAL_OUT_DIR = "docs_plan/shadow_llm/CF6"
+_DRY_RUN_OUT_DIR = "docs_plan/shadow_llm/CF6/_dry_run"
+
+
 def run_cf6_2_5_v3(shadow_dir: str | Path = "docs_plan/shadow_llm",
                    manifest_path: str | Path = "docs_plan/shadow_llm/CF6/CF6_2_5_SAMPLE_MANIFEST.json",
-                   *, out_dir: str | Path = "docs_plan/shadow_llm/CF6",
+                   *, out_dir: str | Path | None = None,
                    dry_run: bool = False) -> dict:
+    """`out_dir=None` (defecto): se elige automáticamente según `dry_run`
+    -- nunca comparte ruta con una corrida real (barrido de integridad R4/E1,
+    mismo mecanismo aplicado en cf6_r2_runner.py). Pasar `out_dir` explícito
+    (p.ej. tmp_path de test) se respeta siempre."""
     _cp3.assert_signed()
+    if out_dir is None:
+        out_dir = _DRY_RUN_OUT_DIR if dry_run else _REAL_OUT_DIR
     SL, OUT = Path(shadow_dir), Path(out_dir)
     OUT.mkdir(parents=True, exist_ok=True)
 
