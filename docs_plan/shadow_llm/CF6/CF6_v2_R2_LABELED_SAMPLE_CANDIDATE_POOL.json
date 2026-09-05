@@ -13,7 +13,7 @@
    "weighted_ratio": 0.0,
    "matched_terms": [],
    "model_relevance_state": "IRRELEVANT",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0004",
@@ -27,7 +27,7 @@
     "level"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0004",
@@ -39,7 +39,7 @@
    "weighted_ratio": 0.0,
    "matched_terms": [],
    "model_relevance_state": "IRRELEVANT",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0004",
@@ -51,7 +51,7 @@
    "weighted_ratio": 0.0,
    "matched_terms": [],
    "model_relevance_state": "IRRELEVANT",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0004",
@@ -63,7 +63,7 @@
    "weighted_ratio": 0.0,
    "matched_terms": [],
    "model_relevance_state": "IRRELEVANT",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0005",
@@ -77,7 +77,7 @@
     "record"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0005",
@@ -93,7 +93,7 @@
     "signature"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "RELEVANT"
   },
   {
    "section_id": "sec-0005",
@@ -105,7 +105,7 @@
    "weighted_ratio": 0.0,
    "matched_terms": [],
    "model_relevance_state": "IRRELEVANT",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0005",
@@ -119,7 +119,7 @@
     "record"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0005",
@@ -133,7 +133,7 @@
     "record"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0005",
@@ -149,7 +149,7 @@
     "signature"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0005",
@@ -165,7 +165,7 @@
     "signature"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "RELEVANT"
   },
   {
    "section_id": "sec-0016",
@@ -180,7 +180,7 @@
     "control"
    ],
    "model_relevance_state": "PARTIALLY_RELEVANT",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0016",
@@ -194,7 +194,7 @@
     "process"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0016",
@@ -206,7 +206,7 @@
    "weighted_ratio": 0.0,
    "matched_terms": [],
    "model_relevance_state": "IRRELEVANT",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0016",
@@ -220,7 +220,7 @@
     "process"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0016",
@@ -234,7 +234,7 @@
     "access"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0016",
@@ -248,7 +248,7 @@
     "process"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0016",
@@ -262,7 +262,7 @@
     "access"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0016",
@@ -276,7 +276,7 @@
     "privilege"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0018",
@@ -290,7 +290,7 @@
     "operation"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0018",
@@ -304,7 +304,7 @@
     "each"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0018",
@@ -318,7 +318,7 @@
     "level"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0018",
@@ -332,7 +332,7 @@
     "level"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0018",
@@ -346,7 +346,7 @@
     "access"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0062",
@@ -360,7 +360,7 @@
     "process"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   },
   {
    "section_id": "sec-0062",
@@ -374,7 +374,11 @@
     "copy"
    ],
    "model_relevance_state": "INCONCLUSIVE",
-   "human_label": null
+   "human_label": "INCONCLUSIVE"
   }
- ]
+ ],
+ "adjudicated_by": "Capa 9 (Cesar)",
+ "adjudicated_at": "2026-09-04",
+ "adjudication_note": "2 pares (sec-0005 sc1/sc2, candidato \"electronic signature\") = RELEVANT (confirma falso negativo del modelo). Los 25 restantes = INCONCLUSIVE (instrucción explícita en bloque, incluye rec-5bfe094286d91b6d que el modelo había clasificado PARTIALLY_RELEVANT y rec-95102a2c01cbeb36 sc6).",
+ "status": "ADJUDICATED"
 }
