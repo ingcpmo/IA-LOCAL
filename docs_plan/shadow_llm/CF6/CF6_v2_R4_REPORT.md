@@ -1,5 +1,15 @@
 # CF-6 v2.0 · R4 — Reconciliación post-R2 + medición del Relevance Model (E1→E5)
 
+> **Adenda 2026-09-05 (iteración de fixture autorizada por Capa 9)**: la v1 de
+> `TECHNICAL_PARAPHRASE` (sustitución de la primera ocurrencia, ~10 patrones) resultó
+> demasiado leve (recall trivial 1.0). Se autorizó iterar el fixture ANTES de recalibrar. La
+> v2 (`_paraphrase`, sustitución de TODAS las ocurrencias, ~50 sinónimos de dominio GMP/21 CFR)
+> reduce el solapamiento léxico de forma deliberada. Nuevo `FIXTURE_HASH =
+> df35ab12999498d4...`. Resultado de la remedición: **ver "Adenda — resultado de la iteración
+> v2" al final de este documento — cambia la lectura de la atribución de forma importante.**
+> El cuerpo original de R4 (v1, `fixture_hash a...`→`dd135f5c...`) se conserva íntegro abajo,
+> sin editar, para trazabilidad.
+
 **Fecha:** 2026-09-04 · **Instrucción:** "RECONCILIACIÓN POST-R2 + EJECUCIÓN R4" (Capa 9) ·
 **Régimen:** ejecución continua E1→E5, sin gates intermedios, validación única al final.
 **LLM_CALLS en toda la ronda: 0.**
@@ -172,3 +182,94 @@ conforme a la instrucción. Ninguna remediación se aplicó al Relevance Model, 
 Composer, ni a `decomposition.yaml`. Decisión de Capa 9 pendiente: (a) si recalibrar el umbral
 del Relevance Model dado el hallazgo de §5.2, y (b) si autorizar una iteración del fixture que
 corrija la limitación de paráfrasis-demasiado-leve antes de esa recalibración.
+
+---
+
+## Adenda — resultado de la iteración v2 del fixture (autorizada por Capa 9, 2026-09-05)
+
+```
+FIXTURE_HASH (v2) = df35ab12999498d4...
+```
+
+**Métricas (fixture v2, umbral CONGELADO actual, sin recalibrar):**
+```
+global:       precisión 0.663 · recall 0.984  (TP=185 FP=94 FN=3 TN=79, n=361)
+CALIBRATION:  precisión 0.682 · recall 0.957  (n=98)
+HELDOUT:      precisión 0.657 · recall 0.993  (n=263)
+por perfil:   MANY_SHORT precisión 0.672 recall 0.975 (n=232)
+              FEW_LONG   precisión 0.648 recall 1.000 (n=129)
+```
+El recall global bajó de 1.0 (v1) a 0.984 (v2) -- la paráfrasis más agresiva SÍ logró que el
+umbral actual perdiera 3 casos que antes pasaba trivialmente. El fixture ahora tensiona
+genuinamente el mecanismo, a diferencia de v1.
+
+**ACHIEVABLE_OPTIMUM (CALIBRATION, v2):** el óptimo se DESPLAZÓ de `threshold=0.44` (v1) a
+**`threshold=0.2667`** -- alcanza `T_recall=0.905` y `T_precision=1.0`. Verificado en HELDOUT
+con el MISMO umbral: **recall=0.952, precisión=1.0** -- **esta vez SÍ se sostiene con margen en
+HELDOUT** (0.952 > 0.90), a diferencia de v1 (que se quedaba en 0.865 < 0.90). La reserva de
+generalización de la versión v1 de este reporte queda, en ese sentido, resuelta.
+
+**Hallazgo crítico, no anticipado, que cambia la lectura de la atribución**: el umbral óptimo
+hallado en el fixture v2 (`0.2667`) es **más alto** que el `weighted_ratio` de LOS DOS ÚNICOS
+candidatos que Capa 9 confirmó como genuinamente `RELEVANT` en `REAL_ADJUDICATED`:
+
+```
+rec-f2c131db4e52163d (sec-0005, sc1, "electronic signature" / nombre del firmante) ratio=0.0909
+rec-33acbc832665ade8 (sec-0005, sc2, "electronic signature" / fecha y hora)        ratio=0.0811
+umbral óptimo hallado (fixture v2, CALIBRATION+HELDOUT)                            = 0.2667
+```
+
+**Recalibrar el umbral del Relevance Model al valor que este fixture (incluso ya endurecido)
+recomienda NO recuperaría ninguno de los 2 casos reales confirmados** -- ambos ratios reales
+quedan muy por debajo del óptimo sintético. Es decir: **incluso la paráfrasis v2, deliberadamente
+más agresiva que v1, sigue siendo más FÁCIL que la paráfrasis real observada en `sec-0005`.** El
+patrón real (reformulación completa a nivel de oración, mención de una *característica* del
+sistema sin ecoar el sub-criterio específico) no está capturado por ninguna transformación
+puramente léxica (sustitución de sinónimos), por agresiva que sea -- el fenómeno parece
+depender de una reestructuración semántica/sintáctica que un diccionario de sinónimos, sin
+LLM, no puede replicar de forma fiel.
+
+**REAL_ADJUDICATED sin cambio** (no depende del fixture): precisión 0.0 / recall 0.0.
+
+### Atribución revisada
+
+`ACHIEVABLE_OPTIMUM` v2 SÍ alcanza ambos objetivos en CALIBRATION **y** se sostiene en HELDOUT
+(a diferencia de v1) → mecánicamente, **CAUSA = CALIBRACIÓN** se confirma con más fuerza que en
+v1 para el INSTRUMENTO SINTÉTICO. Pero el hallazgo del umbral-vs-ratios-reales de arriba
+demuestra que **ese resultado no es transferible al problema real que motivó R1/R4** -- el
+instrumento (incluso mejorado) sigue sin reproducir la dificultad observada. La atribución
+mecánica de la regla §5.2 y la utilidad práctica de esa atribución divergen aquí, y se reportan
+ambas, sin resolver la divergencia por decisión propia:
+
+```
+ATRIBUCIÓN MECÁNICA (regla §5.2 aplicada al fixture v2)     = CALIBRACIÓN
+UTILIDAD DE ESA ATRIBUCIÓN PARA EL PROBLEMA REAL             = NULA (el umbral recomendado no
+                                                                 habría cambiado el resultado
+                                                                 real de R2)
+COMPOSER = INDETERMINADO (sin cambio -- el Relevance Model, con el umbral actual, sigue sin
+           alcanzar los objetivos sobre REAL_ADJUDICATED)
+```
+
+### Qué implica esto para §6 (condición de repetir R2)
+
+La condición 3 de §6 ("El Relevance Model alcanza T_recall y T_precision en HELDOUT") **se
+cumple para el fixture sintético** pero **NO hay evidencia de que se cumpliría sobre
+documentos reales** -- el único dato real disponible (`REAL_ADJUDICATED`, n=27, 2 positivos)
+indica lo contrario. Recalibrar y repetir R2 sobre esa base sería, con la evidencia actual,
+una decisión no respaldada por datos reales, solo por el instrumento sintético.
+
+**Recomendación técnica, no una decisión** (Claude Code no autoriza, solo señala): antes de
+recalibrar, el paso de mayor valor parece ser ampliar `REAL_ADJUDICATED` -- más pares
+etiquetados por un humano sobre documentos reales, no más iteraciones del generador sintético.
+La construcción determinista (sin LLM) tiene un techo demostrado: no reproduce paráfrasis real.
+
+### Invariantes de esta adenda
+
+`LLM_CALLS=0` · `decomposition.yaml` sin escrituras (verificado en test) · `relevance_model.py`
+sin modificar · `CONFIG_R4` sin cambio (no depende de `r4_fixture_builder.py`) · 15/15 tests de
+`r4_fixture_builder`/`r4_measure` pasan con la v2 · `-k shadow`: 281 passed, 1 failed (misma
+falla pre-existente no relacionada).
+
+**STOP.** No se recalibró nada. No se tocó el Composer. Decisión de Capa 9 pendiente: si
+autoriza ampliar `REAL_ADJUDICATED` (más pares reales etiquetados) antes de cualquier
+recalibración, dado que el camino sintético demostró, dos veces, un techo de fidelidad.

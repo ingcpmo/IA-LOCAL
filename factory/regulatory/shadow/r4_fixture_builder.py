@@ -64,27 +64,84 @@ _CATEGORY_LABELS = {
 
 # sustitución léxica fija para TECHNICAL_PARAPHRASE -- determinista, sin LLM.
 # Preserva significado (sinónimos declarados, no reformulación libre).
+# v2 (R4/E2, iteración autorizada por Capa 9 2026-09-05): la v1 (10 pares,
+# sustitución de la PRIMERA ocurrencia solamente) resultó demasiado leve --
+# medido en R4: recall trivial 1.0, no reprodujo la dificultad real de
+# sec-0005 (donde el candidato real comparte SOLO 3 términos genéricos con
+# el sub-criterio, ratio 0.081, muy por debajo del umbral). Esta versión
+# sustituye TODAS las ocurrencias (no solo la primera) con un diccionario de
+# sinónimos de dominio mucho más amplio (vocabulario GMP/21 CFR real, no
+# solo conectores), reduciendo el solapamiento léxico directo de forma
+# deliberada -- el objetivo es que la etiqueta siga siendo RELEVANT por
+# construcción (la sustancia no cambia) pero el eco léxico se acerque al
+# caso real observado, no al caso trivial de la v1. Determinista, sin LLM.
 _PARAPHRASE_MAP = [
-    (r"\bthere is\b", "the system provides"),
-    (r"\beach\b", "every"),
-    (r"\bshows\b", "displays"),
-    (r"\bmust\b", "shall"),
-    (r"\bshall\b", "is required to"),
-    (r"\bprocess\b", "procedure"),
-    (r"\bsystem\b", "application"),
+    (r"\bthere is\b", "the platform maintains"),
+    (r"\bthere are\b", "the platform maintains"),
+    (r"\beach\b", "every instance of a"),
+    (r"\bshows\b", "discloses"),
+    (r"\bmust\b", "is obligated to"),
+    (r"\bshall\b", "is obligated to"),
+    (r"\bprocess(es)?\b", "workflow\\1"),
+    (r"\bsystem\b", "platform"),
+    (r"\brecords\b", "entries"),
     (r"\brecord\b", "entry"),
-    (r"\bexists\b", "is present"),
-    (r"\bdate and time\b", "timestamp"),
+    (r"\bexists\b", "is maintained"),
+    (r"\bdate and time\b", "chronological marker"),
+    (r"\belectronic signature\b", "digital signing credential"),
+    (r"\bsignature(s)?\b", "signing credential\\1"),
+    (r"\baccount(s)?\b", "user profile\\1"),
+    (r"\baccess\b", "entry permission"),
+    (r"\bcontrol\b", "governance"),
+    (r"\bmechanism\b", "capability"),
+    (r"\bdocumented\b", "put on record"),
+    (r"\brisk-based\b", "prioritized by exposure"),
+    (r"\bintended use\b", "operational purpose"),
+    (r"\bacceptance criteria\b", "pass/fail thresholds"),
+    (r"\bexecution evidence\b", "proof of performance"),
+    (r"\bdeviations\b", "departures from plan"),
+    (r"\btraceability\b", "linkage"),
+    (r"\binvalid\b", "non-genuine"),
+    (r"\baltered\b", "tampered"),
+    (r"\bdiscern\b", "flag"),
+    (r"\bprivilege(s)?\b", "entitlement\\1"),
+    (r"\bprovisioning\b", "onboarding"),
+    (r"\brevocation\b", "deactivation"),
+    (r"\bdeactivation\b", "shutdown"),
+    (r"\bindividual\b", "personal"),
+    (r"\bshared\b", "pooled"),
+    (r"\btechnical\b", "non-human"),
+    (r"\bnon-interactive\b", "unattended"),
+    (r"\bowner\b", "responsible party"),
+    (r"\bminimum\b", "baseline"),
+    (r"\btest evidence\b", "verification proof"),
+    (r"\bdenied\b", "blocked"),
+    (r"\baudit trail\b", "activity log"),
+    (r"\btime-?stamped\b", "chronologically marked"),
+    (r"\bcreate, modify and delete\b", "originate, amend and purge"),
+    (r"\bprevious value\b", "prior state"),
+    (r"\brestricted\b", "gated"),
+    (r"\bprinted name\b", "legible identity"),
+    (r"\bmeaning\b", "intent"),
+    (r"\breadable\b", "legible"),
+    (r"\bassociated\b", "linked"),
+    (r"\bextracted?\b", "lifted"),
+    (r"\bcopied\b", "duplicated"),
+    (r"\btransferred\b", "relocated"),
+    (r"\bordinary means\b", "standard tooling"),
+    (r"\bfeature\b", "capability"),
+    (r"\bimplementation\b", "rollout"),
 ]
 
 
 def _paraphrase(text_en: str) -> str:
+    """Sustituye TODAS las ocurrencias de cada patrón (no solo la primera,
+    a diferencia de v1) -- reducción de solapamiento léxico deliberada,
+    misma sustancia semántica."""
     out = text_en
     for pat, repl in _PARAPHRASE_MAP:
-        out = re.sub(pat, repl, out, count=1, flags=re.IGNORECASE)
+        out = re.sub(pat, repl, out, flags=re.IGNORECASE)
     if out == text_en and "," in text_en:
-        # sin match léxico: reordena la primera cláusula al final (preserva
-        # el contenido, cambia la forma) -- fallback determinista.
         head, _, tail = text_en.partition(",")
         out = f"{tail.strip()}, {head.strip()}"
     return out

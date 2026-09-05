@@ -1,32 +1,32 @@
 {
  "schema": "SHADOW_CF6_V2_R4_MEASUREMENT/v1",
- "fixture_hash": "dd135f5c44df477150effc5bc6c512e2177480815cea254849fb1c447d5366b6",
+ "fixture_hash": "df35ab12999498d4ee69f6a3f2ebbc6764493db8f045047def1c961fc073b3a8",
  "n_pairs_measured": 361,
  "GLOBAL_CONFUSION_FROZEN_THRESHOLD": {
-  "TP": 188,
+  "TP": 185,
   "FP": 94,
-  "FN": 0,
+  "FN": 3,
   "TN": 79,
-  "precision": 0.6666666666666666,
-  "recall": 1.0,
+  "precision": 0.6630824372759857,
+  "recall": 0.9840425531914894,
   "n": 361
  },
  "CALIBRATION_CONFUSION_FROZEN_THRESHOLD": {
-  "TP": 47,
+  "TP": 45,
   "FP": 21,
-  "FN": 0,
+  "FN": 2,
   "TN": 30,
-  "precision": 0.6911764705882353,
-  "recall": 1.0,
+  "precision": 0.6818181818181818,
+  "recall": 0.9574468085106383,
   "n": 98
  },
  "HELDOUT_CONFUSION_FROZEN_THRESHOLD": {
-  "TP": 141,
+  "TP": 140,
   "FP": 73,
-  "FN": 0,
+  "FN": 1,
   "TN": 49,
-  "precision": 0.6588785046728972,
-  "recall": 1.0,
+  "precision": 0.6572769953051644,
+  "recall": 0.9929078014184397,
   "n": 263
  },
  "BY_CATEGORY_FROZEN_THRESHOLD": {
@@ -40,12 +40,12 @@
    "n": 84
   },
   "TECHNICAL_PARAPHRASE": {
-   "TP": 84,
+   "TP": 81,
    "FP": 0,
-   "FN": 0,
+   "FN": 3,
    "TN": 0,
    "precision": 1.0,
-   "recall": 1.0,
+   "recall": 0.9642857142857143,
    "n": 84
   },
   "IRRELEVANT_SIMILAR_DOMAIN": {
@@ -105,12 +105,12 @@
  },
  "BY_PROFILE_FROZEN_THRESHOLD": {
   "MANY_SHORT": {
-   "TP": 120,
+   "TP": 117,
    "FP": 57,
-   "FN": 0,
+   "FN": 3,
    "TN": 55,
-   "precision": 0.6779661016949152,
-   "recall": 1.0,
+   "precision": 0.6724137931034483,
+   "recall": 0.975,
    "n": 232
   },
   "FEW_LONG": {
@@ -125,226 +125,266 @@
  },
  "ACHIEVABLE_OPTIMUM_CALIBRATION": {
   "partition": "CALIBRATION",
-  "curve_n_points": 46,
+  "curve_n_points": 54,
   "curve": [
    {
     "threshold": 0.0,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.0244,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.0645,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.08,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.0909,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.0923,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.1724,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.1739,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.1778,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.1786,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.1818,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.1915,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.2,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.2073,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.2083,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.2092,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.2118,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.2188,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.2264,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.2386,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.2667,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.2927,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.4255,
-    "recall_on_relevant": 1.0,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.4318,
     "recall_on_relevant": 0.9761904761904762,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.4348,
+    "threshold": 0.0244,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.0645,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.08,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.0909,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.0923,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1132,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1724,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1739,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1778,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1786,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1818,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1915,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1935,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2,
     "recall_on_relevant": 0.9285714285714286,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.44,
+    "threshold": 0.2073,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2083,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2092,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2118,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2188,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2264,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2386,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.24,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2667,
     "recall_on_relevant": 0.9047619047619048,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.4483,
+    "threshold": 0.2769,
+    "recall_on_relevant": 0.8809523809523809,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2927,
     "recall_on_relevant": 0.8571428571428571,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.4516,
+    "threshold": 0.3404,
+    "recall_on_relevant": 0.8571428571428571,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.3529,
+    "recall_on_relevant": 0.8333333333333334,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.375,
     "recall_on_relevant": 0.8095238095238095,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.4583,
-    "recall_on_relevant": 0.7857142857142857,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.4783,
-    "recall_on_relevant": 0.7619047619047619,
-    "precision_on_hard_negative": 1.0
-   },
-   {
-    "threshold": 0.4821,
+    "threshold": 0.3977,
     "recall_on_relevant": 0.7380952380952381,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.4894,
+    "threshold": 0.4,
+    "recall_on_relevant": 0.7142857142857143,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4268,
     "recall_on_relevant": 0.6904761904761905,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.4906,
+    "threshold": 0.4318,
     "recall_on_relevant": 0.6666666666666666,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.4923,
+    "threshold": 0.4348,
+    "recall_on_relevant": 0.6428571428571429,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.439,
     "recall_on_relevant": 0.6190476190476191,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.5,
-    "recall_on_relevant": 0.5714285714285714,
+    "threshold": 0.44,
+    "recall_on_relevant": 0.5952380952380952,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.5161,
-    "recall_on_relevant": 0.5,
+    "threshold": 0.4471,
+    "recall_on_relevant": 0.5476190476190477,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.5176,
+    "threshold": 0.4483,
+    "recall_on_relevant": 0.5238095238095238,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4783,
     "recall_on_relevant": 0.47619047619047616,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.5229,
+    "threshold": 0.4821,
+    "recall_on_relevant": 0.4523809523809524,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4894,
     "recall_on_relevant": 0.42857142857142855,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.5333,
+    "threshold": 0.4906,
+    "recall_on_relevant": 0.40476190476190477,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4923,
     "recall_on_relevant": 0.38095238095238093,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.5366,
-    "recall_on_relevant": 0.3333333333333333,
+    "threshold": 0.5,
+    "recall_on_relevant": 0.35714285714285715,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.5455,
+    "threshold": 0.5161,
+    "recall_on_relevant": 0.2857142857142857,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5176,
+    "recall_on_relevant": 0.2619047619047619,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5229,
     "recall_on_relevant": 0.23809523809523808,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.56,
+    "threshold": 0.5333,
+    "recall_on_relevant": 0.21428571428571427,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5366,
     "recall_on_relevant": 0.19047619047619047,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.5778,
+    "threshold": 0.5455,
     "recall_on_relevant": 0.14285714285714285,
     "precision_on_hard_negative": 1.0
    },
    {
-    "threshold": 0.5909,
+    "threshold": 0.5778,
     "recall_on_relevant": 0.09523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5909,
+    "recall_on_relevant": 0.07142857142857142,
     "precision_on_hard_negative": 1.0
    },
    {
@@ -360,21 +400,21 @@
   ],
   "achieves_both_targets": true,
   "best_meeting_both_targets": {
-   "threshold": 0.44,
+   "threshold": 0.2667,
    "recall_on_relevant": 0.9047619047619048,
    "precision_on_hard_negative": 1.0
   },
   "best_balanced_point": {
    "threshold": 0.0,
-   "recall_on_relevant": 1.0,
+   "recall_on_relevant": 0.9761904761904762,
    "precision_on_hard_negative": 1.0
   },
   "T_RECALL": 0.9,
   "T_PRECISION": 0.8
  },
  "HELDOUT_VERIFICATION_AT_BEST_CALIBRATION_THRESHOLD": {
-  "threshold_from_calibration": 0.44,
-  "recall_on_relevant_heldout": 0.8650793650793651,
+  "threshold_from_calibration": 0.2667,
+  "recall_on_relevant_heldout": 0.9523809523809523,
   "precision_on_hard_negative_heldout": 1.0
  },
  "REAL_ADJUDICATED": {
@@ -418,17 +458,12 @@
    "partition": "HELDOUT",
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(a)",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5185,
-   "n_matched": 8,
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1852,
+   "n_matched": 3,
    "matched_terms": [
     "approach",
-    "based",
-    "documented",
     "driven",
-    "intended",
-    "risk",
-    "use",
     "validation"
    ]
   },
@@ -476,12 +511,10 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(a)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5417,
-   "n_matched": 7,
+   "weighted_ratio": 0.375,
+   "n_matched": 5,
    "matched_terms": [
-    "acceptance",
     "before",
-    "criteria",
     "defined",
     "executing",
     "validation",
@@ -534,15 +567,11 @@
    "partition": "HELDOUT",
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(a)",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4857,
-   "n_matched": 9,
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2857,
+   "n_matched": 5,
    "matched_terms": [
-    "deviations",
-    "documented",
-    "evidence",
     "executed",
-    "execution",
     "protocol",
     "real",
     "recorded",
@@ -591,13 +620,12 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(a)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5,
-   "n_matched": 4,
+   "weighted_ratio": 0.375,
+   "n_matched": 3,
    "matched_terms": [
     "requirement",
     "result",
-    "test",
-    "traceability"
+    "test"
    ]
   },
   {
@@ -643,19 +671,13 @@
    "partition": "HELDOUT",
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(a)",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4737,
-   "n_matched": 9,
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1579,
+   "n_matched": 3,
    "matched_terms": [
-    "altered",
     "can",
     "demonstrated",
-    "discern",
-    "invalid",
-    "mechanism",
-    "records",
-    "some",
-    "technical"
+    "some"
    ]
   },
   {
@@ -700,15 +722,12 @@
    "partition": "CALIBRATION",
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(d)",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4923,
-   "n_matched": 6,
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2769,
+   "n_matched": 3,
    "matched_terms": [
-    "access",
-    "control",
     "described",
     "federated",
-    "mechanism",
     "native"
    ]
   },
@@ -750,13 +769,11 @@
    "partition": "CALIBRATION",
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(d)",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.56,
-   "n_matched": 3,
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.24,
+   "n_matched": 1,
    "matched_terms": [
-    "account",
-    "creation",
-    "provisioning"
+    "creation"
    ]
   },
   {
@@ -797,13 +814,11 @@
    "partition": "CALIBRATION",
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(d)",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4516,
-   "n_matched": 3,
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1935,
+   "n_matched": 1,
    "matched_terms": [
-    "account",
-    "changing",
-    "privileges"
+    "changing"
    ]
   },
   {
@@ -846,11 +861,9 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(d)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5366,
-   "n_matched": 5,
+   "weighted_ratio": 0.439,
+   "n_matched": 3,
    "matched_terms": [
-    "access",
-    "accounts",
     "periodic",
     "review",
     "rights"
@@ -895,14 +908,10 @@
    "partition": "CALIBRATION",
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(d)",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.56,
-   "n_matched": 3,
-   "matched_terms": [
-    "account",
-    "deactivation",
-    "revocation"
-   ]
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
   },
   {
    "pair_id": "fx-0030",
@@ -943,15 +952,12 @@
    "partition": "CALIBRATION",
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(d)",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5778,
-   "n_matched": 5,
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2667,
+   "n_matched": 2,
    "matched_terms": [
-    "accounts",
     "human",
-    "individual",
-    "not",
-    "shared"
+    "not"
    ]
   },
   {
@@ -1004,23 +1010,18 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(d)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5229,
-   "n_matched": 14,
+   "weighted_ratio": 0.3529,
+   "n_matched": 9,
    "matched_terms": [
-    "accounts",
     "cannot",
     "declared",
     "electronically",
     "have",
-    "interactive",
     "least",
     "non",
-    "owner",
-    "privilege",
     "purpose",
     "service",
-    "sign",
-    "technical"
+    "sign"
    ]
   },
   {
@@ -1067,15 +1068,11 @@
    "partition": "CALIBRATION",
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(d)",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4906,
-   "n_matched": 5,
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.1132,
+   "n_matched": 1,
    "matched_terms": [
-    "access",
-    "allowed",
-    "denied",
-    "evidence",
-    "test"
+    "allowed"
    ]
   },
   {
@@ -1123,17 +1120,15 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(e)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5909,
-   "n_matched": 9,
+   "weighted_ratio": 0.5727,
+   "n_matched": 7,
    "matched_terms": [
-    "audit",
     "automatically",
     "computer",
     "generated",
     "intervention",
     "operator",
     "produced",
-    "trail",
     "without"
    ]
   },
@@ -1181,16 +1176,11 @@
    "partition": "HELDOUT",
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(e)",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.3641,
-   "n_matched": 6,
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0978,
+   "n_matched": 1,
    "matched_terms": [
-    "audit",
-    "entry",
-    "records",
-    "stamped",
-    "time",
-    "trail"
+    "entry"
    ]
   },
   {
@@ -1239,18 +1229,12 @@
    "partition": "HELDOUT",
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(e)",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4724,
-   "n_matched": 8,
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1809,
+   "n_matched": 2,
    "matched_terms": [
     "actions",
-    "audit",
-    "create",
-    "delete",
-    "electronic",
-    "modify",
-    "records",
-    "trail"
+    "electronic"
    ]
   },
   {
@@ -1303,19 +1287,16 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(e)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5433,
-   "n_matched": 11,
+   "weighted_ratio": 0.4671,
+   "n_matched": 8,
    "matched_terms": [
-    "audit",
     "information",
     "modification",
     "new",
     "not",
     "only",
     "preserves",
-    "previous",
     "prior",
-    "trail",
     "value"
    ]
   },
@@ -1367,16 +1348,12 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(e)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4952,
-   "n_matched": 8,
+   "weighted_ratio": 0.3029,
+   "n_matched": 4,
    "matched_terms": [
-    "access",
-    "audit",
     "itself",
     "modify",
     "privileged",
-    "restricted",
-    "trail",
     "users"
    ]
   },
@@ -1424,15 +1401,13 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(e)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5135,
-   "n_matched": 6,
+   "weighted_ratio": 0.4865,
+   "n_matched": 4,
    "matched_terms": [
     "allows",
-    "audit",
     "detection",
     "tamper",
-    "traceable",
-    "trail"
+    "traceable"
    ]
   },
   {
@@ -1478,15 +1453,13 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(e)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5154,
-   "n_matched": 6,
+   "weighted_ratio": 0.4846,
+   "n_matched": 4,
    "matched_terms": [
-    "audit",
     "detectable",
     "modification",
     "prevented",
-    "silent",
-    "trail"
+    "silent"
    ]
   },
   {
@@ -1534,16 +1507,13 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(e)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4653,
-   "n_matched": 7,
+   "weighted_ratio": 0.3564,
+   "n_matched": 4,
    "matched_terms": [
-    "associated",
-    "audit",
     "least",
     "long",
     "period",
-    "retained",
-    "trail"
+    "retained"
    ]
   },
   {
@@ -1590,15 +1560,12 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_11.10(e)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5135,
-   "n_matched": 6,
+   "weighted_ratio": 0.3649,
+   "n_matched": 3,
    "matched_terms": [
-    "audit",
     "can",
-    "copied",
     "exported",
-    "inspection",
-    "trail"
+    "inspection"
    ]
   },
   {
@@ -1703,10 +1670,9 @@
    "profile": "FEW_LONG",
    "requirement_id": "21_CFR_11.10(g)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4255,
-   "n_matched": 11,
+   "weighted_ratio": 0.3404,
+   "n_matched": 9,
    "matched_terms": [
-    "access",
     "alter",
     "applicable",
     "authority",
@@ -1715,7 +1681,6 @@
     "perform",
     "performs",
     "sign",
-    "technical",
     "time"
    ]
   },
@@ -1767,17 +1732,15 @@
    "profile": "FEW_LONG",
    "requirement_id": "21_CFR_11.10(g)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5,
-   "n_matched": 9,
+   "weighted_ratio": 0.375,
+   "n_matched": 7,
    "matched_terms": [
     "attempt",
     "authority",
     "blocked",
-    "evidence",
     "negative",
     "operation",
     "sufficient",
-    "test",
     "without"
    ]
   },
@@ -1825,14 +1788,10 @@
    "partition": "HELDOUT",
    "profile": "FEW_LONG",
    "requirement_id": "21_CFR_11.50_11.70",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4141,
-   "n_matched": 5,
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1212,
+   "n_matched": 1,
    "matched_terms": [
-    "electronic",
-    "name",
-    "printed",
-    "signature",
     "signer"
    ]
   },
@@ -1882,12 +1841,10 @@
    "profile": "FEW_LONG",
    "requirement_id": "21_CFR_11.50_11.70",
    "model_state_frozen": "PARTIALLY_RELEVANT",
-   "weighted_ratio": 0.2613,
-   "n_matched": 4,
+   "weighted_ratio": 0.2162,
+   "n_matched": 2,
    "matched_terms": [
-    "electronic",
     "executed",
-    "signature",
     "was"
    ]
   },
@@ -1938,18 +1895,14 @@
    "partition": "HELDOUT",
    "profile": "FEW_LONG",
    "requirement_id": "21_CFR_11.50_11.70",
-   "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4303,
-   "n_matched": 8,
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2909,
+   "n_matched": 4,
    "matched_terms": [
     "approval",
-    "associated",
     "authorship",
-    "electronic",
-    "meaning",
     "responsibility",
-    "review",
-    "signature"
+    "review"
    ]
   },
   {
@@ -1998,13 +1951,11 @@
    "profile": "FEW_LONG",
    "requirement_id": "21_CFR_11.50_11.70",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4521,
-   "n_matched": 7,
+   "weighted_ratio": 0.3288,
+   "n_matched": 5,
    "matched_terms": [
-    "associated",
     "elements",
     "human",
-    "readable",
     "signed",
     "those",
     "three"
@@ -2060,10 +2011,9 @@
    "profile": "FEW_LONG",
    "requirement_id": "21_CFR_11.50_11.70",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4564,
-   "n_matched": 10,
+   "weighted_ratio": 0.3846,
+   "n_matched": 8,
    "matched_terms": [
-    "access",
     "availability",
     "controls",
     "electronic",
@@ -2071,7 +2021,6 @@
     "extended",
     "integrity",
     "retention",
-    "signature",
     "three"
    ]
   },
@@ -2122,15 +2071,12 @@
    "profile": "FEW_LONG",
    "requirement_id": "21_CFR_11.50_11.70",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4667,
-   "n_matched": 6,
+   "weighted_ratio": 0.3,
+   "n_matched": 3,
    "matched_terms": [
     "binds",
-    "mechanism",
     "protected",
-    "signature",
-    "specific",
-    "technical"
+    "specific"
    ]
   },
   {
@@ -2179,17 +2125,13 @@
    "profile": "FEW_LONG",
    "requirement_id": "21_CFR_11.50_11.70",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4694,
-   "n_matched": 9,
+   "weighted_ratio": 0.3061,
+   "n_matched": 5,
    "matched_terms": [
     "copying",
     "excising",
-    "means",
-    "mechanism",
-    "ordinary",
     "prevents",
     "proof",
-    "signature",
     "transferring"
    ]
   },
@@ -2290,12 +2232,11 @@
    "profile": "FEW_LONG",
    "requirement_id": "ANNEX11_4",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5333,
-   "n_matched": 5,
+   "weighted_ratio": 0.4,
+   "n_matched": 4,
    "matched_terms": [
     "assessment",
     "computerised",
-    "documented",
     "real",
     "risk"
    ]
@@ -2351,19 +2292,16 @@
    "profile": "FEW_LONG",
    "requirement_id": "ANNEX11_4",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4821,
-   "n_matched": 15,
+   "weighted_ratio": 0.375,
+   "n_matched": 12,
    "matched_terms": [
-    "acceptance",
     "assessment",
     "between",
     "connection",
-    "criteria",
     "decisions",
     "explicit",
     "procedures",
     "protocols",
-    "records",
     "risk",
     "scope",
     "taken",
@@ -2421,17 +2359,15 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ANNEX11_7.1",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5366,
-   "n_matched": 10,
+   "weighted_ratio": 0.4268,
+   "n_matched": 8,
    "matched_terms": [
-    "access",
     "data",
     "described",
     "means",
     "physical",
     "protection",
     "racks",
-    "restricted",
     "room",
     "server"
    ]
@@ -2483,11 +2419,10 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ANNEX11_7.1",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5909,
-   "n_matched": 8,
+   "weighted_ratio": 0.5,
+   "n_matched": 7,
    "matched_terms": [
     "checksums",
-    "control",
     "described",
     "electronic",
     "integrity",
@@ -2542,13 +2477,12 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ANNEX11_7.1",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5176,
-   "n_matched": 9,
+   "weighted_ratio": 0.4471,
+   "n_matched": 8,
    "matched_terms": [
     "accessibility",
     "accuracy",
     "data",
-    "documented",
     "evidence",
     "readability",
     "real",
@@ -2658,10 +2592,9 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ANNEX11_7.1",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4318,
-   "n_matched": 8,
+   "weighted_ratio": 0.3977,
+   "n_matched": 7,
    "matched_terms": [
-    "access",
     "data",
     "declared",
     "ensured",
@@ -2717,17 +2650,14 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ANNEX11_9",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5,
-   "n_matched": 8,
+   "weighted_ratio": 0.4167,
+   "n_matched": 5,
    "matched_terms": [
     "about",
     "assessment",
-    "audit",
-    "documented",
     "need",
     "risk",
-    "scope",
-    "trail"
+    "scope"
    ]
   },
   {
@@ -2776,17 +2706,15 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ANNEX11_9",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4783,
-   "n_matched": 8,
+   "weighted_ratio": 0.4348,
+   "n_matched": 6,
    "matched_terms": [
-    "audit",
     "changes",
     "deletions",
     "generates",
     "gmp",
     "recording",
-    "relevant",
-    "trail"
+    "relevant"
    ]
   },
   {
@@ -2835,12 +2763,11 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ANNEX11_9",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4062,
-   "n_matched": 9,
+   "weighted_ratio": 0.375,
+   "n_matched": 8,
    "matched_terms": [
     "change",
     "deletion",
-    "documented",
     "fact",
     "gmp",
     "not",
@@ -2899,10 +2826,9 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ANNEX11_9",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5484,
-   "n_matched": 10,
+   "weighted_ratio": 0.5161,
+   "n_matched": 8,
    "matched_terms": [
-    "audit",
     "available",
     "convertible",
     "exportable",
@@ -2910,8 +2836,7 @@
     "generally",
     "human",
     "intelligible",
-    "readable",
-    "trail"
+    "legible"
    ]
   },
   {
@@ -2961,18 +2886,16 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ANNEX11_9",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5909,
-   "n_matched": 9,
+   "weighted_ratio": 0.5455,
+   "n_matched": 7,
    "matched_terms": [
-    "audit",
     "evidence",
     "existence",
     "not",
     "only",
     "periodic",
     "real",
-    "review",
-    "trail"
+    "review"
    ]
   },
   {
@@ -3031,10 +2954,9 @@
    "profile": "FEW_LONG",
    "requirement_id": "ANNEX11_12",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5156,
-   "n_matched": 18,
+   "weighted_ratio": 0.4688,
+   "n_matched": 16,
    "matched_terms": [
-    "access",
     "areas",
     "biometrics",
     "cards",
@@ -3050,7 +2972,6 @@
     "passwords",
     "personal",
     "physical",
-    "restricted",
     "storage"
    ]
   },
@@ -3173,15 +3094,12 @@
    "profile": "FEW_LONG",
    "requirement_id": "ANNEX11_12",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5192,
-   "n_matched": 14,
+   "weighted_ratio": 0.4231,
+   "n_matched": 11,
    "matched_terms": [
-    "access",
     "actual",
     "against",
     "authorised",
-    "control",
-    "denied",
     "effective",
     "evidence",
     "list",
@@ -3284,13 +3202,12 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ANNEX11_17",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5,
-   "n_matched": 7,
+   "weighted_ratio": 0.4062,
+   "n_matched": 6,
    "matched_terms": [
     "accessibility",
     "archived",
     "data",
-    "documented",
     "integrity",
     "readability",
     "verification"
@@ -3535,20 +3452,18 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ALCOA_ATTRIBUTABLE",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4679,
-   "n_matched": 12,
+   "weighted_ratio": 0.3853,
+   "n_matched": 10,
    "matched_terms": [
     "action",
     "attribution",
     "field",
     "free",
     "human",
-    "mechanism",
     "not",
     "only",
     "reliably",
     "sustains",
-    "technical",
     "text"
    ]
   },
@@ -3599,15 +3514,13 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ALCOA_ATTRIBUTABLE",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5373,
-   "n_matched": 9,
+   "weighted_ratio": 0.3582,
+   "n_matched": 7,
    "matched_terms": [
     "action",
     "attribution",
     "create",
-    "delete",
     "human",
-    "modify",
     "not",
     "only",
     "sustained"
@@ -3664,8 +3577,8 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ALCOA_ATTRIBUTABLE",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4696,
-   "n_matched": 12,
+   "weighted_ratio": 0.4435,
+   "n_matched": 11,
    "matched_terms": [
     "category",
     "data",
@@ -3677,7 +3590,6 @@
     "not",
     "source",
     "specific",
-    "technical",
     "traceable"
    ]
   },
@@ -3728,15 +3640,14 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ALCOA_ATTRIBUTABLE",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4559,
-   "n_matched": 7,
+   "weighted_ratio": 0.3676,
+   "n_matched": 6,
    "matched_terms": [
     "actually",
     "data",
     "generated",
     "instrument",
     "one",
-    "traceability",
     "was"
    ]
   },
@@ -4003,8 +3914,8 @@
    "profile": "FEW_LONG",
    "requirement_id": "ALCOA_CONTEMPORANEOUS",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5465,
-   "n_matched": 10,
+   "weighted_ratio": 0.4767,
+   "n_matched": 9,
    "matched_terms": [
     "activity",
     "actual",
@@ -4012,7 +3923,6 @@
     "identifies",
     "not",
     "performer",
-    "records",
     "retrospectively",
     "scribe",
     "time"
@@ -4256,13 +4166,12 @@
    "profile": "FEW_LONG",
    "requirement_id": "ALCOA_ACCURATE",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5,
-   "n_matched": 5,
+   "weighted_ratio": 0.4375,
+   "n_matched": 4,
    "matched_terms": [
     "accuracy",
     "data",
     "described",
-    "mechanism",
     "verifying"
    ]
   },
@@ -4310,8 +4219,8 @@
    "profile": "FEW_LONG",
    "requirement_id": "ALCOA_ACCURATE",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4118,
-   "n_matched": 8,
+   "weighted_ratio": 0.3824,
+   "n_matched": 7,
    "matched_terms": [
     "all",
     "belong",
@@ -4319,7 +4228,6 @@
     "data",
     "evaluated",
     "forms",
-    "mechanism",
     "scope"
    ]
   },
@@ -4376,18 +4284,16 @@
    "profile": "MANY_SHORT",
    "requirement_id": "ALCOA_COMPLETE",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4894,
-   "n_matched": 14,
+   "weighted_ratio": 0.4326,
+   "n_matched": 12,
    "matched_terms": [
     "all",
     "captured",
     "data",
-    "deviations",
     "evaluated",
     "exclusions",
     "including",
     "part",
-    "process",
     "relevant",
     "reprocessing",
     "retries",
@@ -4670,8 +4576,8 @@
    "profile": "FEW_LONG",
    "requirement_id": "ALCOA_CONSISTENT",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4583,
-   "n_matched": 11,
+   "weighted_ratio": 0.375,
+   "n_matched": 9,
    "matched_terms": [
     "automated",
     "defined",
@@ -4681,9 +4587,7 @@
     "governed",
     "human",
     "inconsistencies",
-    "mechanism",
-    "real",
-    "technical"
+    "real"
    ]
   },
   {
@@ -4988,21 +4892,17 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_211.68(b)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5338,
-   "n_matched": 13,
+   "weighted_ratio": 0.3835,
+   "n_matched": 9,
    "matched_terms": [
     "can",
     "change",
-    "control",
     "just",
     "master",
-    "mechanism",
     "not",
     "policy",
     "production",
-    "records",
     "restricts",
-    "technical",
     "who"
    ]
   },
@@ -5110,14 +5010,13 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_211.68(b)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.4828,
-   "n_matched": 7,
+   "weighted_ratio": 0.4483,
+   "n_matched": 6,
    "matched_terms": [
     "accuracy",
     "data",
     "described",
     "input",
-    "mechanism",
     "output",
     "verifying"
    ]
@@ -5223,16 +5122,15 @@
    "profile": "MANY_SHORT",
    "requirement_id": "21_CFR_211.68(b)",
    "model_state_frozen": "RELEVANT",
-   "weighted_ratio": 0.5,
-   "n_matched": 7,
+   "weighted_ratio": 0.4667,
+   "n_matched": 6,
    "matched_terms": [
     "accurate",
     "backup",
     "complete",
     "data",
     "entered",
-    "evidence",
-    "mechanism"
+    "evidence"
    ]
   },
   {
@@ -7131,17 +7029,7 @@
   "by_section": {
    "sec-0016": {
     "passed": false,
-    "n_violations": 8,
-    "violations": [
-     "Q-STATE-7: 'observed_system_capability' introduce contenido del sub-criterio NO cubierto 21_CFR_11.10(d)::sc8 (overlap=['acceso', 'evidencia'])",
-     "Q-STATE-7: 'technical_assessment' introduce contenido del sub-criterio NO cubierto 21_CFR_11.10(d)::sc8 (overlap=['acceso', 'evidencia'])",
-     "Q-STATE-7: 'procedural_responsibility' introduce contenido del sub-criterio NO cubierto 21_CFR_11.10(d)::sc2 (overlap=['alta', 'cuentas', 'proceso'])",
-     "Q-STATE-7: 'procedural_responsibility' introduce contenido del sub-criterio NO cubierto 21_CFR_11.10(d)::sc3 (overlap=['cambio', 'cuentas', 'privilegios', 'proceso'])",
-     "Q-STATE-7: 'procedural_responsibility' introduce contenido del sub-criterio NO cubierto 21_CFR_11.10(d)::sc5 (overlap=['cuentas', 'proceso', 'revocación'])",
-     "Q-STATE-7: 'procedural_responsibility' introduce contenido del sub-criterio NO cubierto 21_CFR_11.10(d)::sc6 (overlap=['cuentas', 'humanas'])",
-     "Q-STATE-7: 'procedural_responsibility' introduce contenido del sub-criterio NO cubierto 21_CFR_11.10(d)::sc7 (overlap=['cuentas', 'interactivas'])",
-     "Q-STATE-7: 'assessment_rationale' introduce contenido del sub-criterio NO cubierto 21_CFR_11.10(d)::sc8 (overlap=['acceso', 'evidencia'])"
-    ]
+    "n_violations": 8
    }
   }
  }
