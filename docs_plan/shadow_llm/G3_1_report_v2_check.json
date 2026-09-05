@@ -1,0 +1,62 @@
+{
+ "schema": "SHADOW_G3_1_REPORT_V2_CHECK/v1",
+ "run_id": "g3-1-check-20260902",
+ "attestation": {
+  "findings_fingerprint": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23",
+  "input_config_fingerprint": "3fcb3ae859091000b0e6c6cf2b4f51515e74665d658451b753c723d6e6e51668",
+  "graph_snapshot_fingerprint": "2fdda0e2ce513bc48b54038c5890a0b060e87a6e5c0d6d98b3d31fb149be3620",
+  "findings_fingerprint_is_baseline": true,
+  "llm_calls": 0,
+  "embedding_calls": 0,
+  "document_egress_bytes": 0,
+  "human_gate_intact": true,
+  "counts": {
+   "regulatory": 342,
+   "functional": 90,
+   "technical": 25
+  }
+ },
+ "report_v2": {
+  "summary_total_findings": 457,
+  "n_finding_records": 457,
+  "by_class": {
+   "RegulatoryFinding": 342,
+   "TestCoverageFinding": 70,
+   "FunctionalFinding": 20,
+   "TraceabilityFinding": 8,
+   "TechnicalFinding": 6,
+   "SecurityFinding": 5,
+   "DataIntegrityFinding": 6
+  },
+  "by_machine_state": {
+   "MACHINE_INCONCLUSIVE": 377,
+   "MACHINE_DEVIATION_CANDIDATE": 80
+  },
+  "by_risk_band": {
+   "HIGH": 355,
+   "LOW": 78,
+   "MEDIUM": 22,
+   "CRITICAL": 2
+  }
+ },
+ "composer_skeleton": {
+  "total_findings": 457,
+  "sections": 66,
+  "by_primary_bucket": {
+   "FUNCTIONAL_TRACEABILITY": 98,
+   "REGULATORY": 285,
+   "TECHNICAL": 17,
+   "HUMAN_ONLY": 57
+  },
+  "acceptance_PASS": true
+ },
+ "cross_check": {
+  "same_finding_record_id_set": true,
+  "n_common": 457,
+  "only_in_report_v2": [],
+  "only_in_composer": [],
+  "l2_fact_mismatches": [],
+  "n_l2_fact_mismatches": 0
+ },
+ "PASS": true
+}

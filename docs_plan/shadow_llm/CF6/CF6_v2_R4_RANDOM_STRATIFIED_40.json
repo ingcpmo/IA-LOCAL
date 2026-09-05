@@ -1,0 +1,418 @@
+{
+ "schema": "SHADOW_CF6_V2_R4_RANDOM_STRATIFIED_40/v1",
+ "seed": 20260905,
+ "n": 40,
+ "requirement_ids_covered": [
+  "21_CFR_11.10(d)",
+  "21_CFR_11.10(e)",
+  "21_CFR_11.10(g)",
+  "21_CFR_11.50_11.70",
+  "ALCOA_ATTRIBUTABLE",
+  "ALCOA_CONTEMPORANEOUS",
+  "ALCOA_LEGIBLE",
+  "ALCOA_ORIGINAL",
+  "ANNEX11_12",
+  "ANNEX11_17",
+  "ANNEX11_7.1",
+  "ANNEX11_9"
+ ],
+ "n_requirement_ids_covered": 12,
+ "n_requirement_ids_total_in_decomposition_yaml": 20,
+ "documents_covered": [
+  "RW-0005",
+  "RW-0006",
+  "RW-0011",
+  "RW-0012",
+  "RW-0014"
+ ],
+ "n_documents_covered": 5,
+ "n_documents_total_in_corpus": 5,
+ "exclusion": {
+  "DIAGNOSTIC_NEAR_THRESHOLD_15": [
+   "rec-cb15e1c9d46388bd",
+   "rec-41020224b0ac1d19",
+   "rec-f7eff6b9be225492",
+   "rec-bff2bcf00c3551c6",
+   "rec-284aedafa8dddd56",
+   "rec-3369a8711e5f16a3",
+   "rec-814e1e0e05380e78",
+   "rec-850828e07185d641",
+   "rec-2bd352f6e733c687",
+   "rec-5f59722c74597726",
+   "rec-87279db34937bf9f",
+   "rec-9b9b6b70c63a1f85",
+   "rec-e44befac41382590",
+   "rec-39b4c3e7f96aa8b3",
+   "rec-870a752d32280cc4"
+  ],
+  "PREVIOUSLY_ADJUDICATED_27": 27
+ },
+ "selection_rule": "estratificado por requirement_id, hasta 4 candidatos aleatorios por requirement_id (semilla declarada), recortado a 40 con una segunda mezcla aleatoria (misma semilla) preservando cobertura de los 12 requirement_id disponibles en el pool pendiente",
+ "status": "ADJUDICATED",
+ "blind_candidates": [
+  {
+   "finding_record_id": "rec-da4175c93dafe329",
+   "document": "RW-0012",
+   "requirement_id": "21_CFR_11.10(d)",
+   "matched_subcriterion_id": "sc3",
+   "candidate_quote": "PCS – Process Control System (This project’s panel is named PCS-CP01, Process Control System",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-7b6d158e5df2c34e",
+   "document": "RW-0014",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "setpoint, and any time-delay associated with the alarm.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-8b4c0c51d7d4464f",
+   "document": "RW-0005",
+   "requirement_id": "ANNEX11_7.1",
+   "matched_subcriterion_id": "sc2",
+   "candidate_quote": "SCADA Supervisory Control and Data Acquisition",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-2ae4dafb094a42d1",
+   "document": "RW-0006",
+   "requirement_id": "21_CFR_11.10(e)",
+   "matched_subcriterion_id": "sc3",
+   "candidate_quote": "3.3.3 Audit trail records shall be archived.",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-9460e6ea9b3238f0",
+   "document": "RW-0014",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "There are no special calculations for this control strategy.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-977e1772519662b2",
+   "document": "RW-0014",
+   "requirement_id": "ANNEX11_7.1",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "type logic shall be implemented to ensure an active connection exists and data values are live.",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-6f5a13fa19b88b0f",
+   "document": "RW-0011",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "matched_subcriterion_id": "sc2",
+   "candidate_quote": "(Which would be an indicator that data is not being logged as expected.)",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-c0f9fd9ea1057bbc",
+   "document": "RW-0011",
+   "requirement_id": "21_CFR_11.10(g)",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "The PCS system has a dry contact output connection to the BMS which alerts the BMS of",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-f378c9c3d43dd5c8",
+   "document": "RW-0006",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "matched_subcriterion_id": "sc1",
+   "candidate_quote": "3.3.4 Frequency of data point collection",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-157a4d39cae21b68",
+   "document": "RW-0006",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "matched_subcriterion_id": "sc4",
+   "candidate_quote": "The record shall contain the following fields:",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-2d160f0034fc009b",
+   "document": "RW-0011",
+   "requirement_id": "21_CFR_11.10(d)",
+   "matched_subcriterion_id": "sc7",
+   "candidate_quote": "The Environmental Monitoring portion of system does not have any sequencers.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-50f6675b23a58ff2",
+   "document": "RW-0006",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "matched_subcriterion_id": "sc4",
+   "candidate_quote": "The system shall be capable of acquiring a data sample consisting of a adequately",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-03508ec3cf35c334",
+   "document": "RW-0005",
+   "requirement_id": "ANNEX11_12",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "In general, an operator’s only access to the computer should be via the",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-bef00229b74e19fc",
+   "document": "RW-0012",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "matched_subcriterion_id": "sc2",
+   "candidate_quote": "The only current copy of this document is maintained electronically.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-30ddb198378f540d",
+   "document": "RW-0005",
+   "requirement_id": "21_CFR_11.10(e)",
+   "matched_subcriterion_id": "sc6",
+   "candidate_quote": "UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated.",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-3c98d0075f63264d",
+   "document": "RW-0006",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "matched_subcriterion_id": "sc1",
+   "candidate_quote": "3.3.1 Every time a critical alarm threshold is modified an audit trail record",
+   "human_label": "RELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-d27023368407f14a",
+   "document": "RW-0011",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "setpoint, and any time-delay associated with the alarm.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-57426835d127558d",
+   "document": "RW-0012",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "matched_subcriterion_id": "sc1",
+   "candidate_quote": "The communication link status with logic is described",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-42c2eff011a7efd7",
+   "document": "RW-0006",
+   "requirement_id": "ANNEX11_17",
+   "matched_subcriterion_id": "sc1",
+   "candidate_quote": "3.3.7 Data archiving requirements and data storage media.",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-a9a5b6ec78fff8bc",
+   "document": "RW-0011",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "matched_subcriterion_id": "sc1",
+   "candidate_quote": "The only current copy of this document is maintained electronically.",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-8dd53df9991ab844",
+   "document": "RW-0005",
+   "requirement_id": "ANNEX11_9",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "UR3.3.1 Every time a critical alarm threshold is modified and audit trail record shall be generated.",
+   "human_label": "RELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-1897ca8cd56cce11",
+   "document": "RW-0011",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "setpoint, and any time-delay associated with the alarm.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-1bf3040f43d66b37",
+   "document": "RW-0011",
+   "requirement_id": "ANNEX11_7.1",
+   "matched_subcriterion_id": "sc2",
+   "candidate_quote": "SCADA – Supervisory Control and Data Acquisition",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-8c1a0d7079eca9a3",
+   "document": "RW-0014",
+   "requirement_id": "ANNEX11_9",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "system confirms WFI is available and sets the valve positions to the Flushing state for the",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-416802c94910cdde",
+   "document": "RW-0014",
+   "requirement_id": "21_CFR_11.10(d)",
+   "matched_subcriterion_id": "sc5",
+   "candidate_quote": "PCS – Process Control System (This project’s panel is named PCS-CP01, Process Control System",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-f7bc368b97cf57db",
+   "document": "RW-0006",
+   "requirement_id": "ANNEX11_17",
+   "matched_subcriterion_id": "sc2",
+   "candidate_quote": "The system shall be capable of acquiring a data sample consisting of a adequately",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-2841ffacd63643f9",
+   "document": "RW-0011",
+   "requirement_id": "ANNEX11_12",
+   "matched_subcriterion_id": "sc1",
+   "candidate_quote": "cause incorrect control functions and may lead to equipment damage.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-fcdb52df110efcf4",
+   "document": "RW-0014",
+   "requirement_id": "21_CFR_11.10(g)",
+   "matched_subcriterion_id": "sc3",
+   "candidate_quote": "the system enters the automatic supply sequence as per normal operation.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-e1bdf8285b40ff3a",
+   "document": "RW-0006",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "matched_subcriterion_id": "sc1",
+   "candidate_quote": " Original threshold value",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-d9b05cf15b265a23",
+   "document": "RW-0011",
+   "requirement_id": "ANNEX11_9",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "The PCS shall historically record quality data and system alarms.",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-e0a9bccca8043c22",
+   "document": "RW-0014",
+   "requirement_id": "ANNEX11_12",
+   "matched_subcriterion_id": "sc2",
+   "candidate_quote": "If either or both valves in a PCS system controlled WFI valve set is found to be",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-d318608f50818dee",
+   "document": "RW-0011",
+   "requirement_id": "ANNEX11_17",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "The PCS shall historically record quality data and system alarms.",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-46c33ac6c8feadfd",
+   "document": "RW-0011",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "If any EMS alarm condition is present this output will de-energize.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-7d0222f7855cc12c",
+   "document": "RW-0005",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "matched_subcriterion_id": "sc3",
+   "candidate_quote": "UR5.2.19 [URS-PCS-SR-025] Real-time multi-pen trends for all analog and defined discrete signals.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-b9f11dd9d3963b94",
+   "document": "RW-0012",
+   "requirement_id": "21_CFR_11.10(g)",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "previously, with the proper credentials, the input points can be simulated for calibration or other",
+   "human_label": "RELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-a637f215b233f7ad",
+   "document": "RW-0005",
+   "requirement_id": "ANNEX11_12",
+   "matched_subcriterion_id": "sc3",
+   "candidate_quote": "In general, an operator’s only access to the computer should be via the",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-11afa6aa04b93304",
+   "document": "RW-0006",
+   "requirement_id": "21_CFR_11.10(e)",
+   "matched_subcriterion_id": "sc8",
+   "candidate_quote": "3.3.1 Every time a critical alarm threshold is modified an audit trail record",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-3c0d7fd4b8734fad",
+   "document": "RW-0011",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "matched_subcriterion_id": null,
+   "candidate_quote": "There are no special calculations for this control strategy.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-f276eb609aef848a",
+   "document": "RW-0012",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "matched_subcriterion_id": "sc5",
+   "candidate_quote": "The PCS shall historically record quality data and system alarms.",
+   "human_label": "INCONCLUSIVE",
+   "source_context_sufficient": "NO"
+  },
+  {
+   "finding_record_id": "rec-2914af68576cb5b4",
+   "document": "RW-0012",
+   "requirement_id": "ANNEX11_7.1",
+   "matched_subcriterion_id": "sc5",
+   "candidate_quote": "type logic shall be implemented to ensure an active connection exists and data values are live.",
+   "human_label": "IRRELEVANT",
+   "source_context_sufficient": "NO"
+  }
+ ],
+ "sample_hash": "fc81505c483a5ca53fea959018c38256232f847e5d3d7480760d504d3506de5d",
+ "adjudicated_by": "Capa 9 (Cesar)",
+ "adjudicated_at": "2026-09-05",
+ "source_context_sufficient_note": "Asumido NO para los 40 por Claude Code, consistente con la verificacion previa de que ningun finding_record_id de este corpus tiene contexto anclado adicional -- no viene de una respuesta explicita de Capa 9 sobre este campo especifico."
+}

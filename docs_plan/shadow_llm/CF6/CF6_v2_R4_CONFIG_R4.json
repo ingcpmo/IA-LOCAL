@@ -1,0 +1,31 @@
+{
+ "schema": "SHADOW_CF6_V2_R4_CONFIG_R4/v1",
+ "frozen_at": "2026-09-04",
+ "component_sha256": {
+  "relevance_model.py": "f4123912a29d821a6d882f7573120b0d4fc5ab3f358f1083e11c850dd2b8f9a1",
+  "requirement_centric.py": "b4e1043cf1de3008d44d9b96b904d34c5f71fa93579002a727f95bbfc548bcfb",
+  "qstate7.py": "8b673117b28012ca98741a3b94f6ddfc49cd8413bb745ceb61ac5aa86842b804",
+  "composer_gate.py": "1dc8c81ef466d35721433240cb33d74c9b7516a67da8b5580f0f374b7a8ead0a",
+  "decomposition.yaml": "dd9d92bd78b411ed44e2ceef9fb6c14936e52d58aafc2528915c9623d74d7c22",
+  "composer_structured_v2_0_relevance_filtered.yaml": "f5382ae06ab56aab7f1a3110e414e380bdaf4d0eb940c97195517e56881cba5c"
+ },
+ "relevance_model_thresholds_frozen": {
+  "_RELEVANT_MIN_MATCHED": 2,
+  "_RELEVANT_MIN_RATIO": 0.3,
+  "_PARTIAL_MIN_MATCHED": 1,
+  "_PARTIAL_MIN_RATIO": 0.12
+ },
+ "qstate_checks": [
+  "Q-STATE-1",
+  "Q-STATE-2",
+  "Q-STATE-3",
+  "Q-STATE-4",
+  "Q-STATE-5",
+  "Q-STATE-6",
+  "Q-STATE-7"
+ ],
+ "composer_prompt_version": "shadow-cf6-composer-v2.0-relevance-filtered",
+ "composer_prompt_signed": true,
+ "composer_prompt_frozen_content_sha256": "907e2c30fe9d158366f78afebef53364e1d221db7cbb73de6e6c8e48f57814be",
+ "CONFIG_R4_HASH": "6474960820cd911f281d928f40e6612196cab74f0c51c7e8cb8091e785027c70"
+}

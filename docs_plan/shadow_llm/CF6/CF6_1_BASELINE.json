@@ -1,0 +1,2622 @@
+{
+ "schema": "SHADOW_CF6_1_V1_BASELINE/v1",
+ "revision": "cf6-G1-r1",
+ "generated_without_llm": true,
+ "source": {
+  "g4e_composer": "docs_plan/shadow_llm/G4/g4e_composer.jsonl",
+  "skeleton": "docs_plan/shadow_llm/G3_1_composer_skeleton.json",
+  "l2_findings": "docs_plan/shadow_llm/FINAL_GMP_CORPUS_FINDINGS.json"
+ },
+ "SECTION_TYPE_COUNTS": {
+  "FUNCTIONAL_TRACEABILITY": 3,
+  "CROSS_DOMAIN": 11,
+  "REGULATORY": 50,
+  "TECHNICAL": 2
+ },
+ "REGULATORY_STATE_COUNTS_EXPECTED": {
+  "NOT_APPLICABLE": 5,
+  "INCONCLUSIVE": 60,
+  "NOT_ANALYZABLE": 1
+ },
+ "v1_sections_total": 66,
+ "v1_sections_narrative_blocked": 3,
+ "v1_sections_with_state_violation": 17,
+ "v1_sections_with_internal_vocab_violation": 37,
+ "v1_sections_with_record_id_leak": 63,
+ "v1_sections_with_double_shadow_mark": 63,
+ "v1_blacklist_hits_by_rule": {
+  "Q1_compliance_conclusion": 5,
+  "Q2_corrective_action": 6,
+  "Q4_record_id_leak": 305,
+  "Q5_machine_token_leak": 63,
+  "Q3_internal_vocab": 46
+ },
+ "post_qstate_llm_calls": 0,
+ "D3_demonstration": {
+  "sec-0018": {
+   "v1_state_violation": true,
+   "expected": true
+  },
+  "sec-0062": {
+   "v1_state_violation": true,
+   "expected": true
+  },
+  "sec-0016": {
+   "v1_internal_vocab_violation": true,
+   "expected": true
+  },
+  "PASS": true
+ },
+ "integrity": {
+  "l2_source": "docs_plan/shadow_llm/FINAL_GMP_CORPUS_FINDINGS.json",
+  "l2_sha256": "95a79f9b6276ff2a7972100764b308fa4b09f0027c6679ea831b441eb880f02c",
+  "l2_sha256_expected_G0": "95a79f9b6276ff2a7972100764b308fa4b09f0027c6679ea831b441eb880f02c",
+  "l2_byte_identical_to_G0": true,
+  "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23",
+  "FINDINGS_FINGERPRINT_basis": "ancla G0 (docs_plan/shadow_llm/G0_BASELINE_CONSOLIDATION.md); L2 byte-idéntico -> fingerprint sin mover",
+  "human_states_present": [
+   "UNREVIEWED"
+  ],
+  "HUMAN_STATE_CHANGES": 0,
+  "L2_MUTATIONS": 0,
+  "G4D_CALLS": 0,
+  "LLM_CALLS": 0
+ },
+ "per_section": [
+  {
+   "section_id": "sec-0001",
+   "section_type": "FUNCTIONAL_TRACEABILITY",
+   "regulatory_state_expected": "NOT_APPLICABLE",
+   "v1_assessment": "NARRATIVE_BLOCKED",
+   "v1_blocked": true,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": false,
+   "v1_double_shadow_mark": false,
+   "v1_blacklist_hits": []
+  },
+  {
+   "section_id": "sec-0002",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q1_compliance_conclusion",
+     "match": "inconsistencias en el cumplimiento"
+    },
+    {
+     "rule": "Q2_corrective_action",
+     "match": "medidas correctivas"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-7d6cb2d2d0fe0d19"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9c49b5fd7ac0a824"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-178d3dea7ec94c42"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c12602a523915b31"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c499382e9bf65d87"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f373a57af429034f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-217cb698afa8658d"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0003",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "ranking de candidatos"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "auditólico"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "auditólico"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "auditólico"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-084489099054b585"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0a82ed48f065b045"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0bc1edb6dc1f3451"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-22973e44240a927b"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-30ddb198378f540d"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c0ebc0542c593cec"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-cb15e1c9d46388bd"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d837b5c02fd073ef"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d9856e0887157253"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f7eff6b9be225492"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0004",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q2_corrective_action",
+     "match": "acciones correctivas"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-252fddba98df1d69"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-339740a9d90545c3"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e50eb1f506d5ab42"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-50552b00e6ae9f4b"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f9f8810af5fe98d5"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0005",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-2e7a9b8faabae026"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-33acbc832665ade8"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5b4b226466d6ec5b"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8b65c861175f856f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-95102a2c01cbeb36"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-ba0f8a3fd5568ec5"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f2c131db4e52163d"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-33acbc832665ade8"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5b4b226466d6ec5b"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-95102a2c01cbeb36"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-ba0f8a3fd5568ec5"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f2c131db4e52163d"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0006",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-816d307ecbcefbf1"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e7ac5efd05dda7a5"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-74af01b300c13761"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-ba61f401a08e5bc2"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-13bdda659c1242f2"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0007",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5f59722c74597726"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-7d0222f7855cc12c"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5f26dd2da038f4bd"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0008",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-342fadf7d85959b7"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-b6dbf81d4b5cdd03"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-57b0ac53cbfaa895"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-57b0ac53cbfaa895"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0009",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "ranking de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-1f8c66b351356ce1"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f0bb391d02108b8a"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0010",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "ranking de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-03508ec3cf35c334"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-2b74b830e44c61e5"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a637f215b233f7ad"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0011",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q2_corrective_action",
+     "match": "acciones correctivas"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9e664cfb5c0d6420"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0e0ef587cb8086aa"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-b1c607356d75ee79"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3db7cf9280933212"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-77ada55bf2af598f"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0012",
+   "section_type": "TECHNICAL",
+   "regulatory_state_expected": "NOT_APPLICABLE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-31be76e58d138850"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0013",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "ranking de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e44befac41382590"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3985d34037205aff"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c2f228e47e500ddf"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-01f70fdfe1b795fe"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8b4c0c51d7d4464f"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0014",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de los candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-1205689abcec84de"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8c15fcfddf18ad7c"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8dd53df9991ab844"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c257fc11e0273388"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-dc728da9851c448a"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0015",
+   "section_type": "FUNCTIONAL_TRACEABILITY",
+   "regulatory_state_expected": "NOT_APPLICABLE",
+   "v1_assessment": "NARRATIVE_BLOCKED",
+   "v1_blocked": true,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": false,
+   "v1_double_shadow_mark": false,
+   "v1_blacklist_hits": []
+  },
+  {
+   "section_id": "sec-0016",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5bfe094286d91b6d"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-6b0c9965fd2f4e05"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8e51ef14590a270e"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8f15c82009c5642f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-af05e920bad158fb"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d86dfb79cc5b4996"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e0b35452eeb06071"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-4c6611081bdfdeec"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0017",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0d33883aca3b7338"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-11afa6aa04b93304"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-2ae4dafb094a42d1"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3703724a0fc3dcbf"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3813b618834b37a1"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3d0e2d726cb42d3b"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-6910785c7536afb3"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-83616af03e7a0581"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-956eeeb5e5b98cbe"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-bff2bcf00c3551c6"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-956eeeb5e5b98cbe"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f346c55d235c03e3"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0018",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificaciones de candidatos"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificaciones de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9b47c0444e9ae107"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-103f4e4193dd83b5"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-7e228ed0de7cf255"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9416222090670306"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-52ba086fc5d66df9"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0019",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0c773e615ad58481"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-157a4d39cae21b68"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-539e1a8dcb703601"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-812fcc2e12616221"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-aacc63841414b6ba"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c207c15eaf6bc897"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-ea59da4854892e06"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0020",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "candidate ranking"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-28d5f84f402d6489"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-50f6675b23a58ff2"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f378c9c3d43dd5c8"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0f571ab6b3bec210"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a9d520669a15977c"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0021",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3c98d0075f63264d"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-536b01d6dd13e51a"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8cbaab669219ab31"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0022",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0cc42bfb3d8b64f4"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9f0b5f1a41660f20"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-b79068ec770ab757"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0023",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e1bdf8285b40ff3a"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8d75a6b1992bcc0d"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0024",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q1_compliance_conclusion",
+     "match": "cumple con los"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-1c9fa7ed8fd951e8"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3ad7d11d28c743bf"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-fa586a385d5dd192"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0025",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-6f5b3b82eda630cc"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-af177b43bdef9aed"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f7bc368b97cf57db"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-42c2eff011a7efd7"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0c617339da88a074"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0026",
+   "section_type": "TECHNICAL",
+   "regulatory_state_expected": "NOT_APPLICABLE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "BEHAVIOR_NOT_FOUND_IN_SCOPE"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-634d962c7160732a"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0027",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "ranking de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3e9b04bcf43fa43f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5205dc443feda22c"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-7bba6f676b105fbe"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-ae4c39a2a8fc4332"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-be5aba51fbd24d21"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0028",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q1_compliance_conclusion",
+     "match": "no cumple"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-056e624f52aed934"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-36961bd26132e93e"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-658ad8c8f5bd6842"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e5c98bdbc39928c4"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-1112f4cb7bcfb5e5"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0029",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "NOT_ANALYZABLE",
+   "v1_assessment": "NARRATIVE_BLOCKED",
+   "v1_blocked": true,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": false,
+   "v1_double_shadow_mark": false,
+   "v1_blacklist_hits": []
+  },
+  {
+   "section_id": "sec-0030",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-2d562fca466ce961"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5a1265bfec571542"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8aa5603c54329893"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f82f7501f3c739cd"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9cd53e2277178add"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f21a74c8f8efcc10"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-920e1c069c888afb"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-920e1c069c888afb"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-2d160f0034fc009b"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0031",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-061e25c113d8dff1"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-1e739d1ed49aa50d"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-24116cb9a303d852"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3369a8711e5f16a3"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5be5e7022728dc5f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-7b239c5feb66e3b8"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-91ab6e8d4f31d742"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a3d760284cd0b9a5"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e860db2601b6cebf"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0032",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a7d75820b994631e"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c0f9fd9ea1057bbc"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-ea678422db053342"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0033",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "NO_USEFUL_CANDIDATE"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "CANDIDATE_RANKING_PROVIDED"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-1897ca8cd56cce11"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-39b4c3e7f96aa8b3"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-59c9aa61a71b51a5"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5c58709c0f26b0e2"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d27023368407f14a"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e338bab622e8f0a3"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9d54faaa859430c4"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0034",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q2_corrective_action",
+     "match": "acciones correctivas"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3130c124cd7e849f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-6f5a13fa19b88b0f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-784c37f77b476a88"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d1b35865734b8946"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-870a752d32280cc4"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0035",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-87279db34937bf9f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8afa4e3f69dda00f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9abe728bb97911ac"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0036",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-32add0c9ea3290f7"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3c0d7fd4b8734fad"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-46c33ac6c8feadfd"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0037",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "ranking de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-54bce3115e65e603"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a9a5b6ec78fff8bc"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0038",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-2841ffacd63643f9"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-89eeff10645763f5"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c0b890725d182db8"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0039",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-04f5b119e455528c"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a58915157a5f9925"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d123f4c83da7b42f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d318608f50818dee"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0040",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "ranking de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-1bf3040f43d66b37"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-4f8f919fcbdb5251"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-6d3f2454352a323f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8754e94a09ec1476"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c1919381b368941d"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-4f8f919fcbdb5251"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-6d3f2454352a323f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8754e94a09ec1476"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c1919381b368941d"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0041",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-2a3e51a6af531b7b"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-7215ca09abf3eada"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-7c2407fc9cfcf753"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9d6bb68c2fc4c91e"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d9b05cf15b265a23"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0042",
+   "section_type": "FUNCTIONAL_TRACEABILITY",
+   "regulatory_state_expected": "NOT_APPLICABLE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8a4bbe1c1d01735b"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-da2dd36165ffbc37"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9d62cdb1e9e911b3"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a5d31c1634788d60"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0043",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "ranking de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-38ca5f4b1bcdecb3"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0044",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q1_compliance_conclusion",
+     "match": "no cumple"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-2a087800e25837ae"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f60777836a943d3b6"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0045",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-207d02811ef3d149"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-b9f11dd9d3963b94"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a5b4dfbb2f5ad5d3"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0046",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-284aedafa8dddd56"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0cd391eb90f3c9c3"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0dabdffc2499e72d"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-401acfb9ab836af3"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-7b1d0018e0a7b892"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e0b2f74690c62d12"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-fb8002f6d8d67ca3"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0047",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-74ff2a0592937823"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-83bfd3889ed3654f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-ac00a59b618d0b09"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f276eb609aef848a"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-b64c4f3071c70007"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0048",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0404b41c0265d1d8"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-800a035cf11819d9"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9b9b6b70c63a1f85"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0049",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-32e1df2adaaa6b49"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-6a37e3199c0c0802"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-bfb54c580e7d5b82"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0050",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q1_compliance_conclusion",
+     "match": "si cumple"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación del candidato"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-57426835d127558d"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-bef00229b74e19fc"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0051",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3085302a6a1a41d7"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-642f2def6cd789a5"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d793d4dfdbe58a55"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0052",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-46e04aeaafab5400"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-72d639d67763e8c5"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-ccc1eaf9f98fd503"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e331cd2c6767296f"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0053",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-56c5e933aa2819de"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-fe5d4ee6d92f122e"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-104ec2e369553178"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-2914af68576cb5b4"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-b0bd7d132fff70f8"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-104ec2e369553178"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-2914af68576cb5b4"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-b0bd7d132fff70f8"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0054",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a97cc563d49e86fe"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c2b7d491973850b2"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c6fea3d236535532"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e58810852f84eec9"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-18d1cb0cbc537d07"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0055",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-416802c94910cdde"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-560c2c68926d3c1e"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5709a42354003b15"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a8c6782050e06757"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-cfabd45ba589d838"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c7941a0eff0bc22c"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-104e0c05174a0f6c"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-21c842f02794aa67"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a3965dbc0f624005"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0056",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-0f8854eda6750a93"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-42aead7c958c5c8e"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-4b825308bdc2e0a3"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-850828e07185d641"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8845834af32cbbc7"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-2434de3a732b7dda"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5615bf4d8c4aff5b"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-b06097a7cfc498be"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f8f7de5378f256e2"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0057",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3bcc8a52126f218f"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-447eb2c62d2754df"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-fcdb52df110efcf4"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a5724dd2e1502ae2"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0058",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificaciones de candidatos"
+    },
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificaciones de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-6858133e127e6d20"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-798ba8ec531ec5f1"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-7b6d158e5df2c34e"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-ad5c75e429b497fd"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-dc5765d37bebfb3b"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-df9944d70ec10520"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-f9863e040e25a3ca"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0059",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "rango de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5ee41dfa43c9fe97"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-6d7871310ba4c551"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-73b4f0fd3665646d"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d8fe552c906febf7"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8564996784209916"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0060",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9043a86b040996f4"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-927e377a7e8b9de0"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a645e1b67f98cd16"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0061",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-39cdac49f3d89c46"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5232d7f4e2992b47"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9460e6ea9b3238f0"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0062",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "clasificación del candidato"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-79f3c3e1583037f5"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d656513a62d17de6"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0063",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "candidate ranking"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e0a9bccca8043c22"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-e2da65ebac952e02"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-59e67770a61ea9eb"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0064",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": true,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q2_corrective_action",
+     "match": "acciones correctivas"
+    },
+    {
+     "rule": "Q2_corrective_action",
+     "match": "medidas correctivas"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-3e1d1a134fc57900"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5dc17e549507f538"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-c31770f6f675026d"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-d1a37985e1667811"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0065",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": false,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-13306f6b569de9d3"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-5992f149a0e54dd2"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8695e22d41c0f411"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-917a939d46c3ca72"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-977e1772519662b2"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  },
+  {
+   "section_id": "sec-0066",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "v1_assessment": "NARRATIVE_DRAFTED",
+   "v1_blocked": false,
+   "v1_state_violation": false,
+   "v1_internal_vocab_violation": true,
+   "v1_record_id_leak": true,
+   "v1_double_shadow_mark": true,
+   "v1_blacklist_hits": [
+    {
+     "rule": "Q3_internal_vocab",
+     "match": "ranking de candidatos"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-7267a5fff23eb259"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8c1a0d7079eca9a3"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-9f38c6420acd1b68"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a5903de70687e288"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-97a0c75e8a9ae838"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-a5903de70687e288"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-7267a5fff23eb259"
+    },
+    {
+     "rule": "Q4_record_id_leak",
+     "match": "rec-8c1a0d7079eca9a3"
+    },
+    {
+     "rule": "Q5_machine_token_leak",
+     "match": "[[SHADOW"
+    }
+   ]
+  }
+ ]
+}

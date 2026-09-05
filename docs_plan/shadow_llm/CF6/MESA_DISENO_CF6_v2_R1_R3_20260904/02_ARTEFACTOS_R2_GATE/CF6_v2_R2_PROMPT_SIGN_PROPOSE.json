@@ -1,0 +1,41 @@
+{
+ "schema": "SHADOW_CF6_V2_R2_PROMPT_SIGN_PROPOSE/v1",
+ "action": "propose",
+ "decision_origin": "agent_proposed",
+ "written_to_ledger": false,
+ "submit_via": "firma de Capa 9 sobre el YAML (status/signed_by/signed_at/signed_on) + evidencia propose→human_confirmed",
+ "PROMPT_VERSION": "shadow-cf6-composer-v2.0-relevance-filtered",
+ "prompt_path": "/home/cmay/ivr-ia/.claude/worktrees/shadow-llm/factory/regulatory/shadow/prompts/composer_structured_v2_0_relevance_filtered.yaml",
+ "prompt_sha256_before_signing": "907e2c30fe9d158366f78afebef53364e1d221db7cbb73de6e6c8e48f57814be",
+ "matches_frozen_content_sha256": true,
+ "status_at_propose": "DRAFT_UNSIGNED",
+ "schema_version": "SHADOW_CF6_V2_COMPOSER_CONTRACT/v1",
+ "CORRECTION_REASON": "Autorización explícita de Capa 9 (2026-09-04): 'Formalizar mediante el mecanismo de gobernanza existente el prompt ya congelado... El contenido congelado no debe modificarse. Debe quedar aprobado/firmado, no DRAFT_UNSIGNED.' Se edita SOLO status/signed_by/signed_at/signed_on -- el contrato (system/user_template/contract/few_shot) permanece byte-idéntico (verificable por diff).",
+ "does_not_touch": [
+  "contract",
+  "system",
+  "user_template",
+  "few_shot",
+  "shadow-cf6-composer-struct-v2 (firmado, tag cf6-G2)",
+  "shadow-cf6-composer-struct-v3 (firmado, tag cf6-G2-r1)",
+  "Q-STATE",
+  "renderer determinista",
+  "G4d",
+  "L2",
+  "routing",
+  "FINDINGS_FINGERPRINT",
+  "human_state"
+ ],
+ "invariants": {
+  "LLM_CALLS": 0,
+  "G4D_CALLS": 0,
+  "L2_MUTATIONS": 0,
+  "HUMAN_STATE_CHANGES": 0
+ },
+ "proposed_by_id": "Capa 8 (Claude Code)",
+ "proposed_at": "2026-09-04T21:06:02Z",
+ "awaiting": {
+  "action": "human_confirmed",
+  "authority": "Capa 9 (Cesar)"
+ }
+}

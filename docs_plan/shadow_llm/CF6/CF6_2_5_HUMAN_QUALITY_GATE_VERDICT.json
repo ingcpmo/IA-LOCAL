@@ -1,0 +1,108 @@
+{
+ "schema": "SHADOW_CF6_2_5_HUMAN_QUALITY_GATE_STATUS/v2",
+ "supersedes_schema": "SHADOW_CF6_2_5_HUMAN_QUALITY_GATE_VERDICT/v1 (mismo archivo; corrige atribución)",
+ "gate": "HUMAN_QUALITY_GATE (CF-6 v1.2 §4.2)",
+ "status": "HUMAN_CONFIRMED",
+ "human_adjudication": {
+  "result": "FAIL",
+  "by": "cesar",
+  "display": "Capa 9 (Cesar)",
+  "at": "2026-09-04T04:03:09Z",
+  "verbatim": "Capa 9 confirma HUMAN_QUALITY_GATE = FAIL para el CF6-2.5 ejecutado con shadow-cf6-composer-struct-v2, con base en los hallazgos técnicos documentados por sección. Autorizo continuar con la propuesta shadow-cf6-composer-struct-v3.",
+  "path": "CF6_2_5_HUMAN_QUALITY_GATE_ADJUDICATION.json"
+ },
+ "HUMAN_GATE_ALREADY_EXPLICITLY_CONFIRMED_BY_CAPA9": "YES",
+ "HUMAN_GATE_EVIDENCE_PATH": "docs_plan/shadow_llm/CF6/CF6_2_5_HUMAN_QUALITY_GATE_ADJUDICATION.json",
+ "HUMAN_GATE_DECLARED_BY": "cesar",
+ "HUMAN_GATE_DECLARED_AT": "2026-09-04T04:03:09Z",
+ "HUMAN_GATE_RESULT": "FAIL",
+ "attribution_correction": "El archivo anterior (schema v1, commit 56c6e2e) marcaba verdict=FAIL y declared_by='Capa 9 (Cesar)'. Esa adjudicación por sección la calculó Capa 8 (Claude Code), NO Capa 9. No existe registro gobernado (decisions_v2.jsonl / w5_human_decisions.jsonl) ni artefacto firmado de adjudicación del HUMAN_QUALITY_GATE. Se reclasifica a PENDING_HUMAN_CONFIRMATION. [2026-09-04] Capa 9 confirmó explícitamente FAIL sobre el diagnóstico técnico; adjudicación registrada.",
+ "session_direction_only": "Mensaje de sesión del usuario: 'Capa 9 declara HUMAN_QUALITY_GATE = FAIL para el CF6-2.5 actual, con base en los fallos documentados del paquete A-vs-B y el diagnóstico posterior.' — es dirección de sesión, no evidencia gobernada de adjudicación por sección.",
+ "technical_diagnosis_by": "Capa 8 (Claude Code) — sin valor de adjudicación",
+ "technical_diagnosis_basis": "CF6_2_5_HUMAN_QUALITY_GATE.md (paquete A-vs-B, sin puntuar) + matriz REGLA_EN_PROMPT (diagnóstico del prompt v2)",
+ "technical_diagnosis_summary": "7/7 secciones del SAMPLE_MANIFEST presentan defectos documentados frente a los umbrales §4.2; sec-0062 con sobreafirmación regulatoria en reviewer_action ('...cumplen con ... ALCOA_ORIGINAL'). sec-0026/0042 = SAFE_MODE (B no disponible, sin valor añadido sobre A).",
+ "technical_diagnosis_per_section": {
+  "sec-0004": {
+   "B_mode": "RENDERED",
+   "fail_dimensions": [
+    "Precisión GMP",
+    "Claridad",
+    "Fidelidad al finding"
+   ],
+   "evidence": "technical_findings=['CROSS_DOMAIN'] (section_type, no subtype técnico); reviewer_action introduce 'pág. 2' ausente de L2 (L2=[13,40])"
+  },
+  "sec-0005": {
+   "B_mode": "RENDERED",
+   "fail_dimensions": [
+    "Precisión GMP",
+    "Claridad",
+    "Utilidad para revisión"
+   ],
+   "evidence": "technical_findings=['REGULATORY']; evidence_observed repite la misma cita x3"
+  },
+  "sec-0016": {
+   "B_mode": "RENDERED",
+   "fail_dimensions": [
+    "Precisión GMP",
+    "Claridad",
+    "Fidelidad al finding"
+   ],
+   "evidence": "technical_findings=['REGULATORY_INCONCLUSIVE']; citas duplicadas x4 y x2; reviewer_action 'pág. 1-8' ausente de L2 (L2=[6,16])"
+  },
+  "sec-0018": {
+   "B_mode": "RENDERED",
+   "fail_dimensions": [
+    "Precisión GMP",
+    "Claridad"
+   ],
+   "evidence": "technical_findings=['CROSS_DOMAIN'] (section_type)"
+  },
+  "sec-0026": {
+   "B_mode": "SAFE_MODE",
+   "fail_dimensions": [
+    "Valor añadido vs determinista",
+    "Utilidad para revisión",
+    "Preferencia B sobre A"
+   ],
+   "evidence": "B cayó a modo seguro (Q-STATE-4: reviewer_action decía '...cumple'); no aporta valor sobre A"
+  },
+  "sec-0042": {
+   "B_mode": "SAFE_MODE",
+   "fail_dimensions": [
+    "Valor añadido vs determinista",
+    "Utilidad para revisión",
+    "Preferencia B sobre A"
+   ],
+   "evidence": "B cayó a modo seguro (Q-STATE-5: reviewer_action con 'acciones correctivas'); no aporta valor sobre A"
+  },
+  "sec-0062": {
+   "B_mode": "RENDERED",
+   "fail_dimensions": [
+    "Sobreafirmación regulatoria (= 0, cero tolerancia)",
+    "Precisión GMP"
+   ],
+   "evidence": "reviewer_action: '...si los pasajes recuperados cumplen con los requisitos de la regulación ALCOA_ORIGINAL' (sobreafirmación regulatoria != 0); technical_findings=['REGULATORY_INCONCLUSIVE']"
+  }
+ },
+ "rule_reference": "CF-6 v1.2 §4.2 — PASS del conjunto SOLO si CADA sección pasa TODOS los umbrales; Sobreafirmación regulatoria = 0 por sección (cero tolerancia)",
+ "sample_manifest_hash": "7422faaf569430dbc8a19647a2d2b64ff6b53b5231fc4e7962b4486e3165f5a0",
+ "sample_manifest_tag": "cf6-G2.5-manifest",
+ "pilot_prompt_version": "shadow-cf6-composer-struct-v2",
+ "artifacts_not_modified": [
+  "CF6_2_5_HUMAN_QUALITY_GATE.md",
+  "CF6_2_5_B_OUTPUTS.jsonl",
+  "CF6_2_5_PILOT_RUN.json",
+  "cf6-G2",
+  "cf6-G2G",
+  "cf6-G2.5-manifest",
+  "composer_structured_v2.yaml"
+ ],
+ "next": "Si Capa 9 confirma explícitamente el resultado (p. ej. FAIL) sobre este diagnóstico, se registra la adjudicación y continúa la propuesta shadow-cf6-composer-struct-v3 hasta el propose. Hasta entonces: STOP.",
+ "invariants": {
+  "LLM_CALLS": 0,
+  "G4D_CALLS": 0,
+  "L2_MUTATIONS": 0,
+  "HUMAN_STATE_CHANGES": 0,
+  "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+ }
+}

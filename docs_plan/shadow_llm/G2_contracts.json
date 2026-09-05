@@ -1,0 +1,195 @@
+{
+ "schema": "SHADOW_G2_CONTRACTS/v1",
+ "experts": [
+  "REGULATORY",
+  "FUNCTIONAL_TRACEABILITY",
+  "TECHNICAL",
+  "CROSS_DOMAIN",
+  "COMPOSER"
+ ],
+ "must_not_change_fields": [
+  "finding_record_id",
+  "finding_class",
+  "subtype",
+  "severity",
+  "risk_band",
+  "requirement_id",
+  "machine_state",
+  "human_state",
+  "document",
+  "page",
+  "source_hash",
+  "related_finding_ids"
+ ],
+ "forbidden_assessment_tokens": [
+  "COMPLIANT",
+  "NON_COMPLIANT",
+  "APPROVED",
+  "REJECTED",
+  "PASS",
+  "FAIL",
+  "MACHINE_CONFIRMED",
+  "SATISFIES",
+  "RELEASED",
+  "CAPA_CLOSED",
+  "OBSERVED"
+ ],
+ "assessment_values": {
+  "REGULATORY": [
+   "CANDIDATE_RANKING_PROVIDED",
+   "NO_USEFUL_CANDIDATE",
+   "NEEDS_HUMAN_SEARCH"
+  ],
+  "FUNCTIONAL_TRACEABILITY": [
+   "LIKELY_REAL_GAP",
+   "LIKELY_EXTRACTION_LIMIT",
+   "INDETERMINATE"
+  ],
+  "TECHNICAL": [
+   "BEHAVIOR_LIKELY_PRESENT_PARAPHRASED",
+   "BEHAVIOR_NOT_FOUND_IN_SCOPE",
+   "INDETERMINATE"
+  ],
+  "CROSS_DOMAIN": [
+   "RECONCILED_CONSISTENT",
+   "DISAGREEMENT_PERSISTS",
+   "INDETERMINATE"
+  ],
+  "COMPOSER": [
+   "NARRATIVE_DRAFTED",
+   "NARRATIVE_BLOCKED"
+  ]
+ },
+ "input_context_spec": {
+  "REGULATORY": [
+   "subcriterion_ref",
+   "subcriterion_text",
+   "requirement_terms",
+   "candidate_claims"
+  ],
+  "FUNCTIONAL_TRACEABILITY": [
+   "anchored_source_text",
+   "graph_path",
+   "reference_ids",
+   "neighbor_claims",
+   "downstream_claims"
+  ],
+  "TECHNICAL": [
+   "case_id",
+   "control_objective",
+   "required_behavior",
+   "source_requirement_id",
+   "scope_claims",
+   "family_signals"
+  ],
+  "CROSS_DOMAIN": [
+   "technical_finding_package",
+   "regulatory_counterpart_packages",
+   "prior_expert_opinions",
+   "shared_regulations"
+  ],
+  "COMPOSER": [
+   "verified_expert_opinions",
+   "l2_findings",
+   "routing"
+  ]
+ },
+ "l2_snapshot_fields": [
+  "finding_record_id",
+  "finding_class",
+  "subtype",
+  "severity",
+  "risk_band",
+  "requirement_id",
+  "machine_state",
+  "human_state",
+  "document",
+  "page",
+  "source_hash",
+  "related_finding_ids",
+  "section",
+  "anchored_quote",
+  "evidence_basis",
+  "rationale_l2"
+ ],
+ "forbidden_package_keys": [
+  "pdf",
+  "pdf_bytes",
+  "canonical_store",
+  "raw_document",
+  "full_text",
+  "graph_store",
+  "other_findings"
+ ],
+ "shadow_mark": "[SHADOW / NO GOBERNADO]",
+ "cross_domain_human_review_trigger": "DISAGREEMENT_PERSISTS",
+ "output_envelope_required_keys": [
+  "schema",
+  "expert",
+  "finding_record_id",
+  "shadow_layer",
+  "assessment",
+  "rationale",
+  "anchored_citations",
+  "MUST_NOT_CHANGE",
+  "confidence",
+  "model",
+  "produced_at"
+ ],
+ "output_envelope_optional_keys": [
+  "external_reg_references",
+  "ranked_candidate_claim_ids"
+ ],
+ "reuse_evaluation": {
+  "model_provider.ModelProvider (Protocol) + OllamaProvider": {
+   "verdict": "REUSE",
+   "why": "abstracción de modelo intercambiable (corr. 4): generate(prompt, num_predict), show_digest(), runtime_version(), model_name. Es exactamente lo que la capa shadow necesita para trazar `model` en la envoltura. Se CONGELA como abstracción; el modelo concreto (7B) es candidato de piloto, no arquitectónico."
+  },
+  "engines.gmpai_integrity.ollama_client.generate()": {
+   "verdict": "REUSE",
+   "why": "canal 1 LOCAL, httpx directo, temperature 0, format:json, timeouts/reintentos ya probados. La generación simple sirve para producir OPINIÓN."
+  },
+  "engines.gmpai_integrity.ollama_client.generate_controlled()": {
+   "verdict": "DISCARD",
+   "why": "fuerza el schema `finding_llm_v1` de EVIDENCIA regulatoria (semántica de adjudicación). El shadow produce opinión con su propio envelope, no evidencia."
+  },
+  "v2_judgment.prompts (load_prompt / is_signed / assert_all_signed / render / temperature)": {
+   "verdict": "REUSE",
+   "why": "infra de carga/render/firma de prompts YAML, reutilizable tal cual para los prompts de INTERPRETACIÓN nuevos que se firmarán antes de G4."
+  },
+  "v2_judgment prompts de contenido: step_a / step_b(_nonstrict) / critic (v2_draft/*.yaml)": {
+   "verdict": "DISCARD",
+   "why": "hoy status=SIGNED, pero su tarea es JUZGAR un sub-criterio (SATISFIES/PARTIAL/NO). El shadow no juzga cumplimiento -> se necesitan prompts nuevos de interpretación asistida (triage regulatorio, gap vs límite de extracción, comportamiento parafraseado, reconciliación cross-domain)."
+  },
+  "evidence_verifier.match_citation / relevance_score / verify_llm_output / load_requirement_terms": {
+   "verdict": "REUSE",
+   "why": "núcleo determinista de anclaje de cita (exact/normalized/despaced/fuzzy>=0.93). Es la base del verificador fail-closed de G3: '¿la cita del experto existe literalmente en L1/L2?'. FUZZY_THRESHOLD y umbrales NO se tocan."
+  },
+  "judgment_v2._extract_json / _resp_text / _claims_index": {
+   "verdict": "REUSE",
+   "why": "helpers puros de parseo de respuesta del modelo, sin semántica de adjudicación."
+  },
+  "judgment_v2.evaluate_bundle (orquestador A->B->verify->critic->adjudicator)": {
+   "verdict": "DISCARD",
+   "why": "ensambla un VEREDICTO de cumplimiento por sub-criterio (MACHINE_CONFIRMED = 'el sub-criterio se cumple'). Incompatible con 'el shadow no concluye cumplimiento' (corr. 5). Se reutiliza el PATRÓN (paso A neutro; verificación de cita; parseo), no el ensamblaje ni su salida."
+  },
+  "v2_judgment.adjudicator.adjudicate + estados (MACHINE_CONFIRMED / EVIDENCE_NOT_FOUND / …)": {
+   "verdict": "DISCARD",
+   "why": "los estados son conclusiones de cumplimiento del sub-criterio. El shadow usa su propio enum ASSESSMENT_VALUES (opinión, no veredicto)."
+  },
+  "v2_judgment.critic.review + CriticResult (AGREE/DISAGREE/CANNOT_CONFIRM)": {
+   "verdict": "REUSE_WITH_ADAPTATION",
+   "why": "el PATRÓN 'segunda lectura adversarial que SOLO degrada, fail-closed hacia la duda' es muy valioso para el shadow. El enum (AGREE = confirmo cumplimiento) es de adjudicación -> se adapta a un enum de duda sobre la OPINIÓN, no sobre el cumplimiento."
+  },
+  "judgment_v2.SubcriterionVerdict / CandidateOutcome (dataclasses)": {
+   "verdict": "DISCARD",
+   "why": "modelan un veredicto de cumplimiento por sub-criterio. El shadow modela una opinión por finding -> estructura nueva (esta envoltura de G2)."
+  }
+ },
+ "reuse_summary": {
+  "REUSE": 5,
+  "REUSE_WITH_ADAPTATION": 1,
+  "DISCARD": 5
+ },
+ "verification_note": "G2 define y valida ESTRUCTURA. El anclaje real de citas contra L1/L2 y el fail-closed SHADOW_REJECTED son G3."
+}

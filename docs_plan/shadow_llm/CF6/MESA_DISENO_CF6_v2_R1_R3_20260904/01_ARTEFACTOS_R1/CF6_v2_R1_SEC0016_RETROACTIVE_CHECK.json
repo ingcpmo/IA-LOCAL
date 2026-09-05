@@ -1,0 +1,80 @@
+{
+ "schema": "SHADOW_CF6_V2_R1_SEC0016_RETROACTIVE_CHECK/v1",
+ "section_id": "sec-0016",
+ "bad_candidate": "rec-6b0c9965fd2f4e05",
+ "bad_candidate_in_excluded_evidence": true,
+ "relevance_record": {
+  "schema": "SHADOW_CF6_V2_RELEVANCE_RECORD/v1",
+  "section_id": "sec-0016",
+  "relevant_evidence": [
+   {
+    "finding_record_id": "rec-5bfe094286d91b6d",
+    "relevance_state": "PARTIALLY_RELEVANT",
+    "matched_subcriterion_id": "sc1",
+    "n_matched": 2,
+    "weighted_ratio": 0.1231,
+    "reason": "overlap parcial (2 términos, ratio=0.123)"
+   }
+  ],
+  "excluded_evidence": [
+   {
+    "finding_record_id": "rec-6b0c9965fd2f4e05",
+    "relevance_state": "INCONCLUSIVE",
+    "matched_subcriterion_id": "sc3",
+    "n_matched": 1,
+    "weighted_ratio": 0.0645,
+    "reason": "overlap bajo/ambiguo (1 términos, ratio=0.065)"
+   },
+   {
+    "finding_record_id": "rec-8e51ef14590a270e",
+    "relevance_state": "IRRELEVANT",
+    "matched_subcriterion_id": null,
+    "n_matched": 0,
+    "weighted_ratio": 0.0,
+    "reason": "overlap léxico nulo con el sub-criterio (bm25 no disponible o bajo)"
+   },
+   {
+    "finding_record_id": "rec-8f15c82009c5642f",
+    "relevance_state": "INCONCLUSIVE",
+    "matched_subcriterion_id": "sc2",
+    "n_matched": 1,
+    "weighted_ratio": 0.08,
+    "reason": "overlap bajo/ambiguo (1 términos, ratio=0.080)"
+   },
+   {
+    "finding_record_id": "rec-af05e920bad158fb",
+    "relevance_state": "INCONCLUSIVE",
+    "matched_subcriterion_id": "sc4",
+    "n_matched": 1,
+    "weighted_ratio": 0.0488,
+    "reason": "overlap bajo/ambiguo (1 términos, ratio=0.049)"
+   },
+   {
+    "finding_record_id": "rec-d86dfb79cc5b4996",
+    "relevance_state": "INCONCLUSIVE",
+    "matched_subcriterion_id": "sc5",
+    "n_matched": 1,
+    "weighted_ratio": 0.08,
+    "reason": "overlap bajo/ambiguo (1 términos, ratio=0.080)"
+   },
+   {
+    "finding_record_id": "rec-e0b35452eeb06071",
+    "relevance_state": "INCONCLUSIVE",
+    "matched_subcriterion_id": "sc8",
+    "n_matched": 1,
+    "weighted_ratio": 0.0377,
+    "reason": "overlap bajo/ambiguo (1 términos, ratio=0.038)"
+   },
+   {
+    "finding_record_id": "rec-4c6611081bdfdeec",
+    "relevance_state": "INCONCLUSIVE",
+    "matched_subcriterion_id": "sc7",
+    "n_matched": 1,
+    "weighted_ratio": 0.0392,
+    "reason": "overlap bajo/ambiguo (1 términos, ratio=0.039)"
+   }
+  ],
+  "fail_closed_empty_relevant": false
+ },
+ "ctx_excludes_excluded_evidence": true
+}

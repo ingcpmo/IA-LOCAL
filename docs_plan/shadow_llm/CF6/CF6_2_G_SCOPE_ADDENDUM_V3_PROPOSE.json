@@ -1,0 +1,191 @@
+{
+ "schema": "SHADOW_CF6_2_G_SCOPE_ADDENDUM_V3_PROPOSE/v1",
+ "action": "propose",
+ "decision_origin": "agent_proposed",
+ "written_to_ledger": false,
+ "submit_via": "canal gobernado (governance_service.propose ADDENDUM PILOT_EXECUTION) — firma de Capa 9",
+ "family": "PILOT_EXECUTION",
+ "decision": "APPROVE",
+ "decision_type": "ADDENDUM",
+ "amendment_sequence": 1,
+ "selection_mode": "EXPLICIT_LIST",
+ "supersedes_instance_id": null,
+ "proposed_by_id": "Capa 8 (Claude Code)",
+ "target_ids": [
+  "RW-0005",
+  "RW-0006",
+  "RW-0009",
+  "RW-0011",
+  "RW-0012",
+  "RW-0014"
+ ],
+ "payload": {
+  "scope": [
+   {
+    "document_id": "RW-0005",
+    "agent_id": "shadow_composer_expert",
+    "requirement_id": "SHADOW_CF6_COMPOSER",
+    "purpose": "structured_json_composer",
+    "execution_phase": "CF6-2.5",
+    "composer_prompt_version": "shadow-cf6-composer-struct-v3",
+    "selection_reason": "re-generación de B con v3 sobre el SAMPLE_MANIFEST congelado (por sección)"
+   },
+   {
+    "document_id": "RW-0006",
+    "agent_id": "shadow_composer_expert",
+    "requirement_id": "SHADOW_CF6_COMPOSER",
+    "purpose": "structured_json_composer",
+    "execution_phase": "CF6-2.5",
+    "composer_prompt_version": "shadow-cf6-composer-struct-v3",
+    "selection_reason": "re-generación de B con v3 sobre el SAMPLE_MANIFEST congelado (por sección)"
+   },
+   {
+    "document_id": "RW-0012",
+    "agent_id": "shadow_composer_expert",
+    "requirement_id": "SHADOW_CF6_COMPOSER",
+    "purpose": "structured_json_composer",
+    "execution_phase": "CF6-2.5",
+    "composer_prompt_version": "shadow-cf6-composer-struct-v3",
+    "selection_reason": "re-generación de B con v3 sobre el SAMPLE_MANIFEST congelado (por sección)"
+   },
+   {
+    "document_id": "RW-0014",
+    "agent_id": "shadow_composer_expert",
+    "requirement_id": "SHADOW_CF6_COMPOSER",
+    "purpose": "structured_json_composer",
+    "execution_phase": "CF6-2.5",
+    "composer_prompt_version": "shadow-cf6-composer-struct-v3",
+    "selection_reason": "re-generación de B con v3 sobre el SAMPLE_MANIFEST congelado (por sección)"
+   },
+   {
+    "document_id": "RW-0005",
+    "agent_id": "shadow_composer_expert",
+    "requirement_id": "SHADOW_CF6_COMPOSER",
+    "purpose": "structured_json_composer",
+    "execution_phase": "CF6-3",
+    "composer_prompt_version": "shadow-cf6-composer-struct-v3",
+    "selection_reason": "corrida completa post-gate — 66 secciones documento × regulación"
+   },
+   {
+    "document_id": "RW-0006",
+    "agent_id": "shadow_composer_expert",
+    "requirement_id": "SHADOW_CF6_COMPOSER",
+    "purpose": "structured_json_composer",
+    "execution_phase": "CF6-3",
+    "composer_prompt_version": "shadow-cf6-composer-struct-v3",
+    "selection_reason": "corrida completa post-gate — 66 secciones documento × regulación"
+   },
+   {
+    "document_id": "RW-0009",
+    "agent_id": "shadow_composer_expert",
+    "requirement_id": "SHADOW_CF6_COMPOSER",
+    "purpose": "structured_json_composer",
+    "execution_phase": "CF6-3",
+    "composer_prompt_version": "shadow-cf6-composer-struct-v3",
+    "selection_reason": "corrida completa post-gate — 66 secciones documento × regulación"
+   },
+   {
+    "document_id": "RW-0011",
+    "agent_id": "shadow_composer_expert",
+    "requirement_id": "SHADOW_CF6_COMPOSER",
+    "purpose": "structured_json_composer",
+    "execution_phase": "CF6-3",
+    "composer_prompt_version": "shadow-cf6-composer-struct-v3",
+    "selection_reason": "corrida completa post-gate — 66 secciones documento × regulación"
+   },
+   {
+    "document_id": "RW-0012",
+    "agent_id": "shadow_composer_expert",
+    "requirement_id": "SHADOW_CF6_COMPOSER",
+    "purpose": "structured_json_composer",
+    "execution_phase": "CF6-3",
+    "composer_prompt_version": "shadow-cf6-composer-struct-v3",
+    "selection_reason": "corrida completa post-gate — 66 secciones documento × regulación"
+   },
+   {
+    "document_id": "RW-0014",
+    "agent_id": "shadow_composer_expert",
+    "requirement_id": "SHADOW_CF6_COMPOSER",
+    "purpose": "structured_json_composer",
+    "execution_phase": "CF6-3",
+    "composer_prompt_version": "shadow-cf6-composer-struct-v3",
+    "selection_reason": "corrida completa post-gate — 66 secciones documento × regulación"
+   }
+  ],
+  "max_calls": 250,
+  "authorizes_corpus": false,
+  "authorizes_baseline": false,
+  "composer_prompt_version": "shadow-cf6-composer-struct-v3",
+  "supersedes_prompt_version": "shadow-cf6-composer-struct-v2",
+  "execution_type": "structured_json_composer",
+  "authorizes": [
+   "CF6-2.5 SMALL QUALITY PILOT (re-generación con v3)",
+   "CF6-3 corrida completa post-gate"
+  ],
+  "extends_instances": [
+   "PILOT_EXECUTION-2026-035",
+   "PILOT_EXECUTION-2026-036",
+   "PILOT_EXECUTION-2026-037",
+   "PILOT_EXECUTION-2026-038"
+  ],
+  "parent_hard_cap": {
+   "instance": "PILOT_EXECUTION-2026-035",
+   "max_calls": 1000,
+   "used_by_g4": 481,
+   "used_by_cf6_2_5_v2": 7,
+   "still_binds": true
+  },
+  "sample_manifest_hash": "7422faaf569430dbc8a19647a2d2b64ff6b53b5231fc4e7962b4486e3165f5a0",
+  "sample_manifest_tag": "cf6-G2.5-manifest",
+  "prompt_signature_ref": "shadow-cf6-composer-struct-v3 SIGNED por Capa 9, tag cf6-G2-r1",
+  "not_authorized": [
+   "CORPUS_AUTHORIZATION",
+   "D4",
+   "FORMAL_BASELINE_READY",
+   "flip/adjudication/production"
+  ]
+ },
+ "reason": "ADDENDUM a la familia PILOT_EXECUTION (extiende -035/-036/-037/-038; NO los supersede — I-7). Amplía el scope firmado para autorizar EXPLÍCITAMENTE el nuevo composer_prompt_version=shadow-cf6-composer-struct-v3 (firmado por Capa 9 tras HUMAN_QUALITY_GATE=FAIL del CF6-2.5 con shadow-cf6-composer-struct-v2; tag cf6-G2-r1). Sólo cambia el prompt: el tipo de ejecución (structured_json_composer), CF6-2.5, CF6-3 y el SAMPLE_MANIFEST congelado (7422faaf569430db…, tag cf6-G2.5-manifest) son los mismos. Tope duro CF-6 aditivo: 250 llamadas; el tope de 1000 de -035 sigue acotando el total de la familia (481 G4 + 7 del piloto v2). NO autoriza corpus, D4, baseline formal, flip, adjudicación ni producción.",
+ "mechanism_check": {
+  "SCOPE_EXTENSION_SUPPORTED": "YES",
+  "mechanism": "decision_type=ADDENDUM en la familia PILOT_EXECUTION",
+  "evidence": {
+   "COVERING_TYPES": [
+    "ADDENDUM",
+    "CORRECTION",
+    "ORIGINAL",
+    "SUPERSESSION"
+   ],
+   "AMENDING_TYPES": [
+    "CORRECTION",
+    "REVOCATION",
+    "SUPERSESSION"
+   ],
+   "ADDENDUM_is_covering_type": true,
+   "ADDENDUM_not_amending (no supersede)": true,
+   "I-7": "ADDENDUM amplía, no supersede — sin supersedes_*, amendment_sequence>=1",
+   "resolver": "decision_scope_resolver une target_ids de los COVERING_TYPES human_confirmed ACTIVE (union de otorgantes menos revocaciones)",
+   "family_PILOT_EXECUTION": {
+    "requires_human_confirmation": true,
+    "selection_modes": [
+     "EXPLICIT_LIST"
+    ],
+    "decision_type_allowlist": null
+   }
+  },
+  "traceability": "-035/-036 permanecen ACTIVE y cubriendo; el ADDENDUM referencia ['PILOT_EXECUTION-2026-035', 'PILOT_EXECUTION-2026-036'] en `reason` y NO los supersede"
+ },
+ "equivalent_call": "governance_service.propose(family='PILOT_EXECUTION', target_ids=['RW-0005', 'RW-0006', 'RW-0009', 'RW-0011', 'RW-0012', 'RW-0014'], decision='APPROVE', decision_type='ADDENDUM', selection_mode='EXPLICIT_LIST', amendment_sequence=1, proposed_by_id='Capa 8 (Claude Code)', reason=<reason>, payload=<payload>)",
+ "awaiting": {
+  "action": "human_confirmed",
+  "authority": "Capa 9 (Cesar)",
+  "note": "NO confirmar aquí. Tras confirmación: re-ejecutar cf6_pilot_scope.evaluate(required_composer_prompt_version='shadow-cf6-composer-struct-v3') -> debe pasar a YES."
+ },
+ "invariants": {
+  "LLM_CALLS": 0,
+  "G4D_CALLS": 0,
+  "L2_MUTATIONS": 0,
+  "HUMAN_STATE_CHANGES": 0,
+  "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+ }
+}

@@ -1,0 +1,451 @@
+{
+ "schema": "SHADOW_G4_SUMMARY/v1",
+ "pilot_execution": "PILOT_EXECUTION-2026-035 (human_confirmed via PILOT_EXECUTION-2026-036, approved_by_id=Cesar)",
+ "provider": {
+  "kind": "LOCAL",
+  "base_url": "http://localhost:11434",
+  "model_name": "qwen2.5:7b-instruct-q4_K_M",
+  "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "prompt_version": "shadow-g4-interp-v1"
+ },
+ "llm_calls": 481,
+ "llm_calls_ok": 481,
+ "llm_calls_failed": 0,
+ "wall_seconds_total_llm": 13468.9,
+ "stage_counts": {
+  "G4a_technical": 17,
+  "G4b_cross_domain": 15,
+  "G4c_functional": 98,
+  "G4d_regulatory": 285,
+  "G4e_composer_sections": 66
+ },
+ "g2_verifier": {
+  "expert_envelopes_accepted": 372,
+  "expert_envelopes_rejected": 43,
+  "rejected_detail": [
+   {
+    "unit": "rec-2bd352f6e733c687",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: '[UR5.2.2] Control and privilege access shall be assigned to '"
+    ]
+   },
+   {
+    "unit": "rec-3a9d7ff05dc9ffff",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-ce393315b808dca0 :: individual users to define their acc'"
+    ]
+   },
+   {
+    "unit": "rec-50552b00e6ae9f4b",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-421c20ceb0f900eb :: To ensure that only operators with t'"
+    ]
+   },
+   {
+    "unit": "rec-2e7a9b8faabae026",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-ccf9306f6cfc54ba :: Date and time stamps of the change'"
+    ]
+   },
+   {
+    "unit": "rec-8b65c861175f856f",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-ccf9306f6cfc54ba :: Date and time stamps of the change'"
+    ]
+   },
+   {
+    "unit": "rec-e44befac41382590",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-8e4e1f5c42c2fd38 :: Room via wireless access points thro'"
+    ]
+   },
+   {
+    "unit": "rec-2b74b830e44c61e5",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-71a521aaf1a280c3 :: In general, an operator’s only acces'"
+    ]
+   },
+   {
+    "unit": "rec-03508ec3cf35c334",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-71a521aaf1a280c3 :: In general, an operator’s only acces'"
+    ]
+   },
+   {
+    "unit": "rec-77ada55bf2af598f",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'In general, an operator’s only access to the computer should'"
+    ]
+   },
+   {
+    "unit": "rec-e7ac5efd05dda7a5",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-ac9ac91d65077e1f :: An alarm message is programmed for e'"
+    ]
+   },
+   {
+    "unit": "rec-816d307ecbcefbf1",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-fc4f1904373ce949 :: trending requirement for the PV, SP,'"
+    ]
+   },
+   {
+    "unit": "rec-1f8c66b351356ce1",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'The PCS Miscellaneous PLC panel is UL certified as indicated'"
+    ]
+   },
+   {
+    "unit": "rec-e5c98bdbc39928c4",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: '3.3.2 Every time a critical alarm condition occurs an audit '"
+    ]
+   },
+   {
+    "unit": "rec-36961bd26132e93e",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: '3.3.2 Every time a critical alarm condition occurs an audit '"
+    ]
+   },
+   {
+    "unit": "rec-1112f4cb7bcfb5e5",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'be recorded in the Audit Trail. \\uf071 A similar record shall be '"
+    ]
+   },
+   {
+    "unit": "rec-056e624f52aed934",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: '3.3.2 Every time a critical alarm condition occurs an audit '"
+    ]
+   },
+   {
+    "unit": "rec-658ad8c8f5bd6842",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: '3.3.2 Every time a critical alarm condition occurs an audit '"
+    ]
+   },
+   {
+    "unit": "rec-42c2eff011a7efd7",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-49da9e2a329256a3 :: 3.3.7 Data archiving requirements an'"
+    ]
+   },
+   {
+    "unit": "rec-2d160f0034fc009b",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-bb0685bb0d65b102 :: If any EMS alarm condition is presen'"
+    ]
+   },
+   {
+    "unit": "rec-a3d760284cd0b9a5",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-c77204b4bb9ce932 :: setpoint, and any time-delay associa'"
+    ]
+   },
+   {
+    "unit": "rec-1bf3040f43d66b37",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-186cf5e9267280b5 :: SCADA – Supervisory Control and Data'"
+    ]
+   },
+   {
+    "unit": "rec-04f5b119e455528c",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'The PCS shall historically record quality data and system al'"
+    ]
+   },
+   {
+    "unit": "rec-870a752d32280cc4",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-20afa24de73af1ed :: value, it is the responsibility of t'"
+    ]
+   },
+   {
+    "unit": "rec-a5b4dfbb2f5ad5d3",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'The PCS system has a software input signal from the Weigh/Di'"
+    ]
+   },
+   {
+    "unit": "rec-104ec2e369553178",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-ab66b521251a0546 :: type logic shall be implemented to e'"
+    ]
+   },
+   {
+    "unit": "rec-b0bd7d132fff70f8",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-ab66b521251a0546 :: type logic shall be implemented to e'"
+    ]
+   },
+   {
+    "unit": "rec-2914af68576cb5b4",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-ab66b521251a0546 :: type logic shall be implemented to e'"
+    ]
+   },
+   {
+    "unit": "rec-a97cc563d49e86fe",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'running (1=Running, 0=Not running) the HMI indicator will ch'"
+    ]
+   },
+   {
+    "unit": "rec-c2b7d491973850b2",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-83b81f2e722639f4 :: indicates the running status of the '"
+    ]
+   },
+   {
+    "unit": "rec-b64c4f3071c70007",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-57b909608c51b066 :: value, it is the responsibility of t'"
+    ]
+   },
+   {
+    "unit": "rec-104e0c05174a0f6c",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'Washer/Sterilizer system request for WFI for the process is '"
+    ]
+   },
+   {
+    "unit": "rec-21c842f02794aa67",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-628169a7383f9563 :: remain closed to maintain the integr'"
+    ]
+   },
+   {
+    "unit": "rec-5615bf4d8c4aff5b",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-94f76a772da43145 :: setpoint, and any time-delay associa'"
+    ]
+   },
+   {
+    "unit": "rec-b06097a7cfc498be",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-94f76a772da43145 :: setpoint, and any time-delay associa'"
+    ]
+   },
+   {
+    "unit": "rec-2434de3a732b7dda",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-29a468eb6326dfa2 :: WFI-related alarms and actions'"
+    ]
+   },
+   {
+    "unit": "rec-97a0c75e8a9ae838",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-5560f9712c3f5908 :: supply valve closed and thus the sys'"
+    ]
+   },
+   {
+    "unit": "rec-9f38c6420acd1b68",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-628169a7383f9563 :: remain closed to maintain the integr'"
+    ]
+   },
+   {
+    "unit": "rec-59e67770a61ea9eb",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-628169a7383f9563 :: remain closed to maintain the integr'"
+    ]
+   },
+   {
+    "unit": "rec-c31770f6f675026d",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-628169a7383f9563 :: remain closed to maintain the integr'"
+    ]
+   },
+   {
+    "unit": "rec-3e1d1a134fc57900",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-628169a7383f9563 :: remain closed to maintain the integr'"
+    ]
+   },
+   {
+    "unit": "rec-5dc17e549507f538",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-628169a7383f9563 :: remain closed to maintain the integr'"
+    ]
+   },
+   {
+    "unit": "rec-d1a37985e1667811",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-5a15a1ba81c4d3d :: are closed to maintain the integrity '"
+    ]
+   },
+   {
+    "unit": "rec-8564996784209916",
+    "expert": "REGULATORY",
+    "status": "SHADOW_REJECTED",
+    "structural_violations": [],
+    "anchoring_violations": [
+     "anchored_citations[0] cita NO ancla en L1/L2: 'clm-75c54d6fb51200d9 :: permissive is not satisfied, and the'"
+    ]
+   }
+  ]
+ },
+ "g4e_coverage": {
+  "covered": true,
+  "total_l2": 457,
+  "referenced_valid": 457,
+  "missing": [],
+  "unsupported": []
+ },
+ "invariants": {
+  "L2_findings_sha_before": "95a79f9b6276ff2a7972100764b308fa4b09f0027c6679ea831b441eb880f02c",
+  "L2_findings_sha_after": "95a79f9b6276ff2a7972100764b308fa4b09f0027c6679ea831b441eb880f02c",
+  "L2_MUTATIONS": 0,
+  "outputs_only_under_shadow": true,
+  "llm_provider": "LOCAL",
+  "external_regulatory_channel": "DISABLED (0 llamadas externas)",
+  "unauthorized_client_data_egress": 0
+ },
+ "assessment_histograms": {
+  "TECHNICAL": {
+   "BEHAVIOR_NOT_FOUND_IN_SCOPE": 17
+  },
+  "CROSS_DOMAIN": {
+   "DISAGREEMENT_PERSISTS": 15
+  },
+  "FUNCTIONAL_TRACEABILITY": {
+   "LIKELY_EXTRACTION_LIMIT": 34,
+   "LIKELY_REAL_GAP": 64
+  },
+  "REGULATORY": {
+   "CANDIDATE_RANKING_PROVIDED": 278,
+   "NO_USEFUL_CANDIDATE": 7
+  },
+  "COMPOSER": {
+   "NARRATIVE_BLOCKED": 3,
+   "NARRATIVE_DRAFTED": 63
+  }
+ }
+}

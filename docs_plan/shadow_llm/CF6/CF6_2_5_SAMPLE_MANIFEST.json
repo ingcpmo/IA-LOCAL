@@ -1,0 +1,149 @@
+{
+ "schema": "SHADOW_CF6_2_5_SAMPLE_MANIFEST/v1",
+ "status": "FROZEN@cf6-G2.5-manifest",
+ "llm_calls": 0,
+ "note": "CONGELADO antes de cualquier salida del piloto (§4.1). El hash es sobre sections_selected + rows + criteria_pass — NO incluye `status`, así que es idéntico al del DRAFT: prueba de que la selección no cambió.",
+ "freeze_tag": "cf6-G2.5-manifest",
+ "cf6_2_g": "PASS (CF6-2.G, tag cf6-G2G — cierre de scope previo). La congelación del SAMPLE_MANIFEST se etiquetó por separado en cf6-G2.5-manifest.",
+ "sample_manifest_hash": "7422faaf569430dbc8a19647a2d2b64ff6b53b5231fc4e7962b4486e3165f5a0",
+ "sections_selected": [
+  "sec-0004",
+  "sec-0005",
+  "sec-0016",
+  "sec-0018",
+  "sec-0026",
+  "sec-0042",
+  "sec-0062"
+ ],
+ "n_sections": 7,
+ "categories_covered": [
+  "CROSS_DOMAIN",
+  "FUNCTIONAL_TRACEABILITY",
+  "REGULATORY",
+  "TECHNICAL"
+ ],
+ "mandatory_sections": [
+  "sec-0016",
+  "sec-0018",
+  "sec-0062"
+ ],
+ "mandatory_all_present": true,
+ "inclusion_criteria_counts": {
+  "regulatory_with_inconclusive_>=2": 3,
+  "functional_traceability_>=1": 1,
+  "technical_>=1": 1,
+  "cross_domain_>=2": 2
+ },
+ "inclusion_criteria_pass": true,
+ "selection_reason": {
+  "sec-0004": "CROSS_DOMAIN/INCONCLUSIVE (21_CFR_11.10(g), RW-0005) — 2ª CROSS_DOMAIN exigida",
+  "sec-0005": "REGULATORY/INCONCLUSIVE adicional (21_CFR_11.50_11.70, RW-0005) — 2º+ REGULATORY exigido",
+  "sec-0016": "OBLIGATORIA — caso histórico v1 (fuga 'rango de candidatos'); REGULATORY/INCONCLUSIVE",
+  "sec-0018": "OBLIGATORIA — caso histórico v1 (elevación 'no estaban en conformidad'); CROSS_DOMAIN/INCONCLUSIVE",
+  "sec-0026": "TECHNICAL (ANNEX11_7, RW-0006) — cobertura técnica pura (NOT_APPLICABLE)",
+  "sec-0042": "FUNCTIONAL_TRACEABILITY (RW-0012) — cobertura de trazabilidad pura (NOT_APPLICABLE)",
+  "sec-0062": "OBLIGATORIA — caso histórico v1 (elevación 'no se cumplió con'); REGULATORY/INCONCLUSIVE"
+ },
+ "rows": [
+  {
+   "section_id": "sec-0004",
+   "document": "RW-0005",
+   "regulation": "21_CFR_11.10(g)",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "n_findings": 5,
+   "machine_states": [
+    "MACHINE_DEVIATION_CANDIDATE",
+    "MACHINE_INCONCLUSIVE"
+   ],
+   "has_inconclusive_finding": true,
+   "selection_reason": "CROSS_DOMAIN/INCONCLUSIVE (21_CFR_11.10(g), RW-0005) — 2ª CROSS_DOMAIN exigida"
+  },
+  {
+   "section_id": "sec-0005",
+   "document": "RW-0005",
+   "regulation": "21_CFR_11.50_11.70",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "n_findings": 7,
+   "machine_states": [
+    "MACHINE_INCONCLUSIVE"
+   ],
+   "has_inconclusive_finding": true,
+   "selection_reason": "REGULATORY/INCONCLUSIVE adicional (21_CFR_11.50_11.70, RW-0005) — 2º+ REGULATORY exigido"
+  },
+  {
+   "section_id": "sec-0016",
+   "document": "RW-0006",
+   "regulation": "21_CFR_11.10(d)",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "n_findings": 8,
+   "machine_states": [
+    "MACHINE_INCONCLUSIVE"
+   ],
+   "has_inconclusive_finding": true,
+   "selection_reason": "OBLIGATORIA — caso histórico v1 (fuga 'rango de candidatos'); REGULATORY/INCONCLUSIVE"
+  },
+  {
+   "section_id": "sec-0018",
+   "document": "RW-0006",
+   "regulation": "21_CFR_11.10(g)",
+   "section_type": "CROSS_DOMAIN",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "n_findings": 5,
+   "machine_states": [
+    "MACHINE_DEVIATION_CANDIDATE",
+    "MACHINE_INCONCLUSIVE"
+   ],
+   "has_inconclusive_finding": true,
+   "selection_reason": "OBLIGATORIA — caso histórico v1 (elevación 'no estaban en conformidad'); CROSS_DOMAIN/INCONCLUSIVE"
+  },
+  {
+   "section_id": "sec-0026",
+   "document": "RW-0006",
+   "regulation": "ANNEX11_7",
+   "section_type": "TECHNICAL",
+   "regulatory_state_expected": "NOT_APPLICABLE",
+   "n_findings": 1,
+   "machine_states": [
+    "MACHINE_DEVIATION_CANDIDATE"
+   ],
+   "has_inconclusive_finding": false,
+   "selection_reason": "TECHNICAL (ANNEX11_7, RW-0006) — cobertura técnica pura (NOT_APPLICABLE)"
+  },
+  {
+   "section_id": "sec-0042",
+   "document": "RW-0012",
+   "regulation": "(trazabilidad — sin regulación directa)",
+   "section_type": "FUNCTIONAL_TRACEABILITY",
+   "regulatory_state_expected": "NOT_APPLICABLE",
+   "n_findings": 4,
+   "machine_states": [
+    "MACHINE_INCONCLUSIVE"
+   ],
+   "has_inconclusive_finding": true,
+   "selection_reason": "FUNCTIONAL_TRACEABILITY (RW-0012) — cobertura de trazabilidad pura (NOT_APPLICABLE)"
+  },
+  {
+   "section_id": "sec-0062",
+   "document": "RW-0014",
+   "regulation": "ALCOA_ORIGINAL",
+   "section_type": "REGULATORY",
+   "regulatory_state_expected": "INCONCLUSIVE",
+   "n_findings": 2,
+   "machine_states": [
+    "MACHINE_INCONCLUSIVE"
+   ],
+   "has_inconclusive_finding": true,
+   "selection_reason": "OBLIGATORIA — caso histórico v1 (elevación 'no se cumplió con'); REGULATORY/INCONCLUSIVE"
+  }
+ ],
+ "integrity": {
+  "L2_MUTATIONS": 0,
+  "HUMAN_STATE_CHANGES": 0,
+  "G4D_CALLS": 0,
+  "LLM_CALLS": 0,
+  "FINDINGS_FINGERPRINT": "235f724a738ce783e2d0152991f6165c5ee075037e7d0fe6a66c8f16c96f2c23"
+ }
+}

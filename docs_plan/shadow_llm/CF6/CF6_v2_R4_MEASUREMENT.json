@@ -1,0 +1,7036 @@
+{
+ "schema": "SHADOW_CF6_V2_R4_MEASUREMENT/v1",
+ "fixture_hash": "df35ab12999498d4ee69f6a3f2ebbc6764493db8f045047def1c961fc073b3a8",
+ "n_pairs_measured": 361,
+ "GLOBAL_CONFUSION_FROZEN_THRESHOLD": {
+  "TP": 185,
+  "FP": 94,
+  "FN": 3,
+  "TN": 79,
+  "precision": 0.6630824372759857,
+  "recall": 0.9840425531914894,
+  "n": 361
+ },
+ "CALIBRATION_CONFUSION_FROZEN_THRESHOLD": {
+  "TP": 45,
+  "FP": 21,
+  "FN": 2,
+  "TN": 30,
+  "precision": 0.6818181818181818,
+  "recall": 0.9574468085106383,
+  "n": 98
+ },
+ "HELDOUT_CONFUSION_FROZEN_THRESHOLD": {
+  "TP": 140,
+  "FP": 73,
+  "FN": 1,
+  "TN": 49,
+  "precision": 0.6572769953051644,
+  "recall": 0.9929078014184397,
+  "n": 263
+ },
+ "BY_CATEGORY_FROZEN_THRESHOLD": {
+  "POSITIVE_CLEAR": {
+   "TP": 84,
+   "FP": 0,
+   "FN": 0,
+   "TN": 0,
+   "precision": 1.0,
+   "recall": 1.0,
+   "n": 84
+  },
+  "TECHNICAL_PARAPHRASE": {
+   "TP": 81,
+   "FP": 0,
+   "FN": 3,
+   "TN": 0,
+   "precision": 1.0,
+   "recall": 0.9642857142857143,
+   "n": 84
+  },
+  "IRRELEVANT_SIMILAR_DOMAIN": {
+   "TP": 0,
+   "FP": 0,
+   "FN": 0,
+   "TN": 20,
+   "precision": null,
+   "recall": null,
+   "n": 20
+  },
+  "IRRELEVANT_CLEAR": {
+   "TP": 0,
+   "FP": 1,
+   "FN": 0,
+   "TN": 19,
+   "precision": 0.0,
+   "recall": null,
+   "n": 20
+  },
+  "AMBIGUOUS_PARTIAL": {
+   "TP": 0,
+   "FP": 72,
+   "FN": 0,
+   "TN": 12,
+   "precision": 0.0,
+   "recall": null,
+   "n": 84
+  },
+  "PROCEDURAL_VS_TECHNICAL": {
+   "TP": 0,
+   "FP": 1,
+   "FN": 0,
+   "TN": 28,
+   "precision": 0.0,
+   "recall": null,
+   "n": 29
+  },
+  "CROSS_DOMAIN": {
+   "TP": 20,
+   "FP": 0,
+   "FN": 0,
+   "TN": 0,
+   "precision": 1.0,
+   "recall": 1.0,
+   "n": 20
+  },
+  "ADVERSARIAL_LEXICAL": {
+   "TP": 0,
+   "FP": 20,
+   "FN": 0,
+   "TN": 0,
+   "precision": 0.0,
+   "recall": null,
+   "n": 20
+  }
+ },
+ "BY_PROFILE_FROZEN_THRESHOLD": {
+  "MANY_SHORT": {
+   "TP": 117,
+   "FP": 57,
+   "FN": 3,
+   "TN": 55,
+   "precision": 0.6724137931034483,
+   "recall": 0.975,
+   "n": 232
+  },
+  "FEW_LONG": {
+   "TP": 68,
+   "FP": 37,
+   "FN": 0,
+   "TN": 24,
+   "precision": 0.6476190476190476,
+   "recall": 1.0,
+   "n": 129
+  }
+ },
+ "ACHIEVABLE_OPTIMUM_CALIBRATION": {
+  "partition": "CALIBRATION",
+  "curve_n_points": 54,
+  "curve": [
+   {
+    "threshold": 0.0,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.0244,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.0645,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.08,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.0909,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.0923,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1132,
+    "recall_on_relevant": 0.9761904761904762,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1724,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1739,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1778,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1786,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1818,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1915,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.1935,
+    "recall_on_relevant": 0.9523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2073,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2083,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2092,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2118,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2188,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2264,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2386,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.24,
+    "recall_on_relevant": 0.9285714285714286,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2667,
+    "recall_on_relevant": 0.9047619047619048,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2769,
+    "recall_on_relevant": 0.8809523809523809,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.2927,
+    "recall_on_relevant": 0.8571428571428571,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.3404,
+    "recall_on_relevant": 0.8571428571428571,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.3529,
+    "recall_on_relevant": 0.8333333333333334,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.375,
+    "recall_on_relevant": 0.8095238095238095,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.3977,
+    "recall_on_relevant": 0.7380952380952381,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4,
+    "recall_on_relevant": 0.7142857142857143,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4268,
+    "recall_on_relevant": 0.6904761904761905,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4318,
+    "recall_on_relevant": 0.6666666666666666,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4348,
+    "recall_on_relevant": 0.6428571428571429,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.439,
+    "recall_on_relevant": 0.6190476190476191,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.44,
+    "recall_on_relevant": 0.5952380952380952,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4471,
+    "recall_on_relevant": 0.5476190476190477,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4483,
+    "recall_on_relevant": 0.5238095238095238,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4783,
+    "recall_on_relevant": 0.47619047619047616,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4821,
+    "recall_on_relevant": 0.4523809523809524,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4894,
+    "recall_on_relevant": 0.42857142857142855,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4906,
+    "recall_on_relevant": 0.40476190476190477,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.4923,
+    "recall_on_relevant": 0.38095238095238093,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5,
+    "recall_on_relevant": 0.35714285714285715,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5161,
+    "recall_on_relevant": 0.2857142857142857,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5176,
+    "recall_on_relevant": 0.2619047619047619,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5229,
+    "recall_on_relevant": 0.23809523809523808,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5333,
+    "recall_on_relevant": 0.21428571428571427,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5366,
+    "recall_on_relevant": 0.19047619047619047,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5455,
+    "recall_on_relevant": 0.14285714285714285,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5778,
+    "recall_on_relevant": 0.09523809523809523,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.5909,
+    "recall_on_relevant": 0.07142857142857142,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 0.64,
+    "recall_on_relevant": 0.047619047619047616,
+    "precision_on_hard_negative": 1.0
+   },
+   {
+    "threshold": 1.0,
+    "recall_on_relevant": 0.0,
+    "precision_on_hard_negative": 1.0
+   }
+  ],
+  "achieves_both_targets": true,
+  "best_meeting_both_targets": {
+   "threshold": 0.2667,
+   "recall_on_relevant": 0.9047619047619048,
+   "precision_on_hard_negative": 1.0
+  },
+  "best_balanced_point": {
+   "threshold": 0.0,
+   "recall_on_relevant": 0.9761904761904762,
+   "precision_on_hard_negative": 1.0
+  },
+  "T_RECALL": 0.9,
+  "T_PRECISION": 0.8
+ },
+ "HELDOUT_VERIFICATION_AT_BEST_CALIBRATION_THRESHOLD": {
+  "threshold_from_calibration": 0.2667,
+  "recall_on_relevant_heldout": 0.9523809523809523,
+  "precision_on_hard_negative_heldout": 1.0
+ },
+ "REAL_ADJUDICATED": {
+  "n_pairs": 27,
+  "confusion_frozen_threshold": {
+   "TP": 0,
+   "FP": 1,
+   "FN": 2,
+   "TN": 24,
+   "precision": 0.0,
+   "recall": 0.0,
+   "n": 27
+  }
+ },
+ "rows": [
+  {
+   "pair_id": "fx-0001",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5185,
+   "n_matched": 8,
+   "matched_terms": [
+    "approach",
+    "based",
+    "documented",
+    "driven",
+    "intended",
+    "risk",
+    "use",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0002",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1852,
+   "n_matched": 3,
+   "matched_terms": [
+    "approach",
+    "driven",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0003",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1481,
+   "n_matched": 3,
+   "matched_terms": [
+    "approach",
+    "documented",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0004",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5417,
+   "n_matched": 7,
+   "matched_terms": [
+    "acceptance",
+    "before",
+    "criteria",
+    "defined",
+    "executing",
+    "validation",
+    "were"
+   ]
+  },
+  {
+   "pair_id": "fx-0005",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.375,
+   "n_matched": 5,
+   "matched_terms": [
+    "before",
+    "defined",
+    "executing",
+    "validation",
+    "were"
+   ]
+  },
+  {
+   "pair_id": "fx-0006",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3333,
+   "n_matched": 4,
+   "matched_terms": [
+    "acceptance",
+    "criteria",
+    "defined",
+    "were"
+   ]
+  },
+  {
+   "pair_id": "fx-0007",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4857,
+   "n_matched": 9,
+   "matched_terms": [
+    "deviations",
+    "documented",
+    "evidence",
+    "executed",
+    "execution",
+    "protocol",
+    "real",
+    "recorded",
+    "results"
+   ]
+  },
+  {
+   "pair_id": "fx-0008",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2857,
+   "n_matched": 5,
+   "matched_terms": [
+    "executed",
+    "protocol",
+    "real",
+    "recorded",
+    "results"
+   ]
+  },
+  {
+   "pair_id": "fx-0009",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2286,
+   "n_matched": 4,
+   "matched_terms": [
+    "evidence",
+    "execution",
+    "protocol",
+    "real"
+   ]
+  },
+  {
+   "pair_id": "fx-0010",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 4,
+   "matched_terms": [
+    "requirement",
+    "result",
+    "test",
+    "traceability"
+   ]
+  },
+  {
+   "pair_id": "fx-0011",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.375,
+   "n_matched": 3,
+   "matched_terms": [
+    "requirement",
+    "result",
+    "test"
+   ]
+  },
+  {
+   "pair_id": "fx-0012",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.125,
+   "n_matched": 1,
+   "matched_terms": [
+    "requirement"
+   ]
+  },
+  {
+   "pair_id": "fx-0013",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4737,
+   "n_matched": 9,
+   "matched_terms": [
+    "altered",
+    "can",
+    "demonstrated",
+    "discern",
+    "invalid",
+    "mechanism",
+    "records",
+    "some",
+    "technical"
+   ]
+  },
+  {
+   "pair_id": "fx-0014",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1579,
+   "n_matched": 3,
+   "matched_terms": [
+    "can",
+    "demonstrated",
+    "some"
+   ]
+  },
+  {
+   "pair_id": "fx-0015",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1579,
+   "n_matched": 3,
+   "matched_terms": [
+    "can",
+    "discern",
+    "invalid"
+   ]
+  },
+  {
+   "pair_id": "fx-0016",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4923,
+   "n_matched": 6,
+   "matched_terms": [
+    "access",
+    "control",
+    "described",
+    "federated",
+    "mechanism",
+    "native"
+   ]
+  },
+  {
+   "pair_id": "fx-0017",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2769,
+   "n_matched": 3,
+   "matched_terms": [
+    "described",
+    "federated",
+    "native"
+   ]
+  },
+  {
+   "pair_id": "fx-0018",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0923,
+   "n_matched": 1,
+   "matched_terms": [
+    "described"
+   ]
+  },
+  {
+   "pair_id": "fx-0019",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.64,
+   "n_matched": 4,
+   "matched_terms": [
+    "account",
+    "creation",
+    "process",
+    "provisioning"
+   ]
+  },
+  {
+   "pair_id": "fx-0020",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.24,
+   "n_matched": 1,
+   "matched_terms": [
+    "creation"
+   ]
+  },
+  {
+   "pair_id": "fx-0021",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.08,
+   "n_matched": 1,
+   "matched_terms": [
+    "account"
+   ]
+  },
+  {
+   "pair_id": "fx-0022",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5161,
+   "n_matched": 4,
+   "matched_terms": [
+    "account",
+    "changing",
+    "privileges",
+    "process"
+   ]
+  },
+  {
+   "pair_id": "fx-0023",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1935,
+   "n_matched": 1,
+   "matched_terms": [
+    "changing"
+   ]
+  },
+  {
+   "pair_id": "fx-0024",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0645,
+   "n_matched": 1,
+   "matched_terms": [
+    "process"
+   ]
+  },
+  {
+   "pair_id": "fx-0025",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5366,
+   "n_matched": 5,
+   "matched_terms": [
+    "access",
+    "accounts",
+    "periodic",
+    "review",
+    "rights"
+   ]
+  },
+  {
+   "pair_id": "fx-0026",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.439,
+   "n_matched": 3,
+   "matched_terms": [
+    "periodic",
+    "review",
+    "rights"
+   ]
+  },
+  {
+   "pair_id": "fx-0027",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2927,
+   "n_matched": 2,
+   "matched_terms": [
+    "periodic",
+    "review"
+   ]
+  },
+  {
+   "pair_id": "fx-0028",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.64,
+   "n_matched": 4,
+   "matched_terms": [
+    "account",
+    "deactivation",
+    "process",
+    "revocation"
+   ]
+  },
+  {
+   "pair_id": "fx-0029",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0030",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.08,
+   "n_matched": 1,
+   "matched_terms": [
+    "account"
+   ]
+  },
+  {
+   "pair_id": "fx-0031",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5778,
+   "n_matched": 5,
+   "matched_terms": [
+    "accounts",
+    "human",
+    "individual",
+    "not",
+    "shared"
+   ]
+  },
+  {
+   "pair_id": "fx-0032",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2667,
+   "n_matched": 2,
+   "matched_terms": [
+    "human",
+    "not"
+   ]
+  },
+  {
+   "pair_id": "fx-0033",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1778,
+   "n_matched": 2,
+   "matched_terms": [
+    "accounts",
+    "human"
+   ]
+  },
+  {
+   "pair_id": "fx-0034",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5229,
+   "n_matched": 14,
+   "matched_terms": [
+    "accounts",
+    "cannot",
+    "declared",
+    "electronically",
+    "have",
+    "interactive",
+    "least",
+    "non",
+    "owner",
+    "privilege",
+    "purpose",
+    "service",
+    "sign",
+    "technical"
+   ]
+  },
+  {
+   "pair_id": "fx-0035",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3529,
+   "n_matched": 9,
+   "matched_terms": [
+    "cannot",
+    "declared",
+    "electronically",
+    "have",
+    "least",
+    "non",
+    "purpose",
+    "service",
+    "sign"
+   ]
+  },
+  {
+   "pair_id": "fx-0036",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2092,
+   "n_matched": 6,
+   "matched_terms": [
+    "accounts",
+    "have",
+    "interactive",
+    "non",
+    "service",
+    "technical"
+   ]
+  },
+  {
+   "pair_id": "fx-0037",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4906,
+   "n_matched": 5,
+   "matched_terms": [
+    "access",
+    "allowed",
+    "denied",
+    "evidence",
+    "test"
+   ]
+  },
+  {
+   "pair_id": "fx-0038",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.1132,
+   "n_matched": 1,
+   "matched_terms": [
+    "allowed"
+   ]
+  },
+  {
+   "pair_id": "fx-0039",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2264,
+   "n_matched": 2,
+   "matched_terms": [
+    "evidence",
+    "test"
+   ]
+  },
+  {
+   "pair_id": "fx-0040",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5909,
+   "n_matched": 9,
+   "matched_terms": [
+    "audit",
+    "automatically",
+    "computer",
+    "generated",
+    "intervention",
+    "operator",
+    "produced",
+    "trail",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0041",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5727,
+   "n_matched": 7,
+   "matched_terms": [
+    "automatically",
+    "computer",
+    "generated",
+    "intervention",
+    "operator",
+    "produced",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0042",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1727,
+   "n_matched": 3,
+   "matched_terms": [
+    "audit",
+    "computer",
+    "generated"
+   ]
+  },
+  {
+   "pair_id": "fx-0043",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5598,
+   "n_matched": 8,
+   "matched_terms": [
+    "audit",
+    "date",
+    "each",
+    "entry",
+    "records",
+    "stamped",
+    "time",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0044",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0978,
+   "n_matched": 1,
+   "matched_terms": [
+    "entry"
+   ]
+  },
+  {
+   "pair_id": "fx-0045",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2663,
+   "n_matched": 5,
+   "matched_terms": [
+    "audit",
+    "each",
+    "entry",
+    "records",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0046",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4724,
+   "n_matched": 8,
+   "matched_terms": [
+    "actions",
+    "audit",
+    "create",
+    "delete",
+    "electronic",
+    "modify",
+    "records",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0047",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1809,
+   "n_matched": 2,
+   "matched_terms": [
+    "actions",
+    "electronic"
+   ]
+  },
+  {
+   "pair_id": "fx-0048",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1558,
+   "n_matched": 4,
+   "matched_terms": [
+    "actions",
+    "audit",
+    "records",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0049",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5744,
+   "n_matched": 12,
+   "matched_terms": [
+    "audit",
+    "information",
+    "modification",
+    "new",
+    "not",
+    "only",
+    "preserves",
+    "previous",
+    "prior",
+    "record",
+    "trail",
+    "value"
+   ]
+  },
+  {
+   "pair_id": "fx-0050",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4671,
+   "n_matched": 8,
+   "matched_terms": [
+    "information",
+    "modification",
+    "new",
+    "not",
+    "only",
+    "preserves",
+    "prior",
+    "value"
+   ]
+  },
+  {
+   "pair_id": "fx-0051",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2007,
+   "n_matched": 6,
+   "matched_terms": [
+    "audit",
+    "modification",
+    "preserves",
+    "previous",
+    "record",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0052",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4952,
+   "n_matched": 8,
+   "matched_terms": [
+    "access",
+    "audit",
+    "itself",
+    "modify",
+    "privileged",
+    "restricted",
+    "trail",
+    "users"
+   ]
+  },
+  {
+   "pair_id": "fx-0053",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3029,
+   "n_matched": 4,
+   "matched_terms": [
+    "itself",
+    "modify",
+    "privileged",
+    "users"
+   ]
+  },
+  {
+   "pair_id": "fx-0054",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.149,
+   "n_matched": 4,
+   "matched_terms": [
+    "access",
+    "audit",
+    "modify",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0055",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5135,
+   "n_matched": 6,
+   "matched_terms": [
+    "allows",
+    "audit",
+    "detection",
+    "tamper",
+    "traceable",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0056",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4865,
+   "n_matched": 4,
+   "matched_terms": [
+    "allows",
+    "detection",
+    "tamper",
+    "traceable"
+   ]
+  },
+  {
+   "pair_id": "fx-0057",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1486,
+   "n_matched": 3,
+   "matched_terms": [
+    "allows",
+    "audit",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0058",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5154,
+   "n_matched": 6,
+   "matched_terms": [
+    "audit",
+    "detectable",
+    "modification",
+    "prevented",
+    "silent",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0059",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4846,
+   "n_matched": 4,
+   "matched_terms": [
+    "detectable",
+    "modification",
+    "prevented",
+    "silent"
+   ]
+  },
+  {
+   "pair_id": "fx-0060",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2231,
+   "n_matched": 3,
+   "matched_terms": [
+    "audit",
+    "modification",
+    "silent"
+   ]
+  },
+  {
+   "pair_id": "fx-0061",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5099,
+   "n_matched": 8,
+   "matched_terms": [
+    "associated",
+    "audit",
+    "least",
+    "long",
+    "period",
+    "record",
+    "retained",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0062",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3564,
+   "n_matched": 4,
+   "matched_terms": [
+    "least",
+    "long",
+    "period",
+    "retained"
+   ]
+  },
+  {
+   "pair_id": "fx-0063",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.198,
+   "n_matched": 4,
+   "matched_terms": [
+    "audit",
+    "period",
+    "retained",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0064",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5135,
+   "n_matched": 6,
+   "matched_terms": [
+    "audit",
+    "can",
+    "copied",
+    "exported",
+    "inspection",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0065",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3649,
+   "n_matched": 3,
+   "matched_terms": [
+    "can",
+    "exported",
+    "inspection"
+   ]
+  },
+  {
+   "pair_id": "fx-0066",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1486,
+   "n_matched": 3,
+   "matched_terms": [
+    "audit",
+    "can",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0067",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4783,
+   "n_matched": 6,
+   "matched_terms": [
+    "authorization",
+    "each",
+    "level",
+    "matrix",
+    "operations",
+    "required"
+   ]
+  },
+  {
+   "pair_id": "fx-0068",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4348,
+   "n_matched": 5,
+   "matched_terms": [
+    "authorization",
+    "level",
+    "matrix",
+    "operations",
+    "required"
+   ]
+  },
+  {
+   "pair_id": "fx-0069",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1739,
+   "n_matched": 2,
+   "matched_terms": [
+    "matrix",
+    "operations"
+   ]
+  },
+  {
+   "pair_id": "fx-0070",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4894,
+   "n_matched": 13,
+   "matched_terms": [
+    "access",
+    "alter",
+    "applicable",
+    "authority",
+    "check",
+    "each",
+    "operation",
+    "perform",
+    "performs",
+    "record",
+    "sign",
+    "technical",
+    "time"
+   ]
+  },
+  {
+   "pair_id": "fx-0071",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3404,
+   "n_matched": 9,
+   "matched_terms": [
+    "alter",
+    "applicable",
+    "authority",
+    "check",
+    "operation",
+    "perform",
+    "performs",
+    "sign",
+    "time"
+   ]
+  },
+  {
+   "pair_id": "fx-0072",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1915,
+   "n_matched": 5,
+   "matched_terms": [
+    "authority",
+    "check",
+    "performs",
+    "technical",
+    "time"
+   ]
+  },
+  {
+   "pair_id": "fx-0073",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 9,
+   "matched_terms": [
+    "attempt",
+    "authority",
+    "blocked",
+    "evidence",
+    "negative",
+    "operation",
+    "sufficient",
+    "test",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0074",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.375,
+   "n_matched": 7,
+   "matched_terms": [
+    "attempt",
+    "authority",
+    "blocked",
+    "negative",
+    "operation",
+    "sufficient",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0075",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2188,
+   "n_matched": 4,
+   "matched_terms": [
+    "evidence",
+    "negative",
+    "operation",
+    "test"
+   ]
+  },
+  {
+   "pair_id": "fx-0076",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4949,
+   "n_matched": 7,
+   "matched_terms": [
+    "each",
+    "electronic",
+    "name",
+    "printed",
+    "shows",
+    "signature",
+    "signer"
+   ]
+  },
+  {
+   "pair_id": "fx-0077",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1212,
+   "n_matched": 1,
+   "matched_terms": [
+    "signer"
+   ]
+  },
+  {
+   "pair_id": "fx-0078",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1313,
+   "n_matched": 4,
+   "matched_terms": [
+    "each",
+    "electronic",
+    "shows",
+    "signature"
+   ]
+  },
+  {
+   "pair_id": "fx-0079",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5495,
+   "n_matched": 8,
+   "matched_terms": [
+    "date",
+    "each",
+    "electronic",
+    "executed",
+    "shows",
+    "signature",
+    "time",
+    "was"
+   ]
+  },
+  {
+   "pair_id": "fx-0080",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2162,
+   "n_matched": 2,
+   "matched_terms": [
+    "executed",
+    "was"
+   ]
+  },
+  {
+   "pair_id": "fx-0081",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.1171,
+   "n_matched": 4,
+   "matched_terms": [
+    "each",
+    "electronic",
+    "shows",
+    "signature"
+   ]
+  },
+  {
+   "pair_id": "fx-0082",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4788,
+   "n_matched": 10,
+   "matched_terms": [
+    "approval",
+    "associated",
+    "authorship",
+    "each",
+    "electronic",
+    "meaning",
+    "responsibility",
+    "review",
+    "shows",
+    "signature"
+   ]
+  },
+  {
+   "pair_id": "fx-0083",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2909,
+   "n_matched": 4,
+   "matched_terms": [
+    "approval",
+    "authorship",
+    "responsibility",
+    "review"
+   ]
+  },
+  {
+   "pair_id": "fx-0084",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0788,
+   "n_matched": 4,
+   "matched_terms": [
+    "each",
+    "electronic",
+    "shows",
+    "signature"
+   ]
+  },
+  {
+   "pair_id": "fx-0085",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4795,
+   "n_matched": 8,
+   "matched_terms": [
+    "associated",
+    "elements",
+    "human",
+    "readable",
+    "record",
+    "signed",
+    "those",
+    "three"
+   ]
+  },
+  {
+   "pair_id": "fx-0086",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3288,
+   "n_matched": 5,
+   "matched_terms": [
+    "elements",
+    "human",
+    "signed",
+    "those",
+    "three"
+   ]
+  },
+  {
+   "pair_id": "fx-0087",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3288,
+   "n_matched": 5,
+   "matched_terms": [
+    "elements",
+    "human",
+    "readable",
+    "those",
+    "three"
+   ]
+  },
+  {
+   "pair_id": "fx-0088",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4769,
+   "n_matched": 11,
+   "matched_terms": [
+    "access",
+    "availability",
+    "controls",
+    "electronic",
+    "elements",
+    "extended",
+    "integrity",
+    "record",
+    "retention",
+    "signature",
+    "three"
+   ]
+  },
+  {
+   "pair_id": "fx-0089",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3846,
+   "n_matched": 8,
+   "matched_terms": [
+    "availability",
+    "controls",
+    "electronic",
+    "elements",
+    "extended",
+    "integrity",
+    "retention",
+    "three"
+   ]
+  },
+  {
+   "pair_id": "fx-0090",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2821,
+   "n_matched": 6,
+   "matched_terms": [
+    "access",
+    "controls",
+    "electronic",
+    "integrity",
+    "record",
+    "retention"
+   ]
+  },
+  {
+   "pair_id": "fx-0091",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 7,
+   "matched_terms": [
+    "binds",
+    "mechanism",
+    "protected",
+    "record",
+    "signature",
+    "specific",
+    "technical"
+   ]
+  },
+  {
+   "pair_id": "fx-0092",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3,
+   "n_matched": 3,
+   "matched_terms": [
+    "binds",
+    "protected",
+    "specific"
+   ]
+  },
+  {
+   "pair_id": "fx-0093",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.25,
+   "n_matched": 3,
+   "matched_terms": [
+    "mechanism",
+    "protected",
+    "technical"
+   ]
+  },
+  {
+   "pair_id": "fx-0094",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4694,
+   "n_matched": 9,
+   "matched_terms": [
+    "copying",
+    "excising",
+    "means",
+    "mechanism",
+    "ordinary",
+    "prevents",
+    "proof",
+    "signature",
+    "transferring"
+   ]
+  },
+  {
+   "pair_id": "fx-0095",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3061,
+   "n_matched": 5,
+   "matched_terms": [
+    "copying",
+    "excising",
+    "prevents",
+    "proof",
+    "transferring"
+   ]
+  },
+  {
+   "pair_id": "fx-0096",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2143,
+   "n_matched": 4,
+   "matched_terms": [
+    "excising",
+    "mechanism",
+    "prevents",
+    "proof"
+   ]
+  },
+  {
+   "pair_id": "fx-0097",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.44,
+   "n_matched": 6,
+   "matched_terms": [
+    "covering",
+    "documentation",
+    "lifecycle",
+    "relevant",
+    "stages",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0098",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.44,
+   "n_matched": 6,
+   "matched_terms": [
+    "covering",
+    "documentation",
+    "lifecycle",
+    "relevant",
+    "stages",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0099",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2,
+   "n_matched": 3,
+   "matched_terms": [
+    "covering",
+    "documentation",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0100",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5333,
+   "n_matched": 5,
+   "matched_terms": [
+    "assessment",
+    "computerised",
+    "documented",
+    "real",
+    "risk"
+   ]
+  },
+  {
+   "pair_id": "fx-0101",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4,
+   "n_matched": 4,
+   "matched_terms": [
+    "assessment",
+    "computerised",
+    "real",
+    "risk"
+   ]
+  },
+  {
+   "pair_id": "fx-0102",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2667,
+   "n_matched": 2,
+   "matched_terms": [
+    "documented",
+    "real"
+   ]
+  },
+  {
+   "pair_id": "fx-0103",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4821,
+   "n_matched": 15,
+   "matched_terms": [
+    "acceptance",
+    "assessment",
+    "between",
+    "connection",
+    "criteria",
+    "decisions",
+    "explicit",
+    "procedures",
+    "protocols",
+    "records",
+    "risk",
+    "scope",
+    "taken",
+    "traceable",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0104",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.375,
+   "n_matched": 12,
+   "matched_terms": [
+    "assessment",
+    "between",
+    "connection",
+    "decisions",
+    "explicit",
+    "procedures",
+    "protocols",
+    "risk",
+    "scope",
+    "taken",
+    "traceable",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0105",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1786,
+   "n_matched": 6,
+   "matched_terms": [
+    "assessment",
+    "between",
+    "connection",
+    "explicit",
+    "risk",
+    "traceable"
+   ]
+  },
+  {
+   "pair_id": "fx-0106",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5366,
+   "n_matched": 10,
+   "matched_terms": [
+    "access",
+    "data",
+    "described",
+    "means",
+    "physical",
+    "protection",
+    "racks",
+    "restricted",
+    "room",
+    "server"
+   ]
+  },
+  {
+   "pair_id": "fx-0107",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4268,
+   "n_matched": 8,
+   "matched_terms": [
+    "data",
+    "described",
+    "means",
+    "physical",
+    "protection",
+    "racks",
+    "room",
+    "server"
+   ]
+  },
+  {
+   "pair_id": "fx-0108",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2073,
+   "n_matched": 5,
+   "matched_terms": [
+    "data",
+    "described",
+    "means",
+    "physical",
+    "protection"
+   ]
+  },
+  {
+   "pair_id": "fx-0109",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5909,
+   "n_matched": 8,
+   "matched_terms": [
+    "checksums",
+    "control",
+    "described",
+    "electronic",
+    "integrity",
+    "means",
+    "protection",
+    "redundancy"
+   ]
+  },
+  {
+   "pair_id": "fx-0110",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 7,
+   "matched_terms": [
+    "checksums",
+    "described",
+    "electronic",
+    "integrity",
+    "means",
+    "protection",
+    "redundancy"
+   ]
+  },
+  {
+   "pair_id": "fx-0111",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1818,
+   "n_matched": 3,
+   "matched_terms": [
+    "described",
+    "electronic",
+    "means"
+   ]
+  },
+  {
+   "pair_id": "fx-0112",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5176,
+   "n_matched": 9,
+   "matched_terms": [
+    "accessibility",
+    "accuracy",
+    "data",
+    "documented",
+    "evidence",
+    "readability",
+    "real",
+    "stored",
+    "verification"
+   ]
+  },
+  {
+   "pair_id": "fx-0113",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4471,
+   "n_matched": 8,
+   "matched_terms": [
+    "accessibility",
+    "accuracy",
+    "data",
+    "evidence",
+    "readability",
+    "real",
+    "stored",
+    "verification"
+   ]
+  },
+  {
+   "pair_id": "fx-0114",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2118,
+   "n_matched": 4,
+   "matched_terms": [
+    "documented",
+    "evidence",
+    "real",
+    "verification"
+   ]
+  },
+  {
+   "pair_id": "fx-0115",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4483,
+   "n_matched": 7,
+   "matched_terms": [
+    "defined",
+    "frequency",
+    "justifies",
+    "procedure",
+    "risk",
+    "verification",
+    "where"
+   ]
+  },
+  {
+   "pair_id": "fx-0116",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4483,
+   "n_matched": 7,
+   "matched_terms": [
+    "defined",
+    "frequency",
+    "justifies",
+    "procedure",
+    "risk",
+    "verification",
+    "where"
+   ]
+  },
+  {
+   "pair_id": "fx-0117",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1724,
+   "n_matched": 3,
+   "matched_terms": [
+    "defined",
+    "frequency",
+    "verification"
+   ]
+  },
+  {
+   "pair_id": "fx-0118",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4318,
+   "n_matched": 8,
+   "matched_terms": [
+    "access",
+    "data",
+    "declared",
+    "ensured",
+    "evidence",
+    "period",
+    "retention",
+    "throughout"
+   ]
+  },
+  {
+   "pair_id": "fx-0119",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3977,
+   "n_matched": 7,
+   "matched_terms": [
+    "data",
+    "declared",
+    "ensured",
+    "evidence",
+    "period",
+    "retention",
+    "throughout"
+   ]
+  },
+  {
+   "pair_id": "fx-0120",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2386,
+   "n_matched": 4,
+   "matched_terms": [
+    "declared",
+    "evidence",
+    "period",
+    "retention"
+   ]
+  },
+  {
+   "pair_id": "fx-0121",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 8,
+   "matched_terms": [
+    "about",
+    "assessment",
+    "audit",
+    "documented",
+    "need",
+    "risk",
+    "scope",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0122",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4167,
+   "n_matched": 5,
+   "matched_terms": [
+    "about",
+    "assessment",
+    "need",
+    "risk",
+    "scope"
+   ]
+  },
+  {
+   "pair_id": "fx-0123",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2917,
+   "n_matched": 4,
+   "matched_terms": [
+    "about",
+    "assessment",
+    "documented",
+    "risk"
+   ]
+  },
+  {
+   "pair_id": "fx-0124",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4783,
+   "n_matched": 8,
+   "matched_terms": [
+    "audit",
+    "changes",
+    "deletions",
+    "generates",
+    "gmp",
+    "recording",
+    "relevant",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0125",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4348,
+   "n_matched": 6,
+   "matched_terms": [
+    "changes",
+    "deletions",
+    "generates",
+    "gmp",
+    "recording",
+    "relevant"
+   ]
+  },
+  {
+   "pair_id": "fx-0126",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.1087,
+   "n_matched": 2,
+   "matched_terms": [
+    "audit",
+    "generates"
+   ]
+  },
+  {
+   "pair_id": "fx-0127",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4688,
+   "n_matched": 10,
+   "matched_terms": [
+    "change",
+    "deletion",
+    "documented",
+    "each",
+    "fact",
+    "gmp",
+    "not",
+    "only",
+    "reason",
+    "relevant"
+   ]
+  },
+  {
+   "pair_id": "fx-0128",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.375,
+   "n_matched": 8,
+   "matched_terms": [
+    "change",
+    "deletion",
+    "fact",
+    "gmp",
+    "not",
+    "only",
+    "reason",
+    "relevant"
+   ]
+  },
+  {
+   "pair_id": "fx-0129",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3125,
+   "n_matched": 6,
+   "matched_terms": [
+    "change",
+    "deletion",
+    "each",
+    "gmp",
+    "reason",
+    "relevant"
+   ]
+  },
+  {
+   "pair_id": "fx-0130",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5484,
+   "n_matched": 10,
+   "matched_terms": [
+    "audit",
+    "available",
+    "convertible",
+    "exportable",
+    "form",
+    "generally",
+    "human",
+    "intelligible",
+    "readable",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0131",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5161,
+   "n_matched": 8,
+   "matched_terms": [
+    "available",
+    "convertible",
+    "exportable",
+    "form",
+    "generally",
+    "human",
+    "intelligible",
+    "legible"
+   ]
+  },
+  {
+   "pair_id": "fx-0132",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1613,
+   "n_matched": 4,
+   "matched_terms": [
+    "audit",
+    "available",
+    "convertible",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0133",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5909,
+   "n_matched": 9,
+   "matched_terms": [
+    "audit",
+    "evidence",
+    "existence",
+    "not",
+    "only",
+    "periodic",
+    "real",
+    "review",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0134",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5455,
+   "n_matched": 7,
+   "matched_terms": [
+    "evidence",
+    "existence",
+    "not",
+    "only",
+    "periodic",
+    "real",
+    "review"
+   ]
+  },
+  {
+   "pair_id": "fx-0135",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3636,
+   "n_matched": 4,
+   "matched_terms": [
+    "evidence",
+    "periodic",
+    "real",
+    "review"
+   ]
+  },
+  {
+   "pair_id": "fx-0136",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5156,
+   "n_matched": 18,
+   "matched_terms": [
+    "access",
+    "areas",
+    "biometrics",
+    "cards",
+    "codes",
+    "concrete",
+    "controls",
+    "described",
+    "equipment",
+    "keys",
+    "logical",
+    "method",
+    "pass",
+    "passwords",
+    "personal",
+    "physical",
+    "restricted",
+    "storage"
+   ]
+  },
+  {
+   "pair_id": "fx-0137",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4688,
+   "n_matched": 16,
+   "matched_terms": [
+    "areas",
+    "biometrics",
+    "cards",
+    "codes",
+    "concrete",
+    "controls",
+    "described",
+    "equipment",
+    "keys",
+    "logical",
+    "method",
+    "pass",
+    "passwords",
+    "personal",
+    "physical",
+    "storage"
+   ]
+  },
+  {
+   "pair_id": "fx-0138",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2188,
+   "n_matched": 8,
+   "matched_terms": [
+    "concrete",
+    "controls",
+    "described",
+    "keys",
+    "logical",
+    "method",
+    "pass",
+    "physical"
+   ]
+  },
+  {
+   "pair_id": "fx-0139",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4,
+   "n_matched": 9,
+   "matched_terms": [
+    "architecture",
+    "both",
+    "chosen",
+    "combination",
+    "environment",
+    "justified",
+    "logical",
+    "physical",
+    "risk"
+   ]
+  },
+  {
+   "pair_id": "fx-0140",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4,
+   "n_matched": 9,
+   "matched_terms": [
+    "architecture",
+    "both",
+    "chosen",
+    "combination",
+    "environment",
+    "justified",
+    "logical",
+    "physical",
+    "risk"
+   ]
+  },
+  {
+   "pair_id": "fx-0141",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.25,
+   "n_matched": 6,
+   "matched_terms": [
+    "both",
+    "chosen",
+    "combination",
+    "justified",
+    "logical",
+    "physical"
+   ]
+  },
+  {
+   "pair_id": "fx-0142",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5192,
+   "n_matched": 14,
+   "matched_terms": [
+    "access",
+    "actual",
+    "against",
+    "authorised",
+    "control",
+    "denied",
+    "effective",
+    "evidence",
+    "list",
+    "persons",
+    "proof",
+    "restriction",
+    "unauthorised",
+    "verified"
+   ]
+  },
+  {
+   "pair_id": "fx-0143",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4231,
+   "n_matched": 11,
+   "matched_terms": [
+    "actual",
+    "against",
+    "authorised",
+    "effective",
+    "evidence",
+    "list",
+    "persons",
+    "proof",
+    "restriction",
+    "unauthorised",
+    "verified"
+   ]
+  },
+  {
+   "pair_id": "fx-0144",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2308,
+   "n_matched": 6,
+   "matched_terms": [
+    "authorised",
+    "effective",
+    "evidence",
+    "list",
+    "persons",
+    "restriction"
+   ]
+  },
+  {
+   "pair_id": "fx-0145",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 4,
+   "matched_terms": [
+    "archiving",
+    "data",
+    "described",
+    "process"
+   ]
+  },
+  {
+   "pair_id": "fx-0146",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.35,
+   "n_matched": 3,
+   "matched_terms": [
+    "archiving",
+    "data",
+    "described"
+   ]
+  },
+  {
+   "pair_id": "fx-0147",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0148",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 7,
+   "matched_terms": [
+    "accessibility",
+    "archived",
+    "data",
+    "documented",
+    "integrity",
+    "readability",
+    "verification"
+   ]
+  },
+  {
+   "pair_id": "fx-0149",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4062,
+   "n_matched": 6,
+   "matched_terms": [
+    "accessibility",
+    "archived",
+    "data",
+    "integrity",
+    "readability",
+    "verification"
+   ]
+  },
+  {
+   "pair_id": "fx-0150",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2344,
+   "n_matched": 3,
+   "matched_terms": [
+    "accessibility",
+    "documented",
+    "verification"
+   ]
+  },
+  {
+   "pair_id": "fx-0151",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4643,
+   "n_matched": 7,
+   "matched_terms": [
+    "defined",
+    "frequency",
+    "justifies",
+    "procedure",
+    "risk",
+    "verification",
+    "where"
+   ]
+  },
+  {
+   "pair_id": "fx-0152",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4643,
+   "n_matched": 7,
+   "matched_terms": [
+    "defined",
+    "frequency",
+    "justifies",
+    "procedure",
+    "risk",
+    "verification",
+    "where"
+   ]
+  },
+  {
+   "pair_id": "fx-0153",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1786,
+   "n_matched": 3,
+   "matched_terms": [
+    "defined",
+    "frequency",
+    "verification"
+   ]
+  },
+  {
+   "pair_id": "fx-0154",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 12,
+   "matched_terms": [
+    "ability",
+    "archived",
+    "changes",
+    "data",
+    "ensured",
+    "evidence",
+    "occur",
+    "relevant",
+    "retrieve",
+    "tested",
+    "was",
+    "when"
+   ]
+  },
+  {
+   "pair_id": "fx-0155",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 12,
+   "matched_terms": [
+    "ability",
+    "archived",
+    "changes",
+    "data",
+    "ensured",
+    "evidence",
+    "occur",
+    "relevant",
+    "retrieve",
+    "tested",
+    "was",
+    "when"
+   ]
+  },
+  {
+   "pair_id": "fx-0156",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2308,
+   "n_matched": 5,
+   "matched_terms": [
+    "changes",
+    "evidence",
+    "occur",
+    "relevant",
+    "when"
+   ]
+  },
+  {
+   "pair_id": "fx-0157",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5495,
+   "n_matched": 11,
+   "matched_terms": [
+    "action",
+    "attributable",
+    "data",
+    "each",
+    "generated",
+    "human",
+    "individually",
+    "person",
+    "point",
+    "uniquely",
+    "who"
+   ]
+  },
+  {
+   "pair_id": "fx-0158",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4835,
+   "n_matched": 10,
+   "matched_terms": [
+    "action",
+    "attributable",
+    "data",
+    "generated",
+    "human",
+    "individually",
+    "person",
+    "point",
+    "uniquely",
+    "who"
+   ]
+  },
+  {
+   "pair_id": "fx-0159",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2637,
+   "n_matched": 6,
+   "matched_terms": [
+    "action",
+    "data",
+    "each",
+    "human",
+    "point",
+    "uniquely"
+   ]
+  },
+  {
+   "pair_id": "fx-0160",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4679,
+   "n_matched": 12,
+   "matched_terms": [
+    "action",
+    "attribution",
+    "field",
+    "free",
+    "human",
+    "mechanism",
+    "not",
+    "only",
+    "reliably",
+    "sustains",
+    "technical",
+    "text"
+   ]
+  },
+  {
+   "pair_id": "fx-0161",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3853,
+   "n_matched": 10,
+   "matched_terms": [
+    "action",
+    "attribution",
+    "field",
+    "free",
+    "human",
+    "not",
+    "only",
+    "reliably",
+    "sustains",
+    "text"
+   ]
+  },
+  {
+   "pair_id": "fx-0162",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.1193,
+   "n_matched": 4,
+   "matched_terms": [
+    "action",
+    "human",
+    "mechanism",
+    "technical"
+   ]
+  },
+  {
+   "pair_id": "fx-0163",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5373,
+   "n_matched": 9,
+   "matched_terms": [
+    "action",
+    "attribution",
+    "create",
+    "delete",
+    "human",
+    "modify",
+    "not",
+    "only",
+    "sustained"
+   ]
+  },
+  {
+   "pair_id": "fx-0164",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3582,
+   "n_matched": 7,
+   "matched_terms": [
+    "action",
+    "attribution",
+    "create",
+    "human",
+    "not",
+    "only",
+    "sustained"
+   ]
+  },
+  {
+   "pair_id": "fx-0165",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2836,
+   "n_matched": 5,
+   "matched_terms": [
+    "action",
+    "attribution",
+    "create",
+    "human",
+    "sustained"
+   ]
+  },
+  {
+   "pair_id": "fx-0166",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4696,
+   "n_matched": 12,
+   "matched_terms": [
+    "category",
+    "data",
+    "equipment",
+    "generated",
+    "generic",
+    "identifier",
+    "instrument",
+    "not",
+    "source",
+    "specific",
+    "technical",
+    "traceable"
+   ]
+  },
+  {
+   "pair_id": "fx-0167",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4435,
+   "n_matched": 11,
+   "matched_terms": [
+    "category",
+    "data",
+    "equipment",
+    "generated",
+    "generic",
+    "identifier",
+    "instrument",
+    "not",
+    "source",
+    "specific",
+    "traceable"
+   ]
+  },
+  {
+   "pair_id": "fx-0168",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2174,
+   "n_matched": 6,
+   "matched_terms": [
+    "data",
+    "generated",
+    "identifier",
+    "instrument",
+    "specific",
+    "traceable"
+   ]
+  },
+  {
+   "pair_id": "fx-0169",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4559,
+   "n_matched": 7,
+   "matched_terms": [
+    "actually",
+    "data",
+    "generated",
+    "instrument",
+    "one",
+    "traceability",
+    "was"
+   ]
+  },
+  {
+   "pair_id": "fx-0170",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3676,
+   "n_matched": 6,
+   "matched_terms": [
+    "actually",
+    "data",
+    "generated",
+    "instrument",
+    "one",
+    "was"
+   ]
+  },
+  {
+   "pair_id": "fx-0171",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1912,
+   "n_matched": 4,
+   "matched_terms": [
+    "data",
+    "generated",
+    "instrument",
+    "traceability"
+   ]
+  },
+  {
+   "pair_id": "fx-0172",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4167,
+   "n_matched": 6,
+   "matched_terms": [
+    "data",
+    "entire",
+    "guaranteed",
+    "legibility",
+    "lifecycle",
+    "throughout"
+   ]
+  },
+  {
+   "pair_id": "fx-0173",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4167,
+   "n_matched": 6,
+   "matched_terms": [
+    "data",
+    "entire",
+    "guaranteed",
+    "legibility",
+    "lifecycle",
+    "throughout"
+   ]
+  },
+  {
+   "pair_id": "fx-0174",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1667,
+   "n_matched": 3,
+   "matched_terms": [
+    "data",
+    "guaranteed",
+    "legibility"
+   ]
+  },
+  {
+   "pair_id": "fx-0175",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 4,
+   "matched_terms": [
+    "data",
+    "overwriting",
+    "permanent",
+    "silent"
+   ]
+  },
+  {
+   "pair_id": "fx-0176",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 4,
+   "matched_terms": [
+    "data",
+    "overwriting",
+    "permanent",
+    "silent"
+   ]
+  },
+  {
+   "pair_id": "fx-0177",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2143,
+   "n_matched": 2,
+   "matched_terms": [
+    "data",
+    "permanent"
+   ]
+  },
+  {
+   "pair_id": "fx-0178",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5357,
+   "n_matched": 8,
+   "matched_terms": [
+    "continuity",
+    "criterion",
+    "format",
+    "legibility",
+    "obsolescence",
+    "real",
+    "risk",
+    "where"
+   ]
+  },
+  {
+   "pair_id": "fx-0179",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5357,
+   "n_matched": 8,
+   "matched_terms": [
+    "continuity",
+    "criterion",
+    "format",
+    "legibility",
+    "obsolescence",
+    "real",
+    "risk",
+    "where"
+   ]
+  },
+  {
+   "pair_id": "fx-0180",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.25,
+   "n_matched": 4,
+   "matched_terms": [
+    "continuity",
+    "criterion",
+    "legibility",
+    "where"
+   ]
+  },
+  {
+   "pair_id": "fx-0181",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5472,
+   "n_matched": 6,
+   "matched_terms": [
+    "activity",
+    "general",
+    "made",
+    "record",
+    "rule",
+    "time"
+   ]
+  },
+  {
+   "pair_id": "fx-0182",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.434,
+   "n_matched": 5,
+   "matched_terms": [
+    "activity",
+    "general",
+    "made",
+    "rule",
+    "time"
+   ]
+  },
+  {
+   "pair_id": "fx-0183",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3396,
+   "n_matched": 3,
+   "matched_terms": [
+    "general",
+    "record",
+    "rule"
+   ]
+  },
+  {
+   "pair_id": "fx-0184",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5465,
+   "n_matched": 10,
+   "matched_terms": [
+    "activity",
+    "actual",
+    "case",
+    "identifies",
+    "not",
+    "performer",
+    "records",
+    "retrospectively",
+    "scribe",
+    "time"
+   ]
+  },
+  {
+   "pair_id": "fx-0185",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4767,
+   "n_matched": 9,
+   "matched_terms": [
+    "activity",
+    "actual",
+    "case",
+    "identifies",
+    "not",
+    "performer",
+    "retrospectively",
+    "scribe",
+    "time"
+   ]
+  },
+  {
+   "pair_id": "fx-0186",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1977,
+   "n_matched": 4,
+   "matched_terms": [
+    "case",
+    "records",
+    "scribe",
+    "time"
+   ]
+  },
+  {
+   "pair_id": "fx-0187",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5168,
+   "n_matched": 15,
+   "matched_terms": [
+    "acceptable",
+    "case",
+    "countersignature",
+    "defining",
+    "governed",
+    "late",
+    "limit",
+    "maximum",
+    "performer",
+    "procedure",
+    "real",
+    "reason",
+    "review",
+    "time",
+    "when"
+   ]
+  },
+  {
+   "pair_id": "fx-0188",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5168,
+   "n_matched": 15,
+   "matched_terms": [
+    "acceptable",
+    "case",
+    "countersignature",
+    "defining",
+    "governed",
+    "late",
+    "limit",
+    "maximum",
+    "performer",
+    "procedure",
+    "real",
+    "reason",
+    "review",
+    "time",
+    "when"
+   ]
+  },
+  {
+   "pair_id": "fx-0189",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2617,
+   "n_matched": 7,
+   "matched_terms": [
+    "case",
+    "countersignature",
+    "defining",
+    "governed",
+    "late",
+    "procedure",
+    "when"
+   ]
+  },
+  {
+   "pair_id": "fx-0190",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5526,
+   "n_matched": 11,
+   "matched_terms": [
+    "capture",
+    "certified",
+    "copy",
+    "described",
+    "first",
+    "identified",
+    "original",
+    "preserved",
+    "process",
+    "real",
+    "true"
+   ]
+  },
+  {
+   "pair_id": "fx-0191",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 10,
+   "matched_terms": [
+    "capture",
+    "certified",
+    "copy",
+    "described",
+    "first",
+    "identified",
+    "original",
+    "preserved",
+    "real",
+    "true"
+   ]
+  },
+  {
+   "pair_id": "fx-0192",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2632,
+   "n_matched": 5,
+   "matched_terms": [
+    "capture",
+    "first",
+    "identified",
+    "original",
+    "preserved"
+   ]
+  },
+  {
+   "pair_id": "fx-0193",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5909,
+   "n_matched": 7,
+   "matched_terms": [
+    "actually",
+    "carried",
+    "certification",
+    "copy",
+    "evidence",
+    "out",
+    "was"
+   ]
+  },
+  {
+   "pair_id": "fx-0194",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5909,
+   "n_matched": 7,
+   "matched_terms": [
+    "actually",
+    "carried",
+    "certification",
+    "copy",
+    "evidence",
+    "out",
+    "was"
+   ]
+  },
+  {
+   "pair_id": "fx-0195",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0909,
+   "n_matched": 1,
+   "matched_terms": [
+    "evidence"
+   ]
+  },
+  {
+   "pair_id": "fx-0196",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ACCURATE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 5,
+   "matched_terms": [
+    "accuracy",
+    "data",
+    "described",
+    "mechanism",
+    "verifying"
+   ]
+  },
+  {
+   "pair_id": "fx-0197",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ACCURATE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4375,
+   "n_matched": 4,
+   "matched_terms": [
+    "accuracy",
+    "data",
+    "described",
+    "verifying"
+   ]
+  },
+  {
+   "pair_id": "fx-0198",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ACCURATE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.125,
+   "n_matched": 1,
+   "matched_terms": [
+    "described"
+   ]
+  },
+  {
+   "pair_id": "fx-0199",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ACCURATE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4706,
+   "n_matched": 9,
+   "matched_terms": [
+    "all",
+    "belong",
+    "covers",
+    "data",
+    "evaluated",
+    "forms",
+    "mechanism",
+    "process",
+    "scope"
+   ]
+  },
+  {
+   "pair_id": "fx-0200",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ACCURATE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3824,
+   "n_matched": 7,
+   "matched_terms": [
+    "all",
+    "belong",
+    "covers",
+    "data",
+    "evaluated",
+    "forms",
+    "scope"
+   ]
+  },
+  {
+   "pair_id": "fx-0201",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ACCURATE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2353,
+   "n_matched": 5,
+   "matched_terms": [
+    "all",
+    "covers",
+    "data",
+    "forms",
+    "mechanism"
+   ]
+  },
+  {
+   "pair_id": "fx-0202",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4894,
+   "n_matched": 14,
+   "matched_terms": [
+    "all",
+    "captured",
+    "data",
+    "deviations",
+    "evaluated",
+    "exclusions",
+    "including",
+    "part",
+    "process",
+    "relevant",
+    "reprocessing",
+    "retries",
+    "they",
+    "when"
+   ]
+  },
+  {
+   "pair_id": "fx-0203",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4326,
+   "n_matched": 12,
+   "matched_terms": [
+    "all",
+    "captured",
+    "data",
+    "evaluated",
+    "exclusions",
+    "including",
+    "part",
+    "relevant",
+    "reprocessing",
+    "retries",
+    "they",
+    "when"
+   ]
+  },
+  {
+   "pair_id": "fx-0204",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2553,
+   "n_matched": 8,
+   "matched_terms": [
+    "all",
+    "captured",
+    "data",
+    "evaluated",
+    "including",
+    "process",
+    "relevant",
+    "retries"
+   ]
+  },
+  {
+   "pair_id": "fx-0205",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.45,
+   "n_matched": 7,
+   "matched_terms": [
+    "data",
+    "deletion",
+    "evaluated",
+    "part",
+    "process",
+    "selective",
+    "unfavourable"
+   ]
+  },
+  {
+   "pair_id": "fx-0206",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4167,
+   "n_matched": 6,
+   "matched_terms": [
+    "data",
+    "deletion",
+    "evaluated",
+    "part",
+    "selective",
+    "unfavourable"
+   ]
+  },
+  {
+   "pair_id": "fx-0207",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3,
+   "n_matched": 3,
+   "matched_terms": [
+    "deletion",
+    "selective",
+    "unfavourable"
+   ]
+  },
+  {
+   "pair_id": "fx-0208",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 6,
+   "matched_terms": [
+    "activity",
+    "data",
+    "from",
+    "fully",
+    "possible",
+    "reconstruct"
+   ]
+  },
+  {
+   "pair_id": "fx-0209",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 6,
+   "matched_terms": [
+    "activity",
+    "data",
+    "from",
+    "fully",
+    "possible",
+    "reconstruct"
+   ]
+  },
+  {
+   "pair_id": "fx-0210",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1875,
+   "n_matched": 2,
+   "matched_terms": [
+    "fully",
+    "possible"
+   ]
+  },
+  {
+   "pair_id": "fx-0211",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5169,
+   "n_matched": 9,
+   "matched_terms": [
+    "applies",
+    "described",
+    "evaluated",
+    "handling",
+    "oos",
+    "process",
+    "recording",
+    "results",
+    "where"
+   ]
+  },
+  {
+   "pair_id": "fx-0212",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4944,
+   "n_matched": 8,
+   "matched_terms": [
+    "applies",
+    "described",
+    "evaluated",
+    "handling",
+    "oos",
+    "recording",
+    "results",
+    "where"
+   ]
+  },
+  {
+   "pair_id": "fx-0213",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2472,
+   "n_matched": 5,
+   "matched_terms": [
+    "applies",
+    "evaluated",
+    "oos",
+    "process",
+    "where"
+   ]
+  },
+  {
+   "pair_id": "fx-0214",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONSISTENT",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5455,
+   "n_matched": 6,
+   "matched_terms": [
+    "batch",
+    "chronological",
+    "consistent",
+    "numbering",
+    "sequence",
+    "timestamps"
+   ]
+  },
+  {
+   "pair_id": "fx-0215",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONSISTENT",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5455,
+   "n_matched": 6,
+   "matched_terms": [
+    "batch",
+    "chronological",
+    "consistent",
+    "numbering",
+    "sequence",
+    "timestamps"
+   ]
+  },
+  {
+   "pair_id": "fx-0216",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONSISTENT",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0909,
+   "n_matched": 1,
+   "matched_terms": [
+    "consistent"
+   ]
+  },
+  {
+   "pair_id": "fx-0217",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONSISTENT",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 12,
+   "matched_terms": [
+    "automated",
+    "defined",
+    "detects",
+    "equivalent",
+    "execution",
+    "governed",
+    "human",
+    "inconsistencies",
+    "mechanism",
+    "real",
+    "record",
+    "technical"
+   ]
+  },
+  {
+   "pair_id": "fx-0218",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONSISTENT",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.375,
+   "n_matched": 9,
+   "matched_terms": [
+    "automated",
+    "defined",
+    "detects",
+    "equivalent",
+    "execution",
+    "governed",
+    "human",
+    "inconsistencies",
+    "real"
+   ]
+  },
+  {
+   "pair_id": "fx-0219",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONSISTENT",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2083,
+   "n_matched": 5,
+   "matched_terms": [
+    "detects",
+    "governed",
+    "inconsistencies",
+    "mechanism",
+    "real"
+   ]
+  },
+  {
+   "pair_id": "fx-0220",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ENDURING",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 8,
+   "matched_terms": [
+    "durability",
+    "entire",
+    "format",
+    "guarantees",
+    "medium",
+    "period",
+    "retention",
+    "throughout"
+   ]
+  },
+  {
+   "pair_id": "fx-0221",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ENDURING",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 8,
+   "matched_terms": [
+    "durability",
+    "entire",
+    "format",
+    "guarantees",
+    "medium",
+    "period",
+    "retention",
+    "throughout"
+   ]
+  },
+  {
+   "pair_id": "fx-0222",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ENDURING",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1875,
+   "n_matched": 3,
+   "matched_terms": [
+    "format",
+    "guarantees",
+    "medium"
+   ]
+  },
+  {
+   "pair_id": "fx-0223",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ENDURING",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 6,
+   "matched_terms": [
+    "criterion",
+    "degradation",
+    "driven",
+    "evaluation",
+    "obsolescence",
+    "risk"
+   ]
+  },
+  {
+   "pair_id": "fx-0224",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ENDURING",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 6,
+   "matched_terms": [
+    "criterion",
+    "degradation",
+    "driven",
+    "evaluation",
+    "obsolescence",
+    "risk"
+   ]
+  },
+  {
+   "pair_id": "fx-0225",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ENDURING",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.25,
+   "n_matched": 3,
+   "matched_terms": [
+    "criterion",
+    "driven",
+    "evaluation"
+   ]
+  },
+  {
+   "pair_id": "fx-0226",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_AVAILABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5319,
+   "n_matched": 13,
+   "matched_terms": [
+    "accessible",
+    "data",
+    "delay",
+    "form",
+    "inspection",
+    "legible",
+    "readily",
+    "requested",
+    "retrieved",
+    "review",
+    "undue",
+    "when",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0227",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_AVAILABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5319,
+   "n_matched": 13,
+   "matched_terms": [
+    "accessible",
+    "data",
+    "delay",
+    "form",
+    "inspection",
+    "legible",
+    "readily",
+    "requested",
+    "retrieved",
+    "review",
+    "undue",
+    "when",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0228",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_AVAILABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3191,
+   "n_matched": 8,
+   "matched_terms": [
+    "accessible",
+    "data",
+    "delay",
+    "readily",
+    "retrieved",
+    "undue",
+    "when",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0229",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_AVAILABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5758,
+   "n_matched": 10,
+   "matched_terms": [
+    "contingency",
+    "depend",
+    "does",
+    "legacy",
+    "not",
+    "personnel",
+    "retrieval",
+    "specific",
+    "systems",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0230",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_AVAILABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5758,
+   "n_matched": 10,
+   "matched_terms": [
+    "contingency",
+    "depend",
+    "does",
+    "legacy",
+    "not",
+    "personnel",
+    "retrieval",
+    "specific",
+    "systems",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0231",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_AVAILABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3636,
+   "n_matched": 6,
+   "matched_terms": [
+    "depend",
+    "does",
+    "not",
+    "personnel",
+    "retrieval",
+    "specific"
+   ]
+  },
+  {
+   "pair_id": "fx-0232",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5338,
+   "n_matched": 13,
+   "matched_terms": [
+    "can",
+    "change",
+    "control",
+    "just",
+    "master",
+    "mechanism",
+    "not",
+    "policy",
+    "production",
+    "records",
+    "restricts",
+    "technical",
+    "who"
+   ]
+  },
+  {
+   "pair_id": "fx-0233",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.3835,
+   "n_matched": 9,
+   "matched_terms": [
+    "can",
+    "change",
+    "just",
+    "master",
+    "not",
+    "policy",
+    "production",
+    "restricts",
+    "who"
+   ]
+  },
+  {
+   "pair_id": "fx-0234",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1955,
+   "n_matched": 5,
+   "matched_terms": [
+    "just",
+    "mechanism",
+    "not",
+    "policy",
+    "technical"
+   ]
+  },
+  {
+   "pair_id": "fx-0235",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4719,
+   "n_matched": 8,
+   "matched_terms": [
+    "authorization",
+    "change",
+    "current",
+    "identifies",
+    "made",
+    "personnel",
+    "record",
+    "was"
+   ]
+  },
+  {
+   "pair_id": "fx-0236",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4382,
+   "n_matched": 7,
+   "matched_terms": [
+    "authorization",
+    "change",
+    "current",
+    "identifies",
+    "made",
+    "personnel",
+    "was"
+   ]
+  },
+  {
+   "pair_id": "fx-0237",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.236,
+   "n_matched": 4,
+   "matched_terms": [
+    "change",
+    "identifies",
+    "made",
+    "was"
+   ]
+  },
+  {
+   "pair_id": "fx-0238",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4828,
+   "n_matched": 7,
+   "matched_terms": [
+    "accuracy",
+    "data",
+    "described",
+    "input",
+    "mechanism",
+    "output",
+    "verifying"
+   ]
+  },
+  {
+   "pair_id": "fx-0239",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4483,
+   "n_matched": 6,
+   "matched_terms": [
+    "accuracy",
+    "data",
+    "described",
+    "input",
+    "output",
+    "verifying"
+   ]
+  },
+  {
+   "pair_id": "fx-0240",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1897,
+   "n_matched": 3,
+   "matched_terms": [
+    "described",
+    "mechanism",
+    "verifying"
+   ]
+  },
+  {
+   "pair_id": "fx-0241",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4382,
+   "n_matched": 7,
+   "matched_terms": [
+    "accuracy",
+    "complexity",
+    "degree",
+    "frequency",
+    "justified",
+    "reliability",
+    "verification"
+   ]
+  },
+  {
+   "pair_id": "fx-0242",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4382,
+   "n_matched": 7,
+   "matched_terms": [
+    "accuracy",
+    "complexity",
+    "degree",
+    "frequency",
+    "justified",
+    "reliability",
+    "verification"
+   ]
+  },
+  {
+   "pair_id": "fx-0243",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.236,
+   "n_matched": 4,
+   "matched_terms": [
+    "accuracy",
+    "degree",
+    "frequency",
+    "verification"
+   ]
+  },
+  {
+   "pair_id": "fx-0244",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 7,
+   "matched_terms": [
+    "accurate",
+    "backup",
+    "complete",
+    "data",
+    "entered",
+    "evidence",
+    "mechanism"
+   ]
+  },
+  {
+   "pair_id": "fx-0245",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4667,
+   "n_matched": 6,
+   "matched_terms": [
+    "accurate",
+    "backup",
+    "complete",
+    "data",
+    "entered",
+    "evidence"
+   ]
+  },
+  {
+   "pair_id": "fx-0246",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1667,
+   "n_matched": 3,
+   "matched_terms": [
+    "backup",
+    "entered",
+    "mechanism"
+   ]
+  },
+  {
+   "pair_id": "fx-0247",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.519,
+   "n_matched": 8,
+   "matched_terms": [
+    "accidental",
+    "against",
+    "alteration",
+    "backup",
+    "described",
+    "erasure",
+    "loss",
+    "protection"
+   ]
+  },
+  {
+   "pair_id": "fx-0248",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.519,
+   "n_matched": 8,
+   "matched_terms": [
+    "accidental",
+    "against",
+    "alteration",
+    "backup",
+    "described",
+    "erasure",
+    "loss",
+    "protection"
+   ]
+  },
+  {
+   "pair_id": "fx-0249",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.1139,
+   "n_matched": 2,
+   "matched_terms": [
+    "described",
+    "protection"
+   ]
+  },
+  {
+   "pair_id": "fx-0250",
+   "category": "POSITIVE_CLEAR",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4817,
+   "n_matched": 15,
+   "matched_terms": [
+    "automated",
+    "backup",
+    "case",
+    "data",
+    "deleted",
+    "design",
+    "exceptional",
+    "place",
+    "plus",
+    "process",
+    "program",
+    "record",
+    "supporting",
+    "validation",
+    "written"
+   ]
+  },
+  {
+   "pair_id": "fx-0251",
+   "category": "TECHNICAL_PARAPHRASE",
+   "label": "RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4268,
+   "n_matched": 13,
+   "matched_terms": [
+    "automated",
+    "backup",
+    "case",
+    "data",
+    "deleted",
+    "design",
+    "exceptional",
+    "place",
+    "plus",
+    "program",
+    "supporting",
+    "validation",
+    "written"
+   ]
+  },
+  {
+   "pair_id": "fx-0252",
+   "category": "AMBIGUOUS_PARTIAL",
+   "label": "INCONCLUSIVE",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.2317,
+   "n_matched": 7,
+   "matched_terms": [
+    "automated",
+    "case",
+    "data",
+    "deleted",
+    "design",
+    "exceptional",
+    "process"
+   ]
+  },
+  {
+   "pair_id": "fx-0253",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0254",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0255",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0256",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0257",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0258",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0259",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0260",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0261",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0262",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0263",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.022,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0264",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0417,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0265",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0266",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0267",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ACCURATE",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0625,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0268",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0142,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0269",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONSISTENT",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0270",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ENDURING",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0271",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_AVAILABLE",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0426,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0272",
+   "category": "IRRELEVANT_SIMILAR_DOMAIN",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0273",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.037,
+   "n_matched": 1,
+   "matched_terms": [
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0274",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0275",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0276",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0277",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0278",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0279",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0244,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0280",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0281",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0282",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.05,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0283",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0284",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0285",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0286",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0526,
+   "n_matched": 1,
+   "matched_terms": [
+    "described"
+   ]
+  },
+  {
+   "pair_id": "fx-0287",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ACCURATE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.1875,
+   "n_matched": 2,
+   "matched_terms": [
+    "described",
+    "mechanism"
+   ]
+  },
+  {
+   "pair_id": "fx-0288",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0289",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONSISTENT",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0290",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ENDURING",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0291",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_AVAILABLE",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0292",
+   "category": "IRRELEVANT_CLEAR",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0293",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0294",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0295",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0296",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0297",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0298",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0299",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0300",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0301",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0302",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0303",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0304",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0305",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0306",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0307",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0308",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0312,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0309",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0310",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0154,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0311",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0455,
+   "n_matched": 1,
+   "matched_terms": [
+    "copy"
+   ]
+  },
+  {
+   "pair_id": "fx-0312",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ACCURATE",
+   "model_state_frozen": "PARTIALLY_RELEVANT",
+   "weighted_ratio": 0.125,
+   "n_matched": 2,
+   "matched_terms": [
+    "data",
+    "mechanism"
+   ]
+  },
+  {
+   "pair_id": "fx-0313",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0312,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0314",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0312,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0315",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0316",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0317",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0337,
+   "n_matched": 1,
+   "matched_terms": [
+    "record"
+   ]
+  },
+  {
+   "pair_id": "fx-0318",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0345,
+   "n_matched": 1,
+   "matched_terms": [
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0319",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "IRRELEVANT",
+   "weighted_ratio": 0.0,
+   "n_matched": 0,
+   "matched_terms": []
+  },
+  {
+   "pair_id": "fx-0320",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0667,
+   "n_matched": 2,
+   "matched_terms": [
+    "backup",
+    "data"
+   ]
+  },
+  {
+   "pair_id": "fx-0321",
+   "category": "PROCEDURAL_VS_TECHNICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "INCONCLUSIVE",
+   "weighted_ratio": 0.0253,
+   "n_matched": 1,
+   "matched_terms": [
+    "backup"
+   ]
+  },
+  {
+   "pair_id": "fx-0322",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5185,
+   "n_matched": 8,
+   "matched_terms": [
+    "approach",
+    "based",
+    "documented",
+    "driven",
+    "intended",
+    "risk",
+    "use",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0323",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4923,
+   "n_matched": 6,
+   "matched_terms": [
+    "access",
+    "control",
+    "described",
+    "federated",
+    "mechanism",
+    "native"
+   ]
+  },
+  {
+   "pair_id": "fx-0324",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5909,
+   "n_matched": 9,
+   "matched_terms": [
+    "audit",
+    "automatically",
+    "computer",
+    "generated",
+    "intervention",
+    "operator",
+    "produced",
+    "trail",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0325",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4783,
+   "n_matched": 6,
+   "matched_terms": [
+    "authorization",
+    "each",
+    "level",
+    "matrix",
+    "operations",
+    "required"
+   ]
+  },
+  {
+   "pair_id": "fx-0326",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4949,
+   "n_matched": 7,
+   "matched_terms": [
+    "each",
+    "electronic",
+    "name",
+    "printed",
+    "shows",
+    "signature",
+    "signer"
+   ]
+  },
+  {
+   "pair_id": "fx-0327",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.44,
+   "n_matched": 6,
+   "matched_terms": [
+    "covering",
+    "documentation",
+    "lifecycle",
+    "relevant",
+    "stages",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0328",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5366,
+   "n_matched": 10,
+   "matched_terms": [
+    "access",
+    "data",
+    "described",
+    "means",
+    "physical",
+    "protection",
+    "racks",
+    "restricted",
+    "room",
+    "server"
+   ]
+  },
+  {
+   "pair_id": "fx-0329",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 8,
+   "matched_terms": [
+    "about",
+    "assessment",
+    "audit",
+    "documented",
+    "need",
+    "risk",
+    "scope",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0330",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5156,
+   "n_matched": 18,
+   "matched_terms": [
+    "access",
+    "areas",
+    "biometrics",
+    "cards",
+    "codes",
+    "concrete",
+    "controls",
+    "described",
+    "equipment",
+    "keys",
+    "logical",
+    "method",
+    "pass",
+    "passwords",
+    "personal",
+    "physical",
+    "restricted",
+    "storage"
+   ]
+  },
+  {
+   "pair_id": "fx-0331",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 4,
+   "matched_terms": [
+    "archiving",
+    "data",
+    "described",
+    "process"
+   ]
+  },
+  {
+   "pair_id": "fx-0332",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5495,
+   "n_matched": 11,
+   "matched_terms": [
+    "action",
+    "attributable",
+    "data",
+    "each",
+    "generated",
+    "human",
+    "individually",
+    "person",
+    "point",
+    "uniquely",
+    "who"
+   ]
+  },
+  {
+   "pair_id": "fx-0333",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4167,
+   "n_matched": 6,
+   "matched_terms": [
+    "data",
+    "entire",
+    "guaranteed",
+    "legibility",
+    "lifecycle",
+    "throughout"
+   ]
+  },
+  {
+   "pair_id": "fx-0334",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5472,
+   "n_matched": 6,
+   "matched_terms": [
+    "activity",
+    "general",
+    "made",
+    "record",
+    "rule",
+    "time"
+   ]
+  },
+  {
+   "pair_id": "fx-0335",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5526,
+   "n_matched": 11,
+   "matched_terms": [
+    "capture",
+    "certified",
+    "copy",
+    "described",
+    "first",
+    "identified",
+    "original",
+    "preserved",
+    "process",
+    "real",
+    "true"
+   ]
+  },
+  {
+   "pair_id": "fx-0336",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ACCURATE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 5,
+   "matched_terms": [
+    "accuracy",
+    "data",
+    "described",
+    "mechanism",
+    "verifying"
+   ]
+  },
+  {
+   "pair_id": "fx-0337",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4894,
+   "n_matched": 14,
+   "matched_terms": [
+    "all",
+    "captured",
+    "data",
+    "deviations",
+    "evaluated",
+    "exclusions",
+    "including",
+    "part",
+    "process",
+    "relevant",
+    "reprocessing",
+    "retries",
+    "they",
+    "when"
+   ]
+  },
+  {
+   "pair_id": "fx-0338",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONSISTENT",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5455,
+   "n_matched": 6,
+   "matched_terms": [
+    "batch",
+    "chronological",
+    "consistent",
+    "numbering",
+    "sequence",
+    "timestamps"
+   ]
+  },
+  {
+   "pair_id": "fx-0339",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ENDURING",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 8,
+   "matched_terms": [
+    "durability",
+    "entire",
+    "format",
+    "guarantees",
+    "medium",
+    "period",
+    "retention",
+    "throughout"
+   ]
+  },
+  {
+   "pair_id": "fx-0340",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_AVAILABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5319,
+   "n_matched": 13,
+   "matched_terms": [
+    "accessible",
+    "data",
+    "delay",
+    "form",
+    "inspection",
+    "legible",
+    "readily",
+    "requested",
+    "retrieved",
+    "review",
+    "undue",
+    "when",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0341",
+   "category": "CROSS_DOMAIN",
+   "label": "PARTIALLY_RELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5338,
+   "n_matched": 13,
+   "matched_terms": [
+    "can",
+    "change",
+    "control",
+    "just",
+    "master",
+    "mechanism",
+    "not",
+    "policy",
+    "production",
+    "records",
+    "restricts",
+    "technical",
+    "who"
+   ]
+  },
+  {
+   "pair_id": "fx-0342",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(a)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5185,
+   "n_matched": 8,
+   "matched_terms": [
+    "approach",
+    "based",
+    "documented",
+    "driven",
+    "intended",
+    "risk",
+    "use",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0343",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(d)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4923,
+   "n_matched": 6,
+   "matched_terms": [
+    "access",
+    "control",
+    "described",
+    "federated",
+    "mechanism",
+    "native"
+   ]
+  },
+  {
+   "pair_id": "fx-0344",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_11.10(e)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5909,
+   "n_matched": 9,
+   "matched_terms": [
+    "audit",
+    "automatically",
+    "computer",
+    "generated",
+    "intervention",
+    "operator",
+    "produced",
+    "trail",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0345",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.10(g)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4783,
+   "n_matched": 6,
+   "matched_terms": [
+    "authorization",
+    "each",
+    "level",
+    "matrix",
+    "operations",
+    "required"
+   ]
+  },
+  {
+   "pair_id": "fx-0346",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "21_CFR_11.50_11.70",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4949,
+   "n_matched": 7,
+   "matched_terms": [
+    "each",
+    "electronic",
+    "name",
+    "printed",
+    "shows",
+    "signature",
+    "signer"
+   ]
+  },
+  {
+   "pair_id": "fx-0347",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_4",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.44,
+   "n_matched": 6,
+   "matched_terms": [
+    "covering",
+    "documentation",
+    "lifecycle",
+    "relevant",
+    "stages",
+    "validation"
+   ]
+  },
+  {
+   "pair_id": "fx-0348",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_7.1",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5366,
+   "n_matched": 10,
+   "matched_terms": [
+    "access",
+    "data",
+    "described",
+    "means",
+    "physical",
+    "protection",
+    "racks",
+    "restricted",
+    "room",
+    "server"
+   ]
+  },
+  {
+   "pair_id": "fx-0349",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_9",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 8,
+   "matched_terms": [
+    "about",
+    "assessment",
+    "audit",
+    "documented",
+    "need",
+    "risk",
+    "scope",
+    "trail"
+   ]
+  },
+  {
+   "pair_id": "fx-0350",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ANNEX11_12",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5156,
+   "n_matched": 18,
+   "matched_terms": [
+    "access",
+    "areas",
+    "biometrics",
+    "cards",
+    "codes",
+    "concrete",
+    "controls",
+    "described",
+    "equipment",
+    "keys",
+    "logical",
+    "method",
+    "pass",
+    "passwords",
+    "personal",
+    "physical",
+    "restricted",
+    "storage"
+   ]
+  },
+  {
+   "pair_id": "fx-0351",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ANNEX11_17",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 4,
+   "matched_terms": [
+    "archiving",
+    "data",
+    "described",
+    "process"
+   ]
+  },
+  {
+   "pair_id": "fx-0352",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_ATTRIBUTABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5495,
+   "n_matched": 11,
+   "matched_terms": [
+    "action",
+    "attributable",
+    "data",
+    "each",
+    "generated",
+    "human",
+    "individually",
+    "person",
+    "point",
+    "uniquely",
+    "who"
+   ]
+  },
+  {
+   "pair_id": "fx-0353",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_LEGIBLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4167,
+   "n_matched": 6,
+   "matched_terms": [
+    "data",
+    "entire",
+    "guaranteed",
+    "legibility",
+    "lifecycle",
+    "throughout"
+   ]
+  },
+  {
+   "pair_id": "fx-0354",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONTEMPORANEOUS",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5472,
+   "n_matched": 6,
+   "matched_terms": [
+    "activity",
+    "general",
+    "made",
+    "record",
+    "rule",
+    "time"
+   ]
+  },
+  {
+   "pair_id": "fx-0355",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ORIGINAL",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5526,
+   "n_matched": 11,
+   "matched_terms": [
+    "capture",
+    "certified",
+    "copy",
+    "described",
+    "first",
+    "identified",
+    "original",
+    "preserved",
+    "process",
+    "real",
+    "true"
+   ]
+  },
+  {
+   "pair_id": "fx-0356",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ACCURATE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 5,
+   "matched_terms": [
+    "accuracy",
+    "data",
+    "described",
+    "mechanism",
+    "verifying"
+   ]
+  },
+  {
+   "pair_id": "fx-0357",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "ALCOA_COMPLETE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.4894,
+   "n_matched": 14,
+   "matched_terms": [
+    "all",
+    "captured",
+    "data",
+    "deviations",
+    "evaluated",
+    "exclusions",
+    "including",
+    "part",
+    "process",
+    "relevant",
+    "reprocessing",
+    "retries",
+    "they",
+    "when"
+   ]
+  },
+  {
+   "pair_id": "fx-0358",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "CALIBRATION",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_CONSISTENT",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5455,
+   "n_matched": 6,
+   "matched_terms": [
+    "batch",
+    "chronological",
+    "consistent",
+    "numbering",
+    "sequence",
+    "timestamps"
+   ]
+  },
+  {
+   "pair_id": "fx-0359",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_ENDURING",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5,
+   "n_matched": 8,
+   "matched_terms": [
+    "durability",
+    "entire",
+    "format",
+    "guarantees",
+    "medium",
+    "period",
+    "retention",
+    "throughout"
+   ]
+  },
+  {
+   "pair_id": "fx-0360",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "FEW_LONG",
+   "requirement_id": "ALCOA_AVAILABLE",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5319,
+   "n_matched": 13,
+   "matched_terms": [
+    "accessible",
+    "data",
+    "delay",
+    "form",
+    "inspection",
+    "legible",
+    "readily",
+    "requested",
+    "retrieved",
+    "review",
+    "undue",
+    "when",
+    "without"
+   ]
+  },
+  {
+   "pair_id": "fx-0361",
+   "category": "ADVERSARIAL_LEXICAL",
+   "label": "IRRELEVANT",
+   "partition": "HELDOUT",
+   "profile": "MANY_SHORT",
+   "requirement_id": "21_CFR_211.68(b)",
+   "model_state_frozen": "RELEVANT",
+   "weighted_ratio": 0.5338,
+   "n_matched": 13,
+   "matched_terms": [
+    "can",
+    "change",
+    "control",
+    "just",
+    "master",
+    "mechanism",
+    "not",
+    "policy",
+    "production",
+    "records",
+    "restricts",
+    "technical",
+    "who"
+   ]
+  }
+ ],
+ "QSTATE7_ON_R2_OUTPUTS": {
+  "n_rendered_sections_in_r2": 1,
+  "n_would_be_rejected_by_qstate7": 1,
+  "firing_rate": "1/1",
+  "by_section": {
+   "sec-0016": {
+    "passed": false,
+    "n_violations": 8
+   }
+  }
+ }
+}
